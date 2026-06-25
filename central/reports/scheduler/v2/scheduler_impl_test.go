@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/mocks"
+	snapshotMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -271,4 +272,40 @@ func TestCancelReportRequestReturnsFalseForUnknownReport(t *testing.T) {
 	cancelled, err := s.CancelReportRequest(context.Background(), "nonexistent-id")
 	assert.NoError(t, err)
 	assert.False(t, cancelled)
+}
+
+func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, nil, cronScheduler, nil)
+
+	req := &reportGen.ReportRequest{
+		ReportSnapshot: &storage.ReportSnapshot{
+			ReportId:              "waiting-report-id",
+			ReportConfigurationId: "test-config-id",
+			Name:                  "test-report",
+			ReportStatus: &storage.ReportStatus{
+				RunState: storage.ReportStatus_WAITING,
+			},
+		},
+	}
+	s.reportRequestsQueue.PushBack(req)
+
+	mockSnapshotStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, snap *storage.ReportSnapshot) error {
+			assert.Equal(t, storage.ReportStatus_FAILURE, snap.GetReportStatus().GetRunState())
+			assert.Equal(t, reportGen.ErrUserCancelled.Error(), snap.GetReportStatus().GetErrorMsg())
+			assert.NotNil(t, snap.GetReportStatus().GetCompletedAt())
+			return nil
+		})
+
+	cancelled, err := s.CancelReportRequest(context.Background(), "waiting-report-id")
+	assert.NoError(t, err)
+	assert.True(t, cancelled)
+	assert.Equal(t, 0, s.reportRequestsQueue.Len())
 }

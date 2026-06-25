@@ -282,29 +282,31 @@ func (s *scheduler) RemoveReportSchedule(reportConfigID string) {
 /* Functions to add/remove report jobs from queue */
 
 // CancelReportRequest cancels a report request. If the report is waiting in queue, it is removed
-// and its snapshot is deleted. If the report is already being prepared, its context is cancelled,
-// which propagates cancellation to in-flight database queries and blob store writes.
+// and its snapshot is updated to FAILURE with a cancellation message. If the report is already
+// being prepared, its context is cancelled, which propagates cancellation to in-flight database
+// queries and blob store writes.
 func (s *scheduler) CancelReportRequest(ctx context.Context, reportID string) (bool, error) {
-	removed := s.tryRemoveFromRequestQueue(reportID)
-	if removed {
-		err := s.reportSnapshotStore.DeleteReportSnapshot(ctx, reportID)
-		if err != nil {
-			return false, errors.Wrapf(err, "Error deleting report ID '%s' from storage", reportID)
+	req := s.tryRemoveFromRequestQueue(reportID)
+	if req != nil {
+		req.ReportSnapshot.ReportStatus.ErrorMsg = reportGen.ErrUserCancelled.Error()
+		req.ReportSnapshot.ReportStatus.CompletedAt = protocompat.TimestampNow()
+		req.ReportSnapshot.ReportStatus.RunState = storage.ReportStatus_FAILURE
+		if err := s.reportSnapshotStore.UpdateReportSnapshot(ctx, req.ReportSnapshot); err != nil {
+			return false, errors.Wrapf(err, "Error updating report snapshot to FAILURE for report ID '%s'", reportID)
 		}
 		return true, nil
 	}
 	return s.tryCancelRunningReport(reportID), nil
 }
 
-// Returns true if the request was successfully removed from the ReportRequests queue
-func (s *scheduler) tryRemoveFromRequestQueue(reportID string) bool {
+// Returns the removed ReportRequest if found, nil otherwise
+func (s *scheduler) tryRemoveFromRequestQueue(reportID string) *reportGen.ReportRequest {
 	s.schedulerLock.Lock()
 	defer s.schedulerLock.Unlock()
 
-	request := findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
+	return findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
 		return req.ReportSnapshot.GetReportId() == reportID
 	})
-	return request != nil
 }
 
 func (s *scheduler) CanSubmitReportRequest(user *storage.SlimUser, reportConfig *storage.ReportConfiguration) (bool, error) {
