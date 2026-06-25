@@ -77,20 +77,35 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
-		if supportedKeyTypes.Contains(entry.Type) {
-			keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
-			if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-				return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
+		if spec, ok := supportedKeyTypes[entry.Type]; ok {
+			if err := spec.validate(entry); err != nil {
+				return nil, err
 			}
-			entry.PEM = string(pem.EncodeToMemory(keyBlock))
 		}
 	}
 
 	return &bundle, nil
 }
 
-// supportedKeyTypes defines which key types are currently handled.
-var supportedKeyTypes = set.NewFrozenStringSet(KeyTypeCosign)
+// keyTypeSpec describes how to validate a supported key type.
+type keyTypeSpec struct {
+	validate func(entry *KeyBundleEntry) error
+}
+
+// supportedKeyTypes maps each supported key type to its validation spec.
+// Adding a new type = one entry here.
+var supportedKeyTypes = map[string]keyTypeSpec{
+	KeyTypeCosign: {validate: validateCosignKey},
+}
+
+func validateCosignKey(entry *KeyBundleEntry) error {
+	keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
+	if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
+		return ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
+	}
+	entry.PEM = string(pem.EncodeToMemory(keyBlock))
+	return nil
+}
 
 // ToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
@@ -99,7 +114,7 @@ var supportedKeyTypes = set.NewFrozenStringSet(KeyTypeCosign)
 func (kb *KeyBundle) ToSignatureIntegration() (*storage.SignatureIntegration, error) {
 	var publicKeys []*storage.CosignPublicKeyVerification_PublicKey
 	for _, entry := range kb.Keys {
-		if !supportedKeyTypes.Contains(entry.Type) {
+		if _, ok := supportedKeyTypes[entry.Type]; !ok {
 			log.Warnf("Skipping key %q with unsupported type %q", entry.Name, entry.Type)
 			continue
 		}
