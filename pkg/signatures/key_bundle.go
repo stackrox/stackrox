@@ -38,8 +38,7 @@ type KeyBundleEntry struct {
 	PEM  string `json:"pem"`
 }
 
-// ParseKeyBundle parses and validates a key bundle JSON. All keys must be valid
-// PEM-encoded public keys; if any key fails validation the entire bundle is rejected.
+// ParseKeyBundle parses and validates a key bundle JSON.
 //
 // Schema version handling:
 //   - Known versions (e.g. "1.0"): accepted.
@@ -49,6 +48,8 @@ type KeyBundleEntry struct {
 //
 // Key type handling:
 //   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
+//   - Keys with supported types are validated (e.g. PEM encoding for cosign keys).
+//   - Keys with unsupported types are stored as-is without validation.
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
@@ -76,11 +77,13 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
 		}
-		keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
-		if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
-			return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
+		if supportedKeyTypes.Contains(entry.Type) {
+			keyBlock, rest := pem.Decode([]byte(strings.TrimSpace(entry.PEM)))
+			if !IsValidPublicKeyPEMBlock(keyBlock, rest) {
+				return nil, ErrKeyInvalidPEM.CausedByf("key %q", entry.Name)
+			}
+			entry.PEM = string(pem.EncodeToMemory(keyBlock))
 		}
-		entry.PEM = string(pem.EncodeToMemory(keyBlock))
 	}
 
 	return &bundle, nil

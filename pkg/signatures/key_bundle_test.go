@@ -96,26 +96,26 @@ func TestParseKeyBundle(t *testing.T) {
 			wantErr: ErrKeyNamePathSeparator,
 		},
 		"invalid PEM": {
-			input:   `{"keys": [{"name": "bad-key", "pem": "not-a-pem"}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "not-a-pem"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"whitespace-only PEM": {
-			input:   `{"keys": [{"name": "bad-key", "pem": "   \t\n  "}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "   \t\n  "}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"wrong PEM type": { //nolint:gosec // G101: test data, not real credentials
-			input:   `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"valid + invalid key rejects entire bundle": {
 			input: `{"keys": [
-				{"name": "good", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "bad", "pem": "not-a-pem"}
+				{"name": "good", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "bad", "type": "cosign", "pem": "not-a-pem"}
 			]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"trailing PEM data": {
-			input:   `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
+			input:   `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"duplicate key names": {
@@ -132,6 +132,12 @@ func TestParseKeyBundle(t *testing.T) {
 			input: `{"schemaVersion": "1.0", "keys": [
 				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
 				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
+			]}`,
+		},
+		"unsupported type with non-PEM data accepted": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "not-a-pem-block"}
 			]}`,
 		},
 		"v1.0 with only unsupported types parses successfully": {
@@ -251,7 +257,7 @@ func TestParseKeyBundleMalformedJSON(t *testing.T) {
 
 func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
 	pemWithExtraNewlines := testPublicKeyPEM + "\n\n\n"
-	input := `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
+	input := `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
 
 	bundle, err := ParseKeyBundle([]byte(input))
 	require.NoError(t, err)
