@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"maps"
 	"regexp"
 	"testing"
 
@@ -76,9 +77,7 @@ func NewSchedulingExpectations(paths []ComponentPath, expectation SchedulingExpe
 // WithOverride returns a copy of the expectations with the specified component's values overridden.
 func (e SchedulingExpectations) WithOverride(name string, expectation SchedulingExpectation) SchedulingExpectations {
 	result := make(SchedulingExpectations, len(e))
-	for k, v := range e {
-		result[k] = v
-	}
+	maps.Copy(result, e)
 	result[name] = expectation
 	return result
 }

@@ -2,6 +2,7 @@ package derivelocalvalues
 
 import (
 	"context"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -87,9 +88,7 @@ func newLocalK8sObjectDescriptionFromPath(inputPath string) (*localK8sObjectDesc
 			if cache[kind] == nil {
 				cache[kind] = make(map[string]unstructured.Unstructured)
 			}
-			for name, u := range resources {
-				cache[kind][name] = u
-			}
+			maps.Copy(cache[kind], resources)
 		}
 	}
 

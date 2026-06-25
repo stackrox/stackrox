@@ -257,6 +257,8 @@ slack_top_n_failures() {
     local subject="${3:-Top 10 QA E2E Test failures for the last 7 days}"
     local is_test="${4:-false}"
 
+    echo "::group::${subject}"
+
     local sql
     # shellcheck disable=SC2016
     sql='
@@ -299,7 +301,7 @@ LIMIT
         --use_legacy_sql=false \
         --parameter="job_name_match::${job_name_match}" \
         --parameter="limit:INTEGER:${n}" \
-        "$sql" > "${data_file}" 2>/dev/null || {
+        "$sql" > "${data_file}" || {
         echo >&2 -e "Cannot run query:\n${sql}\nresponse:\n$(jq < "${data_file}")"
         exit 1
     }
@@ -308,32 +310,109 @@ LIMIT
     if [[ $(cat "${data_file}") != "[]" ]]; then
         jq < "${data_file}"
         # shellcheck disable=SC2016
-        body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
-            {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`Rate %` *Suite*")},
-                {"type": "mrkdwn", "text": "*Case*"}
-            ]},
-            (.[] | {"type": "section", "fields": [
-                {"type": "mrkdwn", "text": ("`"+.["%"]+"` "+.["Suite"])},
-                {"type": "plain_text", "text": .["Case"]}
-            ]})]}'
+        body='{
+            "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
+                {
+                    "type": "table",
+                    "rows": (
+                        [
+                            [
+                                {"type": "raw_text", "text": "Rate %"},
+                                {"type": "raw_text", "text": "Suite"},
+                                {"type": "raw_text", "text": "Case"}
+                            ]
+                        ] +
+                        [.[] | [
+                            {"type": "raw_text", "text": .["%"]},
+                            {"type": "raw_text", "text": .Suite},
+                            {"type": "raw_text", "text": .Case}
+                        ]]
+                    ),
+                    "column_settings": [
+                        {"align": "right", "is_wrapped": false},
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "left", "is_wrapped": true}
+                    ]
+                }
+            ]
+        }'
     else
         body='{"blocks":[
-            {"type": "header", "text": {"type": "plain_text", "text": "'"${subject}"'", "emoji": true}},
+            {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
             {"type": "section", "text": {"type": "plain_text", "text": "No failures! :success-kid:", "emoji": true}}]}'
         echo "No failures found!"
     fi
 
     echo "Posting data to slack"
-    local webhook_url
-    if [[ "${is_test}" == "true" ]]; then
-        webhook_url="${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
-    else
-        webhook_url="${SLACK_ENG_DISCUSS_WEBHOOK}"
-    fi
-    jq "$body" "${data_file}" | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+    _post_to_slack "${subject}" "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
     rm -f "${data_file}"
+    echo "::endgroup::"
+}
+
+slack_test_failure_streaks() {
+    local min_streak="${1:-5}"
+    local limit="${2:-10}"
+    local subject="${3:-Tests with 5+ consecutive failures}"
+    local is_test="${4:-false}"
+
+    echo "::group::${subject}"
+
+    local data_file
+    data_file="$(mktemp)"
+    local sql_file="$ROOT/scripts/ci/sql/test_failure_streaks.sql"
+    echo "Running query for test failure streaks (min_streak=${min_streak})"
+    bq --quiet --format=json query \
+        --use_legacy_sql=false \
+        --parameter="min_streak:INTEGER:${min_streak}" \
+        --parameter="limit:INTEGER:${limit}" \
+        < "${sql_file}" > "${data_file}" || {
+        echo >&2 -e "Cannot run query:\n$(cat "${sql_file}")\nresponse:\n$(jq < "${data_file}")"
+        exit 1
+    }
+
+    local body
+    if [[ $(cat "${data_file}") != "[]" ]]; then
+        jq < "${data_file}"
+        # shellcheck disable=SC2016
+        body='{
+            "blocks": [
+                {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
+                {
+                    "type": "table",
+                    "rows": (
+                        [
+                            [
+                                {"type": "raw_text", "text": "Test"},
+                                {"type": "raw_text", "text": "Suite"},
+                                {"type": "raw_text", "text": "Job"}
+                            ]
+                        ] +
+                        [.[] | [
+                            {"type": "raw_text", "text": .test_name},
+                            {"type": "raw_text", "text": .suite},
+                            {"type": "raw_text", "text": .job}
+                        ]]
+                    ),
+                    "column_settings": [
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "left", "is_wrapped": true},
+                        {"align": "left", "is_wrapped": true}
+                    ]
+                }
+            ]
+        }'
+    else
+        body='{"blocks":[
+            {"type": "header", "text": {"type": "plain_text", "text": $subject, "emoji": true}},
+            {"type": "section", "text": {"type": "plain_text", "text": "No long failure streaks! :success-kid:", "emoji": true}}]}'
+        echo "No failure streaks found!"
+    fi
+
+    echo "Posting data to slack"
+    _post_to_slack "${subject}" "$body" "${data_file}" "$(_get_slack_webhook_url "${is_test}")"
+    rm -f "${data_file}"
+    echo "::endgroup::"
 }
 
 # Saving test metrics directly after tests complete results in GCP quota issues.
@@ -344,6 +423,24 @@ _TESTS_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_tests"
 _TESTS_STORAGE_DIR="test-metrics"
 
 _CENTRAL_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_central_metrics"
+
+# Helper to get the appropriate Slack webhook URL based on test mode
+_get_slack_webhook_url() {
+    local is_test="${1:-false}"
+    if [[ "${is_test}" == "true" ]]; then
+        echo "${SLACK_CI_INTEGRATION_TESTING_WEBHOOK}"
+    else
+        echo "${SLACK_ENG_DISCUSS_WEBHOOK}"
+    fi
+}
+
+_post_to_slack() {
+    local subject="$1"
+    local body="$2"
+    local data_file="$3"
+    local webhook_url="$4"
+    jq --arg subject "${subject}" "$body" "${data_file}" | curl --fail -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+}
 _CENTRAL_STORAGE_DIR="central-metrics"
 
 _IMAGE_PREFETCHES_TABLE_NAME="acs-san-stackroxci:ci_metrics.stackrox_image_prefetches"

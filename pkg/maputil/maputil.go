@@ -1,6 +1,8 @@
 package maputil
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -8,9 +10,7 @@ import (
 // ShallowClone creates a shallow clone of the given map.
 func ShallowClone[K comparable, V any](inputMap map[K]V) map[K]V {
 	cloned := make(map[K]V, len(inputMap))
-	for k, v := range inputMap {
-		cloned[k] = v
-	}
+	maps.Copy(cloned, inputMap)
 	return cloned
 }
 
@@ -76,9 +76,7 @@ func (m *FastRMap[K, V]) DeleteMany(keys ...K) {
 // If there are key collisions, the passed-in map's elements take precedence.
 func (m *FastRMap[K, V]) SetMany(elements map[K]V) {
 	m.cloneAndMutate(func(clonedMap map[K]V) {
-		for k, v := range elements {
-			clonedMap[k] = v
-		}
+		maps.Copy(clonedMap, elements)
 	})
 }
 

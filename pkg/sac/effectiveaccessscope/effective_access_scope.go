@@ -1,7 +1,8 @@
 package effectiveaccessscope
 
 import (
-	"sort"
+	"maps"
+	"slices"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -169,9 +170,7 @@ func (root *ScopeTree) Compactify() ScopeTreeCompacted {
 			}
 		}
 		// Ensure order consistency across invocations.
-		sort.Slice(namespaces, func(i, j int) bool {
-			return namespaces[i] < namespaces[j]
-		})
+		slices.Sort(namespaces)
 		compacted[clusterName] = namespaces
 	}
 
@@ -343,9 +342,7 @@ func (root *ScopeTree) Merge(tree *ScopeTree) {
 	if len(tree.clusterIDToName) > 0 && root.clusterIDToName == nil {
 		root.clusterIDToName = make(map[string]string)
 	}
-	for clusterID, clusterName := range tree.clusterIDToName {
-		root.clusterIDToName[clusterID] = clusterName
-	}
+	maps.Copy(root.clusterIDToName, tree.clusterIDToName)
 	for key, cluster := range tree.Clusters {
 		rootCluster := root.Clusters[key]
 		if rootCluster == nil || cluster.State == Included {
@@ -439,9 +436,7 @@ func getNamespaceFQSN(cluster string, namespace string) string {
 
 func augmentLabels(labels map[string]string, key string, value string) map[string]string {
 	result := make(map[string]string)
-	for k, v := range labels {
-		result[k] = v
-	}
+	maps.Copy(result, labels)
 	result[key] = value
 
 	return result

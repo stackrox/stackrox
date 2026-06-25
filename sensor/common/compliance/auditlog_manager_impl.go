@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"maps"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -162,9 +163,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 	// Clone the map before returning because it may get changed before the caller has a chance to use it.
 	nodeStates := make(map[string]*storage.AuditLogFileState, len(a.fileStates))
-	for k, v := range a.fileStates {
-		nodeStates[k] = v // no need to clone this because when the map is updated a new storage.AuditLogFileState is always created (see updateFileState)
-	}
+	// no need to clone this because when the map is updated a new storage.AuditLogFileState is always created (see updateFileState)
+	maps.Copy(nodeStates, a.fileStates)
 	return nodeStates
 }
 
