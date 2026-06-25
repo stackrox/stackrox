@@ -37,6 +37,8 @@ fi
 # Enable Scanner V4 by default for all e2e jobs. openshift/release currently
 # hardcodes ROX_SCANNER_V4=false; this override can be removed once that is
 # dropped. Individual job scripts can opt out via os.environ["ROX_SCANNER_V4"].
+#
+# TODO(ROX-35345): remove this
 export ROX_SCANNER_V4=true
 
 openshift_ci_mods
