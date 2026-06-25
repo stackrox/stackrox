@@ -43,7 +43,8 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "tag=${{ inputs.image-tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=konflux-${{ github.sha }}.git" >> "$GITHUB_OUTPUT"
+            sha="${{ github.event.pull_request.head.sha || github.sha }}"
+            echo "tag=konflux-${sha}.git" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Wait for Konflux images
