@@ -95,28 +95,6 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 // supportedKeyTypes defines which key types are currently handled.
 var supportedKeyTypes = set.NewFrozenStringSet(KeyTypeCosign)
 
-// SupportedKeys returns only the keys with types that are currently supported.
-func (kb *KeyBundle) SupportedKeys() []KeyBundleEntry {
-	var result []KeyBundleEntry
-	for _, entry := range kb.Keys {
-		if supportedKeyTypes.Contains(entry.Type) {
-			result = append(result, entry)
-		}
-	}
-	return result
-}
-
-// UnsupportedKeys returns only the keys with types that are not currently supported.
-func (kb *KeyBundle) UnsupportedKeys() []KeyBundleEntry {
-	var result []KeyBundleEntry
-	for _, entry := range kb.Keys {
-		if !supportedKeyTypes.Contains(entry.Type) {
-			result = append(result, entry)
-		}
-	}
-	return result
-}
-
 // ToSignatureIntegration converts a parsed KeyBundle into the default
 // Red Hat SignatureIntegration, using the well-known ID and name.
 // Only keys with supported types are included; unsupported key types are skipped with a warning.
