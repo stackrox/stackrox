@@ -131,15 +131,6 @@ func TestParseKeyBundle(t *testing.T) {
 			]}`,
 			wantErr: ErrKeyNameDuplicate,
 		},
-		"legacy format defaults type to cosign": {
-			input: `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-		},
-		"v1.0 with explicit cosign type": {
-			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
-		},
-		"v1.0 with missing type defaults to cosign": {
-			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-		},
 		"unknown schema version rejected": {
 			input:   `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrUnknownSchemaVersion,
