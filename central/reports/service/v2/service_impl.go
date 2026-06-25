@@ -388,9 +388,6 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 }
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report job ID is empty")
 	}
@@ -514,7 +511,9 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
+	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -560,7 +559,10 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
+	// Results are already scoped to the requesting user via the UserID query filter above.
+	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
