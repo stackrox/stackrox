@@ -2,6 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementDashboard,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 import { selectors } from './VulnerabilityManagement.selectors';
 
@@ -50,6 +51,10 @@ function selectTopRiskiestOption(optionText) {
 
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     // Some tests might fail in local deployment.
 
