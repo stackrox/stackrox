@@ -136,8 +136,8 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
-	// For DOWNLOAD reports, use streaming pipeline to avoid accumulating large datasets in memory.
-	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+	// For DOWNLOAD config based reports, use streaming pipeline to avoid accumulating large datasets in memory.
+	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD && req.ReportSnapshot.GetVulnReportFilters() != nil {
 		return rg.generateReportStreamingDownload(req)
 	}
 
@@ -163,6 +163,15 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	err = rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_GENERATED)
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
+	}
+
+	// For view based reports generate downloadable csv
+	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+		parentDir := "view-based-report"
+		if err = rg.saveReportData(parentDir,
+			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
+			return errors.Wrap(err, "error persisting blob")
+		}
 	}
 
 	defaultEmailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
