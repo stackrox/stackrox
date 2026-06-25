@@ -870,6 +870,10 @@ mitre:
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
 
+.PHONY: bootstrap_background_migration
+bootstrap_background_migration:
+	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-background-migration/main.go --root . --description "${DESCRIPTION}" ;fi
+
 .PHONY: image-prefetcher-deploy-bin
 image-prefetcher-deploy-bin: $(IMAGE_PREFETCHER_DEPLOY_BIN) ## download and install
 
