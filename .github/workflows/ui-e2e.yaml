@@ -231,81 +231,14 @@ jobs:
       working-directory: ui/apps/platform
       run: npm ci
 
-    - name: Wait for shard-specific data
+    - name: Trigger image scan
       run: |
         set +x
         ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
-        SHARD="${{ matrix.name }}"
-
-        case "$SHARD" in
-          *vulnmanagement*|*vulnerabilities*)
-            # These shards need image scan data.
-            echo "Waiting for scanner pod..."
-            kubectl -n stackrox wait --for=condition=ready pod -l app=scanner --timeout=10m || \
-              echo "::warning::Scanner pod not ready after 10m -- continuing anyway"
-            echo "Waiting for scanner registration with Central..."
-            for _ in $(seq 1 60); do
-              registered=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/imageintegrations" \
-                | jq '[.integrations[]? | select(.type == "clairify" or .type == "scanner")] | length')
-              [ "${registered:-0}" -gt 0 ] && echo "Scanner registered with Central" && break
-              sleep 5
-            done
-            if [ "${registered:-0}" -gt 0 ]; then
-              echo "Triggering image scan..."
-              curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/images/scan" \
-                -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 | jq -r '.name // .error // .message' || true
-            fi
-
-            echo "Scan response:"
-            curl -sk -u "admin:${ADMIN_PASSWORD}" \
-              "https://${API_ENDPOINT}/v1/images/scan" \
-              -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
-              | jq '{id: .id, name: .name, components: (.scan.components | length), cves: .cves, notes: .notes}' || true
-
-            check_scan_data() {
-              local label="$1"
-              local count_images count_cves
-              count_images=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/imagescount" \
-                | jq '.count // 0' 2>/dev/null)
-              count_cves=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/api/graphql" \
-                -X POST -H 'Content-Type: application/json' \
-                -d '{"query":"{ imageCVECount }"}' \
-                | jq '.data.imageCVECount // 0' 2>/dev/null)
-              echo "${label}: images=${count_images:-0} imageCVEs=${count_cves:-0}"
-              [ "${count_images:-0}" -gt 5 ] && [ "${count_cves:-0}" -gt 0 ] && return 0 || return 1
-            }
-
-            total=0
-            data_ready=false
-            check_scan_data "+0s" && data_ready=true
-            if [ "$data_ready" != "true" ]; then
-              for wait in 60 120 120 120 180 300 300 300 300; do
-                sleep "$wait"
-                total=$((total + wait))
-                check_scan_data "+$((total/60))m" && data_ready=true && break
-              done
-            fi
-            if [ "$data_ready" != "true" ]; then
-              echo "::warning::Limited image data after 30 minutes -- some vulnerability tests may fail"
-            fi
-            ;;
-          *policies*|*risk*)
-            echo "Waiting for deployment events..."
-            for _ in $(seq 1 30); do
-              deps=$(curl -sk -u "admin:${ADMIN_PASSWORD}" \
-                "https://${API_ENDPOINT}/v1/deploymentscount?query=" | jq -r '.count // 0')
-              [ "${deps:-0}" -gt 5 ] && echo "Deployments: ${deps}" && break
-              sleep 5
-            done
-            ;;
-          *)
-            echo "No extra data wait needed for $SHARD"
-            ;;
-        esac
+        curl -sk -u "admin:${ADMIN_PASSWORD}" \
+          "https://${API_ENDPOINT}/v1/images/scan" \
+          -X POST -d '{"imageName":"docker.io/nginx:1.12","force":true}' 2>&1 \
+          | jq -r '.name // .error // .message' || true
         set -x
 
     - name: Run Cypress
