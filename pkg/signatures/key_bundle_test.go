@@ -63,12 +63,12 @@ func TestParseKeyBundle(t *testing.T) {
 		wantErr error
 	}{
 		"valid single key": {
-			input: `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 		"valid multiple keys": {
-			input: `{"keys": [
-				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "key-2", "pem": "` + testKeyPEMJSON2 + `"}
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "cosign", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 		},
 		"empty keys array": {

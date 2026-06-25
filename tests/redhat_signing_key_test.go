@@ -152,9 +152,10 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	bundle := keyBundle{
+		SchemaVersion: "1.0",
 		Keys: []bundleKey{
-			{Name: "test-key-1", PEM: testPublicKeyPEM1},
-			{Name: "test-key-2", PEM: testPublicKeyPEM2},
+			{Name: "test-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
+			{Name: "test-key-2", Type: "cosign", PEM: testPublicKeyPEM2},
 		},
 	}
 	bundleJSON, err := json.Marshal(bundle)
@@ -234,9 +235,10 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
 	bundle := keyBundle{
+		SchemaVersion: "1.0",
 		Keys: []bundleKey{
-			{Name: "updater-key-1", PEM: testPublicKeyPEM1},
-			{Name: "updater-key-2", PEM: testPublicKeyPEM2},
+			{Name: "updater-key-1", Type: "cosign", PEM: testPublicKeyPEM1},
+			{Name: "updater-key-2", Type: "cosign", PEM: testPublicKeyPEM2},
 		},
 	}
 	bundleJSON, err := json.Marshal(bundle)

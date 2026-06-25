@@ -34,11 +34,11 @@ func redHatIntegrationMatcher() gomock.Matcher {
 }
 
 func validBundleJSON() []byte {
-	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}]}`, testPublicKeyPEM)
+	return fmt.Appendf(nil, `{"schemaVersion": "1.0", "keys": [{"name": "test-key-1", "type": "cosign", "pem": %q}]}`, testPublicKeyPEM)
 }
 
 func validBundleJSON2Keys() []byte {
-	return fmt.Appendf(nil, `{"keys": [{"name": "test-key-1", "pem": %q}, {"name": "test-key-2", "pem": %q}]}`,
+	return fmt.Appendf(nil, `{"schemaVersion": "1.0", "keys": [{"name": "test-key-1", "type": "cosign", "pem": %q}, {"name": "test-key-2", "type": "cosign", "pem": %q}]}`,
 		testPublicKeyPEM, testPublicKeyPEM2)
 }
 
