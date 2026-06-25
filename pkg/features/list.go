@@ -193,7 +193,7 @@ var (
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
 
 	// ScannerV4RedHatVEXNotAffected enables filtering image vulnerabilities using Red Hat VEX known_not_affected assertions.
-	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED")
+	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED", enabled)
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
 	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE")
