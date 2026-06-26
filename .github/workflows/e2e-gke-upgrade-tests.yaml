@@ -138,6 +138,12 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
+    - name: Fix GOPATH and PATH for building and running roxctl
+      run: |
+        GOPATH="$(go env GOPATH)"
+        echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
+        echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
+
     - name: Run central upgrade test
       env:
         LONGTERM_LICENSE: todo - remove me
@@ -151,9 +157,6 @@ jobs:
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
       run: |
-        GOPATH="$(go env GOPATH)"
-        export GOPATH
-        export PATH="${GOPATH}/bin:${PATH}"
         tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
         touch /tmp/stackrox_ci_state_deployed
@@ -285,6 +288,12 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
+    - name: Fix GOPATH and PATH for building and running roxctl
+      run: |
+        GOPATH="$(go env GOPATH)"
+        echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
+        echo "${GOPATH}/bin" | tee -a "${GITHUB_PATH}"
+
     - name: Run postgres version upgrade test
       env:
         LONGTERM_LICENSE: todo - remove me
@@ -297,9 +306,6 @@ jobs:
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
       run: |
-        GOPATH="$(go env GOPATH)"
-        export GOPATH
-        export PATH="${GOPATH}/bin:${PATH}"
         tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
         touch /tmp/stackrox_ci_state_deployed
