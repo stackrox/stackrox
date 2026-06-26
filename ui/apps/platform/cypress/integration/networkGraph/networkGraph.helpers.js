@@ -128,7 +128,9 @@ export function waitForNetworkFlows(timeoutMs = 600000) {
                         const hasEdges =
                             collector?.outEdges && Object.keys(collector.outEdges).length > 0;
                         if (!hasEdges) {
-                            cy.log(`Network flows not ready (attempt ${attempt + 1}/${maxAttempts})`);
+                            cy.log(
+                                `Network flows not ready (attempt ${attempt + 1}/${maxAttempts})`
+                            );
                             cy.wait(interval);
                             poll(attempt + 1);
                         } else {

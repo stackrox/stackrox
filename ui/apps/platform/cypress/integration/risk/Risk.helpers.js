@@ -153,28 +153,28 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 
 export function waitForProcessEvents(timeoutMs = 300000) {
     const interval = 10000;
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
 
     function poll(elapsed) {
         if (elapsed >= timeoutMs) {
             cy.log('Warning: process events not detected within timeout, proceeding anyway');
-            return;
-        }
-        const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
-        return cy
-            .request({ url: '/v1/processcount', auth, failOnStatusCode: false })
-            .then(({ body }) => {
-                const count = body?.count ?? 0;
-                if (count > 0) {
-                    cy.log(`Process activity detected: ${count} processes`);
-                    return;
+        } else {
+            cy.request({ url: '/v1/processcount', auth, failOnStatusCode: false }).then(
+                ({ body }) => {
+                    const count = body?.count ?? 0;
+                    if (count > 0) {
+                        cy.log(`Process activity detected: ${count} processes`);
+                    } else {
+                        cy.log(`Waiting for processes... (${elapsed / 1000}s)`);
+                        cy.wait(interval);
+                        poll(elapsed + interval);
+                    }
                 }
-                cy.log(`Waiting for processes... (${elapsed / 1000}s)`);
-                cy.wait(interval);
-                return poll(elapsed + interval);
-            });
+            );
+        }
     }
 
-    return poll(0);
+    poll(0);
 }
 
 // interact
