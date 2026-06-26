@@ -115,10 +115,12 @@ jobs:
         infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
@@ -256,10 +258,12 @@ jobs:
         infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
@@ -397,10 +401,12 @@ jobs:
         infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
         echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
