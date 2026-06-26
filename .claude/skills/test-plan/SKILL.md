@@ -1,6 +1,7 @@
 ---
 name: test-plan
 description: Generate a manual test plan for the current feature/work following StackRox testing patterns
+disable-model-invocation: true
 arguments:
   - name: feature_description
     description: Brief description of what's being tested (e.g., "cluster label scoping in policies")
@@ -33,11 +34,14 @@ Get current context:
 # Get current branch
 git branch --show-current
 
+# Compute the merge base for comparison (handles repos where master/main may not share history)
+BASE=$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's|^origin/||' || echo master)" 2>/dev/null || git rev-parse HEAD~10 2>/dev/null || git rev-parse HEAD)
+
 # Get recent commits to understand changes
-git log master..HEAD --oneline | head -10
+git log "$BASE"..HEAD --oneline | head -10
 
 # Get changed files to understand scope
-git diff master...HEAD --name-only
+git diff "$BASE"...HEAD --name-only
 ```
 
 {{#if feature_description}}
@@ -303,6 +307,11 @@ curl -sk -u "admin:$PASSWORD" https://$CENTRAL_IP/v1/metadata | jq
 ```
 
 **Step 3: Write Test Plan to File**
+
+Ensure the output directory exists:
+```bash
+mkdir -p tmp
+```
 
 Get the filename:
 - If JIRA ticket: `tmp/<JIRA-ID>-test-plan.md`
