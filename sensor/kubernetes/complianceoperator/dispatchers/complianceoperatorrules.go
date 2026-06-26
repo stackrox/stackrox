@@ -67,26 +67,33 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 			})
 		}
 
+		ruleV2 := &central.ComplianceOperatorRuleV2{
+			RuleId:       complianceRule.ID,
+			Id:           id,
+			Name:         complianceRule.Name,
+			RuleType:     complianceRule.CheckType,
+			Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
+			Labels:       complianceRule.Labels,
+			Annotations:  complianceRule.Annotations,
+			Title:        complianceRule.Title,
+			Description:  complianceRule.Description,
+			Rationale:    complianceRule.Rationale,
+			Fixes:        fixes,
+			Warning:      complianceRule.Warning,
+			Instructions: complianceRule.Instructions,
+			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
+		}
+
+		// CEL fields are not in the v1.8.2 Go struct (RulePayload) but may be
+		// present in the K8s object if the cluster runs CO >= 1.9.0. Extract
+		// them from the raw unstructured data.
+		populateCelFieldsFromUnstructured(ruleV2, unstructuredObject.Object)
+
 		events = append(events, &central.SensorEvent{
 			Id:     id,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:       complianceRule.ID,
-					Id:           id,
-					Name:         complianceRule.Name,
-					RuleType:     complianceRule.CheckType,
-					Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
-					Labels:       complianceRule.Labels,
-					Annotations:  complianceRule.Annotations,
-					Title:        complianceRule.Title,
-					Description:  complianceRule.Description,
-					Rationale:    complianceRule.Rationale,
-					Fixes:        fixes,
-					Warning:      complianceRule.Warning,
-					Instructions: complianceRule.Instructions,
-					OperatorKind: central.ComplianceOperatorRuleV2_RULE,
-				},
+				ComplianceOperatorRuleV2: ruleV2,
 			},
 		})
 	}
