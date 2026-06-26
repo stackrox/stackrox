@@ -26,7 +26,7 @@ export CGO_ENABLED ?= 0
 # GOLANG_FIPS=0 disables the legacy OpenSSL backend; it is mutually exclusive with native
 # FIPS and will panic at runtime if both are active. See:
 # https://github.com/golang-fips/go/blob/main/README.md#migration-to-upstream-fips-certified-cryptography
-export GOFIPS140 ?= certified
+export GOFIPS140 ?= v1.0.0
 export GOLANG_FIPS ?= 0
 export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
 

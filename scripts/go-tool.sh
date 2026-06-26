@@ -68,7 +68,7 @@ function invoke_go() {
 
   # Enforce Go native FIPS 140-3 crypto (CMVP #5247). These are not overridable.
   # https://github.com/golang-fips/go/blob/main/README.md#migration-to-upstream-fips-certified-cryptography
-  export GOFIPS140=certified
+  export GOFIPS140=v1.0.0
   export GOLANG_FIPS=0
   local tags="${GOTAGS:+${GOTAGS},}no_openssl"
   args+=(-tags "$(tr , ' ' <<<"$tags")")
