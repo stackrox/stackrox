@@ -10,6 +10,8 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 EARLIER_TAG="4.6.2"
 EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
+SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
 PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.8" "4.10.4" "4.11.0")
 
 # shellcheck source=../../scripts/lib.sh
@@ -236,11 +238,11 @@ test_upgrade_paths() {
     ./sensor-remote/sensor.sh
     kubectl -n stackrox set image deploy/sensor "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/admission-control "*=$REGISTRY/main:$CURRENT_TAG"
-    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:$(make collector-tag)" \
+    kubectl -n stackrox set image ds/collector "collector=$REGISTRY/collector:${COLLECTOR_TAG}" \
         "compliance=$REGISTRY/main:$CURRENT_TAG"
     if [[ "$(kubectl -n stackrox get ds/collector -o=jsonpath='{$.spec.template.spec.containers[*].name}')" == *"node-inventory"* ]]; then
         echo "Upgrading node-inventory container"
-        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:$(make scanner-tag)"
+        kubectl -n stackrox set image ds/collector "node-inventory=$REGISTRY/scanner-slim:${SCANNER_TAG}"
     else
         echo "Skipping node-inventory container as this is not Openshift 4"
     fi
