@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 // CA represents a StackRox service certificate authority.
@@ -59,7 +59,7 @@ func LoadCAForSigning(certPEM, keyPEM []byte) (CA, error) {
 
 	ca.tlsCert.Leaf, _ = x509.ParseCertificate(ca.tlsCert.Certificate[0])
 
-	ca.caKey, err = x509utils.ParsePrivateKeyPEM(keyPEM)
+	ca.caKey, err = helpers.ParsePrivateKeyPEM(keyPEM)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func LoadCAForValidation(certPEM []byte) (CA, error) {
 	}
 
 	var err error
-	ca.tlsCert.Leaf, err = x509utils.ParseCertificatePEM(certPEM)
+	ca.tlsCert.Leaf, err = helpers.ParseCertificatePEM(certPEM)
 	if err != nil {
 		return nil, err
 	}

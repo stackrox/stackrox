@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +33,7 @@ f51IDnm9EwnPPJH42AIPiTrsHnLg
 
 func TestExtractAttributes(t *testing.T) {
 	a := assert.New(t)
-	userA, err := x509utils.ParseCertificatePEM(userA)
+	userA, err := helpers.ParseCertificatePEM(userA)
 	if err != nil {
 		t.Fatal(err)
 	}

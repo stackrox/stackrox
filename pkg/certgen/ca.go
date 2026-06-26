@@ -14,7 +14,7 @@ import (
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 var (
@@ -98,7 +98,7 @@ func VerifyCACertInFileMap(fileMap map[string][]byte, ca mtls.CA) error {
 	if len(caCertPEM) == 0 {
 		return ErrNoCACert
 	}
-	caCert, err := x509utils.ParseCertificatePEM(caCertPEM)
+	caCert, err := helpers.ParseCertificatePEM(caCertPEM)
 	if err != nil {
 		return pkgErrors.Wrap(err, "unparseable CA certificate in file map")
 	}

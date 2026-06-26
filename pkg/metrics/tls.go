@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -174,7 +174,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	}
 	if caFile, ok := cm.Data[env.SecureMetricsClientCAKey.Setting()]; ok {
 		log.Debugf("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
-		signerCAs, err := x509utils.ParseCertificatesPEM([]byte(caFile))
+		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {
 			log.Errorw("Unable to parse client CAs", logging.Err(err))
 			return

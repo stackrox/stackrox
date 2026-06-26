@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/jsonutil"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -109,7 +109,7 @@ func PrintProviderDetails(logger logger.Logger, p *storage.AuthProvider, default
 		logger.PrintfLn("  Minimum access role: %q", defaultRoles[p.GetId()])
 	}
 	pem := p.GetConfig()[userpki.ConfigKeys]
-	certs, err := x509utils.ParseCertificatesPEM([]byte(pem))
+	certs, err := helpers.ParseCertificatesPEM([]byte(pem))
 	if err != nil {
 		logger.PrintfLn("  Certificates: %v", err)
 		return

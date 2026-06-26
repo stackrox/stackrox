@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
@@ -381,13 +381,13 @@ func TestEndpoints(t *testing.T) {
 	trustPool := x509.NewCertPool()
 	serviceCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
-	serviceCACert, err := x509utils.ParseCertificatePEM(serviceCAPEMBytes)
+	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
 	defaultCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
-	defaultCACert, err := x509utils.ParseCertificatePEM(defaultCAPEMBytes)
+	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")
 	trustPool.AddCert(defaultCACert)
 

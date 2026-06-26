@@ -20,7 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/x509utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 const (
@@ -226,7 +226,7 @@ func readCAFromFile(filePath string) (*x509.Certificate, []byte, []byte, error) 
 		return nil, nil, nil, errors.Wrap(err, "reading CA file")
 	}
 
-	der, err := x509utils.ConvertPEMToDERs(caBytes)
+	der, err := helpers.ConvertPEMToDERs(caBytes)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "CA cert could not be decoded")
 	}
@@ -317,7 +317,7 @@ func loadCAFromFiles() (*x509.Certificate, crypto.Signer, error) {
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "reading CA key")
 	}
-	caKey, err := x509utils.ParsePrivateKeyPEM(keyPEM)
+	caKey, err := helpers.ParsePrivateKeyPEM(keyPEM)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "parsing CA key")
 	}
