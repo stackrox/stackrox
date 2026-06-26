@@ -13,6 +13,9 @@ func ParseCertificatePEM(data []byte) (*x509.Certificate, error) {
 	if block == nil {
 		return nil, errors.New("failed to decode PEM block")
 	}
+	if block.Type != "CERTIFICATE" {
+		return nil, errors.New("PEM block is not a certificate")
+	}
 	return x509.ParseCertificate(block.Bytes)
 }
 

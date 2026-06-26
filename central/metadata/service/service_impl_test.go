@@ -242,7 +242,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 }
 
 func (s *serviceImplTestSuite) TestIssueSecondaryCALeafCert() {
-	secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+	secondaryCA := s.createTestCA("Test Secondary CA", 2*365*24*time.Hour)
 
 	s.Run("successful certificate generation", func() {
 		mockProvider := &testCertificateProvider{
@@ -295,7 +295,7 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 	})
 
 	s.Run("returns cert when valid", func() {
-		secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+		secondaryCA := s.createTestCA("Test Secondary CA", 2*365*24*time.Hour)
 		mockProvider := &testCertificateProvider{
 			secondaryCA:         secondaryCA,
 			shouldFailSecondary: false,
@@ -331,7 +331,7 @@ func (s *serviceImplTestSuite) TestLoadSecondaryLeafCertIfValid() {
 	})
 }
 
-func (s *serviceImplTestSuite) createTestCA(commonName, _ string) mtls.CA {
+func (s *serviceImplTestSuite) createTestCA(commonName string, expiry time.Duration) mtls.CA {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
 
@@ -348,7 +348,7 @@ func (s *serviceImplTestSuite) createTestCA(commonName, _ string) mtls.CA {
 		SerialNumber:          serial,
 		Subject:               pkix.Name{CommonName: commonName},
 		NotBefore:             now,
-		NotAfter:              now.Add(365 * 24 * time.Hour),
+		NotAfter:              now.Add(expiry),
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
@@ -414,8 +414,8 @@ func (m *testCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, error
 
 func (s *serviceImplTestSuite) TestTLSChallengeWithSecondaryCA() {
 	// Create test CAs
-	primaryCA := s.createTestCA("Test Primary CA", "8760h")
-	secondaryCA := s.createTestCA("Test Secondary CA", "17520h")
+	primaryCA := s.createTestCA("Test Primary CA", 365*24*time.Hour)
+	secondaryCA := s.createTestCA("Test Secondary CA", 2*365*24*time.Hour)
 
 	// Create a primary leaf certificate
 	issuedCert, err := primaryCA.IssueCertForSubject(mtls.CentralSubject)
