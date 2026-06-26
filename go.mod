@@ -2,7 +2,7 @@ module github.com/stackrox/rox
 
 go 1.26.3
 
-godebug fips140=on
+godebug fips140=only
 
 require (
 	cloud.google.com/go/artifactregistry v1.25.0
