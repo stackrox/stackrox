@@ -12,7 +12,7 @@ var (
 	CreateTableRoleBindingsStmt = &postgres.CreateStmts{
 		GormModel: (*RoleBindings)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*RoleBindingsSubjects)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

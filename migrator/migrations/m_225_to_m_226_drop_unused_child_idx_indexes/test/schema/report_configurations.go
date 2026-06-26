@@ -12,7 +12,7 @@ var (
 	CreateTableReportConfigurationsStmt = &postgres.CreateStmts{
 		GormModel: (*ReportConfigurations)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ReportConfigurationsNotifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

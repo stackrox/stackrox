@@ -11,7 +11,7 @@ var (
 	CreateTableCollectionsStmt = &postgres.CreateStmts{
 		GormModel: (*Collections)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*CollectionsEmbeddedCollections)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

@@ -13,7 +13,7 @@ var (
 	CreateTableBaseImagesStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImages)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*BaseImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

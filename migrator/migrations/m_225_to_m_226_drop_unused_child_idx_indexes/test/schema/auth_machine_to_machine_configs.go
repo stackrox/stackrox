@@ -11,7 +11,7 @@ var (
 	CreateTableAuthMachineToMachineConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*AuthMachineToMachineConfigs)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*AuthMachineToMachineConfigsMappings)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

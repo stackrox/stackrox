@@ -14,10 +14,10 @@ var (
 	CreateTableSecretsStmt = &postgres.CreateStmts{
 		GormModel: (*Secrets)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*SecretsFiles)(nil),
 				Children: []*postgres.CreateStmts{
-					&postgres.CreateStmts{
+					{
 						GormModel: (*SecretsFilesRegistries)(nil),
 						Children:  []*postgres.CreateStmts{},
 					},

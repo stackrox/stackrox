@@ -14,7 +14,7 @@ var (
 	CreateTableImagesV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ImagesV2)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ImagesV2Layers)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

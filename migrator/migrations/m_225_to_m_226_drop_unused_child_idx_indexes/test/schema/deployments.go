@@ -15,27 +15,27 @@ var (
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
 		GormModel: (*Deployments)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*DeploymentsContainers)(nil),
 				Children: []*postgres.CreateStmts{
-					&postgres.CreateStmts{
+					{
 						GormModel: (*DeploymentsContainersEnvs)(nil),
 						Children:  []*postgres.CreateStmts{},
 					},
-					&postgres.CreateStmts{
+					{
 						GormModel: (*DeploymentsContainersVolumes)(nil),
 						Children:  []*postgres.CreateStmts{},
 					},
-					&postgres.CreateStmts{
+					{
 						GormModel: (*DeploymentsContainersSecrets)(nil),
 						Children:  []*postgres.CreateStmts{},
 					},
 				},
 			},
-			&postgres.CreateStmts{
+			{
 				GormModel: (*DeploymentsPorts)(nil),
 				Children: []*postgres.CreateStmts{
-					&postgres.CreateStmts{
+					{
 						GormModel: (*DeploymentsPortsExposureInfos)(nil),
 						Children:  []*postgres.CreateStmts{},
 					},

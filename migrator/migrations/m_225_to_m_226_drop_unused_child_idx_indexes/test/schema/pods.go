@@ -11,7 +11,7 @@ var (
 	CreateTablePodsStmt = &postgres.CreateStmts{
 		GormModel: (*Pods)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*PodsLiveInstances)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

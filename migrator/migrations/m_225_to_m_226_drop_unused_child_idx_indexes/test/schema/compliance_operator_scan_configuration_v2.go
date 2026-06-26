@@ -11,15 +11,15 @@ var (
 	CreateTableComplianceOperatorScanConfigurationV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorScanConfigurationV2)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ComplianceOperatorScanConfigurationV2Notifiers)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

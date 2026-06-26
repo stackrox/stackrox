@@ -14,7 +14,7 @@ var (
 	CreateTableComplianceOperatorReportSnapshotV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorReportSnapshotV2)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*ComplianceOperatorReportSnapshotV2Scans)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},

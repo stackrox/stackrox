@@ -14,7 +14,7 @@ var (
 	CreateTableNodesStmt = &postgres.CreateStmts{
 		GormModel: (*Nodes)(nil),
 		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
+			{
 				GormModel: (*NodesTaints)(nil),
 				Children:  []*postgres.CreateStmts{},
 			},
