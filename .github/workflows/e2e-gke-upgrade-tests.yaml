@@ -22,6 +22,9 @@ defaults:
 jobs:
   wait-for-images:
     runs-on: ubuntu-latest
+    env:
+      # TODO: undo before merging
+      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6
@@ -54,6 +57,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
+      # TODO: undo before merging
+      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
+
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
@@ -199,6 +205,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
+      # TODO: undo before merging
+      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
+
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
@@ -344,6 +353,9 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
+      # TODO: undo before merging
+      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
+
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
