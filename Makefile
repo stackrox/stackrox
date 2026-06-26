@@ -362,11 +362,20 @@ generated-srcs: go-generated-srcs config-controller-gen
 .PHONY: deps
 deps:
 	@echo "+ $@"
+	$(SILENT)gomock_dirs=$$(find . -type d -name 'gomock_reflect_*'); \
+	if [ -n "$$gomock_dirs" ]; then \
+		echo "Found leftover gomock directories. Please remove them and rerun make deps!"; \
+		echo "$$gomock_dirs"; \
+		exit 1; \
+	fi
 	$(SILENT)for gomod in $$(find $(BASE_DIR) -name "go.mod" -not -path '*/.claude/*'); do \
 		dir=$$(dirname "$$gomod"); \
 		echo "  go mod tidy in $$dir"; \
 		(cd "$$dir" && go mod tidy); \
 	done
+ifdef CI
+	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
+endif
 
 .PHONY: clean-obsolete-protos
 clean-obsolete-protos:
