@@ -71,6 +71,13 @@ function invoke_go() {
   export GOFIPS140=v1.0.0
   export GOLANG_FIPS=0
   local tags="${GOTAGS:+${GOTAGS},}no_openssl"
+
+  # FIPS_STRICT=true bakes fips140=only into the binary via linker, causing
+  # non-FIPS algorithms to error/panic. Applies to all binaries including those
+  # deployed to clusters. Triggered by the ci-fips-strict PR label.
+  if [[ "${FIPS_STRICT:-}" == "true" ]]; then
+    cgo_ldflags+=(-X "runtime.godebugDefault=fips140=only")
+  fi
   args+=(-tags "$(tr , ' ' <<<"$tags")")
 
   if [[ "$RACE" == "true" ]]; then
