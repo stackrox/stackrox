@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"slices"
 	"testing"
 	"time"
@@ -392,9 +393,26 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	// Precondition: verify the decoy URL is reachable from within the cluster.
 	// Without this, a broken nginx service would produce the same result as
 	// offline mode (keys unchanged), making the negative assertion ambiguous.
+	// Retry because Service endpoints may not be routable immediately after
+	// the deployment is marked ready.
 	s.logf("Verifying decoy bundle URL is reachable from within the cluster")
-	execInDeployment(t, s.k8s, deploymentName, ns,
-		"sh", "-c", fmt.Sprintf("wget -q -O /dev/null %s", bundleURL))
+	wgetCmd := fmt.Sprintf("wget -q -O /dev/null %s", bundleURL)
+	mustEventually(t, testCtx, func() error {
+		podList, err := s.k8s.CoreV1().Pods(ns).List(testCtx, metaV1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+		})
+		if err != nil {
+			return fmt.Errorf("listing pods: %w", err)
+		}
+		if len(podList.Items) == 0 {
+			return fmt.Errorf("no pods found for deployment %q", deploymentName)
+		}
+		out, err := exec.CommandContext(testCtx, "kubectl", "exec", "-n", ns, podList.Items[0].Name, "--", "sh", "-c", wgetCmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("wget failed: %s: %w", string(out), err)
+		}
+		return nil
+	}, 2*time.Second, "decoy bundle URL not yet reachable")
 	s.logf("Decoy bundle URL is reachable")
 
 	// --- Step 2: Set env vars on Central with offline mode enabled ---
