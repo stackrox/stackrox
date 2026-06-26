@@ -19,6 +19,10 @@ GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
 export CGO_ENABLED ?= 1
+# Use Go's native FIPS 140-3 module (CMVP #5247) instead of the Red Hat OpenSSL backend.
+# GOLANG_FIPS=0 disables the legacy OpenSSL backend; it is mutually exclusive with native
+# FIPS and will panic at runtime if both are active. See:
+# https://github.com/golang-fips/go/blob/main/README.md#migration-to-upstream-fips-certified-cryptography
 export GOFIPS140 ?= certified
 export GOLANG_FIPS ?= 0
 export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
