@@ -2,7 +2,7 @@ package clairv4
 
 import (
 	"crypto/fips140"
-	"os"
+	stdos "os"
 	"testing"
 )
 
@@ -12,5 +12,5 @@ func TestMain(m *testing.M) {
 	fips140.WithoutEnforcement(func() {
 		code = m.Run()
 	})
-	os.Exit(code)
+	stdos.Exit(code)
 }
