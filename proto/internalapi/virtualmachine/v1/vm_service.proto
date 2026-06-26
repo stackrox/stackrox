@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package virtualmachine.v1;
+
+import "google/protobuf/timestamp.proto";
+import "internalapi/scanner/v4/index_report.proto";
+
+option go_package = "./internalapi/virtualmachine/v1;v1";
+
+// --- Envelope ---
+
+message VMServiceRequest {
+  RequestMeta meta = 1;
+  oneof method {
+    GetReportRequest get_report = 2;
+  }
+}
+
+message VMServiceResponse {
+  ResponseMeta meta = 1;
+  oneof result {
+    GetReportResponse get_report = 2;
+    ErrorResponse error = 3;
+  }
+}
+
+// --- Metadata ---
+
+message RequestMeta {
+  string request_id = 1;
+  repeated string capabilities = 2;
+  map<string, string> facts = 3;
+}
+
+message ResponseMeta {
+  string agent_version = 1;
+  google.protobuf.Timestamp report_generated_at = 2;
+  uint32 report_generation = 3;
+  repeated string supported_methods = 4;
+  map<string, string> facts = 5;
+}
+
+// --- Methods ---
+
+message GetReportRequest {
+  uint32 if_newer_than_generation = 1;
+}
+
+message GetReportResponse {
+  scanner.v4.IndexReport index_report = 1;
+  bool unchanged = 2;
+}
+
+// --- Errors ---
+
+message ErrorResponse {
+  ErrorCode code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_UNKNOWN_METHOD = 1;
+  ERROR_CODE_NOT_READY = 2;
+  ERROR_CODE_INTERNAL = 3;
+}
