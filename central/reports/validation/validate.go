@@ -302,9 +302,6 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
 	}
-	if !common.IsV2ReportConfig(config) {
-		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
-	}
 	// Verify ResourceScope is non-nil
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,

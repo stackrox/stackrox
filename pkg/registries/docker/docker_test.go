@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -157,16 +158,17 @@ func TestListTags(t *testing.T) {
 				}
 				if r.URL.Path == "/v2/test/repo/tags/list" {
 					// Tags list endpoint
-					response := `{"name":"test/repo","tags":[`
+					var response strings.Builder
+					response.WriteString(`{"name":"test/repo","tags":[`)
 					for i, tag := range tt.mockTags {
 						if i > 0 {
-							response += ","
+							response.WriteString(",")
 						}
-						response += `"` + tag + `"`
+						response.WriteString(`"` + tag + `"`)
 					}
-					response += `]}`
+					response.WriteString(`]}`)
 					w.Header().Set("Content-Type", "application/json")
-					_, _ = w.Write([]byte(response))
+					_, _ = w.Write([]byte(response.String()))
 					return
 				}
 				w.WriteHeader(http.StatusNotFound)
@@ -231,14 +233,15 @@ func TestListTagsPagination(t *testing.T) {
 			pageTags := allTags[startIdx:endIdx]
 
 			// Build JSON response
-			response := `{"name":"test/repo","tags":[`
+			var response strings.Builder
+			response.WriteString(`{"name":"test/repo","tags":[`)
 			for i, tag := range pageTags {
 				if i > 0 {
-					response += ","
+					response.WriteString(",")
 				}
-				response += `"` + tag + `"`
+				response.WriteString(`"` + tag + `"`)
 			}
-			response += `]}`
+			response.WriteString(`]}`)
 
 			// Add Link header for pagination if there are more tags
 			if endIdx < len(allTags) {
@@ -248,7 +251,7 @@ func TestListTagsPagination(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(response))
+			_, _ = w.Write([]byte(response.String()))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -347,14 +350,15 @@ func TestListTagsCallerTimeout(t *testing.T) {
 			}
 			pageTags := allTags[startIdx:endIdx]
 
-			response := `{"name":"test/repo","tags":[`
+			var response strings.Builder
+			response.WriteString(`{"name":"test/repo","tags":[`)
 			for i, tag := range pageTags {
 				if i > 0 {
-					response += ","
+					response.WriteString(",")
 				}
-				response += `"` + tag + `"`
+				response.WriteString(`"` + tag + `"`)
 			}
-			response += `]}`
+			response.WriteString(`]}`)
 
 			if endIdx < len(allTags) {
 				linkHeader := fmt.Sprintf(`</v2/test/repo/tags/list?n=%d&last=%s>; rel="next"`,
@@ -363,7 +367,7 @@ func TestListTagsCallerTimeout(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(response))
+			_, _ = w.Write([]byte(response.String()))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -440,14 +444,15 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 			}
 			pageTags := allTags[startIdx:endIdx]
 
-			response := `{"name":"large/repo","tags":[`
+			var response strings.Builder
+			response.WriteString(`{"name":"large/repo","tags":[`)
 			for i, tag := range pageTags {
 				if i > 0 {
-					response += ","
+					response.WriteString(",")
 				}
-				response += `"` + tag + `"`
+				response.WriteString(`"` + tag + `"`)
 			}
-			response += `]}`
+			response.WriteString(`]}`)
 
 			if endIdx < len(allTags) {
 				linkHeader := fmt.Sprintf(`</v2/large/repo/tags/list?n=%d&last=%s>; rel="next"`,
@@ -456,7 +461,7 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(response))
+			_, _ = w.Write([]byte(response.String()))
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)

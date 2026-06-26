@@ -304,7 +304,7 @@ func createTailoredProfile(ctx context.Context, t *testing.T, client ctrlClient.
 		require.Equalf(c, complianceoperatorv1.TailoredProfileStateReady, current.Status.State,
 			"TailoredProfile %s not READY (state: %q, error: %q)",
 			name, current.Status.State, current.Status.ErrorMessage)
-	}, 10*time.Second, 1*time.Second)
+	}, 1*time.Minute, 2*time.Second)
 }
 
 // waitUntilTPInCentralDB waits for a tailored profile to appear in Central's

@@ -1,6 +1,7 @@
 package standards
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -71,9 +72,7 @@ func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
 			scopes = append(scopes, v1.ComplianceStandardMetadata_NODE)
 		}
 	}
-	sort.Slice(scopes, func(i, j int) bool {
-		return scopes[i] < scopes[j]
-	})
+	slices.Sort(scopes)
 	return scopes
 }
 
@@ -260,9 +259,7 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 	for s := range scopeMap {
 		scopes = append(scopes, s)
 	}
-	sort.Slice(scopes, func(i, j int) bool {
-		return scopes[i] < scopes[j]
-	})
+	slices.Sort(scopes)
 	s.scopes = scopes
 
 	return s

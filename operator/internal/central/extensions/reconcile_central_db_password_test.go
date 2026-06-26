@@ -45,7 +45,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			Namespace: testutils.TestNamespace,
 		},
 		Data: map[string][]byte{
-			"password": []byte(fmt.Sprintf("%s\n", pw1)),
+			"password": fmt.Appendf(nil, "%s\n", pw1),
 		},
 	}
 
@@ -55,7 +55,7 @@ func TestReconcileDBPassword(t *testing.T) {
 			Namespace: testutils.TestNamespace,
 		},
 		Data: map[string][]byte{
-			"password": []byte(fmt.Sprintf("%s\n", pw2)),
+			"password": fmt.Appendf(nil, "%s\n", pw2),
 		},
 	}
 

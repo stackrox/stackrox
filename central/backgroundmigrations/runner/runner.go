@@ -293,7 +293,7 @@ func parseSkipMigrations() set.IntSet {
 		return set.NewIntSet()
 	}
 	s := set.NewIntSet()
-	for _, entry := range strings.Split(val, ",") {
+	for entry := range strings.SplitSeq(val, ",") {
 		n, err := strconv.Atoi(strings.TrimSpace(entry))
 		if err != nil {
 			log.Errorf("could not parse %q from %s, not skipping", entry, env.SkipBackgroundMigrations.EnvVar())

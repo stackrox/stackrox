@@ -135,19 +135,13 @@ var (
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
 
 	// InitContainerSupport enables extraction, scanning, and evaluation of init containers in deployments.
-	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT")
-
-	// PolicyFiltersUI enables the image layer and init container filters UI in the policy editor.
-	PolicyFiltersUI = registerFeature("Enable image layer and init container filters UI in the policy editor", "ROX_POLICY_FILTERS_UI")
+	InitContainerSupport = registerFeature("Enable init container support", "ROX_INIT_CONTAINER_SUPPORT", enabled)
 
 	// BackgroundMigration enables long-running background migrations in Central
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
-	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER")
-
-	// VulnMgmtDateRangeFilter enables date/time range filtering conditions in Vulnerability Management 2.0 advanced filters
-	VulnMgmtDateRangeFilter = registerFeature("Enables date/time range filtering in Vulnerability Management 2.0", "ROX_VULN_MGMT_DATE_RANGE_FILTER")
+	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -199,8 +193,8 @@ var (
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
 
 	// ScannerV4RedHatVEXNotAffected enables filtering image vulnerabilities using Red Hat VEX known_not_affected assertions.
-	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED")
+	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED", enabled)
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
-	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE")
+	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
 )

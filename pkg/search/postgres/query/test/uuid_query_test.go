@@ -34,6 +34,59 @@ func (s *UUIDTestSuite) SetupTest() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
+// TestLargeUUIDParameterSetUsesANY verifies that queries with more values than
+// PostgresParameterThreshold work correctly on UUID-typed columns. The ANY($$)
+// path relies on pgx inferring uuid[] from the element types; this test catches
+// regressions where the wrong type is inferred and PostgreSQL rejects the query.
+func (s *UUIDTestSuite) TestLargeUUIDParameterSetUsesANY() {
+	const matchCount = 10
+	const totalValues = 101 // > default threshold of 100, triggers ANY path
+
+	// Insert structs with known UUID keys and known optional_uuid values.
+	objs := make([]*storage.TestSingleUUIDKeyStruct, matchCount)
+	knownKeys := make([]string, matchCount)
+	knownOptionalUUIDs := make([]string, matchCount)
+	for i := range objs {
+		key := uuid.NewV4().String()
+		optUUID := uuid.NewV4().String()
+		knownKeys[i] = key
+		knownOptionalUUIDs[i] = optUUID
+		objs[i] = &storage.TestSingleUUIDKeyStruct{
+			Key:          key,
+			Name:         uuid.NewV4().String(),
+			OptionalUuid: optUUID,
+		}
+	}
+	s.Require().NoError(s.store.UpsertMany(s.ctx, objs))
+
+	// Build value lists: known values first, padded with non-matching UUIDs.
+	keyValues := make([]string, totalValues)
+	copy(keyValues, knownKeys)
+	for i := matchCount; i < totalValues; i++ {
+		keyValues[i] = uuid.NewV4().String()
+	}
+
+	optUUIDValues := make([]string, totalValues)
+	copy(optUUIDValues, knownOptionalUUIDs)
+	for i := matchCount; i < totalValues; i++ {
+		optUUIDValues[i] = uuid.NewV4().String()
+	}
+
+	s.Run("uuid primary key column", func() {
+		q := search.NewQueryBuilder().AddExactMatches(search.TestKey, keyValues...).ProtoQuery()
+		results, err := s.store.Search(s.ctx, q)
+		s.Require().NoError(err)
+		s.Len(results, matchCount)
+	})
+
+	s.Run("uuid non-pk column", func() {
+		q := search.NewQueryBuilder().AddExactMatches(search.TestUUID, optUUIDValues...).ProtoQuery()
+		results, err := s.store.Search(s.ctx, q)
+		s.Require().NoError(err)
+		s.Len(results, matchCount)
+	})
+}
+
 func (s *UUIDTestSuite) TestNullableUUIDQueries() {
 	// 3 objects without OptionalUuid, 3 with it set
 	objs := []*storage.TestSingleUUIDKeyStruct{

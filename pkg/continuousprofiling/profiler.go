@@ -113,8 +113,8 @@ func validateServerAddress(address string) (string, error) {
 
 func parseLabels(labels string) (map[string]string, error) {
 	parsedLabels := make(map[string]string)
-	entries := strings.Split(labels, ",")
-	for _, entry := range entries {
+	entries := strings.SplitSeq(labels, ",")
+	for entry := range entries {
 		entry = strings.TrimSpace(entry)
 		if entry == "" {
 			continue

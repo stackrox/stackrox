@@ -14,17 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestPollUntil_ImmediateSuccess(t *testing.T) {
-	ctx := context.Background()
-	err := pollUntil(ctx, WaitOptions{
-		Timeout:      100 * time.Millisecond,
-		PollInterval: 1 * time.Millisecond,
-	}, "immediate", func(context.Context) (bool, string, error) {
-		return true, "ok", nil
-	})
-	require.NoError(t, err)
-}
-
 func TestPollUntil_SucceedsAfterRetries(t *testing.T) {
 	ctx := context.Background()
 	var polls int

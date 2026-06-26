@@ -48,8 +48,8 @@ var (
 
 func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 	for _, prefix := range validPrefixesSortedByLengthDec {
-		if strings.HasPrefix(value, prefix) {
-			return prefix, strings.TrimSpace(strings.TrimPrefix(value, prefix))
+		if after, ok := strings.CutPrefix(value, prefix); ok {
+			return prefix, strings.TrimSpace(after)
 		}
 	}
 	return "", value

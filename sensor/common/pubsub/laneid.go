@@ -8,6 +8,11 @@ const (
 	FromCentralResolverEventLane
 	UnenrichedProcessIndicatorLane
 	EnrichedProcessIndicatorLane
+	DetectorProcessIndicatorLane
+	DetectorNetworkFlowLane
+	DetectorFileAccessLane
+	DetectorAuditLogLane
+	DetectorDeploymentLane
 )
 
 var (
@@ -17,6 +22,11 @@ var (
 		FromCentralResolverEventLane:   "FromCentralResolverEvent",
 		UnenrichedProcessIndicatorLane: "UnenrichedProcessIndicator",
 		EnrichedProcessIndicatorLane:   "EnrichedProcessIndicator",
+		DetectorProcessIndicatorLane:   "DetectorProcessIndicator",
+		DetectorNetworkFlowLane:        "DetectorNetworkFlow",
+		DetectorFileAccessLane:         "DetectorFileAccess",
+		DetectorAuditLogLane:           "DetectorAuditLog",
+		DetectorDeploymentLane:         "DetectorDeployment",
 	}
 )
 

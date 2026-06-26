@@ -131,8 +131,7 @@ func TestScanConfigWatcher(t *testing.T) {
 			scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
 				Id: watcherID,
 			}
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 			scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 			for _, id := range tCase.snapshotIDs {

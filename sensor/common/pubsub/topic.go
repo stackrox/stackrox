@@ -8,6 +8,11 @@ const (
 	FromCentralResolverEventTopic
 	UnenrichedProcessIndicatorTopic
 	EnrichedProcessIndicatorTopic
+	DetectorProcessIndicatorTopic
+	DetectorNetworkFlowTopic
+	DetectorFileAccessTopic
+	DetectorAuditLogTopic
+	DetectorDeploymentTopic
 )
 
 var (
@@ -17,6 +22,11 @@ var (
 		FromCentralResolverEventTopic:   "FromCentralResolverEvent",
 		UnenrichedProcessIndicatorTopic: "UnenrichedProcessIndicator",
 		EnrichedProcessIndicatorTopic:   "EnrichedProcessIndicator",
+		DetectorProcessIndicatorTopic:   "DetectorProcessIndicator",
+		DetectorNetworkFlowTopic:        "DetectorNetworkFlow",
+		DetectorFileAccessTopic:         "DetectorFileAccess",
+		DetectorAuditLogTopic:           "DetectorAuditLog",
+		DetectorDeploymentTopic:         "DetectorDeployment",
 	}
 )
 

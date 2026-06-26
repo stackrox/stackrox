@@ -9,6 +9,11 @@ const (
 	EnrichedProcessConsumer
 	UnenrichedProcessConsumer
 	FileActivityEnrichedProcessConsumer
+	DetectorProcessIndicatorConsumer
+	DetectorNetworkFlowConsumer
+	DetectorFileAccessConsumer
+	DetectorAuditLogConsumer
+	DetectorDeploymentConsumer
 )
 
 var (
@@ -19,6 +24,11 @@ var (
 		EnrichedProcessConsumer:             "EnrichedProcess",
 		FileActivityEnrichedProcessConsumer: "FileActivityEnrichedProcess",
 		UnenrichedProcessConsumer:           "UnenrichedProcess",
+		DetectorProcessIndicatorConsumer:    "DetectorProcessIndicator",
+		DetectorNetworkFlowConsumer:         "DetectorNetworkFlow",
+		DetectorFileAccessConsumer:          "DetectorFileAccess",
+		DetectorAuditLogConsumer:            "DetectorAuditLog",
+		DetectorDeploymentConsumer:          "DetectorDeployment",
 	}
 )
 

@@ -208,7 +208,7 @@ func Matcher(value string, typ reflect.Type) (func(*reflect.MapIter, int) (*Matc
 	// The first group implies that the map matches if key 'a' is absent, and b=1 is present.
 	// The second group implies that the map matches if c=2 is present.
 	var conjunctionGroupConstraints []*conjunctionGroupConstraint
-	for _, conjunctionPairsStr := range strings.Split(value, DisjunctionMarker) {
+	for conjunctionPairsStr := range strings.SplitSeq(value, DisjunctionMarker) {
 		cg, err := convertConjunctionPairsToGroupConstraint(conjunctionPairsStr)
 		if err != nil {
 			return nil, err

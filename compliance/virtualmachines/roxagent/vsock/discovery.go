@@ -209,14 +209,14 @@ func discoverActivationStatusWithPath(path string) (v1.ActivationStatus, error) 
 		}
 
 		name := entry.Name()
-		if strings.HasSuffix(name, entitlementKeySuffix) {
-			base := strings.TrimSuffix(name, entitlementKeySuffix)
+		if before, ok := strings.CutSuffix(name, entitlementKeySuffix); ok {
+			base := before
 			keyBases.Add(base)
 			if certBases.Contains(base) {
 				return v1.ActivationStatus_ACTIVE, nil
 			}
-		} else if strings.HasSuffix(name, entitlementCertSuffix) {
-			base := strings.TrimSuffix(name, entitlementCertSuffix)
+		} else if before, ok := strings.CutSuffix(name, entitlementCertSuffix); ok {
+			base := before
 			certBases.Add(base)
 			if keyBases.Contains(base) {
 				return v1.ActivationStatus_ACTIVE, nil

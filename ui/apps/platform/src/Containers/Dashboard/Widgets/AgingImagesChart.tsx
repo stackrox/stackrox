@@ -36,6 +36,7 @@ export type AgingImagesChartProps = {
     searchFilter: SearchFilter;
     timeRanges: TimeRangeTuple;
     timeRangeCounts: TimeRangeCounts;
+    onBucketClick?: (bucket: string) => void;
 };
 
 export function getTimeFilterOption(ageRange: number, nextAgeRange?: number) {
@@ -121,7 +122,12 @@ function makeChartData(
     return chartData;
 }
 
-function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingImagesChartProps) {
+function AgingImagesChart({
+    searchFilter,
+    timeRanges,
+    timeRangeCounts,
+    onBucketClick,
+}: AgingImagesChartProps) {
     const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
@@ -150,6 +156,14 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                         <LinkableChartLabel
                             linkWith={(props) => labelLinkCallback(props, chartData)}
                             text={(props) => labelTextCallback(props, chartData)}
+                            onClick={({ datum }) => {
+                                if (typeof datum === 'number') {
+                                    const label = chartData[datum - 1]?.labelText;
+                                    if (label) {
+                                        onBucketClick?.(label);
+                                    }
+                                }
+                            }}
                         />
                     }
                 />
@@ -162,18 +176,21 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                     dependentAxis
                     showGrid
                 />
-                {chartData.map(({ barData, fill, labelLink }) => {
-                    return (
-                        <ChartBar
-                            key={fill}
-                            barWidth={defaultChartBarWidth}
-                            data={barData}
-                            labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
-                            style={{ data: { fill } }}
-                            events={[navigateOnClickEvent(navigate, () => labelLink)]}
-                        />
-                    );
-                })}
+                {chartData.map(({ barData, fill, labelLink, labelText }) => (
+                    <ChartBar
+                        key={fill}
+                        barWidth={defaultChartBarWidth}
+                        data={barData}
+                        labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
+                        style={{ data: { fill } }}
+                        events={[
+                            navigateOnClickEvent(navigate, () => {
+                                onBucketClick?.(labelText);
+                                return labelLink;
+                            }),
+                        ]}
+                    />
+                ))}
             </Chart>
         </div>
     );

@@ -77,9 +77,9 @@ func getProcessFromCmdLineBytes(cmdlineBytes []byte) string {
 		return ""
 	}
 	processBytes := cmdlineBytes
-	index := bytes.Index(cmdlineBytes, []byte("\x00"))
-	if index != -1 {
-		processBytes = cmdlineBytes[:index]
+	before, _, ok := bytes.Cut(cmdlineBytes, []byte("\x00"))
+	if ok {
+		processBytes = before
 	}
 	return filepath.Base(string(processBytes))
 }

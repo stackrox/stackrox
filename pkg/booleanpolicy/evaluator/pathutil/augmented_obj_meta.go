@@ -176,8 +176,7 @@ func (o *AugmentedObjMeta) addPathsForSearchTagsFromStruct(currentType reflect.T
 	}
 
 	// Next, go over the fields of the struct. These are the statically defined fields that exist in the struct.
-	for i := 0; i < currentType.NumField(); i++ {
-		field := currentType.Field(i)
+	for field := range currentType.Fields() {
 		if _, inAugmented := augmentedFields[field.Name]; inAugmented {
 			// Skip this field -- it has been clobbered by an augment.
 			continue

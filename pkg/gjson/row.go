@@ -354,7 +354,7 @@ func isRelatedQuery(relatedQuery, query string) bool {
 	}
 
 	// Go through all object accessors to find a relation. This will short-circuit on the first match.
-	for _, split := range strings.Split(query, ".") {
+	for split := range strings.SplitSeq(query, ".") {
 		if strings.Contains(relatedQuery, split) {
 			return true
 		}

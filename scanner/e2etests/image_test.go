@@ -287,7 +287,7 @@ func (tc *TestCase) mapFillVuln(v *v4.VulnerabilityReport_Vulnerability, featVul
 	// Link is by default the first on the list, but we check if the expected link is
 	// somewhere else.
 	link, _, _ := strings.Cut(v.GetLink(), " ")
-	for _, l := range strings.Split(v.GetLink(), " ") {
+	for l := range strings.SplitSeq(v.GetLink(), " ") {
 		if l == featVuln.Link {
 			link = l
 		}

@@ -70,7 +70,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	if imagesRaw == "" {
 		return nil, errors.New("VM_IMAGES is required (comma-separated list of container-disk image references)")
 	}
-	for _, img := range strings.Split(imagesRaw, ",") {
+	for img := range strings.SplitSeq(imagesRaw, ",") {
 		img = strings.TrimSpace(img)
 		if img == "" {
 			continue
@@ -82,7 +82,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	}
 
 	if usersRaw := strings.TrimSpace(os.Getenv("VM_USERS")); usersRaw != "" {
-		for _, u := range strings.Split(usersRaw, ",") {
+		for u := range strings.SplitSeq(usersRaw, ",") {
 			cfg.GuestUsers = append(cfg.GuestUsers, strings.TrimSpace(u))
 		}
 	}

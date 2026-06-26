@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+# Gets diagnostics after performance/scale testing completes.
+# This script gets a diagnostic bundle from Central.
+
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+# shellcheck source=../lib.sh
+source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../../tests/e2e/lib.sh
+source "$ROOT/tests/e2e/lib.sh"
+
+info "Getting diagnostics after performance/scale tests"
+
+# Directory names match what PostClusterTest uses in post_tests.py
+DIAGNOSTIC_OUTPUT="diagnostic-bundle"
+
+# Set up port forward to Central with retry
+info "Setting up port forward to central"
+PORT_FORWARD_PID=""
+MAX_PORT_FORWARD_RETRIES=5
+for retry in $(seq 1 ${MAX_PORT_FORWARD_RETRIES}); do
+    info "Attempting to establish port-forward (try ${retry}/${MAX_PORT_FORWARD_RETRIES})"
+
+    # Kill any existing port-forward on this port
+    pkill -f "port-forward.*8000:443" || true
+    sleep 1
+
+    # Start new port-forward
+    nohup kubectl -n stackrox port-forward svc/central 8000:443 >/dev/null 2>&1 &
+    PORT_FORWARD_PID=$!
+
+    # Wait for port-forward to be ready
+    for i in $(seq 1 10); do
+        if curl -sk --connect-timeout 2 --max-time 5 https://localhost:8000/v1/ping >/dev/null 2>&1; then
+            info "Port-forward established successfully"
+            break 2  # Break out of both loops
+        fi
+        sleep 1
+    done
+
+    # If we got here, port-forward failed
+    info "Port-forward attempt ${retry} failed, retrying..."
+    kill "${PORT_FORWARD_PID}" 2>/dev/null || true
+done
+
+if ! curl -sk --connect-timeout 2 --max-time 5 https://localhost:8000/v1/ping >/dev/null 2>&1; then
+    info "Error: Failed to establish port-forward after ${MAX_PORT_FORWARD_RETRIES} attempts"
+    exit 1
+fi
+
+# Set API_ENDPOINT since we know it from the port-forward
+export API_ENDPOINT="localhost:8000"
+
+# Get admin password from SHARED_DIR (saved by stackrox-install-helm step)
+if [[ -n "${SHARED_DIR:-}" && -f "${SHARED_DIR}/rox_admin_password" ]]; then
+    export ROX_ADMIN_PASSWORD="$(cat "${SHARED_DIR}/rox_admin_password")"
+    info "Retrieved admin password from SHARED_DIR"
+else
+    info "Warning: Could not find admin password in SHARED_DIR"
+fi
+
+# Wait for Central API to be responsive (ignore ci_export permission errors at end of function)
+# If wait_for_api truly fails (API down), it will exit the script with exit 1
+# If it succeeds but ci_export fails, || true catches that and we continue
+wait_for_api || true
+info "Central API is responsive, getting diagnostics"
+
+# Get central diagnostics bundle
+if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then
+    info "Collected central diagnostics to ${DIAGNOSTIC_OUTPUT}"
+else
+    info "Warning: Failed to get central diagnostics"
+fi
+
+# Store artifacts to OpenShift CI artifact directory
+if [[ -n "${ARTIFACT_DIR:-}" ]]; then
+    info "Copying diagnostics to ${ARTIFACT_DIR}"
+    if [[ -d "${DIAGNOSTIC_OUTPUT}" ]]; then
+        cp -r "${DIAGNOSTIC_OUTPUT}" "${ARTIFACT_DIR}/" || info "Warning: Failed to copy ${DIAGNOSTIC_OUTPUT}"
+    fi
+else
+    info "Warning: ARTIFACT_DIR not set, diagnostics not copied to artifacts"
+fi
+
+# Clean up port forward
+if [[ -n "${PORT_FORWARD_PID:-}" ]]; then
+    kill "${PORT_FORWARD_PID}" 2>/dev/null || true
+fi
+
+info "Getting diagnostics complete"

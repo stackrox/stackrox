@@ -64,16 +64,6 @@ func TestEnricherSuite(t *testing.T) {
 	suite.Run(t, new(enricherSuite))
 }
 
-type fakeClusterIDPeekWaiter struct{}
-
-func (f *fakeClusterIDPeekWaiter) Get() string {
-	return "fake-cluster-id"
-}
-
-func (f *fakeClusterIDPeekWaiter) GetNoWait() string {
-	return "fake-cluster-id"
-}
-
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
 	return &scanImageRequest{
 		containerIdx: containerID,

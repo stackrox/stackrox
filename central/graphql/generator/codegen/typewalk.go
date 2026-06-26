@@ -109,8 +109,8 @@ func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 		td.IsInputType = true
 	}
 	if ty.Kind() == reflect.Struct {
-		for i := 0; i < ty.NumField(); i++ {
-			ctx.walkField(&td, ty, ty.Field(i))
+		for field := range ty.Fields() {
+			ctx.walkField(&td, ty, field)
 		}
 		sort.Slice(td.FieldData, func(i, j int) bool {
 			return td.FieldData[i].Name < td.FieldData[j].Name

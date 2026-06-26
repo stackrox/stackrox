@@ -46,7 +46,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     }
 
     const { orchestratorMetadata = null } = status;
-    const { buildDate = '', version = 'N/A' } = orchestratorMetadata;
+    const { buildDate = '', version = 'N/A' } = orchestratorMetadata ?? {};
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {

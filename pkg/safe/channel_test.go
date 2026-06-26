@@ -16,8 +16,7 @@ import (
 func TestSafeChannel_Write_Success(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	ch := NewChannel[int](5, ctx)
 
@@ -102,8 +101,7 @@ func TestSafeChannel_Write_FailsAfterWaitableTriggered(t *testing.T) {
 func TestSafeChannel_TryWrite_Success(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	ch := NewChannel[int](5, ctx)
 
@@ -122,8 +120,7 @@ func TestSafeChannel_TryWrite_Success(t *testing.T) {
 func TestSafeChannel_TryWrite_FailsWhenFull(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	ch := NewChannel[int](2, ctx)
 
@@ -157,8 +154,7 @@ func TestSafeChannel_TryWrite_FailsAfterWaitableTriggered(t *testing.T) {
 func TestSafeChannel_Len(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	ch := NewChannel[int](5, ctx)
 
@@ -180,8 +176,7 @@ func TestSafeChannel_Len(t *testing.T) {
 func TestSafeChannel_Cap(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	ch := NewChannel[int](10, ctx)
 	assert.Equal(t, 10, ch.Cap())
@@ -201,8 +196,7 @@ func TestSafeChannel_Cap(t *testing.T) {
 func TestSafeChannel_NegativeSize(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	// Creating a Channel with negative size should panic
 	assert.Panics(t, func() {

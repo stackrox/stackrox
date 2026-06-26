@@ -89,8 +89,8 @@ func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
 	readableResourceName := strings.ToLower(object.GetResource().String())
 
 	var singularResourceName string
-	if strings.HasSuffix(readableResourceName, "ies") {
-		singularResourceName = strings.TrimSuffix(readableResourceName, "ies")
+	if before, ok := strings.CutSuffix(readableResourceName, "ies"); ok {
+		singularResourceName = before
 		singularResourceName = fmt.Sprintf("%sy", singularResourceName)
 	} else {
 		singularResourceName = strings.TrimSuffix(readableResourceName, "s")

@@ -5,7 +5,7 @@ readonly downstream_image="registry.redhat.io/advanced-cluster-security/rhacs-rh
 operator_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 
 function usage() {
-    echo >&2 "Usage: $0 <opensource|development_build|rhacs>"
+    echo >&2 "Usage: $0 <opensource|development_build|rhacs> [VERSION]"
     echo >&2
     echo >&2 "Generates the operator helm chart in ${operator_dir}/dist/chart"
     echo >&2
@@ -15,6 +15,8 @@ function usage() {
     echo >&2 "development_build | RHACS    | quay.io/rhacs-eng/stackrox-operator"
     echo >&2 "rhacs             | RHACS    | ${downstream_image}"
     echo >&2
+    echo >&2 "If VERSION is omitted, it will be inferred from the currently checked out commit."
+    echo >&2
     echo >&2 "Note: If you want to skip regenerating proto files, prepend the invocation with:"
     echo >&2 "ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true"
     exit 1
@@ -22,6 +24,10 @@ function usage() {
 
 if [[ "${1:---help}" = "--help" ]]; then
     usage
+fi
+
+if [ -n "${2:-}" ]; then
+    export VERSION="$2"
 fi
 
 case "$1" in

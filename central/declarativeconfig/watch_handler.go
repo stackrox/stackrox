@@ -160,12 +160,13 @@ func (w *watchHandler) checkForDeletedFiles(fileContents map[string][]byte) bool
 }
 
 func (w *watchHandler) logFileContents(contents map[string][]byte) {
-	logMessage := "Found declarative configuration file contents\n"
+	var logMessage strings.Builder
+	logMessage.WriteString("Found declarative configuration file contents\n")
 
 	for fileName, fileContents := range contents {
-		logMessage += fmt.Sprintf("File %s: %s\n", fileName, fileContents)
+		logMessage.WriteString(fmt.Sprintf("File %s: %s\n", fileName, fileContents))
 	}
-	log.Debug(logMessage)
+	log.Debug(logMessage.String())
 }
 
 // readDeclarativeConfigFile will read the file and additionally verify that the contents are valid YAML.

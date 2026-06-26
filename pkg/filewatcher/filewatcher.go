@@ -113,7 +113,7 @@ func (w *Watcher) check() {
 		return
 	}
 	if info.Size() > w.maxFileSize {
-		fingerprint := sha256.Sum256([]byte(fmt.Sprintf("oversize:%d:%d", info.Size(), info.ModTime().UnixNano())))
+		fingerprint := sha256.Sum256(fmt.Appendf(nil, "oversize:%d:%d", info.Size(), info.ModTime().UnixNano()))
 		if fingerprint != w.lastHash {
 			log.Warnf("Watched file %q exceeds maximum size (%d bytes > %d), skipping",
 				w.filePath, info.Size(), w.maxFileSize)

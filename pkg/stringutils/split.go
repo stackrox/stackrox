@@ -6,11 +6,11 @@ import "strings"
 // separate return values.
 // If the string does not contain `sep`, the entire string is returned as the first return value.
 func Split2(str string, sep string) (string, string) {
-	splitIdx := strings.Index(str, sep)
-	if splitIdx == -1 {
+	before, after, ok := strings.Cut(str, sep)
+	if !ok {
 		return str, ""
 	}
-	return str[:splitIdx], str[splitIdx+len(sep):]
+	return before, after
 }
 
 // Split2Last splits the given string at the last instance of the given separator,

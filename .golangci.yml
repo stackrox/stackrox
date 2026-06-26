@@ -172,21 +172,11 @@ linters:
     modernize:
       disable:
         - any
-        - fmtappendf
-        - mapsloop
         - minmax
         - newexpr
         - rangeint
         - reflecttypefor
         - slicescontains
-        - slicessort
-        - stditerators
-        - stringsbuilder
-        - stringscut
-        - stringscutprefix
-        - stringsseq
-        - testingcontext
-        - waitgroup
   exclusions:
     generated: lax
     rules:

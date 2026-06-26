@@ -30,7 +30,7 @@ func init() {
 	if env == "" {
 		return
 	}
-	for _, skipped := range strings.Split(env, ",") {
+	for skipped := range strings.SplitSeq(env, ",") {
 		migration, err := strconv.Atoi(strings.TrimSpace(skipped))
 		if err != nil {
 			log.WriteToStderrf("could not parse %v. Not skipping", skipped)

@@ -172,7 +172,7 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 
 	yamlData, err := yaml.Marshal(objToMarshal)
 	if err != nil {
-		yamlData = []byte(fmt.Sprintf("Error marshaling pod to YAML: %v", err))
+		yamlData = fmt.Appendf(nil, "Error marshaling pod to YAML: %v", err)
 	}
 	if err := c.emitFile(pod, ".yaml", yamlData); err != nil {
 		return err
@@ -187,7 +187,7 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v\n", err))
+				logsData = fmt.Appendf(nil, "Error retrieving container logs: %v\n", err)
 				logsData = appendDebugError(logsData, err)
 			} else {
 				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
@@ -213,7 +213,7 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw(c.ctx)
 			if err != nil {
-				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v\n", err))
+				logsData = fmt.Appendf(nil, "Error retrieving previous container logs: %v\n", err)
 				logsData = appendDebugError(logsData, err)
 			} else {
 				logsData = utils.IfThenElse(c.cfg.IgnoreLogLimits,
@@ -274,7 +274,7 @@ func (c *collector) collectObjectsData(ns string, cfg ObjectConfig, resourceClie
 		}
 		objYAML, err := yaml.Marshal(&obj)
 		if err != nil {
-			objYAML = []byte(fmt.Sprintf("Failed to marshal object to YAML: %v", err))
+			objYAML = fmt.Appendf(nil, "Failed to marshal object to YAML: %v", err)
 		}
 		if err := c.emitFile(&obj, ".yaml", objYAML); err != nil {
 			return err
@@ -299,7 +299,7 @@ func (c *collector) collectNamespaceData(ns string) (bool, error) {
 	}
 
 	if err != nil && len(nsYAML) == 0 {
-		nsYAML = []byte(fmt.Sprintf("Failed to retrieve namespace: %v", err))
+		nsYAML = fmt.Appendf(nil, "Failed to retrieve namespace: %v", err)
 	}
 
 	return true, c.emitFileRaw(fmt.Sprintf("%s/namespace-spec.yaml", ns), nsYAML)

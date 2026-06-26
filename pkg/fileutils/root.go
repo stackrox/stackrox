@@ -28,7 +28,7 @@ func MkdirAllInRoot(root *os.Root, dirPath string, perm os.FileMode) error {
 
 	// Iteratively build each segment under root for relative paths
 	var current string
-	for _, seg := range strings.Split(cleanPath, string(filepath.Separator)) {
+	for seg := range strings.SplitSeq(cleanPath, string(filepath.Separator)) {
 		current = filepath.Join(current, seg)
 		if err := root.Mkdir(current, perm); err != nil && !os.IsExist(err) {
 			return err

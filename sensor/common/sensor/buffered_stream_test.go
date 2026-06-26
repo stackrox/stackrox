@@ -137,7 +137,7 @@ func (s *bufferedStreamSuite) Test_Stop() {
 	s.Require().NotNil(onStop)
 
 	// This is triggered when the inner stream Send function is called
-	messageReadSignal := make(chan struct{})
+	messageReadSignal := make(chan struct{}, 1)
 	defer close(messageReadSignal)
 
 	// Most of the time, this should be called once
@@ -165,10 +165,10 @@ func (s *bufferedStreamSuite) Test_Stop() {
 			// Since stopC and errC are active, the select will choose one randomly.
 			// We shouldn't fail the test if the channel is not closed immediately.
 			return ok == false
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			return false
 		}
-	}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for the stream to stop")
+	}, 2*time.Second, 50*time.Millisecond, "timeout waiting for the stream to stop")
 
 	s.Assert().NoError(onStop())
 }

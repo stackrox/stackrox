@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"errors"
+	"maps"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -248,9 +249,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				Spec:   *c.Spec.DeepCopy(),
 				Status: *c.Status.DeepCopy(),
 			}
-			for key, val := range c.Annotations {
-				baseSecuredCluster.Annotations[key] = val
-			}
+			maps.Copy(baseSecuredCluster.Annotations, c.Annotations)
 
 			ctx := context.Background()
 			sch := runtime.NewScheme()
@@ -385,9 +384,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				Spec:   *c.Spec.DeepCopy(),
 				Status: *c.Status.DeepCopy(),
 			}
-			for key, val := range c.Annotations {
-				baseSecuredCluster.Annotations[key] = val
-			}
+			maps.Copy(baseSecuredCluster.Annotations, c.Annotations)
 
 			ctx := context.Background()
 			sch := runtime.NewScheme()

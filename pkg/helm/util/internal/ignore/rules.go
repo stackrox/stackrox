@@ -171,10 +171,10 @@ func (r *Rules) parseRule(rule string) error {
 		rule = strings.TrimSuffix(rule, "/")
 	}
 
-	if strings.HasPrefix(rule, "/") {
+	if after, ok := strings.CutPrefix(rule, "/"); ok {
 		// Require path matches the root path.
 		p.match = func(n string, fi os.FileInfo) bool {
-			rule = strings.TrimPrefix(rule, "/")
+			rule = after
 			ok, err := filepath.Match(rule, n)
 			if err != nil {
 				log.Printf("Failed to compile %q: %s", rule, err)

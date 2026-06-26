@@ -173,8 +173,7 @@ func fullInitStruct(structVal reflect.Value, init BasicTypeInitializer, fieldFil
 	seenTypes[structTy] = struct{}{}
 	defer delete(seenTypes, structTy)
 
-	for i := 0; i < structTy.NumField(); i++ {
-		field := structTy.Field(i)
+	for field := range structTy.Fields() {
 		if fieldFilter != nil {
 			if !fieldFilter(field, fieldPath) {
 				continue

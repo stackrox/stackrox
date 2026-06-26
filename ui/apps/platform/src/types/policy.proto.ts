@@ -168,7 +168,8 @@ export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
 // Will match proto message EvaluationFilter in storage/policy.proto
 export type EvaluationFilter = {
     skipContainerTypes: SkipContainerType[];
-    skipImageLayers: SkipImageLayers;
+    // TODO: reimplement once backend support is available - demo code was deleted at the same time this comment was added
+    // skipImageLayers: SkipImageLayers;
 };
 
 export type PolicyCategory = {

@@ -139,7 +139,10 @@ func TestCredentialManager(t *testing.T) {
 			manager.Start()
 			defer manager.Stop()
 
-			// Wait HasSynced first.
+			// There is a problem with fake informer. It happens that Go routine that starts informers,
+			// marks HasSynced as a true before watchers are registered. Because of that,
+			// events are never received. There are no watchers that are listening to these events
+			// after HasSynced is true. That's why we need to wait for HasSynced and Watch event.
 			require.Eventually(t, manager.informer.HasSynced, 30*time.Second, 100*time.Millisecond)
 
 			// Wait that watch is executed and events will be properly received.

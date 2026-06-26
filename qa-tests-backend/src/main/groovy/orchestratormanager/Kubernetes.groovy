@@ -1681,10 +1681,7 @@ class Kubernetes {
                             new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "")
                         }
                 )
-                def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
-                        client.rbac().roles()
-                                .inNamespace(it.metadata.namespace)
-                                .withName(it.roleRef.name).get()?.metadata?.uid
+                def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid
                 b.roleRef.uid = uid ?: ""
                 clusterBindings.add(b)
             }

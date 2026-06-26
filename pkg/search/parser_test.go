@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -223,23 +222,14 @@ func TestValueAndModifierFromString(t *testing.T) {
 }
 
 func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
-	// Create a slice of values that exceeds MaxQueryParameters
-	// MaxQueryParameters is math.MaxUint16 (65535), so we create 65536 values
+	// Large value sets no longer panic — combineDisjunction handles them
+	// by switching to = ANY($1::text[]) when the count exceeds the threshold.
 	excessiveValues := make([]string, MaxQueryParameters+1)
 	for i := 0; i < len(excessiveValues); i++ {
 		excessiveValues[i] = fmt.Sprintf("value%d", i)
 	}
 
-	// On dev builds, utils.Should panics; on release builds, it logs and returns.
-	if !buildinfo.ReleaseBuild {
-		// Verify that queryFromFieldValues panics when given too many parameters on dev builds
-		require.Panics(t, func() {
-			queryFromFieldValues("test-field", excessiveValues, false)
-		}, "Expected queryFromFieldValues to panic when exceeding MaxQueryParameters on dev builds")
-	} else {
-		// On release builds, queryFromFieldValues should not panic
-		require.NotPanics(t, func() {
-			queryFromFieldValues("test-field", excessiveValues, false)
-		}, "Expected queryFromFieldValues to not panic on release builds")
-	}
+	require.NotPanics(t, func() {
+		queryFromFieldValues("test-field", excessiveValues, false)
+	}, "queryFromFieldValues should not panic for large value sets")
 }

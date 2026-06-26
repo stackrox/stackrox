@@ -85,6 +85,50 @@ var (
 		Name:      "process_upserted_lineage_size_total",
 		Help:      "Total upserted process lineage sizes in bytes by cluster and namespace",
 	}, []string{"cluster", "namespace"})
+
+	processNotPersistedTotal = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_not_persisted",
+		Help:      "Number of process indicators filtered out and not persisted",
+	})
+
+	processNotPersistedArgsSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_not_persisted_args_size",
+		Help:      "Distribution of process argument sizes in bytes for indicators not persisted",
+		Buckets:   []float64{0, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
+	})
+
+	processNotPersistedArgsSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_not_persisted_args_size_total",
+		Help:      "Total not-persisted process argument sizes in bytes by cluster and namespace",
+	}, []string{"cluster", "namespace"})
+
+	processNotPersistedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_not_persisted_count",
+		Help:      "Number of process indicators not persisted by cluster and namespace",
+	}, []string{"cluster", "namespace"})
+
+	processNotPersistedLineageSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_not_persisted_lineage_size",
+		Help:      "Distribution of process lineage sizes in bytes for indicators not persisted",
+		Buckets:   []float64{0, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
+	})
+
+	processNotPersistedLineageSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_not_persisted_lineage_size_total",
+		Help:      "Total not-persisted process lineage sizes in bytes by cluster and namespace",
+	}, []string{"cluster", "namespace"})
 )
 
 func recordProcessIndicatorsRemoved(num int, reason string) {
@@ -143,6 +187,21 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	}
 }
 
+// RecordProcessIndicatorNotPersisted records metrics for a process indicator that was filtered out and not persisted.
+func RecordProcessIndicatorNotPersisted(indicator *storage.ProcessIndicator) {
+	argsSizeBytes := getProcessArgsSizeBytes(indicator)
+	lineageSizeBytes := getProcessLineageSizeBytes(indicator)
+	clusterID := indicator.GetClusterId()
+	namespace := indicator.GetNamespace()
+
+	processNotPersistedTotal.Inc()
+	processNotPersistedArgsSizeHistogram.Observe(float64(argsSizeBytes))
+	processNotPersistedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeBytes))
+	processNotPersistedCount.WithLabelValues(clusterID, namespace).Inc()
+	processNotPersistedLineageSizeHistogram.Observe(float64(lineageSizeBytes))
+	processNotPersistedLineageSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(lineageSizeBytes))
+}
+
 func init() {
 	prometheus.MustRegister(
 		processPruningCacheHits,
@@ -154,5 +213,11 @@ func init() {
 		processIndicatorsRemovedTotal,
 		processUpsertedLineageSizeHistogram,
 		processUpsertedLineageSizeTotal,
+		processNotPersistedTotal,
+		processNotPersistedArgsSizeHistogram,
+		processNotPersistedArgsSizeTotal,
+		processNotPersistedCount,
+		processNotPersistedLineageSizeHistogram,
+		processNotPersistedLineageSizeTotal,
 	)
 }

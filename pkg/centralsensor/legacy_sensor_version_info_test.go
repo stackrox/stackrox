@@ -45,8 +45,7 @@ func TestVersionInfoHasAllOldFields(t *testing.T) {
 	var seenFields []fieldNameWithTag
 
 	versionInfoType := reflect.TypeOf(sensorVersionInfo{})
-	for i := 0; i < versionInfoType.NumField(); i++ {
-		field := versionInfoType.Field(i)
+	for field := range versionInfoType.Fields() {
 		seenFields = append(seenFields, fieldNameWithTag{field.Name, field.Tag.Get("json")})
 	}
 

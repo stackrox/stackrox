@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
+	"maps"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -525,9 +526,7 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	}
 
 	pvcsToVerify := make(map[string]pvcVerifyFunc)
-	for name, pvf := range testCase.ExpectedPVCs {
-		pvcsToVerify[name] = pvf
-	}
+	maps.Copy(pvcsToVerify, testCase.ExpectedPVCs)
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	err = r.client.List(context.TODO(), pvcList)

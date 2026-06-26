@@ -170,7 +170,7 @@ const defaultIndex = "btree"
 func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignoreFKs, ignoreIndex bool) PostgresOptions {
 	var opts PostgresOptions
 
-	for _, field := range strings.Split(tag, ",") {
+	for field := range strings.SplitSeq(tag, ",") {
 		switch {
 		case field == "-":
 			opts.Ignored = true
@@ -305,7 +305,7 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 }
 
 func getProtoBufName(protoBufTag string) string {
-	for _, part := range strings.Split(protoBufTag, ",") {
+	for part := range strings.SplitSeq(protoBufTag, ",") {
 		if strings.HasPrefix(part, "name=") {
 			return part[len("name="):]
 		}

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { ReactElement } from 'react';
 import { generatePath, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -8,8 +7,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    // Card,
-    // CardBody,
     Divider,
     DropdownItem,
     Flex,
@@ -24,8 +21,6 @@ import {
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 
-// import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
-// import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -45,17 +40,12 @@ import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
     searchFilterConfigForImageVulnerabilityReport,
 } from '../../searchFilterConfig';
-// import EmailTemplatePreview from '../components/EmailTemplatePreview';
-// import ReportParametersDetails from '../components/ReportParametersDetails';
-// import ScheduleDetails from '../components/ScheduleDetails';
-// import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import ReportJobs from './ReportJobs';
 import useFetchReport from '../api/useFetchReport';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
 import useDeleteModal, { isErrorDeleteResult } from '../hooks/useDeleteModal';
 import { vulnerabilityConfigurationReportDetailsPath } from '../pathsForVulnerabilityReporting';
-// import { getReportFormValuesFromConfiguration } from '../utils';
 
 // resourceScope: {} after roll back to previous version that does not support a newer resource scope.
 // Do not let user clone or edit report configuration which might cause worse problems after roll forward.
@@ -63,15 +53,8 @@ function isResourceScopeAbsent({ resourceScope }: ReportConfiguration) {
     return Object.keys(resourceScope).length === 0;
 }
 
-export type TabTitleProps = {
-    icon?: ReactElement;
-    children: string;
-};
-
 const configDetailsTabId = 'VulnReportsConfigDetails';
 const allReportJobsTabId = 'VulnReportsConfigReportJobs';
-
-// const headingLevel = 'h2';
 
 function ViewVulnReportPage() {
     const navigate = useNavigate();
@@ -138,8 +121,6 @@ function ViewVulnReportPage() {
     const vulnReportPageURL = generatePath(vulnerabilityConfigurationReportDetailsPath, {
         reportId: reportConfiguration.id,
     });
-
-    // const reportFormValues = getReportFormValuesFromConfiguration(reportConfiguration);
 
     const isReportStatusPending =
         reportSnapshot?.reportStatus.runState === 'PREPARING' ||
@@ -293,44 +274,6 @@ function ViewVulnReportPage() {
                     />
                 </PageSection>
             )}
-            {/*
-            {selectedTab === 'CONFIGURATION_DETAILS' && (
-                <PageSection hasBodyWrapper={false} isCenterAligned id={configDetailsTabId}>
-                    <Card>
-                        <CardBody>
-                            <ReportParametersDetails
-                                headingLevel={headingLevel}
-                                formValues={reportFormValues}
-                            />
-                            <Divider component="div" className="pf-v6-u-py-md" />
-                            <NotifierConfigurationView
-                                headingLevel={headingLevel}
-                                customBodyDefault={defaultEmailBody}
-                                customSubjectDefault={getDefaultEmailSubject(
-                                    reportFormValues.reportParameters.reportName,
-                                    reportFormValues.reportParameters.reportScope?.name
-                                )}
-                                notifierConfigurations={reportFormValues.deliveryDestinations}
-                                renderTemplatePreview={({
-                                    customBody,
-                                    customSubject,
-                                    customSubjectDefault,
-                                }: TemplatePreviewArgs) => (
-                                    <EmailTemplatePreview
-                                        emailSubject={customSubject}
-                                        emailBody={customBody}
-                                        defaultEmailSubject={customSubjectDefault}
-                                        reportParameters={reportFormValues.reportParameters}
-                                    />
-                                )}
-                            />
-                            <Divider component="div" className="pf-v6-u-py-md" />
-                            <ScheduleDetails formValues={reportFormValues} />
-                        </CardBody>
-                    </Card>
-                </PageSection>
-            )}
-            */}
             {selectedTab === 'ALL_REPORT_JOBS' && (
                 <PageSection id={allReportJobsTabId}>
                     <ReportJobs reportId={reportId} />

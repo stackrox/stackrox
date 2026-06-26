@@ -1,6 +1,8 @@
 package effectiveaccessscope
 
 import (
+	"maps"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
@@ -13,9 +15,7 @@ type treeNodeAttributes struct {
 
 func (t *treeNodeAttributes) copy() *treeNodeAttributes {
 	labels := make(map[string]string, len(t.Labels))
-	for k, v := range t.Labels {
-		labels[k] = v
-	}
+	maps.Copy(labels, t.Labels)
 	return &treeNodeAttributes{
 		ID:     t.ID,
 		Name:   t.Name,

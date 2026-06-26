@@ -61,7 +61,7 @@ spec:
         - name: name
           value: slack-webhook-notification
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:14766aebbf6f4739e1b7dde0406dcba2d1e300170d3b084f23df9fb074d87dc3
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:3350566fdd5838366bb0c480c14270cea87f1f3ddf5765964405c6111c02893f
         - name: kind
           value: task
         resolver: bundles
@@ -75,7 +75,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:72c050dbc90421d03a703c742151cdbec441d1fda072ae2d611962d6d3a8ffbd
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6e02b9f3317312678fb4addc95b558cfac92020ecea8c516585a21e2809be33f
         - name: kind
           value: task
         resolver: bundles
@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:ae09ecc3d754bc1726cbda3e2599cc7839e09fe1cc547ce173cf669b645be3cc
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:44bc70ef6e6ea9a70e353be97f4722e10358d09fbb9494ca943b2a641049690e
           imagePullPolicy: IfNotPresent
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
@@ -201,7 +201,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:d30f13dd15daf89dd6dc645243b3444d35570d13f7840c3fd65e366022515205
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2@sha256:89da85c1508b3a2b7ad884c1215b9fd3a7d9e28c2335aca6750948d129707035
         - name: kind
           value: task
         resolver: bundles
@@ -224,7 +224,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:72c050dbc90421d03a703c742151cdbec441d1fda072ae2d611962d6d3a8ffbd
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6e02b9f3317312678fb4addc95b558cfac92020ecea8c516585a21e2809be33f
         - name: kind
           value: task
         resolver: bundles
@@ -242,7 +242,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:72c050dbc90421d03a703c742151cdbec441d1fda072ae2d611962d6d3a8ffbd
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6e02b9f3317312678fb4addc95b558cfac92020ecea8c516585a21e2809be33f
         - name: kind
           value: task
         resolver: bundles
@@ -335,7 +335,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:72c050dbc90421d03a703c742151cdbec441d1fda072ae2d611962d6d3a8ffbd
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6e02b9f3317312678fb4addc95b558cfac92020ecea8c516585a21e2809be33f
         - name: kind
           value: task
         resolver: bundles

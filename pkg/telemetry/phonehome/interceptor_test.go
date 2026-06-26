@@ -174,6 +174,7 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 	rih := requestinfo.NewRequestInfoHandler()
 	ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 	md := rih.AnnotateMD(ctx, req)
+	// Simulate the gRPC transport User-Agent (set via grpc.WithUserAgent).
 	md.Set(userAgentHeaderKey, "gateway")
 
 	ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
@@ -181,11 +182,58 @@ func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo() {
 
 	rp := getGRPCRequestDetails(ctx, err, "ignored grpc method", "request")
 	s.Equal(http.StatusOK, rp.Code)
-	s.Equal([]string{"gateway", "user"}, rp.Headers.Get(userAgentHeaderKey))
+	// Original HTTP User-Agent + gRPC transport agent merged under one key.
+	s.Equal([]string{"user", "gateway"}, rp.Headers.Get(userAgentHeaderKey))
 	s.Nil(rp.UserID)
 	s.Equal("request", rp.GRPCReq)
 	s.Equal("/wrapped/http", rp.Path)
 	s.Equal(http.MethodPatch, rp.Method)
+}
+
+func (s *interceptorTestSuite) TestGrpcWithHTTPRequestInfo_UserAgentVariants() {
+	cases := map[string]struct {
+		httpUserAgent []string // User-Agent values on the HTTP request.
+		mdUserAgent   []string // User-Agent values in gRPC metadata (transport agent).
+		expected      []string // Expected merged User-Agent values in the result.
+	}{
+		"HTTP and gRPC transport User-Agent": {
+			httpUserAgent: []string{"curl/8.0"},
+			mdUserAgent:   []string{"Rox Central/4.11 grpc-go/1.80.0"},
+			expected:      []string{"curl/8.0", "Rox Central/4.11 grpc-go/1.80.0"},
+		},
+		"only HTTP User-Agent": {
+			httpUserAgent: []string{"curl/8.0"},
+			expected:      []string{"curl/8.0"},
+		},
+		"only gRPC transport User-Agent": {
+			mdUserAgent: []string{"grpc-go/1.80.0"},
+			expected:    []string{"grpc-go/1.80.0"},
+		},
+		"no User-Agent anywhere": {
+			expected: nil,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			req, _ := http.NewRequest(http.MethodGet, "/test", nil)
+			req.Header.Del(userAgentHeaderKey)
+			for _, ua := range tc.httpUserAgent {
+				req.Header.Add(userAgentHeaderKey, ua)
+			}
+			rih := requestinfo.NewRequestInfoHandler()
+			ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
+			md := rih.AnnotateMD(ctx, req)
+			if tc.mdUserAgent != nil {
+				md.Set(userAgentHeaderKey, tc.mdUserAgent...)
+			}
+
+			ctx, err := rih.UpdateContextForGRPC(metadata.NewIncomingContext(ctx, md))
+			s.NoError(err)
+
+			rp := getGRPCRequestDetails(ctx, err, "ignored", "request")
+			s.Equal(tc.expected, rp.Headers.Get(userAgentHeaderKey))
+		})
+	}
 }
 
 type testBody struct {

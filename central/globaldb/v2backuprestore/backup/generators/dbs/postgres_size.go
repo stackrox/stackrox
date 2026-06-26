@@ -37,7 +37,7 @@ func (ps *PostgresSize) WriteTo(_ context.Context, out io.Writer) error {
 		return err
 	}
 
-	_, err = out.Write([]byte(fmt.Sprintf("%d", size)))
+	_, err = out.Write(fmt.Appendf(nil, "%d", size))
 	if err != nil {
 		return err
 	}

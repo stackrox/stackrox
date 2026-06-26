@@ -595,6 +595,26 @@ func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
 	where := seenQueries.GetArbitraryElem()
 	where = strings.TrimSuffix(where, exactQuerySuffix)
 
+	// For large value sets, use = ANY($$) with a single array parameter
+	// to avoid the 65535 parameter limit. For small sets, use IN ($1, $2, ...)
+	// for better plan quality since the planner can inspect individual values.
+	// pgx infers the array type from the element type ([]uuid.UUID → uuid[],
+	// []string → text[], etc.) so no explicit cast is needed.
+	if len(values) >= env.PostgresParameterThreshold.IntegerSetting() {
+		originalValues := make([]interface{}, len(entries))
+		for i, entry := range entries {
+			originalValues[i] = entry.Where.Values[0]
+		}
+		return &pgsearch.QueryEntry{
+			Where: pgsearch.WhereClause{
+				Query:  fmt.Sprintf("%s = ANY($$)", where),
+				Values: []interface{}{originalValues},
+			},
+			SelectedFields: entries[0].SelectedFields,
+			GroupBy:        nil,
+		}
+	}
+
 	return &pgsearch.QueryEntry{
 		Where: pgsearch.WhereClause{
 			Query:  fmt.Sprintf("%s IN (%s$$)", where, strings.Join(make([]string, len(entries)), "$$, ")),

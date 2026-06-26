@@ -30,8 +30,7 @@ func withExpectCall(fn func(*mocksComplianceIntegrationDS.MockDataStore)) func(*
 }
 
 func TestValidateScanConfigResults(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	cases := map[string]struct {
 		results                *ScanConfigWatcherResults
 		expectFn               func(*mocksComplianceIntegrationDS.MockDataStore)
@@ -161,8 +160,7 @@ func TestValidateScanConfigResults(t *testing.T) {
 }
 
 func TestValidateScanResults(t *testing.T) {
-	ctx, validCtxCancelFn := context.WithCancel(context.Background())
-	defer validCtxCancelFn()
+	ctx := t.Context()
 	canceledCtx, canceledCtxCancelFn := context.WithCancel(context.Background())
 	canceledCtxCancelFn()
 	cases := map[string]struct {
@@ -327,8 +325,7 @@ func TestValidateScanResults(t *testing.T) {
 }
 
 func TestValidateClusterHealth(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	cases := map[string]struct {
 		operatorStatus []*storage.ComplianceIntegration
 		expectDSError  error

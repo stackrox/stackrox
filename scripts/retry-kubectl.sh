@@ -16,6 +16,7 @@ net/http: request canceled \(Client\.Timeout exceeded while awaiting headers\)$
 : TLS handshake timeout
 failed to download openapi: Get "[^"]*": EOF
 Please retry
+The connection to the server [^ ]+ was refused
 EOT
 )
 
