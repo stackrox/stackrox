@@ -76,12 +76,6 @@ export function deletePolicyInTable({ policyName, actionText }) {
     cy.wait(`@${policiesAlias}`); // assume visitPolicies as a prerequisite
 }
 
-export function goToFirstPolicy() {
-    cy.intercept('GET', api.policies.policy).as('policies/id');
-    cy.get(selectors.tableFirstRowName).click();
-    cy.wait('policies/id');
-}
-
 export function editFirstPolicyFromTable() {
     cy.get(`${selectors.table.firstRow} td[data-label="Policy"] a`).then(($a) => {
         const policyName = $a.text();
@@ -113,10 +107,6 @@ export function cloneFirstPolicyFromTable() {
 export function doPolicyPageAction(titleOfActionItem) {
     cy.get(selectors.page.actionsToggleButton).click();
     cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
-}
-
-export function editPolicy() {
-    cy.get(selectors.page.editPolicyButton).click();
 }
 
 // Actions on policy wizard page
