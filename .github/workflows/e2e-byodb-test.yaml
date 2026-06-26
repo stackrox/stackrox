@@ -27,7 +27,7 @@ jobs:
   wait-for-images:
     if: >-
       github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
     steps:
