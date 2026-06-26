@@ -107,22 +107,18 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        source scripts/ci/gke.sh
-        wait_for_cluster
-
     - name: Build roxctl
       run: |
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
