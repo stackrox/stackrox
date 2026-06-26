@@ -18,7 +18,10 @@ ifeq ($(findstring :, $(GOPATH)), $(colon))
 GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
-export CGO_ENABLED ?= 1
+# CGO_ENABLED=0 produces static binaries with Go's native FIPS crypto module.
+# The old OpenSSL FIPS backend required CGO_ENABLED=1 for dynamic linking to libcrypto;
+# native FIPS (GOFIPS140=certified) embeds the FIPS module directly, no CGO needed.
+export CGO_ENABLED ?= 0
 # Use Go's native FIPS 140-3 module (CMVP #5247) instead of the Red Hat OpenSSL backend.
 # GOLANG_FIPS=0 disables the legacy OpenSSL backend; it is mutually exclusive with native
 # FIPS and will panic at runtime if both are active. See:
