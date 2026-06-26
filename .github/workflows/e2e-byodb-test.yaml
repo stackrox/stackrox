@@ -12,8 +12,8 @@ on:
     types:
     - opened
     - reopened
-    - labeled
     - synchronize
+    - labeled
 
 defaults:
   run:
