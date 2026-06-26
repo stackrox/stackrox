@@ -17,6 +17,11 @@ var (
 	RuleUID = uuid.NewV4().String()
 
 	ruleID = uuid.NewV4().String()
+
+	// CustomRuleUID is the UID used for custom rule test objects.
+	CustomRuleUID = uuid.NewV4().String()
+
+	customRuleID = uuid.NewV4().String()
 )
 
 // GetRuleV2SensorMsg -- returns a V2 message from sensor
@@ -129,6 +134,100 @@ func GetRuleV2(_ *testing.T) *apiV2.ComplianceRule {
 		Fixes:        fixes,
 		ParentRule:   "random-rule-name",
 		OperatorKind: apiV2.ComplianceRule_RULE,
+	}
+}
+
+// GetCustomRuleV2SensorMsg returns a V2 sensor message for a custom rule with CEL fields.
+func GetCustomRuleV2SensorMsg(_ *testing.T) *central.ComplianceOperatorRuleV2 {
+	return &central.ComplianceOperatorRuleV2{
+		RuleId:        customRuleID,
+		Id:            CustomRuleUID,
+		Name:          "check-cm-marker",
+		RuleType:      "Platform",
+		Severity:      central.ComplianceOperatorRuleSeverity_HIGH_RULE_SEVERITY,
+		Labels:        map[string]string{v1alpha1.SuiteLabel: "custom-suite"},
+		Annotations:   map[string]string{},
+		Title:         "Check CM Marker",
+		Description:   "Checks that a configmap marker exists",
+		OperatorKind:  central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+		ScannerType:   "CEL",
+		Expression:    `input.configmap.data["marker"] == "present"`,
+		FailureReason: "ConfigMap marker not present",
+		Inputs: []*central.ComplianceOperatorCelInput{
+			{
+				Name:              "configmap",
+				ApiVersion:        "v1",
+				Resource:          "configmaps",
+				ResourceNamespace: "default",
+				ResourceName:      "test-cm",
+			},
+		},
+		CustomRuleDetails: &central.ComplianceOperatorRuleV2_CustomRuleDetails{
+			Phase: "Ready",
+		},
+	}
+}
+
+// GetCustomRuleV2Storage returns a V2 storage custom rule with CEL fields.
+func GetCustomRuleV2Storage(_ *testing.T) *storage.ComplianceOperatorRuleV2 {
+	return &storage.ComplianceOperatorRuleV2{
+		Id:            CustomRuleUID,
+		RuleId:        customRuleID,
+		Name:          "check-cm-marker",
+		RuleType:      "Platform",
+		Severity:      storage.RuleSeverity_HIGH_RULE_SEVERITY,
+		Labels:        map[string]string{v1alpha1.SuiteLabel: "custom-suite"},
+		Annotations:   map[string]string{},
+		Title:         "Check CM Marker",
+		Description:   "Checks that a configmap marker exists",
+		ClusterId:     fixtureconsts.Cluster1,
+		ParentRule:    customRuleID,
+		RuleRefId:     internaltov2storage.BuildNameRefID(fixtureconsts.Cluster1, customRuleID),
+		OperatorKind:  storage.ComplianceOperatorRuleV2_CUSTOM_RULE,
+		ScannerType:   "CEL",
+		Expression:    `input.configmap.data["marker"] == "present"`,
+		FailureReason: "ConfigMap marker not present",
+		Inputs: []*storage.ComplianceOperatorCelInput{
+			{
+				Name:              "configmap",
+				ApiVersion:        "v1",
+				Resource:          "configmaps",
+				ResourceNamespace: "default",
+				ResourceName:      "test-cm",
+			},
+		},
+		CustomRuleDetails: &storage.ComplianceOperatorRuleV2_CustomRuleDetails{
+			Phase: "Ready",
+		},
+	}
+}
+
+// GetCustomRuleV2 returns a V2 API custom rule with CEL fields.
+func GetCustomRuleV2(_ *testing.T) *apiV2.ComplianceRule {
+	return &apiV2.ComplianceRule{
+		Id:            CustomRuleUID,
+		RuleId:        customRuleID,
+		Name:          "check-cm-marker",
+		RuleType:      "Platform",
+		Severity:      "HIGH_RULE_SEVERITY",
+		Title:         "Check CM Marker",
+		Description:   "Checks that a configmap marker exists",
+		OperatorKind:  apiV2.ComplianceRule_CUSTOM_RULE,
+		ScannerType:   "CEL",
+		Expression:    `input.configmap.data["marker"] == "present"`,
+		FailureReason: "ConfigMap marker not present",
+		Inputs: []*apiV2.ComplianceRule_CelInput{
+			{
+				Name:              "configmap",
+				ApiVersion:        "v1",
+				Resource:          "configmaps",
+				ResourceNamespace: "default",
+				ResourceName:      "test-cm",
+			},
+		},
+		CustomRuleDetails: &apiV2.ComplianceRule_CustomRuleDetails{
+			Phase: "Ready",
+		},
 	}
 }
 

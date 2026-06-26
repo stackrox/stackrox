@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_idToDNSFriendlyName(t *testing.T) {
@@ -99,5 +100,69 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 		expectedParentRule := "xccdf-org.example-rule-check-no-latest-tag"
 		assert.Equal(t, expectedParentRule, result.GetParentRule())
 		assert.Equal(t, BuildNameRefID(clusterID, expectedParentRule), result.GetRuleRefId())
+	})
+}
+
+func TestComplianceOperatorRule_CelFields(t *testing.T) {
+	const clusterID = fixtureconsts.Cluster1
+
+	t.Run("CEL fields are converted from sensor to storage", func(t *testing.T) {
+		msg := &central.ComplianceOperatorRuleV2{
+			Id:            "rule-uid",
+			RuleId:        "xccdf_org.example_rule_check_cm",
+			Name:          "check-cm",
+			OperatorKind:  central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+			ScannerType:   "CEL",
+			Expression:    `input.cm.data["key"] == "val"`,
+			FailureReason: "key not found",
+			Inputs: []*central.ComplianceOperatorCelInput{
+				{
+					Name:              "cm",
+					ApiGroup:          "",
+					ApiVersion:        "v1",
+					Resource:          "configmaps",
+					ResourceNamespace: "default",
+					ResourceName:      "my-cm",
+				},
+			},
+			CustomRuleDetails: &central.ComplianceOperatorRuleV2_CustomRuleDetails{
+				Phase:        "Ready",
+				ErrorMessage: "",
+			},
+		}
+
+		result := ComplianceOperatorRule(msg, clusterID)
+
+		assert.Equal(t, "CEL", result.GetScannerType())
+		assert.Equal(t, `input.cm.data["key"] == "val"`, result.GetExpression())
+		assert.Equal(t, "key not found", result.GetFailureReason())
+		require.Len(t, result.GetInputs(), 1)
+		assert.Equal(t, "cm", result.GetInputs()[0].GetName())
+		assert.Equal(t, "v1", result.GetInputs()[0].GetApiVersion())
+		assert.Equal(t, "configmaps", result.GetInputs()[0].GetResource())
+		assert.Equal(t, "default", result.GetInputs()[0].GetResourceNamespace())
+		assert.Equal(t, "my-cm", result.GetInputs()[0].GetResourceName())
+		require.NotNil(t, result.GetCustomRuleDetails())
+		assert.Equal(t, "Ready", result.GetCustomRuleDetails().GetPhase())
+	})
+
+	t.Run("regular rule has no CEL fields or CustomRuleDetails", func(t *testing.T) {
+		msg := &central.ComplianceOperatorRuleV2{
+			Id:           "rule-uid",
+			RuleId:       "xccdf_org.ssgproject.content_rule_some_rule",
+			Name:         "some-rule",
+			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
+			Annotations: map[string]string{
+				v1alpha1.RuleIDAnnotationKey: "some-rule",
+			},
+		}
+
+		result := ComplianceOperatorRule(msg, clusterID)
+
+		assert.Empty(t, result.GetScannerType())
+		assert.Empty(t, result.GetExpression())
+		assert.Empty(t, result.GetFailureReason())
+		assert.Empty(t, result.GetInputs())
+		assert.Nil(t, result.GetCustomRuleDetails())
 	})
 }
