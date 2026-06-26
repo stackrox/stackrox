@@ -217,6 +217,44 @@
     }
   },
   "definitions": {
+    "ComplianceRuleCelInput": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "apiGroup": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        },
+        "resource": {
+          "type": "string"
+        },
+        "resourceNamespace": {
+          "type": "string"
+        },
+        "resourceName": {
+          "type": "string"
+        }
+      },
+      "description": "CelInput represents a Kubernetes resource input for a CEL rule expression."
+    },
+    "ComplianceRuleCustomRuleDetails": {
+      "type": "object",
+      "properties": {
+        "phase": {
+          "type": "string",
+          "description": "phase is the validation phase of the CustomRule (\"Ready\" or \"Error\")."
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "error_message contains the validation error when phase is \"Error\"."
+        }
+      },
+      "description": "CustomRuleDetails contains validation lifecycle fields specific to\nCompliance Operator CustomRule resources. Only set when operator_kind\nis CUSTOM_RULE."
+    },
     "ComplianceRuleFix": {
       "type": "object",
       "properties": {
@@ -454,6 +492,26 @@
         },
         "operatorKind": {
           "$ref": "#/definitions/v2ComplianceRuleOperatorKind"
+        },
+        "scannerType": {
+          "type": "string",
+          "description": "CEL rule fields. Populated for rules with scanner_type \"CEL\"."
+        },
+        "expression": {
+          "type": "string"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ComplianceRuleCelInput"
+          }
+        },
+        "failureReason": {
+          "type": "string"
+        },
+        "customRuleDetails": {
+          "$ref": "#/definitions/ComplianceRuleCustomRuleDetails"
         }
       }
     },
