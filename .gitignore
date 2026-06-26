@@ -15,7 +15,6 @@ monitoring/grafana/rawcaptures
 *.test
 
 # Makefile cruft
-deps
 proto-generated-srcs
 report.xml
 test.log

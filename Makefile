@@ -359,25 +359,6 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
-deps: $(shell git ls-files '*/go.sum' 'go.sum')
-	@echo "+ $@"
-	$(SILENT)touch deps
-
-%/go.sum: %/go.mod
-	$(SILENT)cd $*
-	@echo "+ $@"
-	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)go mod tidy
-ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-endif
-	$(SILENT)touch $@
-
-.PHONY: clean-deps
-clean-deps:
-	@echo "+ $@"
-	$(SILENT)rm -f deps
 
 .PHONY: clean-obsolete-protos
 clean-obsolete-protos:
