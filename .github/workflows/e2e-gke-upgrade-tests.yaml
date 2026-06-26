@@ -68,7 +68,7 @@ jobs:
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
@@ -212,7 +212,7 @@ jobs:
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-postgres
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
@@ -356,7 +356,7 @@ jobs:
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-sensor
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60 # Keep in sync with cluster's lifespan
