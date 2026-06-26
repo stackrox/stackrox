@@ -389,6 +389,14 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	bundleURL := fmt.Sprintf("http://%s.%s.svc/bundle.json", deploymentName, ns)
 	s.logf("Bundle URL: %s", bundleURL)
 
+	// Precondition: verify the decoy URL is reachable from within the cluster.
+	// Without this, a broken nginx service would produce the same result as
+	// offline mode (keys unchanged), making the negative assertion ambiguous.
+	s.logf("Verifying decoy bundle URL is reachable from within the cluster")
+	execInDeployment(t, s.k8s, deploymentName, ns,
+		"sh", "-c", fmt.Sprintf("wget -q -O /dev/null %s", bundleURL))
+	s.logf("Decoy bundle URL is reachable")
+
 	// --- Step 2: Set env vars on Central with offline mode enabled ---
 
 	defer func() {
