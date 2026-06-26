@@ -364,7 +364,7 @@ deps:
 	@echo "+ $@"
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)for gomod in $$(find $(BASE_DIR) -name "go.mod" -not -path '*/.claude/*'); do \
+	$(SILENT)for gomod in $$(git ls-files '*/go.mod' 'go.mod'); do \
 		dir=$$(dirname "$$gomod"); \
 		(cd "$$dir" && go mod tidy); \
 	done
