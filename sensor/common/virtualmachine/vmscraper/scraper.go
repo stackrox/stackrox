@@ -224,6 +224,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 
 	if result.Unchanged {
 		if s.now().Sub(state.lastForwardedAt) <= mandatoryRefreshAfter {
+			s.registerScrapedVM(scrapedVMs, vm)
 			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
@@ -264,14 +265,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 
 	state.lastGeneration = result.Meta.GetReportGeneration()
 	state.lastForwardedAt = s.now()
-	// Register both identifiers so IsActivelyScraped works whether the
-	// caller uses "namespace/name" (pull path) or a CID string (push path).
-	concurrency.WithLock(&s.mu, func() {
-		scrapedVMs.Add(key)
-		if vm.VSOCKCID != nil {
-			scrapedVMs.Add(strconv.FormatUint(uint64(*vm.VSOCKCID), 10))
-		}
-	})
+	s.registerScrapedVM(scrapedVMs, vm)
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, dial=%s, read=%s, total=%s",
 		key, state.lastGeneration, len(result.IndexReport.GetContents().GetPackages()), reportSize,
@@ -298,6 +292,18 @@ func (s *VMScraper) handleGetReportError(key string, err error) {
 		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	}
+}
+
+func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachine.Info) {
+	key := vm.Namespace + "/" + vm.Name
+	// Register both identifiers so IsActivelyScraped works whether the
+	// caller uses "namespace/name" (pull path) or a CID string (push path).
+	concurrency.WithLock(&s.mu, func() {
+		scrapedVMs.Add(key)
+		if vm.VSOCKCID != nil {
+			scrapedVMs.Add(strconv.FormatUint(uint64(*vm.VSOCKCID), 10))
+		}
+	})
 }
 
 // getOrCreateState returns the vmState for key, creating it if absent.

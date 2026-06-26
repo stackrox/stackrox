@@ -155,6 +155,31 @@ func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
 	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
 }
 
+func TestVMScraper_RemainsActiveAcrossUnchangedPolls(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+
+	s.pollOnce(context.Background())
+	require.True(t, s.IsActivelyScraped("ns1/vm-a"))
+	require.True(t, s.IsActivelyScraped("100"))
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
+	s.pollOnce(context.Background())
+
+	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
+	assert.True(t, s.IsActivelyScraped("ns1/vm-a"))
+	assert.True(t, s.IsActivelyScraped("100"))
+}
+
 func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
