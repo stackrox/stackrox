@@ -71,6 +71,9 @@ const (
 
 	ephemeralProfileWithExpirationInDays             = "ephemeralWithExpirationInDays"
 	ephemeralProfileWithExpirationInDaysCertLifetime = 2 * 24 * time.Hour
+
+	crsProfile                      = "crs"
+	crsProfileDefaultValidityPeriod = 24 * time.Hour
 )
 
 var (
@@ -302,6 +305,7 @@ var certProfiles = map[string]certProfile{
 	"":                                    {lifetime: certLifetime, gracePeriod: beforeGracePeriod},
 	ephemeralProfileWithExpirationInHours: {lifetime: ephemeralProfileWithExpirationInHoursCertLifetime},
 	ephemeralProfileWithExpirationInDays:  {lifetime: ephemeralProfileWithExpirationInDaysCertLifetime},
+	crsProfile:                            {lifetime: crsProfileDefaultValidityPeriod, gracePeriod: beforeGracePeriod},
 }
 
 func loadCAFromFiles() (*x509.Certificate, crypto.Signer, error) {
@@ -428,6 +432,7 @@ func IssueNewCrsCert(crsId uuid.UUID, validUntil time.Time) (cert *IssuedCert, e
 		return nil, errors.Wrap(err, "loading CA")
 	}
 	return issueCert(subj, caCert, caKey, []IssueCertOption{
+		withCRSProfile(),
 		WithValidityNotAfter(validUntil),
 	})
 }
