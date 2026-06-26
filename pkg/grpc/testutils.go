@@ -84,14 +84,14 @@ func (d *debugLoggerImpl) Log(args ...any) {
 	if d == nil || d.log == nil {
 		return
 	}
-	d.log.Log(args)
+	d.log.Log(args...)
 }
 
 func (d *debugLoggerImpl) Logf(format string, args ...any) {
 	if d == nil || d.log == nil {
 		return
 	}
-	d.log.Logf(format, args)
+	d.log.Logf(format, args...)
 }
 
 func newDebugLogger(t *testing.T) *debugLoggerImpl {
