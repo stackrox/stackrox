@@ -16,6 +16,11 @@ on:
         description: 'Image tag to scan (e.g. 4.11.0 or konflux-<sha>.git)'
         required: true
         type: string
+      image-prefix:
+        description: 'Image name prefix (default: release- for Konflux, empty for GHA)'
+        default: 'release-'
+        required: false
+        type: string
 
 run-name: >-
   ${{ github.event_name == 'workflow_dispatch'
@@ -35,7 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REGISTRY: quay.io/rhacs-eng
-      IMAGES: release-main release-central-db release-roxctl release-operator release-scanner-v4 release-scanner-v4-db release-scanner release-scanner-slim release-scanner-db release-scanner-db-slim release-collector release-fact
+      IMAGE_PREFIX: ${{ inputs.image-prefix || 'release-' }}
+      COMPONENT_NAMES: main central-db roxctl operator scanner-v4 scanner-v4-db scanner scanner-slim scanner-db scanner-db-slim collector fact
     steps:
       - name: Determine image tag
         id: tag
@@ -52,7 +58,9 @@ jobs:
         run: |
           tag="${{ steps.tag.outputs.tag }}"
           echo "Waiting for Konflux images with tag: ${tag}"
-          images=(${{ env.IMAGES }})
+          components=(${{ env.COMPONENT_NAMES }})
+          images=()
+          for c in "${components[@]}"; do images+=("${{ env.IMAGE_PREFIX }}${c}"); done
           for image in "${images[@]}"; do
             ref="${{ env.REGISTRY }}/${image}:${tag}"
             echo "Polling for ${ref}..."
@@ -101,7 +109,9 @@ jobs:
       - name: Scan images for FIPS compliance
         run: |
           tag="${{ steps.tag.outputs.tag }}"
-          images=(${{ env.IMAGES }})
+          components=(${{ env.COMPONENT_NAMES }})
+          images=()
+          for c in "${components[@]}"; do images+=("${{ env.IMAGE_PREFIX }}${c}"); done
           exitcode=0
 
           echo "## FIPS check-payload results" >> "$GITHUB_STEP_SUMMARY"
