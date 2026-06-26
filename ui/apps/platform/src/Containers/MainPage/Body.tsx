@@ -294,16 +294,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: vulnerabilityConfigurationReportsPath,
     },
-    'vulnerabilities/reports/view-based': {
-        component: asyncComponent(
-            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
-        ),
-        path: vulnerabilityViewBasedReportsPath,
-    },
-    'vulnerability-management': {
-        component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
-        path: vulnManagementPath,
-    },
 };
 
 type BodyProps = {
