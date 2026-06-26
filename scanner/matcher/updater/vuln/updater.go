@@ -426,15 +426,31 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		return false, err
 	}
 
-	// Iterate through each vulnerability bundle in the .zip archive
-	names := make([]string, 0, len(zipReader.File))
-	for i := range zipReader.File {
-		bundleF := zipReader.File[i]
-		if !u.isBundleAllowed(bundleF.Name) {
-			slog.InfoContext(ctx, "skipping bundle (not in allowlist)", "bundle", bundleF.Name)
+	// Filter to allowed bundles once; the slice is reused for pre-registration,
+	// processing, and GC.
+	allowedBundles := make([]*zip.File, 0, len(zipReader.File))
+	for _, f := range zipReader.File {
+		if !u.isBundleAllowed(f.Name) {
+			slog.InfoContext(ctx, "skipping bundle (not in allowlist)", "bundle", f.Name)
 			continue
 		}
-		names = append(names, bundleF.Name)
+		allowedBundles = append(allowedBundles, f)
+	}
+
+	// Pre-register all allowed bundles so that Initialized() correctly reports
+	// not-ready until every bundle has been processed at least once. Without
+	// this, the health-check probe can observe a window where only completed
+	// bundles have rows (all with valid timestamps) and prematurely latch
+	// initialized=true.
+	for _, f := range allowedBundles {
+		if _, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(ctx, f.Name, prevTime); err != nil {
+			return false, fmt.Errorf("pre-registering bundle %s: %w", f.Name, err)
+		}
+	}
+	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(allowedBundles))
+
+	// Process each vulnerability bundle in the .zip archive.
+	for _, bundleF := range allowedBundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
@@ -446,6 +462,10 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
 	// Safe to be run concurrently.
+	names := make([]string, 0, len(allowedBundles))
+	for _, f := range allowedBundles {
+		names = append(names, f.Name)
+	}
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
 		return false, fmt.Errorf("cleaning vuln updates: %w", err)
@@ -470,7 +490,7 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 		return nil
 	}
 
-	// Ensure there is an update timestamp for this bundle, and check if it's newer
+	// Get the last update timestamp for this bundle and check if it's newer
 	// than this update.
 	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, prevTime)
 	if err != nil {
