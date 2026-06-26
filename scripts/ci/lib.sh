@@ -1186,6 +1186,35 @@ is_in_PR_context() {
     return 1
 }
 
+# Returns 0 when the current PR only changes files under the given path prefix.
+# Returns 1 for non-PR contexts (postsubmit, periodic) so callers always run.
+changes_limited_to() {
+    local prefix="${1:?usage: changes_limited_to <path-prefix>}"
+
+    is_in_PR_context || return 1
+
+    local base_ref
+    if is_OPENSHIFT_CI; then
+        base_ref="${PULL_BASE_SHA:-}"
+    elif is_GITHUB_ACTIONS; then
+        if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+            git fetch --depth=1 origin "${GITHUB_BASE_REF}" 2>/dev/null || return 1
+            base_ref="origin/${GITHUB_BASE_REF}"
+        fi
+    fi
+    if [[ -z "${base_ref:-}" ]]; then
+        return 1
+    fi
+
+    local changed
+    changed="$(git diff --name-only "${base_ref}...HEAD" 2>/dev/null)" || return 1
+    if [[ -z "$changed" ]]; then
+        return 1
+    fi
+
+    ! grep -qv "^${prefix}" <<< "$changed"
+}
+
 get_PR_number() {
     if is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         echo "${PULL_NUMBER}"
