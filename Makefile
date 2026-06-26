@@ -359,6 +359,14 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
+.PHONY: deps
+deps:
+	@echo "+ $@"
+	$(SILENT)for gomod in $$(find $(BASE_DIR) -name "go.mod" -not -path '*/.claude/*'); do \
+		dir=$$(dirname "$$gomod"); \
+		echo "  go mod tidy in $$dir"; \
+		(cd "$$dir" && go mod tidy); \
+	done
 
 .PHONY: clean-obsolete-protos
 clean-obsolete-protos:
