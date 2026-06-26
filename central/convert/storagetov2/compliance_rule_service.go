@@ -18,19 +18,24 @@ func ComplianceRule(incoming *storage.ComplianceOperatorRuleV2) *v2.ComplianceRu
 	}
 
 	return &v2.ComplianceRule{
-		Name:         incoming.GetName(),
-		RuleType:     incoming.GetRuleType(),
-		Severity:     incoming.GetSeverity().String(),
-		Title:        incoming.GetTitle(),
-		Description:  incoming.GetDescription(),
-		Rationale:    incoming.GetRationale(),
-		Fixes:        fixes,
-		Id:           incoming.GetId(),
-		RuleId:       incoming.GetRuleId(),
-		Instructions: incoming.GetInstructions(),
-		Warning:      incoming.GetWarning(),
-		ParentRule:   incoming.GetParentRule(),
-		OperatorKind: convertRuleOperatorKind(incoming.GetOperatorKind()),
+		Name:              incoming.GetName(),
+		RuleType:          incoming.GetRuleType(),
+		Severity:          incoming.GetSeverity().String(),
+		Title:             incoming.GetTitle(),
+		Description:       incoming.GetDescription(),
+		Rationale:         incoming.GetRationale(),
+		Fixes:             fixes,
+		Id:                incoming.GetId(),
+		RuleId:            incoming.GetRuleId(),
+		Instructions:      incoming.GetInstructions(),
+		Warning:           incoming.GetWarning(),
+		ParentRule:        incoming.GetParentRule(),
+		OperatorKind:      convertRuleOperatorKind(incoming.GetOperatorKind()),
+		ScannerType:       incoming.GetScannerType(),
+		Expression:        incoming.GetExpression(),
+		Inputs:            convertCelInputsToAPI(incoming.GetInputs()),
+		FailureReason:     incoming.GetFailureReason(),
+		CustomRuleDetails: convertCustomRuleDetailsToAPI(incoming.GetCustomRuleDetails()),
 	}
 }
 
@@ -48,5 +53,33 @@ func convertRuleOperatorKind(kind storage.ComplianceOperatorRuleV2_OperatorKind)
 	default:
 		utils.Should(errors.Errorf("unhandled rule operator kind %s", kind))
 		return v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
+func convertCelInputsToAPI(inputs []*storage.ComplianceOperatorCelInput) []*v2.ComplianceRule_CelInput {
+	if len(inputs) == 0 {
+		return nil
+	}
+	result := make([]*v2.ComplianceRule_CelInput, 0, len(inputs))
+	for _, inp := range inputs {
+		result = append(result, &v2.ComplianceRule_CelInput{
+			Name:              inp.GetName(),
+			ApiGroup:          inp.GetApiGroup(),
+			ApiVersion:        inp.GetApiVersion(),
+			Resource:          inp.GetResource(),
+			ResourceNamespace: inp.GetResourceNamespace(),
+			ResourceName:      inp.GetResourceName(),
+		})
+	}
+	return result
+}
+
+func convertCustomRuleDetailsToAPI(details *storage.ComplianceOperatorRuleV2_CustomRuleDetails) *v2.ComplianceRule_CustomRuleDetails {
+	if details == nil {
+		return nil
+	}
+	return &v2.ComplianceRule_CustomRuleDetails{
+		Phase:        details.GetPhase(),
+		ErrorMessage: details.GetErrorMessage(),
 	}
 }
