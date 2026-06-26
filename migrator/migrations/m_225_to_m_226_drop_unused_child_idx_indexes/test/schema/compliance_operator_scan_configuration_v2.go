@@ -68,4 +68,5 @@ type ComplianceOperatorScanConfigurationV2Notifiers struct {
 	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2notifiers_idx,type:btree"`
 	ID                                       string                                `gorm:"column:id;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	NotifiersRef                             Notifiers                             `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
 }
