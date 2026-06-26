@@ -46,7 +46,7 @@ import { getPlatformComponentsConfigRules } from '../configUtils';
 import type { PlatformComponentsConfigRules } from '../configUtils';
 import type { Values } from './formTypes';
 import PlatformComponentsConfigForm from './PlatformComponentsConfigForm';
-import { PrometheusMetricsTabbedForm } from '../Details/components/PrometheusMetricsCard';
+import PrometheusMetricsTabbedForm from '../Details/components/PrometheusMetricsTabbedForm';
 
 function getCompletePublicConfig(systemConfig: SystemConfig): PublicConfig {
     return {
@@ -526,7 +526,7 @@ const SystemConfigForm = ({
                     </Grid>
                     <Title headingLevel="h2">Prometheus metrics configuration</Title>
                     <PrometheusMetricsTabbedForm
-                        pcfg={values?.privateConfig}
+                        privateConfig={values?.privateConfig}
                         onChange={onChange}
                         onCustomChange={onCustomChange}
                     />
