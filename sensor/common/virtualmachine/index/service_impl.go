@@ -21,7 +21,8 @@ const indexReportSendTimeout = 10 * time.Second
 
 type serviceImpl struct {
 	sensor.UnimplementedVirtualMachineIndexReportServiceServer
-	handler Handler
+	handler     Handler
+	pullChecker PullActiveChecker
 }
 
 var _ Service = (*serviceImpl)(nil)
@@ -57,6 +58,11 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
 			Success: false,
 		}, errox.InvalidArgs.CausedBy("index report in request cannot be nil")
+	}
+
+	if s.pullChecker != nil && s.pullChecker.IsActivelyScraped(ir.GetVsockCid()) {
+		log.Debugf("Dropping push-mode report for vsock_cid=%q (VM is actively scraped via pull)", ir.GetVsockCid())
+		return &sensor.UpsertVirtualMachineIndexReportResponse{Success: true}, nil
 	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
