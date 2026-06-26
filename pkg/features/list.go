@@ -141,7 +141,7 @@ var (
 	BackgroundMigration = registerFeature("Enable long-running background migrations in Central", "ROX_BACKGROUND_MIGRATION", enabled)
 
 	// EvaluationFilter enables evaluation filtering in policy evaluation.
-	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER")
+	EvaluationFilter = registerFeature("Enable evaluation filtering in policy evaluation", "ROX_EVALUATION_FILTER", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -193,8 +193,8 @@ var (
 	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
 
 	// ScannerV4RedHatVEXNotAffected enables filtering image vulnerabilities using Red Hat VEX known_not_affected assertions.
-	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED")
+	ScannerV4RedHatVEXNotAffected = registerFeature("Scanner V4 will filter image vulnerabilities using Red Hat VEX known_not_affected assertions", "ROX_SCANNER_V4_RED_HAT_VEX_NOT_AFFECTED", enabled)
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
-	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE")
+	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
 )
