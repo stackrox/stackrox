@@ -340,7 +340,7 @@ func (x ComplianceOperatorCheckResultV2_CheckStatus) Number() protoreflect.EnumN
 
 // Deprecated: Use ComplianceOperatorCheckResultV2_CheckStatus.Descriptor instead.
 func (ComplianceOperatorCheckResultV2_CheckStatus) EnumDescriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7, 0}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{8, 0}
 }
 
 type ComplianceOperatorReportStatus_RunState int32
@@ -404,7 +404,7 @@ func (x ComplianceOperatorReportStatus_RunState) Number() protoreflect.EnumNumbe
 
 // Deprecated: Use ComplianceOperatorReportStatus_RunState.Descriptor instead.
 func (ComplianceOperatorReportStatus_RunState) EnumDescriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17, 0}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{18, 0}
 }
 
 type ComplianceOperatorReportStatus_NotificationMethod int32
@@ -450,7 +450,7 @@ func (x ComplianceOperatorReportStatus_NotificationMethod) Number() protoreflect
 
 // Deprecated: Use ComplianceOperatorReportStatus_NotificationMethod.Descriptor instead.
 func (ComplianceOperatorReportStatus_NotificationMethod) EnumDescriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17, 1}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{18, 1}
 }
 
 type ComplianceOperatorReportStatus_RunMethod int32
@@ -496,7 +496,7 @@ func (x ComplianceOperatorReportStatus_RunMethod) Number() protoreflect.EnumNumb
 
 // Deprecated: Use ComplianceOperatorReportStatus_RunMethod.Descriptor instead.
 func (ComplianceOperatorReportStatus_RunMethod) EnumDescriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17, 2}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{18, 2}
 }
 
 type ProfileShim struct {
@@ -556,12 +556,12 @@ type ComplianceOperatorProfileV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The primary key is name-profile_version as that is guaranteed unique in the operator and how
 	// the profile is referenced in scans and settings
-	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
-	ProfileId      string                                   `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
-	Name           string                                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
+	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                                                 // @gotags: sql:"pk"
+	ProfileId      string                                   `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                     // @gotags: search:"Compliance Profile ID,hidden"
+	Name           string                                   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                              // @gotags: search:"Compliance Profile Name,hidden"
 	ProfileVersion string                                   `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
-	ProductType    string                                   `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
-	Standard       string                                   `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
+	ProductType    string                                   `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`     // @gotags: search:"Compliance Profile Product Type,hidden"
+	Standard       string                                   `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                          // @gotags: search:"Compliance Standard,hidden"
 	Labels         map[string]string                        `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Annotations    map[string]string                        `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Description    string                                   `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
@@ -569,8 +569,8 @@ type ComplianceOperatorProfileV2 struct {
 	Product        string                                   `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
 	Title          string                                   `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string                                 `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
-	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                 // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"`                                                      // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                      // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"`                                                       // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty" search:"Compliance Profile Operator Kind,hidden"` // @gotags: search:"Compliance Profile Operator Kind,hidden"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -718,29 +718,35 @@ func (x *ComplianceOperatorProfileV2) GetOperatorKind() ComplianceOperatorProfil
 	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 }
 
-// Next tag: 19
+// Next tag: 24
 type ComplianceOperatorRuleV2 struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	Id            string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	RuleId        string                                `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                    // @gotags: search:"Compliance Rule Name,hidden"
-	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`            // @gotags: search:"Compliance Rule Type,hidden"
-	Severity      RuleSeverity                          `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"` // @gotags: search:"Compliance Rule Severity,hidden"
-	Labels        map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations   map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Title         string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale     string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes         []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Warning       string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
-	Controls      []*RuleControls                       `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
-	ClusterId     string                                `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`   // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	RuleRefId     string                                `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
-	ParentRule    string                                `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
-	Instructions  string                                `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	OperatorKind  ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,18,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState                `protogen:"open.v1"`
+	Id           string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	RuleId       string                                `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	Name         string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                        // @gotags: search:"Compliance Rule Name,hidden"
+	RuleType     string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`                // @gotags: search:"Compliance Rule Type,hidden"
+	Severity     RuleSeverity                          `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"` // @gotags: search:"Compliance Rule Severity,hidden"
+	Labels       map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations  map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Title        string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Description  string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale    string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes        []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Warning      string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
+	Controls     []*RuleControls                       `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
+	ClusterId    string                                `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	RuleRefId    string                                `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"`                              // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+	ParentRule   string                                `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
+	Instructions string                                `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	OperatorKind ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,18,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
+	// CEL rule fields. Populated for rules with scanner_type "CEL".
+	ScannerType       string                                      `protobuf:"bytes,19,opt,name=scanner_type,json=scannerType,proto3" json:"scanner_type,omitempty"`
+	Expression        string                                      `protobuf:"bytes,20,opt,name=expression,proto3" json:"expression,omitempty"`
+	Inputs            []*ComplianceOperatorCelInput               `protobuf:"bytes,21,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	FailureReason     string                                      `protobuf:"bytes,22,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	CustomRuleDetails *ComplianceOperatorRuleV2_CustomRuleDetails `protobuf:"bytes,23,opt,name=custom_rule_details,json=customRuleDetails,proto3" json:"custom_rule_details,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -899,6 +905,126 @@ func (x *ComplianceOperatorRuleV2) GetOperatorKind() ComplianceOperatorRuleV2_Op
 	return ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
 }
 
+func (x *ComplianceOperatorRuleV2) GetScannerType() string {
+	if x != nil {
+		return x.ScannerType
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetExpression() string {
+	if x != nil {
+		return x.Expression
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetInputs() []*ComplianceOperatorCelInput {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorRuleV2) GetFailureReason() string {
+	if x != nil {
+		return x.FailureReason
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetCustomRuleDetails() *ComplianceOperatorRuleV2_CustomRuleDetails {
+	if x != nil {
+		return x.CustomRuleDetails
+	}
+	return nil
+}
+
+// ComplianceOperatorCelInput represents a Kubernetes resource input for a CEL rule expression.
+type ComplianceOperatorCelInput struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ApiGroup          string                 `protobuf:"bytes,2,opt,name=api_group,json=apiGroup,proto3" json:"api_group,omitempty"`
+	ApiVersion        string                 `protobuf:"bytes,3,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	Resource          string                 `protobuf:"bytes,4,opt,name=resource,proto3" json:"resource,omitempty"`
+	ResourceNamespace string                 `protobuf:"bytes,5,opt,name=resource_namespace,json=resourceNamespace,proto3" json:"resource_namespace,omitempty"`
+	ResourceName      string                 `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorCelInput) Reset() {
+	*x = ComplianceOperatorCelInput{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorCelInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorCelInput) ProtoMessage() {}
+
+func (x *ComplianceOperatorCelInput) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorCelInput.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorCelInput) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ComplianceOperatorCelInput) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetApiGroup() string {
+	if x != nil {
+		return x.ApiGroup
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetApiVersion() string {
+	if x != nil {
+		return x.ApiVersion
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResource() string {
+	if x != nil {
+		return x.Resource
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResourceNamespace() string {
+	if x != nil {
+		return x.ResourceNamespace
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
 // Next Tag: 4
 type RuleControls struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
@@ -912,7 +1038,7 @@ type RuleControls struct {
 
 func (x *RuleControls) Reset() {
 	*x = RuleControls{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[3]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -924,7 +1050,7 @@ func (x *RuleControls) String() string {
 func (*RuleControls) ProtoMessage() {}
 
 func (x *RuleControls) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[3]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -937,7 +1063,7 @@ func (x *RuleControls) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuleControls.ProtoReflect.Descriptor instead.
 func (*RuleControls) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{3}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *RuleControls) GetStandard() string {
@@ -965,7 +1091,7 @@ func (x *RuleControls) GetControl() string {
 // Next Tag: 19
 type ComplianceOperatorScanConfigurationV2 struct {
 	state                  protoimpl.MessageState                               `protogen:"open.v1"`
-	Id                     string                                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"`                                                 // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
+	Id                     string                                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"`                                     // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
 	ScanConfigName         string                                               `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"unique"` // @gotags: search:"Compliance Scan Config Name" sql:"unique"
 	AutoApplyRemediations  bool                                                 `protobuf:"varint,3,opt,name=auto_apply_remediations,json=autoApplyRemediations,proto3" json:"auto_apply_remediations,omitempty"`
 	AutoUpdateRemediations bool                                                 `protobuf:"varint,4,opt,name=auto_update_remediations,json=autoUpdateRemediations,proto3" json:"auto_update_remediations,omitempty"`
@@ -995,7 +1121,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 
 func (x *ComplianceOperatorScanConfigurationV2) Reset() {
 	*x = ComplianceOperatorScanConfigurationV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[4]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1007,7 +1133,7 @@ func (x *ComplianceOperatorScanConfigurationV2) String() string {
 func (*ComplianceOperatorScanConfigurationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[4]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1020,7 +1146,7 @@ func (x *ComplianceOperatorScanConfigurationV2) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ComplianceOperatorScanConfigurationV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanConfigurationV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{4}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ComplianceOperatorScanConfigurationV2) GetId() string {
@@ -1154,8 +1280,8 @@ func (x *ComplianceOperatorScanConfigurationV2) GetNotifiers() []*NotifierConfig
 // unable to be applied to a cluster for whatever reason.
 type ComplianceOperatorClusterScanConfigStatus struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                           // @gotags: sql:"pk,type(uuid)"
-	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	Id              string                 `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                                                                // @gotags: sql:"pk,type(uuid)"
+	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                         // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	ScanConfigId    string                 `protobuf:"bytes,2,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty" search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Compliance Scan Config ID,hidden" sql:"fk(ComplianceOperatorScanConfigurationV2:id),no-fk-constraint,type(uuid)"
 	Errors          []string               `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
 	LastUpdatedTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_updated_time,json=lastUpdatedTime,proto3" json:"last_updated_time,omitempty" search:"Compliance Scan Config Last Updated Time,hidden"` // @gotags: search:"Compliance Scan Config Last Updated Time,hidden"
@@ -1166,7 +1292,7 @@ type ComplianceOperatorClusterScanConfigStatus struct {
 
 func (x *ComplianceOperatorClusterScanConfigStatus) Reset() {
 	*x = ComplianceOperatorClusterScanConfigStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[5]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1178,7 +1304,7 @@ func (x *ComplianceOperatorClusterScanConfigStatus) String() string {
 func (*ComplianceOperatorClusterScanConfigStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorClusterScanConfigStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[5]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1191,7 +1317,7 @@ func (x *ComplianceOperatorClusterScanConfigStatus) ProtoReflect() protoreflect.
 
 // Deprecated: Use ComplianceOperatorClusterScanConfigStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorClusterScanConfigStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{5}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ComplianceOperatorClusterScanConfigStatus) GetId() string {
@@ -1254,7 +1380,7 @@ type ComplianceOperatorBenchmarkV2 struct {
 
 func (x *ComplianceOperatorBenchmarkV2) Reset() {
 	*x = ComplianceOperatorBenchmarkV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[6]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1266,7 +1392,7 @@ func (x *ComplianceOperatorBenchmarkV2) String() string {
 func (*ComplianceOperatorBenchmarkV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorBenchmarkV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[6]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1279,7 +1405,7 @@ func (x *ComplianceOperatorBenchmarkV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorBenchmarkV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorBenchmarkV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{6}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ComplianceOperatorBenchmarkV2) GetId() string {
@@ -1337,11 +1463,11 @@ func (x *ComplianceOperatorBenchmarkV2) GetProfiles() []*ComplianceOperatorBench
 // as the rules can change without impacting the historical result.
 type ComplianceOperatorCheckResultV2 struct {
 	state          protoimpl.MessageState                      `protogen:"open.v1"`
-	Id             string                                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Check UID,hidden" sql:"pk"`                                                                   // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
-	CheckId        string                                      `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty" search:"Compliance Check ID,hidden"`                                          // @gotags: search:"Compliance Check ID,hidden"
-	CheckName      string                                      `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty" search:"Compliance Check Name,hidden"`                                    // @gotags: search:"Compliance Check Name,hidden"
-	ClusterId      string                                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                    // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	Status         ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResultV2_CheckStatus" json:"status,omitempty" search:"Compliance Check Status,hidden"` // @gotags: search:"Compliance Check Status,hidden"
+	Id             string                                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Compliance Check UID,hidden" sql:"pk"`                                                              // @gotags: search:"Compliance Check UID,hidden" sql:"pk"
+	CheckId        string                                      `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty" search:"Compliance Check ID,hidden"`                                               // @gotags: search:"Compliance Check ID,hidden"
+	CheckName      string                                      `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty" search:"Compliance Check Name,hidden"`                                       // @gotags: search:"Compliance Check Name,hidden"
+	ClusterId      string                                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	Status         ComplianceOperatorCheckResultV2_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResultV2_CheckStatus" json:"status,omitempty" search:"Compliance Check Status,hidden"`  // @gotags: search:"Compliance Check Status,hidden"
 	Severity       RuleSeverity                                `protobuf:"varint,6,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"`                            // @gotags: search:"Compliance Rule Severity,hidden"
 	Description    string                                      `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
 	Instructions   string                                      `protobuf:"bytes,8,opt,name=instructions,proto3" json:"instructions,omitempty"`
@@ -1353,9 +1479,9 @@ type ComplianceOperatorCheckResultV2 struct {
 	ScanName       string                                      `protobuf:"bytes,14,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	ClusterName    string                                      `protobuf:"bytes,15,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	ScanConfigName string                                      `protobuf:"bytes,16,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	Rationale      string                                      `protobuf:"bytes,17,opt,name=rationale,proto3" json:"rationale,omitempty" search:"Compliance Check Rationale,hidden"`                                   // @gotags: search:"Compliance Check Rationale,hidden"
-	ScanRefId      string                                      `protobuf:"bytes,18,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
-	RuleRefId      string                                      `protobuf:"bytes,19,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"`                // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
+	Rationale      string                                      `protobuf:"bytes,17,opt,name=rationale,proto3" json:"rationale,omitempty" search:"Compliance Check Rationale,hidden"`                                                                                                               // @gotags: search:"Compliance Check Rationale,hidden"
+	ScanRefId      string                                      `protobuf:"bytes,18,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"`                                // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint,type(uuid)"
+	RuleRefId      string                                      `protobuf:"bytes,19,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"`                                // @gotags: search:"Rule Ref ID,hidden" sql:"fk(ComplianceOperatorRuleV2:rule_ref_id),no-fk-constraint,type(uuid)"
 	// last_started_time is the last time the Scan resource was triggered
 	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,20,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Check Last Started Time,hidden"` // @gotags: search:"Compliance Check Last Started Time,hidden"
 	unknownFields   protoimpl.UnknownFields
@@ -1364,7 +1490,7 @@ type ComplianceOperatorCheckResultV2 struct {
 
 func (x *ComplianceOperatorCheckResultV2) Reset() {
 	*x = ComplianceOperatorCheckResultV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[7]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1376,7 +1502,7 @@ func (x *ComplianceOperatorCheckResultV2) String() string {
 func (*ComplianceOperatorCheckResultV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorCheckResultV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[7]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,7 +1515,7 @@ func (x *ComplianceOperatorCheckResultV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorCheckResultV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorCheckResultV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ComplianceOperatorCheckResultV2) GetId() string {
@@ -1545,7 +1671,7 @@ type ScanStatus struct {
 
 func (x *ScanStatus) Reset() {
 	*x = ScanStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[8]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1557,7 +1683,7 @@ func (x *ScanStatus) String() string {
 func (*ScanStatus) ProtoMessage() {}
 
 func (x *ScanStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[8]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1570,7 +1696,7 @@ func (x *ScanStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScanStatus.ProtoReflect.Descriptor instead.
 func (*ScanStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{8}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ScanStatus) GetPhase() string {
@@ -1598,9 +1724,9 @@ func (x *ScanStatus) GetWarnings() string {
 // Scan object per cluster
 type ComplianceOperatorScanV2 struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                                                                                                                               // @gotags: sql:"pk"
 	ScanConfigName   string                 `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	ClusterId        string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ClusterId        string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                                                                                             // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	Errors           string                 `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
 	Profile          *ProfileShim           `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
 	Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -1610,7 +1736,7 @@ type ComplianceOperatorScanV2 struct {
 	Status           *ScanStatus            `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
 	CreatedTime      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
 	LastExecutedTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
-	ScanName         string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"
+	ScanName         string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                                         // @gotags: search:"Compliance Scan Name,hidden"
 	Warnings         string                 `protobuf:"bytes,14,opt,name=warnings,proto3" json:"warnings,omitempty"`
 	ProductType      string                 `protobuf:"bytes,15,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
 	ScanRefId        string                 `protobuf:"bytes,16,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
@@ -1622,7 +1748,7 @@ type ComplianceOperatorScanV2 struct {
 
 func (x *ComplianceOperatorScanV2) Reset() {
 	*x = ComplianceOperatorScanV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[9]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1634,7 +1760,7 @@ func (x *ComplianceOperatorScanV2) String() string {
 func (*ComplianceOperatorScanV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[9]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1647,7 +1773,7 @@ func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorScanV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{9}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ComplianceOperatorScanV2) GetId() string {
@@ -1773,8 +1899,8 @@ func (x *ComplianceOperatorScanV2) GetLastStartedTime() *timestamppb.Timestamp {
 // Next Tag: 9
 type ComplianceOperatorScanSettingBindingV2 struct {
 	state           protoimpl.MessageState    `protogen:"open.v1"`
-	Id              string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                // @gotags: sql:"pk,id"
-	Name            string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Scan Setting Binding Name"`                            // @gotags: search:"Compliance Scan Setting Binding Name"
+	Id              string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                                // @gotags: sql:"pk,id"
+	Name            string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Scan Setting Binding Name"`                                                          // @gotags: search:"Compliance Scan Setting Binding Name"
 	ClusterId       string                    `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	ProfileNames    []string                  `protobuf:"bytes,4,rep,name=profile_names,json=profileNames,proto3" json:"profile_names,omitempty"`
 	ScanSettingName string                    `protobuf:"bytes,5,opt,name=scan_setting_name,json=scanSettingName,proto3" json:"scan_setting_name,omitempty" search:"Compliance Scan Config Name"` // @gotags: search:"Compliance Scan Config Name"
@@ -1787,7 +1913,7 @@ type ComplianceOperatorScanSettingBindingV2 struct {
 
 func (x *ComplianceOperatorScanSettingBindingV2) Reset() {
 	*x = ComplianceOperatorScanSettingBindingV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[10]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1799,7 +1925,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) String() string {
 func (*ComplianceOperatorScanSettingBindingV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[10]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1812,7 +1938,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ComplianceOperatorScanSettingBindingV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanSettingBindingV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{10}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetId() string {
@@ -1886,7 +2012,7 @@ type ComplianceOperatorCondition struct {
 
 func (x *ComplianceOperatorCondition) Reset() {
 	*x = ComplianceOperatorCondition{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[11]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1898,7 +2024,7 @@ func (x *ComplianceOperatorCondition) String() string {
 func (*ComplianceOperatorCondition) ProtoMessage() {}
 
 func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[11]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1911,7 +2037,7 @@ func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorCondition.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorCondition) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{11}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ComplianceOperatorCondition) GetType() string {
@@ -1963,7 +2089,7 @@ type ComplianceOperatorStatus struct {
 
 func (x *ComplianceOperatorStatus) Reset() {
 	*x = ComplianceOperatorStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[12]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1975,7 +2101,7 @@ func (x *ComplianceOperatorStatus) String() string {
 func (*ComplianceOperatorStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[12]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1988,7 +2114,7 @@ func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{12}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ComplianceOperatorStatus) GetPhase() string {
@@ -2023,8 +2149,8 @@ func (x *ComplianceOperatorStatus) GetConditions() []*ComplianceOperatorConditio
 // ComplianceOperatorSuiteV2 represents scan status
 type ComplianceOperatorSuiteV2 struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
-	Id            string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                // @gotags: sql:"pk,id,type(uuid)"
-	Name          string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Suite Name,hidden"`                            // @gotags: search:"Compliance Suite Name,hidden"
+	Id            string                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                     // @gotags: sql:"pk,id,type(uuid)"
+	Name          string                    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Suite Name,hidden"`                                                                  // @gotags: search:"Compliance Suite Name,hidden"
 	ClusterId     string                    `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
 	Status        *ComplianceOperatorStatus `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2033,7 +2159,7 @@ type ComplianceOperatorSuiteV2 struct {
 
 func (x *ComplianceOperatorSuiteV2) Reset() {
 	*x = ComplianceOperatorSuiteV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[13]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2045,7 +2171,7 @@ func (x *ComplianceOperatorSuiteV2) String() string {
 func (*ComplianceOperatorSuiteV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[13]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2058,7 +2184,7 @@ func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorSuiteV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorSuiteV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{13}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ComplianceOperatorSuiteV2) GetId() string {
@@ -2092,8 +2218,8 @@ func (x *ComplianceOperatorSuiteV2) GetStatus() *ComplianceOperatorStatus {
 // Next Tag: 9
 type ComplianceOperatorRemediationV2 struct {
 	state                     protoimpl.MessageState `protogen:"open.v1"`
-	Id                        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                    // @gotags: sql:"pk,id,type(uuid)"
-	Name                      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Remediation Name,hidden"`                                                                                // @gotags: search:"Compliance Remediation Name,hidden"
+	Id                        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`                                                                                                   // @gotags: sql:"pk,id,type(uuid)"
+	Name                      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Remediation Name,hidden"`                                                                          // @gotags: search:"Compliance Remediation Name,hidden"
 	ComplianceCheckResultName string                 `protobuf:"bytes,3,opt,name=compliance_check_result_name,json=complianceCheckResultName,proto3" json:"compliance_check_result_name,omitempty" search:"Compliance Check Name,hidden"` // @gotags: search:"Compliance Check Name,hidden"
 	// apply is used by the compliance operator to apply a remediation
 	Apply bool `protobuf:"varint,4,opt,name=apply,proto3" json:"apply,omitempty"`
@@ -2112,7 +2238,7 @@ type ComplianceOperatorRemediationV2 struct {
 
 func (x *ComplianceOperatorRemediationV2) Reset() {
 	*x = ComplianceOperatorRemediationV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[14]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2124,7 +2250,7 @@ func (x *ComplianceOperatorRemediationV2) String() string {
 func (*ComplianceOperatorRemediationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[14]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2137,7 +2263,7 @@ func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorRemediationV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorRemediationV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{14}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ComplianceOperatorRemediationV2) GetId() string {
@@ -2199,9 +2325,9 @@ func (x *ComplianceOperatorRemediationV2) GetClusterId() string {
 // Next Tag: 9
 type ComplianceOperatorReportSnapshotV2 struct {
 	state               protoimpl.MessageState                              `protogen:"open.v1"`
-	ReportId            string                                              `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                    // @gotags: sql:"pk,id,type(uuid)"
+	ReportId            string                                              `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,id,type(uuid)"`                                                                                                   // @gotags: sql:"pk,id,type(uuid)"
 	ScanConfigurationId string                                              `protobuf:"bytes,2,opt,name=scan_configuration_id,json=scanConfigurationId,proto3" json:"scan_configuration_id,omitempty" search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"` // @gotags: search:"Compliance Scan Config ID" sql:"fk(ComplianceOperatorScanConfigurationV2:id)"
-	Name                string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                            // @gotags: search:"Compliance Report Name"
+	Name                string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Report Name"`                                                                                                                  // @gotags: search:"Compliance Report Name"
 	Description         string                                              `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	ReportStatus        *ComplianceOperatorReportStatus                     `protobuf:"bytes,5,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
 	User                *SlimUser                                           `protobuf:"bytes,6,opt,name=user,proto3" json:"user,omitempty"`
@@ -2214,7 +2340,7 @@ type ComplianceOperatorReportSnapshotV2 struct {
 
 func (x *ComplianceOperatorReportSnapshotV2) Reset() {
 	*x = ComplianceOperatorReportSnapshotV2{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[15]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2226,7 +2352,7 @@ func (x *ComplianceOperatorReportSnapshotV2) String() string {
 func (*ComplianceOperatorReportSnapshotV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[15]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2239,7 +2365,7 @@ func (x *ComplianceOperatorReportSnapshotV2) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ComplianceOperatorReportSnapshotV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportSnapshotV2) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ComplianceOperatorReportSnapshotV2) GetReportId() string {
@@ -2317,7 +2443,7 @@ type ComplianceOperatorReportData struct {
 
 func (x *ComplianceOperatorReportData) Reset() {
 	*x = ComplianceOperatorReportData{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[16]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2329,7 +2455,7 @@ func (x *ComplianceOperatorReportData) String() string {
 func (*ComplianceOperatorReportData) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[16]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2342,7 +2468,7 @@ func (x *ComplianceOperatorReportData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorReportData.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportData) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ComplianceOperatorReportData) GetScanConfiguration() *ComplianceOperatorScanConfigurationV2 {
@@ -2370,10 +2496,10 @@ func (x *ComplianceOperatorReportData) GetLastExecutedTime() *timestamppb.Timest
 type ComplianceOperatorReportStatus struct {
 	state                    protoimpl.MessageState                            `protogen:"open.v1"`
 	RunState                 ComplianceOperatorReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ComplianceOperatorReportStatus_RunState" json:"run_state,omitempty" search:"Compliance Report State"` // @gotags: search:"Compliance Report State"
-	StartedAt                *timestamppb.Timestamp                            `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty" search:"Compliance Report Started Time"`                                                    // @gotags: search:"Compliance Report Started Time"
-	CompletedAt              *timestamppb.Timestamp                            `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Compliance Report Completed Time"`                                              // @gotags: search:"Compliance Report Completed Time"
+	StartedAt                *timestamppb.Timestamp                            `protobuf:"bytes,2,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty" search:"Compliance Report Started Time"`                                             // @gotags: search:"Compliance Report Started Time"
+	CompletedAt              *timestamppb.Timestamp                            `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Compliance Report Completed Time"`                                     // @gotags: search:"Compliance Report Completed Time"
 	ErrorMsg                 string                                            `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
-	ReportRequestType        ComplianceOperatorReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ComplianceOperatorReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Compliance Report Request Type"`                               // @gotags: search:"Compliance Report Request Type"
+	ReportRequestType        ComplianceOperatorReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ComplianceOperatorReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Compliance Report Request Type"`                                      // @gotags: search:"Compliance Report Request Type"
 	ReportNotificationMethod ComplianceOperatorReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ComplianceOperatorReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Compliance Report Notification Method"` // @gotags: search:"Compliance Report Notification Method"
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
@@ -2381,7 +2507,7 @@ type ComplianceOperatorReportStatus struct {
 
 func (x *ComplianceOperatorReportStatus) Reset() {
 	*x = ComplianceOperatorReportStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[17]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2393,7 +2519,7 @@ func (x *ComplianceOperatorReportStatus) String() string {
 func (*ComplianceOperatorReportStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[17]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2406,7 +2532,7 @@ func (x *ComplianceOperatorReportStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorReportStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ComplianceOperatorReportStatus) GetRunState() ComplianceOperatorReportStatus_RunState {
@@ -2460,7 +2586,7 @@ type ComplianceOperatorProfileV2_Rule struct {
 
 func (x *ComplianceOperatorProfileV2_Rule) Reset() {
 	*x = ComplianceOperatorProfileV2_Rule{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[20]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2472,7 +2598,7 @@ func (x *ComplianceOperatorProfileV2_Rule) String() string {
 func (*ComplianceOperatorProfileV2_Rule) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2_Rule) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[20]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2505,7 +2631,7 @@ type ComplianceOperatorRuleV2_Fix struct {
 
 func (x *ComplianceOperatorRuleV2_Fix) Reset() {
 	*x = ComplianceOperatorRuleV2_Fix{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[23]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2517,7 +2643,7 @@ func (x *ComplianceOperatorRuleV2_Fix) String() string {
 func (*ComplianceOperatorRuleV2_Fix) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[23]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2547,6 +2673,61 @@ func (x *ComplianceOperatorRuleV2_Fix) GetDisruption() string {
 	return ""
 }
 
+// CustomRuleDetails contains validation lifecycle fields specific to
+// Compliance Operator CustomRule resources. Only set when operator_kind
+// is CUSTOM_RULE.
+type ComplianceOperatorRuleV2_CustomRuleDetails struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Phase         string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) Reset() {
+	*x = ComplianceOperatorRuleV2_CustomRuleDetails{}
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorRuleV2_CustomRuleDetails) ProtoMessage() {}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorRuleV2_CustomRuleDetails.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorRuleV2_CustomRuleDetails) Descriptor() ([]byte, []int) {
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{2, 3}
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 type ComplianceOperatorScanConfigurationV2_ProfileName struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProfileName   string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty" search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"` // @gotags: search:"Compliance Config Profile Name,hidden" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
@@ -2556,7 +2737,7 @@ type ComplianceOperatorScanConfigurationV2_ProfileName struct {
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileName) Reset() {
 	*x = ComplianceOperatorScanConfigurationV2_ProfileName{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[26]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2568,7 +2749,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileName) String() string {
 func (*ComplianceOperatorScanConfigurationV2_ProfileName) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileName) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[26]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2581,7 +2762,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileName) ProtoReflect() proto
 
 // Deprecated: Use ComplianceOperatorScanConfigurationV2_ProfileName.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanConfigurationV2_ProfileName) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{4, 2}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{5, 2}
 }
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileName) GetProfileName() string {
@@ -2604,7 +2785,7 @@ type ComplianceOperatorScanConfigurationV2_ProfileReference struct {
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) Reset() {
 	*x = ComplianceOperatorScanConfigurationV2_ProfileReference{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[27]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2616,7 +2797,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) String() string
 func (*ComplianceOperatorScanConfigurationV2_ProfileReference) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[27]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2629,7 +2810,7 @@ func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) ProtoReflect() 
 
 // Deprecated: Use ComplianceOperatorScanConfigurationV2_ProfileReference.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanConfigurationV2_ProfileReference) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{4, 3}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{5, 3}
 }
 
 func (x *ComplianceOperatorScanConfigurationV2_ProfileReference) GetName() string {
@@ -2655,7 +2836,7 @@ type ComplianceOperatorScanConfigurationV2_Cluster struct {
 
 func (x *ComplianceOperatorScanConfigurationV2_Cluster) Reset() {
 	*x = ComplianceOperatorScanConfigurationV2_Cluster{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[28]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2667,7 +2848,7 @@ func (x *ComplianceOperatorScanConfigurationV2_Cluster) String() string {
 func (*ComplianceOperatorScanConfigurationV2_Cluster) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanConfigurationV2_Cluster) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[28]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2680,7 +2861,7 @@ func (x *ComplianceOperatorScanConfigurationV2_Cluster) ProtoReflect() protorefl
 
 // Deprecated: Use ComplianceOperatorScanConfigurationV2_Cluster.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanConfigurationV2_Cluster) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{4, 4}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{5, 4}
 }
 
 func (x *ComplianceOperatorScanConfigurationV2_Cluster) GetClusterId() string {
@@ -2700,7 +2881,7 @@ type ComplianceOperatorBenchmarkV2_Profile struct {
 
 func (x *ComplianceOperatorBenchmarkV2_Profile) Reset() {
 	*x = ComplianceOperatorBenchmarkV2_Profile{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[29]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2712,7 +2893,7 @@ func (x *ComplianceOperatorBenchmarkV2_Profile) String() string {
 func (*ComplianceOperatorBenchmarkV2_Profile) ProtoMessage() {}
 
 func (x *ComplianceOperatorBenchmarkV2_Profile) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[29]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2725,7 +2906,7 @@ func (x *ComplianceOperatorBenchmarkV2_Profile) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ComplianceOperatorBenchmarkV2_Profile.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorBenchmarkV2_Profile) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{6, 0}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{7, 0}
 }
 
 func (x *ComplianceOperatorBenchmarkV2_Profile) GetProfileName() string {
@@ -2744,7 +2925,7 @@ func (x *ComplianceOperatorBenchmarkV2_Profile) GetProfileVersion() string {
 
 type ComplianceOperatorReportSnapshotV2_Scan struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	ScanRefId       string                 `protobuf:"bytes,1,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"`                   // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
+	ScanRefId       string                 `protobuf:"bytes,1,opt,name=scan_ref_id,json=scanRefId,proto3" json:"scan_ref_id,omitempty" search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"`                                               // @gotags: search:"Scan Ref ID,hidden" sql:"fk(ComplianceOperatorScanV2:scan_ref_id),no-fk-constraint"
 	LastStartedTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"` // @gotags: search:"Compliance Scan Last Started Time,hidden" sql:"fk(ComplianceOperatorScanV2:last_started_time),no-fk-constraint"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -2752,7 +2933,7 @@ type ComplianceOperatorReportSnapshotV2_Scan struct {
 
 func (x *ComplianceOperatorReportSnapshotV2_Scan) Reset() {
 	*x = ComplianceOperatorReportSnapshotV2_Scan{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2764,7 +2945,7 @@ func (x *ComplianceOperatorReportSnapshotV2_Scan) String() string {
 func (*ComplianceOperatorReportSnapshotV2_Scan) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2_Scan) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[36]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2777,7 +2958,7 @@ func (x *ComplianceOperatorReportSnapshotV2_Scan) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use ComplianceOperatorReportSnapshotV2_Scan.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportSnapshotV2_Scan) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 0}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16, 0}
 }
 
 func (x *ComplianceOperatorReportSnapshotV2_Scan) GetScanRefId() string {
@@ -2807,7 +2988,7 @@ type ComplianceOperatorReportSnapshotV2_FailedCluster struct {
 
 func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) Reset() {
 	*x = ComplianceOperatorReportSnapshotV2_FailedCluster{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2819,7 +3000,7 @@ func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) String() string {
 func (*ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[37]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2832,7 +3013,7 @@ func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) ProtoReflect() protor
 
 // Deprecated: Use ComplianceOperatorReportSnapshotV2_FailedCluster.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportSnapshotV2_FailedCluster) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{15, 1}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16, 1}
 }
 
 func (x *ComplianceOperatorReportSnapshotV2_FailedCluster) GetClusterId() string {
@@ -2883,7 +3064,7 @@ type ComplianceOperatorReportData_SuiteStatus struct {
 
 func (x *ComplianceOperatorReportData_SuiteStatus) Reset() {
 	*x = ComplianceOperatorReportData_SuiteStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2895,7 +3076,7 @@ func (x *ComplianceOperatorReportData_SuiteStatus) String() string {
 func (*ComplianceOperatorReportData_SuiteStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_SuiteStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[38]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2908,7 +3089,7 @@ func (x *ComplianceOperatorReportData_SuiteStatus) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ComplianceOperatorReportData_SuiteStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportData_SuiteStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16, 0}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17, 0}
 }
 
 func (x *ComplianceOperatorReportData_SuiteStatus) GetPhase() string {
@@ -2952,7 +3133,7 @@ type ComplianceOperatorReportData_ClusterStatus struct {
 
 func (x *ComplianceOperatorReportData_ClusterStatus) Reset() {
 	*x = ComplianceOperatorReportData_ClusterStatus{}
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2964,7 +3145,7 @@ func (x *ComplianceOperatorReportData_ClusterStatus) String() string {
 func (*ComplianceOperatorReportData_ClusterStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorReportData_ClusterStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_compliance_operator_v2_proto_msgTypes[39]
+	mi := &file_storage_compliance_operator_v2_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2977,7 +3158,7 @@ func (x *ComplianceOperatorReportData_ClusterStatus) ProtoReflect() protoreflect
 
 // Deprecated: Use ComplianceOperatorReportData_ClusterStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorReportData_ClusterStatus) Descriptor() ([]byte, []int) {
-	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{16, 1}
+	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{17, 1}
 }
 
 func (x *ComplianceOperatorReportData_ClusterStatus) GetClusterId() string {
@@ -3048,7 +3229,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aPROFILE\x10\x01\x12\x14\n" +
-	"\x10TAILORED_PROFILE\x10\x02\"\x85\b\n" +
+	"\x10TAILORED_PROFILE\x10\x02\"\xe1\n" +
+	"\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\arule_id\x18\x02 \x01(\tR\x06ruleId\x12\x12\n" +
@@ -3070,7 +3252,14 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\vparent_rule\x18\x10 \x01(\tR\n" +
 	"parentRule\x12\"\n" +
 	"\finstructions\x18\x11 \x01(\tR\finstructions\x12S\n" +
-	"\roperator_kind\x18\x12 \x01(\x0e2..storage.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x1a9\n" +
+	"\roperator_kind\x18\x12 \x01(\x0e2..storage.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x12!\n" +
+	"\fscanner_type\x18\x13 \x01(\tR\vscannerType\x12\x1e\n" +
+	"\n" +
+	"expression\x18\x14 \x01(\tR\n" +
+	"expression\x12;\n" +
+	"\x06inputs\x18\x15 \x03(\v2#.storage.ComplianceOperatorCelInputR\x06inputs\x12%\n" +
+	"\x0efailure_reason\x18\x16 \x01(\tR\rfailureReason\x12c\n" +
+	"\x13custom_rule_details\x18\x17 \x01(\v23.storage.ComplianceOperatorRuleV2.CustomRuleDetailsR\x11customRuleDetails\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -3081,11 +3270,22 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"H\n" +
+	"disruption\x1aN\n" +
+	"\x11CustomRuleDetails\x12\x14\n" +
+	"\x05phase\x18\x01 \x01(\tR\x05phase\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"H\n" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\b\n" +
 	"\x04RULE\x10\x01\x12\x0f\n" +
-	"\vCUSTOM_RULE\x10\x02\"d\n" +
+	"\vCUSTOM_RULE\x10\x02\"\xde\x01\n" +
+	"\x1aComplianceOperatorCelInput\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
+	"\tapi_group\x18\x02 \x01(\tR\bapiGroup\x12\x1f\n" +
+	"\vapi_version\x18\x03 \x01(\tR\n" +
+	"apiVersion\x12\x1a\n" +
+	"\bresource\x18\x04 \x01(\tR\bresource\x12-\n" +
+	"\x12resource_namespace\x18\x05 \x01(\tR\x11resourceNamespace\x12#\n" +
+	"\rresource_name\x18\x06 \x01(\tR\fresourceName\"d\n" +
 	"\fRuleControls\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x1e\n" +
 	"\bcontrols\x18\x02 \x03(\tB\x02\x18\x01R\bcontrols\x12\x18\n" +
@@ -3355,129 +3555,133 @@ func file_storage_compliance_operator_v2_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_compliance_operator_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
-var file_storage_compliance_operator_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
+var file_storage_compliance_operator_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_storage_compliance_operator_v2_proto_goTypes = []any{
 	(NodeRole)(0),     // 0: storage.NodeRole
 	(ScanType)(0),     // 1: storage.ScanType
 	(RuleSeverity)(0), // 2: storage.RuleSeverity
-	(ComplianceOperatorProfileV2_OperatorKind)(0),             // 3: storage.ComplianceOperatorProfileV2.OperatorKind
-	(ComplianceOperatorRuleV2_OperatorKind)(0),                // 4: storage.ComplianceOperatorRuleV2.OperatorKind
-	(ComplianceOperatorCheckResultV2_CheckStatus)(0),          // 5: storage.ComplianceOperatorCheckResultV2.CheckStatus
-	(ComplianceOperatorReportStatus_RunState)(0),              // 6: storage.ComplianceOperatorReportStatus.RunState
-	(ComplianceOperatorReportStatus_NotificationMethod)(0),    // 7: storage.ComplianceOperatorReportStatus.NotificationMethod
-	(ComplianceOperatorReportStatus_RunMethod)(0),             // 8: storage.ComplianceOperatorReportStatus.RunMethod
-	(*ProfileShim)(nil),                                       // 9: storage.ProfileShim
-	(*ComplianceOperatorProfileV2)(nil),                       // 10: storage.ComplianceOperatorProfileV2
-	(*ComplianceOperatorRuleV2)(nil),                          // 11: storage.ComplianceOperatorRuleV2
-	(*RuleControls)(nil),                                      // 12: storage.RuleControls
-	(*ComplianceOperatorScanConfigurationV2)(nil),             // 13: storage.ComplianceOperatorScanConfigurationV2
-	(*ComplianceOperatorClusterScanConfigStatus)(nil),         // 14: storage.ComplianceOperatorClusterScanConfigStatus
-	(*ComplianceOperatorBenchmarkV2)(nil),                     // 15: storage.ComplianceOperatorBenchmarkV2
-	(*ComplianceOperatorCheckResultV2)(nil),                   // 16: storage.ComplianceOperatorCheckResultV2
-	(*ScanStatus)(nil),                                        // 17: storage.ScanStatus
-	(*ComplianceOperatorScanV2)(nil),                          // 18: storage.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil),            // 19: storage.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorCondition)(nil),                       // 20: storage.ComplianceOperatorCondition
-	(*ComplianceOperatorStatus)(nil),                          // 21: storage.ComplianceOperatorStatus
-	(*ComplianceOperatorSuiteV2)(nil),                         // 22: storage.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),                   // 23: storage.ComplianceOperatorRemediationV2
-	(*ComplianceOperatorReportSnapshotV2)(nil),                // 24: storage.ComplianceOperatorReportSnapshotV2
-	(*ComplianceOperatorReportData)(nil),                      // 25: storage.ComplianceOperatorReportData
-	(*ComplianceOperatorReportStatus)(nil),                    // 26: storage.ComplianceOperatorReportStatus
-	nil,                                                       // 27: storage.ComplianceOperatorProfileV2.LabelsEntry
-	nil,                                                       // 28: storage.ComplianceOperatorProfileV2.AnnotationsEntry
-	(*ComplianceOperatorProfileV2_Rule)(nil),                  // 29: storage.ComplianceOperatorProfileV2.Rule
-	nil,                                                       // 30: storage.ComplianceOperatorRuleV2.LabelsEntry
-	nil,                                                       // 31: storage.ComplianceOperatorRuleV2.AnnotationsEntry
-	(*ComplianceOperatorRuleV2_Fix)(nil),                      // 32: storage.ComplianceOperatorRuleV2.Fix
-	nil,                                                       // 33: storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
-	nil,                                                       // 34: storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
-	(*ComplianceOperatorScanConfigurationV2_ProfileName)(nil), // 35: storage.ComplianceOperatorScanConfigurationV2.ProfileName
-	(*ComplianceOperatorScanConfigurationV2_ProfileReference)(nil), // 36: storage.ComplianceOperatorScanConfigurationV2.ProfileReference
-	(*ComplianceOperatorScanConfigurationV2_Cluster)(nil),          // 37: storage.ComplianceOperatorScanConfigurationV2.Cluster
-	(*ComplianceOperatorBenchmarkV2_Profile)(nil),                  // 38: storage.ComplianceOperatorBenchmarkV2.Profile
-	nil, // 39: storage.ComplianceOperatorCheckResultV2.LabelsEntry
-	nil, // 40: storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	nil, // 41: storage.ComplianceOperatorScanV2.LabelsEntry
-	nil, // 42: storage.ComplianceOperatorScanV2.AnnotationsEntry
-	nil, // 43: storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	nil, // 44: storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	(*ComplianceOperatorReportSnapshotV2_Scan)(nil),          // 45: storage.ComplianceOperatorReportSnapshotV2.Scan
-	(*ComplianceOperatorReportSnapshotV2_FailedCluster)(nil), // 46: storage.ComplianceOperatorReportSnapshotV2.FailedCluster
-	(*ComplianceOperatorReportData_SuiteStatus)(nil),         // 47: storage.ComplianceOperatorReportData.SuiteStatus
-	(*ComplianceOperatorReportData_ClusterStatus)(nil),       // 48: storage.ComplianceOperatorReportData.ClusterStatus
-	(*Schedule)(nil),              // 49: storage.Schedule
-	(*timestamppb.Timestamp)(nil), // 50: google.protobuf.Timestamp
-	(*SlimUser)(nil),              // 51: storage.SlimUser
-	(*NotifierConfiguration)(nil), // 52: storage.NotifierConfiguration
+	(ComplianceOperatorProfileV2_OperatorKind)(0),          // 3: storage.ComplianceOperatorProfileV2.OperatorKind
+	(ComplianceOperatorRuleV2_OperatorKind)(0),             // 4: storage.ComplianceOperatorRuleV2.OperatorKind
+	(ComplianceOperatorCheckResultV2_CheckStatus)(0),       // 5: storage.ComplianceOperatorCheckResultV2.CheckStatus
+	(ComplianceOperatorReportStatus_RunState)(0),           // 6: storage.ComplianceOperatorReportStatus.RunState
+	(ComplianceOperatorReportStatus_NotificationMethod)(0), // 7: storage.ComplianceOperatorReportStatus.NotificationMethod
+	(ComplianceOperatorReportStatus_RunMethod)(0),          // 8: storage.ComplianceOperatorReportStatus.RunMethod
+	(*ProfileShim)(nil),                                    // 9: storage.ProfileShim
+	(*ComplianceOperatorProfileV2)(nil),                    // 10: storage.ComplianceOperatorProfileV2
+	(*ComplianceOperatorRuleV2)(nil),                       // 11: storage.ComplianceOperatorRuleV2
+	(*ComplianceOperatorCelInput)(nil),                     // 12: storage.ComplianceOperatorCelInput
+	(*RuleControls)(nil),                                   // 13: storage.RuleControls
+	(*ComplianceOperatorScanConfigurationV2)(nil),          // 14: storage.ComplianceOperatorScanConfigurationV2
+	(*ComplianceOperatorClusterScanConfigStatus)(nil),      // 15: storage.ComplianceOperatorClusterScanConfigStatus
+	(*ComplianceOperatorBenchmarkV2)(nil),                  // 16: storage.ComplianceOperatorBenchmarkV2
+	(*ComplianceOperatorCheckResultV2)(nil),                // 17: storage.ComplianceOperatorCheckResultV2
+	(*ScanStatus)(nil),                                     // 18: storage.ScanStatus
+	(*ComplianceOperatorScanV2)(nil),                       // 19: storage.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),         // 20: storage.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorCondition)(nil),                    // 21: storage.ComplianceOperatorCondition
+	(*ComplianceOperatorStatus)(nil),                       // 22: storage.ComplianceOperatorStatus
+	(*ComplianceOperatorSuiteV2)(nil),                      // 23: storage.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),                // 24: storage.ComplianceOperatorRemediationV2
+	(*ComplianceOperatorReportSnapshotV2)(nil),             // 25: storage.ComplianceOperatorReportSnapshotV2
+	(*ComplianceOperatorReportData)(nil),                   // 26: storage.ComplianceOperatorReportData
+	(*ComplianceOperatorReportStatus)(nil),                 // 27: storage.ComplianceOperatorReportStatus
+	nil,                                                    // 28: storage.ComplianceOperatorProfileV2.LabelsEntry
+	nil,                                                    // 29: storage.ComplianceOperatorProfileV2.AnnotationsEntry
+	(*ComplianceOperatorProfileV2_Rule)(nil),               // 30: storage.ComplianceOperatorProfileV2.Rule
+	nil,                                                    // 31: storage.ComplianceOperatorRuleV2.LabelsEntry
+	nil,                                                    // 32: storage.ComplianceOperatorRuleV2.AnnotationsEntry
+	(*ComplianceOperatorRuleV2_Fix)(nil),                   // 33: storage.ComplianceOperatorRuleV2.Fix
+	(*ComplianceOperatorRuleV2_CustomRuleDetails)(nil),     // 34: storage.ComplianceOperatorRuleV2.CustomRuleDetails
+	nil, // 35: storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
+	nil, // 36: storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
+	(*ComplianceOperatorScanConfigurationV2_ProfileName)(nil),      // 37: storage.ComplianceOperatorScanConfigurationV2.ProfileName
+	(*ComplianceOperatorScanConfigurationV2_ProfileReference)(nil), // 38: storage.ComplianceOperatorScanConfigurationV2.ProfileReference
+	(*ComplianceOperatorScanConfigurationV2_Cluster)(nil),          // 39: storage.ComplianceOperatorScanConfigurationV2.Cluster
+	(*ComplianceOperatorBenchmarkV2_Profile)(nil),                  // 40: storage.ComplianceOperatorBenchmarkV2.Profile
+	nil, // 41: storage.ComplianceOperatorCheckResultV2.LabelsEntry
+	nil, // 42: storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	nil, // 43: storage.ComplianceOperatorScanV2.LabelsEntry
+	nil, // 44: storage.ComplianceOperatorScanV2.AnnotationsEntry
+	nil, // 45: storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	nil, // 46: storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	(*ComplianceOperatorReportSnapshotV2_Scan)(nil),          // 47: storage.ComplianceOperatorReportSnapshotV2.Scan
+	(*ComplianceOperatorReportSnapshotV2_FailedCluster)(nil), // 48: storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	(*ComplianceOperatorReportData_SuiteStatus)(nil),         // 49: storage.ComplianceOperatorReportData.SuiteStatus
+	(*ComplianceOperatorReportData_ClusterStatus)(nil),       // 50: storage.ComplianceOperatorReportData.ClusterStatus
+	(*Schedule)(nil),              // 51: storage.Schedule
+	(*timestamppb.Timestamp)(nil), // 52: google.protobuf.Timestamp
+	(*SlimUser)(nil),              // 53: storage.SlimUser
+	(*NotifierConfiguration)(nil), // 54: storage.NotifierConfiguration
 }
 var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
-	27, // 0: storage.ComplianceOperatorProfileV2.labels:type_name -> storage.ComplianceOperatorProfileV2.LabelsEntry
-	28, // 1: storage.ComplianceOperatorProfileV2.annotations:type_name -> storage.ComplianceOperatorProfileV2.AnnotationsEntry
-	29, // 2: storage.ComplianceOperatorProfileV2.rules:type_name -> storage.ComplianceOperatorProfileV2.Rule
+	28, // 0: storage.ComplianceOperatorProfileV2.labels:type_name -> storage.ComplianceOperatorProfileV2.LabelsEntry
+	29, // 1: storage.ComplianceOperatorProfileV2.annotations:type_name -> storage.ComplianceOperatorProfileV2.AnnotationsEntry
+	30, // 2: storage.ComplianceOperatorProfileV2.rules:type_name -> storage.ComplianceOperatorProfileV2.Rule
 	3,  // 3: storage.ComplianceOperatorProfileV2.operator_kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
 	2,  // 4: storage.ComplianceOperatorRuleV2.severity:type_name -> storage.RuleSeverity
-	30, // 5: storage.ComplianceOperatorRuleV2.labels:type_name -> storage.ComplianceOperatorRuleV2.LabelsEntry
-	31, // 6: storage.ComplianceOperatorRuleV2.annotations:type_name -> storage.ComplianceOperatorRuleV2.AnnotationsEntry
-	32, // 7: storage.ComplianceOperatorRuleV2.fixes:type_name -> storage.ComplianceOperatorRuleV2.Fix
-	12, // 8: storage.ComplianceOperatorRuleV2.controls:type_name -> storage.RuleControls
+	31, // 5: storage.ComplianceOperatorRuleV2.labels:type_name -> storage.ComplianceOperatorRuleV2.LabelsEntry
+	32, // 6: storage.ComplianceOperatorRuleV2.annotations:type_name -> storage.ComplianceOperatorRuleV2.AnnotationsEntry
+	33, // 7: storage.ComplianceOperatorRuleV2.fixes:type_name -> storage.ComplianceOperatorRuleV2.Fix
+	13, // 8: storage.ComplianceOperatorRuleV2.controls:type_name -> storage.RuleControls
 	4,  // 9: storage.ComplianceOperatorRuleV2.operator_kind:type_name -> storage.ComplianceOperatorRuleV2.OperatorKind
-	33, // 10: storage.ComplianceOperatorScanConfigurationV2.labels:type_name -> storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
-	34, // 11: storage.ComplianceOperatorScanConfigurationV2.annotations:type_name -> storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
-	35, // 12: storage.ComplianceOperatorScanConfigurationV2.profiles:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileName
-	36, // 13: storage.ComplianceOperatorScanConfigurationV2.profile_refs:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileReference
-	0,  // 14: storage.ComplianceOperatorScanConfigurationV2.node_roles:type_name -> storage.NodeRole
-	49, // 15: storage.ComplianceOperatorScanConfigurationV2.schedule:type_name -> storage.Schedule
-	50, // 16: storage.ComplianceOperatorScanConfigurationV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 17: storage.ComplianceOperatorScanConfigurationV2.last_updated_time:type_name -> google.protobuf.Timestamp
-	51, // 18: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
-	37, // 19: storage.ComplianceOperatorScanConfigurationV2.clusters:type_name -> storage.ComplianceOperatorScanConfigurationV2.Cluster
-	52, // 20: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
-	50, // 21: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
-	38, // 22: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
-	5,  // 23: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
-	2,  // 24: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
-	39, // 25: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
-	40, // 26: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	50, // 27: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 28: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
-	9,  // 29: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
-	41, // 30: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
-	42, // 31: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
-	1,  // 32: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
-	0,  // 33: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
-	17, // 34: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
-	50, // 35: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
-	50, // 36: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
-	50, // 37: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
-	43, // 38: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	44, // 39: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	21, // 40: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
-	50, // 41: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	20, // 42: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
-	21, // 43: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
-	26, // 44: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
-	51, // 45: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
-	45, // 46: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
-	25, // 47: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
-	46, // 48: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
-	13, // 49: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
-	48, // 50: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
-	50, // 51: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
-	6,  // 52: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
-	50, // 53: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
-	50, // 54: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	8,  // 55: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
-	7,  // 56: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
-	3,  // 57: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
-	50, // 58: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
-	50, // 59: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
-	47, // 60: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
-	61, // [61:61] is the sub-list for method output_type
-	61, // [61:61] is the sub-list for method input_type
-	61, // [61:61] is the sub-list for extension type_name
-	61, // [61:61] is the sub-list for extension extendee
-	0,  // [0:61] is the sub-list for field type_name
+	12, // 10: storage.ComplianceOperatorRuleV2.inputs:type_name -> storage.ComplianceOperatorCelInput
+	34, // 11: storage.ComplianceOperatorRuleV2.custom_rule_details:type_name -> storage.ComplianceOperatorRuleV2.CustomRuleDetails
+	35, // 12: storage.ComplianceOperatorScanConfigurationV2.labels:type_name -> storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
+	36, // 13: storage.ComplianceOperatorScanConfigurationV2.annotations:type_name -> storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
+	37, // 14: storage.ComplianceOperatorScanConfigurationV2.profiles:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileName
+	38, // 15: storage.ComplianceOperatorScanConfigurationV2.profile_refs:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileReference
+	0,  // 16: storage.ComplianceOperatorScanConfigurationV2.node_roles:type_name -> storage.NodeRole
+	51, // 17: storage.ComplianceOperatorScanConfigurationV2.schedule:type_name -> storage.Schedule
+	52, // 18: storage.ComplianceOperatorScanConfigurationV2.created_time:type_name -> google.protobuf.Timestamp
+	52, // 19: storage.ComplianceOperatorScanConfigurationV2.last_updated_time:type_name -> google.protobuf.Timestamp
+	53, // 20: storage.ComplianceOperatorScanConfigurationV2.modified_by:type_name -> storage.SlimUser
+	39, // 21: storage.ComplianceOperatorScanConfigurationV2.clusters:type_name -> storage.ComplianceOperatorScanConfigurationV2.Cluster
+	54, // 22: storage.ComplianceOperatorScanConfigurationV2.notifiers:type_name -> storage.NotifierConfiguration
+	52, // 23: storage.ComplianceOperatorClusterScanConfigStatus.last_updated_time:type_name -> google.protobuf.Timestamp
+	40, // 24: storage.ComplianceOperatorBenchmarkV2.profiles:type_name -> storage.ComplianceOperatorBenchmarkV2.Profile
+	5,  // 25: storage.ComplianceOperatorCheckResultV2.status:type_name -> storage.ComplianceOperatorCheckResultV2.CheckStatus
+	2,  // 26: storage.ComplianceOperatorCheckResultV2.severity:type_name -> storage.RuleSeverity
+	41, // 27: storage.ComplianceOperatorCheckResultV2.labels:type_name -> storage.ComplianceOperatorCheckResultV2.LabelsEntry
+	42, // 28: storage.ComplianceOperatorCheckResultV2.annotations:type_name -> storage.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	52, // 29: storage.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	52, // 30: storage.ComplianceOperatorCheckResultV2.last_started_time:type_name -> google.protobuf.Timestamp
+	9,  // 31: storage.ComplianceOperatorScanV2.profile:type_name -> storage.ProfileShim
+	43, // 32: storage.ComplianceOperatorScanV2.labels:type_name -> storage.ComplianceOperatorScanV2.LabelsEntry
+	44, // 33: storage.ComplianceOperatorScanV2.annotations:type_name -> storage.ComplianceOperatorScanV2.AnnotationsEntry
+	1,  // 34: storage.ComplianceOperatorScanV2.scan_type:type_name -> storage.ScanType
+	0,  // 35: storage.ComplianceOperatorScanV2.node_selector:type_name -> storage.NodeRole
+	18, // 36: storage.ComplianceOperatorScanV2.status:type_name -> storage.ScanStatus
+	52, // 37: storage.ComplianceOperatorScanV2.created_time:type_name -> google.protobuf.Timestamp
+	52, // 38: storage.ComplianceOperatorScanV2.last_executed_time:type_name -> google.protobuf.Timestamp
+	52, // 39: storage.ComplianceOperatorScanV2.last_started_time:type_name -> google.protobuf.Timestamp
+	45, // 40: storage.ComplianceOperatorScanSettingBindingV2.labels:type_name -> storage.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	46, // 41: storage.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> storage.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	22, // 42: storage.ComplianceOperatorScanSettingBindingV2.status:type_name -> storage.ComplianceOperatorStatus
+	52, // 43: storage.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	21, // 44: storage.ComplianceOperatorStatus.conditions:type_name -> storage.ComplianceOperatorCondition
+	22, // 45: storage.ComplianceOperatorSuiteV2.status:type_name -> storage.ComplianceOperatorStatus
+	27, // 46: storage.ComplianceOperatorReportSnapshotV2.report_status:type_name -> storage.ComplianceOperatorReportStatus
+	53, // 47: storage.ComplianceOperatorReportSnapshotV2.user:type_name -> storage.SlimUser
+	47, // 48: storage.ComplianceOperatorReportSnapshotV2.scans:type_name -> storage.ComplianceOperatorReportSnapshotV2.Scan
+	26, // 49: storage.ComplianceOperatorReportSnapshotV2.report_data:type_name -> storage.ComplianceOperatorReportData
+	48, // 50: storage.ComplianceOperatorReportSnapshotV2.failed_clusters:type_name -> storage.ComplianceOperatorReportSnapshotV2.FailedCluster
+	14, // 51: storage.ComplianceOperatorReportData.scan_configuration:type_name -> storage.ComplianceOperatorScanConfigurationV2
+	50, // 52: storage.ComplianceOperatorReportData.cluster_status:type_name -> storage.ComplianceOperatorReportData.ClusterStatus
+	52, // 53: storage.ComplianceOperatorReportData.last_executed_time:type_name -> google.protobuf.Timestamp
+	6,  // 54: storage.ComplianceOperatorReportStatus.run_state:type_name -> storage.ComplianceOperatorReportStatus.RunState
+	52, // 55: storage.ComplianceOperatorReportStatus.started_at:type_name -> google.protobuf.Timestamp
+	52, // 56: storage.ComplianceOperatorReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	8,  // 57: storage.ComplianceOperatorReportStatus.report_request_type:type_name -> storage.ComplianceOperatorReportStatus.RunMethod
+	7,  // 58: storage.ComplianceOperatorReportStatus.report_notification_method:type_name -> storage.ComplianceOperatorReportStatus.NotificationMethod
+	3,  // 59: storage.ComplianceOperatorScanConfigurationV2.ProfileReference.kind:type_name -> storage.ComplianceOperatorProfileV2.OperatorKind
+	52, // 60: storage.ComplianceOperatorReportSnapshotV2.Scan.last_started_time:type_name -> google.protobuf.Timestamp
+	52, // 61: storage.ComplianceOperatorReportData.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
+	49, // 62: storage.ComplianceOperatorReportData.ClusterStatus.suite_status:type_name -> storage.ComplianceOperatorReportData.SuiteStatus
+	63, // [63:63] is the sub-list for method output_type
+	63, // [63:63] is the sub-list for method input_type
+	63, // [63:63] is the sub-list for extension type_name
+	63, // [63:63] is the sub-list for extension extendee
+	0,  // [0:63] is the sub-list for field type_name
 }
 
 func init() { file_storage_compliance_operator_v2_proto_init() }
@@ -3494,7 +3698,7 @@ func file_storage_compliance_operator_v2_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_compliance_operator_v2_proto_rawDesc), len(file_storage_compliance_operator_v2_proto_rawDesc)),
 			NumEnums:      9,
-			NumMessages:   40,
+			NumMessages:   42,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
