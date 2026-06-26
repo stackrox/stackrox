@@ -71,11 +71,6 @@ jobs:
       ARTIFACT_DIR: ./junit-reports/
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
-      volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -217,11 +212,6 @@ jobs:
       ARTIFACT_DIR: ./junit-reports/
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
-      volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
 
@@ -363,11 +353,6 @@ jobs:
       ARTIFACT_DIR: ./junit-reports/
       # Make sure Python steps don't buffer stdout/stderr.
       PYTHONUNBUFFERED: "1"
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
-      volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     timeout-minutes: 60 # Keep in sync with cluster's lifespan
     steps:
 
