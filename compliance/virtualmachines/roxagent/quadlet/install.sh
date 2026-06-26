@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Directory containing the Quadlet unit files (roxagent.container, .timer, etc.)
+# Directory containing the Quadlet unit files (roxagent.container, etc.)
 # to install. Defaults to the script's own directory; override for testing.
 QUADLET_FILES_DIR="${QUADLET_FILES_DIR:-${SCRIPT_DIR}}"
 
@@ -30,7 +30,6 @@ OPTIONAL_HOST_PATHS=(
 STAGED_INSTALL_FILES=(
     install.sh
     roxagent.container
-    roxagent.timer
     roxagent-prep.service
     roxagent-tmpfiles.conf
 )
@@ -70,11 +69,11 @@ main() {
     fi
 
     echo ""
-    echo "Done! The roxagent will run periodically."
+    echo "Done! The roxagent serve process is running."
     echo ""
-    echo "To run immediately:  sudo systemctl start roxagent.service"
-    echo "To view logs:        sudo journalctl -u roxagent.service -f"
-    echo "To check timer:      sudo systemctl list-timers roxagent.timer"
+    echo "To view logs:     sudo journalctl -u roxagent.service -f"
+    echo "To check status:  sudo systemctl status roxagent.service"
+    echo "To restart:       sudo systemctl restart roxagent.service"
 }
 
 usage() {
@@ -208,26 +207,30 @@ install_from_stage_dir() {
     # restorecon resets SELinux labels so systemd/podman can read the new files.
     sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
-    # Timer and prep service go in standard systemd directory
-    sudo cp "${stage_dir}/roxagent.timer" /etc/systemd/system/
+    # Prep service goes in standard systemd directory
     sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
-    sudo restorecon -Rv /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
+    sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
+
+    # Remove stale push-mode timer if present from a previous install
+    if [ -f /etc/systemd/system/roxagent.timer ]; then
+        sudo systemctl disable --now roxagent.timer 2>/dev/null || true
+        sudo rm -f /etc/systemd/system/roxagent.timer
+    fi
 
     # Recreate the lock directory on every boot since /run is tmpfs.
     sudo mkdir -p /etc/tmpfiles.d/
     sudo cp "${stage_dir}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
     sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
-    # systemd-tmpfiles --create applies the rule now (creates /run/lock/roxagent immediately).
     sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
 
     echo "Reloading systemd..."
     sudo systemctl daemon-reload
 
-    echo "Enabling and starting timer..."
-    sudo systemctl enable --now roxagent.timer
+    echo "Enabling and starting roxagent service..."
+    sudo systemctl enable --now roxagent.service
 
     echo "Status:"
-    sudo systemctl list-timers roxagent.timer
+    sudo systemctl status --no-pager roxagent.service || true
 }
 
 install_local() {
