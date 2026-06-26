@@ -270,7 +270,8 @@
         "customRuleDetails": {
           "$ref": "#/definitions/ComplianceRuleCustomRuleDetails"
         }
-      }
+      },
+      "title": "Next tag: 22"
     },
     "v2ComplianceRuleOperatorKind": {
       "type": "string",

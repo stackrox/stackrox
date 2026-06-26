@@ -212,6 +212,7 @@ func GetCustomRuleV2(_ *testing.T) *apiV2.ComplianceRule {
 		Severity:      "HIGH_RULE_SEVERITY",
 		Title:         "Check CM Marker",
 		Description:   "Checks that a configmap marker exists",
+		ParentRule:    customRuleID,
 		OperatorKind:  apiV2.ComplianceRule_CUSTOM_RULE,
 		ScannerType:   "CEL",
 		Expression:    `input.configmap.data["marker"] == "present"`,
