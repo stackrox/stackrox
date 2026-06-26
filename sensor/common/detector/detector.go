@@ -496,7 +496,7 @@ func (d *detectorImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return d.output
 }
 
-func (d *detectorImpl) detectDeploymentFromScanResult(deployment *storage.Deployment, images []*storage.Image, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction, ctx context.Context) {
+func (d *detectorImpl) detectDeploymentFromScanResult(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
 	detectorMetrics.RemoveBlockingScanCall()
 	alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
 		Deployment:             deployment,
@@ -533,7 +533,7 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			d.detectDeploymentFromScanResult(scanOutput.Deployment, scanOutput.Images, scanOutput.NetworkPoliciesApplied, scanOutput.Action, scanOutput.Context)
+			d.detectDeploymentFromScanResult(scanOutput.Context, scanOutput.Deployment, scanOutput.Images, scanOutput.NetworkPoliciesApplied, scanOutput.Action)
 		}
 	}
 }
@@ -543,7 +543,7 @@ func (d *detectorImpl) handleScanResultEvent(event pubsub.Event) error {
 	if !ok {
 		return errors.Errorf("unexpected event type: %T", event)
 	}
-	d.detectDeploymentFromScanResult(scanResult.Deployment, scanResult.Images, scanResult.NetworkPoliciesApplied, scanResult.Action, scanResult.Context)
+	d.detectDeploymentFromScanResult(scanResult.Context, scanResult.Deployment, scanResult.Images, scanResult.NetworkPoliciesApplied, scanResult.Action)
 	return nil
 }
 

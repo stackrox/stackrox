@@ -414,7 +414,7 @@ func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deploym
 	// This will allow us to cancel the scanWithRetries call if sensor disconnects.
 	images := e.getImages(ctx, deployment)
 
-	if e.pubSubDispatcher != nil {
+	if features.SensorInternalPubSub.Enabled() && e.pubSubDispatcher != nil {
 		if err := e.pubSubDispatcher.Publish(&detectorEvents.ScanResultEvent{
 			Context:                ctx,
 			Action:                 action,
