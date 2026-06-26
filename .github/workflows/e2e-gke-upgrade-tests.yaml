@@ -69,6 +69,8 @@ jobs:
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
       ARTIFACT_DIR: ./junit-reports/
+      # Make sure Python steps don't buffer stdout/stderr.
+      PYTHONUNBUFFERED: "1"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -127,7 +129,6 @@ jobs:
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -153,8 +154,6 @@ jobs:
     - name: Run post-test
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -166,7 +165,6 @@ jobs:
       shell: python
       env:
         QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -217,6 +215,8 @@ jobs:
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-postgres
       ARTIFACT_DIR: ./junit-reports/
+      # Make sure Python steps don't buffer stdout/stderr.
+      PYTHONUNBUFFERED: "1"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -275,7 +275,6 @@ jobs:
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -301,8 +300,6 @@ jobs:
     - name: Run post-test
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -314,7 +311,6 @@ jobs:
       shell: python
       env:
         QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -365,6 +361,8 @@ jobs:
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-sensor
       ARTIFACT_DIR: ./junit-reports/
+      # Make sure Python steps don't buffer stdout/stderr.
+      PYTHONUNBUFFERED: "1"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -423,7 +421,6 @@ jobs:
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -443,8 +440,6 @@ jobs:
     - name: Run post-test
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -455,8 +450,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
