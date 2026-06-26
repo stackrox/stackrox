@@ -204,7 +204,7 @@ func NewManager(
 				return nil
 			},
 		); err != nil {
-			log.Errorf("unable to register consumer for ResourceSyncFinished: %v", err)
+			log.Panicf("unable to register consumer for ResourceSyncFinished: %v", err)
 		}
 	} else {
 		if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {

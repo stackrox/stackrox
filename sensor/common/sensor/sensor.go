@@ -335,7 +335,7 @@ func (s *Sensor) Start() {
 				return nil
 			},
 		); err != nil {
-			log.Warnf("Failed to register consumer for SoftRestart: %q", err)
+			log.Panicf("Failed to register consumer for SoftRestart: %v", err)
 		}
 	} else {
 		err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
