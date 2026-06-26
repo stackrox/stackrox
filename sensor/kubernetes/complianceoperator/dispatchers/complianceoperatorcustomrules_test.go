@@ -44,6 +44,25 @@ func testCustomRule() *v1alpha1.CustomRule {
 					{Platform: "ocp4", Disruption: "low"},
 				},
 			},
+			CustomRulePayload: v1alpha1.CustomRulePayload{
+				ScannerType:   v1alpha1.ScannerTypeCEL,
+				Expression:    `input.configmap.data["marker"] == "present"`,
+				FailureReason: "ConfigMap marker not present",
+				Inputs: []v1alpha1.InputPayload{
+					{
+						Name: "configmap",
+						KubernetesInputSpec: v1alpha1.KubernetesInputSpec{
+							APIVersion:        "v1",
+							Resource:          "configmaps",
+							ResourceNamespace: "default",
+							ResourceName:      "test-cm",
+						},
+					},
+				},
+			},
+		},
+		Status: v1alpha1.CustomRuleStatus{
+			Phase: v1alpha1.CustomRulePhaseReady,
 		},
 	}
 }
@@ -73,6 +92,38 @@ func TestCustomRuleProcessEvent_WithCapability(t *testing.T) {
 	assert.Equal(t, cr.Spec.Instructions, rule.GetInstructions())
 	require.Len(t, rule.GetFixes(), 1)
 	assert.Equal(t, cr.Spec.AvailableFixes[0].Platform, rule.GetFixes()[0].GetPlatform())
+
+	assert.Equal(t, "CEL", rule.GetScannerType())
+	assert.Equal(t, `input.configmap.data["marker"] == "present"`, rule.GetExpression())
+	assert.Equal(t, "ConfigMap marker not present", rule.GetFailureReason())
+	require.Len(t, rule.GetInputs(), 1)
+	assert.Equal(t, "configmap", rule.GetInputs()[0].GetName())
+	assert.Equal(t, "v1", rule.GetInputs()[0].GetApiVersion())
+	assert.Equal(t, "configmaps", rule.GetInputs()[0].GetResource())
+	assert.Equal(t, "default", rule.GetInputs()[0].GetResourceNamespace())
+	assert.Equal(t, "test-cm", rule.GetInputs()[0].GetResourceName())
+
+	require.NotNil(t, rule.GetCustomRuleDetails())
+	assert.Equal(t, "Ready", rule.GetCustomRuleDetails().GetPhase())
+	assert.Empty(t, rule.GetCustomRuleDetails().GetErrorMessage())
+}
+
+func TestCustomRuleProcessEvent_ErrorPhase(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	cr := testCustomRule()
+	cr.Status.Phase = v1alpha1.CustomRulePhaseError
+	cr.Status.ErrorMessage = "invalid CEL expression"
+
+	dispatcher := NewCustomRuleDispatcher()
+	event := dispatcher.ProcessEvent(customRuleToUnstructured(t, cr), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	rule := event.ForwardMessages[0].GetComplianceOperatorRuleV2()
+	require.NotNil(t, rule.GetCustomRuleDetails())
+	assert.Equal(t, "Error", rule.GetCustomRuleDetails().GetPhase())
+	assert.Equal(t, "invalid CEL expression", rule.GetCustomRuleDetails().GetErrorMessage())
 }
 
 func TestCustomRuleProcessEvent_WithoutCapability(t *testing.T) {
