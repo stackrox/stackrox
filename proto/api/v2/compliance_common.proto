@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
+// Next tag: 22
 message ComplianceRule {
   string name = 1;
   reserved 2;

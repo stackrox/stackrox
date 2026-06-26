@@ -196,6 +196,7 @@ func (ComplianceProfileSummary_OperatorKind) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{11, 0}
 }
 
+// Next tag: 22
 type ComplianceRule struct {
 	state        protoimpl.MessageState      `protogen:"open.v1"`
 	Name         string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
