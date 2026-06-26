@@ -88,7 +88,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-a", map[string]string{"node-role.kubernetes.io/worker": ""}, false, "1"),
 			},
 			wantUsable: true,
-			wantScope:  WorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", false, "1"),
 			},
@@ -99,7 +99,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-b", map[string]string{"node-role.kubernetes.io/worker": ""}, false, "0"),
 			},
 			wantUsable: false,
-			wantScope:  WorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", false, "0"),
 				expectedNode("worker-b", false, "0"),
@@ -110,7 +110,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("worker-a", map[string]string{"node-role.kubernetes.io/worker": ""}, true, "1"),
 			},
 			wantUsable: false,
-			wantScope:  WorkerNodeScope,
+			wantScope:  workerNodeScope,
 			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", true, "1"),
 			},
@@ -120,7 +120,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("node-a", nil, false, "1"),
 			},
 			wantUsable:   true,
-			wantScope:    KVMAllSchedulableNodeScope,
+			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
 			wantChecked: []KVMPreflightNode{
 				expectedNode("node-a", false, "1"),
@@ -132,7 +132,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 				makeNode("node-b", nil, false, "1"),
 			},
 			wantUsable:   true,
-			wantScope:    KVMAllSchedulableNodeScope,
+			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
 			wantChecked: []KVMPreflightNode{
 				expectedNode("node-b", false, "1"),
@@ -169,7 +169,7 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 	}{
 		"should format failure diagnostics with checked nodes": {
 			result: ClusterKVMPreflightResult{
-				Scope: WorkerNodeScope,
+				Scope: workerNodeScope,
 				CheckedNodes: []KVMPreflightNode{
 					expectedNode("worker-a", false, "0"),
 					expectedNode("worker-b", true, "1"),
@@ -183,14 +183,14 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 		},
 		"should format fallback and success diagnostics separately": {
 			result: ClusterKVMPreflightResult{
-				Scope:                           KVMAllSchedulableNodeScope,
+				Scope:                           kvmAllSchedulableNodeScope,
 				UsedAllSchedulableNodesFallback: true,
 				CheckedNodes: []KVMPreflightNode{
 					expectedNode("node-a", false, "1"),
 				},
 			},
 			wantText: []string{
-				KVMFallbackDiagnostic,
+				kvmFallbackDiagnostic,
 				"KVM-capable all schedulable nodes: node-a(kvm=1)",
 			},
 		},

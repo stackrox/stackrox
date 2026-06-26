@@ -16,9 +16,9 @@ const (
 	kvmCapacityResourceName = coreV1.ResourceName("devices.kubevirt.io/kvm")
 	workerNodeLabel         = "node-role.kubernetes.io/worker"
 
-	WorkerNodeScope            = "worker-labeled nodes"
-	KVMAllSchedulableNodeScope = "all schedulable nodes"
-	KVMFallbackDiagnostic      = "No worker-labeled nodes found; checking all schedulable nodes for KVM capacity"
+	workerNodeScope            = "worker-labeled nodes"
+	kvmAllSchedulableNodeScope = "all schedulable nodes"
+	kvmFallbackDiagnostic      = "No worker-labeled nodes found; checking all schedulable nodes for KVM capacity"
 )
 
 // KVMPreflightNode summarizes whether a node can host KubeVirt VMs.
@@ -50,7 +50,7 @@ func (r ClusterKVMPreflightResult) IsUsable() bool {
 func (r ClusterKVMPreflightResult) Diagnostic() string {
 	parts := make([]string, 0, 2)
 	if r.UsedAllSchedulableNodesFallback {
-		parts = append(parts, KVMFallbackDiagnostic)
+		parts = append(parts, kvmFallbackDiagnostic)
 	}
 
 	if r.IsUsable() {
@@ -98,7 +98,7 @@ func InspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (
 	}
 
 	result := ClusterKVMPreflightResult{
-		Scope:        WorkerNodeScope,
+		Scope:        workerNodeScope,
 		CheckedNodes: make([]KVMPreflightNode, 0, len(nodeList.Items)),
 	}
 
@@ -114,7 +114,7 @@ func InspectClusterKVMReadiness(ctx context.Context, k8s kubernetes.Interface) (
 	}
 
 	if len(result.CheckedNodes) == 0 {
-		result.Scope = KVMAllSchedulableNodeScope
+		result.Scope = kvmAllSchedulableNodeScope
 		result.UsedAllSchedulableNodesFallback = true
 		for _, node := range nodeList.Items {
 			if node.Spec.Unschedulable {
@@ -147,15 +147,15 @@ func VerifyClusterVSOCKReadyPhases(
 	waitForVirtHandler func(context.Context) (string, error),
 ) (KubeVirtVSOCKRef, string, error) {
 	phaseOneCtx, cancelPhaseOne := context.WithTimeout(ctx, featureGateTimeout)
+	defer cancelPhaseOne()
 	ref, err := waitForFeatureGate(phaseOneCtx)
-	cancelPhaseOne()
 	if err != nil {
 		return KubeVirtVSOCKRef{}, "", err
 	}
 
 	phaseTwoCtx, cancelPhaseTwo := context.WithTimeout(ctx, virtHandlerTimeout)
+	defer cancelPhaseTwo()
 	lastDiag, err := waitForVirtHandler(phaseTwoCtx)
-	cancelPhaseTwo()
 	if err != nil {
 		return ref, lastDiag, err
 	}
