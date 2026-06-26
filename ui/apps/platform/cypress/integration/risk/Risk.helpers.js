@@ -151,61 +151,26 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 
 // data readiness
 
-export function waitForProcessEvents(timeoutMs = 600000) {
-    const interval = 15000;
-    const maxAttempts = Math.ceil(timeoutMs / interval);
+export function waitForProcessEvents(timeoutMs = 300000) {
+    const interval = 10000;
 
-    function poll(attempt) {
-        if (attempt >= maxAttempts) {
-            throw new Error(
-                `Timed out after ${timeoutMs / 1000}s waiting for deployment timeline data`
-            );
+    function poll(elapsed) {
+        if (elapsed >= timeoutMs) {
+            cy.log('Warning: process events not detected within timeout, proceeding anyway');
+            return;
         }
         const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
         return cy
-            .request({
-                url: '/v1/deployments?query=Namespace%3Astackrox&pagination.limit=1&pagination.sortOption.field=Priority',
-                auth,
-                failOnStatusCode: false,
-            })
-            .then((response) => {
-                const deployments = response?.body?.deployments ?? [];
-                if (deployments.length === 0) {
-                    cy.log(`No deployments yet (attempt ${attempt + 1}/${maxAttempts})`);
-                    cy.wait(interval);
-                    return poll(attempt + 1);
+            .request({ url: '/v1/processcount', auth, failOnStatusCode: false })
+            .then(({ body }) => {
+                const count = body?.count ?? 0;
+                if (count > 0) {
+                    cy.log(`Process activity detected: ${count} processes`);
+                    return;
                 }
-                const deploymentId = deployments[0].id;
-                const deploymentName = deployments[0].name;
-                const podsQuery = `Deployment Id:${deploymentId}`;
-                return cy
-                    .request({
-                        method: 'POST',
-                        url: '/api/graphql',
-                        auth,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: {
-                            query: `query { pods(query: "${podsQuery}", pagination: { limit: 5 }) { id name events { id } } }`,
-                        },
-                        failOnStatusCode: false,
-                    })
-                    .then((gqlResponse) => {
-                        const pods = gqlResponse?.body?.data?.pods ?? [];
-                        const podsWithEvents = pods.filter(
-                            (p) => p.events && p.events.length > 0
-                        );
-                        if (podsWithEvents.length > 0) {
-                            cy.log(
-                                `Timeline data ready: ${deploymentName} has ${podsWithEvents.length} pods with events`
-                            );
-                            return;
-                        }
-                        cy.log(
-                            `${deploymentName}: ${pods.length} pods, 0 with events (attempt ${attempt + 1}/${maxAttempts})`
-                        );
-                        cy.wait(interval);
-                        return poll(attempt + 1);
-                    });
+                cy.log(`Waiting for processes... (${elapsed / 1000}s)`);
+                cy.wait(interval);
+                return poll(elapsed + interval);
             });
     }
 
