@@ -65,7 +65,21 @@ function invoke_go() {
   local cgo_enabled="${CGO_ENABLED:-0}"
 
   args+=("-buildvcs=false")
-  args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
+
+  # Enforce Go native FIPS 140-3 crypto (CMVP #5247). These are not overridable.
+  # https://github.com/golang-fips/go/blob/main/README.md#migration-to-upstream-fips-certified-cryptography
+  export GOFIPS140=v1.0.0
+  export GOLANG_FIPS=0
+  local tags="${GOTAGS:+${GOTAGS},}no_openssl"
+
+  # STRICTFIPSRUNTIME=true bakes fips140=only into the binary via linker,
+  # causing non-FIPS algorithms to error/panic. Applies to all binaries
+  # including those deployed to clusters. Triggered by the fips-strict
+  # PR label. Named to match the old Red Hat OpenSSL-era enforcement mechanism.
+  if [[ "${STRICTFIPSRUNTIME:-}" == "true" ]]; then
+    cgo_ldflags+=(-X "runtime.godebugDefault=fips140=only")
+  fi
+  args+=(-tags "$(tr , ' ' <<<"$tags")")
 
   if [[ "$RACE" == "true" ]]; then
     echo >&2 "RACE==true, forcing CGO_ENABLED=1"

@@ -22,7 +22,9 @@ env:
   # prevent per-commit cache misses.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
-  GODEBUG: "fips140=only"
+  # fips-strict label bakes fips140=only into binaries via go-tool.sh,
+  # causing non-FIPS algorithms to error/panic in all tests including e2e.
+  STRICTFIPSRUNTIME: ${{ contains(github.event.pull_request.labels.*.name, 'fips-strict') }}
 
 jobs:
   detect-changes:

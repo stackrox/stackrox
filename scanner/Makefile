@@ -15,29 +15,8 @@ ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
 endif
 DEBUG_BUILD ?= no
 
-# CGO is disabled for Scanner V4 builds because:
-#
-# 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
-# OS's glibc does not match version in target container, scanner refuses to start with errors looking like this:
-#    $ /usr/local/bin/scanner --help
-#    /usr/local/bin/scanner: /lib64/libc.so.6: version `GLIBC_2.32' not found (required by /usr/local/bin/scanner)
-#    /usr/local/bin/scanner: /lib64/libc.so.6: version `GLIBC_2.34' not found (required by /usr/local/bin/scanner)
-#
-# 2. GitHub builds for arm64, ppc64le and s390x need support for cross-compilation which, when unavailable, makes
-# builds fail with errors like
-#    gcc_arm64.S:30: Error: no such instruction: `stp x29,x30,[sp,'
-#    gcc_arm64.S:34: Error: too many memory references for `mov'
-#
-# This flag must be overridden in commercial/downstream builds in arguments to `make`.
-#    make CGO_ENABLED=1 blah          # Correct - flips it to 1.
-#    CGO_ENABLED=1 make blah          # Wrong! This has no effect. Don't do this.
-#    export CGO_ENABLED=1; make blah  # Wrong! This has no effect. Don't do this.
-# Similarly, don't do the following in Dockerfile
-#    ENV CGO_ENABLED=1                # Wrong!..
-#    RUN make blah                    # because it has no effect. Don't do this.
-# If you need to separate the declaration and the usage in Dockerfile, do this instead
-#    ARG CGO_ENABLED=1
-#    RUN make CGO_ENABLED=$CGO_ENABLED blah
+# CGO_ENABLED=0 produces static binaries using Go's native FIPS crypto module (GOFIPS140=certified).
+# No dynamic linking to OpenSSL/libcrypto is needed. See make/env.mk for FIPS configuration.
 CGO_ENABLED = 0
 ifeq ($(RACE),true)
 	CGO_ENABLED = 1
@@ -51,7 +30,7 @@ GOOS := $(HOST_OS)
 
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) $(CURDIR)/../scripts/go-build-file.sh
-GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
+GO_TEST_CMD    = $(GO_BUILD_FLAGS) $(CURDIR)/../scripts/go-test.sh
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
