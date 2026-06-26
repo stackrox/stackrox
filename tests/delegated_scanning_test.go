@@ -127,11 +127,13 @@ var (
 		"no connection to",
 
 		// A registry having gateway issues (Quay.io in particular) may return a 502 (Bad Gateway)
-		// message along with some HTML, retry when this happens.
+		// or 504 (Gateway Timeout) along with some HTML, retry when this happens.
 		//
 		// ex:
 		// - http: non-successful response (status=502 body="<!doctype html>...<HTML HERE>...")
+		// - http: non-successful response (status=504 body="<html>...<title>504 Gateway Time-out</title>...")
 		"non-successful response (status=502",
+		"non-successful response (status=504",
 	}
 )
 
