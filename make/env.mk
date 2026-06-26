@@ -19,6 +19,8 @@ GOPATH := $(firstword $(subst :, ,$(GOPATH)))
 endif
 
 export CGO_ENABLED ?= 1
+export GOFIPS140 ?= certified
+export GOLANG_FIPS ?= 0
 export DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOBIN GOPROXY
 
 # Update the arch to arm64 but only for Macs running on Apple Silicon (M1)

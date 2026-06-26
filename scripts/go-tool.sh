@@ -65,7 +65,9 @@ function invoke_go() {
   local cgo_enabled="${CGO_ENABLED:-0}"
 
   args+=("-buildvcs=false")
-  args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
+  # Ensure no_openssl is always present to use Go native FIPS instead of OpenSSL backend.
+  local tags="${GOTAGS:+${GOTAGS},}no_openssl"
+  args+=(-tags "$(tr , ' ' <<<"$tags")")
 
   if [[ "$RACE" == "true" ]]; then
     echo >&2 "RACE==true, forcing CGO_ENABLED=1"
