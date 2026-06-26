@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - '*-nightly-*'
+    - '*'
     branches:
     - master
     - release-*

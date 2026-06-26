@@ -3,6 +3,8 @@ name: e2e-byodb-test
 on:
   workflow_dispatch:
   push:
+    tags:
+    - '*'
     branches:
     - master
     - release-*
