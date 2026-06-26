@@ -66,13 +66,10 @@ function invoke_go() {
 
   args+=("-buildvcs=false")
 
-  # Enforce Go native FIPS 140-3 crypto (CMVP #5247).
-  # GOFIPS140=certified embeds the certified FIPS module; GOLANG_FIPS=0 disables the
-  # legacy OpenSSL backend (mutually exclusive with native FIPS); no_openssl excludes
-  # OpenSSL code paths at compile time. See make/env.mk and:
+  # Enforce Go native FIPS 140-3 crypto (CMVP #5247). These are not overridable.
   # https://github.com/golang-fips/go/blob/main/README.md#migration-to-upstream-fips-certified-cryptography
-  export GOFIPS140="${GOFIPS140:-certified}"
-  export GOLANG_FIPS="${GOLANG_FIPS:-0}"
+  export GOFIPS140=certified
+  export GOLANG_FIPS=0
   local tags="${GOTAGS:+${GOTAGS},}no_openssl"
   args+=(-tags "$(tr , ' ' <<<"$tags")")
 
