@@ -310,3 +310,35 @@ roleRef:
   kind: ClusterRole
   name: {{ include "srox.globalResourceName" (list . "stackrox:review-access") }}
   apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox:vsock-access") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox:vsock-access") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox:vsock-access") | nindent 4 }}
+rules:
+- resources:
+  - virtualmachineinstances/vsock
+  apiGroups: ["subresources.kubevirt.io"]
+  verbs:
+  - get
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox:vsock-access-binding") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox:vsock-access-binding") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox:vsock-access-binding") | nindent 4 }}
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: {{ ._rox._namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "srox.globalResourceName" (list . "stackrox:vsock-access") }}
+  apiGroup: rbac.authorization.k8s.io
