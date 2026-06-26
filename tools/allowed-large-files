@@ -29,6 +29,7 @@ generated/**/*.pb.gw.go
 generated/**/*.swagger.json
 go.sum
 operator/bundle/manifests/*.yaml
+operator/internal/central/extensions/reconcile_tls_test.go
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
