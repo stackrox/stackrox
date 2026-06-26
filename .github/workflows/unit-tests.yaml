@@ -24,7 +24,7 @@ env:
   SHORTCOMMIT: "0000000"
   # ci-fips-strict label bakes fips140=only into binaries via go-tool.sh,
   # causing non-FIPS algorithms to error/panic in all tests including e2e.
-  FIPS_STRICT: ${{ contains(github.event.pull_request.labels.*.name, 'ci-fips-strict') }}
+  STRICTFIPSRUNTIME: ${{ contains(github.event.pull_request.labels.*.name, 'ci-fips-strict') }}
 
 jobs:
   detect-changes:
