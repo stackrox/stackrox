@@ -2,7 +2,7 @@ package schema
 
 import "github.com/stackrox/rox/pkg/postgres"
 
-// AllCreateStmts contains the frozen pre-PR#21423 CreateStmts for all tables
+// AllCreateStmts contains the frozen CreateStmts for all tables
 // that had standalone _idx indexes on child table idx columns.
 // Dependency tables (Roles, Notifiers, BaseImageRepositories) are listed first
 // because other tables have FK references to them.
