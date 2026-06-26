@@ -374,6 +374,7 @@ endif
 
 .PHONY: clean-deps
 clean-deps:
+	@echo "+ $@"
 	$(SILENT)rm -f deps
 
 .PHONY: clean-obsolete-protos
