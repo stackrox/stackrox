@@ -22,7 +22,10 @@ env:
   # prevent per-commit cache misses.
   BUILD_TAG: 0.0.0
   SHORTCOMMIT: "0000000"
-  GODEBUG: "fips140=only"
+  # fips140=on: FIPS crypto always active, non-approved algorithms still work.
+  # Add the 'ci-fips-strict' label to a PR to run with fips140=only, which
+  # rejects non-FIPS algorithms and surfaces code paths that need migration.
+  GODEBUG: ${{ contains(github.event.pull_request.labels.*.name, 'ci-fips-strict') && 'fips140=only' || 'fips140=on' }}
 
 jobs:
   detect-changes:
