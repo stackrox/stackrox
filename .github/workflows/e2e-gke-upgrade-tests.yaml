@@ -31,6 +31,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    - uses: ./.github/actions/handle-tagged-build
     - name: Get image tag
       id: get-tag
       run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
