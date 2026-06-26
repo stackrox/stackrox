@@ -74,7 +74,7 @@ type TestNoSerializeds struct {
 // TestNoSerializedsLabels holds the Gorm model for Postgres table `test_no_serializeds_labels`.
 type TestNoSerializedsLabels struct {
 	TestNoSerializedsID  string            `gorm:"column:test_no_serializeds_id;type:uuid;primaryKey"`
-	Idx                  int               `gorm:"column:idx;type:integer;primaryKey;index:testnoserializedslabels_idx,type:btree"`
+	Idx                  int               `gorm:"column:idx;type:integer;primaryKey"`
 	Key                  string            `gorm:"column:key;type:varchar"`
 	Value                string            `gorm:"column:value;type:varchar"`
 	TestNoSerializedsRef TestNoSerializeds `gorm:"foreignKey:test_no_serializeds_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

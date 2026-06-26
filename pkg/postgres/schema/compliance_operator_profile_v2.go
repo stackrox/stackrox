@@ -74,7 +74,7 @@ type ComplianceOperatorProfileV2 struct {
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.
 type ComplianceOperatorProfileV2Rules struct {
 	ComplianceOperatorProfileV2ID  string                      `gorm:"column:compliance_operator_profile_v2_id;type:varchar;primaryKey"`
-	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorprofilev2rules_idx,type:btree"`
+	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey"`
 	RuleName                       string                      `gorm:"column:rulename;type:varchar"`
 	ComplianceOperatorProfileV2Ref ComplianceOperatorProfileV2 `gorm:"foreignKey:compliance_operator_profile_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
