@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for base_images.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -14,9 +13,19 @@ var (
 	CreateTableBaseImagesStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImages)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*BaseImagesLayers)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*BaseImagesLayers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// BaseImagesTableName specifies the name of the table in postgres.
+	BaseImagesTableName = "base_images"
+	// BaseImagesLayersTableName specifies the name of the table in postgres.
+	BaseImagesLayersTableName = "base_images_layers"
 )
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
@@ -32,9 +41,6 @@ type BaseImages struct {
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (BaseImages) TableName() string { return "base_images" }
-
 // BaseImagesLayers holds the Gorm model for Postgres table `base_images_layers`.
 type BaseImagesLayers struct {
 	BaseImagesID  string     `gorm:"column:base_images_id;type:uuid;primaryKey"`
@@ -43,6 +49,3 @@ type BaseImagesLayers struct {
 	Index         int32      `gorm:"column:index;type:integer"`
 	BaseImagesRef BaseImages `gorm:"foreignKey:base_images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (BaseImagesLayers) TableName() string { return "base_images_layers" }

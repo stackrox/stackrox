@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for auth_machine_to_machine_configs.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -12,9 +11,19 @@ var (
 	CreateTableAuthMachineToMachineConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*AuthMachineToMachineConfigs)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*AuthMachineToMachineConfigsMappings)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*AuthMachineToMachineConfigsMappings)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// AuthMachineToMachineConfigsTableName specifies the name of the table in postgres.
+	AuthMachineToMachineConfigsTableName = "auth_machine_to_machine_configs"
+	// AuthMachineToMachineConfigsMappingsTableName specifies the name of the table in postgres.
+	AuthMachineToMachineConfigsMappingsTableName = "auth_machine_to_machine_configs_mappings"
 )
 
 // AuthMachineToMachineConfigs holds the Gorm model for Postgres table `auth_machine_to_machine_configs`.
@@ -24,20 +33,10 @@ type AuthMachineToMachineConfigs struct {
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (AuthMachineToMachineConfigs) TableName() string {
-	return "auth_machine_to_machine_configs"
-}
-
 // AuthMachineToMachineConfigsMappings holds the Gorm model for Postgres table `auth_machine_to_machine_configs_mappings`.
 type AuthMachineToMachineConfigsMappings struct {
 	AuthMachineToMachineConfigsID  string                      `gorm:"column:auth_machine_to_machine_configs_id;type:uuid;primaryKey"`
 	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:authmachinetomachineconfigsmappings_idx,type:btree"`
 	Role                           string                      `gorm:"column:role;type:varchar"`
 	AuthMachineToMachineConfigsRef AuthMachineToMachineConfigs `gorm:"foreignKey:auth_machine_to_machine_configs_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (AuthMachineToMachineConfigsMappings) TableName() string {
-	return "auth_machine_to_machine_configs_mappings"
 }

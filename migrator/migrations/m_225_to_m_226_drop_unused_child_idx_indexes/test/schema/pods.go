@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for pods.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -12,9 +11,19 @@ var (
 	CreateTablePodsStmt = &postgres.CreateStmts{
 		GormModel: (*Pods)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*PodsLiveInstances)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*PodsLiveInstances)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// PodsTableName specifies the name of the table in postgres.
+	PodsTableName = "pods"
+	// PodsLiveInstancesTableName specifies the name of the table in postgres.
+	PodsLiveInstancesTableName = "pods_live_instances"
 )
 
 // Pods holds the Gorm model for Postgres table `pods`.
@@ -27,9 +36,6 @@ type Pods struct {
 	Serialized   []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (Pods) TableName() string { return "pods" }
-
 // PodsLiveInstances holds the Gorm model for Postgres table `pods_live_instances`.
 type PodsLiveInstances struct {
 	PodsID      string `gorm:"column:pods_id;type:uuid;primaryKey"`
@@ -37,6 +43,3 @@ type PodsLiveInstances struct {
 	ImageDigest string `gorm:"column:imagedigest;type:varchar"`
 	PodsRef     Pods   `gorm:"foreignKey:pods_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (PodsLiveInstances) TableName() string { return "pods_live_instances" }

@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for deployments.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -16,22 +15,51 @@ var (
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
 		GormModel: (*Deployments)(nil),
 		Children: []*postgres.CreateStmts{
-			{
+			&postgres.CreateStmts{
 				GormModel: (*DeploymentsContainers)(nil),
 				Children: []*postgres.CreateStmts{
-					{GormModel: (*DeploymentsContainersEnvs)(nil), Children: []*postgres.CreateStmts{}},
-					{GormModel: (*DeploymentsContainersVolumes)(nil), Children: []*postgres.CreateStmts{}},
-					{GormModel: (*DeploymentsContainersSecrets)(nil), Children: []*postgres.CreateStmts{}},
+					&postgres.CreateStmts{
+						GormModel: (*DeploymentsContainersEnvs)(nil),
+						Children:  []*postgres.CreateStmts{},
+					},
+					&postgres.CreateStmts{
+						GormModel: (*DeploymentsContainersVolumes)(nil),
+						Children:  []*postgres.CreateStmts{},
+					},
+					&postgres.CreateStmts{
+						GormModel: (*DeploymentsContainersSecrets)(nil),
+						Children:  []*postgres.CreateStmts{},
+					},
 				},
 			},
-			{
+			&postgres.CreateStmts{
 				GormModel: (*DeploymentsPorts)(nil),
 				Children: []*postgres.CreateStmts{
-					{GormModel: (*DeploymentsPortsExposureInfos)(nil), Children: []*postgres.CreateStmts{}},
+					&postgres.CreateStmts{
+						GormModel: (*DeploymentsPortsExposureInfos)(nil),
+						Children:  []*postgres.CreateStmts{},
+					},
 				},
 			},
 		},
 	}
+)
+
+const (
+	// DeploymentsTableName specifies the name of the table in postgres.
+	DeploymentsTableName = "deployments"
+	// DeploymentsContainersTableName specifies the name of the table in postgres.
+	DeploymentsContainersTableName = "deployments_containers"
+	// DeploymentsContainersEnvsTableName specifies the name of the table in postgres.
+	DeploymentsContainersEnvsTableName = "deployments_containers_envs"
+	// DeploymentsContainersVolumesTableName specifies the name of the table in postgres.
+	DeploymentsContainersVolumesTableName = "deployments_containers_volumes"
+	// DeploymentsContainersSecretsTableName specifies the name of the table in postgres.
+	DeploymentsContainersSecretsTableName = "deployments_containers_secrets"
+	// DeploymentsPortsTableName specifies the name of the table in postgres.
+	DeploymentsPortsTableName = "deployments_ports"
+	// DeploymentsPortsExposureInfosTableName specifies the name of the table in postgres.
+	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
 )
 
 // Deployments holds the Gorm model for Postgres table `deployments`.
@@ -58,9 +86,6 @@ type Deployments struct {
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (Deployments) TableName() string { return "deployments" }
-
 // DeploymentsContainers holds the Gorm model for Postgres table `deployments_containers`.
 type DeploymentsContainers struct {
 	DeploymentsID                         string                `gorm:"column:deployments_id;type:uuid;primaryKey"`
@@ -83,9 +108,6 @@ type DeploymentsContainers struct {
 	DeploymentsRef                        Deployments           `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// TableName returns the table name for GORM.
-func (DeploymentsContainers) TableName() string { return "deployments_containers" }
-
 // DeploymentsContainersEnvs holds the Gorm model for Postgres table `deployments_containers_envs`.
 type DeploymentsContainersEnvs struct {
 	DeploymentsID            string                                                 `gorm:"column:deployments_id;type:uuid;primaryKey"`
@@ -96,9 +118,6 @@ type DeploymentsContainersEnvs struct {
 	EnvVarSource             storage.ContainerConfig_EnvironmentConfig_EnvVarSource `gorm:"column:envvarsource;type:integer"`
 	DeploymentsContainersRef DeploymentsContainers                                  `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (DeploymentsContainersEnvs) TableName() string { return "deployments_containers_envs" }
 
 // DeploymentsContainersVolumes holds the Gorm model for Postgres table `deployments_containers_volumes`.
 type DeploymentsContainersVolumes struct {
@@ -113,9 +132,6 @@ type DeploymentsContainersVolumes struct {
 	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// TableName returns the table name for GORM.
-func (DeploymentsContainersVolumes) TableName() string { return "deployments_containers_volumes" }
-
 // DeploymentsContainersSecrets holds the Gorm model for Postgres table `deployments_containers_secrets`.
 type DeploymentsContainersSecrets struct {
 	DeploymentsID            string                `gorm:"column:deployments_id;type:uuid;primaryKey"`
@@ -126,9 +142,6 @@ type DeploymentsContainersSecrets struct {
 	DeploymentsContainersRef DeploymentsContainers `gorm:"foreignKey:deployments_id,deployments_containers_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// TableName returns the table name for GORM.
-func (DeploymentsContainersSecrets) TableName() string { return "deployments_containers_secrets" }
-
 // DeploymentsPorts holds the Gorm model for Postgres table `deployments_ports`.
 type DeploymentsPorts struct {
 	DeploymentsID  string                           `gorm:"column:deployments_id;type:uuid;primaryKey"`
@@ -138,9 +151,6 @@ type DeploymentsPorts struct {
 	Exposure       storage.PortConfig_ExposureLevel `gorm:"column:exposure;type:integer"`
 	DeploymentsRef Deployments                      `gorm:"foreignKey:deployments_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (DeploymentsPorts) TableName() string { return "deployments_ports" }
 
 // DeploymentsPortsExposureInfos holds the Gorm model for Postgres table `deployments_ports_exposure_infos`.
 type DeploymentsPortsExposureInfos struct {
@@ -154,9 +164,4 @@ type DeploymentsPortsExposureInfos struct {
 	ExternalIps         *pq.StringArray                  `gorm:"column:externalips;type:text[]"`
 	ExternalHostnames   *pq.StringArray                  `gorm:"column:externalhostnames;type:text[]"`
 	DeploymentsPortsRef DeploymentsPorts                 `gorm:"foreignKey:deployments_id,deployments_ports_idx;references:deployments_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (DeploymentsPortsExposureInfos) TableName() string {
-	return "deployments_ports_exposure_infos"
 }

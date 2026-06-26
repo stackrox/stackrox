@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for compliance_operator_profile_v2.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -13,9 +12,19 @@ var (
 	CreateTableComplianceOperatorProfileV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorProfileV2)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*ComplianceOperatorProfileV2Rules)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorProfileV2Rules)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// ComplianceOperatorProfileV2TableName specifies the name of the table in postgres.
+	ComplianceOperatorProfileV2TableName = "compliance_operator_profile_v2"
+	// ComplianceOperatorProfileV2RulesTableName specifies the name of the table in postgres.
+	ComplianceOperatorProfileV2RulesTableName = "compliance_operator_profile_v2_rules"
 )
 
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
@@ -32,20 +41,10 @@ type ComplianceOperatorProfileV2 struct {
 	Serialized     []byte                                           `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (ComplianceOperatorProfileV2) TableName() string {
-	return "compliance_operator_profile_v2"
-}
-
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.
 type ComplianceOperatorProfileV2Rules struct {
 	ComplianceOperatorProfileV2ID  string                      `gorm:"column:compliance_operator_profile_v2_id;type:varchar;primaryKey"`
 	Idx                            int                         `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorprofilev2rules_idx,type:btree"`
 	RuleName                       string                      `gorm:"column:rulename;type:varchar"`
 	ComplianceOperatorProfileV2Ref ComplianceOperatorProfileV2 `gorm:"foreignKey:compliance_operator_profile_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (ComplianceOperatorProfileV2Rules) TableName() string {
-	return "compliance_operator_profile_v2_rules"
 }

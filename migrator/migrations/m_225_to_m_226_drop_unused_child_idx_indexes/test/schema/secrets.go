@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for secrets.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -15,14 +14,26 @@ var (
 	CreateTableSecretsStmt = &postgres.CreateStmts{
 		GormModel: (*Secrets)(nil),
 		Children: []*postgres.CreateStmts{
-			{
+			&postgres.CreateStmts{
 				GormModel: (*SecretsFiles)(nil),
 				Children: []*postgres.CreateStmts{
-					{GormModel: (*SecretsFilesRegistries)(nil), Children: []*postgres.CreateStmts{}},
+					&postgres.CreateStmts{
+						GormModel: (*SecretsFilesRegistries)(nil),
+						Children:  []*postgres.CreateStmts{},
+					},
 				},
 			},
 		},
 	}
+)
+
+const (
+	// SecretsTableName specifies the name of the table in postgres.
+	SecretsTableName = "secrets"
+	// SecretsFilesTableName specifies the name of the table in postgres.
+	SecretsFilesTableName = "secrets_files"
+	// SecretsFilesRegistriesTableName specifies the name of the table in postgres.
+	SecretsFilesRegistriesTableName = "secrets_files_registries"
 )
 
 // Secrets holds the Gorm model for Postgres table `secrets`.
@@ -36,9 +47,6 @@ type Secrets struct {
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (Secrets) TableName() string { return "secrets" }
-
 // SecretsFiles holds the Gorm model for Postgres table `secrets_files`.
 type SecretsFiles struct {
 	SecretsID   string             `gorm:"column:secrets_id;type:uuid;primaryKey"`
@@ -48,9 +56,6 @@ type SecretsFiles struct {
 	SecretsRef  Secrets            `gorm:"foreignKey:secrets_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// TableName returns the table name for GORM.
-func (SecretsFiles) TableName() string { return "secrets_files" }
-
 // SecretsFilesRegistries holds the Gorm model for Postgres table `secrets_files_registries`.
 type SecretsFilesRegistries struct {
 	SecretsID       string       `gorm:"column:secrets_id;type:uuid;primaryKey"`
@@ -59,6 +64,3 @@ type SecretsFilesRegistries struct {
 	Name            string       `gorm:"column:name;type:varchar"`
 	SecretsFilesRef SecretsFiles `gorm:"foreignKey:secrets_id,secrets_files_idx;references:secrets_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (SecretsFilesRegistries) TableName() string { return "secrets_files_registries" }

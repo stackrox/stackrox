@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for compliance_operator_scan_configuration_v2.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -12,11 +11,31 @@ var (
 	CreateTableComplianceOperatorScanConfigurationV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorScanConfigurationV2)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil), Children: []*postgres.CreateStmts{}},
-			{GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil), Children: []*postgres.CreateStmts{}},
-			{GormModel: (*ComplianceOperatorScanConfigurationV2Notifiers)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorScanConfigurationV2Profiles)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorScanConfigurationV2Clusters)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorScanConfigurationV2Notifiers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// ComplianceOperatorScanConfigurationV2TableName specifies the name of the table in postgres.
+	ComplianceOperatorScanConfigurationV2TableName = "compliance_operator_scan_configuration_v2"
+	// ComplianceOperatorScanConfigurationV2ProfilesTableName specifies the name of the table in postgres.
+	ComplianceOperatorScanConfigurationV2ProfilesTableName = "compliance_operator_scan_configuration_v2_profiles"
+	// ComplianceOperatorScanConfigurationV2ClustersTableName specifies the name of the table in postgres.
+	ComplianceOperatorScanConfigurationV2ClustersTableName = "compliance_operator_scan_configuration_v2_clusters"
+	// ComplianceOperatorScanConfigurationV2NotifiersTableName specifies the name of the table in postgres.
+	ComplianceOperatorScanConfigurationV2NotifiersTableName = "compliance_operator_scan_configuration_v2_notifiers"
 )
 
 // ComplianceOperatorScanConfigurationV2 holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2`.
@@ -27,22 +46,12 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (ComplianceOperatorScanConfigurationV2) TableName() string {
-	return "compliance_operator_scan_configuration_v2"
-}
-
 // ComplianceOperatorScanConfigurationV2Profiles holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_profiles`.
 type ComplianceOperatorScanConfigurationV2Profiles struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
 	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2profiles_idx,type:btree"`
 	ProfileName                              string                                `gorm:"column:profilename;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (ComplianceOperatorScanConfigurationV2Profiles) TableName() string {
-	return "compliance_operator_scan_configuration_v2_profiles"
 }
 
 // ComplianceOperatorScanConfigurationV2Clusters holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_clusters`.
@@ -53,20 +62,10 @@ type ComplianceOperatorScanConfigurationV2Clusters struct {
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
-// TableName returns the table name for GORM.
-func (ComplianceOperatorScanConfigurationV2Clusters) TableName() string {
-	return "compliance_operator_scan_configuration_v2_clusters"
-}
-
 // ComplianceOperatorScanConfigurationV2Notifiers holds the Gorm model for Postgres table `compliance_operator_scan_configuration_v2_notifiers`.
 type ComplianceOperatorScanConfigurationV2Notifiers struct {
 	ComplianceOperatorScanConfigurationV2ID  string                                `gorm:"column:compliance_operator_scan_configuration_v2_id;type:uuid;primaryKey"`
 	Idx                                      int                                   `gorm:"column:idx;type:integer;primaryKey;index:complianceoperatorscanconfigurationv2notifiers_idx,type:btree"`
 	ID                                       string                                `gorm:"column:id;type:varchar"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2 `gorm:"foreignKey:compliance_operator_scan_configuration_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (ComplianceOperatorScanConfigurationV2Notifiers) TableName() string {
-	return "compliance_operator_scan_configuration_v2_notifiers"
 }

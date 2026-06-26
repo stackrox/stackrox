@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for compliance_operator_report_snapshot_v2.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -15,29 +14,35 @@ var (
 	CreateTableComplianceOperatorReportSnapshotV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ComplianceOperatorReportSnapshotV2)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*ComplianceOperatorReportSnapshotV2Scans)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*ComplianceOperatorReportSnapshotV2Scans)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
 )
 
+const (
+	// ComplianceOperatorReportSnapshotV2TableName specifies the name of the table in postgres.
+	ComplianceOperatorReportSnapshotV2TableName = "compliance_operator_report_snapshot_v2"
+	// ComplianceOperatorReportSnapshotV2ScansTableName specifies the name of the table in postgres.
+	ComplianceOperatorReportSnapshotV2ScansTableName = "compliance_operator_report_snapshot_v2_scans"
+)
+
 // ComplianceOperatorReportSnapshotV2 holds the Gorm model for Postgres table `compliance_operator_report_snapshot_v2`.
 type ComplianceOperatorReportSnapshotV2 struct {
-	ReportID                             string                                                    `gorm:"column:reportid;type:uuid;primaryKey"`
-	ScanConfigurationID                  string                                                    `gorm:"column:scanconfigurationid;type:varchar"`
-	Name                                 string                                                    `gorm:"column:name;type:varchar"`
-	ReportStatusRunState                 storage.ComplianceOperatorReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
-	ReportStatusStartedAt                *time.Time                                                `gorm:"column:reportstatus_startedat;type:timestamp"`
-	ReportStatusCompletedAt              *time.Time                                                `gorm:"column:reportstatus_completedat;type:timestamp"`
-	ReportStatusReportRequestType        storage.ComplianceOperatorReportStatus_RunMethod          `gorm:"column:reportstatus_reportrequesttype;type:integer"`
-	ReportStatusReportNotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
-	UserID                               string                                                    `gorm:"column:user_id;type:varchar"`
-	UserName                             string                                                    `gorm:"column:user_name;type:varchar"`
-	Serialized                           []byte                                                    `gorm:"column:serialized;type:bytea"`
-}
-
-// TableName returns the table name for GORM.
-func (ComplianceOperatorReportSnapshotV2) TableName() string {
-	return "compliance_operator_report_snapshot_v2"
+	ReportID                                 string                                                    `gorm:"column:reportid;type:uuid;primaryKey"`
+	ScanConfigurationID                      string                                                    `gorm:"column:scanconfigurationid;type:varchar"`
+	Name                                     string                                                    `gorm:"column:name;type:varchar"`
+	ReportStatusRunState                     storage.ComplianceOperatorReportStatus_RunState           `gorm:"column:reportstatus_runstate;type:integer"`
+	ReportStatusStartedAt                    *time.Time                                                `gorm:"column:reportstatus_startedat;type:timestamp"`
+	ReportStatusCompletedAt                  *time.Time                                                `gorm:"column:reportstatus_completedat;type:timestamp"`
+	ReportStatusReportRequestType            storage.ComplianceOperatorReportStatus_RunMethod          `gorm:"column:reportstatus_reportrequesttype;type:integer"`
+	ReportStatusReportNotificationMethod     storage.ComplianceOperatorReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
+	UserID                                   string                                                    `gorm:"column:user_id;type:varchar"`
+	UserName                                 string                                                    `gorm:"column:user_name;type:varchar"`
+	Serialized                               []byte                                                    `gorm:"column:serialized;type:bytea"`
+	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2                     `gorm:"foreignKey:scanconfigurationid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // ComplianceOperatorReportSnapshotV2Scans holds the Gorm model for Postgres table `compliance_operator_report_snapshot_v2_scans`.
@@ -47,9 +52,4 @@ type ComplianceOperatorReportSnapshotV2Scans struct {
 	ScanRefID                                  string                             `gorm:"column:scanrefid;type:varchar"`
 	LastStartedTime                            *time.Time                         `gorm:"column:laststartedtime;type:timestamp"`
 	ComplianceOperatorReportSnapshotV2Ref      ComplianceOperatorReportSnapshotV2 `gorm:"foreignKey:compliance_operator_report_snapshot_v2_reportid;references:reportid;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (ComplianceOperatorReportSnapshotV2Scans) TableName() string {
-	return "compliance_operator_report_snapshot_v2_scans"
 }

@@ -44,7 +44,6 @@ func (s *migrationTestSuite) dbs() *types.Databases {
 	}
 }
 
-// indexExists checks whether an index with the given name exists in the public schema.
 func (s *migrationTestSuite) indexExists(name string) bool {
 	var n int
 	err := s.db.DB.QueryRow(s.ctx,

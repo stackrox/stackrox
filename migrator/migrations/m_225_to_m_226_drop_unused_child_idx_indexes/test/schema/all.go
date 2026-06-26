@@ -1,14 +1,9 @@
-// Package schema contains frozen pre-migration GORM models for all tables
-// that had standalone child _idx indexes. These models reproduce the old index
-// tags so GORM AutoMigrate creates the indexes that the migration drops.
-
 package schema
 
-import (
-	"github.com/stackrox/rox/pkg/postgres"
-)
+import "github.com/stackrox/rox/pkg/postgres"
 
-// AllCreateStmts aggregates every table's CreateStmts for use in test setup.
+// AllCreateStmts contains the frozen pre-PR#21423 CreateStmts for all tables
+// that had standalone _idx indexes on child table idx columns.
 var AllCreateStmts = []*postgres.CreateStmts{
 	CreateTableAuthMachineToMachineConfigsStmt,
 	CreateTableBaseImagesStmt,

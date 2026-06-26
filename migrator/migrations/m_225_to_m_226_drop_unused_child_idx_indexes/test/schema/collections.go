@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for collections.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -12,9 +11,19 @@ var (
 	CreateTableCollectionsStmt = &postgres.CreateStmts{
 		GormModel: (*Collections)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*CollectionsEmbeddedCollections)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*CollectionsEmbeddedCollections)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// CollectionsTableName specifies the name of the table in postgres.
+	CollectionsTableName = "collections"
+	// CollectionsEmbeddedCollectionsTableName specifies the name of the table in postgres.
+	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
 
 // Collections holds the Gorm model for Postgres table `collections`.
@@ -26,9 +35,6 @@ type Collections struct {
 	Serialized    []byte `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (Collections) TableName() string { return "collections" }
-
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.
 type CollectionsEmbeddedCollections struct {
 	CollectionsID       string      `gorm:"column:collections_id;type:varchar;primaryKey"`
@@ -36,9 +42,4 @@ type CollectionsEmbeddedCollections struct {
 	ID                  string      `gorm:"column:id;type:varchar"`
 	CollectionsRef      Collections `gorm:"foreignKey:collections_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	CollectionsCycleRef Collections `gorm:"foreignKey:id;references:id;belongsTo;constraint:OnDelete:RESTRICT"`
-}
-
-// TableName returns the table name for GORM.
-func (CollectionsEmbeddedCollections) TableName() string {
-	return "collections_embedded_collections"
 }

@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for report_configurations.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -13,9 +12,19 @@ var (
 	CreateTableReportConfigurationsStmt = &postgres.CreateStmts{
 		GormModel: (*ReportConfigurations)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*ReportConfigurationsNotifiers)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*ReportConfigurationsNotifiers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// ReportConfigurationsTableName specifies the name of the table in postgres.
+	ReportConfigurationsTableName = "report_configurations"
+	// ReportConfigurationsNotifiersTableName specifies the name of the table in postgres.
+	ReportConfigurationsNotifiersTableName = "report_configurations_notifiers"
 )
 
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
@@ -29,18 +38,10 @@ type ReportConfigurations struct {
 	Serialized                []byte                                 `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (ReportConfigurations) TableName() string { return "report_configurations" }
-
 // ReportConfigurationsNotifiers holds the Gorm model for Postgres table `report_configurations_notifiers`.
 type ReportConfigurationsNotifiers struct {
 	ReportConfigurationsID  string               `gorm:"column:report_configurations_id;type:varchar;primaryKey"`
 	Idx                     int                  `gorm:"column:idx;type:integer;primaryKey;index:reportconfigurationsnotifiers_idx,type:btree"`
 	ID                      string               `gorm:"column:id;type:varchar"`
 	ReportConfigurationsRef ReportConfigurations `gorm:"foreignKey:report_configurations_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// TableName returns the table name for GORM.
-func (ReportConfigurationsNotifiers) TableName() string {
-	return "report_configurations_notifiers"
 }

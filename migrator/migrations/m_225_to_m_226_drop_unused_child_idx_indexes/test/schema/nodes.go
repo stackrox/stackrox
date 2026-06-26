@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for nodes.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -15,9 +14,19 @@ var (
 	CreateTableNodesStmt = &postgres.CreateStmts{
 		GormModel: (*Nodes)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*NodesTaints)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*NodesTaints)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// NodesTableName specifies the name of the table in postgres.
+	NodesTableName = "nodes"
+	// NodesTaintsTableName specifies the name of the table in postgres.
+	NodesTaintsTableName = "nodes_taints"
 )
 
 // Nodes holds the Gorm model for Postgres table `nodes`.
@@ -42,9 +51,6 @@ type Nodes struct {
 	Serialized              []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (Nodes) TableName() string { return "nodes" }
-
 // NodesTaints holds the Gorm model for Postgres table `nodes_taints`.
 type NodesTaints struct {
 	NodesID     string              `gorm:"column:nodes_id;type:uuid;primaryKey"`
@@ -54,6 +60,3 @@ type NodesTaints struct {
 	TaintEffect storage.TaintEffect `gorm:"column:tainteffect;type:integer"`
 	NodesRef    Nodes               `gorm:"foreignKey:nodes_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (NodesTaints) TableName() string { return "nodes_taints" }

@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for role_bindings.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -13,9 +12,19 @@ var (
 	CreateTableRoleBindingsStmt = &postgres.CreateStmts{
 		GormModel: (*RoleBindings)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*RoleBindingsSubjects)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*RoleBindingsSubjects)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// RoleBindingsTableName specifies the name of the table in postgres.
+	RoleBindingsTableName = "role_bindings"
+	// RoleBindingsSubjectsTableName specifies the name of the table in postgres.
+	RoleBindingsSubjectsTableName = "role_bindings_subjects"
 )
 
 // RoleBindings holds the Gorm model for Postgres table `role_bindings`.
@@ -32,9 +41,6 @@ type RoleBindings struct {
 	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (RoleBindings) TableName() string { return "role_bindings" }
-
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.
 type RoleBindingsSubjects struct {
 	RoleBindingsID  string              `gorm:"column:role_bindings_id;type:uuid;primaryKey"`
@@ -43,6 +49,3 @@ type RoleBindingsSubjects struct {
 	Name            string              `gorm:"column:name;type:varchar"`
 	RoleBindingsRef RoleBindings        `gorm:"foreignKey:role_bindings_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (RoleBindingsSubjects) TableName() string { return "role_bindings_subjects" }

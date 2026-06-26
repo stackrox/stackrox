@@ -1,5 +1,4 @@
-// Frozen pre-migration GORM schema for images_v2.
-// Reproduces old index tags so AutoMigrate creates the _idx indexes that the migration drops.
+// Frozen pre-PR#21423 schema copied from release-4.11.
 
 package schema
 
@@ -15,9 +14,19 @@ var (
 	CreateTableImagesV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ImagesV2)(nil),
 		Children: []*postgres.CreateStmts{
-			{GormModel: (*ImagesV2Layers)(nil), Children: []*postgres.CreateStmts{}},
+			&postgres.CreateStmts{
+				GormModel: (*ImagesV2Layers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
 		},
 	}
+)
+
+const (
+	// ImagesV2TableName specifies the name of the table in postgres.
+	ImagesV2TableName = "images_v2"
+	// ImagesV2LayersTableName specifies the name of the table in postgres.
+	ImagesV2LayersTableName = "images_v2_layers"
 )
 
 // ImagesV2 holds the Gorm model for Postgres table `images_v2`.
@@ -57,9 +66,6 @@ type ImagesV2 struct {
 	Serialized                        []byte            `gorm:"column:serialized;type:bytea"`
 }
 
-// TableName returns the table name for GORM.
-func (ImagesV2) TableName() string { return "images_v2" }
-
 // ImagesV2Layers holds the Gorm model for Postgres table `images_v2_layers`.
 type ImagesV2Layers struct {
 	ImagesV2ID  string   `gorm:"column:images_v2_id;type:varchar;primaryKey"`
@@ -68,6 +74,3 @@ type ImagesV2Layers struct {
 	Value       string   `gorm:"column:value;type:varchar"`
 	ImagesV2Ref ImagesV2 `gorm:"foreignKey:images_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
-
-// TableName returns the table name for GORM.
-func (ImagesV2Layers) TableName() string { return "images_v2_layers" }
