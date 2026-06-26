@@ -15,16 +15,14 @@ import {
 } from './Risk.helpers';
 import { selectors } from './Risk.selectors';
 
-function openEventTimeline() {
+function openEventTimeline(staticResponseMapForDeploymentEventTimeline) {
     visitRiskDeployments('Platform view');
     viewFirstRiskDeployment();
     clickTab('Process discovery');
-    viewGraph();
+    viewGraph(staticResponseMapForDeploymentEventTimeline);
 }
 
-// TODO: vjwilson (2024-05-06) disabled these checks because after the PatternFly 5 upgrade
-//                             the tooltip does not open about 5% of the test runs
-// const fixtureForDeploymentEventTimeline = 'risks/eventTimeline/deploymentEventTimeline.json';
+const fixtureForDeploymentEventTimeline = 'risks/eventTimeline/deploymentEventTimeline.json';
 
 const fixtureForPodEventTimeline = 'risks/eventTimeline/podEventTimeline.json';
 
@@ -37,7 +35,7 @@ describe('Risk Event Timeline for Pod', () => {
 
     describe('Clustering Events', () => {
         it('should show the clustered event markers', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
 
             // mocking data to thoroughly test the clustering
             // click the button and drill down to see containers
@@ -60,7 +58,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('should show the clustered event tooltip', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
 
             // mocking data to thoroughly test the filtering
             // click the button and drill down to see containers
@@ -86,7 +84,7 @@ describe('Risk Event Timeline for Pod', () => {
 
     describe('Filtering Events By Type', () => {
         it('should filter policy violation events', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // the policy violation event should be visible
@@ -103,7 +101,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('should filter process activity events and process in baseline activity events', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // the process activity + process in baseline activity event should be visible
@@ -124,7 +122,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('should filter container restart events', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // the container restart event should be visible
@@ -139,7 +137,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('should filter container termination events', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // the container termination event should be visible
@@ -158,7 +156,7 @@ describe('Risk Event Timeline for Pod', () => {
 
     describe('Event Details', () => {
         it('shows the policy violation event details', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -182,7 +180,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the process activity event details for a process with no parent', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -212,7 +210,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the process activity event details for a process with a parent and unknown parent uid', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -242,7 +240,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the process activity event details for a process with a uid change', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -271,7 +269,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the process activity event details for a process with no uid change', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -300,7 +298,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the process in baseline activity event details', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -329,7 +327,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the container restart event details', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -351,7 +349,7 @@ describe('Risk Event Timeline for Pod', () => {
         });
 
         it('shows the container termination event details', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
             clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // trigger the tooltip
@@ -378,7 +376,7 @@ describe('Risk Event Timeline for Pod', () => {
 
     describe('Pagination', () => {
         it('should be able to page between sets of pods when there are 10+', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
 
             // mocking data to thoroughly test the pagination
             // click the button and drill down to see containers
@@ -402,10 +400,10 @@ describe('Risk Event Timeline for Pod', () => {
 
     describe('Legend', () => {
         it('should show the timeline legend', () => {
-            openEventTimeline();
+            openEventTimeline(fixtureForDeploymentEventTimeline);
 
             // click the button and drill down to see containers
-            clickFirstDrillDownButtonInEventTimeline();
+            clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimeline);
 
             // show the legend
             cy.get(selectors.eventTimeline.legend).click();
