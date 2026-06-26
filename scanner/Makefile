@@ -30,7 +30,7 @@ GOOS := $(HOST_OS)
 
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) $(CURDIR)/../scripts/go-build-file.sh
-GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
+GO_TEST_CMD    = $(GO_BUILD_FLAGS) $(CURDIR)/../scripts/go-test.sh
 
 DOCKERBUILD := $(CURDIR)/../scripts/docker-build.sh
 
