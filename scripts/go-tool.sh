@@ -74,7 +74,7 @@ function invoke_go() {
 
   # STRICTFIPSRUNTIME=true bakes fips140=only into the binary via linker,
   # causing non-FIPS algorithms to error/panic. Applies to all binaries
-  # including those deployed to clusters. Triggered by the ci-fips-strict
+  # including those deployed to clusters. Triggered by the fips-strict
   # PR label. Named to match the old Red Hat OpenSSL-era enforcement mechanism.
   if [[ "${STRICTFIPSRUNTIME:-}" == "true" ]]; then
     cgo_ldflags+=(-X "runtime.godebugDefault=fips140=only")
