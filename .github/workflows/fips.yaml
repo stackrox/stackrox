@@ -122,10 +122,11 @@ jobs:
               continue
             fi
 
-            if podman unshare go run main.go scan operator --verbose --spec "${ref}" 2>&1 \
-                | tee "${logfile}"; then
-              echo "| ${image} | :white_check_mark: pass | |" >> "$GITHUB_STEP_SUMMARY"
-            else
+            podman unshare go run main.go scan operator --verbose --spec "${ref}" 2>&1 \
+                | tee "${logfile}"
+            scan_exit=${PIPESTATUS[0]}
+
+            if [[ $scan_exit -ne 0 ]] || grep -q 'status="failed"' "${logfile}"; then
               (( exitcode++ ))
               details=""
               for status_type in warning failed; do
@@ -136,6 +137,8 @@ jobs:
                 fi
               done
               echo "| ${image} | :x: fail | ${details} |" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "| ${image} | :white_check_mark: pass | |" >> "$GITHUB_STEP_SUMMARY"
             fi
 
             echo "::endgroup::"
