@@ -25,6 +25,7 @@ import (
 const (
 	redHatIntegrationID = "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
 	watchIntervalEnv    = "ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL"
+	offlineModeEnv      = "ROX_OFFLINE_MODE"
 	shortWatchInterval  = "10s"
 
 	testPublicKeyPEM1 = `-----BEGIN PUBLIC KEY-----
@@ -35,6 +36,12 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE16IoQbiiB5exTRLTkl2rn5FuyXys
 	testPublicKeyPEM2 = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQq1X/6XxCA4s0++8Tvl8k+Z0G/GN
 LKpdYJEldXnyRE4ppY5d7vnRZHvdZQMSE3KoRSMvVnzZtc9LTKLB3DlS/w==
+-----END PUBLIC KEY-----
+`
+	// testPublicKeyPEM3 is a third distinct ECDSA P-256 key used as a decoy in offline-mode tests.
+	testPublicKeyPEM3 = `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEY1GlPyRPrzGm1oU5MFfPBr3BXHGZ
+aXKsg3TLHB3M3MiEMOmFjS+eDJg6bqKrqbOwYle6GiN3s7VewDyKzZsYQ==
 -----END PUBLIC KEY-----
 `
 )
@@ -288,4 +295,179 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 		"updater did not download and apply the bundle")
 
 	t.Log("Updater successfully downloaded bundle and applied 2 keys")
+}
+
+func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
+	t := s.T()
+	ns := namespaces.StackRox
+	testCtx, overallCtx, cancel := testContexts(t, "TestOfflineModeIgnoresHTTPUpdater", 10*time.Minute)
+	defer cancel()
+
+	// --- Step 1: Deploy nginx serving a decoy bundle ---
+
+	configMapName := "rh-signing-key-offline-test"
+	deploymentName := "key-bundle-offline-server"
+	bundleURLEnv := "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL"
+	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
+
+	decoyBundle := keyBundle{
+		Keys: []bundleKey{
+			{Name: "updater-decoy-key", PEM: testPublicKeyPEM3},
+		},
+	}
+	decoyBundleJSON, err := json.Marshal(decoyBundle)
+	s.Require().NoError(err)
+
+	s.logf("Creating ConfigMap %q with decoy key bundle", configMapName)
+	s.ensureConfigMapExists(testCtx, ns, configMapName, map[string]string{
+		"bundle.json": string(decoyBundleJSON),
+	})
+
+	defer func() {
+		s.logf("Cleanup: deleting ConfigMap %q", configMapName)
+		_ = s.k8s.CoreV1().ConfigMaps(ns).Delete(overallCtx, configMapName, metaV1.DeleteOptions{})
+	}()
+
+	s.logf("Creating nginx deployment %q", deploymentName)
+	nginxDeploy := &appsV1.Deployment{
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: ns,
+			Labels:    map[string]string{"app": deploymentName},
+		},
+		Spec: appsV1.DeploymentSpec{
+			Replicas: pointers.Int32(1),
+			Selector: &metaV1.LabelSelector{
+				MatchLabels: map[string]string{"app": deploymentName},
+			},
+			Template: coreV1.PodTemplateSpec{
+				ObjectMeta: metaV1.ObjectMeta{
+					Labels: map[string]string{"app": deploymentName},
+				},
+				Spec: coreV1.PodSpec{
+					Containers: []coreV1.Container{{
+						Name:  "nginx",
+						Image: "docker.io/nginxinc/nginx-unprivileged:alpine",
+						Ports: []coreV1.ContainerPort{{ContainerPort: 8080, Protocol: coreV1.ProtocolTCP}},
+						VolumeMounts: []coreV1.VolumeMount{{
+							Name:      "bundle",
+							MountPath: "/usr/share/nginx/html",
+							ReadOnly:  true,
+						}},
+					}},
+					Volumes: []coreV1.Volume{{
+						Name: "bundle",
+						VolumeSource: coreV1.VolumeSource{
+							ConfigMap: &coreV1.ConfigMapVolumeSource{
+								LocalObjectReference: coreV1.LocalObjectReference{Name: configMapName},
+							},
+						},
+					}},
+				},
+			},
+		},
+	}
+	_, err = s.k8s.AppsV1().Deployments(ns).Create(testCtx, nginxDeploy, metaV1.CreateOptions{})
+	s.Require().NoError(err, "creating nginx deployment")
+
+	defer func() {
+		s.logf("Cleanup: deleting deployment %q", deploymentName)
+		_ = s.k8s.AppsV1().Deployments(ns).Delete(overallCtx, deploymentName, metaV1.DeleteOptions{})
+	}()
+
+	s.waitUntilK8sDeploymentReady(testCtx, ns, deploymentName)
+
+	s.createService(testCtx, ns, deploymentName,
+		map[string]string{"app": deploymentName},
+		map[int32]int32{80: 8080})
+
+	defer func() {
+		s.logf("Cleanup: deleting service %q", deploymentName)
+		_ = s.k8s.CoreV1().Services(ns).Delete(overallCtx, deploymentName, metaV1.DeleteOptions{})
+	}()
+
+	bundleURL := fmt.Sprintf("http://%s.%s.svc/bundle.json", deploymentName, ns)
+	s.logf("Bundle URL: %s", bundleURL)
+
+	// --- Step 2: Set env vars on Central with offline mode enabled ---
+
+	defer func() {
+		s.logf("Cleanup: removing env vars from Central")
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", offlineModeEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", bundleURLEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", updateIntervalEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
+		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+	}()
+
+	s.logf("Setting offline mode and updater env vars on central")
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", offlineModeEnv, "true")
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", bundleURLEnv, bundleURL)
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", updateIntervalEnv, "10s")
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+
+	// --- Step 3: Wait for Central to restart ---
+
+	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+
+	// --- Step 4: Verify the HTTP updater did NOT fetch the decoy bundle ---
+	// Wait long enough for the updater to have fired if it were active,
+	// then assert the integration still only has the default key.
+
+	s.logf("Waiting 30s to confirm the HTTP updater is disabled in offline mode")
+	time.Sleep(30 * time.Second)
+
+	rpcCtx, rpcCancel := context.WithTimeout(testCtx, 10*time.Second)
+	defer rpcCancel()
+	resp, err := s.listIntegrations(rpcCtx)
+	s.Require().NoError(err, "listing integrations after offline-mode wait")
+
+	var found bool
+	for _, si := range resp.GetIntegrations() {
+		if si.GetId() != redHatIntegrationID {
+			continue
+		}
+		found = true
+		keys := si.GetCosign().GetPublicKeys()
+		names := make([]string, len(keys))
+		for i, k := range keys {
+			names[i] = k.GetName()
+		}
+		slices.Sort(names)
+		s.Assert().Equal([]string{"release-key-3"}, names,
+			"in offline mode, the HTTP updater should be disabled — only the default key should be present")
+		break
+	}
+	s.Require().True(found, "Red Hat integration %q not found", redHatIntegrationID)
+	t.Log("Confirmed: HTTP updater is disabled in offline mode, only default key present")
+
+	// --- Step 5: Mount a custom bundle via the file watcher path ---
+
+	watcherBundle := keyBundle{
+		Keys: []bundleKey{
+			{Name: "offline-watcher-key-1", PEM: testPublicKeyPEM1},
+			{Name: "offline-watcher-key-2", PEM: testPublicKeyPEM2},
+		},
+	}
+	watcherBundleJSON, err := json.Marshal(watcherBundle)
+	s.Require().NoError(err)
+
+	b64 := base64.StdEncoding.EncodeToString(watcherBundleJSON)
+	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
+
+	s.logf("Writing watcher bundle to Central pod")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
+
+	defer func() {
+		s.logf("Cleanup: removing watcher bundle file")
+		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
+	}()
+
+	// --- Step 6: Wait for the watcher to pick up the file ---
+
+	s.logf("Waiting for watcher to pick up the bundle in offline mode")
+	s.waitForIntegrationKeys(testCtx, []string{"offline-watcher-key-1", "offline-watcher-key-2"},
+		"watcher did not pick up the bundle file in offline mode")
+
+	t.Log("Watcher successfully picked up bundle in offline mode — test passed")
 }
