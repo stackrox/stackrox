@@ -12,7 +12,6 @@ on:
     types:
     - opened
     - reopened
-    - labeled
     - synchronize
 
 defaults:
