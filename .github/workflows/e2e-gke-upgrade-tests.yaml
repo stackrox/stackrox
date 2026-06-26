@@ -146,7 +146,8 @@ jobs:
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
       run: |
-        export GOPATH="$(go env GOPATH)"
+        GOPATH="$(go env GOPATH)"
+        export GOPATH
         export PATH="${GOPATH}/bin:${PATH}"
         tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
@@ -291,7 +292,8 @@ jobs:
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
       run: |
-        export GOPATH="$(go env GOPATH)"
+        GOPATH="$(go env GOPATH)"
+        export GOPATH
         export PATH="${GOPATH}/bin:${PATH}"
         tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
         # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
