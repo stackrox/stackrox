@@ -40,6 +40,32 @@ message ComplianceRule {
     CUSTOM_RULE = 2;
   }
   OperatorKind operator_kind = 16;
+
+  // CEL rule fields. Populated for rules with scanner_type "CEL".
+  string scanner_type = 17;
+  string expression = 18;
+  // CelInput represents a Kubernetes resource input for a CEL rule expression.
+  message CelInput {
+    string name = 1;
+    string api_group = 2;
+    string api_version = 3;
+    string resource = 4;
+    string resource_namespace = 5;
+    string resource_name = 6;
+  }
+  repeated CelInput inputs = 19;
+  string failure_reason = 20;
+
+  // CustomRuleDetails contains validation lifecycle fields specific to
+  // Compliance Operator CustomRule resources. Only set when operator_kind
+  // is CUSTOM_RULE.
+  message CustomRuleDetails {
+    // phase is the validation phase of the CustomRule ("Ready" or "Error").
+    string phase = 1;
+    // error_message contains the validation error when phase is "Error".
+    string error_message = 2;
+  }
+  CustomRuleDetails custom_rule_details = 21;
 }
 
 enum ComplianceCheckStatus {
