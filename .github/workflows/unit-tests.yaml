@@ -34,6 +34,8 @@ jobs:
         ^.github/actions/job-preamble/
 
   go:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -106,6 +108,8 @@ jobs:
         directory: 'junit-reports'
 
   go-postgres:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -194,6 +198,8 @@ jobs:
   # they compile and execute without errors. A single postgres version is
   # sufficient since go-postgres already tests against multiple versions.
   go-bench:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     env:
       BUILD_TAG: 0.0.0
@@ -356,6 +362,8 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -400,6 +408,8 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -436,6 +446,8 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
@@ -454,6 +466,8 @@ jobs:
         run: make -C .openshift-ci test
 
   sensor-integration-tests:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     env:
       KUBECONFIG: "/tmp/kubeconfig"
     runs-on: ubuntu-latest

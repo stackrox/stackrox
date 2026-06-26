@@ -122,6 +122,11 @@ func New(db postgres.DB) Store {
             {{- end }}
             scanRow,
             scanRows,
+            {{- if .Schema.Children }}
+            fetchChildren,
+            {{- else }}
+            nil,
+            {{- end }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
             isUpsertAllowed,
@@ -150,6 +155,11 @@ func New(db postgres.DB) Store {
             {{- end }}
             scanRow,
             scanRows,
+            {{- if .Schema.Children }}
+            fetchChildren,
+            {{- else }}
+            nil,
+            {{- end }}
             metricsSetAcquireDBConnDuration,
             metricsSetPostgresOperationDurationTime,
             targetResource,
@@ -469,6 +479,93 @@ func scanRows(rows pgx.Rows) ([]*storeType, error) {
 }
 
 // endregion No-serialized scan functions
+
+{{- if .Schema.Children }}
+// region Child table fetching
+
+func fetchChildren(ctx context.Context, db postgres.Queryable, objs []*storeType) error {
+    if len(objs) == 0 {
+        return nil
+    }
+    objsByID := make(map[string]*storeType, len(objs))
+    ids := make([]string, 0, len(objs))
+    for _, obj := range objs {
+        id := pkGetter(obj)
+        objsByID[id] = obj
+        ids = append(ids, id)
+    }
+
+    {{- range $child := .Schema.Children }}
+    {
+        {{- $fkFields := $child.FieldsReferringToParent }}
+        {{- $fkField := index $fkFields 0 }}
+        rows, err := db.Query(ctx,
+            "SELECT {{template "commaSeparatedColumns" $child.DBColumnFields}} FROM {{$child.Table}} WHERE {{$fkField.ColumnName}} = ANY($1::uuid[]) ORDER BY {{$fkField.ColumnName}}, idx",
+            ids)
+        if err != nil {
+            return err
+        }
+        defer rows.Close()
+        for rows.Next() {
+            var parentID string
+            var idx int
+            child := &{{trimPrefix "*" $child.Type}}{}
+            {{- range $field := $child.DBColumnFields }}
+            {{- if $field.Options.Reference }}
+            {{- else if eq $field.ColumnName "idx" }}
+            {{- else if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+            var col_{{$field.ColumnName}} *time.Time
+            {{- else if eq $field.SQLType "uuid" }}
+            var col_{{$field.ColumnName}} *string
+            {{- end }}
+            {{- end }}
+
+            if err := rows.Scan(
+                &parentID,
+                &idx,
+                {{- range $field := $child.DBColumnFields }}
+                {{- if $field.Options.Reference }}
+                {{- else if eq $field.ColumnName "idx" }}
+                {{- else if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+                &col_{{$field.ColumnName}},
+                {{- else if eq $field.SQLType "uuid" }}
+                &col_{{$field.ColumnName}},
+                {{- else }}
+                &{{$field.Setter "child"}},
+                {{- end }}
+                {{- end }}
+            ); err != nil {
+                return err
+            }
+            {{- range $field := $child.DBColumnFields }}
+            {{- if $field.Options.Reference }}
+            {{- else if eq $field.ColumnName "idx" }}
+            {{- else if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
+            if col_{{$field.ColumnName}} != nil {
+                {{$field.Setter "child"}} = protocompat.ConvertTimeToTimestampOrNil(col_{{$field.ColumnName}})
+            }
+            {{- else if eq $field.SQLType "uuid" }}
+            if col_{{$field.ColumnName}} != nil {
+                {{$field.Setter "child"}} = *col_{{$field.ColumnName}}
+            }
+            {{- end }}
+            {{- end }}
+            parent, ok := objsByID[parentID]
+            if !ok {
+                continue
+            }
+            parent.{{objectGetterToSetter $child.ObjectGetter}} = append(parent.{{objectGetterToSetter $child.ObjectGetter}}, child)
+        }
+        if err := rows.Err(); err != nil {
+            return err
+        }
+    }
+    {{- end }}
+    return nil
+}
+
+// endregion Child table fetching
+{{- end }}
 {{- end }}
 
 // endregion Helper functions
