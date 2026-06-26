@@ -56,6 +56,12 @@ jobs:
 
   gke-db-backup-restore-test:
     needs: [ wait-for-images ]
+    if: >-
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test') ||
+        !github.event.pull_request.draft
+      )
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}

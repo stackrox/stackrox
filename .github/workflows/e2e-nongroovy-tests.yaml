@@ -52,6 +52,12 @@ jobs:
 
   gke-nongroovy-e2e-tests:
     needs: [ wait-for-images ]
+    if: >-
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests') ||
+        !github.event.pull_request.draft
+      )
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
