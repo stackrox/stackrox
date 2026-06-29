@@ -111,7 +111,7 @@ type clientSetImpl struct {
 	openshiftOperator operatorVersioned.Interface
 }
 
-// RESTConfig returns nil for the fake client (no real cluster)
+// RESTConfig returns the REST configuration injected via WithRESTConfig, or nil if none was set.
 func (c *clientSetImpl) RESTConfig() *rest.Config {
 	return c.restConfig
 }

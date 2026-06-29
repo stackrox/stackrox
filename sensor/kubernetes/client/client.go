@@ -19,6 +19,8 @@ var (
 
 // Interface implements an interface that bridges Kubernetes and Openshift
 type Interface interface {
+	// RESTConfig returns the underlying REST configuration.
+	// Callers must not modify the returned value; use rest.CopyConfig first if mutation is needed.
 	RESTConfig() *rest.Config
 	Kubernetes() kubernetes.Interface
 	Dynamic() dynamic.Interface

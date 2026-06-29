@@ -14,11 +14,11 @@ func TestWorkloadManagerClientRESTConfigReturnsConfiguredValue(t *testing.T) {
 	workloadFile := filepath.Join(t.TempDir(), "workload.yaml")
 	require.NoError(t, os.WriteFile(workloadFile, []byte("{}\n"), 0o600))
 
+	wantConfig := &rest.Config{Host: "https://example.stackrox.invalid"}
 	config := ConfigDefaults().
 		WithWorkloadFile(workloadFile).
-		WithStoragePath("")
-	wantConfig := &rest.Config{Host: "https://example.stackrox.invalid"}
-	config.WithRESTConfig(wantConfig)
+		WithStoragePath("").
+		WithRESTConfig(wantConfig)
 
 	manager := NewWorkloadManager(config)
 	require.NotNil(t, manager)
