@@ -29,9 +29,6 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests')
       )
     runs-on: ubuntu-slim
-    env:
-      # TODO: undo before merging
-      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
     steps:
     - name: Checkout repo
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
