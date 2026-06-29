@@ -185,11 +185,14 @@ func Test_OutputQueue_DetectorCalls(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			det := mocks.NewMockDetector(ctrl)
 			det.EXPECT().ReprocessDeployments("dep-a", "dep-b")
+			done := make(chan struct{})
 			det.EXPECT().ProcessDeployment(
 				gomock.Any(),
 				gomock.Any(),
 				gomock.Eq(central.ResourceAction_CREATE_RESOURCE),
-			)
+			).Do(func(context.Context, *storage.Deployment, central.ResourceAction) {
+				close(done)
+			})
 
 			env := newOutputTestEnv(t, det, pubsubEnabled, 10)
 			assert.NoError(t, env.queue.Start())
@@ -205,6 +208,12 @@ func Test_OutputQueue_DetectorCalls(t *testing.T) {
 					},
 				},
 			})
+
+			select {
+			case <-done:
+			case <-time.After(waitTimeout):
+				t.Fatal("timed out waiting for detector calls")
+			}
 		})
 	}
 }
