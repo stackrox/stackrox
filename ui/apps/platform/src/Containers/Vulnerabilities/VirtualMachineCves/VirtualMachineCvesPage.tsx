@@ -6,6 +6,7 @@ import PageTitle from 'Components/PageTitle';
 import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import usePermissions from 'hooks/usePermissions';
 import VirtualMachineCvesOverviewPage from './Overview/VirtualMachineCvesOverviewPage';
+import VirtualMachineCvePage from './VirtualMachineCve/VirtualMachineCvePage';
 import VirtualMachinePage from './VirtualMachine/VirtualMachinePage';
 
 function VirtualMachineCvesPage() {
@@ -17,6 +18,7 @@ function VirtualMachineCvesPage() {
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Routes>
                 <Route index element={<VirtualMachineCvesOverviewPage />} />
+                <Route path="cves/:cveId" element={<VirtualMachineCvePage />} />
                 <Route path="virtualmachines/:virtualMachineId" element={<VirtualMachinePage />} />
                 <Route
                     path="*"

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, Pagination } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
@@ -11,6 +12,7 @@ import { listVMCVEs } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
 
@@ -73,7 +75,14 @@ function VirtualMachineCVEsTable() {
                                 return (
                                     <Tr key={virtualMachineCve.cve}>
                                         <Td dataLabel="CVE" modifier="nowrap">
-                                            {virtualMachineCve.cve}
+                                            <Link
+                                                to={getVirtualMachineEntityPagePath(
+                                                    'CVE',
+                                                    virtualMachineCve.cve
+                                                )}
+                                            >
+                                                {virtualMachineCve.cve}
+                                            </Link>
                                         </Td>
                                         <Td dataLabel="Virtual machines by severity">
                                             <SeverityCountLabels
