@@ -76,13 +76,12 @@ use `roxie teardown all`.
 Usually one can rely on roxie managing the operator under the hood, it doesn't need to be explicitly
 torn down or reinstalled.
 
-When roxie succeeds (exit code 0), it can be assumed that the deployment succeeded.
-For extra verification, `kubectl` can be used for checking deployment health.
-
+When roxie succeeds (exit code 0), this means that the command completed successfully.
 When roxie deploys with `earlyReadiness: true` (default), roxie only waits until the deployments
 "central" and/or "sensor" are ready. If `earlyReadiness: false` is used, roxie waits for all
 workloads to be ready. Hence, it is normal that, by default, not all deployments are ready when
 roxie returns.
+In any case, for extra verification, `kubectl` can be used for checking deployment health.
 
 ## Crafting configs and invocations
 
