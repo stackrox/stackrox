@@ -215,7 +215,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2@sha256:89da85c1508b3a2b7ad884c1215b9fd3a7d9e28c2335aca6750948d129707035
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2@sha256:52827a47564514f6accab971b8fad4f1c1cf59997507ed7c4e534615eeeae567
         - name: kind
           value: task
         resolver: bundles
@@ -434,7 +434,7 @@ spec:
         - name: name
           value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.10@sha256:26a1aac6cd89b951b4639a923fec0f832ac3ff4cad57c5e46420cc3c4001a9c1
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.10@sha256:ae1b7a3010b37c55b7702de7a9d3ab61410f7931d1a77f15b3809395d31a9346
         - name: kind
           value: task
         resolver: bundles
