@@ -3,6 +3,7 @@ package custom
 import (
 	"net/http"
 
+	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -39,6 +40,7 @@ func Singleton() Runner {
 			clusterDS.Singleton(),
 			policyDS.Singleton(),
 			expiryS.Singleton(),
+			adminEventDS.Singleton(),
 		})
 		go runner.initialize(configDS.Singleton())
 	})
