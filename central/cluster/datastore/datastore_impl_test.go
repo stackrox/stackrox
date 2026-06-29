@@ -151,6 +151,7 @@ func (s *clusterDataStoreTestSuite) SetupTest() {
 
 func (s *clusterDataStoreTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	refresh.SetSingleton(nil)
 
 	// reset caches
 	s.datastore.idToNameCache = simplecache.New()
