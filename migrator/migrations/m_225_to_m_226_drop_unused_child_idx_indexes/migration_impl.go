@@ -46,7 +46,7 @@ var (
 
 func migrate(database *types.Databases) error {
 	for _, name := range indexesToDrop {
-		stmt := fmt.Sprintf("DROP INDEX IF EXISTS %s", name)
+		stmt := fmt.Sprintf("DROP INDEX CONCURRENTLY IF EXISTS %s", name)
 		if _, err := database.PostgresDB.Exec(database.DBCtx, stmt); err != nil {
 			return fmt.Errorf("dropping index %s: %w", name, err)
 		}
