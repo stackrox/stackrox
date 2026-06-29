@@ -6,8 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
@@ -38,7 +36,6 @@ func (ds *datastoreImpl) AddEvent(ctx context.Context, event *events.Administrat
 	if err := ds.writer.Upsert(ctx, event); err != nil {
 		return errors.Wrap(err, "failed to upsert administration event")
 	}
-	refresh.RefreshTracker(metrics.AdminEvents)
 	return nil
 }
 
