@@ -87,7 +87,7 @@ function VirtualMachinesCvesTableEnhanced() {
         () => listVMs({ searchFilter, page, perPage, sortOption }),
         [searchFilter, page, perPage, sortOption]
     );
-    const { data, isLoading, error } = useRestQuery(fetchVMs);
+    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const tableState = getTableUIState({
         isLoading,
         data: data?.vms ?? [],
