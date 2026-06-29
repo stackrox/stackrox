@@ -41,7 +41,7 @@ roxie deploy --envrc $ROXIE_ENVRC ...
 After deployment:
 1. Tell the user the envrc file path.
 1. Don't show the envrc file contents automatically, since it contains sensitive data.
-   You can show its contents, if the user explicitly aasks for it.
+   You can show its contents, if the user explicitly asks for it.
 1. For subsequent roxie commands that depend on this environment (e.g. deploying a secured cluster
    after central), source the envrc file before running the command:
    `source $ROXIE_ENVRC && roxie deploy securedcluster ...`
