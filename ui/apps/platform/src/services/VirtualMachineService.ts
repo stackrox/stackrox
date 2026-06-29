@@ -101,3 +101,26 @@ export function listVMs({
         .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
+
+export type VMCVEListItem = {
+    cve: string;
+    vmSeverityCounts: VulnCountBySeverity;
+    topCvss: number;
+    cvssVersion: string;
+    affectedVmCount: number;
+    totalVmCount: number;
+    epssProbability: number;
+    publishedOn: string; // ISO 8601 date string
+};
+
+export type ListVMCVEsResponse = {
+    cves: VMCVEListItem[];
+    totalCount: number;
+};
+
+export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage });
+    return axios
+        .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
+        .then((response) => response.data);
+}
