@@ -31,6 +31,9 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
+    env:
+      # TODO: Remove the override
+      MAIN_IMAGE_TAG: 4.12.x-nightly-20260629
     steps:
     - name: Checkout repo
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
