@@ -25,23 +25,32 @@ alternatively -- use `scripts/roxie.sh`, a wrapper that downloads roxie automati
 ## Usage
 
 See @deploy/README.md, specifically the section "Usage" for documentation on how to use roxie.
-The config file schema described there might not be 100% up-to-date. To see the latest config struct, use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/internal/deployer/config.go.
+The config file schema described there might not be 100% up-to-date. To see the latest config struct,
+use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/internal/deployer/config.go.
 
 ## Non-interactive mode (important for agents)
 
 roxie's default interactive mode spawns a sub-shell after deployment, which agents cannot use.
 When invoking roxie, always use `--envrc <path>` to write the post-deployment environment
 (endpoint URL, admin password, etc.) to a file instead. Use a temporary file path, e.g.
-`--envrc /tmp/roxie-envrc-central.sh`.
+```
+ROXIE_ENVRC=$(mktemp)
+roxie deploy --envrc $ROXIE_ENVRC ...
+```
 
 After deployment:
-1. Tell the user the envrc file path and show its contents.
+1. Tell the user the envrc file path.
+1. Don't show the envrc file contents automatically, since it contains sensitive data.
+   You can show its contents, if the user explicitly aasks for it.
 1. For subsequent roxie commands that depend on this environment (e.g. deploying a secured cluster
    after central), source the envrc file before running the command:
-   `source /tmp/roxie-envrc-central.sh && roxie deploy securedcluster ...`
+   `source $ROXIE_ENVRC && roxie deploy securedcluster ...`
+1. When the envrc file is not needed anymore (e.g. in a central teardown or central redeployment),
+   delete the envrc file.
 
 Note, in case the human user is intending to deploy in interactive mode, it is perfectly fine
 to suggest roxie commands without `--envrc`. The interactive sub-shell might be useful for the user.
+It also has the advantage that no envrc file needs to be cleaned up.
 Using the non-interactive mode with `--envrc` is useful in automated flows or when an agent
 is tasked with deploying ACS.
 
