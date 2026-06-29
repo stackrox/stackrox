@@ -1,0 +1,76 @@
+// Frozen pre-PR#21423 schema copied from release-4.11.
+
+package schema
+
+import (
+	"time"
+
+	"github.com/lib/pq"
+	"github.com/stackrox/rox/pkg/postgres"
+)
+
+var (
+	// CreateTableImagesV2Stmt holds the create statement for table `images_v2`.
+	CreateTableImagesV2Stmt = &postgres.CreateStmts{
+		GormModel: (*ImagesV2)(nil),
+		Children: []*postgres.CreateStmts{
+			{
+				GormModel: (*ImagesV2Layers)(nil),
+				Children:  []*postgres.CreateStmts{},
+			},
+		},
+	}
+)
+
+const (
+	// ImagesV2TableName specifies the name of the table in postgres.
+	ImagesV2TableName = "images_v2"
+	// ImagesV2LayersTableName specifies the name of the table in postgres.
+	ImagesV2LayersTableName = "images_v2_layers"
+)
+
+// ImagesV2 holds the Gorm model for Postgres table `images_v2`.
+type ImagesV2 struct {
+	ID                                string            `gorm:"column:id;type:varchar;primaryKey"`
+	Digest                            string            `gorm:"column:digest;type:varchar"`
+	NameRegistry                      string            `gorm:"column:name_registry;type:varchar"`
+	NameRemote                        string            `gorm:"column:name_remote;type:varchar"`
+	NameTag                           string            `gorm:"column:name_tag;type:varchar"`
+	NameFullName                      string            `gorm:"column:name_fullname;type:varchar"`
+	MetadataV1Created                 *time.Time        `gorm:"column:metadata_v1_created;type:timestamp"`
+	MetadataV1User                    string            `gorm:"column:metadata_v1_user;type:varchar"`
+	MetadataV1Command                 *pq.StringArray   `gorm:"column:metadata_v1_command;type:text[]"`
+	MetadataV1Entrypoint              *pq.StringArray   `gorm:"column:metadata_v1_entrypoint;type:text[]"`
+	MetadataV1Volumes                 *pq.StringArray   `gorm:"column:metadata_v1_volumes;type:text[]"`
+	MetadataV1Labels                  map[string]string `gorm:"column:metadata_v1_labels;type:jsonb"`
+	ScanScanTime                      *time.Time        `gorm:"column:scan_scantime;type:timestamp"`
+	ScanOperatingSystem               string            `gorm:"column:scan_operatingsystem;type:varchar"`
+	SignatureFetched                  *time.Time        `gorm:"column:signature_fetched;type:timestamp"`
+	ScanStatsComponentCount           int32             `gorm:"column:scanstats_componentcount;type:integer"`
+	ScanStatsCveCount                 int32             `gorm:"column:scanstats_cvecount;type:integer"`
+	ScanStatsFixableCveCount          int32             `gorm:"column:scanstats_fixablecvecount;type:integer"`
+	ScanStatsUnknownCveCount          int32             `gorm:"column:scanstats_unknowncvecount;type:integer"`
+	ScanStatsFixableUnknownCveCount   int32             `gorm:"column:scanstats_fixableunknowncvecount;type:integer"`
+	ScanStatsCriticalCveCount         int32             `gorm:"column:scanstats_criticalcvecount;type:integer"`
+	ScanStatsFixableCriticalCveCount  int32             `gorm:"column:scanstats_fixablecriticalcvecount;type:integer"`
+	ScanStatsImportantCveCount        int32             `gorm:"column:scanstats_importantcvecount;type:integer"`
+	ScanStatsFixableImportantCveCount int32             `gorm:"column:scanstats_fixableimportantcvecount;type:integer"`
+	ScanStatsModerateCveCount         int32             `gorm:"column:scanstats_moderatecvecount;type:integer"`
+	ScanStatsFixableModerateCveCount  int32             `gorm:"column:scanstats_fixablemoderatecvecount;type:integer"`
+	ScanStatsLowCveCount              int32             `gorm:"column:scanstats_lowcvecount;type:integer"`
+	ScanStatsFixableLowCveCount       int32             `gorm:"column:scanstats_fixablelowcvecount;type:integer"`
+	LastUpdated                       *time.Time        `gorm:"column:lastupdated;type:timestamp"`
+	Priority                          int64             `gorm:"column:priority;type:bigint"`
+	RiskScore                         float32           `gorm:"column:riskscore;type:numeric"`
+	TopCvss                           float32           `gorm:"column:topcvss;type:numeric"`
+	Serialized                        []byte            `gorm:"column:serialized;type:bytea"`
+}
+
+// ImagesV2Layers holds the Gorm model for Postgres table `images_v2_layers`.
+type ImagesV2Layers struct {
+	ImagesV2ID  string   `gorm:"column:images_v2_id;type:varchar;primaryKey"`
+	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:imagesv2layers_idx,type:btree"`
+	Instruction string   `gorm:"column:instruction;type:varchar"`
+	Value       string   `gorm:"column:value;type:varchar"`
+	ImagesV2Ref ImagesV2 `gorm:"foreignKey:images_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+}
