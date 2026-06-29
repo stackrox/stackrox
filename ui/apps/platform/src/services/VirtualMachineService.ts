@@ -118,6 +118,26 @@ export type ListVMCVEsResponse = {
     totalCount: number;
 };
 
+export type VMCVEDetail = {
+    cve: string;
+    summary: string;
+    link: string;
+    epssProbability: number;
+    publishedOn: string;
+    firstDiscovered: string;
+    affectedVmCount: number;
+    totalVmCount: number;
+    affectedGuestOsCount: number;
+    vmSeverityCounts: VulnCountBySeverity;
+    topCvss: number;
+};
+
+export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+    return axios
+        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .then((response) => response.data);
+}
+
 export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
     const params = buildNestedRawQueryParams({ page, perPage });
     return axios
