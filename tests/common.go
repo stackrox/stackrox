@@ -991,7 +991,11 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			require.NoError(ks.T(), ctx.Err())
 		case <-ticker.C:
 			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
-			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
+			if err != nil {
+				require.False(ks.T(), apiErrors.IsNotFound(err), "deployment %q not found in namespace %q", deploymentName, namespace)
+				ks.logf("transient error getting deployment %q from namespace %q: %v", deploymentName, namespace, err)
+				continue
+			}
 
 			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
 				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation %d", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
@@ -1040,7 +1044,11 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentGenerationReady(ctx context.Con
 			require.NoError(ks.T(), ctx.Err())
 		case <-ticker.C:
 			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
-			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
+			if err != nil {
+				require.False(ks.T(), apiErrors.IsNotFound(err), "deployment %q not found in namespace %q", deploymentName, namespace)
+				ks.logf("transient error getting deployment %q from namespace %q: %v", deploymentName, namespace, err)
+				continue
+			}
 
 			currentGen := deploy.GetGeneration()
 			if currentGen >= targetGeneration {

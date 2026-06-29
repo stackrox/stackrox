@@ -1,7 +1,5 @@
 # Deploying StackRox Dev Versions
 
-## Deploying with roxie (recommended)
-
 The legacy deploy scripts have served us well, but over time their configuration
 grew into a maze of environment variables scattered across many files, each
 subtly influencing deployment behavior. This makes them hard to maintain,
@@ -14,27 +12,20 @@ Its core idea is simple: It uses **one self-contained configuration
 file for reproducible deployments**, instead of implicitly picking up dozens of
 environment variables.
 
-### Running roxie directly
+## Deploying with roxie (recommended)
 
-The recommended way is to install roxie natively on your machine (see
-https://github.com/stackrox/roxie for installation instructions) and use it
-directly from the command line, e.g.
+### Installation
 
-```bash
-roxie deploy --tag <stackrox main image tag>
-```
+Installation of roxie is straightforward:
+1. there are executables for released versions which can be fetched from https://github.com/stackrox/roxie/releases
+1. with a properly set up Go dev environment, the roxie repo can be checked out and roxie can be built
+   with `make build` or `make install`.
+1. there is the script wrapper `scripts/roxie.sh`, which handles the downloading of roxie automatically under
+   the hood.
+1. there is also a containerized version of roxie living at quay.io/rhacs-eng/roxie, which can be used ad-hoc.
 
-for deploying the whole stack consisting of the operator, Central and SecuredCluster.
-
-#### Shell script wrapper
-
-For addressing muscle memory habits, `deploy.sh` can invoke roxie under the hood when you
-opt-in into this behavior:
-
-```bash
-export USE_ROXIE_DEPLOY=true
-./deploy/deploy.sh
-```
+Furthermore, the `deploy/deploy.sh` shell script supports a roxie backend: set `USE_ROXIE_DEPLOY=true` in the
+environment and it will automatically download and run the roxie version specified in the `ROXIE_VERSION` file.
 
 Any extra arguments you pass to `deploy.sh` are forwarded directly to roxie,
 so you can use roxie CLI flags even with `deploy.sh`, e.g.:
@@ -46,7 +37,42 @@ so you can use roxie CLI flags even with `deploy.sh`, e.g.:
 The roxie backend in `deploy.sh` is **opt-in** for now. Over time, we expect it to
 become opt-out, and eventually the legacy deployment scripts will be removed entirely.
 
-### Configuration: environment variables vs. config file
+If you would like to use roxie directly, but roxie is not installed on your system, all `roxie`
+commands below can also be run via `scripts/roxie.sh` instead:
+
+```
+❯ ./scripts/roxie.sh --help
+
+roxie is a fast, developer-friendly CLI to deploy and manage
+Red Hat Advanced Cluster Security (ACS) on any Kubernetes/OpenShift cluster.
+
+Usage:
+  roxie [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  deploy      Deploy ACS components
+  help        Help about any command
+  logs        View logs for ACS components
+  shell       Open a subshell for an existing ACS Central deployment
+  teardown    Teardown ACS components
+  version     Print version information
+
+Flags:
+      --dry-run   Do not actually modify cluster
+  -h, --help      help for roxie
+  -v, --verbose   Enable verbose output (show CRs)
+
+Use "roxie [command] --help" for more information about a command.
+```
+
+### Usage
+
+roxie is designed as a standard CLI tool built around the notion of sub-commands.
+The following focuses on the most important commands and flags, for a complete description
+of roxies command line interface, please use `roxie --help`.
+
+#### Configuration: environment variables vs. config file
 
 The old scripts picked up configuration from the shell environment -- feature
 flags, image tags, storage settings, and more. This is convenient at first, but
@@ -83,85 +109,144 @@ roxie deploy --features ROX_NETWORK_GRAPH_EXTERNAL_IPS,-ROX_CISA_KEV
 ./deploy/deploy.sh --features ROX_NETWORK_GRAPH_EXTERNAL_IPS
 ```
 
-### The roxie config file
+### Deployment
 
-Instead of juggling `--set` flags, you can write a YAML config file. This is
-the recommended approach for anything beyond the simplest deployments. The
-config file has two main sections -- `central` and `securedCluster` -- whose
-`spec` fields correspond directly to the
-[Central](https://docs.openshift.com/acs/operating/manage-central.html) and
-[SecuredCluster](https://docs.openshift.com/acs/operating/manage-secured-clusters.html)
-CRD specifications. This means you can customize your deployment in any way
-the CRDs support.
+One of the most important commands is `roxie deploy <component>`, where component can be one of
+1. central
+1. securedcluster
+1. both
 
-Here's an example config file (`my-deployment.yml`):
+Note that specifying "both" is optional -- leaving it out does the same thing.
+
+For example, to deploy the whole stack to your current cluster context use
+```
+roxie deploy [ <roxie args> ... ] --tag <main tag>
+```
+or alternatively
+```
+export USE_ROXIE_DEPLOY=true
+MAIN_IMAGE_TAG=<main tag> ./deploy/deploy.sh [ <roxie args> ... ]
+```
+
+roxie supports two distinct modes of operation:
+1. Interactive mode: after deployment a sub-shell is spawned in which the environment is set up automatically
+   for interacting with central (most importantly endpoint and authentication information).
+1. Non-interactive mode: after the deployment the environmental information for communicating with central
+   is written into an envrc-style file which can then be used by the user as desired -- sourced, propagated, etc.
+
+#### Deployment Configuration Schema
+
+There exist several flags for influencing the deployment behavior. With the exception of very few
+special flags, there exist corresponding fields in a "roxie config YAML file", which can be passed
+with `--config`. The config file has this structure:
 
 ```yaml
 roxie:
-  # Image tag to deploy can also be set in the config file.
-  version: "4.11.0"
+  version: "<a main image tag>" # The same as `MAIN_IMAGE_TAG` used in other places in this repo.
+  konfluxImages: <bool> # Only use this if you need to deploy downstream images
+                        # (Konflux building pipelines must have passed for this to work).
+  featureFlags:
+    ROX_FEATURE_FLAG_A: "true"
+    ROX_FEATURE_FLAG_B: "false"
+  clusterType: "<string representation of the cluster type>" # Usually not needed, since this is auto-detected.
+
+operator:
+  skipDeployment: <bool> # Useful when running the operator using `make -C operator run` locally
+                         # and roxie shouldn't interfere with that.
+  deployViaOlm: <bool> # By default roxie deploys without olm.
+  version: "<string representation of the operator tag>" # This is usually derived from roxie.version.
+  envVars:
+    ENV_VAR_A: "Value for ENV_VAR_A"
+    ENV_VAR_B: "Value for ENV_VAR_B"
+    # Prominent use-case: Setting the RELATED_IMAGE_... variables within the operator to
+    # overwrite specific image references. Can be used, for example, to test an updated main image while
+    # using the other images corresponding to some other tag.
 
 central:
-  namespace: stackrox
-  spec:
-    central:
-      exposure:
-        loadBalancer:
-          # Expose Central via load balancer
-          enabled: true
-    # Feature flags and other env vars for Central:
-    customize:
-      envVars:
-      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS
-        value: "true"
-      - name: ROX_BASELINE_GENERATION_DURATION
-        value: "5m"
-    # Scanner V4 configuration:
-    scannerV4:
-      scannerComponent: Enabled
+  namespace: "<namespace>" # By default this is "acs-central". A different popular choice is "stackrox".
+  resourceProfile: "<profile name>" # Leave empty for using ACS default settings for resources.
+                                    # Often a good idea to use "auto".
+                                    # Important to keep in mind that even on some standard infra cluster flavors
+                                    # (e.g. openshift-4), the "medium" resourceProfile might lead to some
+                                    # resource shortage.
+  pauseReconciliation: <bool> # By default this is false. In case the operand resources shall be modifiable without
+                              # the operator's reconciler kicking in, set this to true.
+  exposure: "<exposure type>" # Usually this can be unset, letting roxie pick a reasonable default.
+                              # Only "lb" is currently supported.
+  deployTimeout: "<duration string>" # Unless earlyReadiness is disabled, this can usually be left unset.
+  portForwarding: <bool> # Can be usually left unset, a sensible default will be selected.
+  earlyReadiness: <bool> # Defaults to true, meaning that roxie only waits for the central deployment.
+                         # If disabled, roxie will wait for all operand workloads to be ready.
+                         # Usually requires a longer `deployTimeout` to be configured, depending on several
+                         # environment properties (e.g. speed of the node disk type, influencing the DB
+                         # initialization for scanner).
+  spec: <map> # This is a verbatim overlay for the Central CR spec and allows arbitrary customization of the CR.
 
 securedCluster:
-  namespace: stackrox
-  spec:
-    clusterName: my-cluster
-    # Feature flags for Sensor:
-    customize:
-      envVars:
-      - name: ROX_INIT_CONTAINER_SUPPORT
-        value: "true"
-    # Per-node configuration:
-    perNode:
-      fileActivityMonitoring:
-        mode: Enabled
+  namespace: "<namespace>" # By default this is "acs-sensor". A different popular choice is "stackrox".
+  resourceProfile: "<profile name>" # Leave empty for using ACS default settings for resources.
+                                    # Often a good idea to use "auto".
+                                    # Important to keep in mind that even on some standard infra cluster flavors
+                                    # (e.g. openshift-4), the "medium" resourceProfile might lead to some
+                                    # resource shortage.
+  pauseReconciliation: <bool> # By default this is false. In case the operand resources shall be modifiable without
+                              # the operator's reconciler kicking in, set this to true.
+  deployTimeout: "<duration string>" # Unless earlyReadiness is disabled, this can usually be left unset.
+  earlyReadiness: <bool> # Defaults to true, meaning that roxie only waits for the sensor deployment.
+                         # If disabled, roxie will wait for all operand workloads to be ready.
+                         # Usually requires a longer `deployTimeout` to be configured, depending on several
+                         # environment properties (e.g. speed of the node disk type, influencing the DB
+                         # initialization for scanner).
+  spec: <map> # This is a verbatim overlay for the SecuredCluster CR spec and allows arbitrary customization of the CR.
 ```
 
-Deploy with it:
+Note that roxie also supports "user config", which is automatically loaded by the deploy command
+and contains overwritable defaults. On Linux systems the path of this user config file is usually
+`~/.config/roxie/config.yaml` (or `$XDG_CONFIG_HOME/roxie/config.yaml`, if that environment variable is set).
+On darwin the path of the file is `~/Library/Application Support/roxie/config.yaml`.
 
-```bash
-roxie deploy --config my-deployment.yml
+#### Deployment CLI Flags
 
-# Or via deploy.sh:
-./deploy/deploy.sh --config my-deployment.yml
-```
+Most CLI flags of roxie implement short-cuts for certain patches of the in-memory representation of this deployment config.
+For example, for the `roxie deploy` command:
 
-The `spec` paths mirror the CRDs, so anything you can configure in a
-`Central` or `SecuredCluster` custom resource, you can configure here. Check
-the CRD documentation or the operator source in `/operator/` for the full
-set of available fields.
+1. `--tag/-t` corresponds to `roxie.version`
+1. `--central-wait/--secured-cluster-wait` corresponds to `central.deployTimeout`/`securedCluster.deployTimeout`.
+1. `--deploy-operator` corresponds to `operator.skipDeployment` (negated).
+1. `--early-readiness` corresponds to `central.earlyReadiness`/`securedCluster.earlyReadiness`.
+1. `--exposure` corresponds to `central.exposure`.
+1. `--features` corresponds to `roxie.featureFlags`.
+1. `--konflux` corresponds to `roxie.konfluxImages`.
+1. `--olm` corresponds to `operator.deployViaOlm`.
+1. `--pause-reconciliation` corresponds to `central.pauseReconciliation`/`securedCluster.pauseReconciliation`.
+1. `--port-forwarding` corresponds to `central.portForwarding`.
+1. `--resources` corresponds to `central.resourceProfile`/`securedCluster.resourceProfile`.
+1. `--single-namespace` sets `central.namespace` and `securedCluster.namespace` to `stackrox`.
+1. `--operator-env` corresponds to `operator.envVars`.
 
-### Image tag
+These CLI flags are special in the sense that they do not correspond to a specific fields in the config file:
+1. `--set <YAML path>=<val>` can be used for arbitrary patches to the in-memory deployment config.
+1. `--config/-c <file path>` can be used for specifying a roxie config file for the deployment.
+1. `--envrc <path>` enables non-interactive mode, writing post-deployment information into the specified envrc file
+   instead of spawning a sub-shell.
+1. `--skip-user-config` disables automatic loading of the user config file.
+1. `--image-preload-command <command>` can be used for configuring an "image preloading command" for deploying only
+   locally existing images onto a local cluster. Preloading support for kind and minikube clusters is already built in.
+   For other local cluster solutions it might be necessary to specify a preloading command. The provided command
+   string will be executed in a shell where `$IMAGE` is bound to the value of the image which needs to be sent to the
+   local cluster.
 
-The roxie flow in `deploy.sh` also supports `MAIN_IMAGE_TAG` for convenience:
+For debugging purposes these flags might be helpful:
+1. `--dry-run` do not actually deploy.
+1. `--verbose` dump verbose information during operation, including final custom resources.
 
-```bash
-MAIN_IMAGE_TAG=4.11.0 ./deploy/deploy.sh
-```
+### Tear down
 
-But the recommended approach is the explicit CLI flag:
-
-```bash
-roxie deploy --tag 4.11.0
-```
+Another important roxie command is `roxie teardown <component>`, where component is one of
+1. central
+1. securedcluster
+1. both (meaning central + securedcluster)
+1. all (meaning both + operator)
 
 ### Feedback
 
