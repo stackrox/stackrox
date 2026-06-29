@@ -316,41 +316,12 @@ func (s *Sensor) Start() {
 			pubsub.CoreSensorConsumer,
 			pubsub.SoftRestartTopic,
 			pubsub.SoftRestartLane,
-			func(e pubsub.Event) error {
-				if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
-					return nil
-				}
-				s.centralCommunicationLock.Lock()
-				defer s.centralCommunicationLock.Unlock()
-				if s.centralCommunication == nil {
-					log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-					return nil
-				}
-				if str, ok := e.(fmt.Stringer); ok {
-					log.Infof("Connection restart requested: %s", str)
-				} else {
-					log.Infof("Connection restart requested")
-				}
-				s.centralCommunication.Stop()
-				return nil
-			},
+			s.makeSoftRestartCallback(),
 		); err != nil {
 			log.Panicf("Failed to register consumer for SoftRestart: %v", err)
 		}
 	} else {
-		err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
-			if message.IsExpired() {
-				return
-			}
-			s.centralCommunicationLock.Lock()
-			defer s.centralCommunicationLock.Unlock()
-			if s.centralCommunication == nil {
-				log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-				return
-			}
-			log.Infof("Connection restart requested: %s", message.Text)
-			s.centralCommunication.Stop()
-		})
+		err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.makeSoftRestartLegacyHandler())
 		if err != nil {
 			log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 		}
@@ -374,6 +345,43 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
 	}, nil
+}
+
+func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
+	return func(e pubsub.Event) error {
+		if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+			return nil
+		}
+		s.centralCommunicationLock.Lock()
+		defer s.centralCommunicationLock.Unlock()
+		if s.centralCommunication == nil {
+			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+			return nil
+		}
+		if str, ok := e.(fmt.Stringer); ok {
+			log.Infof("Connection restart requested: %s", str)
+		} else {
+			log.Infof("Connection restart requested")
+		}
+		s.centralCommunication.Stop()
+		return nil
+	}
+}
+
+func (s *Sensor) makeSoftRestartLegacyHandler() func(*internalmessage.SensorInternalMessage) {
+	return func(message *internalmessage.SensorInternalMessage) {
+		if message.IsExpired() {
+			return
+		}
+		s.centralCommunicationLock.Lock()
+		defer s.centralCommunicationLock.Unlock()
+		if s.centralCommunication == nil {
+			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+			return
+		}
+		log.Infof("Connection restart requested: %s", message.Text)
+		s.centralCommunication.Stop()
+	}
 }
 
 // Stop shuts down background tasks.

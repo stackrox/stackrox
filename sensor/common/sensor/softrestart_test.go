@@ -1,15 +1,5 @@
 package sensor
 
-// Tests for the SoftRestart callback registered inside Sensor.Start().
-//
-// Sensor.Start() requires TLS certificates and a running gRPC server, making
-// it impractical to call in unit tests. The tests below construct a minimal
-// Sensor struct and exercise the callback closure directly, verifying:
-//  1. When centralCommunication is nil the callback is a no-op.
-//  2. When centralCommunication is set the callback calls Stop().
-//  3. With the feature flag enabled, RegisterConsumer is wired to the right
-//     consumer ID and topic.
-
 import (
 	"context"
 	"testing"
@@ -72,24 +62,6 @@ func (c *capturingSensorDispatcher) Stop()                        {}
 
 // ---- helper -----------------------------------------------------------------
 
-// softRestartCallback mirrors the closure registered by Sensor.Start() when
-// the SensorInternalPubSub feature flag is enabled. It must be kept in sync
-// with the production code in sensor.go.
-func softRestartCallback(s *Sensor) pubsub.EventCallback {
-	return func(e pubsub.Event) error {
-		if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
-			return nil
-		}
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			return nil
-		}
-		s.centralCommunication.Stop()
-		return nil
-	}
-}
-
 func sensorForCallbackTest() *Sensor {
 	return &Sensor{
 		centralCommunicationLock: &roxsync.Mutex{},
@@ -103,7 +75,7 @@ func sensorForCallbackTest() *Sensor {
 // returns when the central connection has not been established yet.
 func TestSoftRestartCallback_NilCommunication(t *testing.T) {
 	s := sensorForCallbackTest()
-	require.NoError(t, softRestartCallback(s)(nil))
+	require.NoError(t, s.makeSoftRestartCallback()(nil))
 }
 
 // TestSoftRestartCallback_StopsConnection verifies that the callback calls
@@ -113,9 +85,28 @@ func TestSoftRestartCallback_StopsConnection(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, softRestartCallback(s)(nil))
+	require.NoError(t, s.makeSoftRestartCallback()(nil))
 	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called exactly once")
 }
+
+// stubSoftRestartEvent is a minimal non-expired event.
+type stubSoftRestartEvent struct{}
+
+func (s *stubSoftRestartEvent) Topic() pubsub.Topic { return pubsub.SoftRestartTopic }
+func (s *stubSoftRestartEvent) Lane() pubsub.LaneID { return pubsub.SoftRestartLane }
+
+// stringerSoftRestartEvent implements fmt.Stringer so the Stringer branch is exercised.
+type stringerSoftRestartEvent struct {
+	stubSoftRestartEvent
+	text string
+}
+
+func (s *stringerSoftRestartEvent) String() string { return s.text }
+
+// expiredSoftRestartEvent simulates a stale event whose validity has expired.
+type expiredSoftRestartEvent struct{ stubSoftRestartEvent }
+
+func (e *expiredSoftRestartEvent) IsExpired() bool { return true }
 
 // TestSensor_PubSubEnabled_SoftRestartConsumerRegistration verifies that the
 // dispatcher is called with CoreSensorConsumer + SoftRestartTopic and that the
@@ -129,12 +120,11 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	s.pubSubDispatcher = capturing
 	s.centralCommunication = fakeCC
 
-	// Simulate the call Start() makes when the flag is on.
 	require.NoError(t, s.pubSubDispatcher.RegisterConsumerToLane(
 		pubsub.CoreSensorConsumer,
 		pubsub.SoftRestartTopic,
 		pubsub.SoftRestartLane,
-		softRestartCallback(s),
+		s.makeSoftRestartCallback(),
 	))
 
 	assert.Equal(t, pubsub.CoreSensorConsumer, capturing.consumerID)
@@ -146,17 +136,6 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	assert.Equal(t, 1, fakeCC.stopCount, "callback must call Stop() on centralCommunication")
 }
 
-// stubSoftRestartEvent is a minimal non-expired event.
-type stubSoftRestartEvent struct{}
-
-func (s *stubSoftRestartEvent) Topic() pubsub.Topic { return pubsub.SoftRestartTopic }
-func (s *stubSoftRestartEvent) Lane() pubsub.LaneID { return pubsub.SoftRestartLane }
-
-// expiredSoftRestartEvent simulates a stale event whose validity has expired.
-type expiredSoftRestartEvent struct{ stubSoftRestartEvent }
-
-func (e *expiredSoftRestartEvent) IsExpired() bool { return true }
-
 // TestSoftRestartCallback_SkipsExpiredEvent verifies that the callback does
 // not call Stop() when the event's validity context has been cancelled.
 func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
@@ -164,8 +143,31 @@ func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, softRestartCallback(s)(&expiredSoftRestartEvent{}))
+	require.NoError(t, s.makeSoftRestartCallback()(&expiredSoftRestartEvent{}))
 	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for an expired event")
+}
+
+// TestSoftRestartCallback_StringerEvent verifies that the callback handles an
+// event that implements fmt.Stringer (exercises the Stringer type-assertion branch).
+func TestSoftRestartCallback_StringerEvent(t *testing.T) {
+	s := sensorForCallbackTest()
+	fakeCC := &fakeCentralComm{}
+	s.centralCommunication = fakeCC
+
+	evt := &stringerSoftRestartEvent{text: "CRD resources changed"}
+	require.NoError(t, s.makeSoftRestartCallback()(evt))
+	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called for a Stringer event")
+}
+
+// TestSoftRestartCallback_NonStringerEvent verifies that the callback handles
+// an event that does NOT implement fmt.Stringer (exercises the else branch).
+func TestSoftRestartCallback_NonStringerEvent(t *testing.T) {
+	s := sensorForCallbackTest()
+	fakeCC := &fakeCentralComm{}
+	s.centralCommunication = fakeCC
+
+	require.NoError(t, s.makeSoftRestartCallback()(&stubSoftRestartEvent{}))
+	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called for a non-Stringer event")
 }
 
 // TestSensor_PubSubDisabled_SoftRestartViaInternalmessage verifies the legacy
@@ -178,17 +180,7 @@ func TestSensor_PubSubDisabled_SoftRestartViaInternalmessage(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
-		if msg.IsExpired() {
-			return
-		}
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			return
-		}
-		s.centralCommunication.Stop()
-	}))
+	require.NoError(t, s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.makeSoftRestartLegacyHandler()))
 
 	require.NoError(t, s.pubSub.Publish(&internalmessage.SensorInternalMessage{
 		Kind:     internalmessage.SensorMessageSoftRestart,
@@ -201,4 +193,37 @@ func TestSensor_PubSubDisabled_SoftRestartViaInternalmessage(t *testing.T) {
 		defer fakeCC.mu.Unlock()
 		return fakeCC.stopCount == 1
 	}, 500*time.Millisecond, 5*time.Millisecond, "Stop() must be called via legacy path")
+}
+
+// TestSoftRestartLegacyHandler_SkipsExpiredMessage verifies that the legacy
+// handler ignores messages whose validity context has been cancelled.
+func TestSoftRestartLegacyHandler_SkipsExpiredMessage(t *testing.T) {
+	s := sensorForCallbackTest()
+	fakeCC := &fakeCentralComm{}
+	s.centralCommunication = fakeCC
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	handler := s.makeSoftRestartLegacyHandler()
+	handler(&internalmessage.SensorInternalMessage{
+		Kind:     internalmessage.SensorMessageSoftRestart,
+		Text:     "expired restart",
+		Validity: ctx,
+	})
+
+	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for an expired message")
+}
+
+// TestSoftRestartLegacyHandler_NilCommunication verifies that the legacy
+// handler is a no-op when centralCommunication has not been established.
+func TestSoftRestartLegacyHandler_NilCommunication(t *testing.T) {
+	s := sensorForCallbackTest()
+
+	handler := s.makeSoftRestartLegacyHandler()
+	handler(&internalmessage.SensorInternalMessage{
+		Kind:     internalmessage.SensorMessageSoftRestart,
+		Text:     "no connection yet",
+		Validity: context.Background(),
+	})
 }
