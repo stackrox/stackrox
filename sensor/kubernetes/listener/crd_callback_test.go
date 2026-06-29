@@ -106,6 +106,57 @@ func TestCrdWatcherCallbackWrapper_PubSubDisabled_PublishesViaInternalmessage(t 
 	}
 }
 
+// TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable verifies
+// that the callback also fires when using the resourcesUnavailable condition
+// (i.e., when a CRD is removed and status reports unavailable).
+func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	const expectedText = "resources removed"
+	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+
+	var capturedEvent pubsub.Event
+	mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
+		capturedEvent = e
+		return nil
+	})
+
+	cb := crdWatcherCallbackWrapper(
+		context.Background(),
+		resourcesUnavailable(),
+		internalmessage.NewMessageSubscriber(),
+		mockDispatcher,
+		expectedText,
+	)
+	cb(&watcher.Status{Available: false})
+
+	require.IsType(t, &SoftRestartEvent{}, capturedEvent)
+	assert.Equal(t, expectedText, capturedEvent.(*SoftRestartEvent).Text)
+}
+
+// TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet verifies
+// the unavailable condition does not fire when resources are available.
+func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+
+	cb := crdWatcherCallbackWrapper(
+		context.Background(),
+		resourcesUnavailable(),
+		internalmessage.NewMessageSubscriber(),
+		mockDispatcher,
+		"should not fire",
+	)
+	cb(&watcher.Status{Available: true}) // condition NOT met for resourcesUnavailable
+}
+
 // TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext verifies that
 // when the context is cancelled before the CRD status fires, the published
 // SoftRestartEvent carries the cancelled context and reports IsExpired() == true.
