@@ -83,11 +83,11 @@ function VirtualMachinesCvesTableEnhanced() {
     const hiddenColumnCount = getHiddenColumnCount(managedColumnState.columns);
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
-    const fetchVMs = useCallback(
+    const fetchVirtualMachines = useCallback(
         () => listVMs({ searchFilter, page, perPage, sortOption }),
         [searchFilter, page, perPage, sortOption]
     );
-    const { data, isLoading, error } = useRestQuery(fetchVMs);
+    const { data, isLoading, error } = useRestQuery(fetchVirtualMachines);
     const tableState = getTableUIState({
         isLoading,
         data: data?.vms ?? [],
@@ -211,7 +211,7 @@ function VirtualMachinesCvesTableEnhanced() {
                                                 dataLabel="Scanned components"
                                             >
                                                 {virtualMachine.componentScanCount
-                                                    ? `${virtualMachine.componentScanCount.scanned}/${virtualMachine.componentScanCount.total} scanned components`
+                                                    ? `${virtualMachine.componentScanCount.scanned} / ${virtualMachine.componentScanCount.total} scanned components`
                                                     : 'Not available'}
                                             </Td>
                                             <Td
