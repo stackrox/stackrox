@@ -178,4 +178,9 @@ var funcMap = template.FuncMap{
 		}
 		return fmt.Sprintf("%ss", s)
 	},
+	"objectGetterToSetter": func(getter string) string {
+		s := strings.TrimSuffix(getter, "()")
+		s = strings.TrimPrefix(s, "Get")
+		return s
+	},
 }

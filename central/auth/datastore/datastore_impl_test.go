@@ -163,6 +163,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterDelete() {
 		s.Equal("sub", kubeSAConfig.GetMappings()[0].GetKey())
 		s.Equal("Configuration Controller", kubeSAConfig.GetMappings()[0].GetRole())
 		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
+		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
 
 	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
@@ -176,6 +177,7 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterRestart() {
 		s.Equal("sub", kubeSAConfig.GetMappings()[0].GetKey())
 		s.Equal("Configuration Controller", kubeSAConfig.GetMappings()[0].GetRole())
 		s.Contains(kubeSAConfig.GetMappings()[0].GetValueExpression(), "config-controller")
+		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
 
 	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
@@ -223,9 +225,107 @@ func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigPersistsAfterModificatio
 				s.FailNowf("Failed to find role mapping", "key=%s; role=%s; valueExpression=%s", mapping.GetKey(), mapping.GetRole(), mapping.GetValueExpression())
 			}
 		}
+		s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience())
 	}
 
 	s.kubeSAM2MConfig(authDataStoreMutator, authDataStoreValidator)
+}
+
+// TestKubeSAM2MConfigAudienceSetOnUpgradeWithSingleMapping simulates upgrading
+// from a Central version that did not set an audience on the kube SA M2M config.
+// When the config only has the config-controller mapping, the audience should be
+// backfilled on restart.
+func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigAudienceSetOnUpgradeWithSingleMapping() {
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+	authStore := store.New(s.pool.DB)
+
+	// Seed a pre-existing config without audience (simulates pre-upgrade state).
+	legacyConfig := &storage.AuthMachineToMachineConfig{
+		Id:                      uuid.NewV4().String(),
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1h",
+		Issuer:                  testIssuer,
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "sub",
+				ValueExpression: configControllerServiceAccountName,
+				Role:            configController,
+			},
+		},
+	}
+	s.Require().NoError(authStore.Upsert(s.ctx, legacyConfig))
+
+	// Simulate Central restart with InitializeTokenExchangers.
+	mockSet := mocks.NewMockTokenExchangerSet(controller)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
+	s.NoError(authDataStore.InitializeTokenExchangers())
+
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
+	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		if obj.GetIssuer() == testIssuer {
+			kubeSAConfig = obj
+		}
+		return nil
+	})
+	s.NoError(err)
+	s.Require().NotNil(kubeSAConfig)
+	s.Equal(1, len(kubeSAConfig.GetMappings()))
+	s.Equal(configControllerM2MAudience, kubeSAConfig.GetAudience(), "audience should be backfilled when only the config-controller mapping exists")
+}
+
+// TestKubeSAM2MConfigAudienceNotSetOnUpgradeWithMultipleMappings simulates
+// upgrading from a Central version that did not set an audience, where the user
+// has added their own role mappings to the kube SA M2M config. The audience must
+// NOT be backfilled because the user's tokens won't carry the custom audience.
+func (s *datastorePostgresTestSuite) TestKubeSAM2MConfigAudienceNotSetOnUpgradeWithMultipleMappings() {
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+	authStore := store.New(s.pool.DB)
+
+	// Seed a pre-existing config without audience that has an additional user mapping.
+	legacyConfig := &storage.AuthMachineToMachineConfig{
+		Id:                      uuid.NewV4().String(),
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1h",
+		Issuer:                  testIssuer,
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "sub",
+				ValueExpression: configControllerServiceAccountName,
+				Role:            configController,
+			},
+			{
+				Key:             "sub",
+				ValueExpression: "system:serviceaccount:my-namespace:my-service-account",
+				Role:            testRole1,
+			},
+		},
+	}
+	s.Require().NoError(authStore.Upsert(s.ctx, legacyConfig))
+
+	// Simulate Central restart with InitializeTokenExchangers.
+	mockSet := mocks.NewMockTokenExchangerSet(controller)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
+	s.NoError(authDataStore.InitializeTokenExchangers())
+
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
+	err := authDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		if obj.GetIssuer() == testIssuer {
+			kubeSAConfig = obj
+		}
+		return nil
+	})
+	s.NoError(err)
+	s.Require().NotNil(kubeSAConfig)
+	s.Equal(2, len(kubeSAConfig.GetMappings()))
+	s.Empty(kubeSAConfig.GetAudience(), "audience must not be set when user-defined mappings exist")
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {

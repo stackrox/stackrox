@@ -16,7 +16,7 @@ import spock.lang.Tag
 import spock.lang.Unroll
 
 @Retry(count = 3)
-@Tag("Begin")
+@Tag("BAT")
 @Tag("PZ")
 class VulnMgmtSACTest extends BaseSpecification {
     static final private String NONE = "None"

@@ -30,7 +30,10 @@ func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureInt
 }
 
 func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
-	return []*storage.SignatureIntegration{signatures.DefaultRedHatSignatureIntegration}, nil
+	return []*storage.SignatureIntegration{{
+		Id:   signatures.DefaultRedHatIntegrationID,
+		Name: signatures.DefaultRedHatIntegrationName,
+	}}, nil
 }
 
 func twoSignaturesIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
