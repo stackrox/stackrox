@@ -128,6 +128,14 @@ export USE_ROXIE_DEPLOY=true
 MAIN_IMAGE_TAG=<main tag> ./deploy/deploy.sh [ <roxie args> ... ]
 ```
 
+roxie supports two distinct modes of operation:
+1. Interactive mode: after deployment a sub-shell is spawned in which the environment is set up automatically
+   for interacting with central (most importantly endpoint and authentication information).
+1. Non-interactive mode: after the deployment the environmental information for communicating with central
+   is written into an envrc-style file which can then be used by the user as desired -- sourced, propagated, etc.
+
+#### Deployment Configuration Schema
+
 There exist several flags for influencing the deployment behavior. With the exception of very few
 special flags, there exist corresponding fields in a "roxie config YAML file", which can be passed
 with `--config`. The config file has this structure:
@@ -197,11 +205,7 @@ and contains overwritable defaults. On Linux systems the path of this user confi
 `~/.config/roxie/config.yaml` (or `$XDG_CONFIG_HOME/roxie/config.yaml`, if that environment variable is set).
 On darwin the path of the file is `~/Library/Application Support/roxie/config.yaml`.
 
-roxie supports two distinct modes of operation:
-1. Interactive mode: after deployment a sub-shell is spawned in which the environment is set up automatically
-   for interacting with central (most importantly endpoint and authentication information).
-1. Non-interactive mode: after the deployment the environmental information for communicating with central
-   is written into an envrc-style file which can then be used by the user as desired -- sourced, propagated, etc.
+#### Deployment CLI Flags
 
 Most CLI flags of roxie implement short-cuts for certain patches of the in-memory representation of this deployment config.
 For example, for the `roxie deploy` command:
