@@ -144,7 +144,7 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Fix GOPATH and PATH for building and running roxctl
+    - name: Fix GOPATH and PATH for building and running roxctl during tests
       run: |
         GOPATH="$(go env GOPATH)"
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
@@ -290,7 +290,7 @@ jobs:
         from pre_tests import PreSystemTests
         PreSystemTests().run()
 
-    - name: Fix GOPATH and PATH for building and running roxctl
+    - name: Fix GOPATH and PATH for building and running roxctl during tests
       run: |
         GOPATH="$(go env GOPATH)"
         echo "GOPATH=${GOPATH}" | tee -a "${GITHUB_ENV}"
