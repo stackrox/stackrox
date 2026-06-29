@@ -312,7 +312,7 @@ func Test_shouldRetest(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := shouldRetestFailedStatuses(tt.statuses, tt.comments, tt.checks)
+			got := shouldRetestFailedStatusesAndChecks(tt.statuses, tt.comments, tt.checks)
 			assert.Equal(t, tt.want, got)
 		})
 	}

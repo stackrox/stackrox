@@ -82,17 +82,11 @@ issues:
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		for name, passed := range checks {
-			if passed {
+			if passed || isAllowedCheckFailure(name) || isRetestableCheck(name) {
 				continue
 			}
-			if isRetestableCheck(name) {
-				log.Printf("#%d has a failing retestable check (%s)", prNumber, name)
-				continue
-			}
-			if !isAllowedCheckFailure(name) {
-				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
-				continue issues
-			}
+			log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
+			continue issues
 		}
 
 		statuses, err := statusesForPR(ctx, client, prDetails.GetStatusesURL())
@@ -115,7 +109,7 @@ issues:
 			continue
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments, checks))
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatusesAndChecks(statuses, userComments, checks))
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -196,7 +190,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 
 const retestComment = "/retest"
 
-func shouldRetestFailedStatuses(statuses map[string]string, comments []string, checks map[string]bool) bool {
+func shouldRetestFailedStatusesAndChecks(statuses map[string]string, comments []string, checks map[string]bool) bool {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
