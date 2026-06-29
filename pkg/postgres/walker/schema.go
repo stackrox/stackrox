@@ -451,7 +451,7 @@ type SearchField struct {
 	Ignored   bool
 }
 
-// PostgresIndexOptions is the parsed representation of the index subpart of the sql tag in the struct field.
+// PostgresIndexOptions is the parsed representation of the index subpart of the sql tag in the struct field
 type PostgresIndexOptions struct {
 	IndexName     string
 	IndexType     string
