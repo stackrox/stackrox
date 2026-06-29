@@ -76,6 +76,7 @@ jobs:
       CI_JOB_NAME: gke-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
+      ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
