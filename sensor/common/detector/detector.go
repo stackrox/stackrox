@@ -133,7 +133,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
+		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan, pubSubDispatcher),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		nodeStore:           nodeStore,
@@ -260,12 +260,20 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector deployment consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorScanResultConsumer,
+			pubsub.DetectorScanResultTopic,
+			pubsub.DetectorScanResultLane,
+			d.handleScanResultEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector scan result consumer")
+		}
 	}
 
-	go d.runDetector()
 	go d.serializeDeployTimeOutput()
 
 	if !d.pubSubEnabled() {
+		go d.runDetector()
 		go d.processDeployment()
 		go d.runAuditLogEventDetector()
 		go d.processIndicator()
@@ -352,8 +360,8 @@ func (d *detectorImpl) Stop() {
 	d.alertStopSig.Signal()
 	d.enricher.stop()
 
-	_ = d.detectorStopper.Client().Stopped().Wait()
 	if !d.pubSubEnabled() {
+		_ = d.detectorStopper.Client().Stopped().Wait()
 		_ = d.auditStopper.Client().Stopped().Wait()
 	}
 	_ = d.serializerStopper.Client().Stopped().Wait()
@@ -488,6 +496,35 @@ func (d *detectorImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return d.output
 }
 
+func (d *detectorImpl) detectDeploymentFromScanResult(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
+	detectorMetrics.RemoveBlockingScanCall()
+	alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: netpolApplied,
+	})
+
+	metrics.IncrementDetectorDeploymentProcessed()
+
+	sort.Slice(alerts, func(i, j int) bool {
+		return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
+	})
+
+	select {
+	case <-d.detectorStopper.Flow().StopRequested():
+	case <-d.serializerStopper.Flow().StopRequested():
+	case d.deploymentAlertOutputChan <- outputResult{
+		results: &central.AlertResults{
+			DeploymentId: deployment.GetId(),
+			Alerts:       alerts,
+		},
+		timestamp: deployment.GetStateTimestamp(),
+		action:    action,
+		context:   ctx,
+	}:
+	}
+}
+
 func (d *detectorImpl) runDetector() {
 	defer d.detectorStopper.Flow().ReportStopped()
 
@@ -496,36 +533,18 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			detectorMetrics.RemoveBlockingScanCall()
-			alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
-				Deployment:             scanOutput.deployment,
-				Images:                 scanOutput.images,
-				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
-			})
-
-			metrics.IncrementDetectorDeploymentProcessed()
-
-			sort.Slice(alerts, func(i, j int) bool {
-				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
-			})
-
-			select {
-			case <-d.detectorStopper.Flow().StopRequested():
-				return
-			case <-d.serializerStopper.Flow().StopRequested():
-				return
-			case d.deploymentAlertOutputChan <- outputResult{
-				results: &central.AlertResults{
-					DeploymentId: scanOutput.deployment.GetId(),
-					Alerts:       alerts,
-				},
-				timestamp: scanOutput.deployment.GetStateTimestamp(),
-				action:    scanOutput.action,
-				context:   scanOutput.context,
-			}:
-			}
+			d.detectDeploymentFromScanResult(scanOutput.Context, scanOutput.Deployment, scanOutput.Images, scanOutput.NetworkPoliciesApplied, scanOutput.Action)
 		}
 	}
+}
+
+func (d *detectorImpl) handleScanResultEvent(event pubsub.Event) error {
+	scanResult, ok := event.(*detectorEvents.ScanResultEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.detectDeploymentFromScanResult(scanResult.Context, scanResult.Deployment, scanResult.Images, scanResult.NetworkPoliciesApplied, scanResult.Action)
+	return nil
 }
 
 func (d *detectorImpl) detectAndAlertForAuditLog(auditEvents *sensor.AuditEvents) {

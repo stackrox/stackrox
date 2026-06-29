@@ -14,6 +14,7 @@ const (
 	DetectorFileAccessConsumer
 	DetectorAuditLogConsumer
 	DetectorDeploymentConsumer
+	DetectorScanResultConsumer
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 		DetectorFileAccessConsumer:          "DetectorFileAccess",
 		DetectorAuditLogConsumer:            "DetectorAuditLog",
 		DetectorDeploymentConsumer:          "DetectorDeployment",
+		DetectorScanResultConsumer:          "DetectorScanResult",
 	}
 )
 
