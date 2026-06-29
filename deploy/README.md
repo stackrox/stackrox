@@ -128,9 +128,9 @@ export USE_ROXIE_DEPLOY=true
 MAIN_IMAGE_TAG=<main tag> ./deploy/deploy.sh [ <roxie args> ... ]
 ```
 
-There exist several flags for influencing the
-deployment behavior. With the exception of very few special flags, there exist corresponding fields
-in a "roxie config YAML file", which can be passed with `--config`. The config file has this structure:
+There exist several flags for influencing the deployment behavior. With the exception of very few
+special flags, there exist corresponding fields in a "roxie config YAML file", which can be passed
+with `--config`. The config file has this structure:
 
 ```yaml
 roxie:
@@ -198,6 +198,11 @@ The Central and the SecuredCluster custom resource definitions can be found at
 
 The above description of the config file schema might not be entirely up-to-date, for the most recent
 version, check out the roxie's main branch at https://github.com/stackrox/roxie.
+Take into account that the roxie version of the user (`roxie version` or `scripts/roxie.sh version`) might
+not be the latest version, but the [releases page](https://github.com/stackrox/roxie/tags) can be used to
+resolve a given version tag (e.g. `v0.4.2`) to a commit (e.g. `189e745c91c7a6f98c0bcfcca3e7c780c11c46c3`)
+and the config schema can be [looked up for that specific
+commit](https://github.com/stackrox/roxie/blob/189e745c91c7a6f98c0bcfcca3e7c780c11c46c3/internal/deployer/config.go).
 
 Note that roxie also supports "user config", which is automatically loaded by the deploy command
 and contains overwritable defaults. On Linux systems the path of this user config file is usually
