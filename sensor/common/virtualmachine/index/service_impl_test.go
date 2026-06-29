@@ -134,3 +134,50 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhen
 		s.Require().Error(err)
 	})
 }
+
+func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForActivelyScrapedVM() {
+	ctx := context.Background()
+
+	var sendCalled bool
+	mockHandler := mocks.NewMockHandler(s.ctrl)
+	mockHandler.EXPECT().Send(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, _ *v1.IndexReport) error {
+			sendCalled = true
+			return nil
+		},
+	)
+
+	svc := &serviceImpl{
+		handler: mockHandler,
+		// Mark VM with CID 100 as actively scraped via pull mode.
+		pullChecker: &fakePullChecker{scraped: map[string]bool{"100": true}},
+	}
+
+	// CID 100 has both push and pull active simultaneously. When both modes
+	// coexist, pull takes precedence and the push report must be suppressed
+	// to avoid sending duplicate data to Central.
+	// (The pull path forwarding is tested separately in scraper_test.go.)
+	resp, err := svc.UpsertVirtualMachineIndexReport(ctx, &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{VsockCid: "100"},
+	})
+	s.Require().NoError(err)
+	s.Assert().True(resp.GetSuccess())
+	s.Assert().False(sendCalled, "Send must NOT be called when pull is active for this VM")
+
+	// CID 200 uses push only (not being pulled). Its push report must be
+	// forwarded to Central as usual.
+	resp, err = svc.UpsertVirtualMachineIndexReport(ctx, &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{VsockCid: "200"},
+	})
+	s.Require().NoError(err)
+	s.Assert().True(resp.GetSuccess())
+	s.Assert().True(sendCalled, "Send MUST be called when push is the only mode for this VM")
+}
+
+type fakePullChecker struct {
+	scraped map[string]bool
+}
+
+func (f *fakePullChecker) IsActivelyScraped(key string) bool {
+	return f.scraped[key]
+}
