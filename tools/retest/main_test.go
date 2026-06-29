@@ -231,26 +231,23 @@ func Test_retestNTimes(t *testing.T) {
 }
 
 func Test_shouldRetest(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		statuses map[string]string
 		comments []string
+		checks   map[string]bool
 		want     bool
 	}{
-		{
-			name:     "nil",
+		"nil": {
 			statuses: nil,
 			comments: nil,
 			want:     false,
 		},
-		{
-			name:     "empty",
+		"empty": {
 			statuses: map[string]string{},
 			comments: []string{},
 			want:     false,
 		},
-		{
-			name: "all success",
+		"all success": {
 			statuses: map[string]string{
 				"a": "success",
 				"b": "success",
@@ -259,8 +256,7 @@ func Test_shouldRetest(t *testing.T) {
 			comments: []string{},
 			want:     false,
 		},
-		{
-			name: "one failure",
+		"one failure": {
 			statuses: map[string]string{
 				"a": "success",
 				"b": "failure",
@@ -269,8 +265,7 @@ func Test_shouldRetest(t *testing.T) {
 			comments: []string{},
 			want:     true,
 		},
-		{
-			name: "one failure but already retested",
+		"one failure but already retested once": {
 			statuses: map[string]string{
 				"a": "success",
 				"b": "failure",
@@ -279,8 +274,7 @@ func Test_shouldRetest(t *testing.T) {
 			comments: []string{"/retest"},
 			want:     true,
 		},
-		{
-			name: "one failure but already retested",
+		"one failure but already retested too many times": {
 			statuses: map[string]string{
 				"a": "success",
 				"b": "failure",
@@ -289,10 +283,36 @@ func Test_shouldRetest(t *testing.T) {
 			comments: []string{"/retest", "/retest", "/retest", "/retest"},
 			want:     false,
 		},
+		"failed e2e check triggers retest": {
+			statuses: map[string]string{},
+			comments: []string{},
+			checks:   map[string]bool{"e2e-gke-tests": false},
+			want:     true,
+		},
+		"failed e2e check but already retested too many times": {
+			statuses: map[string]string{},
+			comments: []string{"/retest", "/retest", "/retest", "/retest"},
+			checks:   map[string]bool{"e2e-gke-tests": false},
+			want:     false,
+		},
+		"failed e2e check with prow success": {
+			statuses: map[string]string{
+				"a": "success",
+			},
+			comments: []string{},
+			checks:   map[string]bool{"e2e-gke-tests": false},
+			want:     true,
+		},
+		"passing e2e check does not trigger retest": {
+			statuses: map[string]string{},
+			comments: []string{},
+			checks:   map[string]bool{"e2e-gke-tests": true},
+			want:     false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := shouldRetestFailedStatuses(tt.statuses, tt.comments)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := shouldRetestFailedStatuses(tt.statuses, tt.comments, tt.checks)
 			assert.Equal(t, tt.want, got)
 		})
 	}

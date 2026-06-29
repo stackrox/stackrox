@@ -16,16 +16,22 @@ import (
 
 var allowedCheckFailurePrefixes = []string{
 	"codecov/",
+}
+
+var retestableCheckPrefixes = []string{
 	"e2e-",
 }
 
 func isAllowedCheckFailure(name string) bool {
-	for _, prefix := range allowedCheckFailurePrefixes {
-		if strings.HasPrefix(name, prefix) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(allowedCheckFailurePrefixes, func(prefix string) bool {
+		return strings.HasPrefix(name, prefix)
+	})
+}
+
+func isRetestableCheck(name string) bool {
+	return slices.ContainsFunc(retestableCheckPrefixes, func(prefix string) bool {
+		return strings.HasPrefix(name, prefix)
+	})
 }
 
 const s = "stackrox"
@@ -75,8 +81,15 @@ issues:
 		}
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
-		for name, status := range checks {
-			if !status && !isAllowedCheckFailure(name) {
+		for name, passed := range checks {
+			if passed {
+				continue
+			}
+			if isRetestableCheck(name) {
+				log.Printf("#%d has a failing retestable check (%s)", prNumber, name)
+				continue
+			}
+			if !isAllowedCheckFailure(name) {
 				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
 				continue issues
 			}
@@ -102,7 +115,7 @@ issues:
 			continue
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments, checks))
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -183,7 +196,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 
 const retestComment = "/retest"
 
-func shouldRetestFailedStatuses(statuses map[string]string, comments []string) bool {
+func shouldRetestFailedStatuses(statuses map[string]string, comments []string, checks map[string]bool) bool {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -192,6 +205,12 @@ func shouldRetestFailedStatuses(statuses map[string]string, comments []string) b
 	}
 	if retested > 3 {
 		return false
+	}
+
+	for name, passed := range checks {
+		if !passed && isRetestableCheck(name) {
+			return true
+		}
 	}
 
 	for _, status := range statuses {
