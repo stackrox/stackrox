@@ -8,10 +8,10 @@ on:
         required: true
         type: string
       trigger-label:
-        description: "PR label that triggers this workflow. If empty, runs unconditionally."
+        description: "PR label that triggers this workflow. Defaults to qa-e2e-tests-gha."
         required: false
         type: string
-        default: ""
+        default: "qa-e2e-tests-gha"
       extra-env-vars:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
