@@ -19,6 +19,7 @@ var (
 
 // Interface implements an interface that bridges Kubernetes and Openshift
 type Interface interface {
+	RESTConfig() *rest.Config
 	Kubernetes() kubernetes.Interface
 	Dynamic() dynamic.Interface
 	OpenshiftApps() appVersioned.Interface
@@ -28,6 +29,7 @@ type Interface interface {
 }
 
 type clientSet struct {
+	restConfig        *rest.Config
 	dynamic           dynamic.Interface
 	k8s               kubernetes.Interface
 	openshiftApps     appVersioned.Interface
@@ -91,6 +93,7 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 // MustCreateInterfaceFromRest creates a client interface using a rest config as a parameter
 func MustCreateInterfaceFromRest(config *rest.Config) Interface {
 	return &clientSet{
+		restConfig:        config,
 		dynamic:           mustCreateDynamicClient(config),
 		k8s:               k8sutil.MustCreateK8sClient(config),
 		openshiftApps:     mustCreateOpenshiftAppsClient(config),
@@ -107,6 +110,10 @@ func MustCreateInterface() Interface {
 		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
 	}
 	return MustCreateInterfaceFromRest(config)
+}
+
+func (c *clientSet) RESTConfig() *rest.Config {
+	return c.restConfig
 }
 
 func (c *clientSet) Kubernetes() kubernetes.Interface {

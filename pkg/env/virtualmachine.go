@@ -71,4 +71,15 @@ var (
 	// VMIndexReportRelayCacheTTL is how long a cached VM index report payload may be kept before it is evicted
 	// from the relay's retransmission cache.
 	VMIndexReportRelayCacheTTL = registerDurationSetting("ROX_VM_INDEX_REPORT_RELAY_CACHE_TTL", 4*time.Hour)
+	// VirtualMachinesScraperConcurrency defines the maximum number of VMs scraped
+	// concurrently in a single poll cycle. Higher values reduce cycle wall-clock
+	// time but increase network fan-out.
+	VirtualMachinesScraperConcurrency = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY", 20).
+						WithMinimum(1)
+
+	// VirtualMachinesPullMaxResponseSizeKB defines the maximum response size (in KB) that the
+	// pull-mode scraper accepts from a VM agent. Default 16384 KB (16 MiB) matches the push-mode
+	// limit (ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB).
+	VirtualMachinesPullMaxResponseSizeKB = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB", 16384).
+						WithMinimum(1)
 )

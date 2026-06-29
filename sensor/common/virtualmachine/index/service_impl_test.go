@@ -36,7 +36,7 @@ func (s *virtualMachineServiceSuite) SetupTest() {
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler(s.store))
+	svc := NewService(NewHandler(s.store), nil)
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 

@@ -1,4 +1,4 @@
-package vsock
+package discovery
 
 import (
 	"bufio"
@@ -12,8 +12,11 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
+
+var log = logging.LoggerForModule()
 
 const (
 	osReleasePath         = "/etc/os-release"
@@ -316,7 +319,6 @@ func discoverDnfCacheRepoDirPresence(hostPath, cacheDirPath string) (bool, error
 
 	for _, entry := range cacheEntries {
 		if entry.IsDir() {
-			// Check if it looks like a repo directory (contains "-rpms-" pattern)
 			if strings.Contains(entry.Name(), "-rpms-") {
 				return true, nil
 			}

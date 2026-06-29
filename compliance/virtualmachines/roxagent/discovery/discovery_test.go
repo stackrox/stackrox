@@ -1,4 +1,4 @@
-package vsock
+package discovery
 
 import (
 	"os"
