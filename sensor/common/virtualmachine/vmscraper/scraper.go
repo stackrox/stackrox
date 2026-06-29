@@ -30,9 +30,7 @@ import (
 var log = logging.LoggerForModule()
 
 const (
-	defaultPollInterval   = 15 * time.Second
 	mandatoryRefreshAfter = 4 * time.Hour
-	perVMTimeout          = 30 * time.Second
 )
 
 func getVsockPort() uint32 {
@@ -61,14 +59,15 @@ type ProtocolClient interface {
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
-	store       RunningVMStore
-	sender      IndexReportSender
-	dialer      VMDialer
-	client      ProtocolClient
-	interval    time.Duration
-	concurrency int
-	stopper     concurrency.Stopper
-	now         func() time.Time
+	store        RunningVMStore
+	sender       IndexReportSender
+	dialer       VMDialer
+	client       ProtocolClient
+	interval     time.Duration
+	perVMTimeout time.Duration
+	concurrency  int
+	stopper      concurrency.Stopper
+	now          func() time.Time
 
 	mu        sync.Mutex
 	vmState   map[string]*vmState
@@ -85,15 +84,16 @@ var _ common.SensorComponent = (*VMScraper)(nil)
 // New creates a VMScraper with production defaults.
 func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	return &VMScraper{
-		store:       store,
-		sender:      sender,
-		dialer:      dialer,
-		client:      client,
-		interval:    defaultPollInterval,
-		concurrency: env.VirtualMachinesScraperConcurrency.IntegerSetting(),
-		vmState:     make(map[string]*vmState),
-		activeVMs:   set.NewStringSet(),
-		now:         time.Now,
+		store:        store,
+		sender:       sender,
+		dialer:       dialer,
+		client:       client,
+		interval:     env.VirtualMachinesScraperPollInterval.DurationSetting(),
+		perVMTimeout: env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
+		concurrency:  env.VirtualMachinesScraperConcurrency.IntegerSetting(),
+		vmState:      make(map[string]*vmState),
+		activeVMs:    set.NewStringSet(),
+		now:          time.Now,
 	}
 }
 
@@ -192,7 +192,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	key := vm.Namespace + "/" + vm.Name
 	state := s.getOrCreateState(key)
 
-	vmCtx, cancel := context.WithTimeout(ctx, perVMTimeout)
+	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
 
 	totalStart := s.now()
