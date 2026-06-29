@@ -25,8 +25,19 @@ alternatively -- use `scripts/roxie.sh`, a wrapper that downloads roxie automati
 ## Usage
 
 See @deploy/README.md, specifically the section "Usage" for documentation on how to use roxie.
-The config file schema described there might not be 100% up-to-date. To see the latest config struct,
+The README's description of the config file schema might not be entirely up-to-date, for the most recent
+version, check out roxie's main branch at https://github.com/stackrox/roxie, in particular
 use WebFetch on https://raw.githubusercontent.com/stackrox/roxie/main/internal/deployer/config.go.
+Take into account that the roxie version of the user (`roxie version` or `scripts/roxie.sh version`) might
+not be the latest version, but the [releases page](https://github.com/stackrox/roxie/tags) can be used to
+resolve a given version tag (e.g. `v0.4.2`) to a commit (e.g. `189e745c91c7a6f98c0bcfcca3e7c780c11c46c3`)
+and the config schema can be [looked up for that specific
+commit](https://github.com/stackrox/roxie/blob/189e745c91c7a6f98c0bcfcca3e7c780c11c46c3/internal/deployer/config.go).
+
+The Central and the SecuredCluster custom resource definitions (corresponding to the roxie config paths
+`central.spec` and `securedCluster.spec`) can be found at
+- @operator/config/crd/bases/platform.stackrox.io_centrals.yaml and
+- @operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml, respectively.
 
 ## Non-interactive mode (important for agents)
 

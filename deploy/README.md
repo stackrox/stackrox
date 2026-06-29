@@ -192,18 +192,6 @@ securedCluster:
   spec: <map> # This is a verbatim overlay for the SecuredCluster CR spec and allows arbitrary customization of the CR.
 ```
 
-The Central and the SecuredCluster custom resource definitions can be found at
-- @operator/config/crd/bases/platform.stackrox.io_centrals.yaml and
-- @operator/config/crd/bases/platform.stackrox.io_securedclusters.yaml, respectively.
-
-The above description of the config file schema might not be entirely up-to-date, for the most recent
-version, check out the roxie's main branch at https://github.com/stackrox/roxie.
-Take into account that the roxie version of the user (`roxie version` or `scripts/roxie.sh version`) might
-not be the latest version, but the [releases page](https://github.com/stackrox/roxie/tags) can be used to
-resolve a given version tag (e.g. `v0.4.2`) to a commit (e.g. `189e745c91c7a6f98c0bcfcca3e7c780c11c46c3`)
-and the config schema can be [looked up for that specific
-commit](https://github.com/stackrox/roxie/blob/189e745c91c7a6f98c0bcfcca3e7c780c11c46c3/internal/deployer/config.go).
-
 Note that roxie also supports "user config", which is automatically loaded by the deploy command
 and contains overwritable defaults. On Linux systems the path of this user config file is usually
 `~/.config/roxie/config.yaml` (or `$XDG_CONFIG_HOME/roxie/config.yaml`, if that environment variable is set).
