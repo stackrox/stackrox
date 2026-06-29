@@ -185,7 +185,7 @@ endif
 .PHONY: golangci-lint-nodeps
 golangci-lint-nodeps: $(GOLANGCILINT_BIN)
 	@test -n "$(PKG)" || (echo "Usage: make golangci-lint-nodeps PKG=./path/to/package" && exit 1)
-	go fmt $(PKG)/... 2>/dev/null; true
+	go fmt $(PKG)/... 2>&1 || true
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
 
 .PHONY: proto-style

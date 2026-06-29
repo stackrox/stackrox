@@ -2,10 +2,11 @@
   "$schema": "https://unpkg.com/cursor-hooks@latest/schema/hooks.schema.json",
   "version": 1,
   "hooks": {
-    "afterFileEdit": [
+    "postToolUse": [
       {
         "command": ".claude/hooks/lint.sh",
-        "description": "Run the same lint checks as CI scoped to the edited file"
+        "matcher": "Write|Edit|StrReplace",
+        "description": "Surface lint findings to the agent after file edits"
       }
     ]
   }
