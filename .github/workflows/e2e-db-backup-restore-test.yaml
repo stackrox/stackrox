@@ -72,6 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       CI_JOB_NAME: gke-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
