@@ -15,10 +15,6 @@ on:
     - synchronize
     - labeled
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
 defaults:
   run:
     shell: bash
@@ -26,7 +22,12 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
-      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-gke-upgrade-tests') &&
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        !github.event.pull_request.draft ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests')
+      )
     runs-on: ubuntu-slim
     env:
       # TODO: undo before merging
@@ -40,33 +41,38 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Get image tag
       id: get-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
+      run: |
+        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: |
-          rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/roxctl:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
+          rhacs-eng/fact:${{ env.tag }}
+          rhacs-eng/main:${{ env.tag }}
+          rhacs-eng/roxctl:${{ env.tag }}
+          rhacs-eng/scanner-db-slim:${{ env.tag }}
+          rhacs-eng/scanner-db:${{ env.tag }}
+          rhacs-eng/scanner-slim:${{ env.tag }}
+          rhacs-eng/scanner-v4-db:${{ env.tag }}
+          rhacs-eng/scanner-v4:${{ env.tag }}
+          rhacs-eng/scanner:${{ env.tag }}
+          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
     needs: [ wait-for-images ]
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
-        !github.event.pull_request.draft
-      )
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-gke-upgrade-tests-central
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
-      # TODO: undo before merging
-      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
-
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
@@ -206,17 +212,13 @@ jobs:
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
     needs: [ wait-for-images ]
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
-        !github.event.pull_request.draft
-      )
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-gke-upgrade-tests-postgres
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
-      # TODO: undo before merging
-      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
-
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
@@ -355,17 +357,13 @@ jobs:
   # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
     needs: [ wait-for-images ]
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
-        !github.event.pull_request.draft
-      )
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}-gke-upgrade-tests-sensor
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
-      # TODO: undo before merging
-      MAIN_IMAGE_TAG: 4.12.x-322-gb393a50cae
-
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
