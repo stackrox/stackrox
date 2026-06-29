@@ -13,6 +13,8 @@ const (
 	DetectorFileAccessLane
 	DetectorAuditLogLane
 	DetectorDeploymentLane
+	SoftRestartLane
+	ResourceSyncFinishedLane
 )
 
 var (
@@ -27,6 +29,8 @@ var (
 		DetectorFileAccessLane:         "DetectorFileAccess",
 		DetectorAuditLogLane:           "DetectorAuditLog",
 		DetectorDeploymentLane:         "DetectorDeployment",
+		SoftRestartLane:                "SoftRestart",
+		ResourceSyncFinishedLane:       "ResourceSyncFinished",
 	}
 )
 

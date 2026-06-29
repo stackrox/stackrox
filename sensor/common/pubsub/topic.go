@@ -13,6 +13,8 @@ const (
 	DetectorFileAccessTopic
 	DetectorAuditLogTopic
 	DetectorDeploymentTopic
+	SoftRestartTopic
+	ResourceSyncFinishedTopic
 )
 
 var (
@@ -27,6 +29,8 @@ var (
 		DetectorFileAccessTopic:         "DetectorFileAccess",
 		DetectorAuditLogTopic:           "DetectorAuditLog",
 		DetectorDeploymentTopic:         "DetectorDeployment",
+		SoftRestartTopic:                "SoftRestart",
+		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
 	}
 )
 

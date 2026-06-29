@@ -14,6 +14,8 @@ const (
 	DetectorFileAccessConsumer
 	DetectorAuditLogConsumer
 	DetectorDeploymentConsumer
+	NetworkFlowManagerConsumer
+	CoreSensorConsumer
 )
 
 var (
@@ -29,6 +31,8 @@ var (
 		DetectorFileAccessConsumer:          "DetectorFileAccess",
 		DetectorAuditLogConsumer:            "DetectorAuditLog",
 		DetectorDeploymentConsumer:          "DetectorDeployment",
+		NetworkFlowManagerConsumer:          "NetworkFlowManager",
+		CoreSensorConsumer:                  "CoreSensor",
 	}
 )
 
