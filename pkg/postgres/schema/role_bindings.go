@@ -22,9 +22,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*RoleBindingsSubjects)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "rolebindingssubjects_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS rolebindingssubjects_idx ON role_bindings_subjects USING btree (idx)"},
-				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{

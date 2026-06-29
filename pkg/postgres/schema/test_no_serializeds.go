@@ -24,9 +24,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*TestNoSerializedsLabels)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "testnoserializedslabels_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testnoserializedslabels_idx ON test_no_serializeds_labels USING btree (idx)"},
-				},
 			},
 		},
 	}

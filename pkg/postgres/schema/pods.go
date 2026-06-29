@@ -23,9 +23,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*PodsLiveInstances)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "podsliveinstances_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS podsliveinstances_idx ON pods_live_instances USING btree (idx)"},
-				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{

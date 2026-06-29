@@ -24,9 +24,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*NodesTaints)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "nodestaints_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodestaints_idx ON nodes_taints USING btree (idx)"},
-				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{

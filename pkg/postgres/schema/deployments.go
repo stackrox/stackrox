@@ -28,27 +28,17 @@ var (
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsContainersEnvs)(nil),
 						Children:  []*postgres.CreateStmts{},
-						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainersenvs_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersenvs_idx ON deployments_containers_envs USING btree (idx)"},
-						},
 					},
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsContainersVolumes)(nil),
 						Children:  []*postgres.CreateStmts{},
-						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainersvolumes_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainersvolumes_idx ON deployments_containers_volumes USING btree (idx)"},
-						},
 					},
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsContainersSecrets)(nil),
 						Children:  []*postgres.CreateStmts{},
-						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentscontainerssecrets_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainerssecrets_idx ON deployments_containers_secrets USING btree (idx)"},
-						},
 					},
 				},
 				Indexes: []*postgres.IndexDefinition{
-					{Name: "deploymentscontainers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_idx ON deployments_containers USING btree (idx)"},
 					{Name: "deploymentscontainers_image_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_id ON deployments_containers USING hash (image_id)"},
 					{Name: "deploymentscontainers_image_idv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_idv2 ON deployments_containers USING btree (image_idv2)"},
 				},
@@ -59,13 +49,7 @@ var (
 					&postgres.CreateStmts{
 						GormModel: (*DeploymentsPortsExposureInfos)(nil),
 						Children:  []*postgres.CreateStmts{},
-						Indexes: []*postgres.IndexDefinition{
-							{Name: "deploymentsportsexposureinfos_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsportsexposureinfos_idx ON deployments_ports_exposure_infos USING btree (idx)"},
-						},
 					},
-				},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "deploymentsports_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentsports_idx ON deployments_ports USING btree (idx)"},
 				},
 			},
 		},
@@ -155,7 +139,7 @@ type Deployments struct {
 type DeploymentsContainers struct {
 	DeploymentsID                         string                `gorm:"column:deployments_id;type:uuid;primaryKey"`
 	Idx                                   int                   `gorm:"column:idx;type:integer;primaryKey"`
-	ImageID                               string                `gorm:"column:image_id;type:varchar;index:deploymentscontainers_image_id,type:hash"`
+	ImageID                               string                `gorm:"column:image_id;type:varchar"`
 	ImageNameRegistry                     string                `gorm:"column:image_name_registry;type:varchar"`
 	ImageNameRemote                       string                `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string                `gorm:"column:image_name_tag;type:varchar"`

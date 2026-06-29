@@ -24,9 +24,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*TestParent1Childrens)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "testparent1childrens_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS testparent1childrens_idx ON test_parent1_childrens USING btree (idx)"},
-				},
 			},
 		},
 	}

@@ -25,9 +25,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*ImagesV2Layers)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "imagesv2layers_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS imagesv2layers_idx ON images_v2_layers USING btree (idx)"},
-				},
 			},
 		},
 	}

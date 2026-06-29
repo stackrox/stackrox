@@ -26,13 +26,7 @@ var (
 					&postgres.CreateStmts{
 						GormModel: (*SecretsFilesRegistries)(nil),
 						Children:  []*postgres.CreateStmts{},
-						Indexes: []*postgres.IndexDefinition{
-							{Name: "secretsfilesregistries_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secretsfilesregistries_idx ON secrets_files_registries USING btree (idx)"},
-						},
 					},
-				},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "secretsfiles_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secretsfiles_idx ON secrets_files USING btree (idx)"},
 				},
 			},
 		},
