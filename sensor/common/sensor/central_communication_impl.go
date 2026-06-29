@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"context"
+	"maps"
 	"strconv"
 	"time"
 
@@ -335,9 +336,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 		}
 
 		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.SizeVT(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
-		for k, v := range msg.GetDeduperState().GetResourceHashes() {
-			deduperState[k] = v
-		}
+		maps.Copy(deduperState, msg.GetDeduperState().GetResourceHashes())
 
 		if msg.GetDeduperState().GetCurrent() == msg.GetDeduperState().GetTotal() {
 			break

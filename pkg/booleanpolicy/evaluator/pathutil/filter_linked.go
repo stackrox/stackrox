@@ -1,6 +1,8 @@
 package pathutil
 
 import (
+	"maps"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -82,9 +84,7 @@ func (t *tree) merge(other *tree) {
 }
 
 func (t *tree) gatherValuesIgnoringArrays(currentPath *map[string][]string) {
-	for fieldName, values := range t.values {
-		(*currentPath)[fieldName] = values
-	}
+	maps.Copy((*currentPath), t.values)
 	for key, child := range t.children {
 		if key.Index() >= 0 {
 			continue
@@ -117,9 +117,7 @@ func (t *tree) populateAllPaths(allPaths *[]map[string][]string, currentPath *ma
 			pathToPass = currentPath
 		} else {
 			newMap := make(map[string][]string, len(*currentPath))
-			for k, v := range *currentPath {
-				newMap[k] = v
-			}
+			maps.Copy(newMap, *currentPath)
 			pathToPass = &newMap
 		}
 		child.populateAllPaths(allPaths, pathToPass)

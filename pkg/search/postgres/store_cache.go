@@ -6,6 +6,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -138,6 +139,7 @@ func (c *cachedStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	c.addToCacheNoLock(obj)
+	c.setCacheEntriesGauge()
 	return nil
 }
 
@@ -153,6 +155,7 @@ func (c *cachedStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	for _, obj := range objs {
 		c.addToCacheNoLock(obj)
 	}
+	c.setCacheEntriesGauge()
 	return nil
 }
 
@@ -184,6 +187,7 @@ func (c *cachedStore[T, PT]) Delete(ctx context.Context, id string) error {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	delete(c.cache, id)
+	c.setCacheEntriesGauge()
 	return nil
 }
 
@@ -219,6 +223,7 @@ func (c *cachedStore[T, PT]) DeleteMany(ctx context.Context, identifiers []strin
 	for _, id := range filteredIDs {
 		delete(c.cache, id)
 	}
+	c.setCacheEntriesGauge()
 	return nil
 }
 
@@ -241,8 +246,10 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 	defer c.cacheLock.RUnlock()
 	obj, found := c.cache[id]
 	if !found {
+		cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Exists"}).Inc()
 		return false, nil
 	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Exists"}).Inc()
 	return c.isReadAllowed(ctx, obj), nil
 }
 
@@ -251,6 +258,7 @@ func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error
 	if checkScopeQueries(ctx, q) {
 		return c.countFromCache(ctx)
 	}
+	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Count"}).Inc()
 	return c.underlyingStore.Count(ctx, q)
 }
 
@@ -281,11 +289,13 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	defer c.cacheLock.RUnlock()
 	obj, found := c.cache[id]
 	if !found {
+		cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Get"}).Inc()
 		return nil, false, nil
 	}
 	if !c.isReadAllowed(ctx, obj) {
 		return nil, false, nil
 	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "Get"}).Inc()
 	return obj.CloneVT(), true, nil
 }
 
@@ -299,9 +309,11 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 	defer c.cacheLock.RUnlock()
 	results := make([]PT, 0, len(identifiers))
 	misses := make([]int, 0)
+	var notFound int
 	for idx, id := range identifiers {
 		obj, found := c.cache[id]
 		if !found {
+			notFound++
 			misses = append(misses, idx)
 			continue
 		}
@@ -311,6 +323,10 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 		}
 		results = append(results, obj.CloneVT())
 	}
+	if notFound > 0 {
+		cacheMissTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetMany"}).Add(float64(notFound))
+	}
+	cacheHitTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetMany"}).Add(float64(len(results)))
 	return results, misses, nil
 }
 
@@ -320,6 +336,7 @@ func (c *cachedStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, f
 	if checkScopeQueries(ctx, query) {
 		return c.Walk(ctx, fn)
 	}
+	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "WalkByQuery"}).Inc()
 	return c.underlyingStore.WalkByQuery(ctx, query, fn)
 }
 
@@ -347,6 +364,7 @@ func (c *cachedStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, 
 	if checkScopeQueries(ctx, query) {
 		return c.Walk(ctx, fn)
 	}
+	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetByQueryFn"}).Inc()
 	return c.underlyingStore.GetByQueryFn(ctx, query, fn)
 }
 
@@ -364,6 +382,7 @@ func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([
 		}
 		return result, err
 	}
+	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetByQuery"}).Inc()
 	return c.underlyingStore.GetByQuery(ctx, query)
 }
 
@@ -390,6 +409,7 @@ func (c *cachedStore[T, PT]) deleteByQueryWithIDs(ctx context.Context, query *v1
 	for _, id := range identifiersToRemove {
 		delete(c.cache, id)
 	}
+	c.setCacheEntriesGauge()
 	return identifiersToRemove, nil
 }
 
@@ -414,6 +434,7 @@ func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query)
 	if checkScopeQueries(ctx, query) {
 		return c.GetIDs(ctx)
 	}
+	cacheBypassTotal.With(prometheus.Labels{"Type": c.schema.TypeName, "Operation": "GetIDsByQuery"}).Inc()
 	return c.underlyingStore.GetIDsByQuery(ctx, query)
 }
 
@@ -479,13 +500,21 @@ func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage
 }
 
 func (c *cachedStore[T, PT]) populateCache() error {
+	timer := prometheus.NewTimer(cachePopulationDuration.WithLabelValues(c.schema.TypeName))
+	defer timer.ObserveDuration()
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	c.cache = make(map[string]PT)
-	return c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
+	err := c.underlyingStore.Walk(sac.WithAllAccess(context.Background()), func(obj PT) error {
 		c.addToCacheNoLock(obj)
 		return nil
 	})
+	c.setCacheEntriesGauge()
+	return err
+}
+
+func (c *cachedStore[T, PT]) setCacheEntriesGauge() {
+	cacheEntries.WithLabelValues(c.schema.TypeName).Set(float64(len(c.cache)))
 }
 
 func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {

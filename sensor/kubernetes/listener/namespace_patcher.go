@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"maps"
 
 	"github.com/pkg/errors"
 
@@ -74,9 +75,7 @@ func (h *namespacePatchHandler) patchNamespaceLabels(ns *v1.Namespace, desiredLa
 	if patchedNS.Labels == nil {
 		patchedNS.Labels = desiredLabels
 	} else {
-		for k, v := range desiredLabels {
-			patchedNS.Labels[k] = v
-		}
+		maps.Copy(patchedNS.Labels, desiredLabels)
 	}
 
 	if patchedNS.Annotations == nil {

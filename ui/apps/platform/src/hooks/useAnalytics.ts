@@ -57,6 +57,9 @@ export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
 export const PLATFORM_CVE_FILTER_APPLIED = 'Platform CVE Filter Applied';
 export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context View';
 
+// dashboard widgets
+export const AGING_IMAGES_WIDGET_CLICKED = 'Aging Images Widget Link Clicked';
+
 // vulnerability reports
 
 export const IMAGE_VULNERABILITY_REPORTS_WIZARD_SAVE_CLICKED =
@@ -215,6 +218,10 @@ export type AnalyticsEvent =
               type: 'CVE' | 'Image' | 'Deployment';
               page: 'Overview' | 'CVE Detail';
           };
+      }
+    | {
+          event: typeof AGING_IMAGES_WIDGET_CLICKED;
+          properties: { clickType: 'bucket'; bucket: string } | { clickType: 'view-all' };
       }
     /**
      * Tracks each time the user applies a filter on a VM page.

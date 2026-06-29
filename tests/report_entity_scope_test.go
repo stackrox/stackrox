@@ -40,6 +40,17 @@ func (s *ReportEntityScopeSuite) SetupSuite() {
 	s.ctx, s.cancel = context.WithTimeout(context.Background(), 10*time.Minute)
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = apiV2.NewReportServiceClient(conn)
+	s.waitForCentralReady()
+}
+
+func (s *ReportEntityScopeSuite) waitForCentralReady() {
+	s.T().Log("Waiting for Central to be ready...")
+	s.Require().Eventually(func() bool {
+		ctx, cancel := context.WithTimeout(s.ctx, 5*time.Second)
+		defer cancel()
+		_, err := s.service.CountReportConfigurations(ctx, &apiV2.RawQuery{})
+		return err == nil
+	}, 2*time.Minute, 2*time.Second, "Central did not become ready")
 }
 
 func (s *ReportEntityScopeSuite) TearDownSuite() {
@@ -387,8 +398,8 @@ func (s *ReportEntityScopeSuite) downloadReport(reportID string) {
 	password := centralgrpc.RoxPassword(s.T())
 	username := centralgrpc.RoxUsername(s.T())
 
-	url := fmt.Sprintf("https://%s/api/reports/jobs/download?id=%s", endpoint, reportID)
-	s.T().Logf("Downloading report from %s", url)
+	downloadURL := fmt.Sprintf("https://%s/api/reports/jobs/download?id=%s", endpoint, reportID)
+	s.T().Logf("Downloading report from %s", downloadURL)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -397,12 +408,19 @@ func (s *ReportEntityScopeSuite) downloadReport(reportID string) {
 		Timeout: 60 * time.Second,
 	}
 
-	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, url, nil)
-	s.Require().NoError(err)
-	req.SetBasicAuth(username, password)
+	var resp *http.Response
+	s.Require().Eventually(func() bool {
+		req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, downloadURL, nil)
+		s.Require().NoError(err)
+		req.SetBasicAuth(username, password)
 
-	resp, err := client.Do(req)
-	s.Require().NoError(err)
+		resp, err = client.Do(req)
+		if err != nil {
+			s.T().Logf("Download attempt failed: %v", err)
+			return false
+		}
+		return true
+	}, 2*time.Minute, 5*time.Second, "failed to download report after retries")
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)

@@ -12,6 +12,23 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
+if [[ "$#" -lt 1 ]]; then
+    die "usage: dispatch <ci-job> [<...other parameters...>]"
+fi
+
+ci_job="$1"
+shift
+
+# Skip non-UI jobs early when the PR only touches files under ui/.
+case "$ci_job" in
+    *nongroovy*|*upgrade*)
+        if changes_limited_to "ui/"; then
+            info "Skipping $ci_job: all changes are under ui/"
+            exit 0
+        fi
+        ;;
+esac
+
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
     source "${SHARED_DIR:-}/shared_env"
@@ -21,12 +38,6 @@ openshift_ci_mods
 openshift_ci_import_creds
 create_exit_trap
 
-if [[ "$#" -lt 1 ]]; then
-    die "usage: dispatch <ci-job> [<...other parameters...>]"
-fi
-
-ci_job="$1"
-shift
 ci_export CI_JOB_NAME "$ci_job"
 
 case "$ci_job" in

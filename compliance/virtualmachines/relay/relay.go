@@ -41,6 +41,9 @@ type Relay struct {
 	// Rate limiting config
 	maxReportsPerMinute float64
 	staleAckThreshold   time.Duration
+	// payloadCacheTTL is the configured TTL for the payload cache; when positive,
+	// New installs a periodic payload sweep ticker independent of staleAckThreshold.
+	payloadCacheTTL time.Duration
 
 	// cacheEvictTicker owns the metadata eviction ticker in production so it can be
 	// stopped when the relay shuts down, avoiding ticker goroutine leaks.
@@ -51,12 +54,23 @@ type Relay struct {
 	// their own channel for deterministic control.
 	cacheEvictTickCh <-chan time.Time
 
+	// payloadSweepTicker drives periodic TTL sweeps of the payload cache when
+	// payloadCacheTTL > 0. It is independent of staleAckThreshold and cacheEvictTicker.
+	payloadSweepTicker *time.Ticker
+	// payloadSweepTickCh signals when expired payload cache entries should be swept.
+	// In production this is fed by payloadSweepTicker.C; tests may supply their own channel.
+	payloadSweepTickCh <-chan time.Time
+
 	// cache stores metadata (including the per-VSOCK rate limiter) for each VSOCK ID.
 	cache map[string]*cachedReportMetadata
 	// mu guards cache. A plain Mutex is preferred over RWMutex
 	// because nearly every incoming report writes to the map, so there is no
 	// read-heavy workload that would benefit from concurrent readers.
 	mu sync.Mutex
+
+	// payloadCache stores full VM reports for UMH-driven retransmission; it uses its own mutex
+	// (see reportPayloadCache) and is keyed by the same resource ID as UMH (vsock CID).
+	payloadCache *reportPayloadCache
 }
 
 // evictStaleEntries removes metadata entries for VMs that have
@@ -73,6 +87,17 @@ func (r *Relay) evictStaleEntries(now time.Time, threshold time.Duration) {
 	}
 }
 
+// newHalfIntervalTicker creates a ticker that fires at half the given duration,
+// falling back to the full duration when halving would produce a non-positive interval.
+func newHalfIntervalTicker(d time.Duration) (*time.Ticker, <-chan time.Time) {
+	interval := d / 2
+	if interval <= 0 {
+		interval = d
+	}
+	t := time.NewTicker(interval)
+	return t, t.C
+}
+
 // New creates a Relay with the given report stream, sender, and unconfirmed message handler.
 func New(
 	reportStream IndexReportStream,
@@ -80,6 +105,8 @@ func New(
 	umh handler.UnconfirmedMessageHandler,
 	maxReportsPerMinute float64,
 	staleAckThreshold time.Duration,
+	payloadCacheMaxSlots int,
+	payloadCacheTTL time.Duration,
 ) *Relay {
 	r := &Relay{
 		reportStream:        reportStream,
@@ -87,18 +114,19 @@ func New(
 		umh:                 umh,
 		maxReportsPerMinute: maxReportsPerMinute,
 		staleAckThreshold:   staleAckThreshold,
+		payloadCacheTTL:     payloadCacheTTL,
 		cache:               make(map[string]*cachedReportMetadata),
+		payloadCache:        newReportPayloadCache(payloadCacheMaxSlots, payloadCacheTTL),
 	}
+	metrics.IndexReportCacheSlotsCapacity.Set(float64(payloadCacheMaxSlots))
+	metrics.IndexReportCacheSlotsUsed.Set(float64(r.payloadCache.Len()))
 	if staleAckThreshold <= 0 {
 		log.Warnf("VM relay stale ACK threshold is non-positive (%s); disabling stale cache eviction", staleAckThreshold)
 	} else {
-		cacheEvictInterval := staleAckThreshold / 2
-		if cacheEvictInterval <= 0 {
-			cacheEvictInterval = staleAckThreshold
-		}
-		ticker := time.NewTicker(cacheEvictInterval)
-		r.cacheEvictTicker = ticker
-		r.cacheEvictTickCh = ticker.C
+		r.cacheEvictTicker, r.cacheEvictTickCh = newHalfIntervalTicker(staleAckThreshold)
+	}
+	if payloadCacheTTL > 0 {
+		r.payloadSweepTicker, r.payloadSweepTickCh = newHalfIntervalTicker(payloadCacheTTL)
 	}
 	r.umh.OnACK(r.markAcked)
 	return r
@@ -109,6 +137,9 @@ func (r *Relay) Run(ctx context.Context) error {
 	log.Info("Starting virtual machine relay")
 	if r.cacheEvictTicker != nil {
 		defer r.cacheEvictTicker.Stop()
+	}
+	if r.payloadSweepTicker != nil {
+		defer r.payloadSweepTicker.Stop()
 	}
 
 	reportChan, err := r.reportStream.Start(ctx)
@@ -133,9 +164,11 @@ func (r *Relay) Run(ctx context.Context) error {
 				}
 				return errors.New("UMH retry command channel closed")
 			}
-			log.Infof("UMH retry for resource %s; no payload cache available, skipping resend", resourceID)
+			r.handleRetryCommand(ctx, resourceID)
 		case tick := <-r.cacheEvictTickCh:
 			r.evictStaleEntries(tick, r.staleAckThreshold)
+		case tick := <-r.payloadSweepTickCh:
+			r.sweepPayloadCache(tick)
 		}
 	}
 }
@@ -155,6 +188,12 @@ func (r *Relay) markAcked(resourceID string) {
 			}
 		}
 	})
+
+	ev, removed := r.payloadCache.Remove(resourceID, now)
+	if removed {
+		observePayloadEvictionMetrics(ev)
+	}
+	metrics.IndexReportCacheSlotsUsed.Set(float64(r.payloadCache.Len()))
 }
 
 // handleIncomingReport processes an incoming report with rate limiting.
@@ -166,6 +205,11 @@ func (r *Relay) handleIncomingReport(ctx context.Context, vmReport *v1.VMReport)
 	}
 	vsockID := indexReport.GetVsockCid()
 	now := time.Now()
+
+	for _, ev := range r.payloadCache.Upsert(vsockID, vmReport, now) {
+		observePayloadEvictionMetrics(ev)
+	}
+	metrics.IndexReportCacheSlotsUsed.Set(float64(r.payloadCache.Len()))
 
 	r.cacheReport(vsockID, now)
 
@@ -237,4 +281,34 @@ func (r *Relay) tryConsume(vsockID string) bool {
 		metadata.limiter = rate.NewLimiter(rate.Limit(ratePerSecond), 1)
 	}
 	return metadata.limiter.Allow()
+}
+
+// sweepPayloadCache removes expired payload cache entries and updates cache metrics.
+func (r *Relay) sweepPayloadCache(now time.Time) {
+	for _, ev := range r.payloadCache.SweepExpired(now) {
+		observePayloadEvictionMetrics(ev)
+	}
+	metrics.IndexReportCacheSlotsUsed.Set(float64(r.payloadCache.Len()))
+}
+
+// handleRetryCommand attempts to resend a cached payload for the given resource ID.
+func (r *Relay) handleRetryCommand(ctx context.Context, resourceID string) {
+	cached, ok := r.payloadCache.Get(resourceID)
+	if ok {
+		metrics.IndexReportCacheLookupsTotal.WithLabelValues("hit").Inc()
+		if err := r.reportSender.Send(ctx, cached); err != nil {
+			r.umh.HandleNACK(resourceID)
+			log.Errorf("Failed to resend cached VM index report (resourceID=%s): %v", resourceID, err)
+			return
+		}
+		r.umh.ObserveSending(resourceID)
+		return
+	}
+	metrics.IndexReportCacheLookupsTotal.WithLabelValues("miss").Inc()
+	log.Infof("VM index report payload cache miss on retry for resource %s; not resending", resourceID)
+}
+
+func observePayloadEvictionMetrics(ev payloadEviction) {
+	metrics.IndexReportCacheResidencySeconds.Observe(ev.residency.Seconds())
+	metrics.IndexReportCacheLifetimeSeconds.Observe(ev.lifetime.Seconds())
 }
