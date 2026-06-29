@@ -13,6 +13,8 @@ import (
 	clusterCVEDataStoreMocks "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
 	deploymentDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	namespaceDataStoreMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	networkBaselineManagerMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	netEntityDataStoreMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
@@ -42,6 +44,14 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
+
+type recordingRefresher struct {
+	calls []string
+}
+
+func (r *recordingRefresher) RefreshTracker(prefix string) {
+	r.calls = append(r.calls, prefix)
+}
 
 func TestClusterDataStore(t *testing.T) {
 	suite.Run(t, new(clusterDataStoreTestSuite))
@@ -76,6 +86,7 @@ type clusterDataStoreTestSuite struct {
 	notifierProcessor *notifierMocks.MockProcessor
 
 	compliancePruner *compliancePrunerMocks.MockPruner
+	refresher        *recordingRefresher
 
 	datastore *datastoreImpl
 }
@@ -107,6 +118,8 @@ func (s *clusterDataStoreTestSuite) SetupTest() {
 	s.notifierProcessor = notifierMocks.NewMockProcessor(s.mockCtrl)
 
 	s.compliancePruner = compliancePrunerMocks.NewMockPruner(s.mockCtrl)
+	s.refresher = &recordingRefresher{}
+	refresh.SetSingleton(s.refresher)
 
 	// Create datastore instance with all mocks
 	s.datastore = &datastoreImpl{
@@ -998,4 +1011,70 @@ func (s *clusterDataStoreTestSuite) TestUpdateClusterCleanupCache() {
 	filter, ok := s.datastore.idToNamespaceFilterCache.Get(clusterID)
 	assert.False(s.T(), ok)
 	assert.Nil(s.T(), filter)
+}
+
+func (s *clusterDataStoreTestSuite) TestMetricsRefreshOnClusterStatusUpdate() {
+	ctx := sac.WithAllAccess(s.T().Context())
+	clusterID := fixtureconsts.Cluster1
+
+	for name, tc := range map[string]struct {
+		update        func() error
+		upsertErr     error
+		expectedCalls []string
+	}{
+		"UpdateClusterUpgradeStatus refreshes on success": {
+			update: func() error {
+				return s.datastore.UpdateClusterUpgradeStatus(ctx, clusterID, &storage.ClusterUpgradeStatus{})
+			},
+			expectedCalls: []string{metrics.Health},
+		},
+		"UpdateClusterUpgradeStatus skips refresh on error": {
+			update: func() error {
+				return s.datastore.UpdateClusterUpgradeStatus(ctx, clusterID, &storage.ClusterUpgradeStatus{})
+			},
+			upsertErr: errors.New("upsert failed"),
+		},
+		"UpdateClusterCertExpiryStatus refreshes on success": {
+			update: func() error {
+				return s.datastore.UpdateClusterCertExpiryStatus(ctx, clusterID, &storage.ClusterCertExpiryStatus{})
+			},
+			expectedCalls: []string{metrics.Expiry},
+		},
+		"UpdateClusterCertExpiryStatus skips refresh on error": {
+			update: func() error {
+				return s.datastore.UpdateClusterCertExpiryStatus(ctx, clusterID, &storage.ClusterCertExpiryStatus{})
+			},
+			upsertErr: errors.New("upsert failed"),
+		},
+		"UpdateClusterStatus refreshes on success": {
+			update: func() error {
+				return s.datastore.UpdateClusterStatus(ctx, clusterID, &storage.ClusterStatus{})
+			},
+			expectedCalls: []string{metrics.Health},
+		},
+		"UpdateClusterStatus skips refresh on error": {
+			update: func() error {
+				return s.datastore.UpdateClusterStatus(ctx, clusterID, &storage.ClusterStatus{})
+			},
+			upsertErr: errors.New("upsert failed"),
+		},
+	} {
+		s.Run(name, func() {
+			s.refresher.calls = nil
+			s.clusterStore.EXPECT().
+				Get(gomock.Any(), clusterID).
+				Return(&storage.Cluster{Id: clusterID, Status: &storage.ClusterStatus{}}, true, nil)
+			s.clusterStore.EXPECT().
+				Upsert(gomock.Any(), gomock.Any()).
+				Return(tc.upsertErr)
+
+			err := tc.update()
+			if tc.upsertErr != nil {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+			}
+			s.Equal(tc.expectedCalls, s.refresher.calls)
+		})
+	}
 }
