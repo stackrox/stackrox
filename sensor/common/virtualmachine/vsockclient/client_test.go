@@ -6,6 +6,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,10 +16,10 @@ import (
 func TestSendGetReport_Success(t *testing.T) {
 	client := NewClient([]string{CapabilityReportV1}, 10<<20)
 	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+	defer utils.IgnoreError(clientConn.Close)
 
 	go func() {
-		defer func() { _ = agentConn.Close() }()
+		defer utils.IgnoreError(agentConn.Close)
 		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
 		require.NoError(t, err)
 
@@ -51,10 +52,10 @@ func TestSendGetReport_Success(t *testing.T) {
 func TestSendGetReport_Unchanged(t *testing.T) {
 	client := NewClient(nil, 10<<20)
 	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+	defer utils.IgnoreError(clientConn.Close)
 
 	go func() {
-		defer func() { _ = agentConn.Close() }()
+		defer utils.IgnoreError(agentConn.Close)
 		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
 		require.NoError(t, err)
 
@@ -79,10 +80,10 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 func TestSendGetReport_NilReportRejected(t *testing.T) {
 	client := NewClient(nil, 10<<20)
 	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+	defer utils.IgnoreError(clientConn.Close)
 
 	go func() {
-		defer func() { _ = agentConn.Close() }()
+		defer utils.IgnoreError(agentConn.Close)
 		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
 		require.NoError(t, err)
 
@@ -102,60 +103,58 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 	assert.Contains(t, err.Error(), "IndexReport is nil")
 }
 
-func TestSendGetReport_NotReady(t *testing.T) {
-	client := NewClient(nil, 10<<20)
-	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+func TestSendGetReport_ErrorCodes(t *testing.T) {
+	cases := map[string]struct {
+		code      pb.ErrorCode
+		message   string
+		wantErr   error
+		wantInMsg string
+	}{
+		"should wrap ErrNotReady for NOT_READY": {
+			code:    pb.ErrorCode_ERROR_CODE_NOT_READY,
+			message: "report not yet generated",
+			wantErr: ErrNotReady,
+		},
+		"should wrap ErrUnknownMethod for UNKNOWN_METHOD": {
+			code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
+			message: "get_report not supported",
+			wantErr: ErrUnknownMethod,
+		},
+		"should wrap ErrInternal for INTERNAL": {
+			code:      pb.ErrorCode_ERROR_CODE_INTERNAL,
+			message:   "scan crashed",
+			wantErr:   ErrInternal,
+			wantInMsg: "scan crashed",
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			client := NewClient(nil, 10<<20)
+			clientConn, agentConn := net.Pipe()
+			defer utils.IgnoreError(clientConn.Close)
 
-	go func() {
-		defer func() { _ = agentConn.Close() }()
-		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
-		require.NoError(t, err)
+			go func() {
+				defer utils.IgnoreError(agentConn.Close)
+				_, err := vsockframing.ReadFrame(agentConn, 10<<20)
+				require.NoError(t, err)
 
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
-			Result: &pb.VMServiceResponse_Error{
-				Error: &pb.ErrorResponse{
-					Code:    pb.ErrorCode_ERROR_CODE_NOT_READY,
-					Message: "report not yet generated",
-				},
-			},
-		}
-		respData, err := proto.Marshal(resp)
-		require.NoError(t, err)
-		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-	}()
+				resp := &pb.VMServiceResponse{
+					Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
+					Result: &pb.VMServiceResponse_Error{
+						Error: &pb.ErrorResponse{Code: tc.code, Message: tc.message},
+					},
+				}
+				respData, err := proto.Marshal(resp)
+				require.NoError(t, err)
+				require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
+			}()
 
-	_, err := client.GetReport(clientConn, 0)
-	require.Error(t, err)
-	assert.ErrorIs(t, err, ErrNotReady)
-}
-
-func TestSendGetReport_UnknownMethod(t *testing.T) {
-	client := NewClient(nil, 10<<20)
-	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
-
-	go func() {
-		defer func() { _ = agentConn.Close() }()
-		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
-		require.NoError(t, err)
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
-			Result: &pb.VMServiceResponse_Error{
-				Error: &pb.ErrorResponse{
-					Code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
-					Message: "get_report not supported",
-				},
-			},
-		}
-		respData, err := proto.Marshal(resp)
-		require.NoError(t, err)
-		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-	}()
-
-	_, err := client.GetReport(clientConn, 0)
-	require.Error(t, err)
-	assert.ErrorIs(t, err, ErrUnknownMethod)
+			_, err := client.GetReport(clientConn, 0)
+			require.Error(t, err)
+			assert.ErrorIs(t, err, tc.wantErr)
+			if tc.wantInMsg != "" {
+				assert.Contains(t, err.Error(), tc.wantInMsg)
+			}
+		})
+	}
 }

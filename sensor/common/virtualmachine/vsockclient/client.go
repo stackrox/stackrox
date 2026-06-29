@@ -20,6 +20,8 @@ var (
 	ErrNotReady = errors.New("agent has not yet generated a report")
 	// ErrUnknownMethod indicates the agent does not support the requested method.
 	ErrUnknownMethod = errors.New("agent does not support the requested method")
+	// ErrInternal indicates the agent encountered an internal error.
+	ErrInternal = errors.New("agent internal error")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -97,6 +99,8 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrNotReady, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD:
 		return fmt.Errorf("%w: %s", ErrUnknownMethod, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_INTERNAL:
+		return fmt.Errorf("%w: %s", ErrInternal, e.GetMessage())
 	default:
 		return fmt.Errorf("agent error (%s): %s", e.GetCode(), e.GetMessage())
 	}
