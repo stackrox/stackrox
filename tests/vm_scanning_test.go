@@ -25,13 +25,17 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			var first *v2.VirtualMachine
 			var metricsBefore pipelineMetricsSnapshot
 			var metricsMidpoint pipelineMetricsSnapshot
+			metricsChecksEnabled := true
 			roxagentOK := false
 
 			// Capture the shared cumulative metrics before the two roxagent runs so
 			// the final pipeline assertion can check this VM's expected deltas.
-			t.Run("MetricsBaseline", func(t *testing.T) {
+			if ok := t.Run("MetricsBaseline", func(t *testing.T) {
 				metricsBefore = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
-			})
+			}); !ok {
+				t.Log("skipping PipelineMetrics: baseline metric scrape failed")
+				metricsChecksEnabled = false
+			}
 
 			t.Run("RunRoxagent", func(t *testing.T) {
 				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
@@ -84,9 +88,14 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			// Snapshot metrics after the first report is fully visible in Central and
 			// before kicking off the rescan. This is used for diagnostics without
 			// making the midpoint another strict gate.
-			t.Run("MetricsMidpoint", func(t *testing.T) {
-				metricsMidpoint = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
-			})
+			if metricsChecksEnabled {
+				if ok := t.Run("MetricsMidpoint", func(t *testing.T) {
+					metricsMidpoint = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
+				}); !ok {
+					t.Log("skipping PipelineMetrics: midpoint metric scrape failed")
+					metricsChecksEnabled = false
+				}
+			}
 
 			beforeTime := s.mustGetScanTimestamp(first.GetId())
 			var rescan *v2.VirtualMachine
@@ -113,9 +122,15 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				return
 			}
 
-			t.Run("PipelineMetrics", func(t *testing.T) {
-				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore, metricsMidpoint)
-			})
+			if metricsChecksEnabled {
+				t.Run("PipelineMetrics", func(t *testing.T) {
+					s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore, metricsMidpoint)
+				})
+			} else {
+				t.Run("PipelineMetrics", func(t *testing.T) {
+					t.Skip("metric prerequisite scrape failed earlier in this VM scenario")
+				})
+			}
 
 			t.Run("ConsistencyCheck", func(t *testing.T) {
 				fetched := s.mustGetVM(rescan.GetId())

@@ -133,17 +133,6 @@ func formatMetricObservation(o metricObservation) string {
 	return fmt.Sprintf("%.0f", o.value)
 }
 
-func assertMetricDelta(t *assert.CollectT, before, after testmetrics.Metrics, want float64, name string, labels ...string) {
-	beforeObs := metricObservationFor(before, name, labels...)
-	afterObs := metricObservationFor(after, name, labels...)
-	got := afterObs.valueOrZero() - beforeObs.valueOrZero()
-	assert.Truef(t, afterObs.present,
-		"%s should be present after the scenario (before=%s after=%s delta=%.0f)",
-		name, formatMetricObservation(beforeObs), formatMetricObservation(afterObs), got)
-	assert.Equalf(t, want, got, "%s delta should be %.0f (before=%s after=%s delta=%.0f)",
-		name, want, formatMetricObservation(beforeObs), formatMetricObservation(afterObs), got)
-}
-
 func assertMetricDeltaAtLeast(t *assert.CollectT, before, after testmetrics.Metrics, wantMin float64, name string, labels ...string) {
 	beforeObs := metricObservationFor(before, name, labels...)
 	afterObs := metricObservationFor(after, name, labels...)
