@@ -83,4 +83,12 @@ var (
 	// limit (ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB).
 	VirtualMachinesPullMaxResponseSizeKB = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB", 16384).
 						WithMinimum(1)
+
+	// VirtualMachinesScraperPollInterval defines how often the pull-mode scraper
+	// polls VMs for new reports.
+	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 15*time.Second)
+
+	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
+	// and pulling a report in a single scrape cycle.
+	VirtualMachinesScraperPerVMTimeout = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_PER_VM_TIMEOUT", 30*time.Second)
 )
