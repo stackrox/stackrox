@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/audit"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
-	complianceOperatorManager "github.com/stackrox/rox/central/complianceoperator/manager"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCVEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
@@ -100,7 +99,6 @@ type Resolver struct {
 	SignatureIntegrationDataStore signatureIntegrationDataStore.DataStore
 	orchestratorIstioCVEManager   fetcher.OrchestratorIstioCVEManager
 	cveMatcher                    *cveMatcher.CVEMatcher
-	manager                       complianceOperatorManager.Manager
 	mitreStore                    mitreDataStore.AttackReadOnlyDataStore
 	vulnReqMgr                    requestmgr.Manager
 	vulnReqQueryMgr               querymgr.VulnReqQueryManager
@@ -145,7 +143,6 @@ func New() *Resolver {
 		SignatureIntegrationDataStore: signatureIntegrationDataStore.Singleton(),
 		orchestratorIstioCVEManager:   fetcher.SingletonManager(),
 		cveMatcher:                    cveMatcher.Singleton(),
-		manager:                       complianceOperatorManager.Singleton(),
 		mitreStore:                    mitreDataStore.Singleton(),
 		vulnReqMgr:                    requestmgr.Singleton(),
 		vulnReqQueryMgr:               querymgr.Singleton(),
