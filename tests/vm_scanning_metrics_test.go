@@ -148,7 +148,7 @@ func assertMetricZeroOrAbsentDelta(t *assert.CollectT, before, after testmetrics
 	beforeObs := metricObservationFor(before, name, labels...)
 	afterObs := metricObservationFor(after, name, labels...)
 	got := afterObs.valueOrZero() - beforeObs.valueOrZero()
-	assert.Equalf(t, float64(0), got, "%s delta should be 0 or absent (before=%s after=%s delta=%.0f)",
+	assert.Zerof(t, got, "%s delta should be 0 or absent (before=%s after=%s delta=%.0f)",
 		name, formatMetricObservation(beforeObs), formatMetricObservation(afterObs), got)
 }
 
@@ -185,9 +185,9 @@ func assertPipeline(t *assert.CollectT, before, midpoint, after pipelineMetricsS
 	sensorMidpoint := midpoint.sensor
 	sensorAfter := after.sensor
 
-	complianceACKMetric := "rox_compliance_virtual_machine_index_acks_from_sensor_total"
-	sensorACKMetric := "rox_sensor_virtual_machine_index_report_acks_received_total"
-	complianceIngressMetric := "rox_compliance_virtual_machine_relay_index_reports_received_total"
+	const complianceACKMetric = "rox_compliance_virtual_machine_index_acks_from_sensor_total"
+	const sensorACKMetric = "rox_sensor_virtual_machine_index_report_acks_received_total"
+	const complianceIngressMetric = "rox_compliance_virtual_machine_relay_index_reports_received_total"
 
 	complianceACKDeltas := metricPhaseDeltasFor(complianceBefore, complianceMidpoint, complianceAfter, complianceACKMetric, "action", "ACK")
 	sensorACKDeltas := metricPhaseDeltasFor(sensorBefore, sensorMidpoint, sensorAfter, sensorACKMetric, "action", "ACK")

@@ -88,13 +88,13 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			// Snapshot metrics after the first report is fully visible in Central and
 			// before kicking off the rescan. This is used for diagnostics without
 			// making the midpoint another strict gate.
-			if metricsChecksEnabled {
-				if ok := t.Run("MetricsMidpoint", func(t *testing.T) {
-					metricsMidpoint = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
-				}); !ok {
-					t.Log("skipping PipelineMetrics: midpoint metric scrape failed")
-					metricsChecksEnabled = false
+			if ok := t.Run("MetricsMidpoint", func(t *testing.T) {
+				if !metricsChecksEnabled {
+					t.Skip("skipping: baseline metric scrape failed")
 				}
+				metricsMidpoint = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
+			}); !ok {
+				metricsChecksEnabled = false
 			}
 
 			beforeTime := s.mustGetScanTimestamp(first.GetId())
@@ -122,15 +122,12 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				return
 			}
 
-			if metricsChecksEnabled {
-				t.Run("PipelineMetrics", func(t *testing.T) {
-					s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore, metricsMidpoint)
-				})
-			} else {
-				t.Run("PipelineMetrics", func(t *testing.T) {
+			t.Run("PipelineMetrics", func(t *testing.T) {
+				if !metricsChecksEnabled {
 					t.Skip("metric prerequisite scrape failed earlier in this VM scenario")
-				})
-			}
+				}
+				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore, metricsMidpoint)
+			})
 
 			t.Run("ConsistencyCheck", func(t *testing.T) {
 				fetched := s.mustGetVM(rescan.GetId())
