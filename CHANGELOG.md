@@ -11,6 +11,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.9.8]
 
+### Technical Changes
+
+- ROX-35006: With the Go runtime upgrade to 1.26, validation of IPv6 addresses now requires bracketed format (e.g. `[2001:db8::1]:443`).
+
 **Full Changelog**: [4.9.7...4.9.8](https://github.com/stackrox/stackrox/compare/4.9.7...4.9.8)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.9/html/release_notes/index) on the Red Hat Documentation portal.
