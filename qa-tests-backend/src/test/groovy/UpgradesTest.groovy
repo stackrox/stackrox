@@ -31,7 +31,7 @@ class UpgradesTest extends BaseSpecification {
 
     private static final String COMPONENT_RESOURCE_TYPE = "nodeComponents"
 
-@Tag("Upgrade")
+    @Tag("Upgrade")
     def "Verify cluster has listen on exec/pf webhook turned on"() {
         expect:
         "Migrated clusters to have admissionControllerEvents set to true"
