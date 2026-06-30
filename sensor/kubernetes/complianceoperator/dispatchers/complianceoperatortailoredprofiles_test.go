@@ -7,8 +7,6 @@ import (
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,9 +74,6 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
-// TestProcessEvent_ExtendsProfile tests rule computation and metadata handling when extending a base profile:
-// - effective rules = base rules - disabled rules + enabled rules
-// - labels, annotations, description parsed from tailored profile
 func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	baseProfile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -121,7 +116,6 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 		Spec: v1alpha1.TailoredProfileSpec{
 			Description: "Tailored profile description",
 			Extends:     "ocp4-cis",
-			// Description intentionally empty to test inheritance
 			DisableRules: []v1alpha1.RuleReferenceSpec{
 				{Name: "ocp4-api-server-audit-log-path"},
 			},
@@ -139,19 +133,20 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	require.Len(t, event.ForwardMessages, 1)
 
-	// Metadata comes from the tailored profile itself, not the base profile.
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
+	require.NotNil(t, profile)
+
 	assert.Equal(t, "ocp4-tailored", profile.GetLabels()["compliance.openshift.io/profile-bundle"])
 	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
 	assert.Empty(t, profile.GetAnnotations()[v1alpha1.ProductAnnotation])
 	assert.Equal(t, "Tailored profile description", profile.GetDescription())
+	assert.Equal(t, central.ComplianceOperatorProfileV2_TAILORED_PROFILE, profile.GetOperatorKind())
 
-	// Verify rule computation: 3 base - 1 disabled + 1 enabled = 3 rules
 	ruleNames := make([]string, len(profile.GetRules()))
 	for i, r := range profile.GetRules() {
-		ruleNames[i] = r.GetName()
+		ruleNames[i] = r.GetRuleName()
 	}
 	slices.Sort(ruleNames)
 	assert.Equal(t, []string{
@@ -161,8 +156,6 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	}, ruleNames)
 }
 
-// TestProcessEvent_StoresTailoredProfileMetadata tests that all metadata fields are stored
-// from the tailored profile itself, rather than from the base profile it extends.
 func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -192,9 +185,10 @@ func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	require.Len(t, event.ForwardMessages, 1)
 
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
+	require.NotNil(t, profile)
 	assert.Equal(t, "tp-from-scratch", profile.GetName())
 	assert.Equal(t, "tp-uid", profile.GetId())
 	assert.Equal(t, "xccdf_compliance.openshift.io_profile_tp-from-scratch", profile.GetProfileId())
@@ -203,8 +197,6 @@ func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 	assert.Equal(t, "some-value", profile.GetLabels()["some-label"])
 }
 
-// TestProcessEvent_FromScratch tests that TPs without Extends work: only EnableRules are included,
-// with no base profile rules.
 func TestProcessEvent_FromScratch(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -213,7 +205,6 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 			UID:       "tp-uid",
 		},
 		Spec: v1alpha1.TailoredProfileSpec{
-			// No Extends
 			EnableRules: []v1alpha1.RuleReferenceSpec{
 				{Name: "ocp4-api-server-anonymous-auth"},
 				{Name: "ocp4-api-server-encryption-provider-cipher"},
@@ -229,12 +220,14 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	require.Len(t, event.ForwardMessages, 1)
+
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
+	require.NotNil(t, profile)
 
 	ruleNames := make([]string, len(profile.GetRules()))
 	for i, r := range profile.GetRules() {
-		ruleNames[i] = r.GetName()
+		ruleNames[i] = r.GetRuleName()
 	}
 	slices.Sort(ruleNames)
 	assert.Equal(t, []string{
@@ -243,7 +236,6 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	}, ruleNames)
 }
 
-// TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
 func TestProcessEvent_NoStatusID(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -255,7 +247,6 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 			Extends: "ocp4-cis",
 		},
 		Status: v1alpha1.TailoredProfileStatus{
-			// ID is empty - not yet processed by CO
 			State: "PENDING",
 		},
 	}
@@ -266,7 +257,6 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 	assert.Nil(t, event)
 }
 
-// TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped
 func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -289,43 +279,7 @@ func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	assert.Nil(t, event)
 }
 
-// TestProcessEvent_NoV2CentralCapability tests that when ComplianceV2TailoredProfiles is absent we only send the
-// Compliance V1 event
-func TestProcessEvent_NoV2CentralCapability(t *testing.T) {
-	// ComplianceV2Integrations present, ComplianceV2TailoredProfiles absent.
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
-	t.Cleanup(func() { centralcaps.Set(nil) })
-
-	tp := &v1alpha1.TailoredProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ocp4-cis-tailored",
-			Namespace: "openshift-compliance",
-			UID:       "tp-uid",
-		},
-		Spec: v1alpha1.TailoredProfileSpec{
-			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
-		},
-		Status: v1alpha1.TailoredProfileStatus{
-			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-tailored",
-			State: "READY",
-		},
-	}
-
-	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
-	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.Len(t, event.ForwardMessages, 1) // V1 only, no V2
-	assert.NotNil(t, event.ForwardMessages[0].GetComplianceOperatorProfile())
-}
-
-// TestProcessEvent_V2EventHasTailoredProfileKind tests that when both ComplianceV2TailoredProfiles
-// and ComplianceV2Integrations capabilities are present we send both V1 and V2 events and the V2 event carries
-// OperatorKind TAILORED_PROFILE.
 func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations, centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
-
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ocp4-cis-tailored",
@@ -345,9 +299,9 @@ func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
-	require.Len(t, event.ForwardMessages, 2) // V1 + V2
+	require.Len(t, event.ForwardMessages, 1)
 
-	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	v2Profile := event.ForwardMessages[0].GetComplianceOperatorProfileV2()
 	require.NotNil(t, v2Profile)
 	assert.Equal(t, central.ComplianceOperatorProfileV2_TAILORED_PROFILE, v2Profile.GetOperatorKind())
 }

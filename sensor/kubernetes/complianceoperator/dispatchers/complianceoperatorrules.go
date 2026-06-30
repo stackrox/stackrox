@@ -3,9 +3,6 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,62 +31,35 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 		return nil
 	}
 	id := string(complianceRule.UID)
-	// We are pulling additional data for rules and using the storage object even in an internal api
-	// is a bad practice, so we will make that split now.  V1 and V2 compliance will both need to work for a period
-	// of time.  However, we should not need to send the same rule twice, the pipeline can convert the V2 sensor message
-	// so V1 and V2 objects can both be stored.
 
-	events := []*central.SensorEvent{
-		{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorRule{
-				ComplianceOperatorRule: &storage.ComplianceOperatorRule{
-					Id:          id,
-					RuleId:      complianceRule.ID,
-					Name:        complianceRule.Name,
-					Title:       complianceRule.Title,
-					Labels:      complianceRule.Labels,
-					Annotations: complianceRule.Annotations,
-					Description: complianceRule.Description,
-					Rationale:   complianceRule.Rationale,
-				},
-			},
-		},
-	}
-
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		fixes := make([]*central.ComplianceOperatorRuleV2_Fix, 0, len(complianceRule.AvailableFixes))
-		for _, r := range complianceRule.AvailableFixes {
-			fixes = append(fixes, &central.ComplianceOperatorRuleV2_Fix{
-				Platform:   r.Platform,
-				Disruption: r.Disruption,
-			})
-		}
-
-		events = append(events, &central.SensorEvent{
-			Id:     id,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:       complianceRule.ID,
-					Id:           id,
-					Name:         complianceRule.Name,
-					RuleType:     complianceRule.CheckType,
-					Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
-					Labels:       complianceRule.Labels,
-					Annotations:  complianceRule.Annotations,
-					Title:        complianceRule.Title,
-					Description:  complianceRule.Description,
-					Rationale:    complianceRule.Rationale,
-					Fixes:        fixes,
-					Warning:      complianceRule.Warning,
-					Instructions: complianceRule.Instructions,
-					OperatorKind: central.ComplianceOperatorRuleV2_RULE,
-				},
-			},
+	fixes := make([]*central.ComplianceOperatorRuleV2_Fix, 0, len(complianceRule.AvailableFixes))
+	for _, r := range complianceRule.AvailableFixes {
+		fixes = append(fixes, &central.ComplianceOperatorRuleV2_Fix{
+			Platform:   r.Platform,
+			Disruption: r.Disruption,
 		})
 	}
 
-	return component.NewEvent(events...)
+	return component.NewEvent(&central.SensorEvent{
+		Id:     id,
+		Action: action,
+		Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+			ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
+				RuleId:       complianceRule.ID,
+				Id:           id,
+				Name:         complianceRule.Name,
+				RuleType:     complianceRule.CheckType,
+				Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
+				Labels:       complianceRule.Labels,
+				Annotations:  complianceRule.Annotations,
+				Title:        complianceRule.Title,
+				Description:  complianceRule.Description,
+				Rationale:    complianceRule.Rationale,
+				Fixes:        fixes,
+				Warning:      complianceRule.Warning,
+				Instructions: complianceRule.Instructions,
+				OperatorKind: central.ComplianceOperatorRuleV2_RULE,
+			},
+		},
+	})
 }
