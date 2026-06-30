@@ -23,6 +23,69 @@ defaults:
     shell: bash
 
 jobs:
+  should-dispatch:
+    if: >-
+      github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
+    runs-on: ubuntu-slim
+    outputs:
+      dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
+      e2e-byodb-test: ${{ steps.determine.outputs.e2e-byodb-test }}
+      e2e-db-backup-restore-test: ${{ steps.determine.outputs.e2e-db-backup-restore-test }}
+      e2e-gke-upgrade-tests: ${{ steps.determine.outputs.e2e-gke-upgrade-tests }}
+      e2e-nongroovy-tests: ${{ steps.determine.outputs.e2e-nongroovy-tests }}
+    steps:
+    - name: Determine whether should dispatch workflows
+      id: determine
+      shell: python
+      env:
+        PYTHONUNBUFFERED: "1"
+      run: |
+        import os
+        from types import SimpleNamespace
+
+        input = SimpleNamespace(
+            event_name='${{ github.event_name }}',
+            event_action='${{ github.event.action }}',
+            labeled_with='${{ github.event.label.name }}',
+            is_fork='${{ github.event.pull_request.head.repo.fork }}',
+            is_draft='${{ github.event.pull_request.draft }}',
+            all_labels="${{ join(github.event.pull_request.labels.*.name, ',') }}",
+        )
+        print(input)
+
+        def should_run(job):
+            if input.is_fork == 'true':
+                return False
+            if input.event_action == 'labeled' and input.labeled_with != job:
+                return False
+            if input.event_name != 'pull_request':
+                return True
+            if input.is_draft != 'true':
+                return True
+            if f',{input.all_labels},'.find(f',{job},') >= 0:
+                return True
+            return False
+
+        with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
+            def write(job, decision):
+                line = f'{job}={str(decision).lower()}'
+                print(line)
+                file.write(line + '\n')
+
+            dispatch_any = False
+
+            for job in [
+                'e2e-byodb-test',
+                'e2e-db-backup-restore-test',
+                'e2e-gke-upgrade-tests',
+                'e2e-nongroovy-tests',
+            ]:
+                dispatch = should_run(job)
+                dispatch_any = dispatch_any or dispatch
+                write(job, dispatch)
+
+            write('dispatch-any', dispatch_any)
+
   wait-for-images:
     if: >-
       github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
