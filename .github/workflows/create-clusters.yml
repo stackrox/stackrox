@@ -64,7 +64,7 @@ jobs:
   clusters:
     name: Setup demo clusters
     needs: trim-cluster-names
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@893f19c254065c6968c9bf6876918bff12258d15 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@use-roxie-in-start-acs
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
@@ -72,7 +72,7 @@ jobs:
       create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
       create-long-cluster: ${{github.event.inputs.create-long-cluster == 'true'}}
       dry-run: ${{github.event.inputs.dry-run == 'true'}}
-      workflow-ref: v1
+      workflow-ref: use-roxie-in-start-acs
       kube-burner-config-ref: ${{ github.event.inputs.version }}
       kube-burner-config-repo: stackrox
       cluster-with-fake-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
