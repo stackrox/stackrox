@@ -41,6 +41,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
     - name: Compute build tag
       id: build-tag
@@ -96,6 +97,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
