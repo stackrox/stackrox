@@ -14,16 +14,19 @@ on:
     - reopened
     - synchronize
     - labeled
-    paths-ignore:
-    - 'ui/**'
 
 defaults:
   run:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   wait-for-images:
+    needs: detect-changes
     if: >-
+      !needs.detect-changes.outputs.ui_only &&
       (github.event.action != 'labeled' || github.event.label.name == 'e2e-nongroovy-tests') &&
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
