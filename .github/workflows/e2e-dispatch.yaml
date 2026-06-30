@@ -25,12 +25,12 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
-      !github.event.pull_request.head.repo.fork && github.event_name != 'pull_request'
+      github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
       operator_tag: ${{ steps.build-tag.outputs.operator_tag }}
-    env:
+    # env:
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     steps:
@@ -78,3 +78,6 @@ jobs:
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
     secrets: inherit
+    concurrency:
+      group: e2e-byodb-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
