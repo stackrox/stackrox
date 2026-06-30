@@ -15,6 +15,9 @@ on:
     - synchronize
     - labeled
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
