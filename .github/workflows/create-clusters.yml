@@ -64,7 +64,7 @@ jobs:
   clusters:
     name: Setup demo clusters
     needs: trim-cluster-names
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@2fee99cb67b01259b239d9fb47a0506fc197518f # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@use-roxie-in-start-acs
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@b63838eb5bb00518008ce97be2acfd203c9df212
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
