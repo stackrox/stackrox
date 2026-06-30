@@ -11,6 +11,9 @@ const (
 	DetectorProcessIndicatorLane
 	DetectorNetworkFlowLane
 	DetectorFileAccessLane
+	DetectorAuditLogLane
+	DetectorDeploymentLane
+	DetectorScanResultLane
 )
 
 var (
@@ -23,6 +26,9 @@ var (
 		DetectorProcessIndicatorLane:   "DetectorProcessIndicator",
 		DetectorNetworkFlowLane:        "DetectorNetworkFlow",
 		DetectorFileAccessLane:         "DetectorFileAccess",
+		DetectorAuditLogLane:           "DetectorAuditLog",
+		DetectorDeploymentLane:         "DetectorDeployment",
+		DetectorScanResultLane:         "DetectorScanResult",
 	}
 )
 

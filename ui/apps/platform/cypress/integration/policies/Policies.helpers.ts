@@ -1,8 +1,8 @@
-import * as api from '../constants/apiEndpoints';
-import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
-import { visitFromLeftNavExpandable } from './nav';
-import { visit } from './visit';
-import pf6 from '../selectors/pf6';
+import * as api from '../../constants/apiEndpoints';
+import { selectors, url as policiesUrl } from './Policies.selectors';
+import { visitFromLeftNavExpandable } from '../../helpers/nav';
+import { visit } from '../../helpers/visit';
+import pf6 from '../../selectors/pf6';
 
 // Navigation
 
@@ -50,8 +50,6 @@ export function visitPolicy(policyId, staticResponseMap) {
 
 // Actions on policy table
 
-export function createPolicy() {}
-
 export function doPolicyRowAction(trSelector, titleOfActionItem) {
     cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
     cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
@@ -76,12 +74,6 @@ export function deletePolicyInTable({ policyName, actionText }) {
     cy.get('[role="dialog"][aria-label="Confirm delete"] button:contains("Delete")').click();
     cy.wait('@DELETE_policies/id');
     cy.wait(`@${policiesAlias}`); // assume visitPolicies as a prerequisite
-}
-
-export function goToFirstPolicy() {
-    cy.intercept('GET', api.policies.policy).as('policies/id');
-    cy.get(selectors.tableFirstRowName).click();
-    cy.wait('policies/id');
 }
 
 export function editFirstPolicyFromTable() {
@@ -117,19 +109,11 @@ export function doPolicyPageAction(titleOfActionItem) {
     cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
 }
 
-export function clonePolicy() {}
-
-export function editPolicy() {
-    cy.get(selectors.page.editPolicyButton).click();
-}
-
 // Actions on policy wizard page
 
 export function goToStep3() {
     cy.get(selectors.wizardBtns.step3).click();
 }
-
-export function savePolicy() {}
 
 export function importPolicyFromFixture(fileName, contentsInterceptor = (c) => c) {
     return cy.fixture(fileName).then((originalContents) => {

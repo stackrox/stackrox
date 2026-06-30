@@ -57,10 +57,7 @@ func getIdxField(s *Schema) Field {
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
-			Ignored: false,
-			Index: []*PostgresIndexOptions{
-				{IndexType: "btree"},
-			},
+			Ignored:    false,
 			PrimaryKey: true,
 		},
 	}

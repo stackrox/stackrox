@@ -4,14 +4,18 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - '*-nightly-*'
+    - '*'
     branches:
     - master
+    - release-*
   pull_request:
     types:
     - opened
     - reopened
     - synchronize
+    - labeled
+    paths-ignore:
+    - 'ui/**'
 
 defaults:
   run:
@@ -20,8 +24,15 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
-      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-latest
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-nongroovy-tests') &&
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        !github.event.pull_request.draft ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
+      )
+    runs-on: ubuntu-slim
+    outputs:
+      tag: ${{ steps.build-tag.outputs.tag }}
     steps:
     - name: Checkout repo
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -31,26 +42,41 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Compute build tag
       id: build-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
+      run: |
+        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: |
-          rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
+          rhacs-eng/fact:${{ env.tag }}
+          rhacs-eng/main:${{ env.tag }}
+          rhacs-eng/roxctl:${{ env.tag }}
+          rhacs-eng/scanner-db-slim:${{ env.tag }}
+          rhacs-eng/scanner-db:${{ env.tag }}
+          rhacs-eng/scanner-slim:${{ env.tag }}
+          rhacs-eng/scanner-v4-db:${{ env.tag }}
+          rhacs-eng/scanner-v4:${{ env.tag }}
+          rhacs-eng/scanner:${{ env.tag }}
+          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   gke-nongroovy-e2e-tests:
     needs: [ wait-for-images ]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-nongroovy-e2e-tests
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
@@ -59,6 +85,7 @@ jobs:
       SENSOR_HELM_MANAGED: "true"
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "false"
+      PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
     steps:
 
@@ -97,12 +124,6 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        source scripts/ci/gke.sh
-        wait_for_cluster
-
     - name: Build roxctl
       # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
       # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/
@@ -111,10 +132,12 @@ jobs:
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -125,7 +148,6 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -163,7 +185,6 @@ jobs:
       if: failure() || github.event_name == 'push'
       shell: python
       env:
-        PYTHONUNBUFFERED: "1"
         ROX_USERNAME: admin
       run: |
         import os, sys
@@ -179,8 +200,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')

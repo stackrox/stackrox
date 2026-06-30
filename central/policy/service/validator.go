@@ -513,5 +513,11 @@ func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error
 	if policies.AppliesAtBuildTime(policy) && !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
 		return errors.New("container type filters in the evaluation filter are not applicable to build-only policies")
 	}
+	if s.isAuditEventPolicy(policy) {
+		return errors.New("container type filters in the evaluation filter are not applicable to audit log event policies")
+	}
+	if s.isNodeEventPolicy(policy) {
+		return errors.New("container type filters in the evaluation filter are not applicable to node event policies")
+	}
 	return nil
 }

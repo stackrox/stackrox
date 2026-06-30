@@ -3,14 +3,17 @@ name: e2e-byodb-test
 on:
   workflow_dispatch:
   push:
+    tags:
+    - '*'
     branches:
     - master
+    - release-*
   pull_request:
     types:
     - opened
     - reopened
-    - labeled
     - synchronize
+    - labeled
 
 defaults:
   run:
@@ -19,11 +22,15 @@ defaults:
 jobs:
   wait-for-images:
     if: >-
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-byodb-test') &&
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
+        !github.event.pull_request.draft ||
         contains(github.event.pull_request.labels.*.name, 'e2e-byodb-test')
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
+    outputs:
+      tag: ${{ steps.build-tag.outputs.tag }}
     steps:
     - name: Checkout repo
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -33,26 +40,41 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Compute build tag
       id: build-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
+      run: |
+        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: |
-          rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
+          rhacs-eng/fact:${{ env.tag }}
+          rhacs-eng/main:${{ env.tag }}
+          rhacs-eng/roxctl:${{ env.tag }}
+          rhacs-eng/scanner-db-slim:${{ env.tag }}
+          rhacs-eng/scanner-db:${{ env.tag }}
+          rhacs-eng/scanner-slim:${{ env.tag }}
+          rhacs-eng/scanner-v4-db:${{ env.tag }}
+          rhacs-eng/scanner-v4:${{ env.tag }}
+          rhacs-eng/scanner:${{ env.tag }}
+          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   gke-byodb-test:
     needs: [ wait-for-images ]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-byodb-test
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
@@ -61,6 +83,7 @@ jobs:
       BYODB_TEST: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
+      PYTHONUNBUFFERED: "1"
     timeout-minutes: 150
     steps:
 
@@ -99,22 +122,18 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        source scripts/ci/gke.sh
-        wait_for_cluster
-
     - name: Build roxctl
       run: |
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -125,7 +144,6 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -179,7 +197,6 @@ jobs:
       if: failure() || github.event_name == 'push'
       shell: python
       env:
-        PYTHONUNBUFFERED: "1"
         ROX_USERNAME: admin
       run: |
         import os, sys
@@ -195,8 +212,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')

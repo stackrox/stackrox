@@ -84,7 +84,7 @@ type BaseImages struct {
 // BaseImagesLayers holds the Gorm model for Postgres table `base_images_layers`.
 type BaseImagesLayers struct {
 	BaseImagesID  string     `gorm:"column:base_images_id;type:uuid;primaryKey"`
-	Idx           int        `gorm:"column:idx;type:integer;primaryKey;index:baseimageslayers_idx,type:btree"`
+	Idx           int        `gorm:"column:idx;type:integer;primaryKey"`
 	LayerDigest   string     `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
 	Index         int32      `gorm:"column:index;type:integer"`
 	BaseImagesRef BaseImages `gorm:"foreignKey:base_images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`

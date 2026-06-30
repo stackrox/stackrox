@@ -85,21 +85,10 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 	pubSubDispatcher common.PubSubDispatcher) Detector {
 	detectorStopper := concurrency.NewStopper()
 
-	deploymentQueueSize := 0
-	if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
-		deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
-	}
-	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
-	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
-		"DeploymentQueue",
-		deploymentQueueSize,
-		detectorMetrics.DetectorDeploymentQueueOperations,
-		detectorMetrics.DetectorDeploymentDroppedCount,
-	)
-
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
 	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
+	var deploymentQueue queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	if !features.SensorInternalPubSub.Enabled() || pubSubDispatcher == nil {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper,
@@ -122,6 +111,18 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 			detectorMetrics.DetectorFileAccessQueueOperations,
 			detectorMetrics.DetectorFileAccessDroppedCount,
 		)
+		deploymentQueueSize := 0
+		if env.DetectorDeploymentBufferSize.IntegerSetting() > 0 {
+			deploymentQueueSize = queueScaler.ScaleSizeOnNonDefault(env.DetectorDeploymentBufferSize)
+		}
+		// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
+		deploymentQueue = queue.NewSimpleQueue[*detectorEvents.DeploymentEvent](
+			"DeploymentQueue",
+			deploymentQueueSize,
+			detectorMetrics.DetectorDeploymentQueueOperations,
+			detectorMetrics.DetectorDeploymentDroppedCount,
+		)
+
 	}
 
 	return &detectorImpl{
@@ -132,7 +133,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
+		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan, pubSubDispatcher),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		nodeStore:           nodeStore,
@@ -202,7 +203,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
 	indicatorsQueue   *queue.Queue[*detectorEvents.IndicatorEvent]
-	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
+	deploymentsQueue  queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	fileAccessQueue   *queue.Queue[*detectorEvents.FileAccessEvent]
 
 	pubSubDispatcher common.PubSubDispatcher
@@ -243,14 +244,38 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector file access consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorAuditLogConsumer,
+			pubsub.DetectorAuditLogTopic,
+			pubsub.DetectorAuditLogLane,
+			d.handleAuditLogEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector audit log consumer")
+		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorDeploymentConsumer,
+			pubsub.DetectorDeploymentTopic,
+			pubsub.DetectorDeploymentLane,
+			d.handleDeploymentEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector deployment consumer")
+		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorScanResultConsumer,
+			pubsub.DetectorScanResultTopic,
+			pubsub.DetectorScanResultLane,
+			d.handleScanResultEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector scan result consumer")
+		}
 	}
 
-	go d.runDetector()
-	go d.runAuditLogEventDetector()
 	go d.serializeDeployTimeOutput()
-	go d.processDeployment()
 
 	if !d.pubSubEnabled() {
+		go d.runDetector()
+		go d.processDeployment()
+		go d.runAuditLogEventDetector()
 		go d.processIndicator()
 		go d.processAlertsForFlowOnEntity()
 		go d.processFileAccess()
@@ -335,8 +360,10 @@ func (d *detectorImpl) Stop() {
 	d.alertStopSig.Signal()
 	d.enricher.stop()
 
-	_ = d.detectorStopper.Client().Stopped().Wait()
-	_ = d.auditStopper.Client().Stopped().Wait()
+	if !d.pubSubEnabled() {
+		_ = d.detectorStopper.Client().Stopped().Wait()
+		_ = d.auditStopper.Client().Stopped().Wait()
+	}
 	_ = d.serializerStopper.Client().Stopped().Wait()
 }
 
@@ -469,6 +496,35 @@ func (d *detectorImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return d.output
 }
 
+func (d *detectorImpl) detectDeploymentFromScanResult(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
+	detectorMetrics.RemoveBlockingScanCall()
+	alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
+		Deployment:             deployment,
+		Images:                 images,
+		NetworkPoliciesApplied: netpolApplied,
+	})
+
+	metrics.IncrementDetectorDeploymentProcessed()
+
+	sort.Slice(alerts, func(i, j int) bool {
+		return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
+	})
+
+	select {
+	case <-d.detectorStopper.Flow().StopRequested():
+	case <-d.serializerStopper.Flow().StopRequested():
+	case d.deploymentAlertOutputChan <- outputResult{
+		results: &central.AlertResults{
+			DeploymentId: deployment.GetId(),
+			Alerts:       alerts,
+		},
+		timestamp: deployment.GetStateTimestamp(),
+		action:    action,
+		context:   ctx,
+	}:
+	}
+}
+
 func (d *detectorImpl) runDetector() {
 	defer d.detectorStopper.Flow().ReportStopped()
 
@@ -477,35 +533,61 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.Flow().StopRequested():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			detectorMetrics.RemoveBlockingScanCall()
-			alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
-				Deployment:             scanOutput.deployment,
-				Images:                 scanOutput.images,
-				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
-			})
-
-			metrics.IncrementDetectorDeploymentProcessed()
-
-			sort.Slice(alerts, func(i, j int) bool {
-				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
-			})
-
-			select {
-			case <-d.detectorStopper.Flow().StopRequested():
-				return
-			case <-d.serializerStopper.Flow().StopRequested():
-				return
-			case d.deploymentAlertOutputChan <- outputResult{
-				results: &central.AlertResults{
-					DeploymentId: scanOutput.deployment.GetId(),
-					Alerts:       alerts,
-				},
-				timestamp: scanOutput.deployment.GetStateTimestamp(),
-				action:    scanOutput.action,
-				context:   scanOutput.context,
-			}:
-			}
+			d.detectDeploymentFromScanResult(scanOutput.Context, scanOutput.Deployment, scanOutput.Images, scanOutput.NetworkPoliciesApplied, scanOutput.Action)
 		}
+	}
+}
+
+func (d *detectorImpl) handleScanResultEvent(event pubsub.Event) error {
+	scanResult, ok := event.(*detectorEvents.ScanResultEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.detectDeploymentFromScanResult(scanResult.Context, scanResult.Deployment, scanResult.Images, scanResult.NetworkPoliciesApplied, scanResult.Action)
+	return nil
+}
+
+func (d *detectorImpl) detectAndAlertForAuditLog(auditEvents *sensor.AuditEvents) {
+	alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
+
+	// Force update the audit log status since alerts were detected
+	// This is required because if sensor were to restart right after this alert, it's possible that
+	// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
+	// To avoid duplicate alerts force the state to be updated
+	// This is non-blocking as the updates happen on another goroutine
+	d.auditLogUpdater.ForceUpdate()
+
+	sort.Slice(alerts, func(i, j int) bool {
+		return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
+	})
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						Source: central.AlertResults_AUDIT_EVENT,
+						Alerts: alerts,
+						Stage:  storage.LifecycleStage_RUNTIME,
+					},
+				},
+			},
+		},
+	}
+
+	// These messages are coming from compliance, and since compliance supports offline mode as well
+	// it should be ok to leave these messages without expiration.
+	expiringMessage := message.New(msg)
+
+	select {
+	case <-d.auditStopper.Flow().StopRequested():
+	case <-d.serializerStopper.Flow().StopRequested():
+	case d.output <- expiringMessage:
 	}
 }
 
@@ -516,51 +598,18 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 		case <-d.auditStopper.Flow().StopRequested():
 			return
 		case auditEvents := <-d.auditEventsChan:
-			alerts := d.unifiedDetector.DetectAuditLogEvents(auditEvents)
-			if len(alerts) == 0 {
-				// No need to process runtime alerts that have no violations
-				continue
-			}
-
-			// Force update the audit log status since alerts were detected
-			// This is required because if sensor were to restart right after this alert, it's possible that
-			// the saved state is prior to this the event that generated this alert (because the updater updates on a timer)
-			// To avoid duplicate alerts force the state to be updated
-			// This is non-blocking as the updates happen on another goroutine
-			d.auditLogUpdater.ForceUpdate()
-
-			sort.Slice(alerts, func(i, j int) bool {
-				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
-			})
-
-			msg := &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_AlertResults{
-							AlertResults: &central.AlertResults{
-								Source: central.AlertResults_AUDIT_EVENT,
-								Alerts: alerts,
-								Stage:  storage.LifecycleStage_RUNTIME,
-							},
-						},
-					},
-				},
-			}
-
-			// These messages are coming from compliance, and since compliance supports offline mode as well
-			// it should be ok to leave these messages without expiration.
-			expiringMessage := message.New(msg)
-
-			select {
-			case <-d.auditStopper.Flow().StopRequested():
-				return
-			case <-d.serializerStopper.Flow().StopRequested():
-				return
-			case d.output <- expiringMessage:
-			}
+			d.detectAndAlertForAuditLog(auditEvents)
 		}
 	}
+}
+
+func (d *detectorImpl) handleAuditLogEvent(event pubsub.Event) error {
+	auditEvent, ok := event.(*detectorEvents.AuditLogEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.detectAndAlertForAuditLog(auditEvent.AuditEvents)
+	return nil
 }
 
 func (d *detectorImpl) markDeploymentForProcessing(id string) {
@@ -573,12 +622,23 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 }
 
 func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction) {
-	// Don't  process the deployment if the context has already expired
+	// Don't process the deployment if the context has already expired
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		d.deploymentsQueue.Push(&queue.DeploymentQueueItem{
+	}
+
+	if d.pubSubEnabled() {
+		if err := d.pubSubDispatcher.Publish(&detectorEvents.DeploymentEvent{
+			Ctx:        ctx,
+			Deployment: deployment,
+			Action:     action,
+		}); err != nil {
+			log.Errorf("Failed to publish deployment event: %v", err)
+		}
+	} else {
+		d.deploymentsQueue.Push(&detectorEvents.DeploymentEvent{
 			Ctx:        ctx,
 			Deployment: deployment,
 			Action:     action,
@@ -593,6 +653,17 @@ func (d *detectorImpl) processDeployment() {
 			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
 		})
 	}
+}
+
+func (d *detectorImpl) handleDeploymentEvent(event pubsub.Event) error {
+	deploymentEvent, ok := event.(*detectorEvents.DeploymentEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	concurrency.WithLock(&d.deploymentDetectionLock, func() {
+		d.processDeploymentNoLock(deploymentEvent.Ctx, deploymentEvent.Deployment, deploymentEvent.Action)
+	})
+	return nil
 }
 
 func (d *detectorImpl) ReprocessDeployments(deploymentIDs ...string) {
