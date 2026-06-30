@@ -35,7 +35,6 @@ jobs:
 
   go:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
     strategy:
       fail-fast: false
       matrix:
@@ -109,7 +108,6 @@ jobs:
 
   go-postgres:
     needs: detect-changes
-    if: ${{ !needs.detect-changes.outputs.ui_only }}
     strategy:
       fail-fast: false
       matrix:
