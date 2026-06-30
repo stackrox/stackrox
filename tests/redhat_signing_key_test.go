@@ -284,7 +284,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 		if len(podList.Items) == 0 {
 			return fmt.Errorf("no pods found for deployment %q", deploymentName)
 		}
-		out, err := exec.CommandContext(testCtx, "kubectl", "exec", "-n", ns, podList.Items[0].Name, "--", "sh", "-c", wgetCmd).CombinedOutput()
+		out, err := exec.CommandContext(testCtx, "kubectl", "exec", "-n", ns, podList.Items[0].Name, "--", "wget", "-q", "-O", "/dev/null", bundleURL).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("wget failed: %s: %w", string(out), err)
 		}
