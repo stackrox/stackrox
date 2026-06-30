@@ -73,6 +73,8 @@ type ImageResolver interface {
 	SignatureCount(ctx context.Context) (int32, error)
 }
 
+var _ ImageResolver = (*imageResolver)(nil)
+
 var (
 	imageWatchStatuses []string
 
