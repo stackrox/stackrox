@@ -22,6 +22,7 @@ var (
 	ErrKeyNameDuplicate     = errox.InvalidArgs.New("duplicate key name")
 	ErrKeyInvalidPEM        = errox.InvalidArgs.New("invalid PEM-encoded public key")
 	ErrUnmarshalling        = errox.InvalidArgs.New("unmarshalling key bundle JSON")
+	ErrKeyTypeEmpty         = errox.InvalidArgs.New("empty key type")
 	ErrNoSupportedKeys      = errox.InvalidArgs.New("key bundle contains no supported key types")
 )
 
@@ -47,9 +48,10 @@ type KeyBundleEntry struct {
 //     code can still use bundles produced for newer schema versions.
 //
 // Key type handling:
-//   - All types are accepted; unsupported types are filtered by ToSignatureIntegration.
-//   - Keys with supported types are processed (e.g. PEM encoding for cosign keys).
-//   - Keys with unsupported types are stored as-is without validation.
+//   - Every key must have a non-empty type; empty type is a validation error.
+//   - Unsupported types are accepted and stored as-is (forward compatibility);
+//     they are filtered out by ToSignatureIntegration.
+//   - Supported types are processed (e.g. PEM validation for cosign keys).
 func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 	var bundle KeyBundle
 	if err := json.Unmarshal(data, &bundle); err != nil {
@@ -76,6 +78,9 @@ func ParseKeyBundle(data []byte) (*KeyBundle, error) {
 		}
 		if !seenNames.Add(entry.Name) {
 			return nil, ErrKeyNameDuplicate.CausedByf("%q", entry.Name)
+		}
+		if entry.Type == "" {
+			return nil, ErrKeyTypeEmpty.CausedByf("key %q", entry.Name)
 		}
 		if spec, ok := supportedKeyTypes[entry.Type]; ok {
 			if err := spec.process(entry); err != nil {

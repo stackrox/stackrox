@@ -80,20 +80,24 @@ func TestParseKeyBundle(t *testing.T) {
 			wantErr: ErrKeyBundleEmpty,
 		},
 		"empty name": {
-			input:   `{"keys": [{"name": "", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNameEmpty,
 		},
 		"whitespace-only name": {
-			input:   `{"keys": [{"name": "  \t ", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "  \t ", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNameEmpty,
 		},
 		"name with forward slash": {
-			input:   `{"keys": [{"name": "foo/bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "foo/bar", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNamePathSeparator,
 		},
 		"name with backslash": {
-			input:   `{"keys": [{"name": "foo\\bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "foo\\bar", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNamePathSeparator,
+		},
+		"empty type": {
+			input:   `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: ErrKeyTypeEmpty,
 		},
 		"invalid PEM": {
 			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "not-a-pem"}]}`,
@@ -120,13 +124,13 @@ func TestParseKeyBundle(t *testing.T) {
 		},
 		"duplicate key names": {
 			input: `{"keys": [
-				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "key-1", "pem": "` + testKeyPEMJSON2 + `"}
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 			wantErr: ErrKeyNameDuplicate,
 		},
 		"unknown schema version accepted with warning": {
-			input: `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input: `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 		"v1.0 with mixed types parses successfully": {
 			input: `{"schemaVersion": "1.0", "keys": [
@@ -182,11 +186,6 @@ func TestParseKeyBundlePreservesFields(t *testing.T) {
 			input:             `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantSchemaVersion: "",
 			wantTypes:         []string{KeyTypeCosign},
-		},
-		"missing type stays empty": {
-			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
-			wantSchemaVersion: SchemaVersion1,
-			wantTypes:         []string{""},
 		},
 	}
 
