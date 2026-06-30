@@ -10,12 +10,17 @@ import {
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'clusters';
 
 describe('Vulnerability Management Clusters', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     it('should display all the columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);

@@ -2,11 +2,16 @@ import withAuth from '../../helpers/basicAuth';
 import {
     interactAndWaitForVulnerabilityManagementEntity,
     visitVulnerabilityManagementEntities,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 import { selectors } from './VulnerabilityManagement.selectors';
 
 describe('Entities single views', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     // Some tests might fail in local deployment.
 

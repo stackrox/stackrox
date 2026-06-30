@@ -12,6 +12,7 @@ import {
     visitVulnerabilityManagementEntities,
     visitVulnerabilityManagementEntityInSidePanel,
     visitVulnerabilityManagementSecondaryEntitiesInSidePanel,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 import { selectors } from './VulnerabilityManagement.selectors';
 
@@ -19,6 +20,10 @@ const entitiesKey = 'images';
 
 describe('Vulnerability Management Images', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);

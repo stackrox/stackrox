@@ -10,12 +10,17 @@ import {
     verifyConditionalCVEs,
     verifySecondaryEntities,
     visitVulnerabilityManagementEntities,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 
 const entitiesKey = 'namespaces';
 
 describe('Vulnerability Management Namespaces', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     it('should display table columns', () => {
         visitVulnerabilityManagementEntities(entitiesKey);

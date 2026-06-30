@@ -98,6 +98,53 @@ export function checkNetworkGraphEmptyState() {
     );
 }
 
+export function waitForNetworkFlows(timeoutMs = 600000) {
+    const interval = 15000;
+    const maxAttempts = Math.ceil(timeoutMs / interval);
+    const auth = { bearer: Cypress.env('ROX_AUTH_TOKEN') };
+
+    function poll(attempt) {
+        if (attempt >= maxAttempts) {
+            throw new Error(`Timed out after ${timeoutMs / 1000}s waiting for network flow data`);
+        }
+        cy.request({ url: '/v1/clusters', auth, failOnStatusCode: false }).then(
+            ({ body: clustersBody }) => {
+                const clusters = clustersBody?.clusters ?? [];
+                if (clusters.length === 0) {
+                    cy.log('No clusters found, retrying...');
+                    cy.wait(interval);
+                    poll(attempt + 1);
+                } else {
+                    const clusterId = clusters[0].id;
+                    cy.request({
+                        url: `/v1/networkgraph/cluster/${clusterId}?query=Namespace:stackrox`,
+                        auth,
+                        failOnStatusCode: false,
+                    }).then(({ body: graphBody }) => {
+                        const nodes = graphBody?.nodes ?? [];
+                        const collector = nodes.find(
+                            (n) => n?.entity?.deployment?.name === 'collector'
+                        );
+                        const hasEdges =
+                            collector?.outEdges && Object.keys(collector.outEdges).length > 0;
+                        if (!hasEdges) {
+                            cy.log(
+                                `Network flows not ready (attempt ${attempt + 1}/${maxAttempts})`
+                            );
+                            cy.wait(interval);
+                            poll(attempt + 1);
+                        } else {
+                            cy.log('Network flow data ready for collector');
+                        }
+                    });
+                }
+            }
+        );
+    }
+
+    poll(0);
+}
+
 export function updateAndCloseCidrModal() {
     cy.clock();
     cy.get(networkGraphSelectors.updateCidrBlocksButton).click();

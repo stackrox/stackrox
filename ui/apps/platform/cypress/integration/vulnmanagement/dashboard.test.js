@@ -5,6 +5,7 @@ import {
     verifyVulnerabilityManagementDashboardCVEs,
     visitVulnerabilityManagementDashboard,
     visitVulnerabilityManagementDashboardFromLeftNav,
+    waitForImageCVEs,
 } from './VulnerabilityManagement.helpers';
 import { selectors } from './VulnerabilityManagement.selectors';
 
@@ -34,6 +35,10 @@ function selectTopRiskyOption(optionText) {
 
 describe('Vulnerability Management Dashboard', () => {
     withAuth();
+
+    before(() => {
+        waitForImageCVEs();
+    });
 
     it('should visit using the left nav', () => {
         visitVulnerabilityManagementDashboardFromLeftNav();
