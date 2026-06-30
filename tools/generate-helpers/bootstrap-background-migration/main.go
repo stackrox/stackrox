@@ -1,13 +1,13 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 
-	_ "embed"
 	"github.com/spf13/cobra"
 	bc "github.com/stackrox/rox/tools/generate-helpers/bootstrap-common"
 )
