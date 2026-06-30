@@ -56,6 +56,8 @@ func init() {
 	)
 }
 
+var _ ImageResolver = (*imageV2Resolver)(nil)
+
 // ImagesV2 returns GraphQL resolvers for all images using the ImageV2 model
 func (resolver *Resolver) ImageV2s(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageV2s")

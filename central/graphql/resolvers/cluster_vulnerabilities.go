@@ -55,6 +55,8 @@ type ClusterVulnerabilityResolver interface {
 	VulnerabilityTypes() []string
 }
 
+var _ ClusterVulnerabilityResolver = (*clusterCVEResolver)(nil)
+
 // ClusterVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerability")
@@ -98,7 +100,7 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 	// get values
 	query = tryUnsuppressedQuery(query)
 	vulns, err := loader.FromQuery(ctx, query)
-	return resolver.wrapClusterCVEsWithContext(ctx, vulns, err)
+return resolver.wrapClusterCVEsWithContext(ctx, vulns, err)
 }
 
 // ClusterVulnerabilityCount returns count of image vulnerabilities for the input query
