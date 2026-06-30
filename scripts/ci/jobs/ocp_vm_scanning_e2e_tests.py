@@ -23,7 +23,6 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
-os.environ["ROX_SCANNER_V4"] = "true"
 # Avoid default rate limiting of VM index reports set to 1 report per minute per VM.
 os.environ["ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE"] = "10"
 os.environ["VM_IMAGES"] = ",".join([
