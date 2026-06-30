@@ -98,6 +98,8 @@ import (
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
 	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
+	"github.com/stackrox/rox/central/ha/leases"
+	"github.com/stackrox/rox/central/ha/propagation"
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
@@ -116,6 +118,7 @@ import (
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
+	"github.com/stackrox/rox/central/mode"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkBaselineDataStore "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkBaselineService "github.com/stackrox/rox/central/networkbaseline/service"
@@ -321,6 +324,19 @@ func main() {
 		}
 	}
 
+	// Initialize HA components when HA mode is enabled
+	if env.HAEnabled.BooleanSetting() {
+		initializeHA()
+	}
+
+	if mode.IsCronJob() {
+		log.Info("Central starting in CronJob mode")
+		runCronJobTask()
+		globaldb.Close()
+		log.Info("CronJob completed, exiting")
+		return
+	}
+
 	features.LogFeatureFlags()
 
 	go startGRPCServer()
@@ -375,7 +391,83 @@ func ensureDB(ctx context.Context) {
 	}
 }
 
+func runCronJobTask() {
+	task := env.CronJobTask.Setting()
+	log.Infof("CronJob: Executing task: %s", task)
+
+	switch task {
+	case "pruning":
+		pruning.Singleton().RunOnce()
+	default:
+		log.Errorf("CronJob: Unknown task: %s", task)
+	}
+}
+
+func initializeHA() {
+	haCtx := sac.WithAllAccess(context.Background())
+	db := globaldb.GetPostgres()
+
+	// Initialize lease store
+	leaseStore := leases.New(db)
+	if err := leaseStore.Initialize(haCtx); err != nil {
+		log.Errorf("Failed to initialize lease store: %v", err)
+	} else {
+		connection.SetLeaseStore(leaseStore)
+		log.Info("HA: Sensor connection lease store initialized")
+	}
+
+	// Initialize version store and start poller
+	versionStore := propagation.NewVersionStore(db)
+	if err := versionStore.Initialize(haCtx); err != nil {
+		log.Errorf("Failed to initialize version store: %v", err)
+	} else {
+		policyDataStore.SetVersionStore(policyDataStore.Singleton(), versionStore)
+
+		poller := propagation.NewPoller(
+			func() (int64, error) {
+				return versionStore.GetVersion(sac.WithAllAccess(context.Background()))
+			},
+			func(old, newV int64) {
+				log.Infof("HA: Policy version changed: %d -> %d, re-broadcasting policies", old, newV)
+
+				readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+					sac.AllowFixedScopes(
+						sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+						sac.ResourceScopeKeys(resources.WorkflowAdministration)))
+				policies, err := policyDataStore.Singleton().GetAllPolicies(readCtx)
+				if err != nil {
+					log.Errorf("HA: Failed to read policies for broadcast: %v", err)
+					return
+				}
+
+				connection.ManagerSingleton().PreparePoliciesAndBroadcast(policies)
+				log.Infof("HA: Broadcasted %d policies to connected sensors", len(policies))
+			},
+			time.Duration(env.PolicyPollIntervalSecs.IntegerSetting())*time.Second,
+		)
+		poller.Start()
+		log.Infof("HA: Policy version poller started (interval: %ds)", env.PolicyPollIntervalSecs.IntegerSetting())
+	}
+}
+
 func startServices() {
+	centralMode := mode.Get()
+
+	// Start report schedulers in Full and Reports modes
+	if mode.IsReportsEnabled() {
+		log.Infof("Starting report schedulers (mode: %s)", centralMode)
+		vulnReportV2Scheduler.Singleton().Start()
+		if features.ComplianceReporting.Enabled() {
+			complianceReportManager.Singleton().Start()
+		}
+	}
+
+	// Heavy background workers only run in Full mode
+	if !mode.IsBackgroundWorkersEnabled() {
+		log.Infof("Background workers disabled (mode: %s)", centralMode)
+		return
+	}
+
 	go cloudSourcesManager.Singleton().Start()
 
 	reprocessor.Singleton().Start()
@@ -508,19 +600,23 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
-	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
-	if err := connection.ManagerSingleton().Start(
-		clusterDataStore.Singleton(),
-		networkEntityDataStore.Singleton(),
-		policyDataStore.Singleton(),
-		processBaselineDataStore.Singleton(),
-		networkBaselineDataStore.Singleton(),
-		delegatedRegistryConfigDS.Singleton(),
-		iiDatastore.Singleton(),
-		v2ComplianceMgr.Singleton(),
-		autoTriggerUpgrades,
-	); err != nil {
-		log.Panicf("Couldn't start sensor connection manager: %v", err)
+	if mode.IsAPIEnabled() {
+		autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
+		if err := connection.ManagerSingleton().Start(
+			clusterDataStore.Singleton(),
+			networkEntityDataStore.Singleton(),
+			policyDataStore.Singleton(),
+			processBaselineDataStore.Singleton(),
+			networkBaselineDataStore.Singleton(),
+			delegatedRegistryConfigDS.Singleton(),
+			iiDatastore.Singleton(),
+			v2ComplianceMgr.Singleton(),
+			autoTriggerUpgrades,
+		); err != nil {
+			log.Panicf("Couldn't start sensor connection manager: %v", err)
+		}
+	} else {
+		log.Infof("Sensor connection manager disabled (mode: %s)", mode.Get())
 	}
 
 	// Start cluster-level (Kubernetes, OpenShift, Istio) vulnerability data fetcher.
@@ -620,6 +716,12 @@ func startGRPCServer() {
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
 		Subsystem:          pkgMetrics.CentralSubsystem,
+	}
+
+	// In HA mode, enable connection age limit to rebalance sensor connections across Central replicas.
+	if env.HAEnabled.BooleanSetting() {
+		config.MaxConnectionAge = time.Duration(env.MaxConnectionAgeMins.IntegerSetting()) * time.Minute
+		config.MaxConnectionAgeGrace = 30 * time.Second
 	}
 
 	if devbuild.IsEnabled() {

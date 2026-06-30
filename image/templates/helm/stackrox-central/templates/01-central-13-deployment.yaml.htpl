@@ -11,13 +11,20 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "deployment" "central") | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ ._rox.ha.replicas | default 1 }}
   minReadySeconds: 15
   selector:
     matchLabels:
       app: central
   strategy:
+    {{- if and ._rox.ha.enabled (gt (int (._rox.ha.replicas | default 1)) 1) }}
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    {{- else }}
     type: Recreate
+    {{- end }}
   template:
     metadata:
       namespace: {{ .Release.Namespace }}
@@ -149,6 +156,14 @@ spec:
           value: "true"
         {{- end }}
         [<- end >]
+        {{- if ._rox.ha.enabled }}
+        - name: ROX_HA_ENABLED
+          value: "true"
+        - name: ROX_GRPC_MAX_CONNECTION_AGE_MINUTES
+          value: "60"
+        - name: ROX_POLICY_POLL_INTERVAL_SECONDS
+          value: "1"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog

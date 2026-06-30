@@ -22,6 +22,15 @@ spec:
     ports:
     - port: 5432
       protocol: TCP
+  {{- if ._rox.ha.pgbouncer.enabled }}
+  - from:
+    - podSelector:
+        matchLabels:
+          app: pgbouncer
+    ports:
+    - port: 5432
+      protocol: TCP
+  {{- end }}
   podSelector:
     matchLabels:
       app: central-db

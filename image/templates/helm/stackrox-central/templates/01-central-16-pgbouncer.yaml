@@ -1,0 +1,202 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.ha.pgbouncer.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "configmap" "pgbouncer-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "pgbouncer-config") | nindent 4 }}
+data:
+  # Template config -- init container replaces __DB_PASSWORD__ with the
+  # actual password read from the central-db-password secret before
+  # PgBouncer starts.
+  pgbouncer.ini.tmpl: |
+    [databases]
+    * = host=central-db.{{ .Release.Namespace }}.svc.cluster.local port=5432 user=postgres password=__DB_PASSWORD__
+
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 5432
+
+    ; Downstream (Central -> PgBouncer): trust auth, no client TLS.
+    ; PgBouncer is only reachable via ClusterIP within the namespace.
+    auth_type = trust
+    auth_file = /etc/pgbouncer/userlist.txt
+
+    pool_mode = transaction
+    max_prepared_statements = 200
+    default_pool_size = 50
+    min_pool_size = 10
+    max_client_conn = 500
+
+    ; Upstream (PgBouncer -> central-db): TLS required by pg_hba.conf.
+    server_tls_sslmode = verify-ca
+    server_tls_ca_file = /etc/pgbouncer/tls/ca.pem
+    server_tls_cert_file = /etc/pgbouncer/tls/cert.pem
+    server_tls_key_file = /etc/pgbouncer/tls/key.pem
+
+    admin_users = postgres
+    stats_users = postgres
+    ignore_startup_parameters = extra_float_digits,options,statement_timeout
+    log_connections = 0
+    log_disconnections = 0
+  userlist.txt: |
+    "postgres" ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "deployment" "pgbouncer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "pgbouncer") | nindent 4 }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pgbouncer
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: pgbouncer
+        {{- include "srox.podLabels" (list . "deployment" "pgbouncer") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "pgbouncer") | nindent 8 }}
+    spec:
+      {{- if not (eq ._rox.env.openshift 4) }}
+      securityContext:
+        fsGroup: 70
+        runAsUser: 70
+      {{- end }}
+      initContainers:
+      - name: init-config
+        image: "docker.io/edoburu/pgbouncer:v1.25.1-p0"
+        command:
+        - sh
+        - -ce
+        - |
+          DB_PASS=$(cat /run/secrets/stackrox.io/db-password/password | tr -d '\n')
+          sed "s|__DB_PASSWORD__|${DB_PASS}|g" \
+            /etc/pgbouncer-tmpl/pgbouncer.ini.tmpl \
+            > /etc/pgbouncer/pgbouncer.ini
+          cp /etc/pgbouncer-tmpl/userlist.txt /etc/pgbouncer/userlist.txt
+          chmod 0400 /etc/pgbouncer/pgbouncer.ini
+          mkdir -p /etc/pgbouncer/tls
+          cp /run/secrets/stackrox.io/db-tls/ca.pem /etc/pgbouncer/tls/ca.pem
+          cp /run/secrets/stackrox.io/db-tls/cert.pem /etc/pgbouncer/tls/cert.pem
+          cp /run/secrets/stackrox.io/db-tls/key.pem /etc/pgbouncer/tls/key.pem
+          chmod 0400 /etc/pgbouncer/tls/*.pem
+        volumeMounts:
+        - name: pgbouncer-config-tmpl
+          mountPath: /etc/pgbouncer-tmpl
+          readOnly: true
+        - name: pgbouncer-runtime
+          mountPath: /etc/pgbouncer
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/db-password
+          readOnly: true
+        - name: central-db-tls
+          mountPath: /run/secrets/stackrox.io/db-tls
+          readOnly: true
+        resources:
+          requests:
+            cpu: "10m"
+            memory: "16Mi"
+          limits:
+            cpu: "50m"
+            memory: "32Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+      containers:
+      - name: pgbouncer
+        image: "docker.io/edoburu/pgbouncer:v1.25.1-p0"
+        imagePullPolicy: IfNotPresent
+        # Skip the entrypoint's config generation -- we provide our own.
+        command: ["/usr/bin/pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]
+        ports:
+        - name: pgbouncer
+          containerPort: 5432
+          protocol: TCP
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        readinessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        volumeMounts:
+        - name: pgbouncer-runtime
+          mountPath: /etc/pgbouncer
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: pgbouncer-config-tmpl
+        configMap:
+          name: pgbouncer-config
+      - name: pgbouncer-runtime
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Mi
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-db-tls
+        secret:
+          secretName: central-db-tls
+          defaultMode: 0440
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pgbouncer
+    {{- include "srox.labels" (list . "service" "pgbouncer") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "service" "pgbouncer") | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: pgbouncer
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+  selector:
+    app: pgbouncer
+{{- end }}
