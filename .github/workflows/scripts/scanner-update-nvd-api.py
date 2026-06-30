@@ -47,7 +47,7 @@ class ApiLoader:
         index, total = 0, 0
         logging.info(f"Fetching page from {start} to {end}")
         backoff_time = 10
-        max_retries = 5
+        max_retries = 10
 
         while total == 0 or index < total:
             try:
@@ -72,7 +72,7 @@ class ApiLoader:
                     yield {"cve": item['cve']}
 
                 index += data['resultsPerPage']
-                max_retries = 5  # Reset retries
+                max_retries = 10  # Reset retries
                 backoff_time = 1
             except Exception as e:
                 logging.error(f"Failed to download page at index {index}: {e}")

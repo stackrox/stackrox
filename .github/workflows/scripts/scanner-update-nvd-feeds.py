@@ -30,7 +30,7 @@ class FeedLoader:
     def fetch(self, year):
         url = parse.urljoin(self._base_url, f"nvdcve-2.0-{year}.json.gz")
         backoff_time = 10
-        max_retries = 5
+        max_retries = 10
         while True:
             try:
                 self.log.info("fetching and decompressing: %s", url)
