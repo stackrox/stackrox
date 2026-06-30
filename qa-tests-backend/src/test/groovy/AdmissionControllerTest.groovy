@@ -1,5 +1,6 @@
 import static util.Helpers.withRetry
 
+import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -88,6 +89,20 @@ class AdmissionControllerTest extends BaseSpecification {
         ImageOuterClass.Image image = ImageService.getImage(imageId, false)
         assert image
         assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+        assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_SCAN_DATA)
+        assert image.getScan() != null : "Image scan data is null after scanning"
+        assert image.getScan().getComponentsList().size() > 0 : "Image has no scan components"
+
+        def hasFixableImportantVuln = image.getScan().getComponentsList().any { component ->
+            component.getVulnsList().any { vuln ->
+                vuln.getSeverity().getNumber() >=
+                    VulnerabilitySeverity.IMPORTANT_VULNERABILITY_SEVERITY.getNumber() &&
+                vuln.getFixedBy() != ""
+            }
+        }
+        assert hasFixableImportantVuln :
+            "Image ${SCAN_INLINE_IMAGE_NAME_WITH_SHA} has no fixable vulnerabilities with severity >= Important. " +
+            "The severity policy test will fail without matching vulnerabilities."
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
 
