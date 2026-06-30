@@ -7,8 +7,14 @@ import "internalapi/scanner/v4/index_report.proto";
 
 option go_package = "./internalapi/virtualmachine/v1;v1";
 
+// Protocol for pull-mode VM scanning over VSOCK between Sensor and roxagent.
+// See ADR-0006 §2 (Protocol) for the full design, exchange examples, and
+// generation-based deduplication semantics.
+
 // --- Envelope ---
 
+// VMServiceRequest is sent by Sensor to roxagent over a length-prefixed VSOCK frame.
+// One request per connection; the connection closes after the response.
 message VMServiceRequest {
   RequestMeta meta = 1;
   oneof method {
@@ -16,6 +22,8 @@ message VMServiceRequest {
   }
 }
 
+// VMServiceResponse is returned by roxagent. Contains either a successful result
+// or an ErrorResponse, never both.
 message VMServiceResponse {
   ResponseMeta meta = 1;
   oneof result {
@@ -27,27 +35,44 @@ message VMServiceResponse {
 // --- Metadata ---
 
 message RequestMeta {
+  // Correlation ID (UUID) for tracing across Sensor and agent logs.
   string request_id = 1;
+  // Features this Sensor understands (e.g. "report_v1"). The agent may use
+  // this to select response format. See ADR-0006 §3 for negotiation rules.
   repeated string capabilities = 2;
+  // Reserved for future contextual metadata (e.g. sensor_version, cluster_id).
   map<string, string> facts = 3;
 }
 
 message ResponseMeta {
+  // roxagent build version string (e.g. "4.7.0-12-gabcdef"), set via ldflags.
   string agent_version = 1;
+  // When the cached scan report was produced by the scanner.
   google.protobuf.Timestamp report_generated_at = 2;
+  // Monotonic counter incremented on each rescan; resets to 1 on agent restart.
+  // Sensor uses this for deduplication (see ADR-0006 §2, "Generation counter").
   uint32 report_generation = 3;
+  // Methods this agent accepts (e.g. ["get_report"]). Doubles as capability
+  // discovery — no separate handshake needed. See ADR-0006 §2.
   repeated string supported_methods = 4;
+  // VM metadata from the scan (detected_os, os_version, activation_status, etc.).
+  // Future: may also carry roxagent operational metrics.
   map<string, string> facts = 5;
 }
 
 // --- Methods ---
 
 message GetReportRequest {
+  // Last generation known to Sensor. Agent responds unchanged if equal (strict
+  // equality). Use 0 to force a full report. See ADR-0006 §2, "Generation counter".
   uint32 if_newer_than_generation = 1;
 }
 
 message GetReportResponse {
+  // Full scan report; set when generation changed or forced (generation 0).
   scanner.v4.IndexReport index_report = 1;
+  // True when agent's generation matches if_newer_than_generation; index_report
+  // is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
   bool unchanged = 2;
 }
 
@@ -55,13 +80,18 @@ message GetReportResponse {
 
 message ErrorResponse {
   ErrorCode code = 1;
+  // Human-readable error description for logging.
   string message = 2;
+  // Structured error metadata for programmatic handling.
   map<string, string> details = 3;
 }
 
 enum ErrorCode {
   ERROR_CODE_UNSPECIFIED = 0;
+  // Agent does not support the requested method.
   ERROR_CODE_UNKNOWN_METHOD = 1;
+  // Initial scan still in progress; retry next poll cycle.
   ERROR_CODE_NOT_READY = 2;
+  // Malformed request or internal agent failure.
   ERROR_CODE_INTERNAL = 3;
 }
