@@ -42,7 +42,7 @@ func (resolver *nodeScanResolver) NodeComponentCount(_ context.Context, args Raw
 	return resolver.root.NodeComponentCount(resolver.ctx, args)
 }
 
-func (resolver *nodeScanResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+func (resolver *nodeScanResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]*nodeComponentResolver, error) {
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}
@@ -53,7 +53,7 @@ func (resolver *nodeScanResolver) NodeComponents(ctx context.Context, args Pagin
 	return getNodeComponentResolvers(resolver.ctx, resolver.root, resolver.data, query)
 }
 
-func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *storage.NodeScan, query *v1.Query) ([]NodeComponentResolver, error) {
+func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *storage.NodeScan, query *v1.Query) ([]*nodeComponentResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.NodeComponentOptionsMap)
 	predicate, err := nodeComponentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
@@ -90,7 +90,7 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 			return resolverObjs[i].data.GetId() < resolverObjs[j].data.GetId()
 		})
 	}
-	nodeCompResolvers := make([]NodeComponentResolver, 0, len(resolverObjs))
+	nodeCompResolvers := make([]*nodeComponentResolver, 0, len(resolverObjs))
 	for _, resolver := range resolverObjs {
 		nodeCompResolvers = append(nodeCompResolvers, resolver)
 	}

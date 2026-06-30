@@ -82,7 +82,8 @@ type ImageComponentResolver interface {
 	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
-	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
+	// ImageVulnerabilities (ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
+	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error)
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	LayerIndex() (*int32, error)
 	License(ctx context.Context) (*licenseResolver, error)
@@ -93,7 +94,8 @@ type ImageComponentResolver interface {
 	Priority(ctx context.Context) int32
 	RiskScore(ctx context.Context) float64
 	Source(ctx context.Context) string
-	TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error)
+	// TopImageVulnerability (ctx context.Context) (ImageVulnerabilityResolver, error)
+	TopImageVulnerability(ctx context.Context) (*imageCVEV2Resolver, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 	Version(ctx context.Context) string
 	InBaseImageLayer(ctx context.Context) bool
@@ -103,8 +105,10 @@ type ImageComponentResolver interface {
 	FixedIn(ctx context.Context) string
 }
 
+var _ ImageComponentResolver = (*imageComponentV2Resolver)(nil)
+
 // ImageComponent returns an image component based on an input id (name:version)
-func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (ImageComponentResolver, error) {
+func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponent")
 
 	// check permissions
@@ -148,7 +152,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 }
 
 // ImageComponents returns image components that match the input query.
-func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 
 	// check permissions
@@ -217,7 +221,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 	}
 
 	// cast as return type
-	ret := make([]ImageComponentResolver, 0, len(componentResolvers))
+	ret := make([]*imageComponentV2Resolver, 0, len(componentResolvers))
 	for _, res := range componentResolvers {
 		ret = append(ret, res)
 	}
@@ -276,7 +280,7 @@ func (resolver *imageComponentV2Resolver) ImageVulnerabilityCounter(ctx context.
 	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *imageComponentV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilities")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
@@ -330,7 +334,7 @@ func (resolver *imageComponentV2Resolver) PlottedImageVulnerabilities(ctx contex
 	return resolver.root.PlottedImageVulnerabilities(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Context) (ImageVulnerabilityResolver, error) {
+func (resolver *imageComponentV2Resolver) TopImageVulnerability(ctx context.Context) (*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "TopImageVulnerability")
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
