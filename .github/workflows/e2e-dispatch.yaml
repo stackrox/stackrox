@@ -81,3 +81,20 @@ jobs:
     concurrency:
       group: e2e-byodb-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
+
+  e2e-db-backup-restore:
+    needs: [wait-for-images]
+    if: >-
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-db-backup-restore-test') &&
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        !github.event.pull_request.draft ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
+      )
+    uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+    secrets: inherit
+    concurrency:
+      group: e2e-db-backup-restore-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
