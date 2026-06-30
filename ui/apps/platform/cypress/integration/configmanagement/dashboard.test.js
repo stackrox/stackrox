@@ -4,7 +4,6 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     interactAndWaitForConfigurationManagementEntities,
     interactAndWaitForConfigurationManagementEntityInSidePanel,
-    // interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
 } from './ConfigurationManagement.helpers';
 import { selectors } from './ConfigurationManagement.selectors';
