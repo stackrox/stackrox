@@ -1,6 +1,5 @@
 import pf6 from '../selectors/pf6';
 
-
 import { getRouteMatcherMapForGraphQL } from './request';
 import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
@@ -16,7 +15,6 @@ export const getImagesAtMostRiskOpname = 'getImagesAtMostRisk';
 export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
 export const agingImagesQueryOpname = 'agingImagesQuery';
 export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
-
 
 export const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
 const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
