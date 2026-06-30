@@ -8,6 +8,7 @@ import (
 // suppressedWarnings contains API server warnings that should be silently dropped.
 var suppressedWarnings = set.NewFrozenStringSet(
 	"apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+",
+	"apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable no sooner than v6.0+",
 )
 
 // filteredWarningHandler delegates to the default WarningLogger but suppresses
