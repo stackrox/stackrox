@@ -9,7 +9,7 @@ import (
 
 // WriteFrame writes a length-prefixed frame: [4-byte big-endian uint32 length][payload].
 func WriteFrame(w io.Writer, payload []byte) error {
-	if len(payload) > math.MaxUint32 {
+	if uint64(len(payload)) > math.MaxUint32 {
 		return fmt.Errorf("frame payload too large: %d bytes", len(payload))
 	}
 	length := uint32(len(payload))
