@@ -7,6 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/store"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -75,7 +77,7 @@ func (c *writerImpl) flushNoLock(ctx context.Context) error {
 
 	// After successful DB operations, reset the buffer.
 	c.resetNoLock()
-
+	refresh.RefreshTracker(metrics.AdminEvents)
 	return nil
 }
 
