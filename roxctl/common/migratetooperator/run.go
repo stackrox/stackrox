@@ -5,11 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/yaml"
-
 	migrate "github.com/stackrox/rox/pkg/migratetooperator"
 	"github.com/stackrox/rox/roxctl/common/environment"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 // Command holds the common state for migrate-to-operator subcommands.

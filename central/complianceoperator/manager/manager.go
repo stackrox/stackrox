@@ -10,13 +10,10 @@ import (
 	scansDatastore "github.com/stackrox/rox/central/complianceoperator/scans/datastore"
 	scanSettingBindingDatastore "github.com/stackrox/rox/central/complianceoperator/scansettingbinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	allAccessCtx = sac.WithAllAccess(context.Background())
 )
 

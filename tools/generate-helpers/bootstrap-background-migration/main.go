@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	_ "embed"
-
 	"github.com/spf13/cobra"
 	bc "github.com/stackrox/rox/tools/generate-helpers/bootstrap-common"
 )
