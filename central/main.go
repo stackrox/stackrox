@@ -306,6 +306,7 @@ func main() {
 	devmode.StartOnDevBuilds("central")
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
+	log.Info("Central built from opencode-vm dev environment")
 	ensureDB(ctx)
 
 	if !pgconfig.IsExternalDatabase() {
