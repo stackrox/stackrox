@@ -273,7 +273,6 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	// the updater fires its first download immediately on startup and the
 	// retry interval is clamped to 5 minutes.
 	s.logf("Verifying bundle URL is reachable from within the cluster")
-	wgetCmd := fmt.Sprintf("wget -q -O /dev/null %s", bundleURL)
 	mustEventually(t, testCtx, func() error {
 		podList, err := s.k8s.CoreV1().Pods(ns).List(testCtx, metaV1.ListOptions{
 			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
