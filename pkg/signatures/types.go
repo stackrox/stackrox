@@ -2,9 +2,18 @@ package signatures
 
 import (
 	_ "embed"
+	"os"
+	"path/filepath"
+	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
 )
+
+var redHatKeyBundlePath = filepath.Join(os.TempDir(), "redhat-signing-keys", "bundle.json")
+
+// RedHatKeyBundlePath returns the default filesystem path for the Red Hat
+// signing key bundle file.
+func RedHatKeyBundlePath() string { return redHatKeyBundlePath }
 
 const (
 	// SignatureIntegrationIDPrefix should be prepended to every human-hostile ID of a
@@ -25,6 +34,9 @@ const (
 
 //go:embed "bundle.json"
 var defaultBundleJSON []byte
+
+// DefaultBundleJSON returns a copy of the raw embedded bundle JSON.
+func DefaultBundleJSON() []byte { return slices.Clone(defaultBundleJSON) }
 
 var DefaultRedHatSignatureIntegration = mustParseEmbeddedBundle()
 

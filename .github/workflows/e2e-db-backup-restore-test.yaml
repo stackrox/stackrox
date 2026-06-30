@@ -4,30 +4,40 @@ on:
   workflow_dispatch:
   push:
     tags:
-    - '*-nightly-*'
+    - '*'
     branches:
     - master
+    - release-*
   pull_request:
     types:
     - opened
     - reopened
     - synchronize
-    paths-ignore:
-    - 'ui/**'
+    - labeled
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: read
 
 defaults:
   run:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   wait-for-images:
+    needs: detect-changes
     if: >-
-      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-latest
+      !needs.detect-changes.outputs.ui_only &&
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-db-backup-restore-test') &&
+      !github.event.pull_request.head.repo.fork && (
+        github.event_name != 'pull_request' ||
+        !github.event.pull_request.draft ||
+        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
+      )
+    runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
     steps:
@@ -36,31 +46,46 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
     - name: Compute build tag
       id: build-tag
       run: |
         tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
         echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: |
-          rhacs-eng/main:${{ env.tag }}
           rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
+          rhacs-eng/fact:${{ env.tag }}
+          rhacs-eng/main:${{ env.tag }}
+          rhacs-eng/roxctl:${{ env.tag }}
+          rhacs-eng/scanner-db-slim:${{ env.tag }}
+          rhacs-eng/scanner-db:${{ env.tag }}
+          rhacs-eng/scanner-slim:${{ env.tag }}
+          rhacs-eng/scanner-v4-db:${{ env.tag }}
+          rhacs-eng/scanner-v4:${{ env.tag }}
+          rhacs-eng/scanner:${{ env.tag }}
+          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   gke-db-backup-restore-test:
     needs: [ wait-for-images ]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ needs.wait-for-images.outputs.tag }}
+      BUILD_TAG: ${{ needs.wait-for-images.outputs.tag }}
       CI_JOB_NAME: gke-db-backup-restore-test
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
+      ROX_SCANNER_V4: "false"
+      PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:
 
@@ -69,6 +94,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -91,7 +117,6 @@ jobs:
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -119,8 +144,6 @@ jobs:
     - name: Run post-test
       if: failure() || github.event_name == 'push'
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -133,8 +156,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')

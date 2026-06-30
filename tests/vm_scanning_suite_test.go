@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -478,20 +479,29 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	}
 	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
 
-	sa, err := s.waitForDefaultServiceAccount(ctx)
-	require.NoError(s.T(), err, "get default service account in namespace %q", s.namespace)
-	hasRef := false
-	for _, ref := range sa.ImagePullSecrets {
-		if ref.Name == vmImagePullSecretName {
-			hasRef = true
-			break
+	// Wait for the default SA to exist before attempting the update.
+	_, err = s.waitForDefaultServiceAccount(ctx)
+	require.NoError(s.T(), err, "wait for default service account in namespace %q", s.namespace)
+
+	// The SA controller may still be mutating the freshly-created default SA
+	// (e.g. patching token secrets), so a single Get+Update can hit an
+	// optimistic concurrency conflict. Retry exactly like the DaemonSet
+	// update in ensureComplianceMetricsEnv.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		sa, getErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
-	}
-	if !hasRef {
+		for _, ref := range sa.ImagePullSecrets {
+			if ref.Name == vmImagePullSecretName {
+				return nil
+			}
+		}
 		sa.ImagePullSecrets = append(sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
-		_, err = s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
-		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
-	}
+		_, updateErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
+		return updateErr
+	})
+	require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
 	s.logf("provision VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
 }
 
