@@ -29,7 +29,6 @@ jobs:
         master-node-count=3
         worker-node-type=e2-standard-8
         worker-node-count=3
-        fips-enabled=true
         ssd-storage-class=true
       infra-lifespan: 5h
       # To addressl later:
