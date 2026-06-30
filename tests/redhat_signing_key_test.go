@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"os/exec"
 	"slices"
 	"testing"
 	"time"
@@ -266,6 +267,30 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 
 	bundleURL := fmt.Sprintf("http://%s.%s.svc/bundle.json", deploymentName, ns)
 	s.logf("Bundle URL: %s", bundleURL)
+
+	// Service endpoints may not be routable immediately after the deployment
+	// is marked ready. Verify reachability before restarting Central, because
+	// the updater fires its first download immediately on startup and the
+	// retry interval is clamped to 5 minutes.
+	s.logf("Verifying bundle URL is reachable from within the cluster")
+	wgetCmd := fmt.Sprintf("wget -q -O /dev/null %s", bundleURL)
+	mustEventually(t, testCtx, func() error {
+		podList, err := s.k8s.CoreV1().Pods(ns).List(testCtx, metaV1.ListOptions{
+			LabelSelector: fmt.Sprintf("app=%s", deploymentName),
+		})
+		if err != nil {
+			return fmt.Errorf("listing pods: %w", err)
+		}
+		if len(podList.Items) == 0 {
+			return fmt.Errorf("no pods found for deployment %q", deploymentName)
+		}
+		out, err := exec.CommandContext(testCtx, "kubectl", "exec", "-n", ns, podList.Items[0].Name, "--", "sh", "-c", wgetCmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("wget failed: %s: %w", string(out), err)
+		}
+		return nil
+	}, 2*time.Second, "bundle URL not yet reachable")
+	s.logf("Bundle URL is reachable")
 
 	// The watcher must poll frequently so it picks up the file the updater writes.
 	defer func() {
