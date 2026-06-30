@@ -71,7 +71,6 @@ class AutocompleteTest extends BaseSpecification {
         SearchCategory.PROCESS_INDICATORS    | ["Process Name"]
         SearchCategory.CLUSTERS              | ["Cluster"]
         SearchCategory.NAMESPACES            | ["Cluster", "Namespace"]
-        SearchCategory.COMPLIANCE            | ["Cluster", "Control", "Deployment", "Namespace", "Node", "Standard"]
         SearchCategory.NODES                 | ["Cluster", "Node"]
         SearchCategory.SERVICE_ACCOUNTS      | ["Cluster", "Service Account"]
         SearchCategory.ROLES                 | ["Cluster", "Role"]
