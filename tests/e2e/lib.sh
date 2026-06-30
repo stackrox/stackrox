@@ -567,7 +567,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
-    # Explicitly disable the secrets page migration feature flag so that CI runs tests against 
+    # Explicitly disable the secrets page migration feature flag so that CI runs tests against
     # the flag on (gke) and off (ocp) until the feature flag is removed.
     # This change is independent of k8s platform so does not need to be verified for k8s platform compatibility.
     customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
