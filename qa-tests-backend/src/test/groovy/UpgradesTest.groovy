@@ -123,7 +123,7 @@ class UpgradesTest extends BaseSpecification {
             }"""
     }
 
-static private class KnownPolicyDiffs {
+    static private class KnownPolicyDiffs {
         Set<PolicyOuterClass.Exclusion> toRemove
         List<PolicyOuterClass.Exclusion> toAdd
         String clusterId = null
