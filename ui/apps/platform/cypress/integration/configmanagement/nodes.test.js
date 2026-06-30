@@ -50,5 +50,4 @@ describe('Configuration Management Nodes', () => {
         navigateToSingleEntityPage(entitiesKey);
         hasTabsFor(['controls']);
     });
-
 });
