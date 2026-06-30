@@ -77,11 +77,10 @@ jobs:
 
           anchored=$(printf '^%s$\n' "${files[@]}")
 
-          # Self-check disabled for testing: detect-changes.yml is in this PR
-          # if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
-          #   echo "detect-changes.yml modified, running all jobs" >&2
-          #   exit 0
-          # fi
+          if echo "${anchored}" | grep -qF "^${WORKFLOW_FILE_PATH}$"; then
+            echo "detect-changes.yml modified, running all jobs" >&2
+            exit 0
+          fi
 
           if [[ -n "${RUN_ALL}" ]]; then
             while IFS= read -r pattern; do
@@ -100,8 +99,8 @@ jobs:
               echo "EOF"
             } >> "${GITHUB_OUTPUT}"
 
-            if ! echo "${anchored}" | grep -qv '^\^\.github/'; then
-              echo "All changed files are under .github/" >&2
+            if ! echo "${anchored}" | grep -qv '^\^ui/'; then
+              echo "All changed files are under ui/" >&2
               echo "ui_only=true" >> "${GITHUB_OUTPUT}"
             fi
           fi
