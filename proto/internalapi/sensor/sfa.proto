@@ -70,10 +70,15 @@ message AclEntry {
   uint32 id = 3;
 }
 
+enum AclType {
+  ACL_TYPE_UNSPECIFIED = 0;
+  ACL_TYPE_ACCESS = 1;
+  ACL_TYPE_DEFAULT = 2;
+}
+
 message FileAclChange {
   FileActivityBase activity = 1;
-  // "access" or "default"
-  string acl_type = 2;
+  AclType acl_type = 2;
   // The ACL entries being set. Empty when the ACL is being removed.
   repeated AclEntry entries = 3;
 }
