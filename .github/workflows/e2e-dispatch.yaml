@@ -65,7 +65,7 @@ jobs:
           rhacs-eng/scanner:${{ env.tag }}
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
-  e2e-byodb:
+  dispatch-e2e-byodb-test:
     needs: [wait-for-images]
     if: >-
       (github.event.action != 'labeled' || github.event.label.name == 'e2e-byodb-test') &&
@@ -79,10 +79,10 @@ jobs:
       tag: ${{ needs.wait-for-images.outputs.tag }}
     secrets: inherit
     concurrency:
-      group: e2e-byodb-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-db-backup-restore:
+  dispatch-e2e-db-backup-restore-test:
     needs: [wait-for-images]
     if: >-
       (github.event.action != 'labeled' || github.event.label.name == 'e2e-db-backup-restore-test') &&
@@ -96,10 +96,10 @@ jobs:
       tag: ${{ needs.wait-for-images.outputs.tag }}
     secrets: inherit
     concurrency:
-      group: e2e-db-backup-restore-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-gke-upgrade:
+  dispatch-e2e-gke-upgrade-tests:
     needs: [wait-for-images]
     if: >-
       (github.event.action != 'labeled' || github.event.label.name == 'e2e-gke-upgrade-tests') &&
@@ -113,10 +113,10 @@ jobs:
       tag: ${{ needs.wait-for-images.outputs.tag }}
     secrets: inherit
     concurrency:
-      group: e2e-gke-upgrade-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-nongroovy:
+  dispatch-e2e-nongroovy-tests:
     needs: [wait-for-images]
     if: >-
       (github.event.action != 'labeled' || github.event.label.name == 'e2e-nongroovy-tests') &&
