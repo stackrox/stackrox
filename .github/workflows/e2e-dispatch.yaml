@@ -23,9 +23,10 @@ defaults:
     shell: bash
 
 jobs:
+
+  # Determines whether we should dispatch jobs that call real E2E workflows.
+  # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
   should-dispatch:
-    if: >-
-      github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
     runs-on: ubuntu-slim
     outputs:
       dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
@@ -86,9 +87,10 @@ jobs:
 
             write('dispatch-any', dispatch_any)
 
+  # Waits for images to be built so we don't start testing until they are available.
   wait-for-images:
-    if: >-
-      github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
+    needs: [should-dispatch]
+    if: needs.should-dispatch.outputs.dispatch-any == 'true'
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
@@ -129,14 +131,8 @@ jobs:
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   dispatch-e2e-byodb-test:
-    needs: [wait-for-images]
-    if: >-
-      (github.event.action != 'labeled' || github.event.label.name == 'e2e-byodb-test') &&
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        !github.event.pull_request.draft ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-byodb-test')
-      )
+    needs: [wait-for-images, should-dispatch]
+    if: needs.should-dispatch.outputs.e2e-byodb-test == 'true'
     uses: ./.github/workflows/e2e-byodb-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -146,14 +142,8 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-db-backup-restore-test:
-    needs: [wait-for-images]
-    if: >-
-      (github.event.action != 'labeled' || github.event.label.name == 'e2e-db-backup-restore-test') &&
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        !github.event.pull_request.draft ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-db-backup-restore-test')
-      )
+    needs: [wait-for-images, should-dispatch]
+    if: needs.should-dispatch.outputs.e2e-db-backup-restore-test == 'true'
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -163,14 +153,8 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-gke-upgrade-tests:
-    needs: [wait-for-images]
-    if: >-
-      (github.event.action != 'labeled' || github.event.label.name == 'e2e-gke-upgrade-tests') &&
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        !github.event.pull_request.draft ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests')
-      )
+    needs: [wait-for-images, should-dispatch]
+    if: needs.should-dispatch.outputs.e2e-gke-upgrade-tests == 'true'
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -180,14 +164,8 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-nongroovy-tests:
-    needs: [wait-for-images]
-    if: >-
-      (github.event.action != 'labeled' || github.event.label.name == 'e2e-nongroovy-tests') &&
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        !github.event.pull_request.draft ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-nongroovy-tests')
-      )
+    needs: [wait-for-images, should-dispatch]
+    if: needs.should-dispatch.outputs.e2e-nongroovy-tests == 'true'
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
