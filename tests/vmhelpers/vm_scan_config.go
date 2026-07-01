@@ -211,8 +211,8 @@ func GenerateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized st
 	return string(pemData), authorizedKey, nil
 }
 
-// MustFindExecutable resolves an executable on PATH for tests that need a known-good binary.
-func MustFindExecutable(t *testing.T, name string) string {
+// mustFindExecutable resolves an executable on PATH for tests that need a known-good binary.
+func mustFindExecutable(t *testing.T, name string) string {
 	t.Helper()
 
 	path, err := exec.LookPath(name)

@@ -21,7 +21,7 @@ func TestLoadVMScanConfig_MissingImages(t *testing.T) {
 func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
-	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := LoadVMScanConfig()
@@ -42,7 +42,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VM_IMAGES", "img-a,img-b,img-c")
 	t.Setenv("VM_USERS", "alice")
-	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 	cfg, err := LoadVMScanConfig()
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
-	t.Setenv("VIRTCTL_PATH", MustFindExecutable(t, "true"))
+	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
 	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
 
 	tests := map[string]string{
