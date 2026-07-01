@@ -160,14 +160,14 @@ export type PolicyMitreAttackVector = {
 };
 
 // Will match proto enum SkipContainerType in storage/policy.proto
-export type SkipContainerType = 'SKIP_INIT';
+export type ContainerType = 'INIT';
 
 // Will match proto enum SkipImageLayers in storage/policy.proto
 export type SkipImageLayers = 'SKIP_NONE' | 'SKIP_BASE' | 'SKIP_APP';
 
 // Will match proto message EvaluationFilter in storage/policy.proto
 export type EvaluationFilter = {
-    skipContainerTypes: SkipContainerType[];
+    skipContainerTypes: ContainerType[];
     // TODO: reimplement once backend support is available - demo code was deleted at the same time this comment was added
     // skipImageLayers: SkipImageLayers;
 };
