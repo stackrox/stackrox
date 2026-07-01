@@ -26,10 +26,13 @@ const (
 type ErrorCode int32
 
 const (
-	ErrorCode_ERROR_CODE_UNSPECIFIED    ErrorCode = 0
+	ErrorCode_ERROR_CODE_UNSPECIFIED ErrorCode = 0
+	// Agent does not support the requested method.
 	ErrorCode_ERROR_CODE_UNKNOWN_METHOD ErrorCode = 1
-	ErrorCode_ERROR_CODE_NOT_READY      ErrorCode = 2
-	ErrorCode_ERROR_CODE_INTERNAL       ErrorCode = 3
+	// Initial scan still in progress; retry next poll cycle.
+	ErrorCode_ERROR_CODE_NOT_READY ErrorCode = 2
+	// Malformed request or internal agent failure.
+	ErrorCode_ERROR_CODE_INTERNAL ErrorCode = 3
 )
 
 // Enum value maps for ErrorCode.
@@ -75,6 +78,8 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{0}
 }
 
+// VMServiceRequest is sent by Sensor to roxagent over a length-prefixed VSOCK frame.
+// One request per connection; the connection closes after the response.
 type VMServiceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Meta  *RequestMeta           `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -149,6 +154,8 @@ type VMServiceRequest_GetReport struct {
 
 func (*VMServiceRequest_GetReport) isVMServiceRequest_Method() {}
 
+// VMServiceResponse is returned by roxagent. Contains either a successful result
+// or an ErrorResponse, never both.
 type VMServiceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Meta  *ResponseMeta          `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -240,10 +247,14 @@ func (*VMServiceResponse_GetReport) isVMServiceResponse_Result() {}
 func (*VMServiceResponse_Error) isVMServiceResponse_Result() {}
 
 type RequestMeta struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	Capabilities  []string               `protobuf:"bytes,2,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
-	Facts         map[string]string      `protobuf:"bytes,3,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Correlation ID (UUID) for tracing across Sensor and agent logs.
+	RequestId string `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	// Features this Sensor understands (e.g. "report_v1"). The agent may use
+	// this to select response format. See ADR-0006 §3 for negotiation rules.
+	Capabilities []string `protobuf:"bytes,2,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	// Reserved for future contextual metadata (e.g. sensor_version, cluster_id).
+	Facts         map[string]string `protobuf:"bytes,3,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -300,14 +311,22 @@ func (x *RequestMeta) GetFacts() map[string]string {
 }
 
 type ResponseMeta struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	AgentVersion      string                 `protobuf:"bytes,1,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// roxagent build version string (e.g. "4.7.0-12-gabcdef"), set via ldflags.
+	AgentVersion string `protobuf:"bytes,1,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
+	// When the cached scan report was produced by the scanner.
 	ReportGeneratedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=report_generated_at,json=reportGeneratedAt,proto3" json:"report_generated_at,omitempty"`
-	ReportGeneration  uint32                 `protobuf:"varint,3,opt,name=report_generation,json=reportGeneration,proto3" json:"report_generation,omitempty"`
-	SupportedMethods  []string               `protobuf:"bytes,4,rep,name=supported_methods,json=supportedMethods,proto3" json:"supported_methods,omitempty"`
-	Facts             map[string]string      `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Monotonic counter incremented on each rescan; resets to 1 on agent restart.
+	// Sensor uses this for deduplication (see ADR-0006 §2, "Generation counter").
+	ReportGeneration uint32 `protobuf:"varint,3,opt,name=report_generation,json=reportGeneration,proto3" json:"report_generation,omitempty"`
+	// Methods this agent accepts (e.g. ["get_report"]). Doubles as capability
+	// discovery — no separate handshake needed. See ADR-0006 §2.
+	SupportedMethods []string `protobuf:"bytes,4,rep,name=supported_methods,json=supportedMethods,proto3" json:"supported_methods,omitempty"`
+	// VM metadata from the scan (detected_os, os_version, activation_status, etc.).
+	// Future: may also carry roxagent operational metrics.
+	Facts         map[string]string `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ResponseMeta) Reset() {
@@ -376,8 +395,10 @@ func (x *ResponseMeta) GetFacts() map[string]string {
 }
 
 type GetReportRequest struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	IfNewerThanGeneration uint32                 `protobuf:"varint,1,opt,name=if_newer_than_generation,json=ifNewerThanGeneration,proto3" json:"if_newer_than_generation,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Last generation known to Sensor. Agent responds unchanged if equal (strict
+	// equality). Use 0 to force a full report. See ADR-0006 §2, "Generation counter".
+	IfNewerThanGeneration uint32 `protobuf:"varint,1,opt,name=if_newer_than_generation,json=ifNewerThanGeneration,proto3" json:"if_newer_than_generation,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -420,9 +441,12 @@ func (x *GetReportRequest) GetIfNewerThanGeneration() uint32 {
 }
 
 type GetReportResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	IndexReport   *v4.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	Unchanged     bool                   `protobuf:"varint,2,opt,name=unchanged,proto3" json:"unchanged,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Full scan report; set when generation changed or forced (generation 0).
+	IndexReport *v4.IndexReport `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
+	// True when agent's generation matches if_newer_than_generation; index_report
+	// is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
+	Unchanged     bool `protobuf:"varint,2,opt,name=unchanged,proto3" json:"unchanged,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -472,10 +496,12 @@ func (x *GetReportResponse) GetUnchanged() bool {
 }
 
 type ErrorResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=virtualmachine.v1.ErrorCode" json:"code,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	Details       map[string]string      `protobuf:"bytes,3,rep,name=details,proto3" json:"details,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=virtualmachine.v1.ErrorCode" json:"code,omitempty"`
+	// Human-readable error description for logging.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// Structured error metadata for programmatic handling.
+	Details       map[string]string `protobuf:"bytes,3,rep,name=details,proto3" json:"details,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
