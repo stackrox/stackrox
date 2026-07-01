@@ -450,7 +450,7 @@ jobs:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
           if [[ "${{ needs.create-cluster.result }}" == "success" ]]; then
-            infractl delete "${CLUSTER_NAME}" || echo "infractl delete failed; relying on lifespan expiry"
+            infractl delete "${CLUSTER_NAME}"
           else
             echo "create-cluster job did not succeed; nothing to delete"
           fi
