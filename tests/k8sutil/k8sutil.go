@@ -1,3 +1,6 @@
+// Package k8sutil provides small client-go helpers shared across StackRox
+// e2e test suites, such as configuring a retryable REST transport before
+// creating a Kubernetes client.
 package k8sutil
 
 import (

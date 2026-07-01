@@ -1,3 +1,7 @@
+// Package vmhelpers provides helpers shared by the VM-scanning e2e suite and
+// its unit tests: loading VM scan configuration, KubeVirt/VSOCK cluster
+// preflight checks, compliance metrics setup, and Central/roxagent
+// interactions.
 package vmhelpers
 
 import (

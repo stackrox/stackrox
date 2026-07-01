@@ -1,3 +1,7 @@
+// Package logmatchers provides regex-based matchers for finding or ruling
+// out expected content in container logs, used by StackRox e2e test suites
+// to validate behaviors that can't be observed elsewhere (e.g. StackRox API
+// responses).
 package logmatchers
 
 import (
