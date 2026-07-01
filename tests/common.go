@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -22,10 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/tests/k8sutil"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -61,25 +61,6 @@ const (
 var (
 	sensorPodLabels = map[string]string{"app": "sensor"}
 )
-
-// testutilsLogger adapts testutils.T to retryablehttp.Logger interface.
-//
-// WHY THIS EXISTS (and why it's unfortunate):
-// The retryablehttp library requires a logger implementing its Logger interface with Printf method.
-// Go's *testing.T has Logf but NOT Printf (different method names, same functionality).
-// We cannot add Printf to testutils.T because that would break compatibility with *testing.T,
-// which is used throughout the codebase (e.g., centralgrpc.GRPCConnectionToCentral(t testutils.T)).
-//
-// CLEANER ALTERNATIVE:
-// Accept *testing.T directly in helper functions and create testutils.T wrappers locally where needed
-// (specifically for the retry mechanism). This would avoid the interface constraint propagating everywhere.
-// However, this would be a larger refactor affecting many test helper functions.
-//
-// CURRENT COMPROMISE:
-// Use this tiny adapter ONLY where retryablehttp requires it. Everywhere else uses testutils.T naturally.
-type testutilsLogger struct{ testutils.T }
-
-func (l testutilsLogger) Printf(format string, v ...interface{}) { l.Logf(format, v...) }
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
 // Using testing.T.Logf means that the output is hidden unless the test fails or verbose logging is enabled with -v.
@@ -729,13 +710,10 @@ func getConfig(t testutils.T) *rest.Config {
 
 // configureRetryableTransport configures a rest.Config to use retryable HTTP client
 // for network resilience. This adds automatic retry logic for transient network errors.
+// The concrete implementation lives in k8sutil so it can be unit-tested without
+// pulling those unit tests into this e2e-tagged package.
 func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
-	if restCfg.Timeout == 0 {
-		restCfg.Timeout = 30 * time.Second
-	}
-	retryablehttp.ConfigureRESTConfig(restCfg,
-		retryablehttp.WithLogger(&testutilsLogger{t}),
-	)
+	k8sutil.ConfigureRetryableTransport(t, restCfg)
 }
 
 func createK8sClient(t testutils.T) kubernetes.Interface {
@@ -743,10 +721,7 @@ func createK8sClient(t testutils.T) kubernetes.Interface {
 }
 
 func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
-	k8sClient, err := kubernetes.NewForConfig(restCfg)
-	require.NoError(t, err, "creating Kubernetes client from REST config")
-
-	return k8sClient
+	return k8sutil.CreateK8sClientWithConfig(t, restCfg)
 }
 
 // getClusterID returns the ID of the cluster in Central.
@@ -894,10 +869,7 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 	logf(ks.T(), format, args...)
 }
 
-type logMatcher interface {
-	Match(reader io.ReadSeeker) (bool, error)
-	fmt.Stringer
-}
+type logMatcher = logmatchers.LogMatcher
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
@@ -923,7 +895,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", labelSelector, namespace, err)
 		}
 		if len(podList.Items) == 0 {
-			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
+			if ok, err := logmatchers.AllMatch(strings.NewReader(""), logMatchers...); ok {
 				return nil
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
@@ -936,7 +908,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
 			}
-			if ok, err := allMatch(bytes.NewReader(log), logMatchers...); ok {
+			if ok, err := logmatchers.AllMatch(bytes.NewReader(log), logMatchers...); ok {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)

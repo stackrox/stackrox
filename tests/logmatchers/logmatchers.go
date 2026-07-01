@@ -1,6 +1,8 @@
-//go:build test_e2e || test_e2e_vm || sql_integration || compliance || destructive || externalbackups || test_compatibility
-
-package tests
+// Package logmatchers provides regex-based matchers for finding or ruling
+// out expected content in container logs, used by StackRox e2e test suites
+// to validate behaviors that can't be observed elsewhere (e.g. StackRox API
+// responses).
+package logmatchers
 
 import (
 	"bufio"
@@ -10,11 +12,14 @@ import (
 	"regexp"
 )
 
-// This file contains utilities for finding/detecting specific log lines to help
-// validate expected behaviors that cannot be validated elsewhere, such
-// as StackRox API responses.
+// LogMatcher describes a log predicate used by e2e helpers and unit tests.
+type LogMatcher interface {
+	Match(reader io.ReadSeeker) (bool, error)
+	fmt.Stringer
+}
 
-func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (bool, error) {
+// AllMatch returns true when every matcher succeeds against the provided reader.
+func AllMatch(reader io.ReadSeeker, matchers ...LogMatcher) (bool, error) {
 	for i, matcher := range matchers {
 		ok, err := matcher.Match(reader)
 		if err != nil {
@@ -27,33 +32,41 @@ func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (bool, error) {
 	return true, nil
 }
 
-// multiLineMatcher matches when the desired number of lines are found.
+// multiLineLogMatcher matches when the desired number of lines are found.
 type multiLineLogMatcher struct {
 	re       *regexp.Regexp
 	numLines int
 	fromByte int64
 }
 
-// containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
+// ContainsLineMatching returns a simple line-based regex matcher.
 // Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
-func containsLineMatching(re *regexp.Regexp) *multiLineLogMatcher {
+func ContainsLineMatching(re *regexp.Regexp) LogMatcher {
 	return containsMultipleLinesMatching(re, 1)
 }
 
-// containsLineMatchingAfter mimics containsLineMatching but will only attempt to match
+// ContainsLineMatchingAfter mimics ContainsLineMatching but will only attempt to match
 // lines that appear after fromByte.
-func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineLogMatcher {
+func ContainsLineMatchingAfter(re *regexp.Regexp, fromByte int64) LogMatcher {
 	return containsMultipleLinesMatchingAfter(re, 1, fromByte)
 }
 
-// containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
-// that will return true when the desired number of lines are found matching the reg exp.
+// ContainsMultipleLinesMatching returns a matcher that succeeds when at least
+// numLines lines match the regexp.
+func ContainsMultipleLinesMatching(re *regexp.Regexp, numLines int) LogMatcher {
+	return containsMultipleLinesMatching(re, numLines)
+}
+
 func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineLogMatcher {
 	return &multiLineLogMatcher{re: re, numLines: numLines}
 }
 
-// containsMultipleLinesMatchingAfter mimics containsMultipleLinesMatching but will only attempt to match
-// lines that appear after fromByte.
+// ContainsMultipleLinesMatchingAfter mimics ContainsMultipleLinesMatching but will only
+// attempt to match lines that appear after fromByte.
+func ContainsMultipleLinesMatchingAfter(re *regexp.Regexp, numLines int, fromByte int64) LogMatcher {
+	return containsMultipleLinesMatchingAfter(re, numLines, fromByte)
+}
+
 func containsMultipleLinesMatchingAfter(re *regexp.Regexp, numLines int, fromByte int64) *multiLineLogMatcher {
 	return &multiLineLogMatcher{re: re, numLines: numLines, fromByte: fromByte}
 }
@@ -101,23 +114,21 @@ func (lm *multiLineLogMatcher) Match(reader io.ReadSeeker) (ok bool, err error) 
 	}
 }
 
-// notFoundLineMatcher is a line-based regex matcher to go with waitUntilLog
-// that will return true when NO lines are found that match the reg exp.
+// notFoundLineMatcher is a line-based regex matcher that returns true when
+// NO lines are found that match the regexp.
 type notFoundLineMatcher struct {
 	re       *regexp.Regexp
 	fromByte int64
 }
 
-// containsMultiLinesMatching is a convenience method for creating a not found line matcher.
-//
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
-func containsNoLinesMatching(re *regexp.Regexp) *notFoundLineMatcher {
+// ContainsNoLinesMatching returns a matcher that succeeds when no lines match the regexp.
+func ContainsNoLinesMatching(re *regexp.Regexp) LogMatcher {
 	return &notFoundLineMatcher{re: re}
 }
 
-// containsNoLinesMatchingAfter mimics containsMultiLinesMatching but will only attempt to match
+// ContainsNoLinesMatchingAfter mimics ContainsNoLinesMatching but will only attempt to match
 // lines that appear after fromByte.
-func containsNoLinesMatchingAfter(re *regexp.Regexp, fromByte int64) *notFoundLineMatcher {
+func ContainsNoLinesMatchingAfter(re *regexp.Regexp, fromByte int64) LogMatcher {
 	return &notFoundLineMatcher{re: re, fromByte: fromByte}
 }
 
