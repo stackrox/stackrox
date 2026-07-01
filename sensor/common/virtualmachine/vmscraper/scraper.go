@@ -223,6 +223,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	if !ok {
 		return false
 	}
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if result.Unchanged {
 		// Backward-compat fallback: against a current roxagent that honors
