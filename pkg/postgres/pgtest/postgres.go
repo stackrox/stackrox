@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -95,6 +95,8 @@ func ensureTemplateDB(t testing.TB) {
 	var exists bool
 	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)", templateDBName).Scan(&exists)
 	require.NoError(t, err)
+	// CI Postgres is ephemeral per job (fresh runner VM or docker run --rm), so an
+	// existing template is always from the current schema in this job.
 	if exists {
 		t.Log("reusing existing test template database")
 		return
@@ -145,7 +147,7 @@ func generateDatabaseName(t testing.TB) string {
 func ForT(t testing.TB) *TestPostgres {
 	var database string
 
-	if _, ok := os.LookupEnv("CI"); ok {
+	if testutils.IsRunningInCI() {
 		ensureTemplateDB(t)
 		database = generateDatabaseName(t)
 		t.Log("cloning test database from template")
@@ -155,8 +157,6 @@ func ForT(t testing.TB) *TestPostgres {
 		database = CreateADatabaseForT(t)
 
 		sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
-
-		CreateDatabase(t, database)
 
 		// Create all the tables for the database
 		gormDB := OpenGormDB(t, sourceWithDatabase)
