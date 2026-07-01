@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	reportgenerator "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
@@ -41,13 +42,13 @@ func (m *MockReportGenerator) EXPECT() *MockReportGeneratorMockRecorder {
 }
 
 // ProcessReportRequest mocks base method.
-func (m *MockReportGenerator) ProcessReportRequest(req *reportgenerator.ReportRequest) {
+func (m *MockReportGenerator) ProcessReportRequest(ctx context.Context, req *reportgenerator.ReportRequest) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessReportRequest", req)
+	m.ctrl.Call(m, "ProcessReportRequest", ctx, req)
 }
 
 // ProcessReportRequest indicates an expected call of ProcessReportRequest.
-func (mr *MockReportGeneratorMockRecorder) ProcessReportRequest(req any) *gomock.Call {
+func (mr *MockReportGeneratorMockRecorder) ProcessReportRequest(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockReportGenerator)(nil).ProcessReportRequest), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessReportRequest", reflect.TypeOf((*MockReportGenerator)(nil).ProcessReportRequest), ctx, req)
 }

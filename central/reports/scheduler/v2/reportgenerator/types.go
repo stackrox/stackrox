@@ -3,10 +3,14 @@ package reportgenerator
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 )
+
+// ErrUserCancelled is the cause attached to a context when a user cancels a running report.
+var ErrUserCancelled = errors.New("report cancelled by user")
 
 // ReportRequest contains information needed to generate and notify a report
 type ReportRequest struct {

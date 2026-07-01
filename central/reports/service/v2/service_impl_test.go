@@ -1118,6 +1118,24 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(true, nil).Times(1)
+			},
+			isError: false,
+		},
+		{
+			desc: "Report in PREPARING state but no longer in running map",
+			req: &apiV2.ResourceByID{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.CloneVT()
+				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(false, nil).Times(1)
 			},
 			isError: true,
 		},

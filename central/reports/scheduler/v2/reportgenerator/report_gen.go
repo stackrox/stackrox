@@ -1,6 +1,8 @@
 package reportgenerator
 
 import (
+	"context"
+
 	"github.com/graph-gophers/graphql-go"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -21,7 +23,8 @@ type ReportGenerator interface {
 	// ProcessReportRequest will generate a report and send notification via the requested notification method.
 	// On success, report will be generated and notified, and report snapshot will be stored to the db.
 	// On failure, it will log any errors and store it in the report snapshot.
-	ProcessReportRequest(req *ReportRequest)
+	// The context is used for cancellation; cancelling it will abort in-flight database queries.
+	ProcessReportRequest(ctx context.Context, req *ReportRequest)
 }
 
 // New will create a new instance of the ReportGenerator
