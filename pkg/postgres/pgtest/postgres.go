@@ -85,7 +85,7 @@ func ensureTemplateDB(t testing.TB) {
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { require.NoError(t, db.Close()) }()
 
 	// Serialize across concurrent test binaries.
 	_, err = db.Exec("SELECT pg_advisory_lock(1)")
@@ -126,7 +126,7 @@ func createDatabaseFromTemplate(t testing.TB, database string) {
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() { require.NoError(t, db.Close()) }()
 
 	_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(database) + " TEMPLATE " + pq.QuoteIdentifier(templateDBName))
 	require.NoError(t, err)
