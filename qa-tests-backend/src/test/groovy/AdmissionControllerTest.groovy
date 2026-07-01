@@ -108,20 +108,42 @@ class AdmissionControllerTest extends BaseSpecification {
 
         // Wait for policy propagation to sensor and admission controller
         // Verify by attempting to create a deployment that should be blocked
-        def testDeployment = new Deployment()
-                .setName("setup-verification")
+        def latestTagDeployment = new Deployment()
+                .setName("setup-verification-latest")
                 .setNamespace(TEST_NAMESPACE)
                 .setImage(BUSYBOX_LATEST_TAG_IMAGE)
                 .addLabel("app", "test")
 
         withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
-            def created = orchestrator.createDeploymentNoWait(testDeployment)
+            def created = orchestrator.createDeploymentNoWait(latestTagDeployment)
             assert !created // Should be blocked by latest tag policy
         }
 
         // Clean up if somehow it was created
         try {
-            orchestrator.deleteDeployment(testDeployment)
+            orchestrator.deleteDeployment(latestTagDeployment)
+        } catch (Exception ignored) {
+            // Expected - deployment should not exist
+        }
+
+        // Wait for severity policy enforcement with cached scan data to propagate
+        // to the admission controller. The image was pre-scanned above, but the AC
+        // may not have fetched scan results from Central yet.
+        def severityDeployment = new Deployment()
+                .setName("setup-verification-severity")
+                .setNamespace(TEST_NAMESPACE)
+                .setImagePrefetcherAffinity()
+                .setImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
+                .addLabel("app", "test")
+
+        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
+            def created = orchestrator.createDeploymentNoWait(severityDeployment)
+            assert !created // Should be blocked by severity policy
+        }
+
+        // Clean up if somehow it was created
+        try {
+            orchestrator.deleteDeployment(severityDeployment)
         } catch (Exception ignored) {
             // Expected - deployment should not exist
         }
