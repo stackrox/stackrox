@@ -38,7 +38,6 @@ describe('Configuration Management Clusters', () => {
             'Users & Groups',
             'Service Accounts',
             'Roles',
-            'Controls',
         ]);
     });
 
@@ -54,7 +53,6 @@ describe('Configuration Management Clusters', () => {
             'subjects',
             'serviceaccounts',
             'roles',
-            'controls',
         ]);
     });
 
@@ -142,18 +140,6 @@ describe('Configuration Management Clusters', () => {
 
     describe('should go to roles table from widget link', () => {
         const entitiesKey2 = 'roles';
-
-        it('in single page', () => {
-            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
-        });
-
-        it('in side panel', () => {
-            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
-        });
-    });
-
-    describe('should go to controls table from widget link', () => {
-        const entitiesKey2 = 'controls';
 
         it('in single page', () => {
             verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);

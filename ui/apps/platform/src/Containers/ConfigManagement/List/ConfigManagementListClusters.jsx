@@ -33,11 +33,6 @@ const CLUSTERS_QUERY = gql`
                     version
                 }
             }
-            complianceControlCount(query: "Standard:CIS") {
-                passingCount
-                failingCount
-                unknownCount
-            }
             policyStatus {
                 status
                 failingPolicies {
@@ -96,27 +91,6 @@ const buildTableColumns = (match, location) => {
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,
-            sortable: false,
-        },
-        {
-            Header: `CIS Controls`,
-            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'complianceControlCount',
-            Cell: ({ original }) => {
-                const { complianceControlCount } = original;
-                const { passingCount, failingCount, unknownCount } = complianceControlCount;
-                const totalCount = passingCount + failingCount + unknownCount;
-                if (!totalCount) {
-                    return <NoEntitiesIconText text="No Controls" />;
-                }
-                const url = URLService.getURL(match, location)
-                    .push(original.id)
-                    .push('CONTROL')
-                    .url();
-                const text = `${totalCount} ${pluralize('Controls', totalCount)}`;
-                return <TableCellLink url={url}>{text}</TableCellLink>;
-            },
             sortable: false,
         },
         {

@@ -241,7 +241,6 @@ export function interactAndWaitForConfigurationManagementSecondaryEntities(
     interactAndWaitForResponses(interactionCallback, routeMatcherMap);
 }
 
-
 export function navigateToSingleEntityPage(entitiesKey) {
     // interactAndWaitForConfigurationManagementEntityPage(() => {
     //     cy.get('[data-testid="side-panel"] [aria-label="link"]').click();
