@@ -9,11 +9,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"go.uber.org/mock/gomock"
 )
 
-func benchOutputQueue(b *testing.B, pubsubEnabled bool, makeEvent func() *component.ResourceEvent) {
+func benchOutputQueue(b *testing.B, pubsubEnabled bool, forwardCount int, makeEvent func() *component.ResourceEvent) {
 	b.Helper()
 	b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubsubEnabled))
 
@@ -22,12 +25,20 @@ func benchOutputQueue(b *testing.B, pubsubEnabled bool, makeEvent func() *compon
 	det.EXPECT().ReprocessDeployments(gomock.Any()).AnyTimes()
 	det.EXPECT().ProcessDeployment(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	var disp *fakeDispatcher
+	var disp testDispatcher
 	var reg pubSubRegister
 	if pubsubEnabled {
-		disp = &fakeDispatcher{}
-		reg = disp
+		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+		}))
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Cleanup(d.Stop)
+		disp = d
+		reg = d
 	}
+
 	q, err := New(det, 1024, reg)
 	if err != nil {
 		b.Fatal(err)
@@ -35,35 +46,21 @@ func benchOutputQueue(b *testing.B, pubsubEnabled bool, makeEvent func() *compon
 	if err := q.Start(); err != nil {
 		b.Fatal(err)
 	}
-
-	stopDrain := make(chan struct{})
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		ch := q.ResponsesC()
-		for {
-			select {
-			case <-ch:
-			case <-stopDrain:
-				return
-			}
-		}
-	}()
-	b.Cleanup(func() {
-		q.Stop()
-		close(stopDrain)
-		<-done
-	})
+	b.Cleanup(q.Stop)
 
 	b.ResetTimer()
 	for b.Loop() {
 		event := makeEvent()
 		if pubsubEnabled {
-			if err := disp.callback(event); err != nil {
+			event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+			if err := disp.Publish(event); err != nil {
 				b.Fatal(err)
 			}
 		} else {
 			q.Send(event)
+		}
+		for range forwardCount {
+			<-q.ResponsesC()
 		}
 	}
 }
@@ -77,7 +74,7 @@ func BenchmarkOutputQueue_SingleForward(b *testing.B) {
 	}
 	for _, pubsubEnabled := range []bool{false, true} {
 		b.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(b *testing.B) {
-			benchOutputQueue(b, pubsubEnabled, makeEvent)
+			benchOutputQueue(b, pubsubEnabled, 1, makeEvent)
 		})
 	}
 }
@@ -95,7 +92,7 @@ func BenchmarkOutputQueue_MultipleForward(b *testing.B) {
 	}
 	for _, pubsubEnabled := range []bool{false, true} {
 		b.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(b *testing.B) {
-			benchOutputQueue(b, pubsubEnabled, makeEvent)
+			benchOutputQueue(b, pubsubEnabled, 3, makeEvent)
 		})
 	}
 }
@@ -116,7 +113,7 @@ func BenchmarkOutputQueue_WithDetector(b *testing.B) {
 	}
 	for _, pubsubEnabled := range []bool{false, true} {
 		b.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(b *testing.B) {
-			benchOutputQueue(b, pubsubEnabled, makeEvent)
+			benchOutputQueue(b, pubsubEnabled, 1, makeEvent)
 		})
 	}
 }

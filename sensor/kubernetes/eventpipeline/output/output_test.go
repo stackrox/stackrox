@@ -12,8 +12,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
@@ -21,23 +24,20 @@ const (
 	waitTimeout = 100 * time.Millisecond
 )
 
-// fakeDispatcher captures the EventCallback registered by New() so tests can
-// invoke it directly, simulating what the real PubSub dispatcher would do.
-type fakeDispatcher struct {
-	callback pubsub.EventCallback
-}
-
-func (f *fakeDispatcher) RegisterConsumerToLane(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.LaneID, cb pubsub.EventCallback) error {
-	f.callback = cb
-	return nil
+// testDispatcher extends pubSubRegister with Publish and Stop so tests can
+// send events through the real dispatcher machinery.
+type testDispatcher interface {
+	pubSubRegister
+	Publish(pubsub.Event) error
+	Stop()
 }
 
 // outputTestEnv bundles the output queue, its dispatcher (if pubsub), and a
 // helper to send events through the correct path.
 type outputTestEnv struct {
-	queue      component.OutputQueue
-	dispatcher *fakeDispatcher
-	pubsub     bool
+	queue    component.OutputQueue
+	pubsub   bool
+	dispatch testDispatcher
 }
 
 func newOutputTestEnv(t *testing.T, det *mocks.MockDetector, pubsubEnabled bool, queueSize int) *outputTestEnv {
@@ -45,12 +45,17 @@ func newOutputTestEnv(t *testing.T, det *mocks.MockDetector, pubsubEnabled bool,
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubsubEnabled))
 
 	env := &outputTestEnv{pubsub: pubsubEnabled}
-	var disp pubSubRegister
+	var reg pubSubRegister
 	if pubsubEnabled {
-		env.dispatcher = &fakeDispatcher{}
-		disp = env.dispatcher
+		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+		}))
+		require.NoError(t, err)
+		t.Cleanup(d.Stop)
+		env.dispatch = d
+		reg = d
 	}
-	q, err := New(det, queueSize, disp)
+	q, err := New(det, queueSize, reg)
 	assert.NoError(t, err)
 	env.queue = q
 	return env
@@ -59,7 +64,8 @@ func newOutputTestEnv(t *testing.T, det *mocks.MockDetector, pubsubEnabled bool,
 func (e *outputTestEnv) send(t *testing.T, event *component.ResourceEvent) {
 	t.Helper()
 	if e.pubsub {
-		assert.NoError(t, e.dispatcher.callback(event))
+		event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+		assert.NoError(t, e.dispatch.Publish(event))
 	} else {
 		e.queue.Send(event)
 	}
@@ -230,13 +236,19 @@ func Test_ProcessResourceEvent_WrongType(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	det := mocks.NewMockDetector(ctrl)
 
-	disp := &fakeDispatcher{}
-	q, err := New(det, 10, disp)
+	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+		lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+	}))
+	require.NoError(t, err)
+	t.Cleanup(d.Stop)
+
+	q, err := New(det, 10, d)
 	assert.NoError(t, err)
 	assert.NoError(t, q.Start())
 	defer q.Stop()
 
-	err = disp.callback(&wrongTypeEvent{})
+	impl := q.(*outputQueueImpl)
+	err = impl.ProcessResourceEvent(&wrongTypeEvent{})
 	assert.ErrorContains(t, err, "unable to convert event to *component.ResourceEvent")
 }
 
@@ -245,16 +257,22 @@ func Test_ProcessResourceEvent_StopRequested(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	det := mocks.NewMockDetector(ctrl)
 
-	disp := &fakeDispatcher{}
-	q, err := New(det, 10, disp)
+	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+		lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+	}))
+	require.NoError(t, err)
+	t.Cleanup(d.Stop)
+
+	q, err := New(det, 10, d)
 	assert.NoError(t, err)
 	assert.NoError(t, q.Start())
 	q.Stop()
 
-	err = disp.callback(&component.ResourceEvent{
+	event := &component.ResourceEvent{
 		Context:         context.Background(),
 		ForwardMessages: []*central.SensorEvent{{Id: "x"}},
-	})
-	assert.NoError(t, err)
+	}
+	event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+	assert.NoError(t, d.Publish(event))
 	shouldNotForwardMessage(t, q.ResponsesC())
 }
