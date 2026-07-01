@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
@@ -248,11 +247,6 @@ func (s *ImageComponentCVEGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraph
 		SearchRawImageComponents(gomock.Any(), gomock.Any()).
 		AnyTimes().
 		Return([]*storage.ImageComponentV2{systemdStorageComponent}, nil)
-	jsonBytes, err := s.schema.ToJSON()
-	s.NoError(err)
-	err = os.WriteFile("schema.json", jsonBytes, 0644)
-	s.NoError(err)
-	s.T().Logf("GraphQL schema written to schema.json")
 	findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent",
 		map[string]interface{}{
 			"query": "Component:systemd+Component Version:249.11-0ubuntu3.11",
