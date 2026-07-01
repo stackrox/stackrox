@@ -523,7 +523,7 @@ func (resolver *clusterResolver) ImageCount(ctx context.Context, args RawQuery) 
 	return resolver.root.ImageCount(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
+func (resolver *clusterResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageComponents")
 	return resolver.root.ImageComponents(resolver.clusterScopeContext(ctx), args)
 }
@@ -534,7 +534,7 @@ func (resolver *clusterResolver) ImageComponentCount(ctx context.Context, args R
 }
 
 // NodeComponents returns the node components in the cluster.
-func (resolver *clusterResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]*nodeComponentResolver, error) {
+func (resolver *clusterResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeComponents")
 	return resolver.root.NodeComponents(resolver.clusterScopeContext(ctx), args)
 }
@@ -546,7 +546,7 @@ func (resolver *clusterResolver) NodeComponentCount(ctx context.Context, args Ra
 }
 
 // NodeVulnerabilities returns the node vulnerabilities in the cluster.
-func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*nodeCVEResolver, error) {
+func (resolver *clusterResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NodeVulnerabilities")
 
 	// (ROX-10911) Cluster scoping the context is not able to resolve node vulns when combined with 'Fixable:true/false' query
@@ -588,7 +588,7 @@ func (resolver *clusterResolver) clusterScopeContext(ctx context.Context) contex
 	})
 }
 
-func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
+func (resolver *clusterResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
@@ -603,7 +603,7 @@ func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, 
 	return resolver.root.ImageVulnerabilityCounter(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
+func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilities")
 	return resolver.root.ClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
@@ -618,7 +618,7 @@ func (resolver *clusterResolver) ClusterVulnerabilityCounter(ctx context.Context
 	return resolver.root.ClusterVulnerabilityCounter(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
+func (resolver *clusterResolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "K8sClusterVulnerabilities")
 	return resolver.root.K8sClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
@@ -628,7 +628,7 @@ func (resolver *clusterResolver) K8sClusterVulnerabilityCount(ctx context.Contex
 	return resolver.root.K8sClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
+func (resolver *clusterResolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "IstioClusterVulnerabilities")
 	return resolver.root.IstioClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
@@ -638,7 +638,7 @@ func (resolver *clusterResolver) IstioClusterVulnerabilityCount(ctx context.Cont
 	return resolver.root.IstioClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 
-func (resolver *clusterResolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
+func (resolver *clusterResolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "OpenShiftClusterVulnerabilities")
 	return resolver.root.OpenShiftClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }

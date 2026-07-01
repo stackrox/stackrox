@@ -56,8 +56,6 @@ func init() {
 	)
 }
 
-var _ ImageResolver = (*imageV2Resolver)(nil)
-
 // ImagesV2 returns GraphQL resolvers for all images using the ImageV2 model
 func (resolver *Resolver) ImageV2s(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageV2s")
@@ -141,13 +139,13 @@ func (resolver *imageV2Resolver) DeploymentCount(ctx context.Context, args RawQu
 }
 
 // TopImageVulnerability returns the image vulnerability with the top CVSS score.
-func (resolver *imageV2Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (*imageCVEV2Resolver, error) {
+func (resolver *imageV2Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
 	return resolver.root.TopImageVulnerability(resolver.withImageScopeContext(ctx), args)
 }
 
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
-func (resolver *imageV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
+func (resolver *imageV2Resolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
@@ -184,7 +182,7 @@ func (resolver *imageV2Resolver) ImageCVECountBySeverity(ctx context.Context, q 
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
 }
 
-func (resolver *imageV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
+func (resolver *imageV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
 	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 }
