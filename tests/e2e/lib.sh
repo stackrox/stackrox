@@ -392,6 +392,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -566,6 +567,11 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    # Explicitly disable the secrets page migration feature flag so that CI runs tests against
+    # the flag on (gke) and off (ocp) until the feature flag is removed.
+    # This change is independent of k8s platform so does not need to be verified for k8s platform compatibility.
+    customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
+    customize_envVars+=$'\n        value: "false"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
