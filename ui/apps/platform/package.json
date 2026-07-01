@@ -202,7 +202,8 @@
         "connected-react-router": {
             "react": "^18.0.0"
         },
-        "react-dropzone": "14.3.2"
+        "react-dropzone": "14.3.2",
+        "js-cookie": "^3.0.7"
     },
     "browserslist": [
         "Chrome >= 80"
