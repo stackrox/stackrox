@@ -23,10 +23,13 @@ defaults:
     shell: bash
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
 
   # Determines whether we should dispatch jobs that call real E2E workflows.
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
   should-dispatch:
+    needs: [ detect-changes ]
     runs-on: ubuntu-slim
     outputs:
       dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
@@ -46,6 +49,7 @@ jobs:
         is_fork: ${{ github.event.pull_request.head.repo.fork }}
         is_draft: ${{ github.event.pull_request.draft }}
         all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
       run: |
         import os
         from types import SimpleNamespace
@@ -58,6 +62,7 @@ jobs:
                 'is_fork',
                 'is_draft',
                 'all_labels',
+                'ui_only_change',
             )})
         for k, v in vars(input).items():
             print(f'{k} = {v}')
@@ -69,6 +74,10 @@ jobs:
                 return False
             if input.event_name != 'pull_request':
                 return True
+            if input.ui_only_change == 'true':
+                # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
+                # As we add more E2E test workflows, we may want to make this more flexible.
+                return False
             if input.is_draft != 'true':
                 return True
             if f',{input.all_labels},'.find(f',{job},') >= 0:
@@ -97,13 +106,13 @@ jobs:
 
   # Waits for images to be built so we don't start testing until they are available.
   wait-for-images:
-    needs: [should-dispatch]
+    needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.dispatch-any == 'true'
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
       operator_tag: ${{ steps.build-tag.outputs.operator_tag }}
-    # env:
+      # env:
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     steps:
@@ -139,7 +148,7 @@ jobs:
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   dispatch-e2e-byodb-test:
-    needs: [wait-for-images, should-dispatch]
+    needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-byodb-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -150,7 +159,7 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-db-backup-restore-test:
-    needs: [wait-for-images, should-dispatch]
+    needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -161,7 +170,7 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-gke-upgrade-tests:
-    needs: [wait-for-images, should-dispatch]
+    needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -172,7 +181,7 @@ jobs:
       cancel-in-progress: true
 
   dispatch-e2e-nongroovy-tests:
-    needs: [wait-for-images, should-dispatch]
+    needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
