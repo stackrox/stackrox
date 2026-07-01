@@ -47,8 +47,8 @@ jobs:
       cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
       cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
     env:
-      CLUSTER_WITH_FAKE_LOAD_NAME: rt4-fl-${{ github.event.inputs.version }}
-      CLUSTER_WITH_REAL_LOAD_NAME: rt4-rl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_FAKE_LOAD_NAME: ol-fl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_REAL_LOAD_NAME: ol-rl-${{ github.event.inputs.version }}
     steps:
       - name: Trim and clean cluster names
         id: cluster-names
@@ -64,7 +64,7 @@ jobs:
   clusters:
     name: Setup demo clusters
     needs: trim-cluster-names
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@73c923e5cb96fccbccb6d591f05c7491883a0c97
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@86134efcf9bf9d2312f88fa19764eb60500f2156
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
@@ -72,7 +72,7 @@ jobs:
       create-os4-cluster: ${{github.event.inputs.create-os4-cluster == 'true'}}
       create-long-cluster: ${{github.event.inputs.create-long-cluster == 'true'}}
       dry-run: ${{github.event.inputs.dry-run == 'true'}}
-      workflow-ref: use-roxie-in-start-acs
+      workflow-ref: test-legacy-baseline
       kube-burner-config-ref: ${{ github.event.inputs.version }}
       kube-burner-config-repo: stackrox
       cluster-with-fake-load-name: ${{ needs.trim-cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
