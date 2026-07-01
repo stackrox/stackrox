@@ -85,7 +85,7 @@ jobs:
         inputs.trigger-label == '' ||
         contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     outputs:
       # This job also needs to compute the exact tags for each of the images,
       # including the tag suffix ("-fast" or none).
