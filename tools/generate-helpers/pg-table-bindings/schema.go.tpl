@@ -108,6 +108,14 @@ var (
         {{$field.ColumnName|upperCamelCase}} {{$field.ModelType}} `gorm:"{{- /**/ -}}
         column:{{$field.ColumnName|lowerCase}};{{- /**/ -}}
         type:{{$field.SQLType}}{{if $field.Options.Unique}};unique{{end}}{{if $field.Options.PrimaryKey}};primaryKey{{end}}{{- /**/ -}}
+        {{if $field.Options.Index}}
+            {{- range $subindex, $indexconfig := $field.Options.Index -}}
+                {{- if eq $indexconfig.IndexCategory "unique" -}};{{- /**/ -}}
+                    uniqueIndex:{{- /**/ -}}
+                    {{if gt (len $indexconfig.IndexName) 0}}{{$indexconfig.IndexName}}{{else}}{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}}{{end}}{{- /**/ -}}
+                {{- end -}}
+            {{- end -}}
+        {{end}}{{- /**/ -}}
         "`
     {{- end}}
     {{- range $index, $rel := $schema.RelationshipsToDefineAsForeignKeys }}

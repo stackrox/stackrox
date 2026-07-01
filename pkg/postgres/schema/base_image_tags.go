@@ -17,9 +17,6 @@ var (
 	CreateTableBaseImageTagsStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImageTags)(nil),
 		Children:  []*postgres.CreateStmts{},
-		Indexes: []*postgres.IndexDefinition{
-			{Name: "base_image_tags_repo_tag", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_tags_repo_tag ON base_image_tags USING btree (baseimagerepositoryid, tag)"},
-		},
 	}
 
 	// BaseImageTagsSchema is the go schema for table `base_image_tags`.
@@ -50,8 +47,8 @@ const (
 // BaseImageTags holds the Gorm model for Postgres table `base_image_tags`.
 type BaseImageTags struct {
 	ID                       string                `gorm:"column:id;type:uuid;primaryKey"`
-	BaseImageRepositoryID    string                `gorm:"column:baseimagerepositoryid;type:uuid"`
-	Tag                      string                `gorm:"column:tag;type:varchar"`
+	BaseImageRepositoryID    string                `gorm:"column:baseimagerepositoryid;type:uuid;uniqueIndex:base_image_tags_repo_tag"`
+	Tag                      string                `gorm:"column:tag;type:varchar;uniqueIndex:base_image_tags_repo_tag"`
 	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

@@ -123,8 +123,8 @@ func (s *SchemaTestSuite) TestApplyAllIndexes() {
 	created := s.getIndexNames("idx_test_applies")
 	s.Contains(created, "idxtestapply_col_a")
 	s.Contains(created, "idxtestapply_composite")
-	s.Contains(created, "idxtestapply_unique_col")
 	s.Contains(created, "idxtestapply_bg_col")
+	s.Contains(created, "idxtestapply_unique_col", "unique index should exist from GORM AutoMigrate")
 }
 
 func (s *SchemaTestSuite) TestApplyIndexesIdempotent() {
@@ -157,7 +157,7 @@ type IdxTestApply struct {
 	ID        string `gorm:"column:id;type:text;primaryKey"`
 	ColA      string `gorm:"column:col_a;type:text"`
 	ColB      string `gorm:"column:col_b;type:text"`
-	UniqueCol string `gorm:"column:unique_col;type:text"`
+	UniqueCol string `gorm:"column:unique_col;type:text;uniqueIndex:idxtestapply_unique_col"`
 	BgCol     string `gorm:"column:bg_col;type:text"`
 }
 
@@ -175,7 +175,6 @@ func (s *SchemaTestSuite) registerTestIndexTable() {
 		Indexes: []*pkgPostgres.IndexDefinition{
 			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)"},
 			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_applies USING btree (col_a, col_b)"},
-			{Name: "idxtestapply_unique_col", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_unique_col ON idx_test_applies USING btree (unique_col)"},
 			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_applies USING btree (bg_col)"},
 		},
 	}

@@ -20,9 +20,6 @@ var (
 	CreateTableBaseImageLayersStmt = &postgres.CreateStmts{
 		GormModel: (*BaseImageLayers)(nil),
 		Children:  []*postgres.CreateStmts{},
-		Indexes: []*postgres.IndexDefinition{
-			{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_id_layer ON base_image_layers USING btree (layerdigest)"},
-		},
 	}
 
 	// BaseImageLayersSchema is the go schema for table `base_image_layers`.
@@ -59,7 +56,7 @@ const (
 // BaseImageLayers holds the Gorm model for Postgres table `base_image_layers`.
 type BaseImageLayers struct {
 	ID          string `gorm:"column:id;type:uuid;primaryKey"`
-	LayerDigest string `gorm:"column:layerdigest;type:varchar"`
+	LayerDigest string `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
 	Index       int32  `gorm:"column:index;type:integer"`
 	Serialized  []byte `gorm:"column:serialized;type:bytea"`
 }

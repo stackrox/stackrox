@@ -21,7 +21,6 @@ var (
 		GormModel: (*ComplianceIntegrations)(nil),
 		Children:  []*postgres.CreateStmts{},
 		Indexes: []*postgres.IndexDefinition{
-			{Name: "compliance_unique_indicator", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS compliance_unique_indicator ON compliance_integrations USING btree (clusterid)"},
 			{Name: "complianceintegrations_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceintegrations_sac_filter ON compliance_integrations USING hash (clusterid)"},
 		},
 	}
@@ -60,7 +59,7 @@ const (
 type ComplianceIntegrations struct {
 	ID                string           `gorm:"column:id;type:uuid;primaryKey"`
 	Version           string           `gorm:"column:version;type:varchar"`
-	ClusterID         string           `gorm:"column:clusterid;type:uuid"`
+	ClusterID         string           `gorm:"column:clusterid;type:uuid;uniqueIndex:compliance_unique_indicator"`
 	OperatorInstalled bool             `gorm:"column:operatorinstalled;type:bool"`
 	OperatorStatus    storage.COStatus `gorm:"column:operatorstatus;type:integer"`
 	Serialized        []byte           `gorm:"column:serialized;type:bytea"`

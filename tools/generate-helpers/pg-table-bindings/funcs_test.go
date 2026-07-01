@@ -44,7 +44,7 @@ func TestCollectIndexes(t *testing.T) {
 				{Name: "my_custom_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS my_custom_idx ON test_table USING hash (col1)"},
 			},
 		},
-		"unique index": {
+		"unique index excluded from collectIndexes": {
 			schema: &walker.Schema{
 				Table: "groups",
 				Fields: []walker.Field{
@@ -54,10 +54,8 @@ func TestCollectIndexes(t *testing.T) {
 					}},
 				},
 			},
-			obj: object{storageType: "storage.Group"},
-			expected: []IndexInfo{
-				{Name: "groups_unique", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS groups_unique ON groups USING btree (authproviderid)"},
-			},
+			obj:      object{storageType: "storage.Group"},
+			expected: []IndexInfo{},
 		},
 		"composite index": {
 			schema: &walker.Schema{
@@ -189,13 +187,13 @@ func TestCollectIndexes(t *testing.T) {
 				Fields: []walker.Field{
 					{ColumnName: "Col1", Options: walker.PostgresOptions{
 						PrimaryKey: true,
-						Index:      []*walker.PostgresIndexOptions{{IndexName: "my_idx", IndexCategory: "unique"}},
+						Index:      []*walker.PostgresIndexOptions{{IndexName: "my_idx"}},
 					}},
 				},
 			},
 			obj: object{storageType: "storage.Deployment"},
 			expected: []IndexInfo{
-				{Name: "my_idx", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)"},
+				{Name: "my_idx", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS my_idx ON test_table USING btree (col1)"},
 			},
 		},
 	}

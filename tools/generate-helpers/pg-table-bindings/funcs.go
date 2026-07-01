@@ -175,7 +175,6 @@ type indexBuilder struct {
 	table     string
 	columns   []string
 	indexType string
-	unique    bool
 }
 
 func (b *indexBuilder) addColumn(col string) {
@@ -187,11 +186,7 @@ func (b *indexBuilder) addColumn(col string) {
 
 func (b *indexBuilder) build() IndexInfo {
 	cols := strings.Join(b.columns, ", ")
-	unique := ""
-	if b.unique {
-		unique = "UNIQUE "
-	}
-	createSQL := fmt.Sprintf("CREATE %sINDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", unique, b.name, b.table, b.indexType, cols)
+	createSQL := fmt.Sprintf("CREATE INDEX CONCURRENTLY IF NOT EXISTS %s ON %s USING %s (%s)", b.name, b.table, b.indexType, cols)
 
 	return IndexInfo{
 		Name:      b.name,
@@ -216,6 +211,9 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 		col := strings.ToLower(field.ColumnName)
 
 		for _, idx := range field.Options.Index {
+			if idx.IndexCategory == "unique" {
+				continue
+			}
 			name := idx.IndexName
 			if name == "" {
 				name = tablePrefix + "_" + col
@@ -238,7 +236,6 @@ func collectIndexes(schema *walker.Schema, obj object) []IndexInfo {
 					name:      name,
 					table:     table,
 					indexType: indexType,
-					unique:    idx.IndexCategory == "unique",
 				}
 				b.addColumn(col)
 				idxNameToBuilder[name] = b

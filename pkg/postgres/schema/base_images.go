@@ -24,9 +24,6 @@ var (
 			&postgres.CreateStmts{
 				GormModel: (*BaseImagesLayers)(nil),
 				Children:  []*postgres.CreateStmts{},
-				Indexes: []*postgres.IndexDefinition{
-					{Name: "base_image_id_layer", CreateSQL: "CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS base_image_id_layer ON base_images_layers USING btree (layerdigest)"},
-				},
 			},
 		},
 		Indexes: []*postgres.IndexDefinition{
@@ -91,7 +88,7 @@ type BaseImages struct {
 type BaseImagesLayers struct {
 	BaseImagesID  string     `gorm:"column:base_images_id;type:uuid;primaryKey"`
 	Idx           int        `gorm:"column:idx;type:integer;primaryKey"`
-	LayerDigest   string     `gorm:"column:layerdigest;type:varchar"`
+	LayerDigest   string     `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
 	Index         int32      `gorm:"column:index;type:integer"`
 	BaseImagesRef BaseImages `gorm:"foreignKey:base_images_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
