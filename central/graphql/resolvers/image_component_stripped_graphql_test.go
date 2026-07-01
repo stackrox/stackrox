@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
-	"reflect"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -22,6 +21,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// This test was created to investigate the failures that occurred
+// during the upgrade of graphql-go from 1.5.0 to the next version
+// (eventually carried to 1.10.2).
 
 func TestGraphQLQuery(t *testing.T) {
 	testCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
@@ -107,8 +110,4 @@ func TestGraphQLQuery(t *testing.T) {
 		}
 	}
 	assert.True(t, foundCVE, "CVE-2023-7008 should be found in results")
-
-	dumpTypeMethods(t, reflect.TypeOf((*ImageResolver)(nil)).Elem(), "ImageResolver", false)
-	dumpTypeMethods(t, reflect.TypeOf(&imageResolver{}), "*imageResolver", false)
-	dumpTypeMethods(t, reflect.TypeOf(&imageV2Resolver{}), "*imageV2Resolver", false)
 }
