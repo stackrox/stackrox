@@ -8,7 +8,7 @@ import { visit } from '../../helpers/visit';
 
 // visit
 
-const basePath = '/main/risk';
+const basePath = '/main/risk/workloads';
 
 export const deploymentswithprocessinfoAlias = 'deploymentswithprocessinfo';
 export const deploymentscountAlias = 'deploymentscount';

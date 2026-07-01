@@ -31,7 +31,7 @@ import {
     listeningEndpointsBasePath,
     networkBasePath,
     policyManagementBasePath,
-    riskBasePath,
+    riskWorkloadsBasePath,
     systemConfigPath,
     systemHealthPath,
     violationsBasePath,
@@ -200,8 +200,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         {
             type: 'link',
             content: 'Risk',
-            path: riskBasePath,
-            routeKey: 'risk',
+            path: riskWorkloadsBasePath,
+            routeKey: 'risk/workloads',
         },
         {
             type: 'parent',
