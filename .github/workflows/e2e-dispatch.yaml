@@ -145,6 +145,7 @@ jobs:
           rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/scanner-v4:${{ env.tag }}
           rhacs-eng/scanner:${{ env.tag }}
+          rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   dispatch-e2e-byodb-test:
