@@ -33,7 +33,7 @@ jobs:
         worker-node-count=3
         ssd-storage-class=true
       infra-lifespan: 5h
-      # To addressl later:
+      # To address later:
       #   SETUP_WORKLOAD_IDENTITIES=true
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=openshift
