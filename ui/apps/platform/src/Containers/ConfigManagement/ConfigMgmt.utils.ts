@@ -15,7 +15,6 @@ import { defaultSubjectSort } from './List/ConfigManagementListSubjects';
 
 const defaultSortFieldMap: Record<ConfigurationManagementEntityType, GraphQLSortOption[]> = {
     CLUSTER: defaultClusterSort,
-    CONTROL: [],
     DEPLOYMENT: defaultDeploymentSort,
     IMAGE: defaultImageSort,
     NAMESPACE: defaultNamespaceSort,
@@ -38,7 +37,7 @@ export function getConfigMgmtDefaultSort(
 export function getConfigMgmtCountQuery(entityListType: ConfigurationManagementEntityType) {
     const parsedEntityListTypeCount = defaultCountKeyMap[entityListType];
 
-    return !parsedEntityListTypeCount || entityListType === 'CONTROL' || entityListType === 'POLICY'
+    return !parsedEntityListTypeCount || entityListType === 'POLICY'
         ? ''
         : `count: ${parsedEntityListTypeCount}(query: $query)`;
 }
