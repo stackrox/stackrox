@@ -18,7 +18,7 @@ on:
         type: string
         default: ""
       konflux-images:
-        description: "Wait for Konflux-built images instead of upstream images"
+        description: "Use Konflux-built images in tests instead of upstream images"
         required: false
         type: boolean
         default: false
@@ -442,7 +442,7 @@ jobs:
   delete-cluster:
     if: ${{ always() }}
     needs: [create-cluster, qa-e2e-tests]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
 
@@ -451,7 +451,7 @@ jobs:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
           if [[ "${{ needs.create-cluster.result }}" == "success" ]]; then
-            infractl delete "${CLUSTER_NAME}" || echo "infractl delete failed; relying on lifespan expiry"
+            infractl delete "${CLUSTER_NAME}"
           else
             echo "create-cluster job did not succeed; nothing to delete"
           fi
