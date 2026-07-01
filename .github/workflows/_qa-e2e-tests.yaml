@@ -162,7 +162,7 @@ jobs:
         inputs.trigger-label == '' ||
         contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
       )
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: Prepare infra args
         id: prepare-infra-args
