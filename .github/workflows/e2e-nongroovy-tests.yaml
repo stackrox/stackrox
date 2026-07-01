@@ -7,6 +7,10 @@ on:
         description: Image tag to test.
         type: string
         required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
 
 permissions:
   contents: read
@@ -18,6 +22,7 @@ defaults:
 
 jobs:
   gke-nongroovy-e2e-tests:
+    if: inputs.should-run == 'true'
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}

@@ -7,6 +7,10 @@ on:
         description: Image tag to test.
         type: string
         required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
 
 permissions:
   contents: read
@@ -20,6 +24,7 @@ jobs:
 
   # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
+    if: inputs.should-run == 'true'
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -163,6 +168,7 @@ jobs:
 
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
+    if: inputs.should-run == 'true'
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -305,6 +311,7 @@ jobs:
 
   # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
+    if: inputs.should-run == 'true'
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}

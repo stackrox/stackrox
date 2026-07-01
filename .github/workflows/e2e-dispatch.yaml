@@ -140,10 +140,10 @@ jobs:
 
   dispatch-e2e-byodb-test:
     needs: [wait-for-images, should-dispatch]
-    if: needs.should-dispatch.outputs.e2e-byodb-test == 'true'
     uses: ./.github/workflows/e2e-byodb-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ needs.should-dispatch.outputs.e2e-byodb-test }}
     secrets: inherit
     concurrency:
       group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -151,10 +151,10 @@ jobs:
 
   dispatch-e2e-db-backup-restore-test:
     needs: [wait-for-images, should-dispatch]
-    if: needs.should-dispatch.outputs.e2e-db-backup-restore-test == 'true'
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ needs.should-dispatch.outputs.e2e-db-backup-restore-test }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -162,10 +162,10 @@ jobs:
 
   dispatch-e2e-gke-upgrade-tests:
     needs: [wait-for-images, should-dispatch]
-    if: needs.should-dispatch.outputs.e2e-gke-upgrade-tests == 'true'
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ needs.should-dispatch.outputs.e2e-gke-upgrade-tests }}
     secrets: inherit
     concurrency:
       group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -173,10 +173,10 @@ jobs:
 
   dispatch-e2e-nongroovy-tests:
     needs: [wait-for-images, should-dispatch]
-    if: needs.should-dispatch.outputs.e2e-nongroovy-tests == 'true'
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ needs.should-dispatch.outputs.e2e-nongroovy-tests }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
