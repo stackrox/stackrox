@@ -424,7 +424,7 @@ func (s *GraphQLClusterVulnerabilityTestSuite) getClusterResolver(ctx context.Co
 	return cluster
 }
 
-func (s *GraphQLClusterVulnerabilityTestSuite) getClusterVulnerabilityResolver(ctx context.Context, id string) *clusterCVEResolver {
+func (s *GraphQLClusterVulnerabilityTestSuite) getClusterVulnerabilityResolver(ctx context.Context, id string) ClusterVulnerabilityResolver {
 	vulnID := graphql.ID(id)
 
 	vuln, err := s.resolver.ClusterVulnerability(ctx, IDQuery{ID: &vulnID})
