@@ -7,12 +7,11 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    build.appstudio.redhat.com/webhook_action: '{{body.action}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     pipelinesascode.tekton.dev/on-comment: "/konflux-retest checks"
     pipelinesascode.tekton.dev/on-cel-expression: |
       (event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")) ||
-      (event == "pull_request" && (body.action == "opened" || body.action == "synchronize" || body.action == "reopened"))
+      (event == "pull_request" && body.action in ["opened", "synchronize", "reopened", "created"])
   labels:
     appstudio.openshift.io/application: acs
   name: checks
