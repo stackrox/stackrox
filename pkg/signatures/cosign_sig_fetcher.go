@@ -85,6 +85,8 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 
 	// Inject the registry specific authentication options to the google/go-containerregistry client.
 	remoteOpts := optionsFromRegistry(ctx, registry)
+	log.Infof("FetchSignatures for %q: registry=%q hasAuth=%t",
+		fullImageName, registry.Name(), len(remoteOpts) > 0)
 	ociOpts := []ociremote.Option{ociremote.WithRemoteOptions(remoteOpts...)}
 
 	// Fetch from both discovery methods concurrently. Each path retries independently
@@ -117,10 +119,17 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	var allPayloads []cosign.SignedPayload
 	if tagErr == nil {
 		allPayloads = append(allPayloads, tagPayloads...)
+		log.Infof("Tag-based discovery returned %d payload(s) for %q", len(tagPayloads), fullImageName)
+	} else {
+		log.Infof("Tag-based discovery failed for %q: %v", fullImageName, tagErr)
 	}
 	if referrerErr == nil {
 		allPayloads = append(allPayloads, referrerPayloads...)
+		log.Infof("Referrer-based discovery returned %d payload(s) for %q", len(referrerPayloads), fullImageName)
+	} else {
+		log.Infof("Referrer-based discovery failed for %q: %v", fullImageName, referrerErr)
 	}
+	log.Infof("Merged payload count for %q: %d", fullImageName, len(allPayloads))
 
 	fetchErr := errors.Join(tagErr, referrerErr)
 	if fetchErr != nil {
@@ -134,6 +143,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	}
 
 	if len(allPayloads) == 0 {
+		log.Infof("No signatures found for %q via either discovery method", fullImageName)
 		return nil, nil
 	}
 

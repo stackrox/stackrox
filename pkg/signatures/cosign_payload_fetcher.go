@@ -90,6 +90,9 @@ func fetchTagPayloads(image *storage.Image, imgRef name.Reference, opts []ocirem
 func fetchReferrerPayloads(ctx context.Context, digestRef name.Digest, repo name.Repository,
 	opts []ociremote.Option,
 ) ([]cosign.SignedPayload, error) {
+	log.Infof("Fetching OCI referrer signatures for %s with artifact type %s",
+		digestRef.String(), cosignSigArtifactType)
+
 	index, err := ociremote.Referrers(digestRef, cosignSigArtifactType, opts...)
 	if err != nil {
 		// A 404 means the registry does not support the OCI 1.1 referrers endpoint.
@@ -97,12 +100,16 @@ func fetchReferrerPayloads(ctx context.Context, digestRef name.Digest, repo name
 		// The heroku ErrorTransport converts 404 responses into Go errors before
 		// go-containerregistry's built-in fallback can handle them, so we catch it here.
 		if checkIfErrorContainsCode(err, http.StatusNotFound) {
+			log.Infof("OCI referrers API not supported for %s (404), falling back to tag-based discovery",
+				digestRef.String())
 			return nil, nil
 		}
+		log.Infof("OCI referrers API call failed for %s: %v", digestRef.String(), err)
 		return nil, err
 	}
 
 	if index == nil || len(index.Manifests) == 0 {
+		log.Infof("No OCI referrer manifests found for %s", digestRef.String())
 		return nil, nil
 	}
 
@@ -112,12 +119,15 @@ func fetchReferrerPayloads(ctx context.Context, digestRef name.Digest, repo name
 			digestRef.String(), len(manifests), maxReferrerManifests)
 		manifests = manifests[:maxReferrerManifests]
 	}
+	log.Infof("Found %d OCI referrer manifests for %s", len(manifests), digestRef.String())
 
 	var allPayloads []cosign.SignedPayload
 	for _, desc := range manifests {
 		if ctx.Err() != nil {
+			log.Infof("Context cancelled, stopping referrer processing for %s", digestRef.String())
 			break
 		}
+		log.Infof("Processing referrer manifest %s for %s", desc.Digest, digestRef.String())
 		sigDigestRef := repo.Digest(desc.Digest.String())
 		sigs, err := ociremote.Signatures(sigDigestRef, opts...)
 		if err != nil {
@@ -131,8 +141,11 @@ func fetchReferrerPayloads(ctx context.Context, digestRef name.Digest, repo name
 			log.Warnf("Failed to extract signatures from referrer %s: %v", desc.Digest, err)
 			continue
 		}
+		log.Infof("Extracted %d payload(s) from referrer manifest %s", len(payloads), desc.Digest)
 		allPayloads = append(allPayloads, payloads...)
 	}
 
+	log.Infof("Fetched %d total cosign payload(s) via OCI referrers API for %s",
+		len(allPayloads), digestRef.String())
 	return allPayloads, nil
 }
