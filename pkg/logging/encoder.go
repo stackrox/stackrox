@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -61,7 +62,7 @@ func (z *stringObjectEncoder) CreateMessage(msg string, level string, fields []z
 		return "", err
 	}
 
-	split := strings.SplitAfterN(buf.String(), cases.Title(language.English, cases.Compact).String(entry.Level.String()), 2)
+	split := strings.SplitAfterN(buf.String(), fmt.Sprintf("%s: ", cases.Title(language.English, cases.Compact).String(entry.Level.String())), 2)
 	return strings.TrimSuffix(strings.TrimSpace(split[1]), "\n"), nil
 }
 
