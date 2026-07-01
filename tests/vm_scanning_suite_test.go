@@ -101,7 +101,7 @@ type VMScanningSuite struct {
 	cleanupCtx context.Context
 	cancel     func()
 
-	cfg           *vmScanConfig
+	cfg           *vmhelpers.VMScanConfig
 	restCfg       *rest.Config
 	k8sClient     kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -113,7 +113,7 @@ type VMScanningSuite struct {
 	virtctl vmhelpers.Virtctl
 
 	// vmSpecs is the provisioning blueprint for each VM.
-	vmSpecs []vmSpec
+	vmSpecs []vmhelpers.VMSpec
 	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
 	vms []VMHandle
 	// scannerV4Checked is set after the one-time Scanner V4 matcher initialization check.
@@ -180,7 +180,7 @@ func (s *VMScanningSuite) SetupSuite() {
 		HeartbeatInterval: defaultVirtctlHeartbeatInterval,
 	}
 
-	s.vmSpecs = s.cfg.vmSpecs()
+	s.vmSpecs = s.cfg.VMSpecs()
 	s.logf("VM scanning setup: provision VMs (%d specs)", len(s.vmSpecs))
 	s.provisionVMs(s.vmSpecs)
 	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
@@ -385,7 +385,7 @@ func formatContainerNames(containers []coreV1.Container) string {
 	return strings.Join(names, ", ")
 }
 
-func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
+func (s *VMScanningSuite) provisionVMs(specs []vmhelpers.VMSpec) {
 	ctx := s.ctx
 
 	s.logf("provision VMs: creating namespace %q", s.namespace)
@@ -643,8 +643,8 @@ func (s *VMScanningSuite) vmRequestForVM(vm VMHandle) (vmhelpers.VMRequest, erro
 	return vmhelpers.VMRequest{}, fmt.Errorf("no spec found for VM %s/%s", vm.Namespace, vm.Name)
 }
 
-// vmSpecToRequest converts a vmSpec into a VMRequest using suite-level defaults.
-func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
+// vmSpecToRequest converts a VMSpec into a VMRequest using suite-level defaults.
+func (s *VMScanningSuite) vmSpecToRequest(sp vmhelpers.VMSpec) vmhelpers.VMRequest {
 	return vmhelpers.VMRequest{
 		Name:         sp.Name,
 		Namespace:    s.namespace,

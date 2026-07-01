@@ -8,15 +8,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 )
 
-func mustLoadVMScanConfig(t *testing.T) *vmScanConfig {
+func mustLoadVMScanConfig(t *testing.T) *vmhelpers.VMScanConfig {
 	t.Helper()
-	cfg, err := loadVMScanConfig()
-	require.NoError(t, err, "loadVMScanConfig")
+	cfg, err := vmhelpers.LoadVMScanConfig()
+	require.NoError(t, err, "LoadVMScanConfig")
 	return cfg
 }
 
@@ -29,7 +30,7 @@ func mustCreateDynamicClient(t *testing.T, restCfg *rest.Config) dynamic.Interfa
 
 // mustResolveSSHIdentityFile writes the PEM-encoded private key content to a temporary file
 // with 0600 permissions and returns the path, suitable for virtctl --identity-file.
-func mustResolveSSHIdentityFile(t *testing.T, cfg *vmScanConfig) string {
+func mustResolveSSHIdentityFile(t *testing.T, cfg *vmhelpers.VMScanConfig) string {
 	t.Helper()
 	content := cfg.SSHPrivateKey
 	trimmed := strings.TrimSpace(content)

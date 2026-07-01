@@ -1,6 +1,6 @@
-//go:build test_e2e_vm
+//go:build test && !test_e2e && !test_e2e_vm
 
-package tests
+package vmhelpers
 
 import (
 	"context"
@@ -64,8 +64,8 @@ func makeNode(name string, labels map[string]string, unschedulable bool, kvmCapa
 	}
 }
 
-func expectedNode(name string, unschedulable bool, kvmCapacity string) kvmPreflightNode {
-	return kvmPreflightNode{
+func expectedNode(name string, unschedulable bool, kvmCapacity string) KVMPreflightNode {
+	return KVMPreflightNode{
 		Name:          name,
 		Unschedulable: unschedulable,
 		KVMCapacity:   kvmCapacity,
@@ -81,7 +81,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 		wantUsable   bool
 		wantScope    string
 		wantFallback bool
-		wantChecked  []kvmPreflightNode
+		wantChecked  []KVMPreflightNode
 	}{
 		"should report success when a schedulable worker advertises KVM capacity": {
 			nodes: []*coreV1.Node{
@@ -89,7 +89,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			},
 			wantUsable: true,
 			wantScope:  workerNodeScope,
-			wantChecked: []kvmPreflightNode{
+			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", false, "1"),
 			},
 		},
@@ -100,7 +100,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			},
 			wantUsable: false,
 			wantScope:  workerNodeScope,
-			wantChecked: []kvmPreflightNode{
+			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", false, "0"),
 				expectedNode("worker-b", false, "0"),
 			},
@@ -111,7 +111,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			},
 			wantUsable: false,
 			wantScope:  workerNodeScope,
-			wantChecked: []kvmPreflightNode{
+			wantChecked: []KVMPreflightNode{
 				expectedNode("worker-a", true, "1"),
 			},
 		},
@@ -122,7 +122,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantUsable:   true,
 			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
-			wantChecked: []kvmPreflightNode{
+			wantChecked: []KVMPreflightNode{
 				expectedNode("node-a", false, "1"),
 			},
 		},
@@ -134,7 +134,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			wantUsable:   true,
 			wantScope:    kvmAllSchedulableNodeScope,
 			wantFallback: true,
-			wantChecked: []kvmPreflightNode{
+			wantChecked: []KVMPreflightNode{
 				expectedNode("node-b", false, "1"),
 			},
 		},
@@ -150,7 +150,7 @@ func TestInspectClusterKVMReadiness(t *testing.T) {
 			}
 
 			client := kubefake.NewSimpleClientset(objects...)
-			result, err := inspectClusterKVMReadiness(t.Context(), client)
+			result, err := InspectClusterKVMReadiness(t.Context(), client)
 			require.NoError(t, err)
 			require.Equal(t, tc.wantUsable, result.IsUsable())
 			require.Equal(t, tc.wantScope, result.Scope)
@@ -164,13 +164,13 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		result   clusterKVMPreflightResult
+		result   ClusterKVMPreflightResult
 		wantText []string
 	}{
 		"should format failure diagnostics with checked nodes": {
-			result: clusterKVMPreflightResult{
+			result: ClusterKVMPreflightResult{
 				Scope: workerNodeScope,
-				CheckedNodes: []kvmPreflightNode{
+				CheckedNodes: []KVMPreflightNode{
 					expectedNode("worker-a", false, "0"),
 					expectedNode("worker-b", true, "1"),
 				},
@@ -182,10 +182,10 @@ func TestClusterKVMPreflightResultDiagnostic(t *testing.T) {
 			},
 		},
 		"should format fallback and success diagnostics separately": {
-			result: clusterKVMPreflightResult{
+			result: ClusterKVMPreflightResult{
 				Scope:                           kvmAllSchedulableNodeScope,
 				UsedAllSchedulableNodesFallback: true,
-				CheckedNodes: []kvmPreflightNode{
+				CheckedNodes: []KVMPreflightNode{
 					expectedNode("node-a", false, "1"),
 				},
 			},
@@ -218,7 +218,7 @@ func TestVirtHandlerHostVsockVolumesLookUsable(t *testing.T) {
 			client := kubefake.NewSimpleClientset(
 				makeVirtHandlerPod("openshift-cnv", "virt-handler-1", coreV1.PodRunning, hostPath),
 			)
-			ok, diag := virtHandlerHostVsockVolumesLookUsable(context.Background(), t, client)
+			ok, diag := VirtHandlerHostVsockVolumesLookUsable(context.Background(), t, client, "openshift-cnv")
 			require.Truef(t, ok, "expected %s to pass preflight; diagnostics: %s", hostPath, diag)
 		})
 	}
@@ -234,13 +234,13 @@ func TestVerifyClusterVSOCKReadyPhases_ShouldGivePhaseTwoAFreshTimeoutAfterSlowP
 	)
 
 	var phaseTwoRemaining time.Duration
-	ref, diag, err := verifyClusterVSOCKReadyPhases(
+	ref, diag, err := VerifyClusterVSOCKReadyPhases(
 		t.Context(),
 		featureGateTimeout,
 		virtHandlerTimeout,
-		func(context.Context) (kubeVirtVSOCKRef, error) {
+		func(context.Context) (KubeVirtVSOCKRef, error) {
 			time.Sleep(phaseOneDelay)
-			return kubeVirtVSOCKRef{
+			return KubeVirtVSOCKRef{
 				Namespace: "openshift-cnv",
 				Name:      "kubevirt",
 			}, nil
@@ -253,7 +253,7 @@ func TestVerifyClusterVSOCKReadyPhases_ShouldGivePhaseTwoAFreshTimeoutAfterSlowP
 		},
 	)
 	require.NoError(t, err)
-	require.Equal(t, kubeVirtVSOCKRef{
+	require.Equal(t, KubeVirtVSOCKRef{
 		Namespace: "openshift-cnv",
 		Name:      "kubevirt",
 	}, ref)
@@ -265,15 +265,15 @@ func TestVerifyClusterVSOCKReadyPhases_ShouldGivePhaseTwoAFreshTimeoutAfterSlowP
 func TestVerifyClusterVSOCKReadyPhases_ShouldReturnRefOnPhaseTwoFailure(t *testing.T) {
 	t.Parallel()
 
-	wantRef := kubeVirtVSOCKRef{Namespace: "openshift-cnv", Name: "kubevirt"}
+	wantRef := KubeVirtVSOCKRef{Namespace: "openshift-cnv", Name: "kubevirt"}
 	wantDiag := "virt-handler volumes look wrong"
 	wantErr := errors.New("phase two verification failed")
 
-	ref, diag, err := verifyClusterVSOCKReadyPhases(
+	ref, diag, err := VerifyClusterVSOCKReadyPhases(
 		t.Context(),
 		time.Second,
 		time.Second,
-		func(context.Context) (kubeVirtVSOCKRef, error) {
+		func(context.Context) (KubeVirtVSOCKRef, error) {
 			return wantRef, nil
 		},
 		func(context.Context) (string, error) {
@@ -291,12 +291,12 @@ func TestVerifyClusterVSOCKReadyPhases_ShouldStopBeforePhaseTwoWhenPhaseOneFails
 	wantErr := errors.New("phase one failed")
 	phaseTwoCalled := false
 
-	_, _, err := verifyClusterVSOCKReadyPhases(
+	_, _, err := VerifyClusterVSOCKReadyPhases(
 		t.Context(),
 		time.Second,
 		time.Second,
-		func(context.Context) (kubeVirtVSOCKRef, error) {
-			return kubeVirtVSOCKRef{}, wantErr
+		func(context.Context) (KubeVirtVSOCKRef, error) {
+			return KubeVirtVSOCKRef{}, wantErr
 		},
 		func(context.Context) (string, error) {
 			phaseTwoCalled = true
