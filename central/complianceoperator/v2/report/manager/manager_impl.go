@@ -603,7 +603,8 @@ func (m *managerImpl) handleReadyScanConfig() {
 		return
 	}
 	for scanConfigWatcherResult := range m.scanConfigReadyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
-		log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
+		log.Infof("Scan config %s completed with %d scans, %d reports, error: %v",
+			scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot), scanConfigWatcherResult.Error)
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 		})
