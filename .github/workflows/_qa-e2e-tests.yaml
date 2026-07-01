@@ -18,7 +18,7 @@ on:
         type: string
         default: ""
       konflux-images:
-        description: "Wait for Konflux-built images instead of upstream images"
+        description: "Use Konflux-built images in tests instead of upstream images"
         required: false
         type: boolean
         default: false
