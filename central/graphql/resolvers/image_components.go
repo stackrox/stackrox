@@ -220,12 +220,7 @@ func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery)
 		return nil, err
 	}
 
-	// cast as return type
-	ret := make([]*imageComponentV2Resolver, 0, len(componentResolvers))
-	for _, res := range componentResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return componentResolvers, nil
 }
 
 // ImageComponentCount returns count of image components that match the input query

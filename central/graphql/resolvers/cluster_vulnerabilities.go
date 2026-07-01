@@ -105,12 +105,7 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 		return nil, err
 	}
 
-	// cast as return type
-	ret := make([]*clusterCVEResolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return cveResolvers, nil
 }
 
 // ClusterVulnerabilityCount returns count of image vulnerabilities for the input query
@@ -282,7 +277,7 @@ func clusterCveToVulnerabilityWithSeverity(in []*storage.ClusterCVE) []*vulnerab
 	ret := make([]*vulnerabilityWithSeverityImpl, len(in))
 	for i, vuln := range in {
 		ret[i] = &vulnerabilityWithSeverityImpl{
-			id: vuln.GetId(),
+			id:       vuln.GetId(),
 			severity: vuln.GetSeverity(),
 		}
 	}

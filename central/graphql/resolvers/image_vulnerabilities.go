@@ -194,12 +194,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return nil, err
 	}
 
-	// cast as return type
-	ret := make([]*imageCVEV2Resolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return cveResolvers, nil
 }
 
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query

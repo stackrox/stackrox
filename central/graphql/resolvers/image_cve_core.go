@@ -192,12 +192,7 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]*imag
 		cveResolvers[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver.root, data: v, flatData: nil}
 	}
 
-	// cast cves to the resolver
-	ret := make([]*imageCVEV2Resolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return cveResolvers, nil
 }
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {

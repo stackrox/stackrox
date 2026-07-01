@@ -91,8 +91,6 @@ func getNodeComponentResolvers(ctx context.Context, root *Resolver, nodeScan *st
 		})
 	}
 	nodeCompResolvers := make([]*nodeComponentResolver, 0, len(resolverObjs))
-	for _, resolver := range resolverObjs {
-		nodeCompResolvers = append(nodeCompResolvers, resolver)
-	}
+	nodeCompResolvers = append(nodeCompResolvers, resolverObjs...)
 	return paginate(query.GetPagination(), nodeCompResolvers, nil)
 }

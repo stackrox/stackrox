@@ -96,11 +96,7 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args Paginate
 		return nil, err
 	}
 
-	ret := make([]*nodeCVEResolver, 0, len(vulnResolvers))
-	for _, res := range vulnResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return vulnResolvers, nil
 }
 
 // NodeVulnerabilityCount returns count of node vulnerabilities based on a query
@@ -231,7 +227,7 @@ func nodeCveToVulnerabilityWithSeverity(in []*storage.NodeCVE) []*vulnerabilityW
 	ret := make([]*vulnerabilityWithSeverityImpl, 0, len(in))
 	for _, vuln := range in {
 		ret = append(ret, &vulnerabilityWithSeverityImpl{
-			id: vuln.GetId(),
+			id:       vuln.GetId(),
 			severity: vuln.GetSeverity(),
 		})
 	}

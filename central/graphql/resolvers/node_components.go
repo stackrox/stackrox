@@ -117,11 +117,7 @@ func (resolver *Resolver) NodeComponents(ctx context.Context, q PaginatedQuery) 
 		return nil, err
 	}
 
-	ret := make([]*nodeComponentResolver, 0, len(componentResolvers))
-	for _, res := range componentResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return componentResolvers, nil
 }
 
 // NodeComponentCount returns count of node components that match the input query
@@ -203,9 +199,7 @@ func getNodeCVEResolvers(ctx context.Context, root *Resolver, os string, vulns [
 		})
 	}
 	nodeVulnResolvers := make([]*nodeCVEResolver, 0, len(resolverObjs))
-	for _, resolver := range resolverObjs {
-		nodeVulnResolvers = append(nodeVulnResolvers, resolver)
-	}
+	nodeVulnResolvers = append(nodeVulnResolvers, resolverObjs...)
 	return paginate(query.GetPagination(), nodeVulnResolvers, nil)
 }
 
