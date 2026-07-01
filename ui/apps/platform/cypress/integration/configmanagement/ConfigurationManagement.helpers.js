@@ -15,7 +15,6 @@ function getEntitiesPath(entitiesKey) {
 
 const segmentForEntity = {
     clusters: 'cluster',
-    controls: 'control',
     deployments: 'deployment',
     images: 'image',
     namespaces: 'namespace',
@@ -34,7 +33,6 @@ function getEntityPagePath(entitiesKey, id = '') {
 // Heading on entities page has sentence case for entity type.
 const headingForEntities = {
     clusters: 'Clusters',
-    controls: 'Controls',
     deployments: 'Deployments',
     images: 'Images',
     namespaces: 'Namespaces',
@@ -49,7 +47,6 @@ const headingForEntities = {
 // Heading on entity page or side panel has sentence case for entity type.
 const headingForEntity = {
     clusters: 'Cluster',
-    controls: 'Control',
     deployments: 'Deployment',
     images: 'Image',
     namespaces: 'Namespace',
@@ -62,10 +59,8 @@ const headingForEntity = {
 };
 
 function tableHeaderRegExp(entitiesKey) {
-    const singular =
-        entitiesKey === 'controls' ? 'CIS Control' : headingForEntity[entitiesKey].toLowerCase();
-    const plural =
-        entitiesKey === 'controls' ? 'CIS Controls' : headingForEntities[entitiesKey].toLowerCase();
+    const singular = headingForEntity[entitiesKey].toLowerCase();
+    const plural = headingForEntities[entitiesKey].toLowerCase();
 
     // Complexity to exclude 1 for plural.
     // Double backslash \\d needed for RegExp constructor unlike RegExp literal.
@@ -74,7 +69,6 @@ function tableHeaderRegExp(entitiesKey) {
 
 const countNounRegExp = {
     // clusters has singular link by name
-    controls: /\d+ Controls?$/,
     deployments: /^\d+ deployments?$/,
     images: /\d+ images?$/,
     // namespaces
@@ -89,7 +83,6 @@ const countNounRegExp = {
 // Title of widget is title case but has uppercase style.
 const widgetTitleForEntities = {
     clusters: 'Clusters',
-    controls: 'CIS Controls',
     deployments: 'Deployments',
     images: 'Images',
     namespaces: 'Namespaces',
@@ -117,7 +110,6 @@ function getRouteMatcherMapForEntities(entitiesKey) {
 
 const opnameForEntity = {
     clusters: 'getCluster',
-    controls: 'getControl',
     deployments: 'getDeployment',
     images: 'getImage',
     namespaces: 'getNamespace',
@@ -136,7 +128,6 @@ function getRouteMatcherMapForEntity(entitiesKey) {
 
 const typeOfEntity = {
     clusters: 'CLUSTER',
-    controls: 'CONTROL',
     deployments: 'DEPLOYMENT',
     images: 'IMAGE',
     namespaces: 'NAMESPACE',
@@ -350,18 +341,11 @@ function verifyWidgetLinkToTable(entitiesKey1, entitiesKey2, contextSelector) {
                 cy.get(`${selectors.countWidgets}:contains('${listEntity}') button`).click();
             }
 
-            if (
-                (entitiesKey1 === 'controls' && entitiesKey2 === 'nodes') ||
-                (entitiesKey1 === 'nodes' && entitiesKey2 === 'controls')
-            ) {
-                clickCountWidget(); // no request
-            } else {
-                interactAndWaitForConfigurationManagementSecondaryEntities(
-                    clickCountWidget,
-                    entitiesKey1,
-                    entitiesKey2
-                );
-            }
+            interactAndWaitForConfigurationManagementSecondaryEntities(
+                clickCountWidget,
+                entitiesKey1,
+                entitiesKey2
+            );
 
             cy.get(`${contextSelector} .rt-tr-group`);
             cy.get(`${contextSelector} [data-testid="panel-header"]`).contains(

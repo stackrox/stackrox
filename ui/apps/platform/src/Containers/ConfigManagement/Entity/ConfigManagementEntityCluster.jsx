@@ -34,10 +34,6 @@ const ConfigManagementEntityCluster = ({
     if (entityListType === 'POLICY') {
         queryObject['Lifecycle Stage'] = 'DEPLOY';
     }
-    if (!queryObject.Standard && entityListType === 'CONTROL') {
-        queryObject.Standard = 'CIS';
-    }
-
     const variables = {
         id,
         query: queryService.objectToWhereClause(queryObject),
@@ -80,14 +76,8 @@ const ConfigManagementEntityCluster = ({
             'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
-        const availableVars =
-            entityListType === 'CONTROL'
-                ? '$id: ID!, $query: String'
-                : '$id: ID!, $query: String, $pagination: Pagination';
-        const listQueryVars =
-            entityListType === 'CONTROL'
-                ? 'query: $query'
-                : 'query: $query, pagination: $pagination';
+        const availableVars = '$id: ID!, $query: String, $pagination: Pagination';
+        const listQueryVars = 'query: $query, pagination: $pagination';
 
         return gql`
             query getCluster_${entityListType}(${availableVars}) {
