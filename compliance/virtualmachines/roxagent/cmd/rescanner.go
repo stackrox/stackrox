@@ -30,7 +30,7 @@ type rescanner struct {
 	mappingFilePath string
 	interval        time.Duration
 
-	// scanFn defaults to the package scan function; tests override it to
+	// scanFn defaults to scanWithDiagnostics; tests override it to
 	// inject failures. factsFn defaults to the package discoverFacts
 	// function; tests override it to avoid exercising the real
 	// filesystem, since discoverFacts otherwise reads real host paths
@@ -49,7 +49,7 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 		hostPath:        hostPath,
 		mappingFilePath: mappingFilePath,
 		interval:        interval,
-		scanFn:          scan,
+		scanFn:          scanWithDiagnostics,
 		factsFn:         discoverFacts,
 		newDelay:        time.After,
 	}
