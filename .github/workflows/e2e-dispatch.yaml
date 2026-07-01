@@ -115,6 +115,9 @@ jobs:
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
+    concurrency:
+      group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
     steps:
     - name: Checkout repo
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
