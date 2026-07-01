@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imageCVEFlatViewMocks "github.com/stackrox/rox/central/views/imagecveflat/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -185,21 +184,12 @@ func (s *ImageComponentCVEGraphQLTestSuite) SetupSuite() {
 	s.imageComponentFlatView = imageComponentFlatViewMocks.NewMockComponentFlatView(s.mockCtrl)
 	s.imageCVEDS = imageCVEV2Mocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEFlatView = imageCVEFlatViewMocks.NewMockCveFlatView(s.mockCtrl)
-	if features.FlattenImageData.Enabled() {
-		resolver, _ = SetupTestResolver(s.T(),
-			s.imageComponentDS,
-			s.imageCVEDS,
-			s.imageCVEFlatView,
-			s.imageComponentFlatView,
-		)
-	} else {
-		resolver, _ = SetupTestResolver(s.T(),
-			s.imageComponentDS,
-			s.imageCVEDS,
-			s.imageCVEFlatView,
-			s.imageComponentFlatView,
-		)
-	}
+	resolver, _ = SetupTestResolver(s.T(),
+		s.imageComponentDS,
+		s.imageCVEDS,
+		s.imageCVEFlatView,
+		s.imageComponentFlatView,
+	)
 	s.resolver = resolver
 
 	// Parse the GraphQL schema
