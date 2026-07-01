@@ -65,7 +65,6 @@ func getAllCounts(t *testing.T) allCounts {
 }
 
 func TestClusterDeletion(t *testing.T) {
-	}
 	counts := getAllCounts(t)
 	assert.NotZero(t, counts.ClusterCount)
 	// ROX-6391: NodeCount starts at zero

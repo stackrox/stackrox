@@ -47,7 +47,6 @@ func testDeploymentSorting(t *testing.T, field string, extractor func(d *storage
 }
 
 func TestGraphQLSorting(t *testing.T) {
-	}
 	testDeploymentSorting(t, "Deployment", func(d *storage.Deployment) string {
 		return d.GetName()
 	})
