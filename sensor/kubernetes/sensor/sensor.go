@@ -2,11 +2,15 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -47,7 +51,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
@@ -61,6 +68,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
+	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 )
 
 var log = logging.LoggerForModule()
@@ -197,10 +205,25 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	var virtualMachineHandler vmIndex.Handler
+	var vmService vmIndex.Service
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
+
+		var pullChecker vmIndex.PullActiveChecker
+		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
+			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
+			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+			vmSender := &vmScraperSenderAdapter{handler: virtualMachineHandler}
+			scraper := vmscraper.New(storeProvider.VirtualMachines(), vmSender, vmDial, vmProtoClient)
+			pullChecker = scraper
+			components = append(components, scraper)
+		} else {
+			log.Warn("VSOCK pull mode disabled (no REST config available)")
+		}
+		vmService = vmIndex.NewService(virtualMachineHandler, pullChecker)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -300,8 +323,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		apiServices = append(apiServices, fileSystemService)
 	}
 
-	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
+	if vmService != nil {
+		apiServices = append(apiServices, vmService)
 	}
 
 	if admCtrlSettingsMgr != nil {
@@ -310,4 +333,24 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
+}
+
+// vmScraperSenderAdapter adapts vmIndex.Handler to vmscraper.IndexReportSender.
+// It constructs the v1.IndexReport envelope that the handler expects.
+type vmScraperSenderAdapter struct {
+	handler vmIndex.Handler
+}
+
+func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+	var cidStr string
+	if vm.VSOCKCID != nil {
+		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
+	}
+	if err := a.handler.Send(ctx, &v1.IndexReport{
+		VsockCid: cidStr,
+		IndexV4:  report,
+	}); err != nil {
+		return fmt.Errorf("sending index report: %w", err)
+	}
+	return nil
 }
