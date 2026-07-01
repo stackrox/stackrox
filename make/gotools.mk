@@ -8,7 +8,7 @@
 #   GOTOOLS_BIN: the directory in which binaries are stored; defaults to $(GOTOOLS_ROOT)/bin.
 #
 # This file defines a single (user-facing) macro, `go-tool`, which can be invoked via
-#   $(call go-tool VARNAME, go-pkg [, module-root])
+#   $(call go-tool VARNAME, go-pkg [, module-root [, extra-flags]])
 # where go-pkg can be:
 # - an absolute Go import path with an explicit version, e.g.,
 #     github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0. In this case, the tool is installed via `go install`,
@@ -81,7 +81,6 @@ _gotools_mod_root := $(GOTOOLS_PROJECT_ROOT)
 else
 _gotools_mod_root := $(strip $(3))
 endif
-
 # We need to strip a `/v2` (etc.) suffix to derive the tool binary's basename.
 _gotools_bin_name := $$(notdir $$(shell echo "$$(_gotools_pkg)" | sed -E 's@/v[[:digit:]]+$$$$@@g'))
 _gotools_canonical_bin_path := $(GOTOOLS_BIN)/$$(_gotools_bin_name)
@@ -98,7 +97,7 @@ ifneq ($(filter ./%,$(2)),)
 .PHONY: $$(_gotools_canonical_bin_path)
 $$(_gotools_canonical_bin_path):
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install $(strip $(4)) "$(strip $(2))"
 else
 # Tool is specified with version, so we don't take any info from the go.mod file.
 # We install the tool into a location that is version-dependent, and build it via this target. Since the name of
@@ -108,7 +107,7 @@ ifneq ($$(_gotools_version),)
 _gotools_versioned_bin_path := $(GOTOOLS_ROOT)/versioned/$$(_gotools_pkg)/$$(_gotools_version)/$$(_gotools_bin_name)
 $$(_gotools_versioned_bin_path):
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)$(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install $(strip $(4)) "$(strip $(2))"
 
 # To make the tool accessible in the canonical location, we create a symlink. This only depends on the versioned path,
 # i.e., only needs to be recreated when the version is bumped.
@@ -121,7 +120,7 @@ else
 # Tool is specified with an absolute path without a version. Take info from go.mod file in the respective directory.
 $$(_gotools_canonical_bin_path): $$(_gotools_mod_root)/go.mod $$(_gotools_mod_root)/go.sum
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)cd "$$(dir $$<)" && $(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install "$(strip $(2))"
+	$$(SILENT)cd "$$(dir $$<)" && $(RUN_WITH_RETRY_FN); run_with_retry env GOBIN="$$(dir $$@)" go install $(strip $(4)) "$(strip $(2))"
 
 endif
 endif
@@ -130,7 +129,7 @@ _GOTOOLS_ALL_GOTOOLS += $$(_gotools_canonical_bin_path)
 
 endef
 
-go-tool = $(eval $(call go-tool-impl,$(1),$(2),$(3)))
+go-tool = $(eval $(call go-tool-impl,$(1),$(2),$(3),$(4)))
 
 
 .PHONY: gotools-clean
