@@ -72,7 +72,7 @@ func (q *outputQueueImpl) ProcessResourceEvent(event pubsub.Event) error {
 	return nil
 }
 
-func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) (stopped bool) {
+func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) bool {
 	if msg.Context == nil {
 		msg.Context = context.Background()
 	}
@@ -82,7 +82,7 @@ func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) (stopped bool
 			select {
 			case q.forwardQueue <- expiringMessage:
 			case <-q.stopper.Flow().StopRequested():
-				return true
+				return false
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) (stopped bool
 	for _, detectorRequest := range msg.DetectorMessages {
 		q.detector.ProcessDeployment(msg.Context, detectorRequest.Object, detectorRequest.Action)
 	}
-	return false
+	return true
 }
 
 func wrapSensorEvent(update *central.SensorEvent) *central.MsgFromSensor {
@@ -115,7 +115,7 @@ func (q *outputQueueImpl) runOutputQueue() {
 			if !more {
 				return
 			}
-			if q.processMsg(msg) {
+			if !q.processMsg(msg) {
 				return
 			}
 			metrics.DecOutputChannelSize()
