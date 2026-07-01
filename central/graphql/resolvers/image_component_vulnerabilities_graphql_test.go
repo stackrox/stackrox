@@ -27,6 +27,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// These tests were created to investigate the failures that occurred
+// during the upgrade of graphql-go from 1.5.0 to the next version
+// (eventually carried to 1.10.2).
+//
+// A mocked unit-test was later extracted to ease the trace of the issue
+// (see image_component_stripped_graphql_test.go).
+
 const (
 	// GraphQL query matching the user's request
 	getFixableCVEsForEntityQuery = `
