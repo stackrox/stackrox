@@ -1,8 +1,9 @@
-//go:build test_e2e || test_e2e_vm
+//go:build test && !test_e2e && !test_e2e_vm
 
-package tests
+package vmhelpers
 
 import (
+	"errors"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	kubefake "k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
@@ -24,19 +26,6 @@ func writeDockerConfigFile(t *testing.T, content string) string {
 	return path
 }
 
-func newVMScanningSuiteForPullSecretTest(t *testing.T, client *kubefake.Clientset, namespace, secretPath string) *VMScanningSuite {
-	t.Helper()
-	s := &VMScanningSuite{
-		cfg: &vmScanConfig{
-			ImagePullSecretPath: secretPath,
-		},
-		k8sClient: client,
-		namespace: namespace,
-	}
-	s.SetT(t)
-	return s
-}
-
 func TestEnsureImagePullSecret_UpdatesExistingSecretUsingFetchedResourceVersion(t *testing.T) {
 	t.Parallel()
 
@@ -46,7 +35,7 @@ func TestEnsureImagePullSecret_UpdatesExistingSecretUsingFetchedResourceVersion(
 	client := kubefake.NewSimpleClientset(
 		&coreV1.Secret{
 			ObjectMeta: metaV1.ObjectMeta{
-				Name:            vmImagePullSecretName,
+				Name:            ImagePullSecretName,
 				Namespace:       namespace,
 				ResourceVersion: "7",
 			},
@@ -75,18 +64,17 @@ func TestEnsureImagePullSecret_UpdatesExistingSecretUsingFetchedResourceVersion(
 		return false, nil, nil
 	})
 
-	s := newVMScanningSuiteForPullSecretTest(t, client, namespace, secretPath)
+	err := EnsureImagePullSecret(t.Context(), client, t.Logf, namespace, ImagePullSecretName, secretPath)
+	require.NoError(t, err)
 
-	s.ensureImagePullSecret(t.Context())
-
-	secret, err := client.CoreV1().Secrets(namespace).Get(t.Context(), vmImagePullSecretName, metaV1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(namespace).Get(t.Context(), ImagePullSecretName, metaV1.GetOptions{})
 	require.NoError(t, err)
 	require.Equal(t, "7", secret.ResourceVersion)
 	require.Equal(t, `{"auths":{"quay.io":{"auth":"new"}}}`, string(secret.Data[coreV1.DockerConfigJsonKey]))
 
 	sa, err := client.CoreV1().ServiceAccounts(namespace).Get(t.Context(), "default", metaV1.GetOptions{})
 	require.NoError(t, err)
-	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
+	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: ImagePullSecretName})
 }
 
 func TestEnsureImagePullSecret_WaitsForDefaultServiceAccountToAppear(t *testing.T) {
@@ -115,12 +103,44 @@ func TestEnsureImagePullSecret_WaitsForDefaultServiceAccountToAppear(t *testing.
 		return false, nil, nil
 	})
 
-	s := newVMScanningSuiteForPullSecretTest(t, client, namespace, secretPath)
-
-	s.ensureImagePullSecret(t.Context())
+	err := EnsureImagePullSecret(t.Context(), client, t.Logf, namespace, ImagePullSecretName, secretPath)
+	require.NoError(t, err)
 
 	require.GreaterOrEqual(t, getAttempts.Load(), int32(2))
 	sa, err := client.CoreV1().ServiceAccounts(namespace).Get(t.Context(), "default", metaV1.GetOptions{})
 	require.NoError(t, err)
-	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
+	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: ImagePullSecretName})
+}
+
+func TestEnsureImagePullSecret_RetriesServiceAccountLinkOnConflict(t *testing.T) {
+	t.Parallel()
+
+	const namespace = "vm-scan-test"
+	secretPath := writeDockerConfigFile(t, `{"auths":{"quay.io":{"auth":"new"}}}`)
+
+	client := kubefake.NewSimpleClientset(
+		&coreV1.ServiceAccount{
+			ObjectMeta: metaV1.ObjectMeta{Name: "default", Namespace: namespace},
+		},
+	)
+	updateAttempts := 0
+	client.PrependReactor("update", "serviceaccounts", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		updateAttempts++
+		if updateAttempts == 1 {
+			return true, nil, apierrors.NewConflict(
+				schema.GroupResource{Resource: "serviceaccounts"},
+				"default",
+				errors.New("conflict"),
+			)
+		}
+		return false, nil, nil
+	})
+
+	err := EnsureImagePullSecret(t.Context(), client, t.Logf, namespace, ImagePullSecretName, secretPath)
+	require.NoError(t, err)
+
+	require.GreaterOrEqual(t, updateAttempts, 2)
+	sa, err := client.CoreV1().ServiceAccounts(namespace).Get(t.Context(), "default", metaV1.GetOptions{})
+	require.NoError(t, err)
+	require.Contains(t, sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: ImagePullSecretName})
 }
