@@ -31,6 +31,7 @@ import {
     listeningEndpointsBasePath,
     networkBasePath,
     policyManagementBasePath,
+    riskSecretsBasePath,
     riskWorkloadsBasePath,
     systemConfigPath,
     systemHealthPath,
@@ -58,6 +59,7 @@ import './NavigationSidebar.css';
 // Child conditional title finds path to decide presence or absence of counterpart child.
 // Parent conditional title finds key to decide presence or absence of counterpart parent.
 const keyForNetwork = 'Network';
+const keyForRisk = 'Risk';
 const keyForPlatformConfiguration = 'Platform Configuration';
 const keyForCompliance = 'Compliance';
 const keyForVulnerabilities = 'Vulnerability Management';
@@ -197,12 +199,36 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             path: configManagementPath,
             routeKey: 'configmanagement',
         },
-        {
-            type: 'link',
-            content: 'Risk',
-            path: riskWorkloadsBasePath,
-            routeKey: 'risk/workloads',
-        },
+        ...((isFeatureFlagEnabled('ROX_UI_SECRETS_PAGE_MIGRATION')
+            ? [
+                  {
+                      type: 'parent',
+                      title: 'Risk',
+                      key: keyForRisk,
+                      children: [
+                          {
+                              type: 'link',
+                              content: 'Workloads',
+                              path: riskWorkloadsBasePath,
+                              routeKey: 'risk/workloads',
+                          },
+                          {
+                              type: 'link',
+                              content: 'Secrets',
+                              path: riskSecretsBasePath,
+                              routeKey: 'risk/secrets',
+                          },
+                      ],
+                  },
+              ]
+            : [
+                  {
+                      type: 'link',
+                      content: 'Risk',
+                      path: riskWorkloadsBasePath,
+                      routeKey: 'risk/workloads',
+                  },
+              ]) satisfies NavDescription[]),
         {
             type: 'parent',
             title: 'Platform Configuration',

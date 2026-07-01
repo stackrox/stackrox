@@ -67,6 +67,7 @@ export const riskWorkloadPath = `${riskWorkloadsBasePath}/:deploymentId?`;
 export const riskUserWorkloadsViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Applications view`;
 export const riskPlatformViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Platform view`;
 export const riskFullViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Full view`;
+export const riskSecretsBasePath = `${riskBasePath}/secrets`;
 export const searchPath = `${mainPath}/search`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
@@ -180,6 +181,8 @@ export type RouteKey =
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
+    // Risk secrets must precede generic risk in Body for route specificity.
+    | 'risk/secrets'
     // Risk workloads must precede generic risk in Body for route specificity.
     | 'risk/workloads'
     | 'risk'
@@ -312,6 +315,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             // 'Integration',
             'WorkflowAdministration',
         ]),
+    },
+    'risk/secrets': {
+        featureFlagRequirements: allEnabled(['ROX_UI_SECRETS_PAGE_MIGRATION']),
+        resourceAccessRequirements: everyResource(['Secret']),
     },
     'risk/workloads': {
         resourceAccessRequirements: everyResource(['Deployment']),
