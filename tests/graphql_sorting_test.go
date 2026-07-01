@@ -3,7 +3,6 @@
 package tests
 
 import (
-	"os"
 	"slices"
 	"sort"
 	"testing"
@@ -48,8 +47,6 @@ func testDeploymentSorting(t *testing.T, field string, extractor func(d *storage
 }
 
 func TestGraphQLSorting(t *testing.T) {
-	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-25171)")
 	}
 	testDeploymentSorting(t, "Deployment", func(d *storage.Deployment) string {
 		return d.GetName()

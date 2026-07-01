@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"testing"
 	"time"
 
@@ -18,8 +17,6 @@ import (
 )
 
 func TestExcludedScopes(t *testing.T) {
-	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		t.Skip("temporarily skipped on OCP. TODO(ROX-25171)")
 	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 

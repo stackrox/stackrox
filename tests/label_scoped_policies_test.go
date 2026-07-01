@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand/v2"
-	"os"
 	"testing"
 	"time"
 
@@ -33,8 +32,6 @@ func TestLabelScopedPolicies(t *testing.T) {
 }
 
 func (s *LabelScopedPoliciesSuite) SetupSuite() {
-	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		s.T().Skip("temporarily skipped on OCP. TODO(ROX-25171)")
 	}
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.policyService = v1.NewPolicyServiceClient(conn)
