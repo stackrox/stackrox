@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -122,7 +125,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	cache := &vsockserver.ReportCache{}
 	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
 
-	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
+	report, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
@@ -183,6 +186,24 @@ func logMappingDownloadResult(url, cachePath string) func(err error, duration ti
 	}
 }
 
+// scanWithDiagnostics runs the node indexer and surrounds it with filesystem
+// and report diagnostics logging. This mirrors the diagnostics roxagent logs
+// in push mode, so scan issues (e.g. "0 packages" or "0 repositories") can be
+// triaged from agent logs regardless of transport mode. Used for both the
+// initial scan and every periodic rescan (see newRescanner's scanFn).
+func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
+	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
+	logFilesystemDiagnostics(hostPath)
+
+	report, err := scan(ctx, hostPath, mappingFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	logIndexReportDiagnostics(report)
+	return report, nil
+}
+
 // scan indexes the VM filesystem at hostPath, consulting the
 // repository-to-CPE mapping data cached at mappingFilePath.
 // The mapping downloader keeps mappingFilePath fresh independently.
@@ -203,7 +224,20 @@ func discoverFacts(hostPath string) map[string]string {
 		"os_version":          d.GetOsVersion(),
 		"activation_status":   d.GetActivationStatus().String(),
 		"dnf_metadata_status": d.GetDnfMetadataStatus().String(),
+		"dnf_status":          formatDnfStatusFlags(d.GetDnfStatus()),
 	}
+}
+
+func formatDnfStatusFlags(flags []v1.DnfStatusFlag) string {
+	if len(flags) == 0 {
+		return "none"
+	}
+	names := make([]string, 0, len(flags))
+	for _, f := range flags {
+		names = append(names, f.String())
+	}
+	slices.Sort(names)
+	return strings.Join(names, ", ")
 }
 
 // selfSignedCert generates a self-signed ECDSA TLS certificate.
