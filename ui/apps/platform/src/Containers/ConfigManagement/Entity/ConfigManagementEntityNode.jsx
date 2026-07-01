@@ -1,27 +1,19 @@
 import { useContext } from 'react';
 import { gql } from '@apollo/client';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
-import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import { defaultColumnClassName, defaultHeaderClassName } from 'Components/Table';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import { standardLabels } from 'messages/standards';
-import { CONTROL_FRAGMENT } from 'queries/controls';
-import { sortVersion } from 'sorters/sorters';
-import { getDateTime } from 'utils/dateUtils';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
+import { getDateTime } from 'utils/dateUtils';
 
 import EntityList from '../List/EntityList';
-import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
-import TableWidget from './widgets/TableWidget';
 
 const ConfigManagementEntityNode = ({
     id,
@@ -34,9 +26,6 @@ const ConfigManagementEntityNode = ({
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
-    if (!queryObject.Standard) {
-        queryObject.Standard = 'CIS';
-    }
 
     const variables = {
         id,
@@ -45,7 +34,7 @@ const ConfigManagementEntityNode = ({
     };
 
     const QUERY = gql`
-        query getNode($id: ID!, $query: String) {
+        query getNode($id: ID!) {
             node(id: $id) {
                 id
                 name
@@ -66,12 +55,8 @@ const ConfigManagementEntityNode = ({
                     key
                     value
                 }
-                complianceResults(query: $query) {
-                    ...controlFields
-                }
             }
         }
-        ${CONTROL_FRAGMENT}
     `;
 
     return (
@@ -95,7 +80,6 @@ const ConfigManagementEntityNode = ({
                     clusterName,
                     clusterId,
                     annotations,
-                    complianceResults = [],
                 } = node;
 
                 const metadataKeyValuePairs = [
@@ -126,43 +110,12 @@ const ConfigManagementEntityNode = ({
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
-                            data={getControlsWithStatus(complianceResults)}
+                            data={[]}
                             query={query}
                             entityContext={{ ...entityContext, NODE: id }}
                         />
                     );
                 }
-
-                const failedComplianceResults = complianceResults
-                    .filter((cr) => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
-                    .map((cr) => ({
-                        ...cr,
-                        standard: standardLabels[cr.control.standardId],
-                        controlName: `${cr.control.name} - ${cr.control.description}`,
-                    }));
-
-                const controlColumns = [
-                    {
-                        accessor: 'id',
-                        Header: 'id',
-                        headerClassName: 'hidden',
-                        className: 'hidden',
-                    },
-                    {
-                        accessor: 'standard',
-                        sortMethod: sortVersion,
-                        Header: 'Standard',
-                        headerClassName: `w-1/5 ${defaultHeaderClassName}`,
-                        className: `w-1/5 ${defaultColumnClassName}`,
-                    },
-                    {
-                        accessor: 'controlName',
-                        sortMethod: sortVersion,
-                        Header: 'Control',
-                        headerClassName: `w-1/2 ${defaultHeaderClassName}`,
-                        className: `w-1/2 ${defaultColumnClassName}`,
-                    },
-                ];
 
                 return (
                     <div className="w-full">
@@ -183,48 +136,8 @@ const ConfigManagementEntityNode = ({
                                         entityId={clusterId}
                                     />
                                 )}
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 min-h-48 mb-4"
-                                    name="CIS Controls"
-                                    value={complianceResults.length}
-                                    entityType="CONTROL"
-                                />
                             </div>
                         </CollapsibleSection>
-                        {!(entityContext && entityContext.CONTROL) && (
-                            <CollapsibleSection title="Node Findings">
-                                <div className="flex shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                                    {failedComplianceResults.length === 0 && (
-                                        <NoResultsMessage
-                                            message="No nodes failing controls on this node"
-                                            className="p-3 shadow"
-                                            icon="info"
-                                        />
-                                    )}
-                                    {failedComplianceResults.length > 0 && (
-                                        <TableWidget
-                                            entityType="CONTROL"
-                                            header={`${failedComplianceResults.length} controls failed across this node`}
-                                            rows={failedComplianceResults}
-                                            noDataText="No Controls"
-                                            className="bg-base-100"
-                                            columns={controlColumns}
-                                            idAttribute="control.id"
-                                            defaultSorted={[
-                                                {
-                                                    id: 'standard',
-                                                    desc: false,
-                                                },
-                                                {
-                                                    id: 'controlName',
-                                                    desc: false,
-                                                },
-                                            ]}
-                                        />
-                                    )}
-                                </div>
-                            </CollapsibleSection>
-                        )}
                     </div>
                 );
             }}
