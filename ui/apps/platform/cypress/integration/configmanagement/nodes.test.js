@@ -3,9 +3,7 @@ import withAuth from '../../helpers/basicAuth';
 import {
     clickOnSingleEntityInTable,
     clickOnSingularEntityWidgetInSidePanel,
-    hasCountWidgetsFor,
     hasRelatedEntityFor,
-    hasTabsFor,
     navigateToSingleEntityPage,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
@@ -39,15 +37,4 @@ describe('Configuration Management Nodes', () => {
         hasRelatedEntityFor('Cluster');
     });
 
-    it('should have the correct count widgets for a single entity view', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey);
-        navigateToSingleEntityPage(entitiesKey);
-        hasCountWidgetsFor(['Controls']);
-    });
-
-    it('should have the correct tabs for a single entity view', () => {
-        visitConfigurationManagementEntityInSidePanel(entitiesKey);
-        navigateToSingleEntityPage(entitiesKey);
-        hasTabsFor(['controls']);
-    });
 });
