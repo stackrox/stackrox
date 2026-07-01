@@ -32,7 +32,6 @@ func TestLabelScopedPolicies(t *testing.T) {
 }
 
 func (s *LabelScopedPoliciesSuite) SetupSuite() {
-	}
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.policyService = v1.NewPolicyServiceClient(conn)
 	s.alertService = v1.NewAlertServiceClient(conn)

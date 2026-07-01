@@ -17,7 +17,6 @@ import (
 )
 
 func TestExcludedScopes(t *testing.T) {
-	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
 	setupDeploymentInNamespace(t, "quay.io/rhacs-eng/qa-multi-arch-nginx:latest", deploymentName, "default")

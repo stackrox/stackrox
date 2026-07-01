@@ -27,8 +27,6 @@ func getMetadata(t *testing.T, conn *grpc.ClientConn) *v1.Metadata {
 }
 
 func TestMetadataIsSetCorrectly(t *testing.T) {
-	}
-
 	if _, ok := os.LookupEnv("CI"); !ok {
 		t.Skip("Skipping metadata test because we are not on CI")
 		return
