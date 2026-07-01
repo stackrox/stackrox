@@ -35,13 +35,28 @@ export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
 
-// Range condition for the date-picker input. Unlike Before/On/After it is not a
-// prefix on a single date; it serializes to the backend time-range format tr/<startMs>-<endMs>.
+export const dateRelativeOlderThanCondition = 'More than (days ago)' as const;
 export const dateRangeCondition = 'Between' as const;
+export const dateRelativeRangeCondition = 'Between (days ago)' as const;
 
 const absoluteDateRangeRegex = /^tr\/(\d+)-(\d+)$/;
 const relativeDateRangeRegex = /^(\d+)d-(\d+)d$/;
 const relativeDateOlderThanRegex = /^>(\d+)d$/;
+
+function isNonNegativeInteger(n: number): boolean {
+    return Number.isInteger(n) && n >= 0;
+}
+
+export function serializeRelativeOlderThan(days: number): string | null {
+    return isNonNegativeInteger(days) ? `>${days}d` : null;
+}
+
+export function serializeRelativeDateRange(minDays: number, maxDays: number): string | null {
+    if (!isNonNegativeInteger(minDays) || !isNonNegativeInteger(maxDays) || minDays > maxDays) {
+        return null;
+    }
+    return `${minDays}d-${maxDays}d`;
+}
 
 /**
  * Serializes an absolute date range into the backend time-range query format.

@@ -1,4 +1,9 @@
-import { convertFromInternalToExternalDatePicker, serializeAbsoluteDateRange } from './utils';
+import {
+    convertFromInternalToExternalDatePicker,
+    serializeAbsoluteDateRange,
+    serializeRelativeDateRange,
+    serializeRelativeOlderThan,
+} from './utils';
 
 describe('utils', () => {
     describe('convertFromInternalToExternalDatePicker', () => {
@@ -108,6 +113,52 @@ describe('utils', () => {
             expect(convertFromInternalToExternalDatePicker(serialized as string)).toEqual(
                 'Between Jan 01, 2025 and Mar 31, 2025'
             );
+        });
+    });
+
+    describe('serializeRelativeOlderThan', () => {
+        it('serializes a positive integer', () => {
+            expect(serializeRelativeOlderThan(365)).toEqual('>365d');
+        });
+
+        it('serializes zero', () => {
+            expect(serializeRelativeOlderThan(0)).toEqual('>0d');
+        });
+
+        it('returns null for a negative number', () => {
+            expect(serializeRelativeOlderThan(-1)).toBeNull();
+        });
+
+        it('returns null for a non-integer', () => {
+            expect(serializeRelativeOlderThan(1.5)).toBeNull();
+        });
+    });
+
+    describe('serializeRelativeDateRange', () => {
+        it('serializes a valid range', () => {
+            expect(serializeRelativeDateRange(30, 90)).toEqual('30d-90d');
+        });
+
+        it('serializes equal min and max', () => {
+            expect(serializeRelativeDateRange(7, 7)).toEqual('7d-7d');
+        });
+
+        it('serializes zero values', () => {
+            expect(serializeRelativeDateRange(0, 30)).toEqual('0d-30d');
+        });
+
+        it('returns null when min exceeds max', () => {
+            expect(serializeRelativeDateRange(90, 30)).toBeNull();
+        });
+
+        it('returns null for a negative number', () => {
+            expect(serializeRelativeDateRange(-1, 30)).toBeNull();
+            expect(serializeRelativeDateRange(0, -1)).toBeNull();
+        });
+
+        it('returns null for a non-integer', () => {
+            expect(serializeRelativeDateRange(1.5, 30)).toBeNull();
+            expect(serializeRelativeDateRange(0, 2.5)).toBeNull();
         });
     });
 });
