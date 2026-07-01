@@ -121,6 +121,8 @@ func (ActivationStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 // DnfMetadataStatus indicates whether DNF metadata is available.
+// Deprecated: use DnfStatusFlag instead.
+// Was used by roxagents released with 4.10 (tech-preview)
 type DnfMetadataStatus int32
 
 const (
@@ -168,6 +170,69 @@ func (x DnfMetadataStatus) Number() protoreflect.EnumNumber {
 // Deprecated: Use DnfMetadataStatus.Descriptor instead.
 func (DnfMetadataStatus) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{2}
+}
+
+// DnfStatusFlag represents individual facts about the DNF state on a VM.
+// Multiple flags can be reported simultaneously to give a complete picture.
+type DnfStatusFlag int32
+
+const (
+	// DNF repo configuration files (.repo) are present.
+	DnfStatusFlag_DNF_REPO_CONFIG_FOUND DnfStatusFlag = 0
+	// DNF4 package cache directories exist (e.g. /var/cache/dnf with -rpms- subdirs).
+	DnfStatusFlag_DNF_V4_CACHE_FOUND DnfStatusFlag = 1
+	// DNF5/libdnf5 package cache directories exist (e.g. /var/cache/libdnf5 with subdirs).
+	DnfStatusFlag_DNF_V5_CACHE_FOUND DnfStatusFlag = 2
+	// DNF4 transaction history database exists (var/lib/dnf/history.sqlite).
+	DnfStatusFlag_DNF_V4_HISTORY_DB_FOUND DnfStatusFlag = 3
+	// DNF5/libdnf5 transaction history database exists
+	// (usr/lib/sysimage/libdnf5/transaction_history.sqlite).
+	DnfStatusFlag_DNF_V5_HISTORY_DB_FOUND DnfStatusFlag = 4
+)
+
+// Enum value maps for DnfStatusFlag.
+var (
+	DnfStatusFlag_name = map[int32]string{
+		0: "DNF_REPO_CONFIG_FOUND",
+		1: "DNF_V4_CACHE_FOUND",
+		2: "DNF_V5_CACHE_FOUND",
+		3: "DNF_V4_HISTORY_DB_FOUND",
+		4: "DNF_V5_HISTORY_DB_FOUND",
+	}
+	DnfStatusFlag_value = map[string]int32{
+		"DNF_REPO_CONFIG_FOUND":   0,
+		"DNF_V4_CACHE_FOUND":      1,
+		"DNF_V5_CACHE_FOUND":      2,
+		"DNF_V4_HISTORY_DB_FOUND": 3,
+		"DNF_V5_HISTORY_DB_FOUND": 4,
+	}
+)
+
+func (x DnfStatusFlag) Enum() *DnfStatusFlag {
+	p := new(DnfStatusFlag)
+	*p = x
+	return p
+}
+
+func (x DnfStatusFlag) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (DnfStatusFlag) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[3].Descriptor()
+}
+
+func (DnfStatusFlag) Type() protoreflect.EnumType {
+	return &file_internalapi_virtualmachine_v1_index_report_proto_enumTypes[3]
+}
+
+func (x DnfStatusFlag) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use DnfStatusFlag.Descriptor instead.
+func (DnfStatusFlag) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP(), []int{3}
 }
 
 // VMReport is the message sent over vsock from roxagent to relay.
@@ -231,11 +296,16 @@ type DiscoveredData struct {
 	// detected_os will be extracted from '/etc/os-release' or similar source.
 	DetectedOs DetectedOS `protobuf:"varint,1,opt,name=detected_os,json=detectedOs,proto3,enum=virtualmachine.v1.DetectedOS" json:"detected_os,omitempty"`
 	// os_version will be extracted from '/etc/os-release' or similar source.
-	OsVersion         string            `protobuf:"bytes,2,opt,name=os_version,json=osVersion,proto3" json:"os_version,omitempty"`
-	ActivationStatus  ActivationStatus  `protobuf:"varint,3,opt,name=activation_status,json=activationStatus,proto3,enum=virtualmachine.v1.ActivationStatus" json:"activation_status,omitempty"`
+	OsVersion        string           `protobuf:"bytes,2,opt,name=os_version,json=osVersion,proto3" json:"os_version,omitempty"`
+	ActivationStatus ActivationStatus `protobuf:"varint,3,opt,name=activation_status,json=activationStatus,proto3,enum=virtualmachine.v1.ActivationStatus" json:"activation_status,omitempty"`
+	// Deprecated: use dnf_status instead.
 	DnfMetadataStatus DnfMetadataStatus `protobuf:"varint,4,opt,name=dnf_metadata_status,json=dnfMetadataStatus,proto3,enum=virtualmachine.v1.DnfMetadataStatus" json:"dnf_metadata_status,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// dnf_status reports multiple independent facts about the DNF state.
+	// Unlike the single-value dnf_metadata_status, this captures all observed
+	// conditions simultaneously (e.g., metadata available but history DB missing).
+	DnfStatus     []DnfStatusFlag `protobuf:"varint,5,rep,packed,name=dnf_status,json=dnfStatus,proto3,enum=virtualmachine.v1.DnfStatusFlag" json:"dnf_status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DiscoveredData) Reset() {
@@ -294,6 +364,13 @@ func (x *DiscoveredData) GetDnfMetadataStatus() DnfMetadataStatus {
 		return x.DnfMetadataStatus
 	}
 	return DnfMetadataStatus_DNF_METADATA_UNSPECIFIED
+}
+
+func (x *DiscoveredData) GetDnfStatus() []DnfStatusFlag {
+	if x != nil {
+		return x.DnfStatus
+	}
+	return nil
 }
 
 // The index report is collected from the virtual machine agent and contains
@@ -413,14 +490,16 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"0internalapi/virtualmachine/v1/index_report.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\x99\x01\n" +
 	"\bVMReport\x12A\n" +
 	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
-	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"\x97\x02\n" +
+	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"\xd8\x02\n" +
 	"\x0eDiscoveredData\x12>\n" +
 	"\vdetected_os\x18\x01 \x01(\x0e2\x1d.virtualmachine.v1.DetectedOSR\n" +
 	"detectedOs\x12\x1d\n" +
 	"\n" +
 	"os_version\x18\x02 \x01(\tR\tosVersion\x12P\n" +
 	"\x11activation_status\x18\x03 \x01(\x0e2#.virtualmachine.v1.ActivationStatusR\x10activationStatus\x12T\n" +
-	"\x13dnf_metadata_status\x18\x04 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\"^\n" +
+	"\x13dnf_metadata_status\x18\x04 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\x12?\n" +
+	"\n" +
+	"dnf_status\x18\x05 \x03(\x0e2 .virtualmachine.v1.DnfStatusFlagR\tdnfStatus\"^\n" +
 	"\vIndexReport\x12\x1b\n" +
 	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
 	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
@@ -439,7 +518,13 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\x11DnfMetadataStatus\x12\x1c\n" +
 	"\x18DNF_METADATA_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tAVAILABLE\x10\x01\x12\x0f\n" +
-	"\vUNAVAILABLE\x10\x02B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
+	"\vUNAVAILABLE\x10\x02*\x94\x01\n" +
+	"\rDnfStatusFlag\x12\x19\n" +
+	"\x15DNF_REPO_CONFIG_FOUND\x10\x00\x12\x16\n" +
+	"\x12DNF_V4_CACHE_FOUND\x10\x01\x12\x16\n" +
+	"\x12DNF_V5_CACHE_FOUND\x10\x02\x12\x1b\n" +
+	"\x17DNF_V4_HISTORY_DB_FOUND\x10\x03\x12\x1b\n" +
+	"\x17DNF_V5_HISTORY_DB_FOUND\x10\x04B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
 
 var (
 	file_internalapi_virtualmachine_v1_index_report_proto_rawDescOnce sync.Once
@@ -453,31 +538,33 @@ func file_internalapi_virtualmachine_v1_index_report_proto_rawDescGZIP() []byte 
 	return file_internalapi_virtualmachine_v1_index_report_proto_rawDescData
 }
 
-var file_internalapi_virtualmachine_v1_index_report_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_internalapi_virtualmachine_v1_index_report_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_virtualmachine_v1_index_report_proto_goTypes = []any{
 	(DetectedOS)(0),          // 0: virtualmachine.v1.DetectedOS
 	(ActivationStatus)(0),    // 1: virtualmachine.v1.ActivationStatus
 	(DnfMetadataStatus)(0),   // 2: virtualmachine.v1.DnfMetadataStatus
-	(*VMReport)(nil),         // 3: virtualmachine.v1.VMReport
-	(*DiscoveredData)(nil),   // 4: virtualmachine.v1.DiscoveredData
-	(*IndexReport)(nil),      // 5: virtualmachine.v1.IndexReport
-	(*IndexReportEvent)(nil), // 6: virtualmachine.v1.IndexReportEvent
-	(*v4.IndexReport)(nil),   // 7: scanner.v4.IndexReport
+	(DnfStatusFlag)(0),       // 3: virtualmachine.v1.DnfStatusFlag
+	(*VMReport)(nil),         // 4: virtualmachine.v1.VMReport
+	(*DiscoveredData)(nil),   // 5: virtualmachine.v1.DiscoveredData
+	(*IndexReport)(nil),      // 6: virtualmachine.v1.IndexReport
+	(*IndexReportEvent)(nil), // 7: virtualmachine.v1.IndexReportEvent
+	(*v4.IndexReport)(nil),   // 8: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_index_report_proto_depIdxs = []int32{
-	5, // 0: virtualmachine.v1.VMReport.index_report:type_name -> virtualmachine.v1.IndexReport
-	4, // 1: virtualmachine.v1.VMReport.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
+	6, // 0: virtualmachine.v1.VMReport.index_report:type_name -> virtualmachine.v1.IndexReport
+	5, // 1: virtualmachine.v1.VMReport.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
 	0, // 2: virtualmachine.v1.DiscoveredData.detected_os:type_name -> virtualmachine.v1.DetectedOS
 	1, // 3: virtualmachine.v1.DiscoveredData.activation_status:type_name -> virtualmachine.v1.ActivationStatus
 	2, // 4: virtualmachine.v1.DiscoveredData.dnf_metadata_status:type_name -> virtualmachine.v1.DnfMetadataStatus
-	7, // 5: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
-	5, // 6: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	3, // 5: virtualmachine.v1.DiscoveredData.dnf_status:type_name -> virtualmachine.v1.DnfStatusFlag
+	8, // 6: virtualmachine.v1.IndexReport.index_v4:type_name -> scanner.v4.IndexReport
+	6, // 7: virtualmachine.v1.IndexReportEvent.index:type_name -> virtualmachine.v1.IndexReport
+	8, // [8:8] is the sub-list for method output_type
+	8, // [8:8] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_index_report_proto_init() }
@@ -490,7 +577,7 @@ func file_internalapi_virtualmachine_v1_index_report_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc), len(file_internalapi_virtualmachine_v1_index_report_proto_rawDesc)),
-			NumEnums:      3,
+			NumEnums:      4,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,

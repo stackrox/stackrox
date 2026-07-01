@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
@@ -54,9 +57,10 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 		return errors.New("rescan-interval must be greater than 0")
 	}
 
+	httpClient := &http.Client{Transport: proxy.RoundTripper()}
 	cache := &vsockserver.ReportCache{}
 
-	report, err := scan(ctx, hostPath, repoCPEURL)
+	report, err := scanWithDiagnostics(ctx, hostPath, repoCPEURL, httpClient)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
@@ -100,7 +104,7 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 			return nil
 		case <-ticker.C:
 			log.Info("Starting periodic rescan")
-			r, err := scan(ctx, hostPath, repoCPEURL)
+			r, err := scanWithDiagnostics(ctx, hostPath, repoCPEURL, httpClient)
 			if err != nil {
 				log.Errorf("Rescan failed: %v", err)
 				continue
@@ -111,10 +115,27 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 	}
 }
 
-func scan(ctx context.Context, hostPath, repoCPEURL string) (*v4.IndexReport, error) {
+// scanWithDiagnostics runs the node indexer and surrounds it with filesystem
+// and report diagnostics logging. This mirrors the diagnostics roxagent logs
+// in push mode, so scan issues (e.g. "0 packages" or "0 repositories") can be
+// triaged from agent logs regardless of transport mode.
+func scanWithDiagnostics(ctx context.Context, hostPath, repoCPEURL string, httpClient *http.Client) (*v4.IndexReport, error) {
+	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
+	logFilesystemDiagnostics(hostPath)
+
+	report, err := scan(ctx, hostPath, repoCPEURL, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	logIndexReportDiagnostics(report)
+	return report, nil
+}
+
+func scan(ctx context.Context, hostPath, repoCPEURL string, httpClient *http.Client) (*v4.IndexReport, error) {
 	cfg := index.NodeIndexerConfig{
 		HostPath:           hostPath,
-		Client:             &http.Client{Transport: proxy.RoundTripper()},
+		Client:             httpClient,
 		Repo2CPEMappingURL: repoCPEURL,
 		Timeout:            mappingClientTimeout,
 		PackageDBFilter:    "",
@@ -129,7 +150,20 @@ func discoverFacts(hostPath string) map[string]string {
 		"os_version":          d.GetOsVersion(),
 		"activation_status":   d.GetActivationStatus().String(),
 		"dnf_metadata_status": d.GetDnfMetadataStatus().String(),
+		"dnf_status":          formatDnfStatusFlags(d.GetDnfStatus()),
 	}
+}
+
+func formatDnfStatusFlags(flags []v1.DnfStatusFlag) string {
+	if len(flags) == 0 {
+		return "none"
+	}
+	names := make([]string, 0, len(flags))
+	for _, f := range flags {
+		names = append(names, f.String())
+	}
+	slices.Sort(names)
+	return strings.Join(names, ", ")
 }
 
 // selfSignedCert generates a self-signed ECDSA TLS certificate.

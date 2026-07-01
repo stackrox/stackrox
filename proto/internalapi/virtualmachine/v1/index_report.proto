@@ -22,7 +22,12 @@ message DiscoveredData {
   // os_version will be extracted from '/etc/os-release' or similar source.
   string os_version = 2;
   ActivationStatus activation_status = 3;
+  // Deprecated: use dnf_status instead.
   DnfMetadataStatus dnf_metadata_status = 4;
+  // dnf_status reports multiple independent facts about the DNF state.
+  // Unlike the single-value dnf_metadata_status, this captures all observed
+  // conditions simultaneously (e.g., metadata available but history DB missing).
+  repeated DnfStatusFlag dnf_status = 5;
 }
 
 // DetectedOS describes the OS detected by roxagent.
@@ -40,10 +45,28 @@ enum ActivationStatus {
 }
 
 // DnfMetadataStatus indicates whether DNF metadata is available.
+// Deprecated: use DnfStatusFlag instead.
+// Was used by roxagents released with 4.10 (tech-preview)
 enum DnfMetadataStatus {
   DNF_METADATA_UNSPECIFIED = 0;
   AVAILABLE = 1;
   UNAVAILABLE = 2;
+}
+
+// DnfStatusFlag represents individual facts about the DNF state on a VM.
+// Multiple flags can be reported simultaneously to give a complete picture.
+enum DnfStatusFlag {
+  // DNF repo configuration files (.repo) are present.
+  DNF_REPO_CONFIG_FOUND = 0;
+  // DNF4 package cache directories exist (e.g. /var/cache/dnf with -rpms- subdirs).
+  DNF_V4_CACHE_FOUND = 1;
+  // DNF5/libdnf5 package cache directories exist (e.g. /var/cache/libdnf5 with subdirs).
+  DNF_V5_CACHE_FOUND = 2;
+  // DNF4 transaction history database exists (var/lib/dnf/history.sqlite).
+  DNF_V4_HISTORY_DB_FOUND = 3;
+  // DNF5/libdnf5 transaction history database exists
+  // (usr/lib/sysimage/libdnf5/transaction_history.sqlite).
+  DNF_V5_HISTORY_DB_FOUND = 4;
 }
 
 // The index report is collected from the virtual machine agent and contains
