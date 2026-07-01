@@ -14,6 +14,8 @@ logging.basicConfig(
 BASE_URL = os.getenv('SCANNER_NVD_URL', "https://services.nvd.nist.gov/rest/json/cves/2.0")
 API_KEY = os.getenv('SCANNER_NVD_API_KEY', None)
 
+BACKOFF_TABLE = [15, 30, 60, 120, 240, 300]
+
 
 class ApiLoader:
     def __init__(self):
@@ -46,8 +48,8 @@ class ApiLoader:
     def fetch_data(start, end):
         index, total = 0, 0
         logging.info(f"Fetching page from {start} to {end}")
-        backoff_time = 10
         max_retries = 10
+        attempt = 0
 
         while total == 0 or index < total:
             try:
@@ -72,17 +74,16 @@ class ApiLoader:
                     yield {"cve": item['cve']}
 
                 index += data['resultsPerPage']
-                max_retries = 10  # Reset retries
-                backoff_time = 1
+                attempt = 0
             except Exception as e:
-                logging.error(f"Failed to download page at index {index}: {e}")
-                if max_retries > 0:
-                    logging.info(f"Retrying in {backoff_time} seconds...")
-                    time.sleep(backoff_time)
-                    backoff_time *= 2  # Increase the backoff time exponentially
-                    max_retries -= 1
+                if attempt < max_retries:
+                    backoff = BACKOFF_TABLE[min(attempt, len(BACKOFF_TABLE) - 1)]
+                    logging.warning(f"Failed to download page at index {index} (attempt {attempt + 1}/{max_retries + 1}): {e}")
+                    logging.info(f"Retrying in {backoff} seconds...")
+                    time.sleep(backoff)
+                    attempt += 1
                 else:
-                    raise  # Re-raise the exception if max retries have been exceeded
+                    raise
             time.sleep(2)
 
     @staticmethod
