@@ -92,31 +92,32 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	// Fetch from both discovery methods concurrently. Each path retries independently
 	// so a transient failure in one does not block the other.
 	var (
-		tagPayloads      []cosign.SignedPayload
+		tagPayloads      []signaturePayload
 		tagErr           error
-		referrerPayloads []cosign.SignedPayload
+		referrerPayloads []signaturePayload
 		referrerErr      error
 		wg               sync.WaitGroup
 	)
 	wg.Go(func() {
-		tagPayloads, tagErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]cosign.SignedPayload, error) {
+		tagPayloads, tagErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]signaturePayload, error) {
 			return fetchTagPayloads(image, imgRef, opts)
 		})
 	})
 	wg.Go(func() {
 		imgSHA := imgUtils.GetSHA(image)
 		if imgSHA == "" {
+			referrerErr = fmt.Errorf("image %q has no SHA digest for referrer lookup", fullImageName)
 			return
 		}
 		digestRef := imgRef.Context().Digest(imgSHA)
-		referrerPayloads, referrerErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]cosign.SignedPayload, error) {
+		referrerPayloads, referrerErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]signaturePayload, error) {
 			return fetchReferrerPayloads(ctx, digestRef, imgRef.Context(), opts)
 		})
 	})
 	wg.Wait()
 
 	// Merge payloads from both discovery methods.
-	var allPayloads []cosign.SignedPayload
+	var allPayloads []signaturePayload
 	if tagErr == nil {
 		allPayloads = append(allPayloads, tagPayloads...)
 		log.Infof("Tag-based discovery returned %d payload(s) for %q", len(tagPayloads), fullImageName)
@@ -159,12 +160,12 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 // The timeout context is injected into the OCI options so fn does not need to handle contexts.
 // When retryOpts is empty, fn is called directly without retry or timeout wrapping.
 func fetchWithRetry(ctx context.Context, ociOpts []ociremote.Option, retryOpts []retry.OptionsModifier,
-	fn func([]ociremote.Option) ([]cosign.SignedPayload, error),
-) ([]cosign.SignedPayload, error) {
+	fn func([]ociremote.Option) ([]signaturePayload, error),
+) ([]signaturePayload, error) {
 	if len(retryOpts) == 0 {
 		return fn(ociOpts)
 	}
-	var payloads []cosign.SignedPayload
+	var payloads []signaturePayload
 	err := retry.WithRetry(func() error {
 		fetchCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 		defer cancel()
@@ -178,46 +179,51 @@ func fetchWithRetry(ctx context.Context, ociOpts []ociremote.Option, retryOpts [
 }
 
 // convertPayloadsToSignatures converts cosign signed payloads to storage signature protos.
-func convertPayloadsToSignatures(payloads []cosign.SignedPayload, fullImageName string) []*storage.Signature {
+func convertPayloadsToSignatures(payloads []signaturePayload, fullImageName string) []*storage.Signature {
 	signatures := make([]*storage.Signature, 0, len(payloads))
 
 	for _, signedPayload := range payloads {
-		rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
-		if err != nil {
-			log.Errorf("Error during decoding of raw signature for image %q: %v",
-				fullImageName, err)
-			continue
+		cosignSig := &storage.CosignSignature{
+			SignatureFormat: signedPayload.signatureFormat,
 		}
 
-		certPEM, err := certificateFromSignedPayload(signedPayload)
-		if err != nil {
-			log.Errorf("Error during unmarshalling certificate to PEM for image %q: %v", fullImageName, err)
-		}
-
-		chainPEM, err := certificateChainFromSignedPayload(signedPayload)
-		if err != nil {
-			log.Errorf("Error during unmarshalling certificate chain to PEM for image %q: %v",
-				fullImageName, err)
-		}
-
-		var rekorBundle []byte
-		if signedPayload.Bundle != nil {
-			rekorBundle, err = json.Marshal(signedPayload.Bundle)
+		if len(signedPayload.rawBundle) > 0 {
+			cosignSig.SigstoreBundle = signedPayload.rawBundle
+		} else {
+			cosignSig.SignaturePayload = signedPayload.Payload
+			rawSig, err := base64.StdEncoding.DecodeString(signedPayload.Base64Signature)
 			if err != nil {
-				log.Errorf("Error during marshalling rekor bundle for image %q: %v", fullImageName, err)
+				log.Errorf("Error during decoding of raw signature for image %q: %v",
+					fullImageName, err)
+				continue
+			}
+			cosignSig.RawSignature = rawSig
+
+			certPEM, err := certificateFromSignedPayload(signedPayload.SignedPayload)
+			if err != nil {
+				log.Errorf("Error during unmarshalling certificate to PEM for image %q: %v", fullImageName, err)
+			}
+			cosignSig.CertPem = certPEM
+
+			chainPEM, err := certificateChainFromSignedPayload(signedPayload.SignedPayload)
+			if err != nil {
+				log.Errorf("Error during unmarshalling certificate chain to PEM for image %q: %v",
+					fullImageName, err)
+			}
+			cosignSig.CertChainPem = chainPEM
+
+			if signedPayload.Bundle != nil {
+				rekorBundle, err := json.Marshal(signedPayload.Bundle)
+				if err != nil {
+					log.Errorf("Error during marshalling rekor bundle for image %q: %v", fullImageName, err)
+				} else {
+					cosignSig.RekorBundle = rekorBundle
+				}
 			}
 		}
 
 		signatures = append(signatures, &storage.Signature{
-			Signature: &storage.Signature_Cosign{
-				Cosign: &storage.CosignSignature{
-					RawSignature:     rawSig,
-					SignaturePayload: signedPayload.Payload,
-					CertPem:          certPEM,
-					CertChainPem:     chainPEM,
-					RekorBundle:      rekorBundle,
-				},
-			},
+			Signature: &storage.Signature_Cosign{Cosign: cosignSig},
 		})
 	}
 

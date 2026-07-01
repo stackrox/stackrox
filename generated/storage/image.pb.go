@@ -264,6 +264,58 @@ func (ImageSignatureVerificationResult_Status) EnumDescriptor() ([]byte, []int) 
 	return file_storage_image_proto_rawDescGZIP(), []int{4, 0}
 }
 
+// Determines how signature_payload is structured and verified.
+type CosignSignature_SignatureFormat int32
+
+const (
+	CosignSignature_UNSPECIFIED CosignSignature_SignatureFormat = 0
+	// signature_payload is SimpleSigning JSON.
+	CosignSignature_SIMPLE_SIGNING CosignSignature_SignatureFormat = 1
+	// signature_payload is a DSSE envelope wrapping an in-toto statement.
+	CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE CosignSignature_SignatureFormat = 2
+)
+
+// Enum value maps for CosignSignature_SignatureFormat.
+var (
+	CosignSignature_SignatureFormat_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "SIMPLE_SIGNING",
+		2: "DEAD_SIMPLE_SIGNING_ENVELOPE",
+	}
+	CosignSignature_SignatureFormat_value = map[string]int32{
+		"UNSPECIFIED":                  0,
+		"SIMPLE_SIGNING":               1,
+		"DEAD_SIMPLE_SIGNING_ENVELOPE": 2,
+	}
+)
+
+func (x CosignSignature_SignatureFormat) Enum() *CosignSignature_SignatureFormat {
+	p := new(CosignSignature_SignatureFormat)
+	*p = x
+	return p
+}
+
+func (x CosignSignature_SignatureFormat) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CosignSignature_SignatureFormat) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_image_proto_enumTypes[4].Descriptor()
+}
+
+func (CosignSignature_SignatureFormat) Type() protoreflect.EnumType {
+	return &file_storage_image_proto_enumTypes[4]
+}
+
+func (x CosignSignature_SignatureFormat) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CosignSignature_SignatureFormat.Descriptor instead.
+func (CosignSignature_SignatureFormat) EnumDescriptor() ([]byte, []int) {
+	return file_storage_image_proto_rawDescGZIP(), []int{10, 0}
+}
+
 // This proto is deprecated and replaced by ImageV2.
 // Next Tag: 19
 //
@@ -1301,14 +1353,18 @@ type Signature_Cosign struct {
 func (*Signature_Cosign) isSignature_Signature() {}
 
 type CosignSignature struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	RawSignature     []byte                 `protobuf:"bytes,1,opt,name=raw_signature,json=rawSignature,proto3" json:"raw_signature,omitempty"`
-	SignaturePayload []byte                 `protobuf:"bytes,2,opt,name=signature_payload,json=signaturePayload,proto3" json:"signature_payload,omitempty"`
-	CertPem          []byte                 `protobuf:"bytes,3,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
-	CertChainPem     []byte                 `protobuf:"bytes,4,opt,name=cert_chain_pem,json=certChainPem,proto3" json:"cert_chain_pem,omitempty"`
-	RekorBundle      []byte                 `protobuf:"bytes,5,opt,name=rekor_bundle,json=rekorBundle,proto3" json:"rekor_bundle,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state            protoimpl.MessageState          `protogen:"open.v1"`
+	RawSignature     []byte                          `protobuf:"bytes,1,opt,name=raw_signature,json=rawSignature,proto3" json:"raw_signature,omitempty"`
+	SignaturePayload []byte                          `protobuf:"bytes,2,opt,name=signature_payload,json=signaturePayload,proto3" json:"signature_payload,omitempty"`
+	CertPem          []byte                          `protobuf:"bytes,3,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
+	CertChainPem     []byte                          `protobuf:"bytes,4,opt,name=cert_chain_pem,json=certChainPem,proto3" json:"cert_chain_pem,omitempty"`
+	RekorBundle      []byte                          `protobuf:"bytes,5,opt,name=rekor_bundle,json=rekorBundle,proto3" json:"rekor_bundle,omitempty"`
+	SignatureFormat  CosignSignature_SignatureFormat `protobuf:"varint,6,opt,name=signature_format,json=signatureFormat,proto3,enum=storage.CosignSignature_SignatureFormat" json:"signature_format,omitempty"`
+	// Raw sigstore bundle JSON. When populated, the bundle is verified directly
+	// via sigstore-go instead of using the decomposed fields above.
+	SigstoreBundle []byte `protobuf:"bytes,7,opt,name=sigstore_bundle,json=sigstoreBundle,proto3" json:"sigstore_bundle,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CosignSignature) Reset() {
@@ -1372,6 +1428,20 @@ func (x *CosignSignature) GetCertChainPem() []byte {
 func (x *CosignSignature) GetRekorBundle() []byte {
 	if x != nil {
 		return x.RekorBundle
+	}
+	return nil
+}
+
+func (x *CosignSignature) GetSignatureFormat() CosignSignature_SignatureFormat {
+	if x != nil {
+		return x.SignatureFormat
+	}
+	return CosignSignature_UNSPECIFIED
+}
+
+func (x *CosignSignature) GetSigstoreBundle() []byte {
+	if x != nil {
+		return x.SigstoreBundle
 	}
 	return nil
 }
@@ -2134,13 +2204,19 @@ const file_storage_image_proto_rawDesc = "" +
 	"\afetched\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\afetched\"L\n" +
 	"\tSignature\x122\n" +
 	"\x06cosign\x18\x01 \x01(\v2\x18.storage.CosignSignatureH\x00R\x06cosignB\v\n" +
-	"\tSignature\"\xc7\x01\n" +
+	"\tSignature\"\x9f\x03\n" +
 	"\x0fCosignSignature\x12#\n" +
 	"\rraw_signature\x18\x01 \x01(\fR\frawSignature\x12+\n" +
 	"\x11signature_payload\x18\x02 \x01(\fR\x10signaturePayload\x12\x19\n" +
 	"\bcert_pem\x18\x03 \x01(\fR\acertPem\x12$\n" +
 	"\x0ecert_chain_pem\x18\x04 \x01(\fR\fcertChainPem\x12!\n" +
-	"\frekor_bundle\x18\x05 \x01(\fR\vrekorBundle\"$\n" +
+	"\frekor_bundle\x18\x05 \x01(\fR\vrekorBundle\x12S\n" +
+	"\x10signature_format\x18\x06 \x01(\x0e2(.storage.CosignSignature.SignatureFormatR\x0fsignatureFormat\x12'\n" +
+	"\x0fsigstore_bundle\x18\a \x01(\fR\x0esigstoreBundle\"X\n" +
+	"\x0fSignatureFormat\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0eSIMPLE_SIGNING\x10\x01\x12 \n" +
+	"\x1cDEAD_SIMPLE_SIGNING_ENVELOPE\x10\x02\"$\n" +
 	"\n" +
 	"V2Metadata\x12\x16\n" +
 	"\x06digest\x18\x01 \x01(\tR\x06digest\"\xfb\x02\n" +
@@ -2223,75 +2299,77 @@ func file_storage_image_proto_rawDescGZIP() []byte {
 	return file_storage_image_proto_rawDescData
 }
 
-var file_storage_image_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_storage_image_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_storage_image_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_storage_image_proto_goTypes = []any{
 	(SourceType)(0),     // 0: storage.SourceType
 	(Image_Note)(0),     // 1: storage.Image.Note
 	(ImageScan_Note)(0), // 2: storage.ImageScan.Note
-	(ImageSignatureVerificationResult_Status)(0), // 3: storage.ImageSignatureVerificationResult.Status
-	(*Image)(nil),                                 // 4: storage.Image
-	(*DataSource)(nil),                            // 5: storage.DataSource
-	(*ImageScan)(nil),                             // 6: storage.ImageScan
-	(*ImageSignatureVerificationData)(nil),        // 7: storage.ImageSignatureVerificationData
-	(*ImageSignatureVerificationResult)(nil),      // 8: storage.ImageSignatureVerificationResult
-	(*EmbeddedImageScanComponent)(nil),            // 9: storage.EmbeddedImageScanComponent
-	(*License)(nil),                               // 10: storage.License
-	(*ImageMetadata)(nil),                         // 11: storage.ImageMetadata
-	(*ImageSignature)(nil),                        // 12: storage.ImageSignature
-	(*Signature)(nil),                             // 13: storage.Signature
-	(*CosignSignature)(nil),                       // 14: storage.CosignSignature
-	(*V2Metadata)(nil),                            // 15: storage.V2Metadata
-	(*V1Metadata)(nil),                            // 16: storage.V1Metadata
-	(*ImageLayer)(nil),                            // 17: storage.ImageLayer
-	(*ImageName)(nil),                             // 18: storage.ImageName
-	(*ListImage)(nil),                             // 19: storage.ListImage
-	(*WatchedImage)(nil),                          // 20: storage.WatchedImage
-	(*BaseImageInfo)(nil),                         // 21: storage.BaseImageInfo
-	(*EmbeddedImageScanComponent_Executable)(nil), // 22: storage.EmbeddedImageScanComponent.Executable
-	nil,                           // 23: storage.V1Metadata.LabelsEntry
-	(*timestamppb.Timestamp)(nil), // 24: google.protobuf.Timestamp
-	(*EmbeddedVulnerability)(nil), // 25: storage.EmbeddedVulnerability
+	(ImageSignatureVerificationResult_Status)(0),  // 3: storage.ImageSignatureVerificationResult.Status
+	(CosignSignature_SignatureFormat)(0),          // 4: storage.CosignSignature.SignatureFormat
+	(*Image)(nil),                                 // 5: storage.Image
+	(*DataSource)(nil),                            // 6: storage.DataSource
+	(*ImageScan)(nil),                             // 7: storage.ImageScan
+	(*ImageSignatureVerificationData)(nil),        // 8: storage.ImageSignatureVerificationData
+	(*ImageSignatureVerificationResult)(nil),      // 9: storage.ImageSignatureVerificationResult
+	(*EmbeddedImageScanComponent)(nil),            // 10: storage.EmbeddedImageScanComponent
+	(*License)(nil),                               // 11: storage.License
+	(*ImageMetadata)(nil),                         // 12: storage.ImageMetadata
+	(*ImageSignature)(nil),                        // 13: storage.ImageSignature
+	(*Signature)(nil),                             // 14: storage.Signature
+	(*CosignSignature)(nil),                       // 15: storage.CosignSignature
+	(*V2Metadata)(nil),                            // 16: storage.V2Metadata
+	(*V1Metadata)(nil),                            // 17: storage.V1Metadata
+	(*ImageLayer)(nil),                            // 18: storage.ImageLayer
+	(*ImageName)(nil),                             // 19: storage.ImageName
+	(*ListImage)(nil),                             // 20: storage.ListImage
+	(*WatchedImage)(nil),                          // 21: storage.WatchedImage
+	(*BaseImageInfo)(nil),                         // 22: storage.BaseImageInfo
+	(*EmbeddedImageScanComponent_Executable)(nil), // 23: storage.EmbeddedImageScanComponent.Executable
+	nil,                           // 24: storage.V1Metadata.LabelsEntry
+	(*timestamppb.Timestamp)(nil), // 25: google.protobuf.Timestamp
+	(*EmbeddedVulnerability)(nil), // 26: storage.EmbeddedVulnerability
 }
 var file_storage_image_proto_depIdxs = []int32{
-	18, // 0: storage.Image.name:type_name -> storage.ImageName
-	18, // 1: storage.Image.names:type_name -> storage.ImageName
-	11, // 2: storage.Image.metadata:type_name -> storage.ImageMetadata
-	6,  // 3: storage.Image.scan:type_name -> storage.ImageScan
-	7,  // 4: storage.Image.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
-	12, // 5: storage.Image.signature:type_name -> storage.ImageSignature
-	24, // 6: storage.Image.last_updated:type_name -> google.protobuf.Timestamp
+	19, // 0: storage.Image.name:type_name -> storage.ImageName
+	19, // 1: storage.Image.names:type_name -> storage.ImageName
+	12, // 2: storage.Image.metadata:type_name -> storage.ImageMetadata
+	7,  // 3: storage.Image.scan:type_name -> storage.ImageScan
+	8,  // 4: storage.Image.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
+	13, // 5: storage.Image.signature:type_name -> storage.ImageSignature
+	25, // 6: storage.Image.last_updated:type_name -> google.protobuf.Timestamp
 	1,  // 7: storage.Image.notes:type_name -> storage.Image.Note
-	21, // 8: storage.Image.base_image_info:type_name -> storage.BaseImageInfo
-	24, // 9: storage.ImageScan.scan_time:type_name -> google.protobuf.Timestamp
-	9,  // 10: storage.ImageScan.components:type_name -> storage.EmbeddedImageScanComponent
-	5,  // 11: storage.ImageScan.data_source:type_name -> storage.DataSource
+	22, // 8: storage.Image.base_image_info:type_name -> storage.BaseImageInfo
+	25, // 9: storage.ImageScan.scan_time:type_name -> google.protobuf.Timestamp
+	10, // 10: storage.ImageScan.components:type_name -> storage.EmbeddedImageScanComponent
+	6,  // 11: storage.ImageScan.data_source:type_name -> storage.DataSource
 	2,  // 12: storage.ImageScan.notes:type_name -> storage.ImageScan.Note
-	8,  // 13: storage.ImageSignatureVerificationData.results:type_name -> storage.ImageSignatureVerificationResult
-	24, // 14: storage.ImageSignatureVerificationResult.verification_time:type_name -> google.protobuf.Timestamp
+	9,  // 13: storage.ImageSignatureVerificationData.results:type_name -> storage.ImageSignatureVerificationResult
+	25, // 14: storage.ImageSignatureVerificationResult.verification_time:type_name -> google.protobuf.Timestamp
 	3,  // 15: storage.ImageSignatureVerificationResult.status:type_name -> storage.ImageSignatureVerificationResult.Status
-	10, // 16: storage.EmbeddedImageScanComponent.license:type_name -> storage.License
-	25, // 17: storage.EmbeddedImageScanComponent.vulns:type_name -> storage.EmbeddedVulnerability
+	11, // 16: storage.EmbeddedImageScanComponent.license:type_name -> storage.License
+	26, // 17: storage.EmbeddedImageScanComponent.vulns:type_name -> storage.EmbeddedVulnerability
 	0,  // 18: storage.EmbeddedImageScanComponent.source:type_name -> storage.SourceType
-	22, // 19: storage.EmbeddedImageScanComponent.executables:type_name -> storage.EmbeddedImageScanComponent.Executable
-	16, // 20: storage.ImageMetadata.v1:type_name -> storage.V1Metadata
-	15, // 21: storage.ImageMetadata.v2:type_name -> storage.V2Metadata
-	5,  // 22: storage.ImageMetadata.data_source:type_name -> storage.DataSource
-	13, // 23: storage.ImageSignature.signatures:type_name -> storage.Signature
-	24, // 24: storage.ImageSignature.fetched:type_name -> google.protobuf.Timestamp
-	14, // 25: storage.Signature.cosign:type_name -> storage.CosignSignature
-	24, // 26: storage.V1Metadata.created:type_name -> google.protobuf.Timestamp
-	17, // 27: storage.V1Metadata.layers:type_name -> storage.ImageLayer
-	23, // 28: storage.V1Metadata.labels:type_name -> storage.V1Metadata.LabelsEntry
-	24, // 29: storage.ImageLayer.created:type_name -> google.protobuf.Timestamp
-	24, // 30: storage.ListImage.created:type_name -> google.protobuf.Timestamp
-	24, // 31: storage.ListImage.last_updated:type_name -> google.protobuf.Timestamp
-	24, // 32: storage.BaseImageInfo.created:type_name -> google.protobuf.Timestamp
-	33, // [33:33] is the sub-list for method output_type
-	33, // [33:33] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	23, // 19: storage.EmbeddedImageScanComponent.executables:type_name -> storage.EmbeddedImageScanComponent.Executable
+	17, // 20: storage.ImageMetadata.v1:type_name -> storage.V1Metadata
+	16, // 21: storage.ImageMetadata.v2:type_name -> storage.V2Metadata
+	6,  // 22: storage.ImageMetadata.data_source:type_name -> storage.DataSource
+	14, // 23: storage.ImageSignature.signatures:type_name -> storage.Signature
+	25, // 24: storage.ImageSignature.fetched:type_name -> google.protobuf.Timestamp
+	15, // 25: storage.Signature.cosign:type_name -> storage.CosignSignature
+	4,  // 26: storage.CosignSignature.signature_format:type_name -> storage.CosignSignature.SignatureFormat
+	25, // 27: storage.V1Metadata.created:type_name -> google.protobuf.Timestamp
+	18, // 28: storage.V1Metadata.layers:type_name -> storage.ImageLayer
+	24, // 29: storage.V1Metadata.labels:type_name -> storage.V1Metadata.LabelsEntry
+	25, // 30: storage.ImageLayer.created:type_name -> google.protobuf.Timestamp
+	25, // 31: storage.ListImage.created:type_name -> google.protobuf.Timestamp
+	25, // 32: storage.ListImage.last_updated:type_name -> google.protobuf.Timestamp
+	25, // 33: storage.BaseImageInfo.created:type_name -> google.protobuf.Timestamp
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_proto_init() }
@@ -2326,7 +2404,7 @@ func file_storage_image_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_proto_rawDesc), len(file_storage_image_proto_rawDesc)),
-			NumEnums:      4,
+			NumEnums:      5,
 			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   0,

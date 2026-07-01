@@ -710,20 +710,21 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 		b64CosignSignature, b64CosignSignaturePayload, nil, nil, nil)
 	require.NoError(t, err, "error creating image")
 
-	sigs, hash, err := retrieveVerificationDataFromImage(img)
+	vsigs, hash, err := retrieveVerificationDataFromImage(img)
 	require.NoError(t, err, "should not fail")
 
-	assert.Len(t, sigs, 1, "expected one signature")
-	sig := sigs[0]
-	b64sig, err := sig.Base64Signature()
+	assert.Len(t, vsigs, 1, "expected one signature")
+	vsig := vsigs[0]
+	b64sig, err := vsig.sig.Base64Signature()
 	require.NoError(t, err)
 	assert.Equal(t, b64CosignSignature, b64sig, "expected the base64 values of the signatures to match")
-	payload, err := sig.Payload()
+	payload, err := vsig.sig.Payload()
 	require.NoError(t, err)
 	expectedPayload, err := base64.StdEncoding.DecodeString(b64CosignSignaturePayload)
 	require.NoError(t, err)
 	assert.Equal(t, expectedPayload, payload, "expected the payloads of the signature to match")
 	assert.Equal(t, imgHash, hash.String(), "expected the hash to match the image's hash")
+	assert.Empty(t, vsig.rawBundle)
 }
 
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {

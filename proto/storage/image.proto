@@ -200,6 +200,20 @@ message CosignSignature {
   bytes cert_pem = 3;
   bytes cert_chain_pem = 4;
   bytes rekor_bundle = 5;
+
+  // Determines how signature_payload is structured and verified.
+  enum SignatureFormat {
+    UNSPECIFIED = 0;
+    // signature_payload is SimpleSigning JSON.
+    SIMPLE_SIGNING = 1;
+    // signature_payload is a DSSE envelope wrapping an in-toto statement.
+    DEAD_SIMPLE_SIGNING_ENVELOPE = 2;
+  }
+  SignatureFormat signature_format = 6;
+
+  // Raw sigstore bundle JSON. When populated, the bundle is verified directly
+  // via sigstore-go instead of using the decomposed fields above.
+  bytes sigstore_bundle = 7;
 }
 
 message V2Metadata {
