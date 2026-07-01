@@ -23,7 +23,6 @@ const ConfigManagementRoutes = () => (
             <Route path={`image/${entityPath}`} element={<EntityPage />} />
             <Route path={`secret/${entityPath}`} element={<EntityPage />} />
             <Route path={`policy/${entityPath}`} element={<EntityPage />} />
-            <Route path={`control/${entityPath}`} element={<EntityPage />} />
             <Route path={`serviceaccount/${entityPath}`} element={<EntityPage />} />
             <Route path={`subject/${entityPath}`} element={<EntityPage />} />
             <Route path={`role/${entityPath}`} element={<EntityPage />} />
@@ -35,7 +34,6 @@ const ConfigManagementRoutes = () => (
             <Route path={`images/${listPath}`} element={<ListPage />} />
             <Route path={`secrets/${listPath}`} element={<ListPage />} />
             <Route path={`policies/${listPath}`} element={<ListPage />} />
-            <Route path={`controls/${listPath}`} element={<ListPage />} />
             <Route path={`serviceaccounts/${listPath}`} element={<ListPage />} />
             <Route path={`subjects/${listPath}`} element={<ListPage />} />
             <Route path={`roles/${listPath}`} element={<ListPage />} />
