@@ -744,7 +744,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) getImageResolver(ctx context.Cont
 	return image
 }
 
-func (s *GraphQLImageVulnerabilityV2TestSuite) getImageVulnerabilityResolver(ctx context.Context, id string) *imageCVEV2Resolver {
+func (s *GraphQLImageVulnerabilityV2TestSuite) getImageVulnerabilityResolver(ctx context.Context, id string) ImageVulnerabilityResolver {
 	vulnID := graphql.ID(id)
 
 	vuln, err := s.resolver.ImageVulnerability(ctx, IDQuery{ID: &vulnID})
@@ -753,7 +753,7 @@ func (s *GraphQLImageVulnerabilityV2TestSuite) getImageVulnerabilityResolver(ctx
 	return vuln
 }
 
-func getCVEList(ctx context.Context, vulns []*imageCVEV2Resolver) []string {
+func getCVEList(ctx context.Context, vulns []ImageVulnerabilityResolver) []string {
 	cveList := make([]string, 0, len(vulns))
 	for _, vuln := range vulns {
 		cveList = append(cveList, vuln.CVE(ctx))

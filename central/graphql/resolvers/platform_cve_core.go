@@ -209,7 +209,7 @@ func (resolver *platformCVECoreResolver) Clusters(ctx context.Context, args stru
 
 // ClusterVulnerability returns the associated cluster vulnerability with the given platform cve.
 // The cluster vulnerability contains metadata for cve like link, summary, etc
-func (resolver *platformCVECoreResolver) ClusterVulnerability(ctx context.Context) (*clusterCVEResolver, error) {
+func (resolver *platformCVECoreResolver) ClusterVulnerability(ctx context.Context) (ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.PlatformCVECore, "ClusterVulnerability")
 
 	cveID := graphql.ID(resolver.data.GetCVEID())
