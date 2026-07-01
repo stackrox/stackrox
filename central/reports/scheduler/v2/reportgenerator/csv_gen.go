@@ -35,38 +35,49 @@ var (
 	}
 )
 
+func formatCSVRow(r *ImageCVEQueryResponse) []string {
+	var epssScore string
+	if r.GetEPSSProbability() != nil {
+		epssScore = strconv.FormatFloat(*r.GetEPSSProbability()*100, 'f', 3, 64)
+	} else {
+		epssScore = "Not Available"
+	}
+	return []string{
+		r.GetCluster(),
+		r.GetNamespace(),
+		r.GetDeployment(),
+		r.GetImage(),
+		r.GetComponent(),
+		r.GetComponentVersion(),
+		r.GetCVE(),
+		strconv.FormatBool(r.GetFixable()),
+		r.GetFixedByVersion(),
+		strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
+		strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+		strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
+		epssScore,
+		r.GetDiscoveredAtImage(),
+		r.Link,
+		r.GetAdvisoryName(),
+		r.GetAdvisoryLink(),
+	}
+}
+
+func csvReportName(configName string) string {
+	truncatedName := configName
+	if len(configName) > 80 {
+		truncatedName = configName[0:80] + "..."
+	}
+	now := time.Now()
+	return fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, now.Format("02_January_2006"))
+}
+
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
 func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
-	// add header for component version
 	csvWriter := csv.NewGenericWriter(csvHeader, true)
 
 	for _, r := range cveResponses {
-		var epssScore string
-		if r.GetEPSSProbability() != nil {
-			epssScore = strconv.FormatFloat(*r.GetEPSSProbability()*100, 'f', 3, 64)
-		} else {
-			epssScore = "Not Available"
-		}
-		row := csv.Value{
-			r.GetCluster(),
-			r.GetNamespace(),
-			r.GetDeployment(),
-			r.GetImage(),
-			r.GetComponent(),
-			r.GetComponentVersion(),
-			r.GetCVE(),
-			strconv.FormatBool(r.GetFixable()),
-			r.GetFixedByVersion(),
-			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
-			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
-			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
-			epssScore,
-			r.GetDiscoveredAtImage(),
-			r.Link,
-			r.GetAdvisoryName(),
-			r.GetAdvisoryLink(),
-		}
-		csvWriter.AddValue(row)
+		csvWriter.AddValue(formatCSVRow(r))
 	}
 
 	var buf bytes.Buffer
@@ -77,17 +88,10 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	truncatedName := configName
-	if len(configName) > 80 {
-		truncatedName = configName[0:80] + "..."
-	}
-
-	now := time.Now()
-	reportName := fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", truncatedName, now.Format("02_January_2006"))
 	header := &zip.FileHeader{
-		Name:     reportName,
+		Name:     csvReportName(configName),
 		Method:   zip.Deflate,
-		Modified: now,
+		Modified: time.Now(),
 	}
 	zipFile, err := zipWriter.CreateHeader(header)
 	if err != nil {
