@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import { Card, Content } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { riskBasePath } from 'routePaths';
+import { riskWorkloadsBasePath } from 'routePaths';
 import type { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import type { ListDeployment } from 'types/deployment.proto';
@@ -110,7 +110,7 @@ function ListeningEndpointsTable({
                                 }}
                             />
                             <Td dataLabel="Deployment">
-                                <Link to={`${riskBasePath}/${id}`}>{name}</Link>
+                                <Link to={`${riskWorkloadsBasePath}/${id}`}>{name}</Link>
                             </Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>

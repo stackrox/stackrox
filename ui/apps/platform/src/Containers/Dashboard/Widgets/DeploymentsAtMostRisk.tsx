@@ -3,7 +3,7 @@ import { Flex, FlexItem, Title } from '@patternfly/react-core';
 
 import WidgetCard from 'Components/PatternFly/WidgetCard';
 import useURLSearch from 'hooks/useURLSearch';
-import { riskBasePath } from 'routePaths';
+import { riskWorkloadsBasePath } from 'routePaths';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentsAtMostRiskTable from './DeploymentsAtMostRiskTable';
 import useDeploymentsAtRisk from '../hooks/useDeploymentsAtRisk';
@@ -27,7 +27,7 @@ function DeploymentsAtMostRisk() {
                         <Title headingLevel="h2">Deployments at most risk</Title>
                     </FlexItem>
                     <FlexItem>
-                        <Link to={`${riskBasePath}?${urlQueryString}`}>View all</Link>
+                        <Link to={`${riskWorkloadsBasePath}?${urlQueryString}`}>View all</Link>
                     </FlexItem>
                 </Flex>
             }

@@ -6,7 +6,7 @@ import {
     clustersBasePath,
     configManagementPath,
     policiesBasePath,
-    riskBasePath,
+    riskWorkloadsBasePath,
     violationsBasePath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesNodeCvesPath,
@@ -41,9 +41,9 @@ type SearchLinkDescriptor = {
 };
 
 const filterOnRisk: SearchLinkDescriptor = {
-    basePath: riskBasePath,
+    basePath: riskWorkloadsBasePath,
     linkText: 'Risk',
-    routeKey: 'risk',
+    routeKey: 'risk/workloads',
     searchParams: 'filteredWorkflowView=Full view',
 };
 
@@ -89,9 +89,9 @@ function getSearchResultCategoryMap(
             },
             viewLinks: [
                 {
-                    basePath: `${riskBasePath}/:id`,
+                    basePath: `${riskWorkloadsBasePath}/:id`,
                     linkText: 'Risk',
-                    routeKey: 'risk',
+                    routeKey: 'risk/workloads',
                     searchParams: 'filteredWorkflowView=Full view',
                 },
             ],
