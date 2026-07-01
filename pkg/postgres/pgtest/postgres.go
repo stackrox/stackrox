@@ -117,8 +117,8 @@ func ensureTemplateDB(t testing.TB) {
 
 	src := conn.GetConnectionStringWithDatabaseName(t, templateDBName)
 	gormDB := OpenGormDB(t, src)
+	defer CloseGormDB(t, gormDB)
 	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
-	CloseGormDB(t, gormDB)
 	success = true
 }
 
