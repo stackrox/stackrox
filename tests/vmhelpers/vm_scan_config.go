@@ -15,11 +15,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -213,13 +211,4 @@ func GenerateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized st
 	authorizedKey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
 
 	return string(pemData), authorizedKey, nil
-}
-
-// mustFindExecutable resolves an executable on PATH for tests that need a known-good binary.
-func mustFindExecutable(t *testing.T, name string) string {
-	t.Helper()
-
-	path, err := exec.LookPath(name)
-	require.NoError(t, err)
-	return path
 }

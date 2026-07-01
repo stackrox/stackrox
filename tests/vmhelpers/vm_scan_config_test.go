@@ -4,12 +4,22 @@ package vmhelpers
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+// mustFindExecutable resolves an executable on PATH for tests that need a known-good binary.
+func mustFindExecutable(t *testing.T, name string) string {
+	t.Helper()
+
+	path, err := exec.LookPath(name)
+	require.NoError(t, err)
+	return path
+}
 
 func TestLoadVMScanConfig_MissingImages(t *testing.T) {
 	t.Setenv("VM_IMAGES", "")
