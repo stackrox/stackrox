@@ -221,6 +221,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		s.handleGetReportError(key, err)
 		return false
 	}
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if result.Unchanged {
 		if s.now().Sub(state.lastForwardedAt) <= mandatoryRefreshAfter {
