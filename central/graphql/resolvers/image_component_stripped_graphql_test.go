@@ -108,67 +108,7 @@ func TestGraphQLQuery(t *testing.T) {
 	}
 	assert.True(t, foundCVE, "CVE-2023-7008 should be found in results")
 
+	dumpTypeMethods(t, reflect.TypeOf((*ImageResolver)(nil)).Elem(), "ImageResolver", false)
+	dumpTypeMethods(t, reflect.TypeOf(&imageResolver{}), "*imageResolver", false)
+	dumpTypeMethods(t, reflect.TypeOf(&imageV2Resolver{}), "*imageV2Resolver", false)
 }
-
-// dumpResolverMethods uses reflection to dump the index and names of methods for a given resolver type.
-// It accepts any resolver value and outputs method information to the test logger.
-//
-// Example usage:
-//
-//	// After creating a resolver instance in a test:
-//	componentResolver, err := resolver.ImageComponent(ctx, struct{ ID *graphql.ID }{ID: &componentID})
-//	require.NoError(t, err)
-//	dumpResolverMethods(t, componentResolver, "imageComponentV2Resolver")
-//
-// Output includes:
-//   - Index of each method (0-based)
-//   - Method name
-//   - Full method signature
-//   - Input parameter types
-//   - Output parameter types
-func dumpResolverMethods(t *testing.T, resolver interface{}, resolverName string) {
-	t.Helper()
-
-	if resolver == nil {
-		t.Logf("Resolver %s is nil", resolverName)
-		return
-	}
-
-	val := reflect.ValueOf(resolver)
-	typ := val.Type()
-
-	t.Logf("\n=== Methods of %s ===", resolverName)
-	t.Logf("Type: %s", typ.String())
-	t.Logf("Kind: %s", typ.Kind())
-	t.Logf("Number of methods: %d\n", typ.NumMethod())
-
-	for i := 0; i < typ.NumMethod(); i++ {
-		method := typ.Method(i)
-		t.Logf("[%d] %s", i, method.Name)
-
-		// Also log the method signature
-		methodType := method.Type
-		t.Logf("    Signature: %s", methodType.String())
-
-		// Log input parameters
-		numIn := methodType.NumIn()
-		if numIn > 0 {
-			t.Logf("    Inputs (%d):", numIn)
-			for j := 0; j < numIn; j++ {
-				t.Logf("      [%d] %s", j, methodType.In(j).String())
-			}
-		}
-
-		// Log return parameters
-		numOut := methodType.NumOut()
-		if numOut > 0 {
-			t.Logf("    Outputs (%d):", numOut)
-			for j := 0; j < numOut; j++ {
-				t.Logf("      [%d] %s", j, methodType.Out(j).String())
-			}
-		}
-		t.Logf("")
-	}
-	t.Logf("=== End of methods for %s ===\n", resolverName)
-}
-
