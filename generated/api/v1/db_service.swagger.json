@@ -147,6 +147,18 @@
         }
       }
     },
+    "DBRestoreProcessStatusState": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NOT_STARTED",
+        "IN_PROGRESS",
+        "PAUSED",
+        "COMPLETED"
+      ],
+      "default": "UNKNOWN",
+      "title": "- COMPLETED: successful if error is empty, unsuccessful otherwise"
+    },
     "DBRestoreRequestHeaderLocalFileInfo": {
       "type": "object",
       "properties": {
@@ -291,7 +303,7 @@
           "type": "string"
         },
         "state": {
-          "$ref": "#/definitions/v1DBRestoreProcessStatusState"
+          "$ref": "#/definitions/DBRestoreProcessStatusState"
         },
         "resumeInfo": {
           "$ref": "#/definitions/DBRestoreProcessStatusResumeInfo",
@@ -312,18 +324,6 @@
           "title": "Files processed so far (approximate)"
         }
       }
-    },
-    "v1DBRestoreProcessStatusState": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "NOT_STARTED",
-        "IN_PROGRESS",
-        "PAUSED",
-        "COMPLETED"
-      ],
-      "default": "UNKNOWN",
-      "title": "- COMPLETED: successful if error is empty, unsuccessful otherwise"
     },
     "v1DBRestoreRequestHeader": {
       "type": "object",

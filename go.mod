@@ -42,7 +42,6 @@ require (
 	github.com/cockroachdb/pebble/v2 v2.1.6
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-oidc/v3 v3.18.0
-	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/dave/jennifer v1.7.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/distribution/reference v0.6.0
@@ -54,7 +53,6 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
-	github.com/godbus/dbus/v5 v5.2.2
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/certificate-transparency-go v1.3.3
 	github.com/google/gnostic-models v0.7.1
@@ -172,7 +170,6 @@ require (
 	k8s.io/cli-runtime v0.35.6
 	k8s.io/client-go v0.35.6
 	k8s.io/kubectl v0.35.6
-	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
 	kubevirt.io/api v1.8.4
 	sigs.k8s.io/controller-runtime v0.23.3
@@ -274,6 +271,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containers/storage v1.59.1 // indirect
+	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect

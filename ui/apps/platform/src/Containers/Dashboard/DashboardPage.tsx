@@ -9,7 +9,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 
 import SummaryCounts from './SummaryCounts';
@@ -20,8 +19,6 @@ import ViolationsByPolicyCategory from './Widgets/ViolationsByPolicyCategory';
 import DeploymentsAtMostRisk from './Widgets/DeploymentsAtMostRisk';
 import AgingImages from './Widgets/AgingImages';
 import ViolationsByPolicySeverity from './Widgets/ViolationsByPolicySeverity';
-import ComplianceLevelsByStandard from './Widgets/ComplianceLevelsByStandard';
-
 // This value is an estimate of the minimum size the widgets need to be to
 // ensure the heading and options do not wrap and break layout.
 const minWidgetWidth = 510;
@@ -30,19 +27,11 @@ function DashboardPage() {
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForAlert = hasReadAccess('Alert');
     const hasReadAccessForCluster = hasReadAccess('Cluster');
-    const hasReadAccessForCompliance = hasReadAccess('Compliance');
     const hasReadAccessForDeployment = hasReadAccess('Deployment');
     const hasReadAccessForImage = hasReadAccess('Image');
     const hasReadAccessForNamespace = hasReadAccess('Namespace');
     const hasReadAccessForNode = hasReadAccess('Node');
     const hasReadAccessForSecret = hasReadAccess('Secret');
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isDeprecatedComplianceDashboardEnabled = isFeatureFlagEnabled(
-        'ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
-    );
-    const hasComplianceLevelsByStandard =
-        isDeprecatedComplianceDashboardEnabled && hasReadAccessForCompliance;
 
     const hasReadAccessForSummaryCounts =
         hasReadAccessForAlert ||
@@ -110,7 +99,6 @@ function DashboardPage() {
                     {hasReadAccessForDeployment && <DeploymentsAtMostRisk />}
                     {hasReadAccessForImage && <AgingImages />}
                     {hasReadAccessForAlert && <ViolationsByPolicyCategory />}
-                    {hasComplianceLevelsByStandard && <ComplianceLevelsByStandard />}
                 </Gallery>
             </PageSection>
         </>

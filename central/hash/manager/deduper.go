@@ -146,14 +146,6 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	case *central.SensorEvent_ImageIntegration:
 		return true
 
-	// Compliance Operator (V1)
-	case *central.SensorEvent_ComplianceOperatorResult,
-		*central.SensorEvent_ComplianceOperatorProfile,
-		*central.SensorEvent_ComplianceOperatorRule,
-		*central.SensorEvent_ComplianceOperatorScanSettingBinding,
-		*central.SensorEvent_ComplianceOperatorScan:
-		return true
-
 	// Virtual Machines
 	case *central.SensorEvent_VirtualMachineIndexReport:
 		return true

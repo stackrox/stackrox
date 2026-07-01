@@ -3,10 +3,7 @@ package dispatchers
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,65 +37,35 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 		return nil
 	}
 
-	// For nextgen compliance this ID is used to tell us which clusters have which profiles.  It is also
-	// useful for the deduping from sensor.
 	uid := string(complianceProfile.UID)
 
-	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:          uid,
-		ProfileId:   complianceProfile.ID,
-		Name:        complianceProfile.Name,
-		Labels:      complianceProfile.Labels,
-		Annotations: complianceProfile.Annotations,
-		Description: complianceProfile.Description,
+	protoProfile := &central.ComplianceOperatorProfileV2{
+		Id:             uid,
+		ProfileId:      complianceProfile.ID,
+		Name:           complianceProfile.Name,
+		ProfileVersion: complianceProfile.Version,
+		Labels:         complianceProfile.Labels,
+		Annotations:    complianceProfile.Annotations,
+		Description:    complianceProfile.Description,
+		Title:          complianceProfile.Title,
+		OperatorKind:   central.ComplianceOperatorProfileV2_PROFILE,
 	}
+
 	for _, r := range complianceProfile.Rules {
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: string(r),
+		protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
+			RuleName: string(r),
 		})
 	}
 
-	events := []*central.SensorEvent{
-		{
-			Id:     uid,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorProfile{
-				ComplianceOperatorProfile: protoProfile,
-			},
+	for _, v := range complianceProfile.Values {
+		protoProfile.Values = append(protoProfile.Values, string(v))
+	}
+
+	return component.NewEvent(&central.SensorEvent{
+		Id:     uid,
+		Action: action,
+		Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+			ComplianceOperatorProfileV2: protoProfile,
 		},
-	}
-
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		protoProfile := &central.ComplianceOperatorProfileV2{
-			Id:             uid,
-			ProfileId:      complianceProfile.ID,
-			Name:           complianceProfile.Name,
-			ProfileVersion: complianceProfile.Version,
-			Labels:         complianceProfile.Labels,
-			Annotations:    complianceProfile.Annotations,
-			Description:    complianceProfile.Description,
-			Title:          complianceProfile.Title,
-			OperatorKind:   central.ComplianceOperatorProfileV2_PROFILE,
-		}
-
-		for _, r := range complianceProfile.Rules {
-			protoProfile.Rules = append(protoProfile.Rules, &central.ComplianceOperatorProfileV2_Rule{
-				RuleName: string(r),
-			})
-		}
-
-		for _, v := range complianceProfile.Values {
-			protoProfile.Values = append(protoProfile.Values, string(v))
-		}
-
-		events = append(events, &central.SensorEvent{
-			Id:     uid,
-			Action: action,
-			Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
-				ComplianceOperatorProfileV2: protoProfile,
-			},
-		})
-	}
-
-	return component.NewEvent(events...)
+	})
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/virtualmachines/relay"
@@ -377,10 +376,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 			return errors.Wrap(err, "receiving msg from sensor")
 		}
 		switch t := msg.GetMsg().(type) {
-		case *sensor.MsgToCompliance_Trigger:
-			if err := compliance_checks.RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
-				return errors.Wrap(err, "running compliance checks")
-			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:
 			switch r := t.AuditLogCollectionRequest.GetReq().(type) {
 			case *sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq:

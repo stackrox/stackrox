@@ -33,7 +33,7 @@ message MsgFromSensor {
   oneof msg {
     SensorEvent event = 1;
     NetworkFlowUpdate network_flow_update = 2;
-    ScrapeUpdate scrape_update = 3;
+    // Field 3 was ScrapeUpdate scrape_update, removed with v1 compliance deletion.
     NetworkPoliciesResponse network_policies_response = 4;
     ClusterStatusUpdate cluster_status_update = 5;
     PullTelemetryDataResponse telemetry_data_response = 6;
@@ -59,7 +59,7 @@ message ReprocessDeployments {
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;
-    ScrapeCommand scrape_command = 2;
+    // Field 2 was ScrapeCommand scrape_command, removed with v1 compliance deletion.
     NetworkPoliciesCommand network_policies_command = 3;
     ClusterConfig cluster_config = 4;
     SensorUpgradeTrigger sensor_upgrade_trigger = 5;

@@ -38,7 +38,6 @@ export const clustersSecureClusterPath = `${clustersBasePath}/secure-a-cluster`;
 export const clustersSecureClusterCrsPath = `${clustersBasePath}/secure-a-cluster-crs`;
 export const collectionsBasePath = `${mainPath}/collections`;
 export const collectionsPath = `${mainPath}/collections/:collectionId?`;
-export const complianceBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedBasePath = `${mainPath}/compliance`;
 export const complianceEnhancedCoveragePath = `${complianceEnhancedBasePath}/coverage`;
 export const complianceEnhancedSchedulesPath = `${complianceEnhancedBasePath}/schedules`;
@@ -169,7 +168,6 @@ export type RouteKey =
     | 'clusters/secure-a-cluster-crs'
     | 'clusters'
     | 'collections'
-    | 'compliance'
     | 'compliance-coverage'
     | 'compliance-schedules'
     | 'configmanagement'
@@ -242,25 +240,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     collections: {
         resourceAccessRequirements: everyResource(['Deployment', 'WorkflowAdministration']),
-    },
-    compliance: {
-        featureFlagRequirements: allEnabled(['ROX_DEPRECATED_COMPLIANCE_DASHBOARD']),
-        // Same resources as compliance-enhanced although lack of commented-out resources affects entire list or entity pages.
-        resourceAccessRequirements: everyResource([
-            // 'Alert', // for Deployment
-            // 'Cluster',
-            'Compliance',
-            // 'Deployment',
-            // 'Image', // for Deployment and Namespace
-            // 'K8sRole', // for Cluster
-            // 'K8sRoleBinding', // for Cluster
-            // 'K8sSubject', // for Cluster
-            // 'Namespace',
-            // 'NetworkPolicy', // for Namespace
-            // 'Node',
-            // 'Secret', // for Deployment and Namespace
-            // 'ServiceAccount', // for Cluster and Deployment
-        ]),
     },
     'compliance-coverage': {
         resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
@@ -477,8 +456,7 @@ export const basePathToLabelMap: Record<string, string> = {
     [networkBasePath]: 'Network Graph',
     [listeningEndpointsBasePath]: 'Listening Endpoints',
     [violationsBasePath]: 'Violations',
-    [complianceBasePath]: 'Compliance',
-    // [complianceEnhancedBasePath]: 'Compliance (2.0)',
+    [complianceEnhancedBasePath]: 'Compliance',
     ...vulnerabilitiesPathToLabelMap,
     ...vulnManagementPathToLabelMap,
     [configManagementPath]: 'Configuration Management',

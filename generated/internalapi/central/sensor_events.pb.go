@@ -7,7 +7,6 @@
 package central
 
 import (
-	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -1148,13 +1147,7 @@ func (x *ContainerInstanceEnforcement) GetDeploymentEnforcement() *DeploymentEnf
 }
 
 type ScrapeCommand struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
-	// Types that are valid to be assigned to Command:
-	//
-	//	*ScrapeCommand_StartScrape
-	//	*ScrapeCommand_KillScrape
-	Command       isScrapeCommand_Command `protobuf_oneof:"command"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1189,160 +1182,15 @@ func (*ScrapeCommand) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ScrapeCommand) GetScrapeId() string {
-	if x != nil {
-		return x.ScrapeId
-	}
-	return ""
-}
-
-func (x *ScrapeCommand) GetCommand() isScrapeCommand_Command {
-	if x != nil {
-		return x.Command
-	}
-	return nil
-}
-
-func (x *ScrapeCommand) GetStartScrape() *StartScrape {
-	if x != nil {
-		if x, ok := x.Command.(*ScrapeCommand_StartScrape); ok {
-			return x.StartScrape
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeCommand) GetKillScrape() *KillScrape {
-	if x != nil {
-		if x, ok := x.Command.(*ScrapeCommand_KillScrape); ok {
-			return x.KillScrape
-		}
-	}
-	return nil
-}
-
-type isScrapeCommand_Command interface {
-	isScrapeCommand_Command()
-}
-
-type ScrapeCommand_StartScrape struct {
-	StartScrape *StartScrape `protobuf:"bytes,2,opt,name=start_scrape,json=startScrape,proto3,oneof"`
-}
-
-type ScrapeCommand_KillScrape struct {
-	KillScrape *KillScrape `protobuf:"bytes,3,opt,name=kill_scrape,json=killScrape,proto3,oneof"`
-}
-
-func (*ScrapeCommand_StartScrape) isScrapeCommand_Command() {}
-
-func (*ScrapeCommand_KillScrape) isScrapeCommand_Command() {}
-
-type StartScrape struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Dictates the hosts we expect results from.
-	Hostnames []string `protobuf:"bytes,1,rep,name=hostnames,proto3" json:"hostnames,omitempty"`
-	// Dictates which standards the compliance pods should run.
-	Standards     []string `protobuf:"bytes,2,rep,name=standards,proto3" json:"standards,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *StartScrape) Reset() {
-	*x = StartScrape{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *StartScrape) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StartScrape) ProtoMessage() {}
-
-func (x *StartScrape) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StartScrape.ProtoReflect.Descriptor instead.
-func (*StartScrape) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *StartScrape) GetHostnames() []string {
-	if x != nil {
-		return x.Hostnames
-	}
-	return nil
-}
-
-func (x *StartScrape) GetStandards() []string {
-	if x != nil {
-		return x.Standards
-	}
-	return nil
-}
-
-type KillScrape struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *KillScrape) Reset() {
-	*x = KillScrape{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *KillScrape) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*KillScrape) ProtoMessage() {}
-
-func (x *KillScrape) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use KillScrape.ProtoReflect.Descriptor instead.
-func (*KillScrape) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{9}
-}
-
 type ScrapeUpdate struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	ScrapeId string                 `protobuf:"bytes,1,opt,name=scrape_id,json=scrapeId,proto3" json:"scrape_id,omitempty"`
-	// Types that are valid to be assigned to Update:
-	//
-	//	*ScrapeUpdate_ComplianceReturn
-	//	*ScrapeUpdate_ScrapeStarted
-	//	*ScrapeUpdate_ScrapeKilled
-	Update        isScrapeUpdate_Update `protobuf_oneof:"update"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScrapeUpdate) Reset() {
 	*x = ScrapeUpdate{}
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1354,7 +1202,7 @@ func (x *ScrapeUpdate) String() string {
 func (*ScrapeUpdate) ProtoMessage() {}
 
 func (x *ScrapeUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1367,75 +1215,83 @@ func (x *ScrapeUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScrapeUpdate.ProtoReflect.Descriptor instead.
 func (*ScrapeUpdate) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{8}
+}
+
+type StartScrape struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartScrape) Reset() {
+	*x = StartScrape{}
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartScrape) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartScrape) ProtoMessage() {}
+
+func (x *StartScrape) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartScrape.ProtoReflect.Descriptor instead.
+func (*StartScrape) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{9}
+}
+
+type KillScrape struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KillScrape) Reset() {
+	*x = KillScrape{}
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KillScrape) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KillScrape) ProtoMessage() {}
+
+func (x *KillScrape) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_sensor_events_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KillScrape.ProtoReflect.Descriptor instead.
+func (*KillScrape) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ScrapeUpdate) GetScrapeId() string {
-	if x != nil {
-		return x.ScrapeId
-	}
-	return ""
-}
-
-func (x *ScrapeUpdate) GetUpdate() isScrapeUpdate_Update {
-	if x != nil {
-		return x.Update
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetComplianceReturn() *compliance.ComplianceReturn {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-			return x.ComplianceReturn
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetScrapeStarted() *ScrapeStarted {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ScrapeStarted); ok {
-			return x.ScrapeStarted
-		}
-	}
-	return nil
-}
-
-func (x *ScrapeUpdate) GetScrapeKilled() *ScrapeKilled {
-	if x != nil {
-		if x, ok := x.Update.(*ScrapeUpdate_ScrapeKilled); ok {
-			return x.ScrapeKilled
-		}
-	}
-	return nil
-}
-
-type isScrapeUpdate_Update interface {
-	isScrapeUpdate_Update()
-}
-
-type ScrapeUpdate_ComplianceReturn struct {
-	ComplianceReturn *compliance.ComplianceReturn `protobuf:"bytes,2,opt,name=compliance_return,json=complianceReturn,proto3,oneof"`
-}
-
-type ScrapeUpdate_ScrapeStarted struct {
-	ScrapeStarted *ScrapeStarted `protobuf:"bytes,3,opt,name=scrape_started,json=scrapeStarted,proto3,oneof"`
-}
-
-type ScrapeUpdate_ScrapeKilled struct {
-	ScrapeKilled *ScrapeKilled `protobuf:"bytes,4,opt,name=scrape_killed,json=scrapeKilled,proto3,oneof"`
-}
-
-func (*ScrapeUpdate_ComplianceReturn) isScrapeUpdate_Update() {}
-
-func (*ScrapeUpdate_ScrapeStarted) isScrapeUpdate_Update() {}
-
-func (*ScrapeUpdate_ScrapeKilled) isScrapeUpdate_Update() {}
-
 type ScrapeStarted struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1470,16 +1326,8 @@ func (*ScrapeStarted) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ScrapeStarted) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
-}
-
 type ScrapeKilled struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ErrorMessage  string                 `protobuf:"bytes,1,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1512,13 +1360,6 @@ func (x *ScrapeKilled) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ScrapeKilled.ProtoReflect.Descriptor instead.
 func (*ScrapeKilled) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_events_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *ScrapeKilled) GetErrorMessage() string {
-	if x != nil {
-		return x.ErrorMessage
-	}
-	return ""
 }
 
 type NetworkPoliciesCommand struct {
@@ -1969,7 +1810,7 @@ var File_internalapi_central_sensor_events_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
+	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\x81\x02\n" +
 	"\fAlertResults\x12#\n" +
@@ -2052,28 +1893,14 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"policyName\"\x8c\x01\n" +
 	"\x1cContainerInstanceEnforcement\x12\x15\n" +
 	"\x06pod_id\x18\x02 \x01(\tR\x05podId\x12U\n" +
-	"\x16deployment_enforcement\x18\x03 \x01(\v2\x1e.central.DeploymentEnforcementR\x15deploymentEnforcement\"\xaa\x01\n" +
-	"\rScrapeCommand\x12\x1b\n" +
-	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x129\n" +
-	"\fstart_scrape\x18\x02 \x01(\v2\x14.central.StartScrapeH\x00R\vstartScrape\x126\n" +
-	"\vkill_scrape\x18\x03 \x01(\v2\x13.central.KillScrapeH\x00R\n" +
-	"killScrapeB\t\n" +
-	"\acommand\"I\n" +
-	"\vStartScrape\x12\x1c\n" +
-	"\thostnames\x18\x01 \x03(\tR\thostnames\x12\x1c\n" +
-	"\tstandards\x18\x02 \x03(\tR\tstandards\"\f\n" +
+	"\x16deployment_enforcement\x18\x03 \x01(\v2\x1e.central.DeploymentEnforcementR\x15deploymentEnforcement\"!\n" +
+	"\rScrapeCommandJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\"&\n" +
+	"\fScrapeUpdateJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05\"\x19\n" +
+	"\vStartScrapeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03\"\f\n" +
 	"\n" +
-	"KillScrape\"\x81\x02\n" +
-	"\fScrapeUpdate\x12\x1b\n" +
-	"\tscrape_id\x18\x01 \x01(\tR\bscrapeId\x12K\n" +
-	"\x11compliance_return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnH\x00R\x10complianceReturn\x12?\n" +
-	"\x0escrape_started\x18\x03 \x01(\v2\x16.central.ScrapeStartedH\x00R\rscrapeStarted\x12<\n" +
-	"\rscrape_killed\x18\x04 \x01(\v2\x15.central.ScrapeKilledH\x00R\fscrapeKilledB\b\n" +
-	"\x06update\"4\n" +
-	"\rScrapeStarted\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"3\n" +
-	"\fScrapeKilled\x12#\n" +
-	"\rerror_message\x18\x01 \x01(\tR\ferrorMessage\"\xaf\x02\n" +
+	"KillScrape\"\x15\n" +
+	"\rScrapeStartedJ\x04\b\x01\x10\x02\"\x14\n" +
+	"\fScrapeKilledJ\x04\b\x01\x10\x02\"\xaf\x02\n" +
 	"\x16NetworkPoliciesCommand\x12\x15\n" +
 	"\x06seq_id\x18\x01 \x01(\x03R\x05seqId\x12A\n" +
 	"\apayload\x18\x02 \x01(\v2'.central.NetworkPoliciesCommand.PayloadR\apayload\x1aj\n" +
@@ -2127,9 +1954,9 @@ var file_internalapi_central_sensor_events_proto_goTypes = []any{
 	(*DeploymentEnforcement)(nil),                        // 7: central.DeploymentEnforcement
 	(*ContainerInstanceEnforcement)(nil),                 // 8: central.ContainerInstanceEnforcement
 	(*ScrapeCommand)(nil),                                // 9: central.ScrapeCommand
-	(*StartScrape)(nil),                                  // 10: central.StartScrape
-	(*KillScrape)(nil),                                   // 11: central.KillScrape
-	(*ScrapeUpdate)(nil),                                 // 12: central.ScrapeUpdate
+	(*ScrapeUpdate)(nil),                                 // 10: central.ScrapeUpdate
+	(*StartScrape)(nil),                                  // 11: central.StartScrape
+	(*KillScrape)(nil),                                   // 12: central.KillScrape
 	(*ScrapeStarted)(nil),                                // 13: central.ScrapeStarted
 	(*ScrapeKilled)(nil),                                 // 14: central.ScrapeKilled
 	(*NetworkPoliciesCommand)(nil),                       // 15: central.NetworkPoliciesCommand
@@ -2172,8 +1999,7 @@ var file_internalapi_central_sensor_events_proto_goTypes = []any{
 	(*ComplianceOperatorSuiteV2)(nil),                    // 52: central.ComplianceOperatorSuiteV2
 	(*ComplianceOperatorRemediationV2)(nil),              // 53: central.ComplianceOperatorRemediationV2
 	(storage.EnforcementAction)(0),                       // 54: storage.EnforcementAction
-	(*compliance.ComplianceReturn)(nil),                  // 55: compliance.ComplianceReturn
-	(*storage.NetworkPolicyModification)(nil),            // 56: storage.NetworkPolicyModification
+	(*storage.NetworkPolicyModification)(nil),            // 55: storage.NetworkPolicyModification
 }
 var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	23, // 0: central.AlertResults.alerts:type_name -> storage.Alert
@@ -2217,23 +2043,18 @@ var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	7,  // 38: central.SensorEnforcement.deployment:type_name -> central.DeploymentEnforcement
 	8,  // 39: central.SensorEnforcement.container_instance:type_name -> central.ContainerInstanceEnforcement
 	7,  // 40: central.ContainerInstanceEnforcement.deployment_enforcement:type_name -> central.DeploymentEnforcement
-	10, // 41: central.ScrapeCommand.start_scrape:type_name -> central.StartScrape
-	11, // 42: central.ScrapeCommand.kill_scrape:type_name -> central.KillScrape
-	55, // 43: central.ScrapeUpdate.compliance_return:type_name -> compliance.ComplianceReturn
-	13, // 44: central.ScrapeUpdate.scrape_started:type_name -> central.ScrapeStarted
-	14, // 45: central.ScrapeUpdate.scrape_killed:type_name -> central.ScrapeKilled
-	19, // 46: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
-	22, // 47: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
-	56, // 48: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
-	18, // 49: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
-	56, // 50: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
-	21, // 51: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
-	20, // 52: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
-	53, // [53:53] is the sub-list for method output_type
-	53, // [53:53] is the sub-list for method input_type
-	53, // [53:53] is the sub-list for extension type_name
-	53, // [53:53] is the sub-list for extension extendee
-	0,  // [0:53] is the sub-list for field type_name
+	19, // 41: central.NetworkPoliciesCommand.payload:type_name -> central.NetworkPoliciesCommand.Payload
+	22, // 42: central.NetworkPoliciesResponse.payload:type_name -> central.NetworkPoliciesResponse.Payload
+	55, // 43: central.NetworkPoliciesCommand.Apply.modification:type_name -> storage.NetworkPolicyModification
+	18, // 44: central.NetworkPoliciesCommand.Payload.apply:type_name -> central.NetworkPoliciesCommand.Apply
+	55, // 45: central.NetworkPoliciesResponse.Apply.undo_modification:type_name -> storage.NetworkPolicyModification
+	21, // 46: central.NetworkPoliciesResponse.Payload.error:type_name -> central.NetworkPoliciesResponse.Error
+	20, // 47: central.NetworkPoliciesResponse.Payload.apply:type_name -> central.NetworkPoliciesResponse.Apply
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_sensor_events_proto_init() }
@@ -2280,15 +2101,6 @@ func file_internalapi_central_sensor_events_proto_init() {
 	file_internalapi_central_sensor_events_proto_msgTypes[4].OneofWrappers = []any{
 		(*SensorEnforcement_Deployment)(nil),
 		(*SensorEnforcement_ContainerInstance)(nil),
-	}
-	file_internalapi_central_sensor_events_proto_msgTypes[7].OneofWrappers = []any{
-		(*ScrapeCommand_StartScrape)(nil),
-		(*ScrapeCommand_KillScrape)(nil),
-	}
-	file_internalapi_central_sensor_events_proto_msgTypes[10].OneofWrappers = []any{
-		(*ScrapeUpdate_ComplianceReturn)(nil),
-		(*ScrapeUpdate_ScrapeStarted)(nil),
-		(*ScrapeUpdate_ScrapeKilled)(nil),
 	}
 	file_internalapi_central_sensor_events_proto_msgTypes[17].OneofWrappers = []any{
 		(*NetworkPoliciesCommand_Payload_Apply)(nil),

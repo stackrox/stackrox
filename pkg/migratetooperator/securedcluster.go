@@ -4,12 +4,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/pointers"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/pointers"
 )
 
 // TransformToSecuredCluster detects the configuration from the given source and

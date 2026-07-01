@@ -3,12 +3,10 @@ import withAuth from '../../helpers/basicAuth';
 import {
     hasCountWidgetsFor,
     hasTabsFor,
-    interactAndWaitForConfigurationManagementScan,
     navigateToSingleEntityPage,
     verifyTableLinkToSidePanelTable,
     verifyWidgetLinkToTableFromSidePanel,
     verifyWidgetLinkToTableFromSinglePage,
-    visitConfigurationManagementDashboard,
     visitConfigurationManagementEntities,
     visitConfigurationManagementEntityInSidePanel,
 } from './ConfigurationManagement.helpers';
@@ -40,7 +38,6 @@ describe('Configuration Management Clusters', () => {
             'Users & Groups',
             'Service Accounts',
             'Roles',
-            'Controls',
         ]);
     });
 
@@ -56,7 +53,6 @@ describe('Configuration Management Clusters', () => {
             'subjects',
             'serviceaccounts',
             'roles',
-            'controls',
         ]);
     });
 
@@ -152,30 +148,6 @@ describe('Configuration Management Clusters', () => {
         it('in side panel', () => {
             verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
         });
-    });
-
-    describe('should go to controls table from widget link', () => {
-        const entitiesKey2 = 'controls';
-
-        it('in single page', () => {
-            verifyWidgetLinkToTableFromSinglePage(entitiesKey, entitiesKey2);
-        });
-
-        it('in side panel', () => {
-            verifyWidgetLinkToTableFromSidePanel(entitiesKey, entitiesKey2);
-        });
-    });
-
-    // ROX-13011: Prevent failures, pending investigation into reason why No Controls instead of link sometimes.
-    it.skip('should go from table link to controls table in side panel', () => {
-        visitConfigurationManagementDashboard();
-
-        // This test assumes that scan results are available
-        interactAndWaitForConfigurationManagementScan(() => {
-            cy.get('[data-testid="scan-button"]').click();
-        });
-
-        verifyTableLinkToSidePanelTable(entitiesKey, 'controls');
     });
 
     it('should go from table link to subjects table in side panel', () => {

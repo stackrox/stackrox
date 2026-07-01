@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -37,13 +36,8 @@ func init() {
 			"clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!",
 			"clusterVulnerabilityCount(query: String): Int!",
 			"clusterVulnerabilityCounter(query: String): VulnerabilityCounter!",
-			"complianceResults(query: String): [ControlResult!]!",
-			"complianceControlCount(query: String): ComplianceControlCount!",
-			"controlStatus(query: String): String!",
-			"controls(query: String): [ComplianceControl!]!",
 			"deployments(query: String, pagination: Pagination): [Deployment!]!",
 			"deploymentCount(query: String): Int!",
-			"failingControls(query: String): [ComplianceControl!]!",
 			"failingPolicyCounter(query: String): PolicyCounter",
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
@@ -76,7 +70,6 @@ func init() {
 			"nodeVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!",
 			"openShiftClusterVulnerabilityCount(query: String): Int!",
-			"passingControls(query: String): [ComplianceControl!]!",
 			"platformCVECountByFixability(query: String): PlatformCVECountByFixability!",
 			"platformCVECountByType(query: String): PlatformCVECountByType!",
 			"plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!",
@@ -308,24 +301,6 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 func (resolver *clusterResolver) NamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "NamespaceCount")
 	return resolver.root.NamespaceCount(resolver.clusterScopeContext(ctx), args)
-}
-
-func (resolver *clusterResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComplianceResults")
-
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-
-	runResults, err := resolver.root.ComplianceAggregator.GetResultsWithEvidence(ctx, args.String())
-	if err != nil {
-		return nil, err
-	}
-	output := newBulkControlResults()
-	output.addClusterData(resolver.root, runResults, nil)
-	output.addDeploymentData(resolver.root, runResults, nil)
-	output.addNodeData(resolver.root, runResults, nil)
-	return *output, nil
 }
 
 // K8sRoles returns GraphQL resolvers for all k8s roles
@@ -780,114 +755,6 @@ func (resolver *clusterResolver) SecretCount(ctx context.Context, args RawQuery)
 		return 0, err
 	}
 	return int32(len(result)), nil
-}
-
-func (resolver *clusterResolver) ControlStatus(ctx context.Context, args RawQuery) (string, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ControlStatus")
-
-	if err := readCompliance(ctx); err != nil {
-		return "Fail", err
-	}
-	r, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER}, args)
-	if err != nil || r == nil {
-		return "Fail", err
-	}
-	if len(r) != 1 {
-		return "Fail", errors.Errorf("unexpected number of results: expected: 1, actual: %d", len(r))
-	}
-	return getControlStatusFromAggregationResult(r[0]), nil
-}
-
-func (resolver *clusterResolver) Controls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Controls")
-
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
-	if err != nil || rs == nil {
-		return nil, err
-	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, all, resolver.root.ComplianceStandardStore))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
-}
-
-func (resolver *clusterResolver) PassingControls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "PassingControls")
-
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
-	if err != nil || rs == nil {
-		return nil, err
-	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, passing, resolver.root.ComplianceStandardStore))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
-}
-
-func (resolver *clusterResolver) FailingControls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "FailingControls")
-
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	rs, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
-	if err != nil || rs == nil {
-		return nil, err
-	}
-	resolvers, err := resolver.root.wrapComplianceControls(getComplianceControlsFromAggregationResults(rs, failing, resolver.root.ComplianceStandardStore))
-	if err != nil {
-		return nil, err
-	}
-	return resolvers, nil
-}
-
-func (resolver *clusterResolver) ComplianceControlCount(ctx context.Context, args RawQuery) (*complianceControlCountResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComplianceControlCount")
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	results, err := resolver.getLastSuccessfulComplianceRunResult(ctx, []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER, storage.ComplianceAggregation_CONTROL}, args)
-	if err != nil {
-		return nil, err
-	}
-	if results == nil {
-		return &complianceControlCountResolver{}, nil
-	}
-	return getComplianceControlCountFromAggregationResults(results), nil
-}
-
-func (resolver *clusterResolver) getLastSuccessfulComplianceRunResult(ctx context.Context, scope []storage.ComplianceAggregation_Scope, args RawQuery) ([]*storage.ComplianceAggregation_Result, error) {
-	if err := readCompliance(ctx); err != nil {
-		return nil, err
-	}
-	standardIDs, err := getStandardIDs(ctx, resolver.root.ComplianceStandardStore)
-	if err != nil {
-		return nil, err
-	}
-	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, resolver.data.GetId(), standardIDs)
-	if err != nil || !hasComplianceSuccessfullyRun {
-		return nil, err
-	}
-	query, err := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).RawQuery()
-	if err != nil {
-		return nil, err
-	}
-	if args.Query != nil {
-		query = strings.Join([]string{query, *(args.Query)}, "+")
-	}
-	r, _, _, err := resolver.root.ComplianceAggregator.Aggregate(ctx, query, scope, storage.ComplianceAggregation_CONTROL)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
 }
 
 func (resolver *clusterResolver) getActiveDeployAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {

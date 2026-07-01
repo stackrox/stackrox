@@ -1,11 +1,10 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"path"
-
-	_ "embed"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/migrations"

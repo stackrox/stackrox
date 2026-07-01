@@ -19,7 +19,6 @@ import {
     clustersSecureClusterCrsPath,
     clustersSecureClusterPath,
     collectionsPath,
-    complianceBasePath,
     complianceEnhancedCoveragePath,
     complianceEnhancedSchedulesPath,
     configManagementPath,
@@ -169,10 +168,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/ComplianceEnhanced/Schedules/ScanConfigsPage')
         ),
         path: complianceEnhancedSchedulesPath,
-    },
-    compliance: {
-        component: asyncComponent(() => import('Containers/Compliance/Page')),
-        path: complianceBasePath,
     },
     configmanagement: {
         component: asyncComponent(

@@ -14,15 +14,6 @@ export const CLUSTERS_QUERY = gql`
                     openshiftVersion
                 }
             }
-            complianceResults {
-                resource {
-                    __typename
-                }
-                control {
-                    id
-                    name
-                }
-            }
             policyStatus {
                 status
                 failingPolicies {
