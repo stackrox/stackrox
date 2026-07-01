@@ -24,7 +24,7 @@ jobs:
 
   # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
-    if: inputs.should-run == 'true'
+    if: inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -168,7 +168,7 @@ jobs:
 
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
-    if: inputs.should-run == 'true'
+    if: inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -311,7 +311,7 @@ jobs:
 
   # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
-    if: inputs.should-run == 'true'
+    if: inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}

@@ -22,7 +22,7 @@ defaults:
 
 jobs:
   gke-nongroovy-e2e-tests:
-    if: inputs.should-run == 'true'
+    if: inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
