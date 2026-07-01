@@ -118,6 +118,19 @@ var VMDiscoveredData = prometheus.NewCounterVec(
 	[]string{"detected_os", "activation_status", "dnf_metadata_status"},
 )
 
+// VMDiscoveredDataDNFStatus is a counter for individual DNF status flags observed
+// on VMs, reported by either push- or pull-mode roxagent. This avoids high-cardinality
+// label combinations by tracking one flag per sample.
+var VMDiscoveredDataDNFStatus = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_discovered_data_dnf_status_total",
+		Help:      "Total number of DNF status flags observed in VM index reports received by Sensor",
+	},
+	[]string{"dnf_status"},
+)
+
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
 // Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportAcksReceived = prometheus.NewCounterVec(
@@ -250,6 +263,7 @@ func init() {
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
+		VMDiscoveredDataDNFStatus,
 		IndexReportAcksReceived,
 		// Pull-mode metrics.
 		PullDialDurationSeconds,
