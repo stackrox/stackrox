@@ -36,5 +36,4 @@ describe('Configuration Management Nodes', () => {
         navigateToSingleEntityPage(entitiesKey);
         hasRelatedEntityFor('Cluster');
     });
-
 });
