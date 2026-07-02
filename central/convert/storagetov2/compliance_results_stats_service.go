@@ -153,6 +153,51 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 	return convertedResults
 }
 
+// ComplianceV2TrendDataPoints converts trend data points to the v2 API response format
+func ComplianceV2TrendDataPoints(dataPoints []*datastore.ComplianceTrendDataPoint) []*v2.ComplianceScanTrendDataPoint {
+	var converted []*v2.ComplianceScanTrendDataPoint
+	for _, dp := range dataPoints {
+		var scanTime *types.Timestamp
+		if dp.LastStartedTime != nil {
+			scanTime = protoconv.ConvertTimeToTimestampOrNil(*dp.LastStartedTime)
+		}
+		converted = append(converted, &v2.ComplianceScanTrendDataPoint{
+			ScanTime: scanTime,
+			CheckStats: []*v2.ComplianceCheckStatusCount{
+				{
+					Count:  int32(dp.PassCount),
+					Status: v2.ComplianceCheckStatus_PASS,
+				},
+				{
+					Count:  int32(dp.FailCount),
+					Status: v2.ComplianceCheckStatus_FAIL,
+				},
+				{
+					Count:  int32(dp.ErrorCount),
+					Status: v2.ComplianceCheckStatus_ERROR,
+				},
+				{
+					Count:  int32(dp.InfoCount),
+					Status: v2.ComplianceCheckStatus_INFO,
+				},
+				{
+					Count:  int32(dp.ManualCount),
+					Status: v2.ComplianceCheckStatus_MANUAL,
+				},
+				{
+					Count:  int32(dp.NotApplicableCount),
+					Status: v2.ComplianceCheckStatus_NOT_APPLICABLE,
+				},
+				{
+					Count:  int32(dp.InconsistentCount),
+					Status: v2.ComplianceCheckStatus_INCONSISTENT,
+				},
+			},
+		})
+	}
+	return converted
+}
+
 func convertBenchmarks(incoming []*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceBenchmark {
 	var convertedBenchmarks []*v2.ComplianceBenchmark
 	for _, benchmark := range incoming {
