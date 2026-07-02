@@ -122,17 +122,22 @@ jobs:
     env:
       POSTGRES_PASSWORD: testpassword
     steps:
+    - name: Checkout
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+
     # Runner's postgres is initialized with C.UTF-8 locale (GHA default).
     # Tests (e.g. central/splunk) require byte-order collation.
     - name: Start Postgres (pre-installed)
       if: matrix.pg == 'default'
       run: |
+        # Run on tmpfs to avoid disk I/O overhead in tests.
+        PG_VER=$(pg_lsclusters -h | awk '{print $1}')
+        sudo pg_dropcluster --stop "$PG_VER" main
+        sudo mount -t tmpfs -o size=1G tmpfs /var/lib/postgresql
         # the unit tests expect a local postgres with passwordless access.
-        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
+        sudo pg_createcluster "$PG_VER" main -- --auth=trust
+        sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
         sudo systemctl start postgresql.service
-
-    - name: Checkout
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
 
     # Image pinned in .github/test-images/postgres.dockerfile (Dependabot auto-bumps).
     - name: Start Postgres (${{ matrix.pg }})
@@ -140,6 +145,8 @@ jobs:
       run: |
         docker build -t postgres-test -f .github/test-images/postgres.dockerfile .
         docker run --rm -d --name postgres --network=host \
+          --tmpfs /var/lib/pgsql/data:rw,size=1G \
+          -v "$GITHUB_WORKSPACE/.github/test-images/postgres-ci.conf:/opt/app-root/src/postgresql-cfg/ci.conf:ro" \
           -e POSTGRESQL_ADMIN_PASSWORD="$POSTGRES_PASSWORD" \
           -e LANG=C.UTF-8 \
           postgres-test
@@ -199,18 +206,20 @@ jobs:
     needs: detect-changes
     if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
-    env:
-      BUILD_TAG: 0.0.0
-      SHORTCOMMIT: "0000000"
     steps:
-    - name: Start Postgres
-      run: |
-        # the unit tests expect a local postgres with passwordless access. Change  host to 'trust'
-        sudo sed -i '/^host/s/scram-sha-256/trust/' /etc/postgresql/*/main/pg_hba.conf
-        sudo systemctl start postgresql.service
-
     - name: Checkout
       uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+
+    - name: Start Postgres
+      run: |
+        # Run on tmpfs to avoid disk I/O overhead in tests.
+        PG_VER=$(pg_lsclusters -h | awk '{print $1}')
+        sudo pg_dropcluster --stop "$PG_VER" main
+        sudo mount -t tmpfs -o size=1G tmpfs /var/lib/postgresql
+        # the unit tests expect a local postgres with passwordless access.
+        sudo pg_createcluster "$PG_VER" main -- --auth=trust
+        sudo cp .github/test-images/postgres-ci.conf "/etc/postgresql/$PG_VER/main/conf.d/ci.conf"
+        sudo systemctl start postgresql.service
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -221,11 +230,20 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        timeout 60 bash -c 'until pg_isready; do sleep 1; done' \
+        timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
           || { sudo journalctl -u postgresql --no-pager -n 20; exit 1; }
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
+
+    - name: Postgres diagnostics
+      if: failure()
+      run: |
+        pg_isready -h 127.0.0.1 || true
+        pg_lsclusters || true
+        df -h /var/lib/postgresql || true
+        sudo journalctl -u postgresql --no-pager -n 40 || true
+        sudo cat /var/log/postgresql/postgresql-*-main.log | tail -60 || true
 
     - name: Generate junit report
       if: always()
