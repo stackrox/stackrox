@@ -22,6 +22,25 @@ export type FileMetadata = {
     mode: number | null; // only relevant for PERMISSION_CHANGE events
     username: string | null; // only relevant for OWNERSHIP_CHANGE events
     group: string | null; // only relevant for OWNERSHIP_CHANGE events
+    aclType: AclType | null; // only relevant for ACL_CHANGE events
+    aclEntries: AclEntry[]; // only relevant for ACL_CHANGE events
+};
+
+export type AclTag =
+    | 'ACL_TAG_UNSPECIFIED'
+    | 'ACL_TAG_USER_OBJ'
+    | 'ACL_TAG_USER'
+    | 'ACL_TAG_GROUP_OBJ'
+    | 'ACL_TAG_GROUP'
+    | 'ACL_TAG_MASK'
+    | 'ACL_TAG_OTHER';
+
+export type AclType = 'ACL_TYPE_UNSPECIFIED' | 'ACL_TYPE_ACCESS' | 'ACL_TYPE_DEFAULT';
+
+export type AclEntry = {
+    tag: AclTag;
+    perm: number; // Permission bits (e.g. 7 = rwx, 6 = rw-, 4 = r--)
+    id: number; // uid or gid for USER/GROUP entries, 0xFFFFFFFF when not applicable
 };
 
 export type FileOperation =
@@ -30,4 +49,5 @@ export type FileOperation =
     | 'RENAME'
     | 'PERMISSION_CHANGE'
     | 'OWNERSHIP_CHANGE'
-    | 'OPEN';
+    | 'OPEN'
+    | 'ACL_CHANGE';
