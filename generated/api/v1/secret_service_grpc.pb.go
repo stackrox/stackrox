@@ -20,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SecretService_GetSecret_FullMethodName    = "/v1.SecretService/GetSecret"
-	SecretService_CountSecrets_FullMethodName = "/v1.SecretService/CountSecrets"
-	SecretService_ListSecrets_FullMethodName  = "/v1.SecretService/ListSecrets"
+	SecretService_GetSecret_FullMethodName           = "/v1.SecretService/GetSecret"
+	SecretService_CountSecrets_FullMethodName        = "/v1.SecretService/CountSecrets"
+	SecretService_ListSecrets_FullMethodName         = "/v1.SecretService/ListSecrets"
+	SecretService_ListSecretsExtended_FullMethodName = "/v1.SecretService/ListSecretsExtended"
 )
 
 // SecretServiceClient is the client API for SecretService service.
@@ -35,6 +36,8 @@ type SecretServiceClient interface {
 	CountSecrets(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountSecretsResponse, error)
 	// ListSecrets returns the list of secrets.
 	ListSecrets(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListSecretsResponse, error)
+	// ListSecretsExtended returns the list of secrets with optional extended information.
+	ListSecretsExtended(ctx context.Context, in *ListSecretsExtendedRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error)
 }
 
 type secretServiceClient struct {
@@ -75,6 +78,16 @@ func (c *secretServiceClient) ListSecrets(ctx context.Context, in *RawQuery, opt
 	return out, nil
 }
 
+func (c *secretServiceClient) ListSecretsExtended(ctx context.Context, in *ListSecretsExtendedRequest, opts ...grpc.CallOption) (*ListSecretsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSecretsResponse)
+	err := c.cc.Invoke(ctx, SecretService_ListSecretsExtended_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SecretServiceServer is the server API for SecretService service.
 // All implementations should embed UnimplementedSecretServiceServer
 // for forward compatibility.
@@ -85,6 +98,8 @@ type SecretServiceServer interface {
 	CountSecrets(context.Context, *RawQuery) (*CountSecretsResponse, error)
 	// ListSecrets returns the list of secrets.
 	ListSecrets(context.Context, *RawQuery) (*ListSecretsResponse, error)
+	// ListSecretsExtended returns the list of secrets with optional extended information.
+	ListSecretsExtended(context.Context, *ListSecretsExtendedRequest) (*ListSecretsResponse, error)
 }
 
 // UnimplementedSecretServiceServer should be embedded to have
@@ -102,6 +117,9 @@ func (UnimplementedSecretServiceServer) CountSecrets(context.Context, *RawQuery)
 }
 func (UnimplementedSecretServiceServer) ListSecrets(context.Context, *RawQuery) (*ListSecretsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSecrets not implemented")
+}
+func (UnimplementedSecretServiceServer) ListSecretsExtended(context.Context, *ListSecretsExtendedRequest) (*ListSecretsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSecretsExtended not implemented")
 }
 func (UnimplementedSecretServiceServer) testEmbeddedByValue() {}
 
@@ -177,6 +195,24 @@ func _SecretService_ListSecrets_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SecretService_ListSecretsExtended_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSecretsExtendedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SecretServiceServer).ListSecretsExtended(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SecretService_ListSecretsExtended_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SecretServiceServer).ListSecretsExtended(ctx, req.(*ListSecretsExtendedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SecretService_ServiceDesc is the grpc.ServiceDesc for SecretService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -195,6 +231,10 @@ var SecretService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListSecrets",
 			Handler:    _SecretService_ListSecrets_Handler,
+		},
+		{
+			MethodName: "ListSecretsExtended",
+			Handler:    _SecretService_ListSecretsExtended_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
