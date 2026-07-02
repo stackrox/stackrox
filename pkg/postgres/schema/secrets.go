@@ -30,6 +30,9 @@ var (
 				},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "secrets_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS secrets_sac_filter ON secrets USING btree (clusterid, namespace)"},
+		},
 	}
 
 	// SecretsSchema is the go schema for table `secrets`.
@@ -60,9 +63,9 @@ const (
 type Secrets struct {
 	ID          string     `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string     `gorm:"column:name;type:varchar"`
-	ClusterID   string     `gorm:"column:clusterid;type:uuid;index:secrets_sac_filter,type:btree"`
+	ClusterID   string     `gorm:"column:clusterid;type:uuid"`
 	ClusterName string     `gorm:"column:clustername;type:varchar"`
-	Namespace   string     `gorm:"column:namespace;type:varchar;index:secrets_sac_filter,type:btree"`
+	Namespace   string     `gorm:"column:namespace;type:varchar"`
 	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
 	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }

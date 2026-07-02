@@ -8,12 +8,14 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgPostgres "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +62,8 @@ func (s *SchemaTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 	_, err = s.pool.Exec(s.ctx, "CREATE SCHEMA public")
 	s.Require().NoError(err)
+
+	ApplyAllSchemas(s.ctx, s.gormDB)
 }
 
 func (s *SchemaTestSuite) TearDownSuite() {
@@ -102,6 +106,105 @@ func (s *SchemaTestSuite) TestTableNameSanity() {
 func (s *SchemaTestSuite) TestReentry() {
 	ApplyAllSchemas(s.ctx, s.gormDB)
 	ApplyAllSchemas(s.ctx, s.gormDB)
+}
+
+func (s *SchemaTestSuite) resetTestIndexTable() {
+	s.registerTestIndexTable()
+	_, err := s.pool.Exec(s.ctx, "DROP TABLE IF EXISTS idx_test_applies CASCADE")
+	s.Require().NoError(err)
+	ApplySchemaForTable(s.ctx, s.gormDB, "idx_test_applies")
+}
+
+func (s *SchemaTestSuite) TestApplyAllIndexes() {
+	s.resetTestIndexTable()
+	err := ApplyAllIndexes(s.ctx, s.pool, 30*time.Second)
+	s.Require().NoError(err)
+
+	created := s.getIndexNames("idx_test_applies")
+	s.Contains(created, "idxtestapply_col_a")
+	s.Contains(created, "idxtestapply_composite")
+	s.Contains(created, "idxtestapply_bg_col")
+	s.Contains(created, "idxtestapply_unique_col", "unique index should exist from GORM AutoMigrate")
+}
+
+func (s *SchemaTestSuite) TestApplyIndexesIdempotent() {
+	s.resetTestIndexTable()
+	s.Require().NoError(ApplyAllIndexes(s.ctx, s.pool, 30*time.Second))
+	s.Require().NoError(ApplyAllIndexes(s.ctx, s.pool, 30*time.Second))
+}
+
+func (s *SchemaTestSuite) TestInvalidIndexDropAndRecreate() {
+	s.resetTestIndexTable()
+
+	_, err := s.pool.Exec(s.ctx, "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)")
+	s.Require().NoError(err)
+	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a")
+
+	_, err = s.pool.Exec(s.ctx,
+		`UPDATE pg_index SET indisvalid = false
+		 WHERE indexrelid = (SELECT oid FROM pg_class WHERE relname = 'idxtestapply_col_a')`)
+	s.Require().NoError(err)
+	s.NotContains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
+		"index should not appear in valid set after invalidation")
+
+	err = ApplyAllIndexes(s.ctx, s.pool, 30*time.Second)
+	s.Require().NoError(err)
+	s.Contains(s.getIndexNames("idx_test_applies"), "idxtestapply_col_a",
+		"index should be valid again after reconciliation")
+}
+
+type IdxTestApply struct {
+	ID        string `gorm:"column:id;type:text;primaryKey"`
+	ColA      string `gorm:"column:col_a;type:text"`
+	ColB      string `gorm:"column:col_b;type:text"`
+	UniqueCol string `gorm:"column:unique_col;type:text;uniqueIndex:idxtestapply_unique_col"`
+	BgCol     string `gorm:"column:bg_col;type:text"`
+}
+
+func (s *SchemaTestSuite) registerTestIndexTable() {
+	const tableName = "idx_test_applies"
+	if _, exists := registeredTables[tableName]; exists {
+		return
+	}
+	schema := &walker.Schema{
+		Table: tableName,
+		Type:  "storage.IdxTestApply",
+	}
+	stmt := &pkgPostgres.CreateStmts{
+		GormModel: (*IdxTestApply)(nil),
+		Indexes: []*pkgPostgres.IndexDefinition{
+			{Name: "idxtestapply_col_a", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_col_a ON idx_test_applies USING btree (col_a)"},
+			{Name: "idxtestapply_composite", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_composite ON idx_test_applies USING btree (col_a, col_b)"},
+			{Name: "idxtestapply_bg_col", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS idxtestapply_bg_col ON idx_test_applies USING btree (bg_col)"},
+		},
+	}
+	registeredTables[tableName] = &registeredTable{
+		Schema:             schema,
+		CreateStmt:         stmt,
+		FeatureEnabledFunc: func() bool { return true },
+	}
+	s.T().Cleanup(func() {
+		delete(registeredTables, tableName)
+	})
+}
+
+func (s *SchemaTestSuite) getIndexNames(table string) set.StringSet {
+	rows, err := s.pool.Query(s.ctx,
+		`SELECT c.relname FROM pg_index i
+		 JOIN pg_class c ON c.oid = i.indexrelid
+		 JOIN pg_class t ON t.oid = i.indrelid
+		 WHERE t.relname = $1 AND i.indisvalid`, table)
+	s.Require().NoError(err)
+	defer rows.Close()
+
+	result := set.NewStringSet()
+	for rows.Next() {
+		var name string
+		s.Require().NoError(rows.Scan(&name))
+		result.Add(name)
+	}
+	s.Require().NoError(rows.Err())
+	return result
 }
 
 func (s *SchemaTestSuite) getAllTestCases() []string {

@@ -26,6 +26,9 @@ var (
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorrulev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorrulev2_sac_filter ON compliance_operator_rule_v2 USING hash (clusterid)"},
+		},
 	}
 
 	// ComplianceOperatorRuleV2Schema is the go schema for table `compliance_operator_rule_v2`.
@@ -63,7 +66,7 @@ type ComplianceOperatorRuleV2 struct {
 	Name       string               `gorm:"column:name;type:varchar"`
 	RuleType   string               `gorm:"column:ruletype;type:varchar"`
 	Severity   storage.RuleSeverity `gorm:"column:severity;type:integer"`
-	ClusterID  string               `gorm:"column:clusterid;type:uuid;index:complianceoperatorrulev2_sac_filter,type:hash"`
+	ClusterID  string               `gorm:"column:clusterid;type:uuid"`
 	RuleRefID  string               `gorm:"column:rulerefid;type:uuid"`
 	Serialized []byte               `gorm:"column:serialized;type:bytea"`
 }

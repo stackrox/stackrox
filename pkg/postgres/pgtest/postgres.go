@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lib/pq"
 	"github.com/stackrox/rox/pkg/env"
@@ -102,6 +103,7 @@ func ForT(t testing.TB) *TestPostgres {
 
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
+	require.NoError(t, pkgSchema.ApplyAllIndexes(context.Background(), pool, 30*time.Second))
 
 	testPg := &TestPostgres{
 		DB:       pool,

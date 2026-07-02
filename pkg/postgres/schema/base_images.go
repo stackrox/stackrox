@@ -26,6 +26,9 @@ var (
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "baseimages_firstlayerdigest", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS baseimages_firstlayerdigest ON base_images USING btree (firstlayerdigest)"},
+		},
 	}
 
 	// BaseImagesSchema is the go schema for table `base_images`.
@@ -76,7 +79,7 @@ type BaseImages struct {
 	ManifestDigest           string                `gorm:"column:manifestdigest;type:varchar"`
 	DiscoveredAt             *time.Time            `gorm:"column:discoveredat;type:timestamp"`
 	Active                   bool                  `gorm:"column:active;type:bool"`
-	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
+	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar"`
 	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

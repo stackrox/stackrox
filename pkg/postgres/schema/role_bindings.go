@@ -24,6 +24,9 @@ var (
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "rolebindings_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS rolebindings_sac_filter ON role_bindings USING btree (namespace, clusterid)"},
+		},
 	}
 
 	// RoleBindingsSchema is the go schema for table `role_bindings`.
@@ -52,8 +55,8 @@ const (
 type RoleBindings struct {
 	ID          string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name        string            `gorm:"column:name;type:varchar"`
-	Namespace   string            `gorm:"column:namespace;type:varchar;index:rolebindings_sac_filter,type:btree"`
-	ClusterID   string            `gorm:"column:clusterid;type:uuid;index:rolebindings_sac_filter,type:btree"`
+	Namespace   string            `gorm:"column:namespace;type:varchar"`
+	ClusterID   string            `gorm:"column:clusterid;type:uuid"`
 	ClusterName string            `gorm:"column:clustername;type:varchar"`
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
