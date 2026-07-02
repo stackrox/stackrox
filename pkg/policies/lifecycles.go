@@ -1,6 +1,8 @@
 package policies
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -20,10 +22,5 @@ func AppliesAtRunTime(policy *storage.Policy) bool {
 }
 
 func appliesAt(policy *storage.Policy, lc storage.LifecycleStage) bool {
-	for _, stage := range policy.GetLifecycleStages() {
-		if stage == lc {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(policy.GetLifecycleStages(), lc)
 }

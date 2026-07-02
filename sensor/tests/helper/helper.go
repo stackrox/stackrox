@@ -96,12 +96,7 @@ type K8sResourceInfo struct {
 var requiredWaitResources = []string{"Service"}
 
 func shouldRetryResource(kind string) bool {
-	for _, k := range requiredWaitResources {
-		if k == kind {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(requiredWaitResources, kind)
 }
 
 // ObjByKind returns the supported dynamic k8s resources that can be created

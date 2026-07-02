@@ -1,6 +1,7 @@
 package common
 
 import (
+	"slices"
 	"strings"
 	"unicode"
 
@@ -39,12 +40,9 @@ func CheckAtLeastOnePolicyEnabledReferringToVulns(ctx framework.ComplianceContex
 			framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
 			continue
 		}
-		for _, cveField := range policyfields.GetCVEs(policy) {
-			if checkCVEIsNotSingleRegexMatch(cveField) {
-				vulnPolicyIDs.Add(policy.GetId())
-				framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
-				break
-			}
+		if slices.ContainsFunc(policyfields.GetCVEs(policy), checkCVEIsNotSingleRegexMatch) {
+			vulnPolicyIDs.Add(policy.GetId())
+			framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
 		}
 	}
 	if vulnPolicyIDs.Cardinality() == 0 {

@@ -32,10 +32,7 @@ func (r *testReader) Read(buf []byte) (int, error) {
 	if len(r.data) == 0 {
 		return 0, io.EOF
 	}
-	toRead := len(buf)
-	if toRead > len(r.data) {
-		toRead = len(r.data)
-	}
+	toRead := min(len(buf), len(r.data))
 
 	copy(buf[:toRead], r.data[:toRead])
 	r.data = r.data[toRead:]

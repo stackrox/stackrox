@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"testing"
 )
 
@@ -20,10 +21,8 @@ func MustBeInTest(t testing.TB) {
 	if v := flag.Lookup("test.v"); v != nil && v.Value.String() == "true" {
 		return
 	}
-	for _, arg := range os.Args {
-		if testArgRegex.MatchString(arg) {
-			return
-		}
+	if slices.ContainsFunc(os.Args, testArgRegex.MatchString) {
+		return
 	}
 	if t == nil || t.Name() == "" {
 		panic(fmt.Sprintf("invalid testing T: %+v", t))

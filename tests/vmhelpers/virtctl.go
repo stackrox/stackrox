@@ -149,10 +149,7 @@ func formatDeadlineRemaining(ctx context.Context) string {
 	if !ok {
 		return "none"
 	}
-	remaining := time.Until(deadline).Round(time.Second)
-	if remaining < 0 {
-		remaining = 0
-	}
+	remaining := max(time.Until(deadline).Round(time.Second), 0)
 	return remaining.String()
 }
 

@@ -31,10 +31,7 @@ func (r *readerWithErr) Read(buf []byte) (int, error) {
 		return 0, err
 	}
 
-	toRead := len(buf)
-	if toRead > len(r.data) {
-		toRead = len(r.data)
-	}
+	toRead := min(len(buf), len(r.data))
 	copy(buf[:toRead], r.data[:toRead])
 	r.data = r.data[toRead:]
 	return toRead, nil

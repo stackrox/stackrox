@@ -1,18 +1,15 @@
 package unified
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 func isLifecycleStage(policy *storage.Policy, stage storage.LifecycleStage) bool {
-	for _, s := range policy.GetLifecycleStages() {
-		if s == stage {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(policy.GetLifecycleStages(), stage)
 }
 
 func reconcilePolicySets(newList []*storage.Policy, policySet detection.PolicySet, matcher func(p *storage.Policy) bool) {

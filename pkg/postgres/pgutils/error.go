@@ -3,6 +3,7 @@ package pgutils
 import (
 	"io"
 	"net"
+	"slices"
 	"syscall"
 
 	"github.com/jackc/pgx/v5"
@@ -58,10 +59,8 @@ func IsTransientError(err error) bool {
 		return false
 	}
 	if multiError := (*errorhelpers.ErrorList)(nil); errors.As(err, &multiError) {
-		for _, err := range multiError.Errors() {
-			if IsTransientError(err) {
-				return true
-			}
+		if slices.ContainsFunc(multiError.Errors(), IsTransientError) {
+			return true
 		}
 	}
 	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) {

@@ -88,10 +88,7 @@ func (r *RingBuffer) ReadFirst(num int) [][]byte {
 // beginning of the buffer). The returned chunks are only valid until the next call to either `Write` or `Reset`.
 func (r *RingBuffer) Read(from, num int) [][]byte {
 	if from < 0 {
-		from = r.fill + from
-		if from < 0 {
-			from = 0
-		}
+		from = max(r.fill+from, 0)
 	}
 	if from >= r.fill {
 		return nil

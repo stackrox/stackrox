@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 
 	scanStore "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore/store/postgres"
@@ -300,13 +301,7 @@ func (s *vmScanV2DataStoreTestSuite) TestSACNamespaceScopedAccess() {
 			// Test Exists for a scan in cluster1 namespaceA
 			exists, err := s.datastore.Exists(ctx, scan1.GetId())
 			s.NoError(err)
-			expectedExists := false
-			for _, id := range tc.expectedIDs {
-				if id == scan1.GetId() {
-					expectedExists = true
-					break
-				}
-			}
+			expectedExists := slices.Contains(tc.expectedIDs, scan1.GetId())
 			s.Equal(expectedExists, exists)
 
 			// Test Get for a scan in cluster1 namespaceA

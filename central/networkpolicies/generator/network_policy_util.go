@@ -1,17 +1,14 @@
 package generator
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
 )
 
 func checkPolicyType(policy *storage.NetworkPolicy, policyType storage.NetworkPolicyType) bool {
-	for _, ty := range policy.GetSpec().GetPolicyTypes() {
-		if ty == policyType {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(policy.GetSpec().GetPolicyTypes(), policyType)
 }
 
 func groupNetworkPolicies(policies []*storage.NetworkPolicy) (ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) {

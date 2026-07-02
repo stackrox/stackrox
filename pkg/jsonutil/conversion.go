@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -88,10 +89,5 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 }
 
 func contains(options []ConversionOption, opt ConversionOption) bool {
-	for _, o := range options {
-		if o == opt {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, opt)
 }

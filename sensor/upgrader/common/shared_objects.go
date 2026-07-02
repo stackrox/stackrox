@@ -1,6 +1,8 @@
 package common
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/pods"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -32,10 +34,5 @@ var (
 
 // IsSharedObject checks if the given object is a shared object.
 func IsSharedObject(objRef k8sobjects.ObjectRef) bool {
-	for _, sharedObjRef := range SharedObjects {
-		if objRef == sharedObjRef {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(SharedObjects, objRef)
 }

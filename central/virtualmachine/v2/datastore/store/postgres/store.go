@@ -477,10 +477,7 @@ func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, com
 		return nil
 	}
 
-	batchSize := pgSearch.MaxBatchSize
-	if len(components) < batchSize {
-		batchSize = len(components)
-	}
+	batchSize := min(len(components), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -536,10 +533,7 @@ func (s *storeImpl) copyFromCVEs(ctx context.Context, tx *postgres.Tx, cves []*s
 		return nil
 	}
 
-	batchSize := pgSearch.MaxBatchSize
-	if len(cves) < batchSize {
-		batchSize = len(cves)
-	}
+	batchSize := min(len(cves), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

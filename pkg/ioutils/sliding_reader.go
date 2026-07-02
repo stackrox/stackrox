@@ -179,10 +179,7 @@ func (r *slidingReaderWithChecksum) Read(buf []byte) (int, error) {
 	}
 
 	if r.readOffset > 0 {
-		n := r.readOffset
-		if n > len(buf) {
-			n = len(buf)
-		}
+		n := min(r.readOffset, len(buf))
 
 		for _, chunk := range r.ringBuf.Read(-r.readOffset, n) {
 			copy(buf[:len(chunk)], chunk)

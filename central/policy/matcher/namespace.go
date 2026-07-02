@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,12 +42,7 @@ func (m *namespaceMatcher) IsPolicyApplicable(_ context.Context, policy *storage
 }
 
 func (m *namespaceMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bool {
-	for _, exclusion := range exclusions {
-		if m.exclusionMatches(exclusion) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(exclusions, m.exclusionMatches)
 }
 
 func (m *namespaceMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
@@ -58,12 +54,7 @@ func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 		return true
 	}
 
-	for _, scope := range scopes {
-		if m.scopeMatches(scope) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(scopes, m.scopeMatches)
 }
 
 func (m *namespaceMatcher) scopeMatches(scope *storage.Scope) bool {

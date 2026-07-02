@@ -1,6 +1,8 @@
 package storagetov2
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/central/views/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -114,11 +116,8 @@ func VirtualMachineComponentV2ToRow(comp *storage.VirtualMachineComponentV2) *v2
 		return nil
 	}
 	scanStatus := v2.ScanStatus_SCANNED
-	for _, n := range comp.GetNotes() {
-		if n == storage.VirtualMachineComponentV2_UNSCANNED {
-			scanStatus = v2.ScanStatus_NOT_SCANNED
-			break
-		}
+	if slices.Contains(comp.GetNotes(), storage.VirtualMachineComponentV2_UNSCANNED) {
+		scanStatus = v2.ScanStatus_NOT_SCANNED
 	}
 	return &v2.VMComponentRow{
 		Id:         comp.GetId(),

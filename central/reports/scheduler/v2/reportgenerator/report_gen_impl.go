@@ -3,6 +3,7 @@ package reportgenerator
 import (
 	"bytes"
 	"context"
+	"slices"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -538,12 +539,7 @@ func (rg *reportGeneratorImpl) logAndUpsertError(ctx context.Context, reportErr 
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
 	target storage.VulnerabilityReportFilters_ImageType) bool {
-	for _, typ := range imageTypes {
-		if typ == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(imageTypes, target)
 }
 
 func selectSchema() *walker.Schema {

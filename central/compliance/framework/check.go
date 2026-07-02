@@ -1,6 +1,10 @@
 package framework
 
-import pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+import (
+	"slices"
+
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+)
 
 // A Check is a single piece of logic executed as part of a compliance run. It usually corresponds to one or multiple
 // controls in a compliance standard.
@@ -73,12 +77,7 @@ func (c *checkFromFunc) AppliesToScope(scope pkgFramework.TargetKind) bool {
 	if c.metadata.Scope == scope {
 		return true
 	}
-	for _, addlScope := range c.metadata.AdditionalScopes {
-		if addlScope == scope {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.metadata.AdditionalScopes, scope)
 }
 
 func (c *checkFromFunc) DataDependencies() []string {

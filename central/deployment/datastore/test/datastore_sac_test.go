@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -302,13 +303,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeployments() {
 			ctx := s.testContexts[c.ScopeKey]
 			expectedIDs := make([]string, 0, len(c.ExpectedDeploymentIDs))
 			for _, ID := range c.ExpectedDeploymentIDs {
-				found := false
-				for _, testID := range testIDs {
-					if ID == testID {
-						found = true
-						break
-					}
-				}
+				found := slices.Contains(testIDs, ID)
 				if found {
 					expectedIDs = append(expectedIDs, ID)
 				}

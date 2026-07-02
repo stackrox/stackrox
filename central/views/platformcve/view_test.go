@@ -793,10 +793,7 @@ func (s *PlatformCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter 
 	if limit == 0 {
 		return expected
 	}
-	end := offset + limit
-	if end > len(expected) {
-		end = len(expected)
-	}
+	end := min(offset+limit, len(expected))
 	return expected[offset:end]
 }
 

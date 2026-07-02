@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -137,21 +139,17 @@ func constructNodeRuntimeAlert(policy *storage.Policy, node *storage.Node, viola
 }
 
 func buildEnforcement(policy *storage.Policy) (enforcement storage.EnforcementAction, message string) {
-	for _, enforcementAction := range policy.GetEnforcementActions() {
-		if enforcementAction == storage.EnforcementAction_KILL_POD_ENFORCEMENT {
-			return storage.EnforcementAction_KILL_POD_ENFORCEMENT,
-				"StackRox killed pods in deployment in response to this policy violation."
-		}
+	if slices.Contains(policy.GetEnforcementActions(), storage.EnforcementAction_KILL_POD_ENFORCEMENT) {
+		return storage.EnforcementAction_KILL_POD_ENFORCEMENT,
+			"StackRox killed pods in deployment in response to this policy violation."
 	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
 }
 
 func buildKubeEventEnforcement(policy *storage.Policy) (enforcement storage.EnforcementAction, message string) {
-	for _, enforcementAction := range policy.GetEnforcementActions() {
-		if enforcementAction == storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT {
-			return storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
-				"StackRox failed Kubernetes request in response to this policy violation."
-		}
+	if slices.Contains(policy.GetEnforcementActions(), storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT) {
+		return storage.EnforcementAction_FAIL_KUBE_REQUEST_ENFORCEMENT,
+			"StackRox failed Kubernetes request in response to this policy violation."
 	}
 	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
 }

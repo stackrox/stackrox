@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"slices"
 
 	"github.com/stackrox/rox/pkg/auth"
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
@@ -33,10 +34,8 @@ func (p *roleChecker) checkRole(roleNames []string) error {
 		return auth.ErrNoValidRole
 	}
 
-	for _, roleName := range roleNames {
-		if roleName == p.roleName {
-			return nil
-		}
+	if slices.Contains(roleNames, p.roleName) {
+		return nil
 	}
 
 	return errox.NotAuthorized.CausedByf("role %q is required", p.roleName)
