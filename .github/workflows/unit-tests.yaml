@@ -13,8 +13,8 @@ on:
     - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
+  group: cache-test-a-${{ github.run_id }}
+  cancel-in-progress: false
 
 env:
   # Stable version ldflags for test caching: Go's test cache keys include
@@ -58,8 +58,76 @@ jobs:
       with:
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Pre-test GOCACHE analysis
+      run: |
+        set +e
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries BEFORE test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries BEFORE test: $cov"
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries AFTER test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries AFTER test: $cov"
+        echo ""
+        echo "=== testcache stderr analysis ==="
+        if [[ -f /tmp/go-test-stderr.txt ]]; then
+          echo "Total testcache lines: $(grep -c 'testcache:' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Phase 1 misses: $(grep -c 'input list not found' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Cover profile missing: $(grep -c 'cover profile missing' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Bad checksum: $(grep -c 'bad checksum' /tmp/go-test-stderr.txt || echo 0)"
+          echo "Saves: $(grep -c 'save test ID' /tmp/go-test-stderr.txt || echo 0)"
+          echo ""
+          echo "Sample cover profile misses:"
+          grep 'cover profile missing' /tmp/go-test-stderr.txt | head -3 || true
+          echo ""
+          echo "Sample Phase 1 misses:"
+          grep 'input list not found' /tmp/go-test-stderr.txt | head -3 || true
+        else
+          echo "stderr file not found"
+        fi
+        exit 0
+      shell: bash
+
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        export GODEBUG=gocachetest=1
+        ${{ matrix.gotags }} make go-unit-tests 2> >(tee /tmp/go-test-stderr.txt >&2) | tee /tmp/go-test-output.txt
+
+
+    - name: Cache diagnostics
+      if: always()
+      run: |
+        set +e
+        if [[ -f /tmp/go-test-output.txt ]]; then
+          cached=$(grep -c '(cached)' /tmp/go-test-output.txt || true)
+          total=$(grep -cE 'ok\s+github\.com/stackrox' /tmp/go-test-output.txt || true)
+          echo "Test cache: $cached/$total cached"
+        fi
+        if [[ -f /tmp/go-test-stderr.txt ]]; then
+          echo ""
+          echo "=== testcache Phase 1 misses (input list not found) ==="
+          grep -c 'input list not found' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache Phase 2 misses (cover profile missing) ==="
+          grep -c 'cover profile missing' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache expired ==="
+          grep -c 'expired' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== testcache saves ==="
+          grep -c 'save test ID' /tmp/go-test-stderr.txt || echo 0
+          echo ""
+          echo "=== Sample Phase 1 misses ==="
+          grep 'input list not found' /tmp/go-test-stderr.txt | head -5
+          echo ""
+          echo "=== Sample Phase 2 misses ==="
+          grep -E 'cover profile missing|input file.*changed' /tmp/go-test-stderr.txt | head -5
+        fi
+        exit 0
+      shell: bash
 
     - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v3
       with:
@@ -169,6 +237,17 @@ jobs:
           timeout 60 bash -c 'until pg_isready -h 127.0.0.1; do sleep 1; done' \
             || { docker logs postgres; exit 1; }
         fi
+
+    - name: Pre-test GOCACHE analysis
+      run: |
+        set +e
+        gocache="$(go env GOCACHE)"
+        total=$(find "$gocache" -type f 2>/dev/null | wc -l | tr -d ' ')
+        echo "GOCACHE entries BEFORE test: $total"
+        cov=$(find "$gocache" -type f -name '*-d' -exec sh -c 'head -c 5 "$1" 2>/dev/null | grep -q "mode:" && echo 1' _ {} \; 2>/dev/null | wc -l | tr -d ' ')
+        echo "Coverage profile entries BEFORE test: $cov"
+        exit 0
+      shell: bash
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests

@@ -137,7 +137,7 @@ function go_run() (
 
 function go_test() (
   unset GOOS
-  invoke_go test "$@"
+  invoke_go test -trimpath "$@"
 )
 
 case "$TOOL" in
