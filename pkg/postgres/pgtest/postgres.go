@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -29,6 +30,8 @@ const (
 	defaultDatabaseName = "postgres"
 
 	templateDBName = "test_template"
+
+	templateAdvisoryLockID int64 = 0x7E57DA7ABA5E
 )
 
 // TestPostgres is a Postgres instance used in tests
@@ -81,22 +84,27 @@ func DropDatabase(t testing.TB, database string) {
 	}
 }
 
+var templateOnce sync.Once
+
 func ensureTemplateDB(t testing.TB) {
+	templateOnce.Do(func() {
+		createTemplateDB(t)
+	})
+}
+
+func createTemplateDB(t testing.TB) {
 	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
 	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
 	require.NoError(t, err)
 	defer func() { require.NoError(t, db.Close()) }()
 
-	// Serialize across concurrent test binaries.
-	_, err = db.Exec("SELECT pg_advisory_lock(1)")
+	_, err = db.Exec("SELECT pg_advisory_lock($1)", templateAdvisoryLockID)
 	require.NoError(t, err)
-	defer func() { _, _ = db.Exec("SELECT pg_advisory_unlock(1)") }()
+	defer func() { _, _ = db.Exec("SELECT pg_advisory_unlock($1)", templateAdvisoryLockID) }()
 
 	var exists bool
 	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)", templateDBName).Scan(&exists)
 	require.NoError(t, err)
-	// CI Postgres is ephemeral per job (fresh runner VM or docker run --rm), so an
-	// existing template is always from the current schema in this job.
 	if exists {
 		t.Log("reusing existing test template database")
 		return
@@ -106,8 +114,6 @@ func ensureTemplateDB(t testing.TB) {
 	_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(templateDBName))
 	require.NoError(t, err)
 
-	// Drop the template if schema population fails so the next caller
-	// does not clone an incomplete database.
 	success := false
 	defer func() {
 		if !success {
