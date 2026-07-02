@@ -11,12 +11,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
-type pubSubRegister interface {
+type pubSubDispatcher interface {
 	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	Publish(pubsub.Event) error
 }
 
 // New instantiates a Resolver component.
-func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int, pubsubDispatcher pubSubRegister) (component.Resolver, error) {
+func New(outputQueue component.OutputQueue, provider store.Provider, queueSize int, dispatcher pubSubDispatcher) (component.Resolver, error) {
 	res := &resolverImpl{
 		outputQueue:           outputQueue,
 		innerQueue:            make(chan *component.ResourceEvent, queueSize),
@@ -26,15 +27,16 @@ func New(outputQueue component.OutputQueue, provider store.Provider, queueSize i
 		deploymentRefQueue:    nil,
 	}
 	if features.SensorInternalPubSub.Enabled() {
-		if pubsubDispatcher == nil {
+		if dispatcher == nil {
 			return nil, errors.Errorf("pubsub dispatcher is null and the feature flag %q is enabled", features.SensorInternalPubSub.EnvVar())
 		}
-		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.KubernetesDispatcherEventTopic, pubsub.KubernetesDispatcherEventLane, res.ProcessResourceEvent); err != nil {
+		if err := dispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.KubernetesDispatcherEventTopic, pubsub.KubernetesDispatcherEventLane, res.ProcessResourceEvent); err != nil {
 			return nil, errors.Wrapf(err, "unable to register resolver as consumer of topic %q in lane %q", pubsub.KubernetesDispatcherEventTopic.String(), pubsub.KubernetesDispatcherEventLane.String())
 		}
-		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.FromCentralResolverEventTopic, pubsub.FromCentralResolverEventLane, res.ProcessResourceEvent); err != nil {
+		if err := dispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.FromCentralResolverEventTopic, pubsub.FromCentralResolverEventLane, res.ProcessResourceEvent); err != nil {
 			return nil, errors.Wrapf(err, "unable to register resolver as consumer of topic %q in lane %q", pubsub.FromCentralResolverEventTopic.String(), pubsub.FromCentralResolverEventLane.String())
 		}
+		res.pubsubDispatcher = dispatcher
 	}
 	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() {
 		res.deploymentRefQueue = dedupingqueue.NewDedupingQueue[string](

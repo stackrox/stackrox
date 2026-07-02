@@ -47,9 +47,12 @@ func New(clusterID clusterIDWaiter,
 	pubSub *internalmessage.MessageSubscriber,
 	pubSubDispatcher component.PubSubDispatcher,
 ) (common.SensorComponent, error) {
-	outputQueue := output.New(detector, queueSize)
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
 		return nil, errors.Errorf("unable to initialize the event pipeline. %q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
+	outputQueue, err := output.New(detector, queueSize, pubSubDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to initialize the output queue")
 	}
 	depResolver, err := resolver.New(outputQueue, storeProvider, queueSize, pubSubDispatcher)
 	if err != nil {

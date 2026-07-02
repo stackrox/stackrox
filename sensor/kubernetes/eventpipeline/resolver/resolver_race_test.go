@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
@@ -32,15 +33,16 @@ type raceTestEnv struct {
 	t        *testing.T
 	resolver *resolverImpl
 
-	mockDeploymentStore *mocksStore.MockDeploymentStore
-	mockRBACStore       *mocksStore.MockRBACStore
-	mockServiceStore    *mocksStore.MockServiceStore
-	mockEndpointManager *mocksStore.MockEndpointManager
+	mockDeploymentStore  *mocksStore.MockDeploymentStore
+	mockRBACStore        *mocksStore.MockRBACStore
+	mockServiceStore     *mocksStore.MockServiceStore
+	mockEndpointManager  *mocksStore.MockEndpointManager
+	mockPubSubDispatcher *mocks.MockPubSubDispatcher
 
 	sentEvents []*component.ResourceEvent
 }
 
-func newRaceTestEnv(t *testing.T) *raceTestEnv {
+func newRaceTestEnv(t *testing.T, pubSubEnabled bool) *raceTestEnv {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -58,10 +60,6 @@ func newRaceTestEnv(t *testing.T) *raceTestEnv {
 		mockEndpointManager: endpointMgr,
 	}
 
-	mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event *component.ResourceEvent) {
-		env.sentEvents = append(env.sentEvents, event)
-	})
-
 	var queue *dedupingqueue.DedupingQueue[string]
 	if features.SensorAggregateDeploymentReferenceOptimization.Enabled() {
 		queue = dedupingqueue.NewDedupingQueue[string]()
@@ -78,6 +76,22 @@ func newRaceTestEnv(t *testing.T) *raceTestEnv {
 		stopper:               concurrency.NewStopper(),
 		pullAndResolveStopped: concurrency.NewSignal(),
 		deploymentRefQueue:    queue,
+	}
+
+	if pubSubEnabled {
+		dispatcher := mocks.NewMockPubSubDispatcher(ctrl)
+		dispatcher.EXPECT().Publish(gomock.Any()).AnyTimes().DoAndReturn(func(event pubsub.Event) error {
+			if e, ok := event.(*component.ResourceEvent); ok {
+				env.sentEvents = append(env.sentEvents, e)
+			}
+			return nil
+		})
+		env.mockPubSubDispatcher = dispatcher
+		env.resolver.pubsubDispatcher = dispatcher
+	} else {
+		mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event *component.ResourceEvent) {
+			env.sentEvents = append(env.sentEvents, event)
+		})
 	}
 
 	return env
@@ -301,16 +315,19 @@ func TestResolverRaceScenarios(t *testing.T) {
 			ffStates = append(ffStates, false)
 		}
 		for _, ffEnabled := range ffStates {
-			t.Run(fmt.Sprintf("%s/ff=%t", name, ffEnabled), func(t *testing.T) {
-				synctest.Test(t, func(t *testing.T) {
-					t.Setenv(features.SensorAggregateDeploymentReferenceOptimization.EnvVar(),
-						fmt.Sprintf("%t", ffEnabled))
-					env := newRaceTestEnv(t)
-					for _, step := range tc.steps {
-						step(env)
-					}
+			for _, pubSubEnabled := range []bool{false, true} {
+				t.Run(fmt.Sprintf("%s/ff=%t/pubsub=%t", name, ffEnabled, pubSubEnabled), func(t *testing.T) {
+					synctest.Test(t, func(t *testing.T) {
+						t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+						t.Setenv(features.SensorAggregateDeploymentReferenceOptimization.EnvVar(),
+							fmt.Sprintf("%t", ffEnabled))
+						env := newRaceTestEnv(t, pubSubEnabled)
+						for _, step := range tc.steps {
+							step(env)
+						}
+					})
 				})
-			})
+			}
 		}
 	}
 }
