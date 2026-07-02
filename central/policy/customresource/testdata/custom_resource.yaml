@@ -1,9 +1,9 @@
 apiVersion: config.stackrox.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: vulnerable-container
+  name: vulnerable-container-foo
 spec:
-  policyName: Vulnerable Container
+  policyName: Vulnerable Container (foo)
   description: Alert if the container contains vulnerabilities
   rationale: This is the rationale
   remediation: This is the remediation
