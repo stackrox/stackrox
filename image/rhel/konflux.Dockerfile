@@ -37,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:47213fcf4e339356548f96af3ef7617e02a285f59ebfc5aaa82e47c70740d7c1 as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:1e7648a1a8855c3f8cb626e02790039079101d905b7dcd3b41449d6c2a0e6397 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,9 +59,9 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:fdf68a4f5f88cca14ae906bbec6e0fbbffe92b5b91e73e0862c961234d63b986 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:35de56a9413112f1474e392ebc35e0cf6f0fb484c8e8877bbae59b513694b41f AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:37a15896602263cb998cd3c21919efb433adf9dbd3a7c961da5d8e3083a0db82 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8bf0e8f20737e9c8a68c8a498299e9504ab397b1b1f2837acb2fef12ec698f0e AS package_installer
 
 ARG PG_VERSION
 
