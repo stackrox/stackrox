@@ -116,7 +116,7 @@ jobs:
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     concurrency:
-      group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: ${{ github.job }}-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
     steps:
     - name: Checkout repo
@@ -151,46 +151,46 @@ jobs:
           rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
-  dispatch-e2e-byodb-test:
+  e2e-byodb-test:
     needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-byodb-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-byodb-test == 'true' }}
+      should-run: ${{ needs.should-dispatch.outputs[github.job] == 'true' }}
     secrets: inherit
     concurrency:
-      group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: ${{ github.job }}-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-e2e-db-backup-restore-test:
+  e2e-db-backup-restore-test:
     needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-db-backup-restore-test == 'true' }}
+      should-run: ${{ needs.should-dispatch.outputs[github.job] == 'true' }}
     secrets: inherit
     concurrency:
-      group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: ${{ github.job }}-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-e2e-gke-upgrade-tests:
+  e2e-gke-upgrade-tests:
     needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-gke-upgrade-tests == 'true' }}
+      should-run: ${{ needs.should-dispatch.outputs[github.job] == 'true' }}
     secrets: inherit
     concurrency:
-      group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: ${{ github.job }}-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-e2e-nongroovy-tests:
+  e2e-nongroovy-tests:
     needs: [ wait-for-images, should-dispatch ]
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-nongroovy-tests == 'true' }}
+      should-run: ${{ needs.should-dispatch.outputs[github.job] == 'true' }}
     secrets: inherit
     concurrency:
-      group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: ${{ github.job }}-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
