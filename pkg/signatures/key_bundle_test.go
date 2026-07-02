@@ -43,16 +43,17 @@ func TestBundleToSignatureIntegration(t *testing.T) {
 	bundle, err := ParseKeyBundle(data)
 	require.NoError(t, err)
 
-	si := BundleToSignatureIntegration(bundle)
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
 	assert.Equal(t, DefaultRedHatIntegrationID, si.GetId())
 	assert.Equal(t, DefaultRedHatIntegrationName, si.GetName())
 	assert.Equal(t, storage.Traits_DEFAULT, si.GetTraits().GetOrigin())
 
 	keys := si.GetCosign().GetPublicKeys()
-	require.Len(t, keys, len(bundle.Keys))
-	for i, key := range keys {
-		assert.Equal(t, bundle.Keys[i].Name, key.GetName())
-		assert.Equal(t, bundle.Keys[i].PEM, key.GetPublicKeyPemEnc())
+	assert.NotEmpty(t, keys, "integration must have at least one cosign key")
+	for _, key := range keys {
+		assert.NotEmpty(t, key.GetName(), "key name must not be empty")
+		assert.NotEmpty(t, key.GetPublicKeyPemEnc(), "key PEM must not be empty")
 	}
 }
 
@@ -62,12 +63,12 @@ func TestParseKeyBundle(t *testing.T) {
 		wantErr error
 	}{
 		"valid single key": {
-			input: `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 		"valid multiple keys": {
-			input: `{"keys": [
-				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "key-2", "pem": "` + testKeyPEMJSON2 + `"}
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "cosign", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 		},
 		"empty keys array": {
@@ -79,50 +80,72 @@ func TestParseKeyBundle(t *testing.T) {
 			wantErr: ErrKeyBundleEmpty,
 		},
 		"empty name": {
-			input:   `{"keys": [{"name": "", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNameEmpty,
 		},
 		"whitespace-only name": {
-			input:   `{"keys": [{"name": "  \t ", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "  \t ", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNameEmpty,
 		},
 		"name with forward slash": {
-			input:   `{"keys": [{"name": "foo/bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "foo/bar", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNamePathSeparator,
 		},
 		"name with backslash": {
-			input:   `{"keys": [{"name": "foo\\bar", "pem": "` + testKeyPEMJSON + `"}]}`,
+			input:   `{"keys": [{"name": "foo\\bar", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
 			wantErr: ErrKeyNamePathSeparator,
 		},
+		"empty type": {
+			input:   `{"keys": [{"name": "key-1", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantErr: ErrKeyTypeEmpty,
+		},
 		"invalid PEM": {
-			input:   `{"keys": [{"name": "bad-key", "pem": "not-a-pem"}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "not-a-pem"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"whitespace-only PEM": {
-			input:   `{"keys": [{"name": "bad-key", "pem": "   \t\n  "}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "   \t\n  "}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"wrong PEM type": { //nolint:gosec // G101: test data, not real credentials
-			input:   `{"keys": [{"name": "bad-key", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
+			input:   `{"keys": [{"name": "bad-key", "type": "cosign", "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJB\n-----END RSA PRIVATE KEY-----\n"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"valid + invalid key rejects entire bundle": {
 			input: `{"keys": [
-				{"name": "good", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "bad", "pem": "not-a-pem"}
+				{"name": "good", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "bad", "type": "cosign", "pem": "not-a-pem"}
 			]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"trailing PEM data": {
-			input:   `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
+			input:   `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + jsonEscapePEM(testPublicKeyPEM+"extra") + `"}]}`,
 			wantErr: ErrKeyInvalidPEM,
 		},
 		"duplicate key names": {
 			input: `{"keys": [
-				{"name": "key-1", "pem": "` + testKeyPEMJSON + `"},
-				{"name": "key-1", "pem": "` + testKeyPEMJSON2 + `"}
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON2 + `"}
 			]}`,
 			wantErr: ErrKeyNameDuplicate,
+		},
+		"unknown schema version accepted with warning": {
+			input: `{"schemaVersion": "2.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+		},
+		"v1.0 with mixed types parses successfully": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
+			]}`,
+		},
+		"unsupported type with non-PEM data accepted": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "not-a-pem-block"}
+			]}`,
+		},
+		"v1.0 with only unsupported types parses successfully": {
+			input: `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "pgp", "pem": "` + testKeyPEMJSON + `"}]}`,
 		},
 	}
 
@@ -140,6 +163,91 @@ func TestParseKeyBundle(t *testing.T) {
 	}
 }
 
+func TestParseKeyBundlePreservesFields(t *testing.T) {
+	cases := map[string]struct {
+		input             string
+		wantSchemaVersion string
+		wantTypes         []string
+	}{
+		"v1.0 with explicit type": {
+			input:             `{"schemaVersion": "1.0", "keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign},
+		},
+		"mixed types preserved": {
+			input: `{"schemaVersion": "1.0", "keys": [
+				{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"},
+				{"name": "key-2", "type": "pgp", "pem": "` + testKeyPEMJSON2 + `"}
+			]}`,
+			wantSchemaVersion: SchemaVersion1,
+			wantTypes:         []string{KeyTypeCosign, "pgp"},
+		},
+		"missing version stays empty": {
+			input:             `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + testKeyPEMJSON + `"}]}`,
+			wantSchemaVersion: "",
+			wantTypes:         []string{KeyTypeCosign},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			bundle, err := ParseKeyBundle([]byte(tc.input))
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantSchemaVersion, bundle.SchemaVersion)
+			require.Len(t, bundle.Keys, len(tc.wantTypes))
+			for i, wantType := range tc.wantTypes {
+				assert.Equal(t, wantType, bundle.Keys[i].Type, "key %d type", i)
+			}
+		})
+	}
+}
+
+func TestBundleToSignatureIntegrationFiltersNonCosignKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "cosign-key", Type: KeyTypeCosign, PEM: testPublicKeyPEM},
+			{Name: "pgp-key", Type: "pgp", PEM: testPublicKeyPEM2},
+		},
+	}
+
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
+	keys := si.GetCosign().GetPublicKeys()
+	require.Len(t, keys, 1)
+	assert.Equal(t, "cosign-key", keys[0].GetName())
+}
+
+func TestBundleToSignatureIntegrationAllCosignKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "key-1", Type: KeyTypeCosign, PEM: testPublicKeyPEM},
+			{Name: "key-2", Type: KeyTypeCosign, PEM: testPublicKeyPEM2},
+		},
+	}
+
+	si, err := bundle.ToSignatureIntegration()
+	require.NoError(t, err)
+	keys := si.GetCosign().GetPublicKeys()
+	require.Len(t, keys, 2)
+	assert.Equal(t, "key-1", keys[0].GetName())
+	assert.Equal(t, "key-2", keys[1].GetName())
+}
+
+func TestBundleToSignatureIntegrationRejectsNoSupportedKeys(t *testing.T) {
+	bundle := &KeyBundle{
+		SchemaVersion: SchemaVersion1,
+		Keys: []KeyBundleEntry{
+			{Name: "pgp-key", Type: "pgp", PEM: testPublicKeyPEM},
+		},
+	}
+
+	si, err := bundle.ToSignatureIntegration()
+	assert.ErrorIs(t, err, ErrNoSupportedKeys)
+	assert.Nil(t, si)
+}
+
 func TestParseKeyBundleMalformedJSON(t *testing.T) {
 	bundle, err := ParseKeyBundle([]byte(`{not json`))
 	assert.ErrorIs(t, err, ErrUnmarshalling)
@@ -148,7 +256,7 @@ func TestParseKeyBundleMalformedJSON(t *testing.T) {
 
 func TestParseKeyBundlePEMCanonicalization(t *testing.T) {
 	pemWithExtraNewlines := testPublicKeyPEM + "\n\n\n"
-	input := `{"keys": [{"name": "key-1", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
+	input := `{"keys": [{"name": "key-1", "type": "cosign", "pem": "` + jsonEscapePEM(pemWithExtraNewlines) + `"}]}`
 
 	bundle, err := ParseKeyBundle([]byte(input))
 	require.NoError(t, err)
