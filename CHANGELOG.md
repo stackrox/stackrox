@@ -13,6 +13,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
+- ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 
 ### Removed Features
 

@@ -1684,6 +1684,21 @@ func TestTranslatePartialMatch(t *testing.T) {
 				"central.db.source.maxConns":         400,
 			},
 		},
+		"central without explicit rollout strategy set": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.rolloutStrategy": nil,
+			},
+		},
 		"central with RollingUpdate rollout strategy": {
 			args: args{
 				c: platform.Central{
