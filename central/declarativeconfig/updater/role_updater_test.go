@@ -63,7 +63,7 @@ func (s *roleUpdaterTestSuite) SetupTest() {
 	tokenIssuerFactory := authTokenMocks.NewMockIssuerFactory(s.mockCtrl)
 	tokenIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	uds := userDS.GetTestDataStore(s.T())
-	mapperFactory := roleMapper.NewStoreBasedMapperFactory(s.gds, rds, uds)
+	mapperFactory := roleMapper.NewStoreBasedMapperFactory(s.gds, rds, uds, ads)
 	s.authProviderRegistry = authproviders.NewStoreBackedRegistry(
 		"/sso/",
 		"/auth/response/generic",

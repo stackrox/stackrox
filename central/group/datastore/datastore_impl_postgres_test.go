@@ -189,6 +189,7 @@ func (s *groupsWithPostgresTestSuite) validRoleAndAuthProvider(roleName, authPro
 		Name: roleName,
 	}
 	mockedAP, err := authproviders.NewProvider(
+		s.T().Context(),
 		authproviders.WithStorageView(&storage.AuthProvider{
 			Id:   authProviderID,
 			Name: "auth-provider",

@@ -177,6 +177,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestUniqueRepositoryPathConstrai
 func (s *BaseImageRepositoryDatastoreTestSuite) TestListRepositoriesAccessDenied() {
 	// Create a context with a user that has no image administration access.
 	authProvider, err := authproviders.NewProvider(
+		s.T().Context(),
 		authproviders.WithEnabled(true),
 		authproviders.WithID(uuid.NewDummy().String()),
 		authproviders.WithName("Test Auth Provider"),

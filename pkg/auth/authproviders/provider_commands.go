@@ -18,7 +18,7 @@ import (
 // ValidateName checks that the name of the provider is neither empty
 // nor already used in database.
 func ValidateName(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		return validateName(ctx, pr, store)
 	}
 }
@@ -45,7 +45,7 @@ func validateName(ctx context.Context, pr *providerImpl, store Store) error {
 
 // DefaultAddToStore adds the providers stored data to the input store.
 func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.doNotStore {
 			return nil
 		}
@@ -58,7 +58,7 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 
 // UpdateStore updates the stored value for the provider in the input store.
 func UpdateStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.doNotStore {
 			return nil
 		}
@@ -69,7 +69,7 @@ func UpdateStore(ctx context.Context, store Store) ProviderOption {
 
 // DeleteFromStore removes the providers stored data from the input store.
 func DeleteFromStore(ctx context.Context, store Store, providerID string, force bool) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		err := store.RemoveAuthProvider(ctx, providerID, force)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
@@ -91,7 +91,7 @@ func DeleteFromStore(ctx context.Context, store Store, providerID string, force 
 
 // UnregisterSource unregisters the token source from the source factory
 func UnregisterSource(factory tokens.IssuerFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		err := factory.UnregisterSource(pr)
 		// both DeleteFromStore and UnregisterSource mutate external stores, so regardless of order the second one
 		// can't return err and fail the change.
