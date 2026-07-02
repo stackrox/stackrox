@@ -159,6 +159,25 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
+	case *sensorAPI.FileActivity_Acl:
+		acl := fs.GetAcl()
+		entries := make([]*storage.AclEntry, 0, len(acl.GetEntries()))
+		for _, e := range acl.GetEntries() {
+			entries = append(entries, &storage.AclEntry{
+				Tag:  storage.AclTag(e.GetTag()),
+				Perm: e.GetPerm(),
+				Id:   e.GetId(),
+			})
+		}
+		access.File = &storage.FileAccess_File{
+			EffectivePath: acl.GetActivity().GetPath(),
+			ActualPath:    acl.GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				AclType:    storage.AclType(acl.GetAclType()),
+				AclEntries: entries,
+			},
+		}
+		access.Operation = storage.FileAccess_ACL_CHANGE
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil

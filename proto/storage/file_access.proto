@@ -8,6 +8,34 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// AclTag identifies the type of entity an ACL entry applies to.
+enum AclTag {
+  ACL_TAG_UNSPECIFIED = 0;
+  ACL_TAG_USER_OBJ = 1;   // Owner user permissions
+  ACL_TAG_USER = 2;        // Specific user permissions
+  ACL_TAG_GROUP_OBJ = 3;   // Owning group permissions
+  ACL_TAG_GROUP = 4;       // Specific group permissions
+  ACL_TAG_MASK = 5;        // Maximum effective permissions mask
+  ACL_TAG_OTHER = 6;       // Everyone else
+}
+
+// AclEntry represents a single POSIX ACL entry.
+message AclEntry {
+  AclTag tag = 1;
+  // Permission bits (e.g. 7 = rwx, 6 = rw-, 4 = r--)
+  uint32 perm = 2;
+  // The uid or gid for ACL_TAG_USER / ACL_TAG_GROUP entries.
+  // Set to 0xFFFFFFFF when not applicable.
+  uint32 id = 3;
+}
+
+// AclType distinguishes access ACLs from default (inherited) ACLs.
+enum AclType {
+  ACL_TYPE_UNSPECIFIED = 0;
+  ACL_TYPE_ACCESS = 1;   // Controls current permissions on the file
+  ACL_TYPE_DEFAULT = 2;  // Inherited by new files created in a directory
+}
+
 // FileAccess contains fields related to arbitrary file accesses
 // performed by a given process. This activity can come from k8s, or
 // directly on a node.
@@ -22,6 +50,10 @@ message FileAccess {
     uint32 mode = 3;
     string username = 4;
     string group = 5;
+
+    // ACL-specific fields, populated only for ACL_CHANGE operations.
+    AclType acl_type = 6;
+    repeated AclEntry acl_entries = 7;
   }
 
   message File {
@@ -46,6 +78,7 @@ message FileAccess {
     PERMISSION_CHANGE = 3;
     OWNERSHIP_CHANGE = 4;
     OPEN = 5;
+    ACL_CHANGE = 6;
   }
 
   File file = 1;

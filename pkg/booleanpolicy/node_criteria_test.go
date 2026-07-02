@@ -93,6 +93,10 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
 					expectAlert: true,
 				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
+					expectAlert: true,
+				},
 			},
 		},
 		{
@@ -200,6 +204,27 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 			},
 		},
 		{
+			description: "Node file policy with ACL_CHANGE operation",
+			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT,
+				[]storage.FileAccess_Operation{storage.FileAccess_ACL_CHANGE}, false,
+				"/etc/passwd",
+			),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: false,
+				},
+				{
+					access:      newActualFileAccessEvent("/tmp/foo", storage.FileAccess_ACL_CHANGE),
+					expectAlert: false,
+				},
+			},
+		},
+		{
 			description: "Node file policy with no operations (matches all operations)",
 			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd"),
 			events: []eventWrapper{
@@ -225,6 +250,10 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 				{
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
 					expectAlert: true,
 				},
 			},
