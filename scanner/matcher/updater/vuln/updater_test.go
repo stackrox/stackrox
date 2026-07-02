@@ -68,8 +68,6 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 }
 
 func TestMultiBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
-
 	// TODO(ROX-26236): Test with zst files, as a chunk of the updater function is currently untested.
 	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
 		accept := r.Header.Get("X-Scanner-V4-Accept")
@@ -149,6 +147,81 @@ func TestMultiBundleUpdate(t *testing.T) {
 	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
 	assert.Equal(t, dists, u.KnownDistributions())
+}
+
+func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
+	bundleNames := []string{"alpine.json.zst", "nvd.json.zst", "rhel-vex.json.zst"}
+
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, name := range bundleNames {
+			_, err := zw.Create(name)
+			require.NoError(t, err)
+		}
+		require.NoError(t, zw.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	ctrl := gomock.NewController(t)
+	store := mocks.NewMockMatcherStore(ctrl)
+	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+	prevTime := now.Add(-time.Minute)
+
+	u := &Updater{
+		locker:        &testLocker{locker: updates.NewLocalLockSource()},
+		store:         store,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		skipGC:        true,
+		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
+		retryDelay:    1 * time.Second,
+		retryMax:      1,
+		distManager:   newDistManager(store),
+	}
+
+	// GetLastVulnerabilityUpdate at start of runMultiBundleUpdate.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(prevTime, nil)
+
+	// Pre-registration phase: GetOrSetLastVulnerabilityUpdate for each bundle.
+	// These must all complete before any processing-phase calls.
+	preReg := make([]*gomock.Call, len(bundleNames))
+	for i, name := range bundleNames {
+		preReg[i] = metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), name, prevTime).
+			Return(prevTime, nil)
+	}
+
+	// Processing phase: each updateBundle calls GetOrSetLastVulnerabilityUpdate.
+	// Return zipTime (now) so updateBundle skips actual import (no zst decoding needed).
+	// Constrained to happen AFTER all pre-registration calls.
+	for _, name := range bundleNames {
+		call := metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), name, prevTime).
+			Return(now, nil)
+		for _, pre := range preReg {
+			call.After(pre)
+		}
+	}
+
+	// GC and Initialized at end of runMultiBundleUpdate.
+	metadataStore.EXPECT().
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(nil, nil)
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+
+	err := u.Update(test.Logging(t))
+	assert.NoError(t, err)
 }
 
 func TestFetch(t *testing.T) {
