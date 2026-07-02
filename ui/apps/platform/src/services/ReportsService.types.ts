@@ -3,18 +3,47 @@ import type { Snapshot } from 'types/reportJob';
 
 // Core report types
 
-export type ReportType = 'VULNERABILITY';
+export type ReportType = 'VULNERABILITY' | 'NODE_VULNERABILITY';
 
-export type ReportConfiguration = {
+export type ReportConfigurationBase = {
     id: string;
     name: string;
     description: string;
-    type: ReportType;
-    vulnReportFilters: VulnerabilityReportFilters;
     notifiers: NotifierConfiguration[];
     schedule: Schedule | null;
-    resourceScope: ResourceScope;
 };
+
+export type GenericVulnerabilityReportConfiguration = {
+    type: 'NODE_VULNERABILITY';
+    vulnReportFilters: GenericVulnerabilityReportFilters;
+    resourceScope: {
+        entityScope: EntityScope;
+    };
+} & ReportConfigurationBase;
+
+// TODO temporary alias to limit changed files that might be superseded later anyway
+export type ReportConfiguration = ImageVulnerabilityReportConfiguration;
+
+// After we remove ForCollection, ForEntity becomes the report configuration.
+export type ImageVulnerabilityReportConfiguration =
+    | ImageVulnerabilityReportConfigurationForEntity
+    | ImageVulnerabilityReportConfigurationForCollection;
+
+export type ImageVulnerabilityReportConfigurationForEntity = {
+    type: 'VULNERABILITY';
+    vulnReportFilters: ImageVulnerabilityReportFiltersForEntity;
+    resourceScope: {
+        entityScope: EntityScope;
+    };
+} & ReportConfigurationBase;
+
+export type ImageVulnerabilityReportConfigurationForCollection = {
+    type: 'VULNERABILITY';
+    vulnReportFilters: ImageVulnerabilityReportFiltersForCollection;
+    resourceScope: {
+        collectionScope: CollectionScope;
+    };
+} & ReportConfigurationBase;
 
 // Vulnerability report filters
 
@@ -23,17 +52,16 @@ export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
 export const imageTypes = ['DEPLOYED', 'WATCHED'] as const;
 export type ImageType = (typeof imageTypes)[number];
 
-export type VulnerabilityReportFiltersBase = {
+export type ImageVulnerabilityReportFiltersForEntity = {
+    imageTypes: ImageType[];
+    query: string;
+} & CvesSince;
+
+export type ImageVulnerabilityReportFiltersForCollection = {
     fixability: Fixability;
     severities: VulnerabilitySeverity[];
     imageTypes: ImageType[];
-    includeAdvisory: boolean;
-    includeEpssProbability: boolean;
-    // includeKnownExploit: boolean; // ROX_CISA_KEV
-    includeNvdCvss: boolean;
-};
-
-export type VulnerabilityReportFilters = VulnerabilityReportFiltersBase & CvesSince;
+} & CvesSince;
 
 export type CvesSince =
     | {
@@ -45,6 +73,10 @@ export type CvesSince =
     | {
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       };
+
+export type GenericVulnerabilityReportFilters = {
+    query: string;
+} & CvesSince;
 
 export type ViewBasedVulnerabilityReportFilters = {
     query: string;
@@ -150,6 +182,13 @@ export type ViewBasedReportSnapshot = Snapshot & {
     areaOfConcern: string;
 };
 
+// TODO temporary disjunction until snamshot has type property.
+type VulnerabilityReportFilters =
+    | GenericVulnerabilityReportFilters
+    | ImageVulnerabilityReportFiltersForCollection
+    | ImageVulnerabilityReportFiltersForEntity;
+
+// TODO distinguish configured versus view-based instead of combining them.
 export type ConfiguredReportSnapshot = Snapshot & {
     reportConfigId: string;
     vulnReportFilters: VulnerabilityReportFilters;

@@ -13,13 +13,8 @@ const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDow
     name: 'test-name-1',
     description: 'test-description-1',
     vulnReportFilters: {
-        fixability: 'FIXABLE',
-        severities: ['LOW_VULNERABILITY_SEVERITY'],
-        imageTypes: ['DEPLOYED'],
-        includeAdvisory: false,
-        includeEpssProbability: false,
-        includeNvdCvss: false,
         allVuln: true,
+        query: '',
     },
     collectionSnapshot: {
         id: 'test-collection-id-1',
