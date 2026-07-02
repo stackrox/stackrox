@@ -584,3 +584,5 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
+
+replace github.com/quay/claircore => github.com/jvdm/quay-claircore v1.5.53-0.20260701210916-c43edc96a137
