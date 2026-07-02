@@ -775,6 +775,8 @@ func setClusterLabels(t *testing.T, clusterID string, labels map[string]string) 
 }
 
 // createNamespaceWithLabels creates a namespace with the specified labels.
+// On OpenShift, it also grants the anyuid SCC to the default service account
+// so that containers (e.g., nginx) can run without permission errors.
 func createNamespaceWithLabels(t *testing.T, name string, labels map[string]string) {
 	client := createK8sClient(t)
 
@@ -792,6 +794,24 @@ func createNamespaceWithLabels(t *testing.T, name string, labels map[string]stri
 	require.NoError(t, err, "creating namespace %q with labels %v", name, labels)
 
 	t.Logf("Created namespace %q with labels: %v", name, labels)
+
+	if isOpenshift() {
+		grantAnyuidSCC(t, name)
+	}
+}
+
+// grantAnyuidSCC adds the default service account in the namespace to the
+// anyuid SCC so containers can run as any UID. This matches the pattern used
+// by the Groovy test framework (OpenShift.groovy ensureNamespaceExists).
+func grantAnyuidSCC(t *testing.T, namespace string) {
+	sa := fmt.Sprintf("system:serviceaccount:%s:default", namespace)
+	cmd := exec.Command("oc", "adm", "policy", "add-scc-to-user", "anyuid", "-z", "default", "-n", namespace)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Warning: failed to grant anyuid SCC to %s: %v (output: %s)", sa, err, string(output))
+	} else {
+		t.Logf("Granted anyuid SCC to default service account in namespace %q", namespace)
+	}
 }
 
 // deleteNamespace deletes a namespace.
