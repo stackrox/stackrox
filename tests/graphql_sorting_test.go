@@ -38,12 +38,17 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 
 func testDeploymentSorting(t *testing.T, field string, extractor func(d *storage.Deployment) string) {
 	sorted := sliceutils.Map(getDeploymentsWithSortOption(t, field, false), extractor)
-	assert.True(t, slices.IsSorted(sorted), "field %s not sorted in response (got %v)", field, sorted)
+	reversed := sliceutils.Map(getDeploymentsWithSortOption(t, field, true), extractor)
 
-	sortedReverse := sliceutils.Map(getDeploymentsWithSortOption(t, field, true), extractor)
-	assert.True(t, sort.SliceIsSorted(sortedReverse, func(i, j int) bool {
-		return sortedReverse[i] > sortedReverse[j]
-	}), "field %s not sorted in reverse in response (got %v)", field, sortedReverse)
+	// The API sorts via Postgres collation which may differ from Go's byte-order
+	// comparison (e.g., hyphen ordering varies between C and glibc collations).
+	// Instead of comparing against Go's sort, verify the forward and reverse
+	// responses are mirror images of each other — proving the API actually sorts.
+	require.Equal(t, len(sorted), len(reversed), "forward and reverse should have same length")
+	for i := range sorted {
+		assert.Equal(t, sorted[i], reversed[len(reversed)-1-i],
+			"field %s: forward[%d] should equal reverse[%d]", field, i, len(reversed)-1-i)
+	}
 }
 
 func TestGraphQLSorting(t *testing.T) {

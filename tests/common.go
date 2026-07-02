@@ -389,6 +389,13 @@ func buildContainer(name, image string, pullPolicy coreV1.PullPolicy) coreV1.Con
 		Resources:       coreV1.ResourceRequirements{}, // Match kubectl behavior
 	}
 
+	// On OCP the restricted SCC prevents nginx from writing to /var/cache/nginx.
+	// Since tests only need the deployment to exist (not serve HTTP), override
+	// the entrypoint with sleep to avoid permission errors.
+	if strings.Contains(image, "nginx") {
+		container.Command = []string{"sleep", "600"}
+	}
+
 	return container
 }
 
