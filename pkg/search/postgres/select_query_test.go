@@ -1387,4 +1387,93 @@ func TestRunSelectDirectFn(t *testing.T) {
 		require.Error(t, err)
 		assert.ErrorIs(t, err, expectedErr)
 	})
+
+	t.Run("row order matches scany with descending sort", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(
+				search.NewQuerySelect(search.TestString),
+				search.NewQuerySelect(search.TestBool),
+			).
+			WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestString).Reversed(true)),
+			).
+			ProtoQuery()
+
+		type row struct {
+			S string
+			B bool
+		}
+		type scanyResult struct {
+			TestString string `db:"test_string"`
+			TestBool   bool   `db:"test_bool"`
+		}
+		var expected []row
+		err := pgSearch.RunSelectRequestForSchemaFn[scanyResult](ctx, testDB.DB, schema.TestStructsSchema, q, func(r *scanyResult) error {
+			expected = append(expected, row{r.TestString, r.TestBool})
+			return nil
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, expected)
+
+		var s string
+		var b bool
+		dests := []any{&s, &b}
+
+		var actual []row
+		err = pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					actual = append(actual, row{s, b})
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("column order matches select field order", func(t *testing.T) {
+		q := search.NewQueryBuilder().
+			AddSelectFields(
+				search.NewQuerySelect(search.TestBool),
+				search.NewQuerySelect(search.TestString),
+				search.NewQuerySelect(search.TestEnum),
+			).
+			WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestString)),
+			).
+			ProtoQuery()
+
+		type scanyResult struct {
+			TestBool   bool   `db:"test_bool"`
+			TestString string `db:"test_string"`
+			TestEnum   int32  `db:"test_enum"`
+		}
+		var expected []scanyResult
+		err := pgSearch.RunSelectRequestForSchemaFn[scanyResult](ctx, testDB.DB, schema.TestStructsSchema, q, func(r *scanyResult) error {
+			expected = append(expected, *r)
+			return nil
+		})
+		require.NoError(t, err)
+		require.NotEmpty(t, expected)
+
+		var b bool
+		var s string
+		var e int32
+		dests := []any{&b, &s, &e}
+
+		var actual []scanyResult
+		err = pgSearch.RunSelectDirectFn(ctx, testDB.DB, schema.TestStructsSchema, q, nil,
+			&pgSearch.DirectScanConfig{
+				ScanDests: func() []any { return dests },
+				OnRow: func() error {
+					actual = append(actual, scanyResult{b, s, e})
+					return nil
+				},
+			})
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
 }
