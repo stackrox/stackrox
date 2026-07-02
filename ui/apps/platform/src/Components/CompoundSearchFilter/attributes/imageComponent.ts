@@ -34,7 +34,6 @@ export const LayerType: CompoundSearchFilterAttribute = {
     filterChipLabel: 'Image component layer type',
     searchTerm: 'Component Layer Type',
     inputType: 'select',
-    featureFlagDependency: ['ROX_BASE_IMAGE_DETECTION'],
     inputProps: {
         options: [
             { label: 'Application', value: 'APPLICATION' },

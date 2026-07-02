@@ -5,8 +5,7 @@ import ImageComponentVulnerabilitiesTable from './ImageComponentVulnerabilitiesT
 const MockFeatureFlagsProvider = ({ children }) => (
     <FeatureFlagsContext.Provider
         value={{
-            isFeatureFlagEnabled: (flag) =>
-                flag === 'ROX_BASE_IMAGE_DETECTION' || flag === 'ROX_SCANNER_V4',
+            isFeatureFlagEnabled: (flag) => flag === 'ROX_SCANNER_V4',
             isLoadingFeatureFlags: false,
             error: undefined,
         }}
