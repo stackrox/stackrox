@@ -44,6 +44,7 @@ var (
 			v2.ComplianceResultsStatsService_GetComplianceOverallClusterStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceClusterStats_FullMethodName,
 			v2.ComplianceResultsStatsService_GetComplianceProfileCheckStats_FullMethodName,
+			v2.ComplianceResultsStatsService_GetComplianceScanTrends_FullMethodName,
 		},
 	})
 
@@ -370,6 +371,25 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	return &v2.ListComplianceClusterOverallStatsResponse{
 		ScanStats:  storagetov2.ComplianceV2ClusterOverallStats(scanResults, clusterErrors),
 		TotalCount: int32(count),
+	}, nil
+}
+
+// GetComplianceScanTrends returns compliance pass/fail counts grouped by scan time
+func (s *serviceImpl) GetComplianceScanTrends(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanTrendResponse, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+	}
+
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
+
+	trendResults, err := s.complianceResultsDS.ComplianceTrendResults(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve compliance trend stats for query %v", query)
+	}
+
+	return &v2.ListComplianceScanTrendResponse{
+		DataPoints: storagetov2.ComplianceV2TrendDataPoints(trendResults),
 	}, nil
 }
 
