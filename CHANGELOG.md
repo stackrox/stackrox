@@ -12,6 +12,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.11.1]
 
+### Technical Changes
+
+- ROX-35006: With the Go runtime upgrade to 1.26, validation of IPv6 addresses now requires bracketed format (e.g. `[2001:db8::1]:443`).
+
 **Full Changelog**: [4.11.0...4.11.1](https://github.com/stackrox/stackrox/compare/4.11.0...4.11.1)
 
 For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.11/html/release_notes/index) on the Red Hat Documentation portal.
@@ -31,7 +35,7 @@ For a description of the changes, review the [Release Notes](https://docs.redhat
 - ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 - ROX-33336: The Operator now reads the cluster-wide TLS profile from `apiserver.config.openshift.io/cluster` on OpenShift and propagates it to all managed ACS components via environment variables. The Operator's own metrics server always honors the cluster TLS profile when running on OpenShift.
 - ROX-26033: Compliance now tracks tailored profiles and custom rules from the Compliance Operator. Tailored profiles can be included in scan configurations, and their check results are shown in the Coverage page and CSV reports.
-- ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports. 
+- ROX-34407: Deprecated fields to select optional columns NVD CVSS, EPSS Probability and Advisory from Vulnerability Reporting. These columns will be included by default next to similar columns. This change also affects column order in reports.
 - ROX-33108: Added Component Version Column in Vulnerability Reporting.
 - ROX-32865: Images are now uniquely identified by the combination of name and digest, rather
   than by digest alone. This new data model resolves several long-standing issues when multiple

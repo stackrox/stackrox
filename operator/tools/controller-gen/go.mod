@@ -1,6 +1,6 @@
 module github.com/stackrox/rox/operator/tools/controller-gen
 
-go 1.26.0
+go 1.26.3
 
 require sigs.k8s.io/controller-tools v0.21.0
 
