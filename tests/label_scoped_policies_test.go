@@ -131,10 +131,15 @@ func (s *LabelScopedPoliciesSuite) TestNamespaceLabelPolicyScoping() {
 
 func (s *LabelScopedPoliciesSuite) TestPolicyDryRunWithNamespaceLabel() {
 	t := s.T()
-	backendNS := fmt.Sprintf("test-backend-%d", rand.IntN(10000))
-	frontendNS := fmt.Sprintf("test-frontend-%d", rand.IntN(10000))
 
-	createNamespaceWithLabels(t, backendNS, map[string]string{"team": "backend"})
+	// Use unique label values per subtest to avoid interference from other
+	// subtests that create namespaces with team=backend in the same suite.
+	labelValue := fmt.Sprintf("dryrun-%d", rand.IntN(10000))
+
+	backendNS := fmt.Sprintf("test-dryrun-be-%d", rand.IntN(10000))
+	frontendNS := fmt.Sprintf("test-dryrun-fe-%d", rand.IntN(10000))
+
+	createNamespaceWithLabels(t, backendNS, map[string]string{"team": labelValue})
 	defer deleteNamespace(t, backendNS)
 
 	createNamespaceWithLabels(t, frontendNS, map[string]string{"team": "frontend"})
@@ -164,7 +169,7 @@ func (s *LabelScopedPoliciesSuite) TestPolicyDryRunWithNamespaceLabel() {
 		"Test - Dry Run Namespace Label",
 		"Dry run test for namespace label scoping",
 		"team",
-		"backend",
+		labelValue,
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
