@@ -37,7 +37,7 @@ func (s *apiTokenExpirationNotifierTestSuite) SetupSuite() {
 
 func (s *apiTokenExpirationNotifierTestSuite) SetupTest() {
 	s.testpostgres = pgtest.ForT(s.T())
-	s.datastore = apiTokenDataStore.NewPostgres(s.testpostgres.DB)
+	s.datastore = apiTokenDataStore.GetTestPostgresDataStore(s.T(), s.testpostgres.DB)
 	s.notifier = newExpirationNotifier(s.datastore)
 }
 
