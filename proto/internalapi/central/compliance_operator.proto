@@ -215,7 +215,7 @@ message ComplianceOperatorProfileV2 {
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
-// Next tag: 15
+// Next tag: 20
 message ComplianceOperatorRuleV2 {
   string rule_id = 1;
   string id = 2;
@@ -241,6 +241,28 @@ message ComplianceOperatorRuleV2 {
     CUSTOM_RULE = 2;
   }
   OperatorKind operator_kind = 14;
+
+  // CEL rule fields. Populated for rules with scanner_type "CEL".
+  string scanner_type = 15;
+  string expression = 16;
+  repeated ComplianceOperatorCelInput inputs = 17;
+  string failure_reason = 18;
+
+  message CustomRuleDetails {
+    string phase = 1;
+    string error_message = 2;
+  }
+  CustomRuleDetails custom_rule_details = 19;
+}
+
+// ComplianceOperatorCelInput represents a Kubernetes resource input for a CEL rule expression.
+message ComplianceOperatorCelInput {
+  string name = 1;
+  string api_group = 2;
+  string api_version = 3;
+  string resource = 4;
+  string resource_namespace = 5;
+  string resource_name = 6;
 }
 
 message ComplianceOperatorScanV2 {

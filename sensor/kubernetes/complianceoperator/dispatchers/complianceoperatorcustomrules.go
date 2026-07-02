@@ -50,26 +50,46 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		})
 	}
 
+	inputs := make([]*central.ComplianceOperatorCelInput, 0, len(customRule.Spec.Inputs))
+	for _, inp := range customRule.Spec.Inputs {
+		inputs = append(inputs, &central.ComplianceOperatorCelInput{
+			Name:              inp.Name,
+			ApiGroup:          inp.KubernetesInputSpec.Group,
+			ApiVersion:        inp.KubernetesInputSpec.APIVersion,
+			Resource:          inp.KubernetesInputSpec.Resource,
+			ResourceNamespace: inp.KubernetesInputSpec.ResourceNamespace,
+			ResourceName:      inp.KubernetesInputSpec.ResourceName,
+		})
+	}
+
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
 				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:       customRule.Spec.ID,
-					Id:           id,
-					Name:         customRule.Name,
-					RuleType:     customRule.Spec.CheckType,
-					Severity:     ruleSeverityToV2Severity(customRule.Spec.Severity),
-					Labels:       customRule.Labels,
-					Annotations:  customRule.Annotations,
-					Title:        customRule.Spec.Title,
-					Description:  customRule.Spec.Description,
-					Rationale:    customRule.Spec.Rationale,
-					Fixes:        fixes,
-					Warning:      customRule.Spec.Warning,
-					Instructions: customRule.Spec.Instructions,
-					OperatorKind: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+					RuleId:        customRule.Spec.ID,
+					Id:            id,
+					Name:          customRule.Name,
+					RuleType:      customRule.Spec.CheckType,
+					Severity:      ruleSeverityToV2Severity(customRule.Spec.Severity),
+					Labels:        customRule.Labels,
+					Annotations:   customRule.Annotations,
+					Title:         customRule.Spec.Title,
+					Description:   customRule.Spec.Description,
+					Rationale:     customRule.Spec.Rationale,
+					Fixes:         fixes,
+					Warning:       customRule.Spec.Warning,
+					Instructions:  customRule.Spec.Instructions,
+					OperatorKind:  central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+					ScannerType:   string(customRule.Spec.ScannerType),
+					Expression:    customRule.Spec.Expression,
+					Inputs:        inputs,
+					FailureReason: customRule.Spec.FailureReason,
+					CustomRuleDetails: &central.ComplianceOperatorRuleV2_CustomRuleDetails{
+						Phase:        customRule.Status.Phase,
+						ErrorMessage: customRule.Status.ErrorMessage,
+					},
 				},
 			},
 		},

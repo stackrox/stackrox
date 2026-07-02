@@ -71,24 +71,29 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 	}
 
 	return &storage.ComplianceOperatorRuleV2{
-		Id:           sensorData.GetId(),
-		RuleId:       sensorData.GetRuleId(),
-		Name:         sensorData.GetName(),
-		RuleType:     sensorData.GetRuleType(),
-		Severity:     severityToV2[sensorData.GetSeverity()],
-		Labels:       sensorData.GetLabels(),
-		Annotations:  sensorData.GetAnnotations(),
-		Title:        sensorData.GetTitle(),
-		Description:  sensorData.GetDescription(),
-		Rationale:    sensorData.GetRationale(),
-		Fixes:        fixes,
-		Warning:      sensorData.GetWarning(),
-		Controls:     controls,
-		ClusterId:    clusterID,
-		RuleRefId:    BuildNameRefID(clusterID, parentRule),
-		Instructions: sensorData.GetInstructions(),
-		ParentRule:   parentRule,
-		OperatorKind: centralToStorageRuleKind(sensorData.GetOperatorKind()),
+		Id:                sensorData.GetId(),
+		RuleId:            sensorData.GetRuleId(),
+		Name:              sensorData.GetName(),
+		RuleType:          sensorData.GetRuleType(),
+		Severity:          severityToV2[sensorData.GetSeverity()],
+		Labels:            sensorData.GetLabels(),
+		Annotations:       sensorData.GetAnnotations(),
+		Title:             sensorData.GetTitle(),
+		Description:       sensorData.GetDescription(),
+		Rationale:         sensorData.GetRationale(),
+		Fixes:             fixes,
+		Warning:           sensorData.GetWarning(),
+		Controls:          controls,
+		ClusterId:         clusterID,
+		RuleRefId:         BuildNameRefID(clusterID, parentRule),
+		Instructions:      sensorData.GetInstructions(),
+		ParentRule:        parentRule,
+		OperatorKind:      centralToStorageRuleKind(sensorData.GetOperatorKind()),
+		ScannerType:       sensorData.GetScannerType(),
+		Expression:        sensorData.GetExpression(),
+		Inputs:            convertCelInputs(sensorData.GetInputs()),
+		FailureReason:     sensorData.GetFailureReason(),
+		CustomRuleDetails: convertCustomRuleDetails(sensorData.GetCustomRuleDetails()),
 	}
 }
 
@@ -106,5 +111,33 @@ func centralToStorageRuleKind(kind central.ComplianceOperatorRuleV2_OperatorKind
 	default:
 		log.Errorf("Unexpected rule operator kind %v", kind)
 		return storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
+func convertCelInputs(inputs []*central.ComplianceOperatorCelInput) []*storage.ComplianceOperatorCelInput {
+	if len(inputs) == 0 {
+		return nil
+	}
+	result := make([]*storage.ComplianceOperatorCelInput, 0, len(inputs))
+	for _, inp := range inputs {
+		result = append(result, &storage.ComplianceOperatorCelInput{
+			Name:              inp.GetName(),
+			ApiGroup:          inp.GetApiGroup(),
+			ApiVersion:        inp.GetApiVersion(),
+			Resource:          inp.GetResource(),
+			ResourceNamespace: inp.GetResourceNamespace(),
+			ResourceName:      inp.GetResourceName(),
+		})
+	}
+	return result
+}
+
+func convertCustomRuleDetails(details *central.ComplianceOperatorRuleV2_CustomRuleDetails) *storage.ComplianceOperatorRuleV2_CustomRuleDetails {
+	if details == nil {
+		return nil
+	}
+	return &storage.ComplianceOperatorRuleV2_CustomRuleDetails{
+		Phase:        details.GetPhase(),
+		ErrorMessage: details.GetErrorMessage(),
 	}
 }

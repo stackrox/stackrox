@@ -1244,25 +1244,31 @@ func (x *ComplianceOperatorProfileV2) GetOperatorKind() ComplianceOperatorProfil
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
-// Next tag: 15
+// Next tag: 20
 type ComplianceOperatorRuleV2 struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
-	RuleId        string                                `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Id            string                                `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
-	Severity      ComplianceOperatorRuleSeverity        `protobuf:"varint,5,opt,name=severity,proto3,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
-	Labels        map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations   map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Title         string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale     string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes         []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Warning       string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
-	Instructions  string                                `protobuf:"bytes,13,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	OperatorKind  ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,14,opt,name=operator_kind,json=operatorKind,proto3,enum=central.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState                `protogen:"open.v1"`
+	RuleId       string                                `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	Id           string                                `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Name         string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	RuleType     string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
+	Severity     ComplianceOperatorRuleSeverity        `protobuf:"varint,5,opt,name=severity,proto3,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
+	Labels       map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations  map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Title        string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Description  string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale    string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes        []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Warning      string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
+	Instructions string                                `protobuf:"bytes,13,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	OperatorKind ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,14,opt,name=operator_kind,json=operatorKind,proto3,enum=central.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
+	// CEL rule fields. Populated for rules with scanner_type "CEL".
+	ScannerType       string                                      `protobuf:"bytes,15,opt,name=scanner_type,json=scannerType,proto3" json:"scanner_type,omitempty"`
+	Expression        string                                      `protobuf:"bytes,16,opt,name=expression,proto3" json:"expression,omitempty"`
+	Inputs            []*ComplianceOperatorCelInput               `protobuf:"bytes,17,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	FailureReason     string                                      `protobuf:"bytes,18,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	CustomRuleDetails *ComplianceOperatorRuleV2_CustomRuleDetails `protobuf:"bytes,19,opt,name=custom_rule_details,json=customRuleDetails,proto3" json:"custom_rule_details,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -1393,6 +1399,126 @@ func (x *ComplianceOperatorRuleV2) GetOperatorKind() ComplianceOperatorRuleV2_Op
 	return ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
 }
 
+func (x *ComplianceOperatorRuleV2) GetScannerType() string {
+	if x != nil {
+		return x.ScannerType
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetExpression() string {
+	if x != nil {
+		return x.Expression
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetInputs() []*ComplianceOperatorCelInput {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *ComplianceOperatorRuleV2) GetFailureReason() string {
+	if x != nil {
+		return x.FailureReason
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetCustomRuleDetails() *ComplianceOperatorRuleV2_CustomRuleDetails {
+	if x != nil {
+		return x.CustomRuleDetails
+	}
+	return nil
+}
+
+// ComplianceOperatorCelInput represents a Kubernetes resource input for a CEL rule expression.
+type ComplianceOperatorCelInput struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ApiGroup          string                 `protobuf:"bytes,2,opt,name=api_group,json=apiGroup,proto3" json:"api_group,omitempty"`
+	ApiVersion        string                 `protobuf:"bytes,3,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	Resource          string                 `protobuf:"bytes,4,opt,name=resource,proto3" json:"resource,omitempty"`
+	ResourceNamespace string                 `protobuf:"bytes,5,opt,name=resource_namespace,json=resourceNamespace,proto3" json:"resource_namespace,omitempty"`
+	ResourceName      string                 `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorCelInput) Reset() {
+	*x = ComplianceOperatorCelInput{}
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorCelInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorCelInput) ProtoMessage() {}
+
+func (x *ComplianceOperatorCelInput) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorCelInput.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorCelInput) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ComplianceOperatorCelInput) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetApiGroup() string {
+	if x != nil {
+		return x.ApiGroup
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetApiVersion() string {
+	if x != nil {
+		return x.ApiVersion
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResource() string {
+	if x != nil {
+		return x.Resource
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResourceNamespace() string {
+	if x != nil {
+		return x.ResourceNamespace
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorCelInput) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
 type ComplianceOperatorScanV2 struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
 	Id            string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1408,7 +1534,7 @@ type ComplianceOperatorScanV2 struct {
 
 func (x *ComplianceOperatorScanV2) Reset() {
 	*x = ComplianceOperatorScanV2{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[11]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1546,7 @@ func (x *ComplianceOperatorScanV2) String() string {
 func (*ComplianceOperatorScanV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[11]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +1559,7 @@ func (x *ComplianceOperatorScanV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorScanV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanV2) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{11}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ComplianceOperatorScanV2) GetId() string {
@@ -1504,7 +1630,7 @@ type ComplianceOperatorScanStatusV2 struct {
 
 func (x *ComplianceOperatorScanStatusV2) Reset() {
 	*x = ComplianceOperatorScanStatusV2{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[12]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1516,7 +1642,7 @@ func (x *ComplianceOperatorScanStatusV2) String() string {
 func (*ComplianceOperatorScanStatusV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanStatusV2) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[12]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1529,7 +1655,7 @@ func (x *ComplianceOperatorScanStatusV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorScanStatusV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanStatusV2) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{12}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ComplianceOperatorScanStatusV2) GetPhase() string {
@@ -1610,7 +1736,7 @@ type ComplianceOperatorScanSettingBindingV2 struct {
 
 func (x *ComplianceOperatorScanSettingBindingV2) Reset() {
 	*x = ComplianceOperatorScanSettingBindingV2{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[13]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1622,7 +1748,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) String() string {
 func (*ComplianceOperatorScanSettingBindingV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[13]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1635,7 +1761,7 @@ func (x *ComplianceOperatorScanSettingBindingV2) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use ComplianceOperatorScanSettingBindingV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorScanSettingBindingV2) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{13}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ComplianceOperatorScanSettingBindingV2) GetId() string {
@@ -1700,7 +1826,7 @@ type ComplianceOperatorCondition struct {
 
 func (x *ComplianceOperatorCondition) Reset() {
 	*x = ComplianceOperatorCondition{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[14]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1712,7 +1838,7 @@ func (x *ComplianceOperatorCondition) String() string {
 func (*ComplianceOperatorCondition) ProtoMessage() {}
 
 func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[14]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1725,7 +1851,7 @@ func (x *ComplianceOperatorCondition) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorCondition.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorCondition) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{14}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ComplianceOperatorCondition) GetType() string {
@@ -1775,7 +1901,7 @@ type ComplianceOperatorStatus struct {
 
 func (x *ComplianceOperatorStatus) Reset() {
 	*x = ComplianceOperatorStatus{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[15]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1787,7 +1913,7 @@ func (x *ComplianceOperatorStatus) String() string {
 func (*ComplianceOperatorStatus) ProtoMessage() {}
 
 func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[15]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1800,7 +1926,7 @@ func (x *ComplianceOperatorStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorStatus) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{15}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ComplianceOperatorStatus) GetPhase() string {
@@ -1842,7 +1968,7 @@ type ComplianceOperatorSuiteV2 struct {
 
 func (x *ComplianceOperatorSuiteV2) Reset() {
 	*x = ComplianceOperatorSuiteV2{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[16]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1854,7 +1980,7 @@ func (x *ComplianceOperatorSuiteV2) String() string {
 func (*ComplianceOperatorSuiteV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[16]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1867,7 +1993,7 @@ func (x *ComplianceOperatorSuiteV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorSuiteV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorSuiteV2) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{16}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ComplianceOperatorSuiteV2) GetId() string {
@@ -1912,7 +2038,7 @@ type ComplianceOperatorRemediationV2 struct {
 
 func (x *ComplianceOperatorRemediationV2) Reset() {
 	*x = ComplianceOperatorRemediationV2{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[17]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1924,7 +2050,7 @@ func (x *ComplianceOperatorRemediationV2) String() string {
 func (*ComplianceOperatorRemediationV2) ProtoMessage() {}
 
 func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[17]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1937,7 +2063,7 @@ func (x *ComplianceOperatorRemediationV2) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceOperatorRemediationV2.ProtoReflect.Descriptor instead.
 func (*ComplianceOperatorRemediationV2) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{17}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ComplianceOperatorRemediationV2) GetId() string {
@@ -2010,7 +2136,7 @@ type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) Reset() {
 	*x = ApplyComplianceScanConfigRequest_BaseScanSettings{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2022,7 +2148,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) String() string {
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2103,7 +2229,7 @@ type ApplyComplianceScanConfigRequest_OneTimeScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_OneTimeScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2115,7 +2241,7 @@ func (x *ApplyComplianceScanConfigRequest_OneTimeScan) String() string {
 func (*ApplyComplianceScanConfigRequest_OneTimeScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2148,7 +2274,7 @@ type ApplyComplianceScanConfigRequest_ScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_ScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2160,7 +2286,7 @@ func (x *ApplyComplianceScanConfigRequest_ScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2199,7 +2325,7 @@ type ApplyComplianceScanConfigRequest_RerunScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_RerunScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2211,7 +2337,7 @@ func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2243,7 +2369,7 @@ type ApplyComplianceScanConfigRequest_SuspendScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_SuspendScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2255,7 +2381,7 @@ func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) String() string 
 func (*ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2287,7 +2413,7 @@ type ApplyComplianceScanConfigRequest_ResumeScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_ResumeScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2299,7 +2425,7 @@ func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2332,7 +2458,7 @@ type ApplyComplianceScanConfigRequest_UpdateScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_UpdateScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2344,7 +2470,7 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2384,7 +2510,7 @@ type ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference struct {
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) Reset() {
 	*x = ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2396,7 +2522,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) Str
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2439,7 +2565,7 @@ type ComplianceResponse_EnableComplianceResponse struct {
 
 func (x *ComplianceResponse_EnableComplianceResponse) Reset() {
 	*x = ComplianceResponse_EnableComplianceResponse{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[26]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2451,7 +2577,7 @@ func (x *ComplianceResponse_EnableComplianceResponse) String() string {
 func (*ComplianceResponse_EnableComplianceResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_EnableComplianceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[26]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2514,7 +2640,7 @@ type ComplianceResponse_DisableComplianceResponse struct {
 
 func (x *ComplianceResponse_DisableComplianceResponse) Reset() {
 	*x = ComplianceResponse_DisableComplianceResponse{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[27]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2526,7 +2652,7 @@ func (x *ComplianceResponse_DisableComplianceResponse) String() string {
 func (*ComplianceResponse_DisableComplianceResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_DisableComplianceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[27]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2589,7 +2715,7 @@ type ComplianceResponse_ApplyComplianceScanConfigResponse struct {
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) Reset() {
 	*x = ComplianceResponse_ApplyComplianceScanConfigResponse{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[28]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2601,7 +2727,7 @@ func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) String() string {
 func (*ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_ApplyComplianceScanConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[28]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2664,7 +2790,7 @@ type ComplianceResponse_DeleteComplianceScanConfigResponse struct {
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) Reset() {
 	*x = ComplianceResponse_DeleteComplianceScanConfigResponse{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[29]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2676,7 +2802,7 @@ func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) String() string 
 func (*ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoMessage() {}
 
 func (x *ComplianceResponse_DeleteComplianceScanConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[29]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2735,7 +2861,7 @@ type ComplianceOperatorProfileV2_Rule struct {
 
 func (x *ComplianceOperatorProfileV2_Rule) Reset() {
 	*x = ComplianceOperatorProfileV2_Rule{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[34]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2747,7 +2873,7 @@ func (x *ComplianceOperatorProfileV2_Rule) String() string {
 func (*ComplianceOperatorProfileV2_Rule) ProtoMessage() {}
 
 func (x *ComplianceOperatorProfileV2_Rule) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[34]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2780,7 +2906,7 @@ type ComplianceOperatorRuleV2_Fix struct {
 
 func (x *ComplianceOperatorRuleV2_Fix) Reset() {
 	*x = ComplianceOperatorRuleV2_Fix{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[37]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2792,7 +2918,7 @@ func (x *ComplianceOperatorRuleV2_Fix) String() string {
 func (*ComplianceOperatorRuleV2_Fix) ProtoMessage() {}
 
 func (x *ComplianceOperatorRuleV2_Fix) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[37]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2818,6 +2944,58 @@ func (x *ComplianceOperatorRuleV2_Fix) GetPlatform() string {
 func (x *ComplianceOperatorRuleV2_Fix) GetDisruption() string {
 	if x != nil {
 		return x.Disruption
+	}
+	return ""
+}
+
+type ComplianceOperatorRuleV2_CustomRuleDetails struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Phase         string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) Reset() {
+	*x = ComplianceOperatorRuleV2_CustomRuleDetails{}
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceOperatorRuleV2_CustomRuleDetails) ProtoMessage() {}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceOperatorRuleV2_CustomRuleDetails.ProtoReflect.Descriptor instead.
+func (*ComplianceOperatorRuleV2_CustomRuleDetails) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{10, 3}
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *ComplianceOperatorRuleV2_CustomRuleDetails) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
 	}
 	return ""
 }
@@ -2977,7 +3155,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\v\n" +
 	"\aPROFILE\x10\x01\x12\x14\n" +
-	"\x10TAILORED_PROFILE\x10\x02\"\x84\a\n" +
+	"\x10TAILORED_PROFILE\x10\x02\"\xe0\t\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x17\n" +
 	"\arule_id\x18\x01 \x01(\tR\x06ruleId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
@@ -2993,7 +3171,14 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05fixes\x18\v \x03(\v2%.central.ComplianceOperatorRuleV2.FixR\x05fixes\x12\x18\n" +
 	"\awarning\x18\f \x01(\tR\awarning\x12\"\n" +
 	"\finstructions\x18\r \x01(\tR\finstructions\x12S\n" +
-	"\roperator_kind\x18\x0e \x01(\x0e2..central.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x1a9\n" +
+	"\roperator_kind\x18\x0e \x01(\x0e2..central.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x12!\n" +
+	"\fscanner_type\x18\x0f \x01(\tR\vscannerType\x12\x1e\n" +
+	"\n" +
+	"expression\x18\x10 \x01(\tR\n" +
+	"expression\x12;\n" +
+	"\x06inputs\x18\x11 \x03(\v2#.central.ComplianceOperatorCelInputR\x06inputs\x12%\n" +
+	"\x0efailure_reason\x18\x12 \x01(\tR\rfailureReason\x12c\n" +
+	"\x13custom_rule_details\x18\x13 \x01(\v23.central.ComplianceOperatorRuleV2.CustomRuleDetailsR\x11customRuleDetails\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -3004,11 +3189,22 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"H\n" +
+	"disruption\x1aN\n" +
+	"\x11CustomRuleDetails\x12\x14\n" +
+	"\x05phase\x18\x01 \x01(\tR\x05phase\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"H\n" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\b\n" +
 	"\x04RULE\x10\x01\x12\x0f\n" +
-	"\vCUSTOM_RULE\x10\x02\"\xd3\x03\n" +
+	"\vCUSTOM_RULE\x10\x02\"\xde\x01\n" +
+	"\x1aComplianceOperatorCelInput\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
+	"\tapi_group\x18\x02 \x01(\tR\bapiGroup\x12\x1f\n" +
+	"\vapi_version\x18\x03 \x01(\tR\n" +
+	"apiVersion\x12\x1a\n" +
+	"\bresource\x18\x04 \x01(\tR\bresource\x12-\n" +
+	"\x12resource_namespace\x18\x05 \x01(\tR\x11resourceNamespace\x12#\n" +
+	"\rresource_name\x18\x06 \x01(\tR\fresourceName\"\xd3\x03\n" +
 	"\x18ComplianceOperatorScanV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -3095,7 +3291,7 @@ func file_internalapi_central_compliance_operator_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_compliance_operator_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
 var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	(ComplianceOperatorRuleSeverity)(0),                                        // 0: central.ComplianceOperatorRuleSeverity
 	(ComplianceOperatorCheckResultV2_CheckStatus)(0),                           // 1: central.ComplianceOperatorCheckResultV2.CheckStatus
@@ -3112,91 +3308,95 @@ var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	(*ComplianceOperatorCheckResultV2)(nil),                                    // 12: central.ComplianceOperatorCheckResultV2
 	(*ComplianceOperatorProfileV2)(nil),                                        // 13: central.ComplianceOperatorProfileV2
 	(*ComplianceOperatorRuleV2)(nil),                                           // 14: central.ComplianceOperatorRuleV2
-	(*ComplianceOperatorScanV2)(nil),                                           // 15: central.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanStatusV2)(nil),                                     // 16: central.ComplianceOperatorScanStatusV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil),                             // 17: central.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorCondition)(nil),                                        // 18: central.ComplianceOperatorCondition
-	(*ComplianceOperatorStatus)(nil),                                           // 19: central.ComplianceOperatorStatus
-	(*ComplianceOperatorSuiteV2)(nil),                                          // 20: central.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),                                    // 21: central.ComplianceOperatorRemediationV2
-	(*ApplyComplianceScanConfigRequest_BaseScanSettings)(nil),                  // 22: central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	(*ApplyComplianceScanConfigRequest_OneTimeScan)(nil),                       // 23: central.ApplyComplianceScanConfigRequest.OneTimeScan
-	(*ApplyComplianceScanConfigRequest_ScheduledScan)(nil),                     // 24: central.ApplyComplianceScanConfigRequest.ScheduledScan
-	(*ApplyComplianceScanConfigRequest_RerunScheduledScan)(nil),                // 25: central.ApplyComplianceScanConfigRequest.RerunScheduledScan
-	(*ApplyComplianceScanConfigRequest_SuspendScheduledScan)(nil),              // 26: central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
-	(*ApplyComplianceScanConfigRequest_ResumeScheduledScan)(nil),               // 27: central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
-	(*ApplyComplianceScanConfigRequest_UpdateScheduledScan)(nil),               // 28: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
-	(*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)(nil), // 29: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
-	(*ComplianceResponse_EnableComplianceResponse)(nil),                        // 30: central.ComplianceResponse.EnableComplianceResponse
-	(*ComplianceResponse_DisableComplianceResponse)(nil),                       // 31: central.ComplianceResponse.DisableComplianceResponse
-	(*ComplianceResponse_ApplyComplianceScanConfigResponse)(nil),               // 32: central.ComplianceResponse.ApplyComplianceScanConfigResponse
-	(*ComplianceResponse_DeleteComplianceScanConfigResponse)(nil),              // 33: central.ComplianceResponse.DeleteComplianceScanConfigResponse
-	nil,                                      // 34: central.ComplianceOperatorCheckResultV2.LabelsEntry
-	nil,                                      // 35: central.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	nil,                                      // 36: central.ComplianceOperatorProfileV2.LabelsEntry
-	nil,                                      // 37: central.ComplianceOperatorProfileV2.AnnotationsEntry
-	(*ComplianceOperatorProfileV2_Rule)(nil), // 38: central.ComplianceOperatorProfileV2.Rule
-	nil,                                      // 39: central.ComplianceOperatorRuleV2.LabelsEntry
-	nil,                                      // 40: central.ComplianceOperatorRuleV2.AnnotationsEntry
-	(*ComplianceOperatorRuleV2_Fix)(nil),     // 41: central.ComplianceOperatorRuleV2.Fix
-	nil,                                      // 42: central.ComplianceOperatorScanV2.LabelsEntry
-	nil,                                      // 43: central.ComplianceOperatorScanV2.AnnotationsEntry
-	nil,                                      // 44: central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	nil,                                      // 45: central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	(*timestamppb.Timestamp)(nil),            // 46: google.protobuf.Timestamp
+	(*ComplianceOperatorCelInput)(nil),                                         // 15: central.ComplianceOperatorCelInput
+	(*ComplianceOperatorScanV2)(nil),                                           // 16: central.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanStatusV2)(nil),                                     // 17: central.ComplianceOperatorScanStatusV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),                             // 18: central.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorCondition)(nil),                                        // 19: central.ComplianceOperatorCondition
+	(*ComplianceOperatorStatus)(nil),                                           // 20: central.ComplianceOperatorStatus
+	(*ComplianceOperatorSuiteV2)(nil),                                          // 21: central.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),                                    // 22: central.ComplianceOperatorRemediationV2
+	(*ApplyComplianceScanConfigRequest_BaseScanSettings)(nil),                  // 23: central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	(*ApplyComplianceScanConfigRequest_OneTimeScan)(nil),                       // 24: central.ApplyComplianceScanConfigRequest.OneTimeScan
+	(*ApplyComplianceScanConfigRequest_ScheduledScan)(nil),                     // 25: central.ApplyComplianceScanConfigRequest.ScheduledScan
+	(*ApplyComplianceScanConfigRequest_RerunScheduledScan)(nil),                // 26: central.ApplyComplianceScanConfigRequest.RerunScheduledScan
+	(*ApplyComplianceScanConfigRequest_SuspendScheduledScan)(nil),              // 27: central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
+	(*ApplyComplianceScanConfigRequest_ResumeScheduledScan)(nil),               // 28: central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
+	(*ApplyComplianceScanConfigRequest_UpdateScheduledScan)(nil),               // 29: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
+	(*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)(nil), // 30: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
+	(*ComplianceResponse_EnableComplianceResponse)(nil),                        // 31: central.ComplianceResponse.EnableComplianceResponse
+	(*ComplianceResponse_DisableComplianceResponse)(nil),                       // 32: central.ComplianceResponse.DisableComplianceResponse
+	(*ComplianceResponse_ApplyComplianceScanConfigResponse)(nil),               // 33: central.ComplianceResponse.ApplyComplianceScanConfigResponse
+	(*ComplianceResponse_DeleteComplianceScanConfigResponse)(nil),              // 34: central.ComplianceResponse.DeleteComplianceScanConfigResponse
+	nil,                                      // 35: central.ComplianceOperatorCheckResultV2.LabelsEntry
+	nil,                                      // 36: central.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	nil,                                      // 37: central.ComplianceOperatorProfileV2.LabelsEntry
+	nil,                                      // 38: central.ComplianceOperatorProfileV2.AnnotationsEntry
+	(*ComplianceOperatorProfileV2_Rule)(nil), // 39: central.ComplianceOperatorProfileV2.Rule
+	nil,                                      // 40: central.ComplianceOperatorRuleV2.LabelsEntry
+	nil,                                      // 41: central.ComplianceOperatorRuleV2.AnnotationsEntry
+	(*ComplianceOperatorRuleV2_Fix)(nil),     // 42: central.ComplianceOperatorRuleV2.Fix
+	(*ComplianceOperatorRuleV2_CustomRuleDetails)(nil), // 43: central.ComplianceOperatorRuleV2.CustomRuleDetails
+	nil,                           // 44: central.ComplianceOperatorScanV2.LabelsEntry
+	nil,                           // 45: central.ComplianceOperatorScanV2.AnnotationsEntry
+	nil,                           // 46: central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	nil,                           // 47: central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	(*timestamppb.Timestamp)(nil), // 48: google.protobuf.Timestamp
 }
 var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	8,  // 0: central.SyncComplianceScanConfigRequest.scan_configs:type_name -> central.ApplyComplianceScanConfigRequest
-	24, // 1: central.ApplyComplianceScanConfigRequest.scheduled_scan:type_name -> central.ApplyComplianceScanConfigRequest.ScheduledScan
-	25, // 2: central.ApplyComplianceScanConfigRequest.rerun_scan:type_name -> central.ApplyComplianceScanConfigRequest.RerunScheduledScan
-	26, // 3: central.ApplyComplianceScanConfigRequest.suspend_scan:type_name -> central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
-	27, // 4: central.ApplyComplianceScanConfigRequest.resume_scan:type_name -> central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
-	28, // 5: central.ApplyComplianceScanConfigRequest.update_scan:type_name -> central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
+	25, // 1: central.ApplyComplianceScanConfigRequest.scheduled_scan:type_name -> central.ApplyComplianceScanConfigRequest.ScheduledScan
+	26, // 2: central.ApplyComplianceScanConfigRequest.rerun_scan:type_name -> central.ApplyComplianceScanConfigRequest.RerunScheduledScan
+	27, // 3: central.ApplyComplianceScanConfigRequest.suspend_scan:type_name -> central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
+	28, // 4: central.ApplyComplianceScanConfigRequest.resume_scan:type_name -> central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
+	29, // 5: central.ApplyComplianceScanConfigRequest.update_scan:type_name -> central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
 	5,  // 6: central.ComplianceRequest.enable_compliance:type_name -> central.EnableComplianceRequest
 	6,  // 7: central.ComplianceRequest.disable_compliance:type_name -> central.DisableComplianceRequest
 	8,  // 8: central.ComplianceRequest.apply_scan_config:type_name -> central.ApplyComplianceScanConfigRequest
 	9,  // 9: central.ComplianceRequest.delete_scan_config:type_name -> central.DeleteComplianceScanConfigRequest
 	7,  // 10: central.ComplianceRequest.sync_scan_configs:type_name -> central.SyncComplianceScanConfigRequest
-	30, // 11: central.ComplianceResponse.enable_compliance_response:type_name -> central.ComplianceResponse.EnableComplianceResponse
-	31, // 12: central.ComplianceResponse.disable_compliance_response:type_name -> central.ComplianceResponse.DisableComplianceResponse
-	32, // 13: central.ComplianceResponse.apply_compliance_scan_config_response:type_name -> central.ComplianceResponse.ApplyComplianceScanConfigResponse
-	33, // 14: central.ComplianceResponse.delete_compliance_scan_config_response:type_name -> central.ComplianceResponse.DeleteComplianceScanConfigResponse
+	31, // 11: central.ComplianceResponse.enable_compliance_response:type_name -> central.ComplianceResponse.EnableComplianceResponse
+	32, // 12: central.ComplianceResponse.disable_compliance_response:type_name -> central.ComplianceResponse.DisableComplianceResponse
+	33, // 13: central.ComplianceResponse.apply_compliance_scan_config_response:type_name -> central.ComplianceResponse.ApplyComplianceScanConfigResponse
+	34, // 14: central.ComplianceResponse.delete_compliance_scan_config_response:type_name -> central.ComplianceResponse.DeleteComplianceScanConfigResponse
 	1,  // 15: central.ComplianceOperatorCheckResultV2.status:type_name -> central.ComplianceOperatorCheckResultV2.CheckStatus
 	0,  // 16: central.ComplianceOperatorCheckResultV2.severity:type_name -> central.ComplianceOperatorRuleSeverity
-	34, // 17: central.ComplianceOperatorCheckResultV2.labels:type_name -> central.ComplianceOperatorCheckResultV2.LabelsEntry
-	35, // 18: central.ComplianceOperatorCheckResultV2.annotations:type_name -> central.ComplianceOperatorCheckResultV2.AnnotationsEntry
-	46, // 19: central.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
-	36, // 20: central.ComplianceOperatorProfileV2.labels:type_name -> central.ComplianceOperatorProfileV2.LabelsEntry
-	37, // 21: central.ComplianceOperatorProfileV2.annotations:type_name -> central.ComplianceOperatorProfileV2.AnnotationsEntry
-	38, // 22: central.ComplianceOperatorProfileV2.rules:type_name -> central.ComplianceOperatorProfileV2.Rule
+	35, // 17: central.ComplianceOperatorCheckResultV2.labels:type_name -> central.ComplianceOperatorCheckResultV2.LabelsEntry
+	36, // 18: central.ComplianceOperatorCheckResultV2.annotations:type_name -> central.ComplianceOperatorCheckResultV2.AnnotationsEntry
+	48, // 19: central.ComplianceOperatorCheckResultV2.created_time:type_name -> google.protobuf.Timestamp
+	37, // 20: central.ComplianceOperatorProfileV2.labels:type_name -> central.ComplianceOperatorProfileV2.LabelsEntry
+	38, // 21: central.ComplianceOperatorProfileV2.annotations:type_name -> central.ComplianceOperatorProfileV2.AnnotationsEntry
+	39, // 22: central.ComplianceOperatorProfileV2.rules:type_name -> central.ComplianceOperatorProfileV2.Rule
 	2,  // 23: central.ComplianceOperatorProfileV2.operator_kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
 	0,  // 24: central.ComplianceOperatorRuleV2.severity:type_name -> central.ComplianceOperatorRuleSeverity
-	39, // 25: central.ComplianceOperatorRuleV2.labels:type_name -> central.ComplianceOperatorRuleV2.LabelsEntry
-	40, // 26: central.ComplianceOperatorRuleV2.annotations:type_name -> central.ComplianceOperatorRuleV2.AnnotationsEntry
-	41, // 27: central.ComplianceOperatorRuleV2.fixes:type_name -> central.ComplianceOperatorRuleV2.Fix
+	40, // 25: central.ComplianceOperatorRuleV2.labels:type_name -> central.ComplianceOperatorRuleV2.LabelsEntry
+	41, // 26: central.ComplianceOperatorRuleV2.annotations:type_name -> central.ComplianceOperatorRuleV2.AnnotationsEntry
+	42, // 27: central.ComplianceOperatorRuleV2.fixes:type_name -> central.ComplianceOperatorRuleV2.Fix
 	3,  // 28: central.ComplianceOperatorRuleV2.operator_kind:type_name -> central.ComplianceOperatorRuleV2.OperatorKind
-	42, // 29: central.ComplianceOperatorScanV2.labels:type_name -> central.ComplianceOperatorScanV2.LabelsEntry
-	43, // 30: central.ComplianceOperatorScanV2.annotations:type_name -> central.ComplianceOperatorScanV2.AnnotationsEntry
-	16, // 31: central.ComplianceOperatorScanV2.status:type_name -> central.ComplianceOperatorScanStatusV2
-	46, // 32: central.ComplianceOperatorScanStatusV2.start_time:type_name -> google.protobuf.Timestamp
-	46, // 33: central.ComplianceOperatorScanStatusV2.end_time:type_name -> google.protobuf.Timestamp
-	46, // 34: central.ComplianceOperatorScanStatusV2.last_start_time:type_name -> google.protobuf.Timestamp
-	44, // 35: central.ComplianceOperatorScanSettingBindingV2.labels:type_name -> central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
-	45, // 36: central.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
-	19, // 37: central.ComplianceOperatorScanSettingBindingV2.status:type_name -> central.ComplianceOperatorStatus
-	46, // 38: central.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	18, // 39: central.ComplianceOperatorStatus.conditions:type_name -> central.ComplianceOperatorCondition
-	19, // 40: central.ComplianceOperatorSuiteV2.status:type_name -> central.ComplianceOperatorStatus
-	29, // 41: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
-	22, // 42: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	22, // 43: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	22, // 44: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	2,  // 45: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
-	46, // [46:46] is the sub-list for method output_type
-	46, // [46:46] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	15, // 29: central.ComplianceOperatorRuleV2.inputs:type_name -> central.ComplianceOperatorCelInput
+	43, // 30: central.ComplianceOperatorRuleV2.custom_rule_details:type_name -> central.ComplianceOperatorRuleV2.CustomRuleDetails
+	44, // 31: central.ComplianceOperatorScanV2.labels:type_name -> central.ComplianceOperatorScanV2.LabelsEntry
+	45, // 32: central.ComplianceOperatorScanV2.annotations:type_name -> central.ComplianceOperatorScanV2.AnnotationsEntry
+	17, // 33: central.ComplianceOperatorScanV2.status:type_name -> central.ComplianceOperatorScanStatusV2
+	48, // 34: central.ComplianceOperatorScanStatusV2.start_time:type_name -> google.protobuf.Timestamp
+	48, // 35: central.ComplianceOperatorScanStatusV2.end_time:type_name -> google.protobuf.Timestamp
+	48, // 36: central.ComplianceOperatorScanStatusV2.last_start_time:type_name -> google.protobuf.Timestamp
+	46, // 37: central.ComplianceOperatorScanSettingBindingV2.labels:type_name -> central.ComplianceOperatorScanSettingBindingV2.LabelsEntry
+	47, // 38: central.ComplianceOperatorScanSettingBindingV2.annotations:type_name -> central.ComplianceOperatorScanSettingBindingV2.AnnotationsEntry
+	20, // 39: central.ComplianceOperatorScanSettingBindingV2.status:type_name -> central.ComplianceOperatorStatus
+	48, // 40: central.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	19, // 41: central.ComplianceOperatorStatus.conditions:type_name -> central.ComplianceOperatorCondition
+	20, // 42: central.ComplianceOperatorSuiteV2.status:type_name -> central.ComplianceOperatorStatus
+	30, // 43: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
+	23, // 44: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	23, // 45: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	23, // 46: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	2,  // 47: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_compliance_operator_proto_init() }
@@ -3228,16 +3428,16 @@ func file_internalapi_central_compliance_operator_proto_init() {
 		(*ComplianceResponse_ApplyComplianceScanConfigResponse_)(nil),
 		(*ComplianceResponse_DeleteComplianceScanConfigResponse_)(nil),
 	}
-	file_internalapi_central_compliance_operator_proto_msgTypes[26].OneofWrappers = []any{
+	file_internalapi_central_compliance_operator_proto_msgTypes[27].OneofWrappers = []any{
 		(*ComplianceResponse_EnableComplianceResponse_Error)(nil),
 	}
-	file_internalapi_central_compliance_operator_proto_msgTypes[27].OneofWrappers = []any{
+	file_internalapi_central_compliance_operator_proto_msgTypes[28].OneofWrappers = []any{
 		(*ComplianceResponse_DisableComplianceResponse_Error)(nil),
 	}
-	file_internalapi_central_compliance_operator_proto_msgTypes[28].OneofWrappers = []any{
+	file_internalapi_central_compliance_operator_proto_msgTypes[29].OneofWrappers = []any{
 		(*ComplianceResponse_ApplyComplianceScanConfigResponse_Error)(nil),
 	}
-	file_internalapi_central_compliance_operator_proto_msgTypes[29].OneofWrappers = []any{
+	file_internalapi_central_compliance_operator_proto_msgTypes[30].OneofWrappers = []any{
 		(*ComplianceResponse_DeleteComplianceScanConfigResponse_Error)(nil),
 	}
 	type x struct{}
@@ -3246,7 +3446,7 @@ func file_internalapi_central_compliance_operator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_compliance_operator_proto_rawDesc), len(file_internalapi_central_compliance_operator_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   42,
+			NumMessages:   44,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
