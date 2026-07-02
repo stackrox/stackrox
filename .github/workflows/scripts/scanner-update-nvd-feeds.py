@@ -20,6 +20,9 @@ logging.basicConfig(
 
 DEFAULT_BASE_URL = "https://nvd.nist.gov/feeds/json/cve/2.0/"
 
+BACKOFF_TABLE = [15, 30, 60, 120, 240, 300]
+
+
 class FeedLoader:
 
     log = logging.getLogger("FeedLoader")
@@ -29,9 +32,8 @@ class FeedLoader:
 
     def fetch(self, year):
         url = parse.urljoin(self._base_url, f"nvdcve-2.0-{year}.json.gz")
-        backoff_time = 10
         max_retries = 10
-        while True:
+        for attempt in range(max_retries + 1):
             try:
                 self.log.info("fetching and decompressing: %s", url)
                 with request.urlopen(url, timeout=120) as resp:
@@ -39,12 +41,11 @@ class FeedLoader:
                         data = json.load(gz)
                 break
             except Exception as e:
-                if max_retries > 0:
-                    self.log.warning("failed to fetch %s: %s", url, e)
-                    self.log.info("retrying in %d seconds...", backoff_time)
-                    time.sleep(backoff_time)
-                    backoff_time *= 2
-                    max_retries -= 1
+                if attempt < max_retries:
+                    backoff = BACKOFF_TABLE[min(attempt, len(BACKOFF_TABLE) - 1)]
+                    self.log.warning("failed to fetch %s (attempt %d/%d): %s", url, attempt + 1, max_retries + 1, e)
+                    self.log.info("retrying in %d seconds...", backoff)
+                    time.sleep(backoff)
                 else:
                     raise
         yield from (v for v in data["vulnerabilities"]
