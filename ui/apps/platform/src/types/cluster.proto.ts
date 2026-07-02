@@ -157,6 +157,26 @@ export type ClusterCertExpiryStatus = {
     sensorCertExpiry: string; // ISO 8601 date string
 };
 
+export type VersionSkewStatus =
+    | 'VERSION_SKEW_STATUS_UNSPECIFIED'
+    | 'VERSION_SKEW_STATUS_MATCHING'
+    | 'VERSION_SKEW_STATUS_COMPATIBLE'
+    | 'VERSION_SKEW_STATUS_INCOMPATIBLE';
+
+export type VersionSkewIncompatibilityReason =
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_UNSPECIFIED'
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_OLD'
+    | 'VERSION_SKEW_INCOMPATIBILITY_REASON_SENSOR_TOO_NEW';
+
+export type VersionSkew = {
+    status: VersionSkewStatus;
+    incompatibilityReason: VersionSkewIncompatibilityReason;
+    // X.Y format (patch version not included).
+    minCompatibleSensorVersion: string;
+    // X.Y format (patch version not included).
+    maxCompatibleSensorVersion: string;
+};
+
 export type ClusterStatus = {
     sensorVersion: string;
     // DEPRECATED_last_contact
@@ -164,6 +184,7 @@ export type ClusterStatus = {
     orchestratorMetadata: ClusterOrchestratorMetadata;
     upgradeStatus: ClusterUpgradeStatus;
     certExpiryStatus: ClusterCertExpiryStatus;
+    versionSkew?: VersionSkew;
 };
 
 export type ClusterUpgradability =

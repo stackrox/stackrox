@@ -55,12 +55,13 @@ type DataStore interface {
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
 	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
-	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade or cluster-cert-expiry status
-	// passed to this endpoint will be ignored. To insert that, callers MUST separately call
-	// UpdateClusterUpgradeStatus or UpdateClusterCertExpiry status.
+	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade, cluster-cert-expiry,
+	// or version-skew status passed to this endpoint will be ignored. To insert those, callers MUST separately call
+	// UpdateClusterUpgradeStatus, UpdateClusterCertExpiryStatus, or UpdateClusterVersionSkew.
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
+	UpdateClusterVersionSkew(ctx context.Context, id string, versionSkew *storage.VersionSkew) error
 	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
 	UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error
 	// UpdateAuditLogFileStates updates for each node in the cluster where the audit log was last at

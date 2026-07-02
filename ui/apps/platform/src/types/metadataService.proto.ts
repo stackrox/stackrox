@@ -3,4 +3,6 @@ export type Metadata = {
     buildFlavor: string;
     releaseBuild: boolean;
     licenseStatus: string;
+    minCompatibleSensorVersion?: string;
+    maxCompatibleSensorVersion?: string;
 };
