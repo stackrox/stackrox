@@ -92,9 +92,10 @@ func IsStartupProcessView(process *views.ProcessIndicatorRiskView) bool {
 		return false
 	}
 	// TODO(ROX-31107): Determine if nil SignalTime should be considered startup task.  By this logic it is.
-	durationBetweenProcessAndContainerStart := protoutils.Sub(protocompat.ConvertTimeToTimestampOrNil(process.SignalTime),
-		protocompat.ConvertTimeToTimestampOrNil(process.ContainerStartTime))
-	return durationBetweenProcessAndContainerStart < ContainerStartupDuration
+	if process.SignalTime == nil {
+		return true
+	}
+	return process.SignalTime.Sub(*process.ContainerStartTime) < ContainerStartupDuration
 }
 
 // BaselineItemFromProcessView returns what we baseline for a given process.
