@@ -1,0 +1,202 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+  namespace: stackrox
+  labels:
+    app: scanner-v4-indexer
+    app.kubernetes.io/component: scanner-v4
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-v4-indexer
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-v4-indexer
+        app.kubernetes.io/component: scanner-v4
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.10.1
+        helm.sh/chart: stackrox-central-services-400.10.1
+      annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        openshift.io/required-scc: restricted-v2
+        owner: stackrox
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+            weight: 50
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+            weight: 25
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+            weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scanner-v4-indexer
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: indexer
+        image: "example.com/rhacs-scanner-v4-rhel8:4.10.1"
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_CENTRAL_ENDPOINT
+          value: "central.stackrox.svc:443"
+        - name: ROX_OPENSHIFT_API
+          value: "true"
+        - name: ROX_METRICS_PORT
+          value: ":9090"
+        - name: ROX_ENABLE_SECURE_METRICS
+          value: "true"
+        - name: ROX_SECURE_METRICS_PORT
+          value: ":9091"
+        
+        resources:
+          limits:
+            cpu: 4000m
+            memory: 3Gi
+          requests:
+            cpu: 1500m
+            memory: 0.5Gi
+        command:
+        - entrypoint.sh
+        - --conf=/etc/scanner/config.yaml
+        ports:
+        - name: grpc
+          containerPort: 8443
+        
+        - containerPort: 9091
+          name: monitoring-tls
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["NET_RAW"]
+          runAsNonRoot: true
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /health/readiness
+            port: 9443
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 5
+          successThreshold: 1
+        volumeMounts:
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: config-volume
+          mountPath: /etc/scanner
+          readOnly: true
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: tmp-volume
+          mountPath: /tmp
+        - name: db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+        - name: monitoring-tls
+          mountPath: /run/secrets/stackrox.io/monitoring-tls
+          readOnly: true
+        
+        - name: trusted-ca-volume
+          mountPath: /etc/pki/injected-ca-trust/
+          readOnly: true
+        
+        
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: scanner-v4
+      volumes:
+      - name: additional-ca-volume
+        secret:
+          optional: true
+          secretName: additional-ca
+      - name: etc-ssl-volume
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      - name: certs
+        secret:
+          secretName: scanner-v4-indexer-tls
+      - name: config-volume
+        configMap:
+          name: scanner-v4-indexer-config
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: tmp-volume
+        emptyDir: {}
+      - name: db-password
+        secret:
+          secretName: scanner-v4-db-password
+      - name: monitoring-tls
+        secret:
+          secretName: scanner-v4-indexer-monitoring-tls
+      
+      - name: trusted-ca-volume
+        configMap:
+          name: injected-cabundle-stackrox-central-services
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+          optional: true

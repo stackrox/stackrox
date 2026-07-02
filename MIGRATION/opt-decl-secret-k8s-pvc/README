@@ -1,0 +1,23 @@
+To deploy:
+  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.
+
+  - Deploy Central
+    - Run central/scripts/setup.sh
+    - Run kubectl create -R -f central
+
+  - Deploy Scanner components
+    - Run scanner/scripts/setup.sh
+    - Run kubectl create -R -f scanner
+
+  - Optional: Deploy Scanner V4 components
+    - Run scanner-v4/scripts/setup.sh
+    - Run kubectl create -R -f scanner-v4
+
+PLEASE NOTE: The recommended way to deploy StackRox is by using Helm. If you have
+Helm 3.1+ installed, please consider choosing this deployment route instead. For your
+convenience, all required files have been written to the helm/ subdirectory, along with
+a README file detailing the Helm-based deployment process.
+
+For administrator login, select the "Login with username/password" option on
+the login page, and log in with username "admin" and the password found in the
+"password" file located in the same directory as this README.
