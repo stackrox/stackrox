@@ -516,6 +516,8 @@ func extractFileAccessInfo(from *storage.FileAccess) *integrations.SplunkViolati
 			info.FileMode = protocompat.ProtoUInt32Value(m.GetMode())
 			info.FileUsername = m.GetUsername()
 			info.FileGroup = m.GetGroup()
+			info.AclType = m.GetAclType()
+			info.AclEntries = m.GetAclEntries()
 		}
 	}
 	if moved := from.GetMoved(); moved != nil {

@@ -272,6 +272,18 @@ func (m *SplunkViolation_FileAccessInfo) CloneVT() *SplunkViolation_FileAccessIn
 	r.FileUsername = m.FileUsername
 	r.FileGroup = m.FileGroup
 	r.Hostname = m.Hostname
+	r.AclType = m.AclType
+	if rhs := m.AclEntries; rhs != nil {
+		tmpContainer := make([]*storage.AclEntry, len(rhs))
+		for k, v := range rhs {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.AclEntry }); ok {
+				tmpContainer[k] = vtpb.CloneVT()
+			} else {
+				tmpContainer[k] = proto.Clone(v).(*storage.AclEntry)
+			}
+		}
+		r.AclEntries = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -743,6 +755,30 @@ func (this *SplunkViolation_FileAccessInfo) EqualVT(that *SplunkViolation_FileAc
 	}
 	if this.Hostname != that.Hostname {
 		return false
+	}
+	if this.AclType != that.AclType {
+		return false
+	}
+	if len(this.AclEntries) != len(that.AclEntries) {
+		return false
+	}
+	for i, vx := range this.AclEntries {
+		vy := that.AclEntries[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &storage.AclEntry{}
+			}
+			if q == nil {
+				q = &storage.AclEntry{}
+			}
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.AclEntry) bool }); ok {
+				if !equal.EqualVT(q) {
+					return false
+				}
+			} else if !proto.Equal(p, q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1628,6 +1664,35 @@ func (m *SplunkViolation_FileAccessInfo) MarshalToSizedBufferVT(dAtA []byte) (in
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.AclEntries) > 0 {
+		for iNdEx := len(m.AclEntries) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.AclEntries[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.AclEntries[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
+			i--
+			dAtA[i] = 0x6a
+		}
+	}
+	if m.AclType != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.AclType))
+		i--
+		dAtA[i] = 0x60
+	}
 	if len(m.Hostname) > 0 {
 		i -= len(m.Hostname)
 		copy(dAtA[i:], m.Hostname)
@@ -2234,6 +2299,21 @@ func (m *SplunkViolation_FileAccessInfo) SizeVT() (n int) {
 	l = len(m.Hostname)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AclType != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.AclType))
+	}
+	if len(m.AclEntries) > 0 {
+		for _, e := range m.AclEntries {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4863,6 +4943,67 @@ func (m *SplunkViolation_FileAccessInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Hostname = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AclType", wireType)
+			}
+			m.AclType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AclType |= storage.AclType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AclEntries", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AclEntries = append(m.AclEntries, &storage.AclEntry{})
+			if unmarshal, ok := interface{}(m.AclEntries[len(m.AclEntries)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AclEntries[len(m.AclEntries)-1]); err != nil {
+					return err
+				}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -7976,6 +8117,67 @@ func (m *SplunkViolation_FileAccessInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Hostname = stringValue
+			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AclType", wireType)
+			}
+			m.AclType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.AclType |= storage.AclType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AclEntries", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AclEntries = append(m.AclEntries, &storage.AclEntry{})
+			if unmarshal, ok := interface{}(m.AclEntries[len(m.AclEntries)-1]).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.AclEntries[len(m.AclEntries)-1]); err != nil {
+					return err
+				}
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

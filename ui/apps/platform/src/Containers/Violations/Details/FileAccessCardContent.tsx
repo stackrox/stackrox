@@ -3,7 +3,7 @@ import { DescriptionList, Divider, Flex, Title } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { getDateTime } from 'utils/dateUtils';
-import type { FileAccess, FileOperation } from 'types/fileAccess.proto';
+import type { AclEntry, AclTag, AclType, FileAccess, FileOperation } from 'types/fileAccess.proto';
 
 const fileOperations: Map<FileOperation, string> = new Map([
     ['OPEN', 'Open (Writable)'],
@@ -12,7 +12,50 @@ const fileOperations: Map<FileOperation, string> = new Map([
     ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
+    ['ACL_CHANGE', 'ACL change'],
 ]);
+
+const aclTagLabels: Map<AclTag, string> = new Map([
+    ['ACL_TAG_USER_OBJ', 'Owner'],
+    ['ACL_TAG_USER', 'User'],
+    ['ACL_TAG_GROUP_OBJ', 'Owning group'],
+    ['ACL_TAG_GROUP', 'Group'],
+    ['ACL_TAG_MASK', 'Mask'],
+    ['ACL_TAG_OTHER', 'Other'],
+]);
+
+const aclTypeLabels: Map<AclType, string> = new Map([
+    ['ACL_TYPE_ACCESS', 'Access'],
+    ['ACL_TYPE_DEFAULT', 'Default'],
+]);
+
+const NO_ID = 0xffffffff;
+
+// Map each octal digit (0-7) to its rwx permission string.
+// Shared between formatFileMode (full 9-char mode) and ACL entry formatting.
+const octalToPermission: Record<string, string> = {
+    '0': '---',
+    '1': '--x',
+    '2': '-w-',
+    '3': '-wx',
+    '4': 'r--',
+    '5': 'r-x',
+    '6': 'rw-',
+    '7': 'rwx',
+};
+
+function formatOctalDigit(digit: number): string {
+    return octalToPermission[String(digit & 7)] || '---';
+}
+
+function formatAclEntry(entry: AclEntry): string {
+    const tagLabel = aclTagLabels.get(entry.tag) || entry.tag;
+    const permStr = formatOctalDigit(entry.perm);
+    if ((entry.tag === 'ACL_TAG_USER' || entry.tag === 'ACL_TAG_GROUP') && entry.id !== NO_ID) {
+        return `${tagLabel}(${entry.id}): ${permStr}`;
+    }
+    return `${tagLabel}: ${permStr}`;
+}
 
 function formatOperation(operation: FileOperation): string {
     return fileOperations.get(operation) || 'Unknown';
@@ -30,18 +73,6 @@ function formatOperation(operation: FileOperation): string {
  * formatFileMode(16877) // returns "rwxr-xr-x" (directory with 0o755)
  */
 function formatFileMode(mode: number): string {
-    // Map each octal digit (0-7) to its rwx permission string
-    const octalToPermission: Record<string, string> = {
-        '0': '---',
-        '1': '--x',
-        '2': '-w-',
-        '3': '-wx',
-        '4': 'r--',
-        '5': 'r-x',
-        '6': 'rw-',
-        '7': 'rwx',
-    };
-
     // Extract the permission bits (lower 9 bits) and convert to octal string
     const permissionBits = mode % 512; // 512 = 0o1000, equivalent to mode & 0o777
     const octalString = permissionBits.toString(8).padStart(3, '0');
@@ -113,6 +144,18 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                         <DescriptionListItem
                             term="Permissions"
                             desc={`${formatFileMode(Number(file.meta.mode))} (${Number(file.meta.mode).toString(8).padStart(4, '0')})`}
+                        />
+                    )}
+                    {file.meta.aclType && (
+                        <DescriptionListItem
+                            term="ACL type"
+                            desc={aclTypeLabels.get(file.meta.aclType) || file.meta.aclType}
+                        />
+                    )}
+                    {file.meta.aclEntries?.length > 0 && (
+                        <DescriptionListItem
+                            term="ACL entries"
+                            desc={file.meta.aclEntries.map(formatAclEntry).join(', ')}
                         />
                     )}
                 </DescriptionList>
