@@ -9,6 +9,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGCMBackwardCompatibility(t *testing.T) {
+	// nonce(12) || ciphertext || tag(16) produced by the old cipher.NewGCM + manual nonce prepend.
+	// NewGCMWithRandomNonce uses the same wire format so must decrypt this.
+	keyString := "QUVTMjU2S2V5LTMyQ2hhcmFjdGVyczEyMzQ1Njc4OTA="
+	oldCiphertext := "HnI7658TcuhmqkfeG2ufIo/pIq3fimbZtPGUgSUpoF99IySLdhDi"
+
+	codec := NewGCMCryptoCodec()
+	decrypted, err := codec.Decrypt(keyString, oldCiphertext)
+	assert.NoError(t, err)
+	assert.Equal(t, "hello world", decrypted)
+}
+
 func TestGCMEncryptionDecryption(t *testing.T) {
 	// Test string encryption/decryption
 	originalText := "lorem ipsum dolor sit amet"

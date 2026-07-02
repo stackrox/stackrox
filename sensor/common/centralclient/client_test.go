@@ -3,13 +3,19 @@ package centralclient
 import (
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,8 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -95,15 +99,41 @@ func (t *ClientTestSuite) SetupSuite() {
 }
 
 func (t *ClientTestSuite) newSelfSignedCertificate(commonName string) *tls.Certificate {
-	req := csr.CertificateRequest{
-		CN:         commonName,
-		KeyRequest: csr.NewKeyRequest(),
-		Hosts:      []string{"host", "central.stackrox", "central.stackrox.svc"}, // Include required SANs
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	t.Require().NoError(err)
+
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 64))
+	t.Require().NoError(err)
+	serial.Add(serial, big.NewInt(1))
+
+	pubDER, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	t.Require().NoError(err)
+	ski := sha256.Sum256(pubDER)
+
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: commonName},
+		DNSNames:              []string{"host", "central.stackrox", "central.stackrox.svc"},
+		NotBefore:             now,
+		NotAfter:              now.Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            0,
+		MaxPathLenZero:        true,
+		SubjectKeyId:          ski[:20],
 	}
 
-	caCert, _, caKey, err := initca.New(&req)
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
 	t.Require().NoError(err)
-	cert, err := tls.X509KeyPair(caCert, caKey)
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	t.Require().NoError(err)
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+
+	cert, err := tls.X509KeyPair(certPEM, keyPEM)
 	t.Require().NoError(err)
 
 	return &cert

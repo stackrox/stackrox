@@ -1,10 +1,10 @@
 package saml
 
 import (
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLoginURL, idpCertPEM, nameIDFormat string) error {

@@ -2,8 +2,6 @@ package ioutils
 
 import (
 	"bytes"
-	"crypto/md5"
-	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"hash"
@@ -185,8 +183,6 @@ func TestChecksumReader(t *testing.T) {
 		"CRC32Koopman": crc32.New(crc32.MakeTable(crc32.Koopman)),
 		"CRC64ISO":     crc64.New(crc64.MakeTable(crc64.ISO)),
 		"CRC64ECMA":    crc64.New(crc64.MakeTable(crc64.ECMA)),
-		"MD5":          md5.New(),
-		"SHA1":         sha1.New(),
 		"SHA224":       sha256.New224(),
 		"SHA256":       sha256.New(),
 		"SHA384":       sha512.New384(),
