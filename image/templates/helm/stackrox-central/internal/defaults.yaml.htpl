@@ -17,6 +17,7 @@ defaults:
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
     endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
 
+    rolloutStrategy: Recreate
     exposeMonitoring: false
 
     affinity:

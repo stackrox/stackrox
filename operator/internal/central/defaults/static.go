@@ -12,6 +12,7 @@ import (
 
 var staticDefaults = platform.CentralSpec{
 	Central: &platform.CentralComponentSpec{
+		RolloutStrategy: ptr.To(platform.RolloutStrategyRecreate),
 		NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 			Enabled: ptr.To(false),
 		},

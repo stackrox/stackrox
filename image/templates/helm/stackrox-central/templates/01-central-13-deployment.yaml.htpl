@@ -17,7 +17,7 @@ spec:
     matchLabels:
       app: central
   strategy:
-    type: Recreate
+    type: {{ ._rox.central.rolloutStrategy }}
   template:
     metadata:
       namespace: {{ .Release.Namespace }}

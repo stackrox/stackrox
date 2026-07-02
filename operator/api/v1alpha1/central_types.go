@@ -103,6 +103,17 @@ func (p ConnectivityPolicy) Pointer() *ConnectivityPolicy {
 	return &p
 }
 
+// RolloutStrategy is a type for values of spec.central.rolloutStrategy.
+// +kubebuilder:validation:Enum=Recreate;RollingUpdate
+type RolloutStrategy string
+
+const (
+	// RolloutStrategyRecreate configures Central to use the Recreate deployment strategy.
+	RolloutStrategyRecreate RolloutStrategy = "Recreate"
+	// RolloutStrategyRollingUpdate configures Central to use the RollingUpdate deployment strategy.
+	RolloutStrategyRollingUpdate RolloutStrategy = "RollingUpdate"
+)
+
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
 	// Specify a secret that contains the administrator password in the "password" data item.
@@ -154,6 +165,11 @@ type CentralComponentSpec struct {
 	// Configures the encryption of notifier secrets stored in the Central DB.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
+
+	// Configures the rollout strategy for the Central deployment.
+	// The default is: Recreate.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=9
+	RolloutStrategy *RolloutStrategy `json:"rolloutStrategy,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
