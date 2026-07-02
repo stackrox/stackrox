@@ -303,10 +303,6 @@ class Env {
         return mustGet("GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2")
     }
 
-    static String mustGetPagerdutyToken() {
-        return mustGet("PAGERDUTY_TOKEN")
-    }
-
     static String mustGetSlackFixableVulnsChannel() {
         return mustGet("SLACK_FIXABLE_VULNS_CHANNEL")
     }

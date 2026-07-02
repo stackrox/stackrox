@@ -1,0 +1,32 @@
+name: qa-e2e-tests-gke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - labeled
+      - synchronize
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  run:
+    uses: ./.github/workflows/_qa-e2e-tests.yaml
+    with:
+      ci-job-name: gke-qa-e2e-tests
+      infra-flavor: gke-default
+      infra-args: |
+        nodes=3
+        machine-type=e2-standard-8
+      infra-lifespan: 5h
+      extra-env-vars: |
+        ORCHESTRATOR_FLAVOR=k8s
+        KUBERNETES_PROVIDER=gke
+    secrets: inherit
