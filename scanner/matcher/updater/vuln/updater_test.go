@@ -370,6 +370,68 @@ func TestIsBundleAllowed(t *testing.T) {
 	}
 }
 
+func TestUpdateBundleSkipsWhenGCLockHeld(t *testing.T) {
+	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zipWriter := zip.NewWriter(&buf)
+		w, err := zipWriter.Create("bundles/test.json.zst")
+		require.NoError(t, err)
+		_, err = w.Write([]byte("fake"))
+		require.NoError(t, err)
+		require.NoError(t, zipWriter.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	locker := &testLocker{
+		locker: updates.NewLocalLockSource(),
+	}
+	store := mocks.NewMockMatcherStore(gomock.NewController(t))
+	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
+	u := &Updater{
+		locker:        locker,
+		store:         store,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		skipGC:        true,
+		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
+		retryDelay:    1 * time.Second,
+		retryMax:      1,
+		distManager:   newDistManager(store),
+	}
+
+	// Hold the GC lock before updating.
+	gcCtx, gcDone := locker.Lock(context.Background(), gcName)
+	require.NoError(t, gcCtx.Err())
+	defer gcDone()
+
+	// The update should fetch the zip but skip every bundle because the
+	// GC lock is held. No store calls (UpdateVulnerabilitiesIter, etc.)
+	// should be made for the bundle.
+	gomock.InOrder(
+		// runMultiBundleUpdate: get previous update time
+		metadataStore.EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any()).
+			Return(now.Add(-time.Minute), nil),
+		// runMultiBundleUpdate: clean deleted updaters
+		metadataStore.EXPECT().
+			GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+			Return(nil),
+		// distManager.update
+		store.EXPECT().
+			Distributions(gomock.Any()).
+			Return(nil, nil),
+		// Initialized check
+		metadataStore.EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any()).
+			Return(now, nil),
+	)
+
+	err := u.Update(test.Logging(t))
+	assert.NoError(t, err)
+}
+
 func TestIsRetryableDialError(t *testing.T) {
 	testCases := map[string]struct {
 		err  error
