@@ -174,15 +174,29 @@ ifdef CI
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+else ifdef PKG
+	@echo "+ $@ $(PKG)"
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
 else
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 endif
 
+.PHONY: golangci-lint-nodeps
+golangci-lint-nodeps: $(GOLANGCILINT_BIN)
+	@test -n "$(PKG)" || (echo "Usage: make golangci-lint-nodeps PKG=./path/to/package" && exit 1)
+	go fmt $(PKG)/... 2>&1 || true
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix $(PKG)
+
 .PHONY: proto-style
 proto-style: $(BUF_BIN) deps
+ifdef FILE
+	@echo "+ $@ $(FILE)"
+	$(BUF_BIN) format --exit-code --diff -w "$(FILE)"
+else
 	@echo "+ $@"
 	$(BUF_BIN) format --exit-code --diff -w
+endif
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -201,8 +215,13 @@ openshift-ci-style:
 
 .PHONY: shell-style
 shell-style:
+ifdef FILE
+	@echo "+ $@ $(FILE)"
+	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh run_single "$(FILE)"
+else
 	@echo "+ $@"
 	$(SILENT)$(BASE_DIR)/scripts/style/shellcheck.sh
+endif
 
 .PHONY: update-shellcheck-skip
 update-shellcheck-skip:
