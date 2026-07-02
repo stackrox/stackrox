@@ -3,6 +3,7 @@
 package vmindexreport
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
@@ -16,6 +17,9 @@ import (
 const (
 	// MockDigest is kept in sync with pkg/virtualmachine/enricher/enricher_impl.go
 	MockDigest = "sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
+
+	// MockDigestWithRegistry is MockDigest prefixed with a registry for use with go-containerregistry.
+	MockDigestWithRegistry = "registry.example.com/image@" + MockDigest
 )
 
 // numericRegex matches sequences of digits in a version string.
@@ -102,13 +106,16 @@ func buildRepositories() map[string]*v4.Repository {
 // When numPackages > available, packages are duplicated to reach the requested count.
 // All packages use the two real RHEL repositories from the fixture.
 // The seed parameter controls random selection for reproducibility.
-func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
+func NewGeneratorWithSeed(numPackages int, seed int64) (*Generator, error) {
 	if numPackages < 0 {
-		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
+		return nil, fmt.Errorf("numPackages must be non-negative, got %d", numPackages)
 	}
 	rng := rand.New(rand.NewSource(seed))
 
-	totalPkgs := len(packagesFixture)
+	totalPkgs := len(PackagesData)
+	if totalPkgs <= 0 {
+		return nil, errors.New("no package fixtures available")
+	}
 	indices := selectPackageIndices(rng, numPackages, totalPkgs)
 	repositories := buildRepositories()
 
@@ -118,7 +125,7 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	environments := make(map[string]*v4.Environment_List, len(indices))
 
 	for i, idx := range indices {
-		pkg := packagesFixture[idx]
+		pkg := PackagesData[idx]
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
 		// All packages use their original repo from the fixture
@@ -162,7 +169,7 @@ func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 		repositories: repositories,
 		packages:     packages,
 		environments: environments,
-	}
+	}, nil
 }
 
 // GenerateV1IndexReport creates a fake v1.IndexReport (used by Sensor for sending to Central).
@@ -195,4 +202,63 @@ func (g *Generator) NumPackages() int {
 // NumRepositories returns the number of repositories in the generator.
 func (g *Generator) NumRepositories() int {
 	return len(g.repositories)
+}
+
+// NewGeneratorWithPackageIndices creates a Generator using specific package indices from packagesFixture.
+// This allows precise control over which packages are included in the generated report.
+// Useful for testing specific vulnerability scenarios.
+func NewGeneratorWithPackageIndices(indices []int) *Generator {
+	repositories := buildRepositories()
+	totalPkgs := len(PackagesData)
+
+	packages := make(map[string]*v4.Package, len(indices))
+	environments := make(map[string]*v4.Environment_List, len(indices))
+
+	for i, idx := range indices {
+		if idx < 0 || idx >= totalPkgs {
+			continue // Skip invalid indices
+		}
+		pkg := PackagesData[idx]
+		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
+
+		repoCPE := repositories[pkg.Repo].GetCpe()
+
+		packages[pkgID] = &v4.Package{
+			Id:             pkgID,
+			Name:           pkg.Name,
+			Version:        pkg.Version,
+			Kind:           "binary",
+			Arch:           "x86_64",
+			RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+			Cpe:            repoCPE,
+			PackageDb:      "sqlite:usr/share/rpm",
+			Source: &v4.Package{
+				Id:      pkgID + "-src",
+				Name:    pkg.Name,
+				Version: pkg.Version,
+				Kind:    "source",
+				Cpe:     repoCPE,
+			},
+			NormalizedVersion: &v4.NormalizedVersion{
+				Kind: "rpm",
+				V:    NormalizeRPMVersion(pkg.Version),
+			},
+		}
+
+		environments[pkgID] = &v4.Environment_List{
+			Environments: []*v4.Environment{
+				{
+					PackageDb:     "sqlite:usr/share/rpm",
+					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					RepositoryIds: []string{pkg.Repo},
+				},
+			},
+		}
+	}
+
+	return &Generator{
+		repositories: repositories,
+		packages:     packages,
+		environments: environments,
+	}
 }
