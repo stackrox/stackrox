@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
@@ -46,6 +47,8 @@ const (
 
 	defaultRetryMax   = 12
 	defaultRetryDelay = 10 * time.Second
+
+	maxImportAttempts = 3
 )
 
 var (
@@ -481,22 +484,32 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 		return nil
 	}
 
-	r, err := zipF.Open()
-	if err != nil {
-		return fmt.Errorf("opening bundle: %w", err)
-	}
-	defer func() {
+	var importErr error
+	for attempt := 1; attempt <= maxImportAttempts; attempt++ {
+		r, err := zipF.Open()
+		if err != nil {
+			return fmt.Errorf("opening bundle: %w", err)
+		}
+		dec, err := zstd.NewReader(r)
+		if err != nil {
+			_ = r.Close()
+			return fmt.Errorf("creating zstd reader: %w", err)
+		}
+		importErr = u.importFunc(lCtx, dec)
+		dec.Close()
 		_ = r.Close()
-	}()
-
-	dec, err := zstd.NewReader(r)
-	if err != nil {
-		return fmt.Errorf("creating zstd reader: %w", err)
-	}
-	defer dec.Close()
-
-	if err := u.importFunc(lCtx, dec); err != nil {
-		return fmt.Errorf("importing vulnerabilities: %w", err)
+		if importErr == nil {
+			break
+		}
+		if attempt < maxImportAttempts && isFKViolation(importErr) {
+			slog.WarnContext(ctx, "foreign key violation during import, reindexing and retrying",
+				"attempt", attempt, "reason", importErr)
+			if reindexErr := u.store.ReindexVulnTables(ctx); reindexErr != nil {
+				slog.ErrorContext(ctx, "failed to reindex vuln tables", "reason", reindexErr)
+			}
+			continue
+		}
+		return fmt.Errorf("importing vulnerabilities: %w", importErr)
 	}
 
 	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipTime)
@@ -604,6 +617,11 @@ func closeResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		utils.IgnoreError(resp.Body.Close)
 	}
+}
+
+func isFKViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23503"
 }
 
 func isRetryableDialError(err error) bool {
