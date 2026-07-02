@@ -2,24 +2,18 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/index"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/lock"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
 var log = logging.LoggerForModule()
 
 const (
-	minDaemonIndexInterval = 10 * time.Minute
-	repoToCPEMappingURL    = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+	repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 )
 
+// RootCmd returns the root cobra command that dispatches to subcommands.
 func RootCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
 		Use:          "agent",
@@ -27,85 +21,6 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		SilenceUsage: true,
 	}
 	cmd.SetContext(ctx)
-	cfg := &common.Config{}
-	cmd.Flags().BoolVar(&cfg.DaemonMode, "daemon", false,
-		"Run in daemon mode. Sends index reports continuously.",
-	)
-
-	// Shortening this interval results in more frequent scans and therefore more load,
-	// which, assuming the throughput continues to be limited by scanning capacity,
-	// reduces the number of VMs that Stackrox can handle.
-	//
-	// As of February 2026, the measured capacity of a default Stackrox deployment is:
-	//   - 4500 VMs if the report interval is 4 hours
-	//   - 1100 VMs if the report interval is 1 hour
-	//
-	// See the documentation for more details.
-	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
-		fmt.Sprintf(
-			"Interval at which index reports are sent in daemon mode (minimum: %v). "+
-				"Shorter intervals increase scanning load and reduce the overall number of VMs that can be scanned.",
-			minDaemonIndexInterval,
-		),
-	)
-	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
-		"Path where the indexer starts searching for the RPM and DNF databases.",
-	)
-	cmd.Flags().DurationVar(&cfg.MaxInitialReportDelay, "max-initial-report-delay", 20*time.Minute,
-		"Max delay before starting to send in daemon mode.",
-	)
-	cmd.Flags().StringVar(&cfg.RepoToCPEMappingURL, "repo-cpe-url", repoToCPEMappingURL,
-		"URL for the repository to CPE mapping.",
-	)
-	cmd.Flags().DurationVar(&cfg.Timeout, "timeout", 30*time.Second,
-		"VSock client timeout when sending index reports.",
-	)
-	cmd.Flags().BoolVar(&cfg.Verbose, "verbose", false,
-		"Prints the index reports to stdout.",
-	)
-	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
-		"VSock port to connect with the virtual machine host.",
-	)
-	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
-		if err := validateDaemonConfig(cfg); err != nil {
-			return err
-		}
-
-		client := &vsock.Client{
-			Port:     cfg.VsockPort,
-			HostPath: cfg.IndexHostPath,
-			Timeout:  cfg.Timeout,
-			Verbose:  cfg.Verbose,
-		}
-		if cfg.DaemonMode {
-			if err := index.RunDaemon(ctx, cfg, client, lock.DefaultLockPath); err != nil {
-				return fmt.Errorf("running indexer daemon: %w", err)
-			}
-			return nil
-		}
-
-		scanFn := func() error { return index.RunSingle(ctx, cfg, client) }
-		onHeld := func() error {
-			return fmt.Errorf("roxagent is already running (lock file is held at %s); exiting", lock.DefaultLockPath)
-		}
-		onUnavailable := func(lockErr error) error {
-			log.Warnf("could not acquire lock at %s: %v; continuing without single-instance protection; concurrent runs may cause high host load", lock.DefaultLockPath, lockErr)
-			return scanFn()
-		}
-		if err := lock.RunWithLock(lock.DefaultLockPath, scanFn, onHeld, onUnavailable); err != nil {
-			return fmt.Errorf("running indexer: %w", err)
-		}
-		return nil
-	}
+	cmd.AddCommand(ServeCmd(ctx))
 	return &cmd
-}
-
-func validateDaemonConfig(cfg *common.Config) error {
-	if !cfg.DaemonMode {
-		return nil
-	}
-	if cfg.IndexInterval < minDaemonIndexInterval {
-		return fmt.Errorf("index interval must be at least %s in daemon mode (got %s)", minDaemonIndexInterval, cfg.IndexInterval)
-	}
-	return nil
 }
