@@ -33,10 +33,7 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
-      e2e-byodb-test: ${{ steps.determine.outputs.e2e-byodb-test }}
-      e2e-db-backup-restore-test: ${{ steps.determine.outputs.e2e-db-backup-restore-test }}
-      e2e-gke-upgrade-tests: ${{ steps.determine.outputs.e2e-gke-upgrade-tests }}
-      e2e-nongroovy-tests: ${{ steps.determine.outputs.e2e-nongroovy-tests }}
+      jobs: ${{ steps.determine.outputs.jobs }}
     steps:
     - name: Determine whether should dispatch workflows
       id: determine
@@ -51,6 +48,7 @@ jobs:
         all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
       run: |
+        import json
         import os
         from types import SimpleNamespace
 
@@ -85,24 +83,20 @@ jobs:
             return False
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
-            def write(job, decision):
-                line = f'{job}={str(decision).lower()}'
+            def write(job, val):
+                line = f'{job}={val}'
                 print(line)
                 file.write(line + '\n')
 
-            dispatch_any = False
+            jobs = { job: should_run(job) for job in [
+                    'e2e-byodb-test',
+                    'e2e-db-backup-restore-test',
+                    'e2e-gke-upgrade-tests',
+                    'e2e-nongroovy-tests',
+                ]}
 
-            for job in [
-                'e2e-byodb-test',
-                'e2e-db-backup-restore-test',
-                'e2e-gke-upgrade-tests',
-                'e2e-nongroovy-tests',
-            ]:
-                dispatch = should_run(job)
-                dispatch_any = dispatch_any or dispatch
-                write(job, dispatch)
-
-            write('dispatch-any', dispatch_any)
+            write('jobs', json.dumps(jobs))
+            write('dispatch-any', str(any(jobs.values())).lower())
 
   # Waits for images to be built so we don't start testing until they are available.
   wait-for-images:
@@ -156,7 +150,7 @@ jobs:
     uses: ./.github/workflows/e2e-byodb-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-byodb-test == 'true' }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-test }}
     secrets: inherit
     concurrency:
       group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -167,7 +161,7 @@ jobs:
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-db-backup-restore-test == 'true' }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-test }}
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -178,7 +172,7 @@ jobs:
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-gke-upgrade-tests == 'true' }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-gke-upgrade-tests }}
     secrets: inherit
     concurrency:
       group: e2e-gke-upgrade-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -189,7 +183,7 @@ jobs:
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ needs.should-dispatch.outputs.e2e-nongroovy-tests == 'true' }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests }}
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
