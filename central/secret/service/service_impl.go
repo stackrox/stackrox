@@ -30,6 +30,7 @@ var (
 			v1.SecretService_GetSecret_FullMethodName,
 			v1.SecretService_CountSecrets_FullMethodName,
 			v1.SecretService_ListSecrets_FullMethodName,
+			v1.SecretService_ListSecretsExtended_FullMethodName,
 		},
 	})
 )
