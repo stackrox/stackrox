@@ -47,8 +47,8 @@ jobs:
       cluster-with-fake-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-fake-load-name-cleaned }}
       cluster-with-real-load-name-cleaned: ${{ steps.cluster-names.outputs.cluster-with-real-load-name-cleaned }}
     env:
-      CLUSTER_WITH_FAKE_LOAD_NAME: rt8-fl-${{ github.event.inputs.version }}
-      CLUSTER_WITH_REAL_LOAD_NAME: rt8-rl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_FAKE_LOAD_NAME: rt9-fl-${{ github.event.inputs.version }}
+      CLUSTER_WITH_REAL_LOAD_NAME: rt9-rl-${{ github.event.inputs.version }}
     steps:
       - name: Trim and clean cluster names
         id: cluster-names
@@ -64,7 +64,7 @@ jobs:
   clusters:
     name: Setup demo clusters
     needs: trim-cluster-names
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@04591adf106a393c035ecb6d6b1000b2fed75b16
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@d86a4e4e228152274425155eaf3d64038dd77a04
     secrets: inherit
     with:
       version: ${{github.event.inputs.version}}
