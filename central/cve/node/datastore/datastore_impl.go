@@ -25,8 +25,6 @@ var (
 		sac.ForResource(resources.VulnerabilityManagementApprovals),
 	)
 
-	nodeSAC = sac.ForResource(resources.Node)
-
 	accessAllCtx = sac.WithAllAccess(context.Background())
 
 	errNilSuppressionStart = errors.New("suppression start time is nil")
@@ -145,12 +143,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 func (ds *datastoreImpl) UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "UpsertMany")
 
-	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
 	if err := ds.storage.UpsertMany(ctx, cves); err != nil {
 		return errors.Wrap(err, "Upserting node CVEs")
 	}
@@ -159,12 +151,6 @@ func (ds *datastoreImpl) UpsertMany(ctx context.Context, cves []*storage.NodeCVE
 
 func (ds *datastoreImpl) PruneNodeCVEs(ctx context.Context, ids []string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "PruneNodeCVEs")
-
-	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
 
 	if err := ds.storage.PruneMany(ctx, ids); err != nil {
 		return errors.Wrap(err, "Pruning node CVEs")
@@ -292,7 +278,7 @@ func (c *NodeCVESearchResultConverter) BuildName(result *pkgSearch.Result) strin
 	return result.Name
 }
 
-func (c *NodeCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+func (c *NodeCVESearchResultConverter) BuildLocation(_ *pkgSearch.Result) string {
 	return ""
 }
 
