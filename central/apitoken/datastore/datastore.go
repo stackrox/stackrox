@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is the gateway to the DB that enforces access control.
@@ -18,7 +17,6 @@ type DataStore interface {
 	GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	SearchRawTokens(ctx context.Context, q *v1.Query) ([]*storage.TokenMetadata, error)
 
 	AddToken(ctx context.Context, token *storage.TokenMetadata) error
