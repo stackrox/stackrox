@@ -148,6 +148,7 @@ message ComplianceOperatorScanConfigurationV2 {
   }
   repeated Cluster clusters = 16;
   repeated NotifierConfiguration notifiers = 17;
+  bool is_managed = 19; // @gotags: search:"Compliance Scan Config Is Managed"
 }
 
 // Next Tag: 7

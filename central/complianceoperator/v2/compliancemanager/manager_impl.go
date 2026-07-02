@@ -142,7 +142,6 @@ func (m *managerImpl) ProcessScanRequest(ctx context.Context, scanRequest *stora
 
 	scanRequest.Id = uuid.NewV4().String()
 	scanRequest.CreatedTime = protocompat.TimestampNow()
-
 	validatedProfiles, err := m.validateScan(ctx, scanRequest, clusters)
 	if err != nil {
 		return nil, err
@@ -198,6 +197,10 @@ func (m *managerImpl) UpdateScanRequest(ctx context.Context, scanRequest *storag
 
 	// Use the created time from the DB
 	scanRequest.CreatedTime = oldScanConfig.GetCreatedTime()
+	// Preserve empty ModifiedBy for discovered configs so they remain detected as externally managed.
+	if oldScanConfig.GetModifiedBy().GetId() == "" {
+		scanRequest.ModifiedBy = oldScanConfig.GetModifiedBy()
+	}
 	scanRequest, err = m.processRequestToSensor(ctx, scanRequest, cron, clusters, false, validatedProfiles)
 	if err != nil {
 		return nil, err
@@ -287,7 +290,8 @@ func (m *managerImpl) validateScan(ctx context.Context, scanRequest *storage.Com
 	}
 
 	// Check if any non-ACS-managed ScanSettingBindings already reference the requested profiles.
-	if err := m.checkForExternalSSBConflicts(ctx, profiles, clusters); err != nil {
+	// Pass the scan config name so that discovered configs skip the SSB they were created from.
+	if err := m.checkForExternalSSBConflicts(ctx, scanRequest.GetScanConfigName(), profiles, clusters); err != nil {
 		return nil, err
 	}
 
@@ -462,8 +466,10 @@ func (m *managerImpl) HandleScanRequestResponse(ctx context.Context, requestID s
 
 // checkForExternalSSBConflicts checks if any non-ACS-managed ScanSettingBindings in the target
 // clusters already reference any of the requested profiles. ACS-managed SSBs are skipped because
-// conflicts with those are already enforced by ScanConfigurationProfileExists.
-func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles []string, clusters []string) error {
+// conflicts with those are already enforced by ScanConfigurationProfileExists. SSBs whose name
+// matches scanConfigName are also skipped because discovered configs are created from those SSBs
+// and updating them (e.g. to edit notifiers) should not trigger a self-conflict.
+func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, scanConfigName string, profiles []string, clusters []string) error {
 	requestedProfiles := set.NewStringSet(profiles...)
 	if requestedProfiles.Cardinality() == 0 {
 		return nil
@@ -479,6 +485,9 @@ func (m *managerImpl) checkForExternalSSBConflicts(ctx context.Context, profiles
 		clusterRef := ""
 		for _, ssb := range ssbs {
 			if ssb.GetLabels()["app.kubernetes.io/name"] == "stackrox" {
+				continue
+			}
+			if ssb.GetName() == scanConfigName {
 				continue
 			}
 
@@ -625,6 +634,83 @@ func (m *managerImpl) updateClusterStatus(ctx context.Context, scanConfigID stri
 	}
 
 	return m.scanSettingDS.UpdateClusterStatus(ctx, scanConfigID, clusterID, clusterStatus, clusterName)
+}
+
+func (m *managerImpl) ReconcileDiscoveredConfig(_ context.Context, ssbName string) error {
+	if !features.ComplianceEnhancements.Enabled() {
+		return nil
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	existing, err := m.scanSettingDS.GetScanConfigurationByName(ctx, ssbName)
+	if err != nil {
+		return errors.Wrapf(err, "looking up scan config %q", ssbName)
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanSettingBindingName, ssbName).
+		ProtoQuery()
+	discovered, err := m.ssbDS.GetDistinctScanConfigs(ctx, query)
+	if err != nil {
+		return errors.Wrapf(err, "aggregating SSBs for %q", ssbName)
+	}
+
+	var dc *ssbDatastore.DiscoveredScanConfig
+	for _, d := range discovered {
+		if d.Name == ssbName {
+			dc = d
+			break
+		}
+	}
+
+	if dc == nil {
+		if existing != nil {
+			_, err = m.scanSettingDS.DeleteScanConfiguration(ctx, existing.GetId())
+			if err != nil {
+				log.Errorf("deleting orphaned discovered config %q: %v", ssbName, err)
+			}
+		}
+		return nil
+	}
+
+	clusters := make([]*storage.ComplianceOperatorScanConfigurationV2_Cluster, 0, len(dc.ClusterIDs))
+	for _, cid := range dc.ClusterIDs {
+		clusters = append(clusters, &storage.ComplianceOperatorScanConfigurationV2_Cluster{ClusterId: cid})
+	}
+	profiles := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileName, 0, len(dc.ProfileNames))
+	for _, p := range dc.ProfileNames {
+		profiles = append(profiles, &storage.ComplianceOperatorScanConfigurationV2_ProfileName{ProfileName: p})
+	}
+
+	var scanConfig *storage.ComplianceOperatorScanConfigurationV2
+	if existing != nil {
+		existing.Clusters = clusters
+		existing.Profiles = profiles
+		existing.LastUpdatedTime = protocompat.TimestampNow()
+		if err := m.scanSettingDS.UpsertScanConfiguration(ctx, existing); err != nil {
+			return err
+		}
+		scanConfig = existing
+	} else {
+		scanConfig = &storage.ComplianceOperatorScanConfigurationV2{
+			Id:              uuid.NewV4().String(),
+			ScanConfigName:  ssbName,
+			Clusters:        clusters,
+			Profiles:        profiles,
+			CreatedTime:     protocompat.TimestampNow(),
+			LastUpdatedTime: protocompat.TimestampNow(),
+		}
+		if err := m.scanSettingDS.UpsertScanConfiguration(ctx, scanConfig); err != nil {
+			return err
+		}
+	}
+
+	for _, cid := range dc.ClusterIDs {
+		if err := m.updateClusterStatus(ctx, scanConfig.GetId(), cid, ""); err != nil {
+			log.Errorf("updating cluster status for discovered config %q cluster %s: %v", ssbName, cid, err)
+		}
+	}
+	return nil
 }
 
 func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2) (string, error) {

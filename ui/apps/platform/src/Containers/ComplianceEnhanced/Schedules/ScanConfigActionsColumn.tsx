@@ -6,10 +6,6 @@ import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanC
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 
-// Component for scan configs table table page corresponds to ScanConfigActionDropdown for scan config details page.
-
-// Caller is responsible for conditional rendering only if READ_WRITE_ACCESS level for Compliance resource.
-
 export type ScanConfigActionsColumnProps = {
     handleDeleteScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
@@ -29,31 +25,40 @@ function ScanConfigActionsColumn({
 }: ScanConfigActionsColumnProps): ReactElement {
     const navigate = useNavigate();
 
-    const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
+    const { id, scanConfig, modifiedBy } = scanConfigResponse;
     const { notifiers } = scanConfig;
+    const isDiscovered = !modifiedBy?.id;
     const scanConfigUrl = generatePath(scanConfigDetailsPath, {
         scanConfigId: id,
     });
-    // const isScanning = lastExecutedTime === null;
 
     const items = [
-        {
-            title: 'Edit scan schedule',
-            // description: isScanning ? 'Edit is disabled while scan is running' : '',
-            // isDisabled: isScanning,
-            onClick: (event) => {
-                event.preventDefault();
-                navigate(`${scanConfigUrl}?action=edit`);
-            },
-            isDisabled: isSnapshotStatusPending,
-        },
+        ...(isDiscovered
+            ? [
+                  {
+                      title: 'Edit notifications',
+                      onClick: (event) => {
+                          event.preventDefault();
+                          navigate(`${scanConfigUrl}?action=edit`);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]
+            : [
+                  {
+                      title: 'Edit scan schedule',
+                      onClick: (event) => {
+                          event.preventDefault();
+                          navigate(`${scanConfigUrl}?action=edit`);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]),
         {
             isSeparator: true,
         },
         {
             title: 'Run scan',
-            // description: isScanning ? 'Run is disabled while scan is already running' : '',
-            // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
                 handleRunScanConfig(scanConfigResponse);
@@ -63,11 +68,7 @@ function ScanConfigActionsColumn({
         {
             title: 'Send report',
             description:
-                notifiers.length === 0
-                    ? 'Send is disabled if no delivery destinations'
-                    : /* isScanning
-                      ? 'Send is disabled while scan is running'
-                      : */ '',
+                notifiers.length === 0 ? 'Send is disabled if no delivery destinations' : '',
             onClick: (event) => {
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
@@ -82,31 +83,28 @@ function ScanConfigActionsColumn({
             },
             isDisabled: isSnapshotStatusPending,
         },
-        {
-            isSeparator: true,
-        },
-        {
-            title: (
-                <span className={/* isScanning ? '' : */ 'pf-v6-u-text-color-status-danger'}>
-                    Delete scan schedule
-                </span>
-            ),
-            // description: isScanning ? 'Delete is disabled while scan is running' : '',
-            // isDisabled: isScanning,
-            onClick: (event) => {
-                event.preventDefault();
-                handleDeleteScanConfig(scanConfigResponse);
-            },
-            isDisabled: isSnapshotStatusPending,
-        },
+        ...(!isDiscovered
+            ? [
+                  {
+                      isSeparator: true,
+                  },
+                  {
+                      title: (
+                          <span className="pf-v6-u-text-color-status-danger">
+                              Delete scan schedule
+                          </span>
+                      ),
+                      onClick: (event) => {
+                          event.preventDefault();
+                          handleDeleteScanConfig(scanConfigResponse);
+                      },
+                      isDisabled: isSnapshotStatusPending,
+                  },
+              ]
+            : []),
     ];
 
-    return (
-        <ActionsColumn
-            // menuAppendTo={() => document.body}
-            items={items}
-        />
-    );
+    return <ActionsColumn items={items} />;
 }
 
 export default ScanConfigActionsColumn;

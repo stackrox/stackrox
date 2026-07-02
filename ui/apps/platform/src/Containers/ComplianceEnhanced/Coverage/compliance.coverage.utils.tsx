@@ -13,7 +13,7 @@ import {
 } from '@patternfly/react-icons';
 
 import type { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/ComplianceCommon';
-import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigOverview } from 'services/ComplianceScanConfigurationService';
 import type { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
 import { getPercentage } from 'utils/mathUtils';
@@ -220,16 +220,16 @@ export function combineSearchFilterWithScanConfig(
 }
 
 export function isScanConfigurationDisabled(
-    config: ComplianceScanConfigurationStatus,
+    config: ComplianceScanConfigOverview,
     disabledCriteria: { profileName?: string; clusterId?: string } = {}
 ): boolean {
     const { profileName, clusterId } = disabledCriteria;
 
-    if (profileName && !config.scanConfig.profiles.includes(profileName)) {
+    if (profileName && !config.profileNames.includes(profileName)) {
         return true;
     }
 
-    if (clusterId && !config.clusterStatus.some((cluster) => cluster.clusterId === clusterId)) {
+    if (clusterId && !config.clusterIds.includes(clusterId)) {
         return true;
     }
 

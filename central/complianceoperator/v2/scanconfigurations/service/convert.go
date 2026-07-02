@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
@@ -394,7 +395,7 @@ func convertStorageScanConfigToV2ScanStatus(ctx context.Context,
 			for _, cluster := range scanClusters {
 				var errors []string
 				bindings, err := bindingsDS.GetScanSettingBindings(ctx, search.NewQueryBuilder().
-					AddExactMatches(search.ComplianceOperatorScanConfigName, scanConfig.GetScanConfigName()).
+					AddExactMatches(search.ComplianceOperatorScanSettingBindingName, scanConfig.GetScanConfigName()).
 					AddExactMatches(search.ClusterID, cluster.GetClusterId()).ProtoQuery())
 				if err != nil {
 					continue

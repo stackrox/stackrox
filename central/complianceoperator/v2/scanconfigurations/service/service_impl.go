@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -52,6 +53,8 @@ var (
 			v2.ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
@@ -219,17 +222,10 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 }
 
 func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigurationsResponse, error) {
-	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
-
-	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.CloneVT()
-
-	// Fill in pagination.
-	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	scanConfigs, err := s.scanConfigDS.GetScanConfigurations(ctx, parsedQuery)
 	if err != nil {
@@ -241,15 +237,31 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 		return nil, errors.Wrap(errox.InvalidArgs, "failed to convert compliance scan configurations.")
 	}
 
-	scanConfigCount, err := s.scanConfigDS.CountScanConfigurations(ctx, countQuery)
-	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
-	}
+	sort.Slice(scanStatuses, func(i, j int) bool {
+		return scanStatuses[i].GetScanName() < scanStatuses[j].GetScanName()
+	})
 
+	total := len(scanStatuses)
+	start, end := paginateSlice(total, query.GetPagination())
 	return &v2.ListComplianceScanConfigurationsResponse{
-		Configurations: scanStatuses,
-		TotalCount:     int32(scanConfigCount),
+		Configurations: scanStatuses[start:end],
+		TotalCount:     int32(total),
 	}, nil
+}
+
+func paginateSlice(total int, pagination *v2.Pagination) (int, int) {
+	if pagination == nil || pagination.GetLimit() == 0 {
+		return 0, total
+	}
+	start := int(pagination.GetOffset())
+	if start > total {
+		start = total
+	}
+	end := start + int(pagination.GetLimit())
+	if end > total {
+		end = total
+	}
+	return start, end
 }
 
 func (s *serviceImpl) GetComplianceScanConfiguration(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceScanConfigurationStatus, error) {
@@ -453,13 +465,10 @@ func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, quer
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.CloneVT()
-
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery, countQuery)
+	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -495,13 +504,10 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 		parsedQuery,
 	)
 
-	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.CloneVT()
-
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
 
-	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery, countQuery)
+	profiles, profileCount, err := s.getProfiles(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -546,32 +552,130 @@ func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.Com
 	return benchmarkMap, nil
 }
 
-func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQuery *v1.Query) ([]*v2.ComplianceProfileSummary, int, error) {
-	profileNames, err := s.scanConfigDS.GetProfilesNames(ctx, query)
+func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query) ([]*v2.ComplianceProfileSummary, int, error) {
+	profileNames, err := s.getProfileNames(ctx, query)
 	if err != nil {
-		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve scan configurations for query %v", query)
+		return nil, 0, err
 	}
 	if len(profileNames) == 0 {
 		return nil, 0, nil
 	}
 
-	// Build query to get the filtered list by profile names
 	profileQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, profileNames...).ProtoQuery()
 	profiles, err := s.profileDS.SearchProfiles(ctx, profileQuery)
 	if err != nil {
 		return nil, 0, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", profileQuery)
 	}
 
-	// Get the benchmarks
 	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	profileCounts, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profiles), nil
+}
+
+// getProfileNames returns profile names from SSBs matching the query.
+// The query may include cluster ID and scan config name filters, which are
+// translated to SSB-native search fields and forwarded to GetScanSettingBindings.
+func (s *serviceImpl) getProfileNames(ctx context.Context, query *v1.Query) ([]string, error) {
+	ssbQuery := translateToSSBQuery(query)
+	bindings, err := s.complianceScanSettingBindingsDS.GetScanSettingBindings(ctx, ssbQuery)
 	if err != nil {
-		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
+		return nil, err
+	}
+	seen := make(map[string]struct{})
+	var names []string
+	for _, binding := range bindings {
+		for _, p := range binding.GetProfileNames() {
+			if _, ok := seen[p]; !ok {
+				seen[p] = struct{}{}
+				names = append(names, p)
+			}
+		}
+	}
+	return names, nil
+}
+
+// translateToSSBQuery builds an SSB query from a check-results-oriented query.
+// It maps "Compliance Scan Config Name" to "Compliance Scan Setting Binding Name"
+// (SSB name = suite name = scan_config_name on results) and preserves Cluster ID.
+func translateToSSBQuery(query *v1.Query) *v1.Query {
+	qb := search.NewQueryBuilder()
+	if query == nil {
+		return qb.ProtoQuery()
+	}
+	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
+		mfq := bq.GetMatchFieldQuery()
+		if mfq == nil {
+			return
+		}
+		switch mfq.GetField() {
+		case search.ComplianceOperatorScanConfigName.String():
+			val := strings.TrimPrefix(strings.TrimSuffix(mfq.GetValue(), `"`), `"`)
+			if val != "" {
+				qb.AddExactMatches(search.ComplianceOperatorScanSettingBindingName, val)
+			}
+		case search.ClusterID.String():
+			val := strings.TrimPrefix(strings.TrimSuffix(mfq.GetValue(), `"`), `"`)
+			if val != "" {
+				qb.AddExactMatches(search.ClusterID, val)
+			}
+		}
+	})
+	return qb.ProtoQuery()
+}
+
+func (s *serviceImpl) ListComplianceScanConfigOverviews(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigOverviewsResponse, error) {
+	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCounts), nil
+	configs, err := s.scanConfigDS.GetScanConfigurations(ctx, parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving scan configurations")
+	}
+
+	overviews := make([]*v2.ComplianceScanConfigOverview, 0, len(configs))
+	for _, mc := range configs {
+		clusterIDs := make([]string, 0, len(mc.GetClusters()))
+		for _, c := range mc.GetClusters() {
+			clusterIDs = append(clusterIDs, c.GetClusterId())
+		}
+		profileNames := make([]string, 0, len(mc.GetProfiles()))
+		for _, p := range mc.GetProfiles() {
+			profileNames = append(profileNames, p.GetProfileName())
+		}
+		overviews = append(overviews, &v2.ComplianceScanConfigOverview{
+			ScanConfigName:  mc.GetScanConfigName(),
+			ManagedConfigId: mc.GetId(),
+			ClusterIds:      clusterIDs,
+			ProfileNames:    profileNames,
+		})
+	}
+
+	sort.Slice(overviews, func(i, j int) bool {
+		return overviews[i].GetScanConfigName() < overviews[j].GetScanConfigName()
+	})
+	return &v2.ListComplianceScanConfigOverviewsResponse{
+		Configs:    overviews,
+		TotalCount: int32(len(overviews)),
+	}, nil
+}
+
+func (s *serviceImpl) GetDiscoveredScanConfiguration(ctx context.Context, req *v2.DiscoveredScanConfigurationRequest) (*v2.ComplianceScanConfigurationStatus, error) {
+	if req.GetName() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+	}
+
+	scanConfig, err := s.scanConfigDS.GetScanConfigurationByName(ctx, req.GetName())
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving scan configuration")
+	}
+	if scanConfig == nil {
+		return nil, errors.Wrapf(errox.NotFound, "scan configuration %q not found", req.GetName())
+	}
+
+	return convertStorageScanConfigToV2ScanStatus(ctx, scanConfig, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
 }

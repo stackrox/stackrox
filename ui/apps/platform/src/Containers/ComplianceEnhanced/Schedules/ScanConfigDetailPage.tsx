@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback } from 'react';
 import type { ReactElement } from 'react';
-import { Link, generatePath, useParams } from 'react-router-dom-v5-compat';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import usePageAction from 'hooks/usePageAction';
 import useRestQuery from 'hooks/useRestQuery';

@@ -35,17 +35,24 @@ function EditScanConfigDetail({
     const parsedScanConfig = scanConfig
         ? convertScanConfigToFormik(scanConfig)
         : defaultScanConfigFormValues;
+    const isDiscovered = !scanConfig?.modifiedBy?.id;
+    const pageTitle = isDiscovered
+        ? 'Edit Compliance Scan Schedule Notifications'
+        : 'Edit Compliance Scan Schedule Details';
+    const heading = isDiscovered
+        ? `Edit notifications for ${scanConfig?.scanName ?? ''}`
+        : `Edit ${scanConfig?.scanName ?? ''}`;
 
     return (
         <>
-            <PageTitle title="Edit Compliance Scan Schedule Details" />
+            <PageTitle title={pageTitle} />
             <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
                     </BreadcrumbItemLink>
                     {!isLoading && !error && scanConfig && (
-                        <BreadcrumbItem isActive>Edit {scanConfig.scanName}</BreadcrumbItem>
+                        <BreadcrumbItem isActive>{heading}</BreadcrumbItem>
                     )}
                 </Breadcrumb>
             </PageSection>
@@ -56,7 +63,7 @@ function EditScanConfigDetail({
                         className="pf-v6-u-py-lg pf-v6-u-px-lg"
                     >
                         <FlexItem flex={{ default: 'flex_1' }}>
-                            <Title headingLevel="h1">Edit {scanConfig.scanName}</Title>
+                            <Title headingLevel="h1">{heading}</Title>
                         </FlexItem>
                     </Flex>
                 )}
@@ -81,7 +88,10 @@ function EditScanConfigDetail({
                 )}
                 {!isLoading && scanConfig && (
                     <PageSection padding={{ default: 'noPadding' }} isFilled>
-                        <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
+                        <ScanConfigWizardForm
+                            initialFormValues={parsedScanConfig}
+                            isDiscovered={isDiscovered}
+                        />
                     </PageSection>
                 )}
             </PageSection>

@@ -38,7 +38,7 @@ func (s *PipelineTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
 	s.v2DS = v2Mocks.NewMockDataStore(s.mockCtrl)
-	s.pipeline = NewPipeline(s.v2DS).(*pipelineImpl)
+	s.pipeline = NewPipeline(s.v2DS, nil).(*pipelineImpl)
 }
 
 func (s *PipelineTestSuite) TearDownTest() {

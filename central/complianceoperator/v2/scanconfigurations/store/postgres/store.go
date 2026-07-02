@@ -103,10 +103,11 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetScanConfigName(),
 		obj.GetModifiedBy().GetName(),
+		obj.GetIsManaged(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanConfigName, ModifiedBy_Name, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ModifiedBy_Name = EXCLUDED.ModifiedBy_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_configuration_v2 (Id, ScanConfigName, ModifiedBy_Name, IsManaged, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ModifiedBy_Name = EXCLUDED.ModifiedBy_Name, IsManaged = EXCLUDED.IsManaged, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -187,6 +188,7 @@ var copyColsComplianceOperatorScanConfigurationV2 = []string{
 	"id",
 	"scanconfigname",
 	"modifiedby_name",
+	"ismanaged",
 	"serialized",
 }
 
@@ -224,6 +226,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetScanConfigName(),
 			obj.GetModifiedBy().GetName(),
+			obj.GetIsManaged(),
 			serialized,
 		}, nil
 	})

@@ -31,4 +31,8 @@ type Manager interface {
 	ProcessRescanRequest(ctx context.Context, scanID string) error
 	// DeleteScan processes a request to delete an existing compliance scan configuration.
 	DeleteScan(ctx context.Context, scanID string) error
+
+	// ReconcileDiscoveredConfig creates, updates, or deletes a discovered (non-managed) scan
+	// configuration record based on the current state of SSBs with the given name.
+	ReconcileDiscoveredConfig(ctx context.Context, ssbName string) error
 }
