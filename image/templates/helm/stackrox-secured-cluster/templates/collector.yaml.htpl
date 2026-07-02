@@ -72,11 +72,17 @@ spec:
         resources:
           {{- ._rox.collector._resources | nindent 10 }}
         securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
-            - NET_RAW
-          privileged: true
-          readOnlyRootFilesystem: true
+            - ALL
+            add:
+            - BPF
+            - PERFMON
+            - SYS_PTRACE
+            - SYS_RESOURCE
         volumeMounts:
         - mountPath: /host/proc
           name: proc-ro
@@ -133,11 +139,17 @@ spec:
         resources:
           {{- ._rox.collector._famResources | nindent 10 }}
         securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
-            - NET_RAW
-          privileged: true
-          readOnlyRootFilesystem: true
+            - ALL
+            add:
+            - BPF
+            - PERFMON
+            - SYS_PTRACE
+            - SYS_RESOURCE
         volumeMounts:
         - mountPath: /sys
           name: sys-ro
@@ -212,6 +224,7 @@ spec:
           {{- ._rox.collector._complianceResources | nindent 10 }}
         securityContext:
           runAsUser: 0
+          allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           {{ if not ._rox.collector.disableSELinuxOptions }}
           seLinuxOptions:
