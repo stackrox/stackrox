@@ -192,19 +192,17 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	cloned := q.CloneVT()
-	// Add the select fields of the view to the query.
-	cloned.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessExecPath).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessContainerStartTime).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessCreationTime).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessName).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
-	}
+	cloned.Selects = views.RiskViewSelectProtos
 
-	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
-	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
+	var scanner views.ProcessIndicatorRiskScanner
+	err := pgSearch.RunSelectDirectFn(ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, nil,
+		&pgSearch.DirectScanConfig{
+			ScanDests: scanner.Dests,
+			OnRow: func() error {
+				v := scanner.Build()
+				return fn(&v)
+			},
+		})
 	if err != nil {
 		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
 	}
