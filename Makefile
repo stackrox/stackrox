@@ -869,6 +869,9 @@ mitre:
 .PHONY: bootstrap_migration
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
+.PHONY: fix_migrations
+fix_migrations:
+	$(SILENT)if [[ "x${MIGRATION_PACKAGES}" == "x" ]]; then echo "Please set the MIGRATION_PACKAGES environment variable"; echo "MIGRATION_PACKAGES can be a comma separated list of migration packages to fix"; echo "MIGRATION_PACKAGES should be listed in the order you wish the migrations to run in after the migrations have been reorganized." else ./scripts/fix-migrations.sh; fi
 
 .PHONY: bootstrap_background_migration
 bootstrap_background_migration:
