@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central;
 
+import "google/protobuf/duration.proto";
 import "storage/cluster.proto";
 
 option go_package = "./internalapi/central;central";
@@ -36,6 +37,10 @@ message SensorHello {
 
   // request_deduper_state is a request to central to communicate its deduper state.
   bool request_deduper_state = 7;
+
+  // requested_cert_validity is the desired validity duration for certificates issued
+  // by Central during the initial connection handshake. When unset, Central uses the default 1-year profile.
+  google.protobuf.Duration requested_cert_validity = 8;
 }
 
 message CentralHello {

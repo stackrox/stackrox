@@ -16,9 +16,9 @@ import {
     TheadClustersHealth,
 } from './ClustersHealthTable';
 
-const dataLabelHealthy = '\u2265 30 days'; // greater than or equal to
-const dataLabelUnhealthy = '< 7 days';
-const dataLabelDegraded = '< 30 days';
+const dataLabelHealthy = 'Healthy';
+const dataLabelUnhealthy = 'Unhealthy';
+const dataLabelDegraded = 'Degraded';
 
 export type CredentialExpirationCardProps = {
     clusters: Cluster[];

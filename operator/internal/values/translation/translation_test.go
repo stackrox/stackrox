@@ -178,6 +178,14 @@ func TestGetTLSConfigValues(t *testing.T) {
 				},
 			},
 		},
+		"service-cert-validity": {
+			tls: &platform.TLSConfig{
+				ServiceCertValidity: pointers.String("1080h0m0s"),
+			},
+			want: chartutil.Values{
+				"serviceCertValidity": "1080h0m0s",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

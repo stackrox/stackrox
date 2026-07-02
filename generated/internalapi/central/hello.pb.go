@@ -10,6 +10,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -151,8 +152,11 @@ type SensorHello struct {
 	SensorState SensorHello_SensorState `protobuf:"varint,6,opt,name=sensor_state,json=sensorState,proto3,enum=central.SensorHello_SensorState" json:"sensor_state,omitempty"`
 	// request_deduper_state is a request to central to communicate its deduper state.
 	RequestDeduperState bool `protobuf:"varint,7,opt,name=request_deduper_state,json=requestDeduperState,proto3" json:"request_deduper_state,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// requested_cert_validity is the desired validity duration for certificates issued
+	// by Central during the initial connection handshake. When unset, Central uses the default 1-year profile.
+	RequestedCertValidity *durationpb.Duration `protobuf:"bytes,8,opt,name=requested_cert_validity,json=requestedCertValidity,proto3" json:"requested_cert_validity,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *SensorHello) Reset() {
@@ -232,6 +236,13 @@ func (x *SensorHello) GetRequestDeduperState() bool {
 		return x.RequestDeduperState
 	}
 	return false
+}
+
+func (x *SensorHello) GetRequestedCertValidity() *durationpb.Duration {
+	if x != nil {
+		return x.RequestedCertValidity
+	}
+	return nil
 }
 
 type CentralHello struct {
@@ -330,14 +341,14 @@ var File_internalapi_central_hello_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\n" +
-	"\x1finternalapi/central/hello.proto\x12\acentral\x1a\x15storage/cluster.proto\"\xdb\x01\n" +
+	"\x1finternalapi/central/hello.proto\x12\acentral\x1a\x1egoogle/protobuf/duration.proto\x1a\x15storage/cluster.proto\"\xdb\x01\n" +
 	"\x15HelmManagedConfigInit\x12E\n" +
 	"\x0ecluster_config\x18\x01 \x01(\v2\x1e.storage.CompleteClusterConfigR\rclusterConfig\x12!\n" +
 	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x123\n" +
 	"\n" +
-	"managed_by\x18\x05 \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedByJ\x04\b\x04\x10\x05\"\xef\x03\n" +
+	"managed_by\x18\x05 \x01(\x0e2\x14.storage.ManagerTypeR\tmanagedByJ\x04\b\x04\x10\x05\"\xc2\x04\n" +
 	"\vSensorHello\x12%\n" +
 	"\x0esensor_version\x18\x01 \x01(\tR\rsensorVersion\x12\"\n" +
 	"\fcapabilities\x18\x02 \x03(\tR\fcapabilities\x12d\n" +
@@ -345,7 +356,8 @@ const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\x18helm_managed_config_init\x18\x03 \x01(\v2\x1e.central.HelmManagedConfigInitR\x15helmManagedConfigInit\x12%\n" +
 	"\x0epolicy_version\x18\x04 \x01(\tR\rpolicyVersion\x12C\n" +
 	"\fsensor_state\x18\x06 \x01(\x0e2 .central.SensorHello.SensorStateR\vsensorState\x122\n" +
-	"\x15request_deduper_state\x18\a \x01(\bR\x13requestDeduperState\"6\n" +
+	"\x15request_deduper_state\x18\a \x01(\bR\x13requestDeduperState\x12Q\n" +
+	"\x17requested_cert_validity\x18\b \x01(\v2\x19.google.protobuf.DurationR\x15requestedCertValidity\"6\n" +
 	"\vSensorState\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTARTUP\x10\x01\x12\r\n" +
@@ -388,6 +400,7 @@ var file_internalapi_central_hello_proto_goTypes = []any{
 	(*storage.CompleteClusterConfig)(nil),          // 5: storage.CompleteClusterConfig
 	(storage.ManagerType)(0),                       // 6: storage.ManagerType
 	(*storage.SensorDeploymentIdentification)(nil), // 7: storage.SensorDeploymentIdentification
+	(*durationpb.Duration)(nil),                    // 8: google.protobuf.Duration
 }
 var file_internalapi_central_hello_proto_depIdxs = []int32{
 	5, // 0: central.HelmManagedConfigInit.cluster_config:type_name -> storage.CompleteClusterConfig
@@ -395,12 +408,13 @@ var file_internalapi_central_hello_proto_depIdxs = []int32{
 	7, // 2: central.SensorHello.deployment_identification:type_name -> storage.SensorDeploymentIdentification
 	1, // 3: central.SensorHello.helm_managed_config_init:type_name -> central.HelmManagedConfigInit
 	0, // 4: central.SensorHello.sensor_state:type_name -> central.SensorHello.SensorState
-	4, // 5: central.CentralHello.cert_bundle:type_name -> central.CentralHello.CertBundleEntry
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	8, // 5: central.SensorHello.requested_cert_validity:type_name -> google.protobuf.Duration
+	4, // 6: central.CentralHello.cert_bundle:type_name -> central.CentralHello.CertBundleEntry
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_hello_proto_init() }

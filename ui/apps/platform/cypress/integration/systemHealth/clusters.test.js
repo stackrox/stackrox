@@ -196,9 +196,9 @@ describe('System Health Clusters with fixture', () => {
         const cardTitle = 'Credential expiration';
         const nthRow = 1; // Clusters
 
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 4));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 1));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 4));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 7));
@@ -305,9 +305,9 @@ describe('System Health Clusters subset 3', () => {
         const cardTitle = 'Credential expiration';
         const nthRow = 1; // Clusters
 
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 2));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 1));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 2));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 3));
@@ -399,9 +399,9 @@ describe('System Health Clusters subset 1 Uninitialized', () => {
         const cardTitle = 'Credential expiration';
         const nthRow = 1; // Clusters
 
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '\u2265 30 days', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 7 days', 0));
-        cy.get(getTableCellContainsSelector(cardTitle, nthRow, '< 30 days', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Healthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unhealthy', 0));
+        cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Degraded', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Unavailable', 0));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Uninitialized', 1));
         cy.get(getTableCellContainsSelector(cardTitle, nthRow, 'Total', 1));

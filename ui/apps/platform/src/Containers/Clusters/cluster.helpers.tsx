@@ -1,4 +1,4 @@
-import { differenceInDays, differenceInMinutes } from 'date-fns';
+import { differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
@@ -21,7 +21,7 @@ import type {
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
 import { healthStatusLabels } from './cluster.constants';
-import type { CertExpiryStatus } from './clusterTypes';
+import type { CertExpiryStatus, SensorHealthStatus } from './clusterTypes';
 
 export const runtimeOptions = [
     {
@@ -321,26 +321,40 @@ export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
     return 'Not available';
 }
 
-const shortLivedCertMaxDays = 14;
-
-const longLivedCertThresholds = {
-    thresholdDegradedMinutes: 7 * 24 * 60, // Unhealthy if less than a week before expiry
-    thresholdHealthyMinutes: 30 * 24 * 60, // Degraded if less than a month before expiry
+type CertExpirationThresholds = {
+    thresholdDegradedMinutes: number;
+    thresholdHealthyMinutes: number;
 };
 
-const shortLivedCertThresholds = {
-    thresholdDegradedMinutes: 15, // Unhealthy if less than 15 minutes before expiry
-    thresholdHealthyMinutes: 59, // Degraded if less than an hour before expiry
-};
+const defaultCertDurationMinutes = 365 * 24 * 60;
 
-const resolveThresholds = (expiryStatus: CertExpiryStatus) => {
-    const certDurationDays = differenceInDays(
+const computeThresholds = (durationMinutes: number): CertExpirationThresholds => ({
+    thresholdDegradedMinutes: Math.max(15, Math.round(durationMinutes * 0.02)),
+    thresholdHealthyMinutes: Math.max(59, Math.round(durationMinutes * 0.08)),
+});
+
+const resolveThresholds = (expiryStatus: CertExpiryStatus): CertExpirationThresholds => {
+    if (!expiryStatus.sensorCertNotBefore) {
+        return computeThresholds(defaultCertDurationMinutes);
+    }
+    const certDurationMinutes = differenceInMinutes(
         expiryStatus.sensorCertExpiry,
         expiryStatus.sensorCertNotBefore
     );
-    return certDurationDays <= shortLivedCertMaxDays
-        ? shortLivedCertThresholds
-        : longLivedCertThresholds;
+    return computeThresholds(certDurationMinutes);
+};
+
+const healthFromRemainingMinutes = (
+    remainingMinutes: number,
+    thresholds: CertExpirationThresholds
+): SensorHealthStatus => {
+    if (remainingMinutes < thresholds.thresholdDegradedMinutes) {
+        return 'UNHEALTHY';
+    }
+    if (remainingMinutes < thresholds.thresholdHealthyMinutes) {
+        return 'DEGRADED';
+    }
+    return 'HEALTHY';
 };
 
 /*
@@ -363,17 +377,38 @@ export const getCredentialExpirationStatus = (
     sensorCertExpiryStatus: CertExpiryStatus,
     currentDatetime
 ) => {
-    const { sensorCertExpiry } = sensorCertExpiryStatus;
-    const diffInMinutes = differenceInMinutes(sensorCertExpiry, currentDatetime);
-    const { thresholdDegradedMinutes, thresholdHealthyMinutes } =
-        resolveThresholds(sensorCertExpiryStatus);
-
-    if (diffInMinutes < thresholdDegradedMinutes) {
-        return 'UNHEALTHY';
+    if (sensorCertExpiryStatus.lastRefreshedCertExpiry && sensorCertExpiryStatus.lastRefreshTime) {
+        const refreshedDurationMinutes = differenceInMinutes(
+            sensorCertExpiryStatus.lastRefreshedCertExpiry,
+            sensorCertExpiryStatus.lastRefreshTime
+        );
+        const refreshedThresholds = computeThresholds(refreshedDurationMinutes);
+        const refreshedRemainingMinutes = differenceInMinutes(
+            sensorCertExpiryStatus.lastRefreshedCertExpiry,
+            currentDatetime
+        );
+        const refreshedHealth = healthFromRemainingMinutes(
+            refreshedRemainingMinutes,
+            refreshedThresholds
+        );
+        if (refreshedHealth !== 'HEALTHY') {
+            return refreshedHealth;
+        }
     }
 
-    if (diffInMinutes < thresholdHealthyMinutes) {
-        return 'DEGRADED';
+    const thresholds = resolveThresholds(sensorCertExpiryStatus);
+    const connectionRemainingMinutes = differenceInMinutes(
+        sensorCertExpiryStatus.sensorCertExpiry,
+        currentDatetime
+    );
+    const connectionEstablishedAfterLastRefresh =
+        !sensorCertExpiryStatus.lastRefreshTime ||
+        !sensorCertExpiryStatus.sensorCertNotBefore ||
+        new Date(sensorCertExpiryStatus.sensorCertNotBefore) >=
+            new Date(sensorCertExpiryStatus.lastRefreshTime);
+
+    if (connectionEstablishedAfterLastRefresh) {
+        return healthFromRemainingMinutes(connectionRemainingMinutes, thresholds);
     }
 
     return 'HEALTHY';

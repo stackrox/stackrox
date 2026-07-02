@@ -905,6 +905,11 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
+          - description: |-
+              Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
+              The default is: 8760h.
+            displayName: Service Certificate Validity
+            path: tls.serviceCertValidity
         statusDescriptors:
           - description: Info stores information on how to obtain the admin password.
             displayName: Admin Credentials Info
@@ -1557,6 +1562,11 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
+          - description: |-
+              Validity duration for service certificates issued to secured cluster components (e.g. "8760h").
+              The default is: 8760h.
+            displayName: Service Certificate Validity
+            path: tls.serviceCertValidity
         statusDescriptors:
           - description: The deployed version of the product.
             displayName: Product Version
