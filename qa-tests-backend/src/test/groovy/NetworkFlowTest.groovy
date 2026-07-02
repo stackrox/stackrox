@@ -566,9 +566,12 @@ class NetworkFlowTest extends BaseSpecification {
         assert deploymentUid != null
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-            assert deploymentIP != null
-            targetUrl = "http://${deploymentIP}"
+            Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
+            assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+            assert nginxDeployment.loadBalancerIP != null :
+                    "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                    " Check waitForLoadBalancer() logs for timeout details."
+            targetUrl = "http://${nginxDeployment.loadBalancerIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
             String routeHost = deployments[NGINXCONNECTIONTARGET]?.routeHost
             assert routeHost != null
@@ -667,10 +670,13 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
-        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
+        Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
+        assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+        String deploymentIP = nginxDeployment.loadBalancerIP
+        assert deploymentIP != null : "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                " Check waitForLoadBalancer() logs for timeout details."
+        String deploymentUid = nginxDeployment?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-        assert deploymentIP != null
 
         when:
         "create a new deployment that talks to A via the LB IP"
