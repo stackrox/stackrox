@@ -55,8 +55,10 @@ type ClusterVulnerabilityResolver interface {
 	VulnerabilityTypes() []string
 }
 
+var _ ClusterVulnerabilityResolver = (*clusterCVEResolver)(nil)
+
 // ClusterVulnerability returns a vulnerability of the given id
-func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery) (*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerability")
 
 	// check permissions
@@ -75,7 +77,7 @@ func (resolver *Resolver) ClusterVulnerability(ctx context.Context, args IDQuery
 }
 
 // ClusterVulnerabilities resolves a set of image vulnerabilities for the input query
-func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q PaginatedQuery) ([]*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterVulnerabilities")
 
 	// check permissions
@@ -103,12 +105,7 @@ func (resolver *Resolver) ClusterVulnerabilities(ctx context.Context, q Paginate
 		return nil, err
 	}
 
-	// cast as return type
-	ret := make([]ClusterVulnerabilityResolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return cveResolvers, nil
 }
 
 // ClusterVulnerabilityCount returns count of image vulnerabilities for the input query
@@ -180,13 +177,13 @@ func (resolver *Resolver) ClusterVulnerabilityCounter(ctx context.Context, args 
 }
 
 // K8sClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
-func (resolver *Resolver) K8sClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) K8sClusterVulnerability(ctx context.Context, args IDQuery) (*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerability")
 	return resolver.ClusterVulnerability(ctx, args)
 }
 
 // K8sClusterVulnerabilities resolves a set of k8s vulnerabilities based on a query.
-func (resolver *Resolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) K8sClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sClusterVulnerabilities")
 	query := withK8sTypeFiltering(args.String())
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -200,13 +197,13 @@ func (resolver *Resolver) K8sClusterVulnerabilityCount(ctx context.Context, args
 }
 
 // IstioClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
-func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) IstioClusterVulnerability(ctx context.Context, args IDQuery) (*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerability")
 	return resolver.ClusterVulnerability(ctx, args)
 }
 
 // IstioClusterVulnerabilities resolves a set of k8s vulnerabilities based on a query.
-func (resolver *Resolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) IstioClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "IstioClusterVulnerabilities")
 	query := withIstioTypeFiltering(args.String())
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -220,13 +217,13 @@ func (resolver *Resolver) IstioClusterVulnerabilityCount(ctx context.Context, ar
 }
 
 // OpenShiftClusterVulnerability resolves a single k8s vulnerability based on an id (the CVE value).
-func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, args IDQuery) (ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) OpenShiftClusterVulnerability(ctx context.Context, args IDQuery) (*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerability")
 	return resolver.ClusterVulnerability(ctx, args)
 }
 
 // OpenShiftClusterVulnerabilities resolves a set of k8s vulnerabilities based on a query.
-func (resolver *Resolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
+func (resolver *Resolver) OpenShiftClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*clusterCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "OpenShiftClusterVulnerabilities")
 	query := withOpenShiftTypeFiltering(args.String())
 	return resolver.ClusterVulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
@@ -276,10 +273,13 @@ func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext(ctx context
 	})
 }
 
-func clusterCveToVulnerabilityWithSeverity(in []*storage.ClusterCVE) []VulnerabilityWithSeverity {
-	ret := make([]VulnerabilityWithSeverity, len(in))
+func clusterCveToVulnerabilityWithSeverity(in []*storage.ClusterCVE) []*vulnerabilityWithSeverityImpl {
+	ret := make([]*vulnerabilityWithSeverityImpl, len(in))
 	for i, vuln := range in {
-		ret[i] = vuln
+		ret[i] = &vulnerabilityWithSeverityImpl{
+			id:       vuln.GetId(),
+			severity: vuln.GetSeverity(),
+		}
 	}
 	return ret
 }

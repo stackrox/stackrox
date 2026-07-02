@@ -84,7 +84,7 @@ func (resolver *nodeCVECoreResolver) CVE(_ context.Context) string {
 	return resolver.data.GetCVE()
 }
 
-func (resolver *nodeCVECoreResolver) DistroTuples(ctx context.Context) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeCVECoreResolver) DistroTuples(ctx context.Context) ([]*nodeCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.NodeCVEs, "DistroTuples")
 	// DistroTuples resolver filters out snoozed CVEs when no explicit filter by CVESuppressed is provided.
 	// When DistroTuples resolver is called from here, it is to get the details of a single CVE which cannot be

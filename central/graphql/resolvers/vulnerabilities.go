@@ -1,9 +1,6 @@
 package resolvers
 
 import (
-	"context"
-
-	"github.com/graph-gophers/graphql-go"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -45,51 +42,6 @@ func init() {
 			"effectiveVulnerabilityRequest: VulnerabilityRequest",
 		}),
 	)
-}
-
-// VulnerabilityResolver represents a generic resolver of vulnerability fields.
-// Values may come from either an embedded vulnerability context, or a top level vulnerability context.
-type VulnerabilityResolver interface {
-	ID(ctx context.Context) graphql.ID
-	CVE(ctx context.Context) string
-	Cvss(ctx context.Context) float64
-	Link(ctx context.Context) string
-	Summary(ctx context.Context) string
-	EnvImpact(ctx context.Context) (float64, error)
-	ImpactScore(ctx context.Context) float64
-	ScoreVersion(ctx context.Context) string
-	FixedByVersion(ctx context.Context) (string, error)
-	IsFixable(ctx context.Context, args RawQuery) (bool, error)
-	PublishedOn(ctx context.Context) (*graphql.Time, error)
-	CreatedAt(ctx context.Context) (*graphql.Time, error)
-	DiscoveredAtImage(ctx context.Context, args RawQuery) (*graphql.Time, error)
-	LastScanned(ctx context.Context) (*graphql.Time, error)
-	LastModified(ctx context.Context) (*graphql.Time, error)
-	Vectors() *EmbeddedVulnerabilityVectorsResolver
-	Severity(ctx context.Context) string
-	VulnerabilityType() string
-	VulnerabilityTypes() []string
-
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
-	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-
-	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
-	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
-
-	Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error)
-	NodeCount(ctx context.Context, args RawQuery) (int32, error)
-
-	ClusterCount(ctx context.Context, args RawQuery) (int32, error)
-	Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error)
-
-	UnusedVarSink(ctx context.Context, args RawQuery) *int32
-
-	Suppressed(ctx context.Context) bool
-	SuppressActivation(ctx context.Context) (*graphql.Time, error)
-	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
-
-	VulnerabilityState(ctx context.Context) string
-	EffectiveVulnerabilityRequest(ctx context.Context) (*VulnerabilityRequestResolver, error)
 }
 
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {

@@ -614,7 +614,7 @@ func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context,
 	return image
 }
 
-func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
+func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) *imageComponentV2Resolver {
 	vulnID := graphql.ID(id)
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
 	assert.NoError(s.T(), err)

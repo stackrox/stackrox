@@ -54,12 +54,15 @@ type ImageResolver interface {
 	BaseImage(ctx context.Context) (*baseImageResolver, error)
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
-	TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error)
-	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
+	// TopImageVulnerability (ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error)
+	TopImageVulnerability(ctx context.Context, args RawQuery) (*imageCVEV2Resolver, error)
+	// ImageVulnerabilities (ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
+	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error)
 	ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error)
-	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
+	// ImageComponents (ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
+	ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error)
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error)
 	Scan(ctx context.Context) (*imageScanResolver, error)
@@ -72,6 +75,8 @@ type ImageResolver interface {
 	ScannerVersion(ctx context.Context) string
 	SignatureCount(ctx context.Context) (int32, error)
 }
+
+var _ ImageResolver = (*imageResolver)(nil)
 
 var (
 	imageWatchStatuses []string
@@ -233,13 +238,13 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 }
 
 // TopImageVulnerability returns the image vulnerability with the top CVSS score.
-func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
+func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args RawQuery) (*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageVulnerability")
 	return resolver.root.TopImageVulnerability(resolver.withImageScopeContext(ctx), args)
 }
 
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
-func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
@@ -276,7 +281,7 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
 }
 
-func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
 	imgResolver, err := resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
 	if err != nil {
