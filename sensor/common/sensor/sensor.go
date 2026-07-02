@@ -395,6 +395,56 @@ func (s *Sensor) Stop() {
 	log.Info("Sensor shutdown complete")
 }
 
+// TriggerOfflineMode simulates a full offline→online state transition by
+// notifying all components of OfflineMode, CentralReachableHTTP,
+// CentralReachable, and SyncFinished events — the same sequence as a real
+// Central reconnect. The gRPC stream and Central communication remain
+// unaffected.
+//
+// This method is exclusively for fake workload testing in local-sensor.
+//
+// Deprecated: DO NOT CALL IT IN PRODUCTION CODE. This bypasses the real gRPC
+// reconnect path and will cause inconsistent state if used against a real
+// Central connection (e.g. components observe SyncFinished without an actual
+// sync having occurred).
+//
+// Only triggers when the sensor is not already in OfflineMode (i.e. Central
+// is reachable). The lock is held for the entire sequence so the real
+// connection retry loop cannot interleave between transitions.
+//
+// The state-persistence model mirrors the real reconnect path:
+// OfflineMode and CentralReachableHTTP are persisted to currentState (via
+// changeStateNoLock), while CentralReachable and SyncFinished are delivered
+// as notifications only (via notifyAllComponents) — exactly as
+// communicationWithCentral + notifySyncDone do in production.
+//
+// Note: after this call s.currentState is CentralReachableHTTP, not
+// SyncFinished. Components still receive the CentralReachable and
+// SyncFinished notifications but the persisted state does not advance
+// beyond CentralReachableHTTP. This matches the real reconnect path where
+// communicationWithCentral sets CentralReachableHTTP and notifySyncDone
+// only broadcasts without persisting state.
+func (s *Sensor) TriggerOfflineMode(reason string) {
+	s.currentStateMtx.Lock()
+	defer s.currentStateMtx.Unlock()
+
+	if s.currentState == common.SensorComponentEventOfflineMode {
+		log.Warnf("Skipping synthetic offline mode cycle: sensor is already offline. Reason: %s", reason)
+		return
+	}
+
+	log.Infof("Synthetic offline mode triggered: %s", reason)
+	s.changeStateNoLock(common.SensorComponentEventOfflineMode)
+	s.changeStateNoLock(common.SensorComponentEventCentralReachableHTTP)
+	// CentralReachable and SyncFinished are broadcast without persisting to
+	// s.currentState. This means s.currentState remains CentralReachableHTTP.
+	// This is intentional and mirrors the real path (see doc comment above).
+	// If used against a real Central connection, components may act on
+	// SyncFinished despite no real sync having completed — use only with
+	// fake workloads.
+	s.notifyAllComponents(common.SensorComponentEventCentralReachable, common.SensorComponentEventSyncFinished)
+}
+
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
