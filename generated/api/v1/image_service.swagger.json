@@ -522,6 +522,16 @@
       ],
       "default": "UI_NONE"
     },
+    "CosignSignatureSignatureFormat": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "SIMPLE_SIGNING",
+        "DEAD_SIMPLE_SIGNING_ENVELOPE"
+      ],
+      "default": "UNSPECIFIED",
+      "description": "Determines how signature_payload is structured and verified.\n\n - SIMPLE_SIGNING: signature_payload is SimpleSigning JSON.\n - DEAD_SIMPLE_SIGNING_ENVELOPE: signature_payload is a DSSE envelope wrapping an in-toto statement."
+    },
     "EmbeddedVulnerabilityScoreVersion": {
       "type": "string",
       "enum": [
@@ -812,6 +822,14 @@
         "rekorBundle": {
           "type": "string",
           "format": "byte"
+        },
+        "signatureFormat": {
+          "$ref": "#/definitions/CosignSignatureSignatureFormat"
+        },
+        "sigstoreBundle": {
+          "type": "string",
+          "format": "byte",
+          "description": "Raw sigstore bundle JSON. When populated, the bundle is verified directly\nvia sigstore-go instead of using the decomposed fields above."
         }
       }
     },
