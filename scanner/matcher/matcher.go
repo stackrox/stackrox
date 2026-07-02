@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -71,6 +72,24 @@ func init() {
 	mf := driver.MatcherStatic(&m)
 	registry.Register(m.Name(), mf)
 	matcherNames = append(matcherNames, m.Name())
+}
+
+// GetMatcherNames returns a copy of the ClairCore matcher names to use.
+func GetMatcherNames() []string {
+	return slices.Clone(matcherNames)
+}
+
+// GetEnrichers returns the list of enrichers to use for vulnerability scanning.
+func GetEnrichers() []driver.Enricher {
+	enrichers := []driver.Enricher{
+		&fixedby.Enricher{},
+		&nvd.Enricher{},
+		&epss.Enricher{},
+	}
+	if features.ScannerV4RedHatCSAF.Enabled() {
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
+	return enrichers
 }
 
 // Matcher represents a vulnerability matcher.
@@ -140,21 +159,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig, reportProvider in
 		Transport: httputil.DenyTransport,
 	}
 
-	enrichers := []driver.Enricher{
-		&fixedby.Enricher{},
-		&nvd.Enricher{},
-		&epss.Enricher{},
-	}
-	var csafEnabled bool
-	if features.ScannerV4RedHatCSAF.Enabled() {
-		csafEnabled = true
-		enrichers = append(enrichers, &csaf.Enricher{})
-	}
+	enrichers := GetEnrichers()
+	csafEnabled := features.ScannerV4RedHatCSAF.Enabled()
 	slog.InfoContext(ctx, "CSAF enrichment", "enabled", csafEnabled)
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
-		MatcherNames:             matcherNames,
+		MatcherNames:             GetMatcherNames(),
 		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
