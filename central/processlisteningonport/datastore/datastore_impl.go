@@ -38,7 +38,8 @@ var (
 )
 
 const (
-	getBatchSize = 1000
+	getBatchSize    = 1000
+	upsertBatchSize = 1000
 )
 
 func newDatastoreImpl(
@@ -119,6 +120,45 @@ func plopStorageToNoSecretsString(plop *storage.ProcessListeningOnPortStorage) s
 	}
 
 	return fmt.Sprintf("%d_%d_%s", plop.GetProtocol(), plop.GetPort(), processToNoSecretsString(plop.GetProcess()))
+}
+
+func (ds *datastoreImpl) upsertManyWithLock(
+	ctx context.Context,
+	plops []*storage.ProcessListeningOnPortStorage) error {
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	err := ds.storage.UpsertMany(ctx, plops)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *datastoreImpl) upsertManyBatched(
+	ctx context.Context,
+	plops []*storage.ProcessListeningOnPortStorage,
+	upsertFunc func(context.Context, []*storage.ProcessListeningOnPortStorage) error) error {
+
+	for plopBatch := range slices.Chunk(plops, upsertBatchSize) {
+		err := upsertFunc(ctx, plopBatch)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (ds *datastoreImpl) upsertManyBatchedWithLock(ctx context.Context, plops []*storage.ProcessListeningOnPortStorage) error {
+	return ds.upsertManyBatched(ctx, plops, ds.upsertManyWithLock)
+}
+
+func (ds *datastoreImpl) upsertManyBatchedWithoutLock(ctx context.Context, plops []*storage.ProcessListeningOnPortStorage) error {
+	return ds.upsertManyBatched(ctx, plops, ds.storage.UpsertMany)
 }
 
 func (ds *datastoreImpl) AddProcessListeningOnPort(
@@ -263,16 +303,13 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	}
 
 	// Save new PLOP objects
-	err = ds.storage.UpsertMany(ctx, newPlopObjects)
+	err = ds.upsertManyBatchedWithoutLock(ctx, newPlopObjects)
 	if err != nil {
 		return err
 	}
 
-	ds.mutex.Lock()
-	defer ds.mutex.Unlock()
-
 	// Update existing PLOP objects while using a lock
-	return ds.storage.UpsertMany(ctx, updatePlopObjects)
+	return ds.upsertManyBatchedWithLock(ctx, updatePlopObjects)
 }
 
 func (ds *datastoreImpl) GetProcessListeningOnPort(
