@@ -76,9 +76,9 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
 
     // Report-specific functionality
     const { hasReadAccess } = usePermissions();
-    const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isViewBasedReportsEnabled =
-        hasWorkflowAdminAccess &&
+        hasReadAccess('Image') &&
+        hasReadAccess('Deployment') &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
