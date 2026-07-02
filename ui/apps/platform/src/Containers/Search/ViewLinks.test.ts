@@ -27,15 +27,19 @@ describe('resolveParams', () => {
 
 describe('buildViewLinkUrl', () => {
     it('should resolve :id in a simple path', () => {
-        expect(buildViewLinkUrl('/main/risk/:id', { id: 'abc123' }, undefined)).toBe(
-            '/main/risk/abc123'
+        expect(buildViewLinkUrl('/main/risk/workloads/:id', { id: 'abc123' }, undefined)).toBe(
+            '/main/risk/workloads/abc123'
         );
     });
 
     it('should append searchParams to a simple path', () => {
         expect(
-            buildViewLinkUrl('/main/risk/:id', { id: 'abc123' }, 'filteredWorkflowView=Full view')
-        ).toBe('/main/risk/abc123?filteredWorkflowView=Full view');
+            buildViewLinkUrl(
+                '/main/risk/workloads/:id',
+                { id: 'abc123' },
+                'filteredWorkflowView=Full view'
+            )
+        ).toBe('/main/risk/workloads/abc123?filteredWorkflowView=Full view');
     });
 
     it('should resolve :params in basePath query string separately from path', () => {
@@ -53,10 +57,14 @@ describe('buildViewLinkUrl', () => {
     });
 
     it('should fall back to the path pattern when :param has no value', () => {
-        expect(buildViewLinkUrl('/main/risk/:id', {}, undefined)).toBe('/main/risk/:id');
+        expect(buildViewLinkUrl('/main/risk/workloads/:id', {}, undefined)).toBe(
+            '/main/risk/workloads/:id'
+        );
     });
 
     it('should handle path without any :params or query', () => {
-        expect(buildViewLinkUrl('/main/risk', {}, undefined)).toBe('/main/risk');
+        expect(buildViewLinkUrl('/main/risk/workloads', {}, undefined)).toBe(
+            '/main/risk/workloads'
+        );
     });
 });

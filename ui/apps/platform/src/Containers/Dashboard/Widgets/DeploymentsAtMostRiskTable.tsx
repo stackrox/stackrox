@@ -3,7 +3,7 @@ import { Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import type { ListDeployment } from 'types/deployment.proto';
-import { getLinkToDeploymentInNetworkGraph, riskBasePath } from 'routePaths';
+import { getLinkToDeploymentInNetworkGraph, riskWorkloadsBasePath } from 'routePaths';
 import type { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 
@@ -12,7 +12,7 @@ function riskPageLinkToDeployment(id: string, name: string, searchFilter: Search
         ...searchFilter,
         Deployment: name,
     });
-    return `${riskBasePath}/${id}?${query}`;
+    return `${riskWorkloadsBasePath}/${id}?${query}`;
 }
 
 type DeploymentsAtMostRiskTableProps = {

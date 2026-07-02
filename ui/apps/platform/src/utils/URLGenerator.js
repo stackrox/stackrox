@@ -8,7 +8,8 @@ import {
     clustersBasePath,
     clustersPathWithParam,
     policiesPath,
-    riskPath,
+    riskWorkloadPath,
+    riskWorkloadsBasePath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
@@ -28,9 +29,9 @@ const legacyPathMap = {
         [pageTypes.DASHBOARD]: clustersBasePath,
     },
     [useCases.RISK]: {
-        [pageTypes.ENTITY]: riskPath,
-        [pageTypes.LIST]: '/main/risk',
-        [pageTypes.DASHBOARD]: '/main/risk',
+        [pageTypes.ENTITY]: riskWorkloadPath,
+        [pageTypes.LIST]: riskWorkloadsBasePath,
+        [pageTypes.DASHBOARD]: riskWorkloadsBasePath,
     },
     [useCases.SECRET]: {
         [pageTypes.ENTITY]: secretsPath,

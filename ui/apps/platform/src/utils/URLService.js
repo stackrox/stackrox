@@ -10,7 +10,8 @@ import Raven from 'raven-js';
 
 import {
     policiesPath,
-    riskPath,
+    riskWorkloadPath,
+    riskWorkloadsBasePath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
@@ -90,9 +91,9 @@ function getPath(urlParams) {
 
     const legacyPathMap = {
         [useCases.RISK]: {
-            [pageTypes.ENTITY]: riskPath,
-            [pageTypes.LIST]: '/main/risk',
-            [pageTypes.DASHBOARD]: '/main/risk',
+            [pageTypes.ENTITY]: riskWorkloadPath,
+            [pageTypes.LIST]: riskWorkloadsBasePath,
+            [pageTypes.DASHBOARD]: riskWorkloadsBasePath,
         },
         [useCases.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,

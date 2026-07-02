@@ -4,7 +4,7 @@ import { Tooltip } from '@patternfly/react-core';
 import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
-import { riskBasePath } from 'routePaths';
+import { riskWorkloadsBasePath } from 'routePaths';
 
 type DeploymentNameColumnProps = {
     original: {
@@ -18,7 +18,7 @@ export function DeploymentNameColumn({ original }: DeploymentNameColumnProps) {
     const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
-    const url = `${riskBasePath}/${original.deployment.id}?filteredWorkflowView=${filteredWorkflowView}`;
+    const url = `${riskWorkloadsBasePath}/${original.deployment.id}?filteredWorkflowView=${filteredWorkflowView}`;
     // Borrow layout from IconText component.
     return (
         <div className="flex items-center">
