@@ -33,6 +33,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+// noopRL is a no-op rate limiter for tests.
+type noopRL struct{}
+
+func (noopRL) TryConsume(string, *central.MsgFromSensor) (bool, string) { return true, "" }
+func (noopRL) Return(string, *central.MsgFromSensor)                    {}
+
 func TestHandler(t *testing.T) {
 	suite.Run(t, new(testSuite))
 }
@@ -129,7 +135,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 		SensorVersion: "1.0",
 	}
 
-	eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
+	eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil, noopRL{})
 
 	sensorMockConn := &sensorConnection{
 		clusterMgr:         mgrMock,
@@ -284,7 +290,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				SensorState:   tc.givenSensorState,
 			}
 
-			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil)
+			eventHandler := newSensorEventHandler(&storage.Cluster{}, "", pipeline, nil, &stopSig, deduper, nil, noopRL{})
 
 			sensorMockConn := &sensorConnection{
 				clusterMgr:         mgrMock,
