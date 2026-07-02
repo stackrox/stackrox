@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/random"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 )
@@ -26,6 +28,10 @@ const (
 	// defaultDatabaseName is needed to create and drop databases. Without it we can't create or drop databases, it is a catch-22
 	// because a database is needed for the connection.
 	defaultDatabaseName = "postgres"
+
+	templateDBName = "test_template"
+
+	templateAdvisoryLockID int64 = 0x7E57DA7ABA5E
 )
 
 // TestPostgres is a Postgres instance used in tests
@@ -36,16 +42,8 @@ type TestPostgres struct {
 
 // CreateADatabaseForT creates a postgres database for test
 func CreateADatabaseForT(t testing.TB) string {
-	suffix := random.GenerateString(5, random.AlphanumericCharacters)
-
-	h := fnv.New64a()
-	_, err := io.WriteString(h, t.Name())
-	require.NoError(t, err)
-
-	database := fmt.Sprintf("%x_%s", h.Sum64(), suffix)
-
+	database := generateDatabaseName(t)
 	CreateDatabase(t, database)
-
 	return database
 }
 
@@ -86,20 +84,91 @@ func DropDatabase(t testing.TB, database string) {
 	}
 }
 
+var templateOnce sync.Once
+
+func ensureTemplateDB(t testing.TB) {
+	templateOnce.Do(func() {
+		createTemplateDB(t)
+	})
+}
+
+func createTemplateDB(t testing.TB) {
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
+	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, db.Close()) }()
+
+	_, err = db.Exec("SELECT pg_advisory_lock($1)", templateAdvisoryLockID)
+	require.NoError(t, err)
+	defer func() { _, _ = db.Exec("SELECT pg_advisory_unlock($1)", templateAdvisoryLockID) }()
+
+	var exists bool
+	err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname = $1)", templateDBName).Scan(&exists)
+	require.NoError(t, err)
+	if exists {
+		t.Log("reusing existing test template database")
+		return
+	}
+
+	t.Log("creating test template database with all schemas")
+	_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(templateDBName))
+	require.NoError(t, err)
+
+	success := false
+	defer func() {
+		if !success {
+			_, _ = db.Exec("DROP DATABASE IF EXISTS " + pq.QuoteIdentifier(templateDBName))
+		}
+	}()
+
+	src := conn.GetConnectionStringWithDatabaseName(t, templateDBName)
+	gormDB := OpenGormDB(t, src)
+	defer CloseGormDB(t, gormDB)
+	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
+	success = true
+}
+
+func createDatabaseFromTemplate(t testing.TB, database string) {
+	sourceWithPostgresDatabase := conn.GetConnectionStringWithDatabaseName(t, defaultDatabaseName)
+	db, err := sql.Open(driverName, sourceWithPostgresDatabase)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, db.Close()) }()
+
+	_, err = db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(database) + " TEMPLATE " + pq.QuoteIdentifier(templateDBName))
+	require.NoError(t, err)
+}
+
+func generateDatabaseName(t testing.TB) string {
+	suffix := random.GenerateString(5, random.AlphanumericCharacters)
+
+	h := fnv.New64a()
+	_, err := io.WriteString(h, t.Name())
+	require.NoError(t, err)
+
+	return fmt.Sprintf("%x_%s", h.Sum64(), suffix)
+}
+
 // ForT creates and returns a Postgres for the test
 // It will teardown DB at the end of the test.
 func ForT(t testing.TB) *TestPostgres {
-	// Bootstrap a test database
-	database := CreateADatabaseForT(t)
+	var database string
 
-	sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
+	if testutils.IsRunningInCI() {
+		ensureTemplateDB(t)
+		database = generateDatabaseName(t)
+		t.Log("cloning test database from template")
+		createDatabaseFromTemplate(t, database)
+	} else {
+		// Bootstrap a test database
+		database = CreateADatabaseForT(t)
 
-	CreateDatabase(t, database)
+		sourceWithDatabase := conn.GetConnectionStringWithDatabaseName(t, database)
 
-	// Create all the tables for the database
-	gormDB := OpenGormDB(t, sourceWithDatabase)
-	pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
-	CloseGormDB(t, gormDB)
+		// Create all the tables for the database
+		gormDB := OpenGormDB(t, sourceWithDatabase)
+		pkgSchema.ApplyAllSchemasIncludingTests(context.Background(), gormDB, t)
+		CloseGormDB(t, gormDB)
+	}
 
 	// initialize pool to be used
 	pool := ForTCustomPool(t, database)
