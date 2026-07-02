@@ -40,28 +40,22 @@ jobs:
       shell: python
       env:
         PYTHONUNBUFFERED: "1"
-        event_name: ${{ github.event_name }}
-        event_action: ${{ github.event.action }}
-        labeled_with: ${{ github.event.label.name }}
-        is_fork: ${{ github.event.pull_request.head.repo.fork }}
-        is_draft: ${{ github.event.pull_request.draft }}
-        all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
-        ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
+        input__event_name: ${{ github.event_name }}
+        input__event_action: ${{ github.event.action }}
+        input__labeled_with: ${{ github.event.label.name }}
+        input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
+        input__is_draft: ${{ github.event.pull_request.draft }}
+        input__all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
       run: |
         import json
         import os
         from types import SimpleNamespace
 
-        input = SimpleNamespace(
-            **{var: os.environ[var] for var in (
-                'event_name',
-                'event_action',
-                'labeled_with',
-                'is_fork',
-                'is_draft',
-                'all_labels',
-                'ui_only_change',
-            )})
+        input = SimpleNamespace(**{
+            key.removeprefix('input__'): val
+            for (key, val) in os.environ.items()
+            if key.startswith('input__')})
         for k, v in vars(input).items():
             print(f'{k} = {v}')
 
