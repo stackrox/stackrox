@@ -596,7 +596,14 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 			}
 		}
 
-		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(ctx, snapshot)
+		// View-based reports are authorized at the gRPC layer with only Image+Deployment
+		// view permissions (no WorkflowAdministration write required). The snapshot datastore
+		// requires WorkflowAdministration write, so we elevate to a privileged context here.
+		persistCtx := ctx
+		if snapshot.GetViewBasedVulnReportFilters() != nil {
+			persistCtx = sac.WithAllAccess(ctx)
+		}
+		snapshot.ReportId, err = s.reportSnapshotStore.AddReportSnapshot(persistCtx, snapshot)
 	} else {
 		err = s.reportSnapshotStore.UpdateReportSnapshot(ctx, snapshot)
 	}
