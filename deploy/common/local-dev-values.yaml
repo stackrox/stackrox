@@ -1,24 +1,65 @@
 # Reduced resource overrides for the stackrox-central-services Helm chart that allow deploying
-# on Docker for Desktop on a typical developer box.
+# on Docker for Desktop, KinD, or Minikube on a typical developer box.
+#
+# Limits are sized to 2-3x measured peak usage from CI testing (KinD, GKE).
+# GOMEMLIMIT is auto-configured via ROX_MEMLIMIT downward API to 95% of memory limit.
+#
 # Please keep /operator/tests/*/*/*central-cr.yaml in sync
 
 central:
   resources:
     requests:
-      cpu: 500m
-      memory: 1Gi
+      cpu: 200m
+      memory: 200Mi
     limits:
-      cpu: 1
-      memory: 4Gi
+      cpu: 2
+      memory: 2Gi
 
   db:
     resources:
       requests:
-        cpu: 500m
-        memory: 1Gi
+        cpu: 200m
+        memory: 200Mi
       limits:
-        cpu: 1
-        memory: 4Gi
+        cpu: 2
+        memory: 2Gi
+    postgresConfig: |
+      hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+      listen_addresses = '*'
+      max_connections = 100
+      password_encryption = scram-sha-256
+      ssl = on
+      ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+      ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+      ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+      shared_buffers = 256MB
+      work_mem = 10MB
+      maintenance_work_mem = 64MB
+      effective_cache_size = 512MB
+      hash_mem_multiplier = 2.0
+      dynamic_shared_memory_type = posix
+      max_wal_size = 1GB
+      min_wal_size = 80MB
+      log_timezone = 'Etc/UTC'
+      datestyle = 'iso, mdy'
+      timezone = 'Etc/UTC'
+      lc_messages = 'en_US.utf8'
+      lc_monetary = 'en_US.utf8'
+      lc_numeric = 'en_US.utf8'
+      lc_time = 'en_US.utf8'
+      default_text_search_config = 'pg_catalog.english'
+      shared_preload_libraries = 'pg_stat_statements'
+      log_connections = 'on'
+      log_disconnections = 'on'
+      log_checkpoints = 'on'
+      log_lock_waits = 'on'
+      log_min_duration_statement = 500
+      log_parameter_max_length = 0
+      log_temp_files = 1024
+      log_autovacuum_min_duration = 500
+      autovacuum_max_workers = 3
+      autovacuum_vacuum_scale_factor = 0.05
+      autovacuum_analyze_scale_factor = 0.02
 
   telemetry:
     enabled: false
@@ -31,11 +72,11 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "400m"
-        memory: "1500Mi"
+        cpu: 100m
+        memory: 200Mi
       limits:
-        cpu: "1000m"
-        memory: "2Gi"
+        cpu: 1
+        memory: 1Gi
   matcher:
     scaling:
       autoScaling: Disabled
@@ -43,19 +84,19 @@ scannerV4:
       replicas: 1
     resources:
       requests:
-        cpu: "400m"
-        memory: "2Gi"
+        cpu: 100m
+        memory: 200Mi
       limits:
-        cpu: "1000m"
-        memory: "5500Mi"
+        cpu: 1
+        memory: 1500Mi
   db:
     resources:
       requests:
-        cpu: "400m"
-        memory: "2Gi"
+        cpu: 100m
+        memory: 200Mi
       limits:
-        cpu: "1000m"
-        memory: "2500Mi"
+        cpu: 1
+        memory: 1Gi
 
 scanner:
   replicas: 1
@@ -64,15 +105,15 @@ scanner:
 
   resources:
     requests:
-      memory: "500Mi"
-      cpu: "500m"
+      memory: 100Mi
+      cpu: 100m
     limits:
-      memory: "2500Mi"
-      cpu: "2000m"
+      memory: 1Gi
+      cpu: 1
   dbResources:
     requests:
-      cpu: "400m"
-      memory: "512Mi"
+      cpu: 100m
+      memory: 100Mi
     limits:
-      cpu: "2000m"
-      memory: "4Gi"
+      cpu: 1
+      memory: 1Gi
