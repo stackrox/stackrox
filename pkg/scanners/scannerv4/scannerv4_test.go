@@ -15,6 +15,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
@@ -585,25 +586,48 @@ func TestGetVirtualMachineScan_Timeout(t *testing.T) {
 	assert.Nil(t, scan)
 }
 
-func TestNewVirtualMachineScanner(t *testing.T) {
-	t.Run("successful creation", func(it *testing.T) {
+func TestVirtualMachineScannerCreator(t *testing.T) {
+	name, creator := VirtualMachineScannerCreator()
+	require.Equal(t, scannerTypes.ScannerV4, name)
+
+	t.Run("uses matcher endpoint and concurrency from integration config", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		integration := &storage.ImageIntegration{
+			Id:   "integration-id",
+			Name: "vm-scanner",
+			Type: scannerTypes.ScannerV4,
+			IntegrationConfig: &storage.ImageIntegration_ScannerV4{
+				ScannerV4: &storage.ScannerV4Config{
+					MatcherEndpoint:    "matcher.example:8443",
+					NumConcurrentScans: 11,
+				},
+			},
+		}
+
 		mockClient := s4ClientMocks.NewMockScanner(ctrl)
-		getter := func(string) (client.Scanner, error) {
+		scanner, err := newVirtualMachineScanner(integration, func(string) (client.Scanner, error) {
 			return mockClient, nil
-		}
-		scanner, err := newVirtualMachineScanner(getter)
-		assert.NoError(it, err)
-		assert.NotNil(it, scanner)
+		})
+		require.NoError(t, err)
+
+		typedScanner, ok := scanner.(*scannerv4)
+		require.True(t, ok)
+		assert.Equal(t, integration.GetName(), typedScanner.Name())
+		sema := typedScanner.MaxConcurrentNodeScanSemaphore()
+		require.True(t, sema.TryAcquire(11))
+		assert.False(t, sema.TryAcquire(1))
 	})
-	t.Run("failed creation", func(it *testing.T) {
-		testErr := errors.New("test error")
-		getter := func(string) (client.Scanner, error) {
-			return nil, testErr
-		}
-		scanner, err := newVirtualMachineScanner(getter)
-		assert.ErrorIs(it, err, testErr)
-		assert.Nil(it, scanner)
+
+	t.Run("returns error for missing scanner v4 config", func(t *testing.T) {
+		_, err := creator(&storage.ImageIntegration{
+			Id:   "integration-id",
+			Name: "vm-scanner",
+			Type: scannerTypes.ScannerV4,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "scanner v4 configuration required")
 	})
 }
 
