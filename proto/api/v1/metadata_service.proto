@@ -9,6 +9,13 @@ import "storage/system_info.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+message MajorVersionBump {
+  // Last minor release before the bump (e.g., "3.74").
+  string from_version = 1;
+  // First release of the new major version (e.g., "4.0").
+  string to_version = 2;
+}
+
 message Metadata {
   enum LicenseStatus {
     NONE = 0 [deprecated = true];
@@ -24,6 +31,11 @@ message Metadata {
 
   // Do not use this field. It will always contain "VALID"
   LicenseStatus license_status = 4 [deprecated = true];
+
+  // Known major version bumps in the product's release history.
+  // Clients (roxctl, Sensor) embed their own copy of this data;
+  // the union of both sets gives the most accurate version-range computation.
+  repeated MajorVersionBump known_major_bumps = 5;
 }
 
 message TrustInfo {
