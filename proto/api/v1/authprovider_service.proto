@@ -61,6 +61,7 @@ message ExchangeTokenResponse {
   string client_state = 2;
   bool test = 3;
   v1.AuthStatus user = 4;
+  bool authorize_roxctl = 5;
 }
 
 message AvailableProviderTypesResponse {

@@ -49,15 +49,24 @@ func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (pr
 		return "", "", err
 	}
 
-	return f.ResolveProviderAndClientState(values.Get("state"))
-}
-
-func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
-	providerID, clientState := idputil.SplitState(state)
+	providerID, clientState, err = idputil.RedeemStateNonce(values.Get("state"))
+	if err != nil {
+		return "", "", httputil.Errorf(http.StatusBadRequest, "invalid state: %v", err)
+	}
 	if providerID == "" {
 		return "", clientState, httputil.NewError(http.StatusBadRequest, "malformed state")
 	}
+	return providerID, clientState, nil
+}
 
+func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
+	providerID, clientState, err := idputil.LookupStateNonce(state)
+	if err != nil {
+		return "", "", httputil.Errorf(http.StatusBadRequest, "invalid state: %v", err)
+	}
+	if providerID == "" {
+		return "", clientState, httputil.NewError(http.StatusBadRequest, "malformed state")
+	}
 	return providerID, clientState, nil
 }
 

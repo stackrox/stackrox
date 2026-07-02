@@ -331,8 +331,9 @@ func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTok
 	clientState, mode := idputil.ParseClientState(clientState)
 	testMode := mode == idputil.TestAuthMode
 	response := &v1.ExchangeTokenResponse{
-		ClientState: clientState,
-		Test:        testMode,
+		ClientState:     clientState,
+		Test:            testMode,
+		AuthorizeRoxctl: mode == idputil.AuthorizeRoxctlMode,
 	}
 
 	userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
