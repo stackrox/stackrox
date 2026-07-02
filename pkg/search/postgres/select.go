@@ -311,6 +311,12 @@ func retryableRunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, 
 }
 
 func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {
+	return retryableRunSelectRequestForSchemaValFn(ctx, db, query, func(row T) error {
+		return fn(&row)
+	})
+}
+
+func retryableRunSelectRequestForSchemaValFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(T) error) error {
 	if len(query.SelectedFields) == 0 {
 		return errors.New("select fields required for select query")
 	}
@@ -324,12 +330,12 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 	defer rows.Close()
 
 	scanner := scanAPI.NewRowScanner(rows)
+	var row T
 	for rows.Next() {
-		var row T
 		if err := scanner.Scan(&row); err != nil {
 			return err
 		}
-		if err := fn(&row); err != nil {
+		if err := fn(row); err != nil {
 			return err
 		}
 	}
