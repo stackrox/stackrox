@@ -118,8 +118,7 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 // VirtualMachineReactiveIndexReportLatencySeconds measures end-to-end latency
 // from roxagent producing a reactively-triggered report
 // (ResponseMeta.report_generated_at) to Sensor successfully handing it off
-// toward Central. Used to validate the ~5 minute reactive-update SLA. See
-// docs/superpowers/specs/2026-07-03-reactive-dnf-scanning-design.md.
+// toward Central. Used to validate the ~5 minute reactive-update SLA.
 var VirtualMachineReactiveIndexReportLatencySeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
