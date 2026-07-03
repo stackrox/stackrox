@@ -28,9 +28,6 @@ import (
 // These tests were created to investigate the failures that occurred
 // during the upgrade of graphql-go from 1.5.0 to the next version
 // (eventually carried to 1.10.2).
-//
-// A mocked unit-test was later extracted to ease the trace of the issue
-// (see TestGraphQLQuery).
 
 const (
 	// GraphQL query matching the user's request
@@ -46,6 +43,14 @@ const (
 					severity
 					fixedByVersion
 				}
+			}
+		}
+	`
+
+	findComponentID = `
+		query findComponent($query: String) {
+			components: imageComponents(query: $query) {
+				id
 			}
 		}
 	`
@@ -117,6 +122,9 @@ var (
 
 // endregion test variables
 
+// This test was extracted from TestGetImageComponentVulnerabilitiesGraphQL /
+// TestGetFixableCVEsForEntityWithGraphQLEngine / query_without_filters
+// for detailed tracing purpose.
 func TestImageComponentGraphQLQuery(t *testing.T) {
 	testCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(t)
@@ -144,7 +152,6 @@ func TestImageComponentGraphQLQuery(t *testing.T) {
 
 	// Check for GraphQL errors
 	validateResponseHasNoError(t, response)
-
 	// Validate the response
 	validateResponseContainsCVE2023x7008(t, response)
 }
@@ -160,17 +167,14 @@ type ImageComponentVulnerabilitiesGraphQLTestSuite struct {
 	resolver *Resolver
 	schema   *graphql.Schema
 
-	mockCtrl *gomock.Controller
-
+	mockCtrl      *gomock.Controller
 	mockContainer *imageComponentCVEMocks
 }
 
-func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) SetupSuite() {
+func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) SetupTest() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	s.mockCtrl = gomock.NewController(s.T())
-
 	s.mockContainer = getImageComponentCVEMocks(s.mockCtrl)
-
 	s.resolver = getImageComponentCVEResolver(s.T(), s.mockContainer)
 
 	// Parse the GraphQL schema
@@ -179,39 +183,28 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
+func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
+}
+
 // TestGetFixableCVEsForEntityWithGraphQLEngine validates the GraphQL query by executing it
 // through the GraphQL engine (graph-gophers/graphql-go) rather than calling resolver functions directly.
 // This tests the full query execution path including parsing, validation, and execution.
 func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraphQLEngine() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	// Step 1: Find the systemd component ID using a separate query
-	findComponentQuery := `
-		query findComponent($query: String) {
-			components: imageComponents(query: $query) {
-				id
-			}
-		}
-	`
-
 	setupImageComponentMocks(s.mockContainer)
 
-	findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent",
+	// Step 1: Find the systemd component ID using a separate query
+	findResponse := s.schema.Exec(ctx, findComponentID, "findComponent",
 		map[string]interface{}{
 			"query": "Component:systemd+Component Version:249.11-0ubuntu3.11",
 		})
 
 	validateResponseHasNoError(s.T(), findResponse)
-
-	var findResult struct {
-		Components []struct {
-			ID string `json:"id"`
-		} `json:"components"`
-	}
-	s.Require().NoError(json.Unmarshal(findResponse.Data, &findResult))
-	s.Require().NotEmpty(findResult.Components, "Should find systemd component")
-
-	componentID := findResult.Components[0].ID
+	componentIDs := validateComponentIDResponse(s.T(), findResponse)
+	require.NotEmpty(s.T(), componentIDs)
+	componentID := componentIDs[0]
 	s.T().Logf("Found systemd component with ID: %s", componentID)
 
 	s.T().Run("query without filters", func(t *testing.T) {
@@ -227,7 +220,6 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 		// Check for GraphQL errors
 		validateResponseHasNoError(t, response)
-
 		// Validate the response
 		validateResponseContainsCVE2023x7008(t, response)
 	})
@@ -244,14 +236,8 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 			})
 
 		validateResponseHasNoError(t, response)
-
-		// Parse the response
-		var result queryResponse
-		require.NoError(t, json.Unmarshal(response.Data, &result))
-
 		// Should find exactly one CVE when filtered
-		require.Len(t, result.Result.Vulnerabilities, 1, "Should find exactly one CVE")
-
+		validateSingleVulnerabilityResponse(t, response)
 		validateResponseContainsCVE2023x7008(t, response)
 	})
 
@@ -267,7 +253,6 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 			})
 
 		validateResponseHasNoError(t, response)
-
 		// Validate the response
 		validateResponseContainsCVE2023x7008(t, response)
 	})
@@ -283,15 +268,9 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 				"scopeQuery": nil,
 			})
 
-		validateResponseHasNoError(t, response)
-
-		// Parse the response
-		var result queryResponse
-		require.NoError(t, json.Unmarshal(response.Data, &result))
-
-		require.Len(t, result.Result.Vulnerabilities, 1, "Should find exactly one fixable CVE-2023-7008")
-
 		// Validate the response
+		validateResponseHasNoError(t, response)
+		validateSingleVulnerabilityResponse(t, response)
 		validateResponseContainsCVE2023x7008(t, response)
 	})
 
@@ -319,30 +298,18 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGraphQLVariableTypes
 
 	s.T().Run("null variables", func(t *testing.T) {
 		// Find component first
-		findComponentQuery := `
-			query findComponent {
-				components: imageComponents(query: "Component:systemd") {
-					id
-				}
-			}
-		`
+		setupImageComponentMocks(s.mockContainer)
 		setupImageComponentCVEMocks(s.mockContainer)
 
-		findResponse := s.schema.Exec(ctx, findComponentQuery, "findComponent", nil)
+		findResponse := s.schema.Exec(ctx, findComponentID, "findComponent", map[string]interface{}{
+			"query": "Component:systemd",
+		})
 
 		validateResponseHasNoError(t, findResponse)
+		componentIDs := validateComponentIDResponse(t, findResponse)
+		require.NotEmpty(t, componentIDs)
+		componentID := componentIDs[0]
 
-		var findResult struct {
-			Components []struct {
-				ID string `json:"id"`
-			} `json:"components"`
-		}
-		require.NoError(t, json.Unmarshal(findResponse.Data, &findResult))
-		require.NotEmpty(t, findResult.Components)
-
-		componentID := findResult.Components[0].ID
-
-		// Test with nil/null variables - GraphQL should handle this gracefully
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
 				"id": componentID,
@@ -416,6 +383,33 @@ func validateResponseHasNoError(t testing.TB, response *graphql.Response) {
 		}
 	}
 	assert.Empty(t, response.Errors, "Query should not produce errors")
+}
+
+func validateComponentIDResponse(t testing.TB, response *graphql.Response) []string {
+	t.Helper()
+
+	var findResult struct {
+		Components []struct {
+			ID string `json:"id"`
+		} `json:"components"`
+	}
+	require.NoError(t, json.Unmarshal(response.Data, &findResult))
+	require.NotEmpty(t, findResult.Components, "Should find systemd component")
+
+	res := make([]string, 0, len(findResult.Components))
+	for _, component := range findResult.Components {
+		res = append(res, component.ID)
+	}
+	return res
+}
+
+func validateSingleVulnerabilityResponse(t testing.TB, response *graphql.Response) {
+	t.Helper()
+
+	var result queryResponse
+	require.NoError(t, json.Unmarshal(response.Data, &result))
+
+	require.Len(t, result.Result.Vulnerabilities, 1, "Should find exactly one fixable CVE-2023-7008")
 }
 
 func validateResponseContainsCVE2023x7008(t testing.TB, response *graphql.Response) {
