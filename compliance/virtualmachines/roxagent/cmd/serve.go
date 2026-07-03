@@ -58,8 +58,7 @@ const (
 	maxConnDeadline = 5 * time.Minute
 )
 
-// scan_trigger fact values shared with Sensor's vmscraper/facts.go. See
-// docs/superpowers/specs/2026-07-03-reactive-dnf-scanning-design.md.
+// scan_trigger fact values shared with Sensor's vmscraper/facts.go.
 const (
 	scanTriggerScheduled = "scheduled"
 	scanTriggerReactive  = "reactive"

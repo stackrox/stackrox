@@ -8,8 +8,7 @@ import (
 )
 
 // scanTriggerFactKey is the ResponseMeta.facts key roxagent sets to classify
-// why a report was generated. See
-// docs/superpowers/specs/2026-07-03-reactive-dnf-scanning-design.md.
+// why a report was generated.
 const scanTriggerFactKey = "scan_trigger"
 
 // scanTriggerReactive is the scanTriggerFactKey value for reports produced by
