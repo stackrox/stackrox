@@ -122,13 +122,9 @@ func (m *policyMatcherImpl) GetIsolationDetails(resource LabeledResource) Isolat
 }
 
 func hasEgress(types []storage.NetworkPolicyType) bool {
-	return hasPolicyType(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
+	return slices.Contains(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
 }
 
 func hasIngress(types []storage.NetworkPolicyType) bool {
-	return len(types) == 0 || hasPolicyType(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
-}
-
-func hasPolicyType(types []storage.NetworkPolicyType, t storage.NetworkPolicyType) bool {
-	return slices.Contains(types, t)
+	return len(types) == 0 || slices.Contains(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
 }

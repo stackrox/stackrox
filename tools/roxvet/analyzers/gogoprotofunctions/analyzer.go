@@ -92,8 +92,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 					continue
 				}
 				extraAllowedPackages := replacedPkgExtraAllowedCallers[monitoredFunction]
-				isCallerPkgAllowed := slices.Contains(extraAllowedPackages, callerPkg)
-				if isCallerPkgAllowed {
+				if slices.Contains(extraAllowedPackages, callerPkg) {
 					continue
 				}
 				pass.Report(analysis.Diagnostic{

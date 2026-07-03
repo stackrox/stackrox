@@ -11,8 +11,7 @@ func isEnforcedDeployTimePolicy(policy *storage.Policy) bool {
 		return false
 	}
 
-	isDeployLifecycle := slices.Contains(policy.GetLifecycleStages(), storage.LifecycleStage_DEPLOY)
-	if !isDeployLifecycle {
+	if !slices.Contains(policy.GetLifecycleStages(), storage.LifecycleStage_DEPLOY) {
 		return false
 	}
 

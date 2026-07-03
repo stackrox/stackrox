@@ -56,7 +56,7 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 	}
 
 	indent := "  "
-	if contains(options, OptCompact) {
+	if slices.Contains(options, OptCompact) {
 		indent = ""
 	}
 
@@ -69,7 +69,7 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 		return "", err
 	}
 
-	if contains(options, OptCompact) {
+	if slices.Contains(options, OptCompact) {
 		// There is a space randomization added to output to ensure that library
 		// users are not relaying on stable output format.
 		// Info: https://pkg.go.dev/google.golang.org/protobuf@v1.34.1/encoding/prototext#Format
@@ -86,8 +86,4 @@ func ProtoToJSON(m protocompat.Message, options ...ConversionOption) (string, er
 	}
 
 	return string(x), nil
-}
-
-func contains(options []ConversionOption, opt ConversionOption) bool {
-	return slices.Contains(options, opt)
 }

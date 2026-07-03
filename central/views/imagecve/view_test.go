@@ -1062,11 +1062,8 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 
 				// Add CVE ID (V2 format) from database object
 				id := vuln.GetId()
-				var found bool
-				if slices.Contains(val.GetCVEIDs(), id) {
-					found = true
-				}
-				if !found {
+
+				if !slices.Contains(val.GetCVEIDs(), id) {
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 

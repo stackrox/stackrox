@@ -50,11 +50,7 @@ func (m *namespaceMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
 }
 
 func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
-	if len(scopes) == 0 {
-		return true
-	}
-
-	return slices.ContainsFunc(scopes, m.scopeMatches)
+	return len(scopes) == 0 || slices.ContainsFunc(scopes, m.scopeMatches)
 }
 
 func (m *namespaceMatcher) scopeMatches(scope *storage.Scope) bool {

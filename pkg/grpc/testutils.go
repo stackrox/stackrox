@@ -114,9 +114,6 @@ func testPrintSocketInfo(t *testing.T, ports ...uint64) error {
 }
 
 func testPrintSocketInfoFromProcFile(t *testing.T, fName string, ports ...uint64) (err error) {
-	shouldPrintPort := func(port uint64, ports ...uint64) bool {
-		return slices.Contains(ports, port)
-	}
 	getStateString := func(code uint64) string {
 		codeToState := map[uint64]string{
 			0x01: "ESTABLISHED",
@@ -163,7 +160,7 @@ func testPrintSocketInfoFromProcFile(t *testing.T, fName string, ports ...uint64
 		if parseErr != nil {
 			return parseErr
 		}
-		if !shouldPrintPort(port, ports...) {
+		if !slices.Contains(ports, port) {
 			continue
 		}
 		code, parseErr := strconv.ParseUint(columns[3], 16, 8)

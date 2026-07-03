@@ -303,8 +303,7 @@ func (s *deploymentDatastoreSACSuite) TestGetDeployments() {
 			ctx := s.testContexts[c.ScopeKey]
 			expectedIDs := make([]string, 0, len(c.ExpectedDeploymentIDs))
 			for _, ID := range c.ExpectedDeploymentIDs {
-				found := slices.Contains(testIDs, ID)
-				if found {
+				if slices.Contains(testIDs, ID) {
 					expectedIDs = append(expectedIDs, ID)
 				}
 			}

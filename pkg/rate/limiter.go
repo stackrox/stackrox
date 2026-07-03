@@ -228,8 +228,7 @@ func (l *Limiter) getOrCreateLimiter(clientID string) *gorate.Limiter {
 // perClientBucketCapacity calculates the per-client burst capacity (max tokens in bucket).
 // The global bucket capacity is divided equally among all clients.
 func (l *Limiter) perClientBucketCapacity(numClients int) int {
-	burst := max(l.bucketCapacity/numClients, 1)
-	return burst
+	return max(l.bucketCapacity/numClients, 1)
 }
 
 // OnClientDisconnect removes a client from rate limiting and rebalances remaining limiters.

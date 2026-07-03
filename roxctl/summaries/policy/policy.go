@@ -94,7 +94,7 @@ func NewPolicySummaryForPrinting(alerts []*storage.Alert, forbiddenEnforcementAc
 			Description:  p.GetDescription(),
 			Remediation:  p.GetRemediation(),
 			Violation:    getAlertViolationsStrings(alert),
-			FailingCheck: checkIfPolicyHasForbiddenEnforcementAction(p, forbiddenEnforcementAction),
+			FailingCheck: slices.Contains(p.GetEnforcementActions(), forbiddenEnforcementAction),
 		}
 
 		// increase the severity count & total account for the entity and the total amount
@@ -221,12 +221,6 @@ func getAlertViolationsStrings(alert *storage.Alert) []string {
 		res = append(res, violation.GetMessage())
 	}
 	return res
-}
-
-// checkIfPolicyHasForbiddenEnforcementAction iterates through the Policy's enforcement actions and returns true
-// if the forbidden action is included
-func checkIfPolicyHasForbiddenEnforcementAction(policy *storage.Policy, forbiddenAction storage.EnforcementAction) bool {
-	return slices.Contains(policy.GetEnforcementActions(), forbiddenAction)
 }
 
 // sortPoliciesBySeverity sorts policies by their severity from highest (CriticalSeverity) to lowest (LowSeverity)

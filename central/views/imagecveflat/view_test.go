@@ -886,12 +886,8 @@ func (s *ImageCVEFlatViewTestSuite) compileExpected(images []testImage, filter *
 				}
 
 				id := vuln.GetId()
-				var found bool
-				if slices.Contains(val.GetCVEIDs(), id) {
-					found = true
-				}
 
-				if !found {
+				if !slices.Contains(val.GetCVEIDs(), id) {
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 

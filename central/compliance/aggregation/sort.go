@@ -15,7 +15,6 @@ func sortAggregations(results []*storage.ComplianceAggregation_Result) {
 }
 
 func aBeforeB(a, b []*storage.ComplianceAggregation_AggregationKey) bool {
-	// Get the length of the smallest aggregtion key set.
 	minLen := min(len(a), len(b))
 
 	// Try to choose a or b based on scope. Lowest scope type works first.
