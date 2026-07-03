@@ -49,7 +49,7 @@ function VirtualMachineCVEsTable() {
                 borders={tableState.type === 'COMPLETE'}
                 variant="compact"
                 aria-live="polite"
-                aria-busy={isLoading ? 'true' : 'false'}
+                aria-busy={false}
             >
                 <Thead noWrap>
                     <Tr>
