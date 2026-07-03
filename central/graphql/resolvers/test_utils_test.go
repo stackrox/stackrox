@@ -26,7 +26,7 @@ func validateAlignedMethodIndex(t testing.TB, type1 reflect.Type, type2 reflect.
 	}
 }
 
-// dumpResolverMethods uses reflection to dump the index and names of methods for a given resolver type.
+// dumpTypeMethods uses reflection to dump the index and names of methods for a given type.
 // It accepts any resolver value and outputs method information to the test logger.
 //
 // Example usage:
@@ -34,7 +34,7 @@ func validateAlignedMethodIndex(t testing.TB, type1 reflect.Type, type2 reflect.
 //	// After creating a resolver instance in a test:
 //	componentResolver, err := resolver.ImageComponent(ctx, struct{ ID *graphql.ID }{ID: &componentID})
 //	require.NoError(t, err)
-//	dumpResolverMethods(t, componentResolver, "imageComponentV2Resolver")
+//	dumpTypeMethods(t, reflect.TypeOf(componentResolver), "imageComponentV2Resolver")
 //
 // Output includes:
 //   - Index of each method (0-based)
@@ -42,20 +42,6 @@ func validateAlignedMethodIndex(t testing.TB, type1 reflect.Type, type2 reflect.
 //   - Full method signature
 //   - Input parameter types
 //   - Output parameter types
-func dumpResolverMethods(t *testing.T, resolver interface{}, resolverName string) {
-	t.Helper()
-
-	if resolver == nil {
-		t.Logf("Resolver %s is nil", resolverName)
-		return
-	}
-
-	val := reflect.ValueOf(resolver)
-	typ := val.Type()
-
-	dumpTypeMethods(t, typ, resolverName, true)
-}
-
 func dumpTypeMethods(t testing.TB, typ reflect.Type, typeName string, verbose bool) {
 	t.Logf("\n=== Methods of %s ===", typeName)
 	t.Logf("Type: %s", typ.String())
