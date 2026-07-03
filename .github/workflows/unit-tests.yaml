@@ -71,6 +71,15 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
+    - name: Upload test results to Codecov (go-unit-tests)
+      if: ${{ !cancelled() }}
+      uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        report_type: test_results
+        flags: unit-tests,go
+        files: junit-reports/report.xml
+
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
@@ -98,13 +107,13 @@ jobs:
         report_type: coverage
         flags: go-unit-tests
 
-    - name: Upload test results to Codecov
+    - name: Upload test results to Codecov (integration)
       if: ${{ !cancelled() }}
       uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # ratchet:codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         report_type: test_results
-        flags: unit-tests,go
+        flags: unit-tests,go-integration
         files: junit-reports/report.xml
 
     - name: Report test failures to Jira
