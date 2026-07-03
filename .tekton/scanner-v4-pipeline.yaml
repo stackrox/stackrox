@@ -366,7 +366,7 @@ spec:
       - name: name
         value: source-build-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.3@sha256:5f53518629ce04fee0466d25670700d0f36b2dbd296b6ae04eaad5d44f0d7d52
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.3@sha256:7c5575ac8e292f27f57716c021ab0324460dc958e73946724c588c5228e5f372
       - name: kind
         value: task
       resolver: bundles
