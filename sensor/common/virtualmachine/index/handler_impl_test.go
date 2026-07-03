@@ -45,6 +45,7 @@ func (s *virtualMachineHandlerSuite) SetupTest() {
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
 		store:        s.store,
+		reactiveWake: make(chan struct{}, 1),
 	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
@@ -742,6 +743,166 @@ func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
 
 	err = s.handler.Start()
 	s.Require().ErrorIs(err, errStartMoreThanOnce)
+}
+
+func (s *virtualMachineHandlerSuite) TestSendReactive_DeliveredBeforeQueuedScheduledBacklog() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	report1 := &v1.IndexReport{VsockCid: "1"}
+	report2 := &v1.IndexReport{VsockCid: "2"}
+	report3 := &v1.IndexReport{VsockCid: "3"}
+
+	s.store.EXPECT().GetFromCID(uint32(1)).Return(&virtualmachine.Info{ID: "vm-1"}).AnyTimes()
+	s.store.EXPECT().GetFromCID(uint32(2)).Return(&virtualmachine.Info{ID: "vm-2"}).AnyTimes()
+	s.store.EXPECT().GetFromCID(uint32(3)).Return(&virtualmachine.Info{ID: "vm-3"}).AnyTimes()
+
+	// report1 is picked up by run()'s single goroutine and blocks trying to
+	// hand it to ResponsesC() (nobody is reading yet), which pins the loop
+	// mid-iteration before it can look at anything queued afterward.
+	s.Require().NoError(s.handler.Send(context.Background(), report1))
+
+	// While run() is blocked delivering report1, queue a scheduled backlog
+	// entry (report2) and then a reactive entry (report3). Because the
+	// reactive path is checked first on every loop iteration, report3 must
+	// come out ahead of report2 once report1's delivery is unblocked.
+	// Give run() a moment to actually reach the blocking send for report1
+	// before queueing more — this is a small, generous sleep, not a tight
+	// race: the assertions below tolerate the goroutine being slightly
+	// slower, they just require it to not have consumed report2 yet, which
+	// it structurally cannot do until report1's send unblocks.
+	time.Sleep(50 * time.Millisecond)
+	s.Require().NoError(s.handler.Send(context.Background(), report2))
+	s.Require().NoError(s.handler.SendReactive(context.Background(), report3, time.Now()))
+
+	var received []string
+	for range 3 {
+		select {
+		case msg := <-s.handler.ResponsesC():
+			received = append(received, msg.GetEvent().GetId())
+		case <-time.After(time.Second):
+			s.Fail("timed out waiting for a message", "received so far: %v", received)
+		}
+	}
+
+	s.Require().Len(received, 3)
+	s.Equal("vm-1", received[0], "report1 was already in flight before the reactive report existed")
+	s.Equal("vm-3", received[1], "the reactive report must be delivered ahead of the queued scheduled backlog")
+	s.Equal("vm-2", received[2], "the scheduled backlog entry is delivered last")
+}
+
+func (s *virtualMachineHandlerSuite) TestSendReactive_UpsertReplacesOlderPendingForSameVM() {
+	// Deliberately does not call Start(): no run() consumer goroutine means
+	// reactivePending is only ever touched by this test goroutine, so it can
+	// be inspected directly and deterministically after both sends.
+	s.handler.indexReports = make(chan *v1.IndexReport, 1)
+	s.handler.centralReady.Signal()
+
+	s.store.EXPECT().GetFromCID(uint32(9)).Return(&virtualmachine.Info{ID: "vm-9"}).Times(2)
+
+	older := &v1.IndexReport{VsockCid: "9"}
+	newer := &v1.IndexReport{VsockCid: "9"}
+
+	s.Require().NoError(s.handler.SendReactive(context.Background(), older, time.Now()))
+	s.Require().NoError(s.handler.SendReactive(context.Background(), newer, time.Now()))
+
+	s.handler.reactiveMu.Lock()
+	defer s.handler.reactiveMu.Unlock()
+	s.Require().Len(s.handler.reactivePending, 1, "reactivePending must never grow past one entry per VM")
+	s.Same(newer, s.handler.reactivePending["vm-9"].report, "the newer report must replace the older one, never queue alongside it")
+}
+
+func (s *virtualMachineHandlerSuite) TestSendReactive_FallsBackToScheduledQueueWhenVMUnknown() {
+	// Deliberately does not call Start(): with no run() consumer goroutine
+	// racing to drain indexReports, the test can read the fallback message
+	// off it directly and deterministically.
+	s.handler.indexReports = make(chan *v1.IndexReport, 1)
+	s.handler.centralReady.Signal()
+
+	s.store.EXPECT().GetFromCID(uint32(42)).Return(nil)
+
+	report := &v1.IndexReport{VsockCid: "42"}
+	err := s.handler.SendReactive(context.Background(), report, time.Now())
+	s.Require().NoError(err, "an unresolvable VM must not cause the reactive update to be dropped")
+
+	s.handler.reactiveMu.Lock()
+	pendingLen := len(s.handler.reactivePending)
+	s.handler.reactiveMu.Unlock()
+	s.Equal(0, pendingLen, "an unresolvable VM's report must not be added to reactivePending")
+
+	select {
+	case got := <-s.handler.indexReports:
+		s.Equal("42", got.GetVsockCid(), "it must instead land on the normal scheduled queue")
+	case <-time.After(time.Second):
+		s.Fail("expected the report to fall back onto the scheduled queue")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendReactive_CentralNotReachable() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	defer s.handler.Stop()
+
+	report := &v1.IndexReport{VsockCid: "1"}
+	err = s.handler.SendReactive(context.Background(), report, time.Now())
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, errCentralNotReachable)
+	s.Require().ErrorIs(err, errox.ResourceExhausted)
+}
+
+func (s *virtualMachineHandlerSuite) TestPopReactivePending_EmptyReturnsFalse() {
+	entry, ok := s.handler.popReactivePending()
+	s.False(ok)
+	s.Nil(entry)
+}
+
+func (s *virtualMachineHandlerSuite) TestSendReactive_ConcurrentUpsertsAreRaceFreeAndBounded() {
+	// Deliberately does not call Start(): no run() consumer goroutine
+	// draining reactivePending means the map's final contents can be
+	// inspected deterministically once all senders finish, while -race
+	// still exercises real concurrent access to reactiveMu/reactivePending
+	// from every sending goroutine below.
+	const numVMs = 40
+	const sendsPerVM = 25
+
+	s.handler.indexReports = make(chan *v1.IndexReport, numVMs*sendsPerVM)
+	s.handler.centralReady.Signal()
+
+	for i := range numVMs {
+		s.store.EXPECT().GetFromCID(uint32(i)).Return(&virtualmachine.Info{
+			ID: virtualmachine.VMID(fmt.Sprintf("vm-%d", i)),
+		}).AnyTimes()
+	}
+
+	// Repeated concurrent sends per VM exercise the upsert-replace path
+	// under contention, not just the first-insert path.
+	wg := sync.WaitGroup{}
+	for i := range numVMs {
+		cid := fmt.Sprintf("%d", i)
+		for range sendsPerVM {
+			wg.Go(func() {
+				report := &v1.IndexReport{VsockCid: cid}
+				err := s.handler.SendReactive(context.Background(), report, time.Now())
+				s.Require().NoError(err)
+			})
+		}
+	}
+	wg.Wait()
+
+	// Exactly one pending entry per VM survives concurrent upserts —
+	// reactivePending must never grow past fleet size, regardless of how
+	// many reactive sends raced for the same VM.
+	s.handler.reactiveMu.Lock()
+	defer s.handler.reactiveMu.Unlock()
+	s.Require().Len(s.handler.reactivePending, numVMs)
+	for i := range numVMs {
+		vmID := virtualmachine.VMID(fmt.Sprintf("vm-%d", i))
+		entry, ok := s.handler.reactivePending[vmID]
+		s.Require().True(ok, "expected a pending reactive entry for %s", vmID)
+		s.Equal(fmt.Sprintf("%d", i), entry.report.GetVsockCid())
+	}
 }
 
 func TestVmIDFromResourceID(t *testing.T) {
