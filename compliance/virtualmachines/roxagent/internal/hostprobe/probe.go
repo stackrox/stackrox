@@ -110,16 +110,14 @@ func hasEntitlementCertKeyPairAtPath(path string) (bool, error) {
 			continue
 		}
 		name := entry.Name()
-		if before, ok := strings.CutSuffix(name, entitlementKeySuffix); ok {
-			base := before
+		if base, ok := strings.CutSuffix(name, entitlementKeySuffix); ok {
 			keyBases[base] = struct{}{}
 			if _, found := certBases[base]; found {
 				return true, nil
 			}
 			continue
 		}
-		if before, ok := strings.CutSuffix(name, entitlementCertSuffix); ok {
-			base := before
+		if base, ok := strings.CutSuffix(name, entitlementCertSuffix); ok {
 			certBases[base] = struct{}{}
 			if _, found := keyBases[base]; found {
 				return true, nil
