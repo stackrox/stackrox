@@ -1,0 +1,20 @@
+{{- include "srox.init" . -}}
+
+{{- if ._rox.central.redHatSigningKeyBundle }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redhat-signing-key-bundle
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "redhat-signing-key-bundle") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "redhat-signing-key-bundle") | nindent 4 }}
+    [<- if not .Operator >]
+    "helm.sh/hook": "pre-install,pre-upgrade"
+    "helm.sh/resource-policy": keep
+    [<- end >]
+data:
+  bundle.json: |
+    {{- ._rox.central.redHatSigningKeyBundle | nindent 4 }}
+{{- end }}

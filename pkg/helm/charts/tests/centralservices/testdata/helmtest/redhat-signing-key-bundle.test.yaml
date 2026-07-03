@@ -1,0 +1,57 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "ConfigMap is not created with default settings"
+  expect: |
+    .configmaps["redhat-signing-key-bundle"] | assertThat(. == null)
+
+- name: "ConfigMap is not created with empty string"
+  set:
+    central.redHatSigningKeyBundle: ""
+  expect: |
+    .configmaps["redhat-signing-key-bundle"] | assertThat(. == null)
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath == "/tmp/redhat-signing-keys/")] | assertThat(length == 0)
+
+- name: "No volume mount at /tmp/redhat-signing-keys with default settings"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.mountPath == "/tmp/redhat-signing-keys/")] | assertThat(length == 0)
+
+- name: "ConfigMap is created when redHatSigningKeyBundle is set"
+  values:
+    central:
+      redHatSigningKeyBundle: |
+        {"keys": [{"name": "test-key", "pem": "-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----\n"}]}
+  expect: |
+    .configmaps["redhat-signing-key-bundle"] | assertThat(. != null)
+    .configmaps["redhat-signing-key-bundle"].data["bundle.json"] | assertThat(contains("test-key"))
+
+- name: "Volume mount is added when redHatSigningKeyBundle is set"
+  values:
+    central:
+      redHatSigningKeyBundle: |
+        {"keys": [{"name": "test-key", "pem": "test"}]}
+  expect: |
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(.mountPath == "/tmp/redhat-signing-keys/")
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(.readOnly == true)
+
+- name: "Volume definition references the ConfigMap with optional"
+  values:
+    central:
+      redHatSigningKeyBundle: |
+        {"keys": [{"name": "test-key", "pem": "test"}]}
+  expect: |
+    .deployments.central.spec.template.spec.volumes[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(.configMap.name == "redhat-signing-key-bundle")
+    .deployments.central.spec.template.spec.volumes[]
+      | select(.name == "redhat-signing-key-bundle") | assertThat(.configMap.optional == true)
