@@ -347,7 +347,7 @@ type vmScraperSenderAdapter struct {
 	handler vmIndex.Handler
 }
 
-func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
 	if vm == nil {
 		return errors.New("virtual machine info is nil")
 	}
@@ -359,22 +359,8 @@ func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.In
 		VsockCid: cidStr,
 		VmId:     string(vm.ID),
 		IndexV4:  report,
-	}); err != nil {
-		return errors.Wrap(err, "sending index report")
-	}
-	return nil
-}
-
-func (a *vmScraperSenderAdapter) SendReactive(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
-	var cidStr string
-	if vm.VSOCKCID != nil {
-		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
-	}
-	if err := a.handler.SendReactive(ctx, &v1.IndexReport{
-		VsockCid: cidStr,
-		IndexV4:  report,
 	}, generatedAt); err != nil {
-		return errors.Wrap(err, "sending reactive index report")
+		return errors.Wrap(err, "sending index report")
 	}
 	return nil
 }

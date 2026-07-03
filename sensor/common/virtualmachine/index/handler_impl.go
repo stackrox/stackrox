@@ -38,29 +38,30 @@ type handlerImpl struct {
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
 	toCompliance chan common.MessageToComplianceWithAddress
-	indexReports chan *v1.IndexReport
+	indexReports chan *slot
 	store        VirtualMachineStore
 
-	// reactiveMu guards reactivePending. Separate from lock (which guards
-	// Start/Stop/Send channel lifecycle) since it protects independent state
-	// that is accessed far more frequently.
-	reactiveMu sync.Mutex
-	// reactivePending holds at most one not-yet-delivered reactive report
-	// per VM ID. A reactive send for a VM that already has a pending entry
-	// replaces it — only the newest report is ever meaningful. Bounded by
-	// the number of VMs Sensor knows about, not an arbitrary constant.
-	reactivePending map[virtualmachine.VMID]*reactiveEntry
-	// reactiveWake signals the run() loop that reactivePending has a new
-	// entry. Buffered size 1 with non-blocking sends: a pending wake-up
-	// already covers any further upserts until it's consumed.
-	reactiveWake chan struct{}
+	// slotsMu guards pending. Separate from lock (which guards
+	// Start/Stop/Send channel lifecycle) since it protects independent
+	// state that is accessed far more frequently.
+	slotsMu sync.Mutex
+	// pending tracks, per vsock CID, the slot currently queued in
+	// indexReports for that VM (if any). It exists purely to support
+	// coalescing (see slot doc comment) and never holds more entries than
+	// indexReports has capacity for, since a VM can only be in this map
+	// while it also occupies a slot in the channel.
+	pending map[string]*slot
 }
 
-// reactiveEntry pairs a reactive report with the roxagent-reported scan time
-// used for SLA latency measurement (never forwarded to Central).
-type reactiveEntry struct {
+// slot is the unit carried through indexReports. It is a pointer so that a
+// coalescing Send can mutate an already-queued entry in place instead of
+// enqueuing a second one for the same VM. That's what gives delivery its
+// Fair FIFO property: a VM's position in the queue never changes once
+// queued, only the contents of its slot can, right up until it's consumed.
+type slot struct {
+	vsockCID    string
 	report      *v1.IndexReport
-	generatedAt time.Time
+	generatedAt time.Time // zero for scheduled reports
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -76,50 +77,44 @@ func (h *handlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress
 	return h.toCompliance
 }
 
-func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
-	if err := h.checkSendPreconditions(vm.GetVsockCid()); err != nil {
+// Send enqueues report for delivery to Central, keeping delivery Fair FIFO
+// across VMs while coalescing per VM: see the Handler.Send doc comment.
+func (h *handlerImpl) Send(ctx context.Context, report *v1.IndexReport, generatedAt time.Time) error {
+	if err := h.checkSendPreconditions(report.GetVsockCid()); err != nil {
 		return err
 	}
 
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 
-	return h.enqueueScheduled(ctx, vm)
-}
-
-// SendReactive enqueues a report produced by a reactive (event-triggered)
-// rescan with priority over Send. At most one pending reactive report is
-// kept per VM: a newer report for the same VM replaces an older,
-// not-yet-delivered one rather than queueing alongside it, since only the
-// latest report is ever meaningful (mirrors the generation-counter semantics
-// already in the VSOCK protocol).
-func (h *handlerImpl) SendReactive(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error {
-	if err := h.checkSendPreconditions(vm.GetVsockCid()); err != nil {
-		return err
-	}
-
-	h.lock.RLock()
-	defer h.lock.RUnlock()
-
-	vmID, err := h.resolveVMIDForReactive(vm.GetVsockCid())
-	if err != nil {
-		// VM identity isn't resolvable yet (e.g. just connected). Fall back
-		// to the normal path instead of silently dropping a reactive update
-		// — it will still be retried on the next scheduled poll either way.
-		log.Warnf("Reactive index report for vsock_cid=%q could not be prioritized (%v); using the normal queue instead", vm.GetVsockCid(), err)
-		return h.enqueueScheduled(ctx, vm)
-	}
-
-	concurrency.WithLock(&h.reactiveMu, func() {
-		if h.reactivePending == nil {
-			h.reactivePending = make(map[virtualmachine.VMID]*reactiveEntry)
+	cid := report.GetVsockCid()
+	var newSlot *slot
+	concurrency.WithLock(&h.slotsMu, func() {
+		if s := h.pending[cid]; s != nil {
+			// Coalesce: this VM already has a slot queued. Mutate it in
+			// place so the newest report wins, without moving its position
+			// in indexReports.
+			s.report, s.generatedAt = report, generatedAt
+			return
 		}
-		h.reactivePending[vmID] = &reactiveEntry{report: vm, generatedAt: generatedAt}
+		newSlot = &slot{vsockCID: cid, report: report, generatedAt: generatedAt}
+		h.pending[cid] = newSlot
 	})
+	if newSlot == nil {
+		return nil
+	}
 
-	select {
-	case h.reactiveWake <- struct{}{}:
-	default:
+	if err := h.enqueueScheduled(ctx, newSlot); err != nil {
+		// The slot never made it into indexReports, so nothing will ever
+		// clear this map entry. Free it now so a future Send for this VM
+		// isn't silently coalesced into a slot that will never be
+		// delivered.
+		concurrency.WithLock(&h.slotsMu, func() {
+			if h.pending[cid] == newSlot {
+				delete(h.pending, cid)
+			}
+		})
+		return err
 	}
 	return nil
 }
@@ -139,10 +134,9 @@ func (h *handlerImpl) checkSendPreconditions(vsockCID string) error {
 	return nil
 }
 
-// enqueueScheduled is the original Send() body: enqueues onto the bounded
-// indexReports channel, blocking up to ctx's deadline and recording
-// backpressure metrics.
-func (h *handlerImpl) enqueueScheduled(ctx context.Context, vm *v1.IndexReport) error {
+// enqueueScheduled enqueues a slot onto the bounded indexReports channel,
+// blocking up to ctx's deadline and recording backpressure metrics.
+func (h *handlerImpl) enqueueScheduled(ctx context.Context, s *slot) error {
 	blockingStart := time.Now()
 	blocked := false
 	outcome := metrics.IndexReportEnqueueOutcomeSuccess
@@ -158,7 +152,7 @@ func (h *handlerImpl) enqueueScheduled(ctx context.Context, vm *v1.IndexReport) 
 	select {
 	case <-ctx.Done():
 		// Handled in the next select statement
-	case h.indexReports <- vm:
+	case h.indexReports <- s:
 		return nil
 	default:
 		blocked = true
@@ -174,40 +168,9 @@ func (h *handlerImpl) enqueueScheduled(ctx context.Context, vm *v1.IndexReport) 
 		}
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
-	case h.indexReports <- vm:
+	case h.indexReports <- s:
 		return nil
 	}
-}
-
-// resolveVMIDForReactive looks up the VM identity for a reactive report so it
-// can be prioritized per-VM. Deliberately kept separate from
-// newMessageToCentral's resolution (used at dequeue time for every report,
-// with its own outcome-metric labels) to avoid touching that already-tested
-// path.
-func (h *handlerImpl) resolveVMIDForReactive(vsockCIDStr string) (virtualmachine.VMID, error) {
-	cid, err := strconv.ParseUint(vsockCIDStr, 10, 32)
-	if err != nil {
-		return "", errors.Wrapf(err, "invalid vsock CID %q", vsockCIDStr)
-	}
-	vmInfo := h.store.GetFromCID(uint32(cid))
-	if vmInfo == nil {
-		return "", errors.Wrapf(errVirtualMachineNotFound, "vsock CID %q", vsockCIDStr)
-	}
-	return vmInfo.ID, nil
-}
-
-// popReactivePending removes and returns one arbitrary entry from
-// reactivePending, if any. Go map iteration order is randomized, which is
-// fine here: with at most one entry per VM and no ordering promised between
-// different VMs' reactive updates, any order is correct.
-func (h *handlerImpl) popReactivePending() (*reactiveEntry, bool) {
-	return concurrency.WithLock2(&h.reactiveMu, func() (*reactiveEntry, bool) {
-		for vmID, entry := range h.reactivePending {
-			delete(h.reactivePending, vmID)
-			return entry, true
-		}
-		return nil, false
-	})
 }
 
 func (h *handlerImpl) Name() string {
@@ -270,7 +233,8 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.indexReports = make(chan *slot, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.pending = make(map[string]*slot)
 	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
 	h.toCentral = h.run(h.indexReports)
 	return nil
@@ -294,12 +258,16 @@ func (h *handlerImpl) Stop() {
 		close(h.indexReports)
 		h.indexReports = nil
 	}
+	// h.pending is intentionally left as-is: Start() always reinitializes it
+	// unconditionally, and nil-ing it here would race with an in-flight
+	// Send() that already passed checkSendPreconditions before Stop() ran
+	// (it re-checks h.stopper only, not h.pending), causing a nil-map write.
 }
 
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(indexReports <-chan *slot) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -308,24 +276,25 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 		}()
 		log.Debugf("virtual machine index report handler is running")
 		for {
-			// Priority path: always drain a pending reactive report before
-			// considering anything from the routine indexReports channel.
-			if entry, ok := h.popReactivePending(); ok {
-				h.handleIndexReport(ch2Central, entry.report, entry.generatedAt)
-				continue
-			}
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case <-h.reactiveWake:
-				// A reactive report just arrived; loop back to the top so
-				// the priority check above drains it before indexReports.
-			case indexReport, ok := <-indexReports:
+			case s, ok := <-indexReports:
 				if !ok {
 					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				h.handleIndexReport(ch2Central, indexReport, time.Time{})
+				var report *v1.IndexReport
+				var generatedAt time.Time
+				concurrency.WithLock(&h.slotsMu, func() {
+					report, generatedAt = s.report, s.generatedAt
+					// Clearing the map entry here (before delivery) lets
+					// this VM queue a fresh slot immediately, rather than
+					// waiting for a potentially slow downstream delivery
+					// to finish.
+					delete(h.pending, s.vsockCID)
+				})
+				h.handleIndexReport(ch2Central, report, generatedAt)
 			}
 		}
 	}()

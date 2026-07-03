@@ -145,31 +145,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, vm, generatedAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, vm, generatedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
-}
-
-// SendReactive mocks base method.
-func (m *MockHandler) SendReactive(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendReactive", ctx, vm, generatedAt)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendReactive indicates an expected call of SendReactive.
-func (mr *MockHandlerMockRecorder) SendReactive(ctx, vm, generatedAt any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendReactive", reflect.TypeOf((*MockHandler)(nil).SendReactive), ctx, vm, generatedAt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm, generatedAt)
 }
 
 // Start mocks base method.
