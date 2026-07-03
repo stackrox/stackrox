@@ -62,6 +62,12 @@ type VMDialer interface {
 // IndexReportSender sends index reports toward Central.
 type IndexReportSender interface {
 	Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error
+	// SendReactive sends a report produced by a reactive (event-triggered)
+	// rescan, giving it delivery priority over Send. generatedAt is the
+	// report's roxagent-side generation time
+	// (ResponseMeta.report_generated_at), used to measure reactive-update
+	// delivery latency.
+	SendReactive(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error
 }
 
 // ProtocolClient performs the request/response protocol over a stream.
@@ -355,7 +361,14 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 
-	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
+	if isReactiveTrigger(result.Meta.GetFacts()) {
+		generatedAt := result.Meta.GetReportGeneratedAt().AsTime()
+		if err := s.sender.SendReactive(vmCtx, vm, result.IndexReport, generatedAt); err != nil {
+			log.Errorf("VMScraper: sending reactive %q report to Central failed: %v", key, err)
+			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
+			return false
+		}
+	} else if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
 		return false
