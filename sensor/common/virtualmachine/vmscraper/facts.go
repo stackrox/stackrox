@@ -7,17 +7,18 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
-// scanTriggerFactKey is the ResponseMeta.facts key roxagent sets to classify
-// why a report was generated.
-const scanTriggerFactKey = "scan_trigger"
-
-// scanTriggerReactive is the scanTriggerFactKey value for reports produced by
-// a reactive (event-triggered) rescan, as opposed to a routine scheduled one.
-const scanTriggerReactive = "reactive"
-
-// scanTriggerScheduled is the scanTriggerFactKey value for reports produced
-// by a routine, non-reactive scan.
-const scanTriggerScheduled = "scheduled"
+const (
+	// scanTriggerFactKey is the ResponseMeta.facts key roxagent sets to
+	// classify why a report was generated.
+	scanTriggerFactKey = "scan_trigger"
+	// scanTriggerReactive is the scanTriggerFactKey value for reports
+	// produced by a reactive (event-triggered) rescan, as opposed to a
+	// routine scheduled one.
+	scanTriggerReactive = "reactive"
+	// scanTriggerScheduled is the scanTriggerFactKey value for reports
+	// produced by a routine, non-reactive scan.
+	scanTriggerScheduled = "scheduled"
+)
 
 // isReactiveTrigger reports whether facts indicate a reactive rescan. Absent
 // or unrecognized values default to false (scheduled), the safe default for
