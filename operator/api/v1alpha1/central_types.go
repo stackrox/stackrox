@@ -103,6 +103,17 @@ func (p ConnectivityPolicy) Pointer() *ConnectivityPolicy {
 	return &p
 }
 
+// SigningKeyBundleSpec defines settings for the Red Hat signing key bundle.
+type SigningKeyBundleSpec struct {
+	// The signing key bundle content as a JSON string. When set, the bundle
+	// is mounted into Central for image signature verification. This is
+	// intended for offline/air-gapped environments. See the
+	// bundle.example.json file in the Central pod at
+	// /tmp/redhat-signing-keys/ for the expected format.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Bundle Content"
+	Content string `json:"content,omitempty"`
+}
+
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
 	// Specify a secret that contains the administrator password in the "password" data item.
@@ -154,6 +165,11 @@ type CentralComponentSpec struct {
 	// Configures the encryption of notifier secrets stored in the Central DB.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
+
+	// Provides a Red Hat signing key bundle for offline/air-gapped environments.
+	// When set, the bundle is mounted into Central for image signature verification.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Red Hat Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	SigningKeyBundle *SigningKeyBundleSpec `json:"signingKeyBundle,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`

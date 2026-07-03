@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.21.0
   labels:
-    app: rhacs-operator
+    app: stackrox-operator
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -592,6 +592,20 @@ spec:
                           otherwise to an implementation-defined value. Requests cannot exceed Limits.
                           More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                         type: object
+                    type: object
+                  signingKeyBundle:
+                    description: |-
+                      Provides a Red Hat signing key bundle for offline/air-gapped environments.
+                      When set, the bundle is mounted into Central for image signature verification.
+                    properties:
+                      content:
+                        description: |-
+                          The signing key bundle content as a JSON string. When set, the bundle
+                          is mounted into Central for image signature verification. This is
+                          intended for offline/air-gapped environments. See the
+                          bundle.example.json file in the Central pod at
+                          /tmp/redhat-signing-keys/ for the expected format.
+                        type: string
                     type: object
                   telemetry:
                     description: |-
