@@ -45,7 +45,7 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 	rolesForUser := set.NewStringSet()
 
 	for i, mapping := range mappings {
-		if valuesMatch(expressions[i], claims[mapping.GetKey()]) {
+		if anyValueMatches(expressions[i], claims[mapping.GetKey()]) {
 			rolesForUser.Add(mapping.GetRole())
 		}
 	}
@@ -73,6 +73,6 @@ func resolveRolesForClaims(ctx context.Context, claims map[string][]string, role
 	return resolvedRoles, nil
 }
 
-func valuesMatch(expr *regexp.Regexp, claimValues []string) bool {
+func anyValueMatches(expr *regexp.Regexp, claimValues []string) bool {
 	return slices.ContainsFunc(claimValues, expr.MatchString)
 }
