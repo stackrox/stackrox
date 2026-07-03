@@ -110,12 +110,22 @@ func TestFormatDnfStatusFlags(t *testing.T) {
 }
 
 func TestDiscoverFacts(t *testing.T) {
-	facts := discoverFacts(t.TempDir())
+	facts := discoverFacts(t.TempDir(), scanTriggerScheduled)
 
 	assert.Contains(t, facts, "detected_os")
 	assert.Contains(t, facts, "os_version")
 	assert.Contains(t, facts, "activation_status")
 	assert.Contains(t, facts, "dnf_metadata_status")
+}
+
+func TestDiscoverFacts_IncludesScanTrigger(t *testing.T) {
+	hostPath := t.TempDir()
+
+	reactiveFacts := discoverFacts(hostPath, scanTriggerReactive)
+	assert.Equal(t, "reactive", reactiveFacts["scan_trigger"])
+
+	scheduledFacts := discoverFacts(hostPath, scanTriggerScheduled)
+	assert.Equal(t, "scheduled", scheduledFacts["scan_trigger"])
 }
 
 func TestSelfSignedCert(t *testing.T) {

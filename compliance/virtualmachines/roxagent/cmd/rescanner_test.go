@@ -70,7 +70,7 @@ func TestRescanner_Run(t *testing.T) {
 			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
-			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, map[string]string, error) {
+			r.scanFn = func(_ context.Context, _, _, _ string) (*v4.IndexReport, map[string]string, error) {
 				report, err := concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
 					calls++
 					return &v4.IndexReport{HashId: "ok"}, nil
@@ -106,7 +106,7 @@ func TestRescanner_Run(t *testing.T) {
 			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
-			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, map[string]string, error) {
+			r.scanFn = func(_ context.Context, _, _, _ string) (*v4.IndexReport, map[string]string, error) {
 				report, err := concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
 					calls++
 					if calls == 1 {
@@ -137,6 +137,41 @@ func TestRescanner_Run(t *testing.T) {
 
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "the failed rescan was never retried")
 			assert.Equal(t, r.interval, ticker.lastReset(), "a successful rescan should reschedule after the full interval, resetting backoff")
+		})
+	})
+
+	t.Run("should rescan immediately when the reactive channel fires, tagged as reactive", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			r := testRescanner()
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			reactiveCh := make(chan struct{}, 1)
+			r.reactiveCh = reactiveCh
+			var mu sync.Mutex
+			var triggers []string
+			r.scanFn = func(_ context.Context, _, _, trigger string) (*v4.IndexReport, map[string]string, error) {
+				concurrency.WithLock(&mu, func() { triggers = append(triggers, trigger) })
+				return &v4.IndexReport{HashId: "ok"}, nil, nil
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait() // Run is blocked waiting for the first tick
+
+			reactiveCh <- struct{}{}
+			synctest.Wait()
+			assert.Equal(t, []string{scanTriggerReactive}, concurrency.WithLock1(&mu, func() []string { return triggers }))
+			assert.Equal(t, r.interval, ticker.lastReset(), "a reactive rescan should reset the periodic delay too")
+
+			ticker.fire()
+			synctest.Wait()
+			assert.Equal(t, []string{scanTriggerReactive, scanTriggerScheduled},
+				concurrency.WithLock1(&mu, func() []string { return triggers }))
 		})
 	})
 

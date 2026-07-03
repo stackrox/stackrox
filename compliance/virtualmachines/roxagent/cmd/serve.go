@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/watch"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -55,6 +56,13 @@ const (
 	// in-flight-connection slot (see vsockserver.WithConnDeadline).
 	minConnDeadline = 5 * time.Second
 	maxConnDeadline = 5 * time.Minute
+)
+
+// scan_trigger fact values shared with Sensor's vmscraper/facts.go. See
+// docs/superpowers/specs/2026-07-03-reactive-dnf-scanning-design.md.
+const (
+	scanTriggerScheduled = "scheduled"
+	scanTriggerReactive  = "reactive"
 )
 
 // ServeCmd returns the "serve" cobra subcommand for pull-mode operation.
@@ -125,7 +133,18 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	cache := &vsockserver.ReportCache{}
 	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
 
-	report, facts, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
+	// Reactive scanning is best-effort: if the watcher can't start (e.g. no
+	// watchable RPM directory, inotify limit hit), roxagent logs a warning
+	// and falls back to periodic-only scanning rather than failing startup.
+	rpmWatcher, watchErr := watch.New(cfg.hostPath)
+	if watchErr != nil {
+		log.Warnf("Reactive DNF/RPM scanning disabled, falling back to periodic-only scanning: %v", watchErr)
+	} else {
+		defer func() { _ = rpmWatcher.Close() }()
+		vmRescanner.reactiveCh = rpmWatcher.Triggered()
+	}
+
+	report, facts, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath, scanTriggerScheduled)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
@@ -195,8 +214,10 @@ func logMappingDownloadResult(url, cachePath string) func(err error, duration ti
 // DiscoveredData is computed once here and returned as facts alongside the
 // report, rather than left for the caller to recompute via discoverFacts:
 // that would probe the same filesystem facts (DNF version, entitlement)
-// this function already probed for logFilesystemDiagnostics.
-func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, map[string]string, error) {
+// this function already probed for logFilesystemDiagnostics. trigger is
+// stamped onto the returned facts (see the scan_trigger fact) so Sensor can
+// tell a reactive rescan (RPM watcher fired) from a scheduled one.
+func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath, trigger string) (*v4.IndexReport, map[string]string, error) {
 	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
 	d := discovery.DiscoverVMData(hostPath)
 	logFilesystemDiagnostics(hostPath, d)
@@ -207,7 +228,7 @@ func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) 
 	}
 
 	logIndexReportDiagnostics(report)
-	return report, discoveredDataFacts(d), nil
+	return report, discoveredDataFacts(d, trigger), nil
 }
 
 // scan indexes the VM filesystem at hostPath, consulting the
@@ -232,17 +253,18 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 // this: it already has DiscoveredData in hand from its own diagnostics
 // logging and converts it directly via discoveredDataFacts, so as not to
 // probe the filesystem a second time for the same facts.
-func discoverFacts(hostPath string) map[string]string {
-	return discoveredDataFacts(discovery.DiscoverVMData(hostPath))
+func discoverFacts(hostPath, trigger string) map[string]string {
+	return discoveredDataFacts(discovery.DiscoverVMData(hostPath), trigger)
 }
 
-func discoveredDataFacts(d *v1.DiscoveredData) map[string]string {
+func discoveredDataFacts(d *v1.DiscoveredData, trigger string) map[string]string {
 	return map[string]string{
 		"detected_os":         d.GetDetectedOs().String(),
 		"os_version":          d.GetOsVersion(),
 		"activation_status":   d.GetActivationStatus().String(),
 		"dnf_metadata_status": d.GetDnfMetadataStatus().String(),
 		"dnf_status":          formatDnfStatusFlags(d.GetDnfStatus()),
+		"scan_trigger":        trigger,
 	}
 }
 
