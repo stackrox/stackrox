@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/internal/hostprobe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +24,7 @@ func TestNew_NoCandidateDirectory_ReturnsError(t *testing.T) {
 
 func TestNew_WatchesLegacyRPMDir(t *testing.T) {
 	hostPath := t.TempDir()
-	rpmDir := hostprobe.HostPathFor(hostPath, "/var/lib/rpm")
+	rpmDir := hostPathFor(hostPath, "/var/lib/rpm")
 	require.NoError(t, os.MkdirAll(rpmDir, 0o755))
 
 	w, err := New(hostPath)
@@ -44,8 +43,8 @@ func TestNew_WatchesLegacyRPMDir(t *testing.T) {
 
 func TestNew_PrefersModernRPMDirWhenBothExist(t *testing.T) {
 	hostPath := t.TempDir()
-	modernDir := hostprobe.HostPathFor(hostPath, "/usr/lib/sysimage/rpm")
-	legacyDir := hostprobe.HostPathFor(hostPath, "/var/lib/rpm")
+	modernDir := hostPathFor(hostPath, "/usr/lib/sysimage/rpm")
+	legacyDir := hostPathFor(hostPath, "/var/lib/rpm")
 	require.NoError(t, os.MkdirAll(modernDir, 0o755))
 	require.NoError(t, os.MkdirAll(legacyDir, 0o755))
 
@@ -73,7 +72,7 @@ func TestNew_PrefersModernRPMDirWhenBothExist(t *testing.T) {
 
 func TestWatcher_CoalescesBurstOfEvents(t *testing.T) {
 	hostPath := t.TempDir()
-	rpmDir := hostprobe.HostPathFor(hostPath, "/var/lib/rpm")
+	rpmDir := hostPathFor(hostPath, "/var/lib/rpm")
 	require.NoError(t, os.MkdirAll(rpmDir, 0o755))
 
 	w, err := New(hostPath)

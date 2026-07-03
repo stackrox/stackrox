@@ -30,6 +30,14 @@ type rescanner struct {
 	mappingFilePath string
 	interval        time.Duration
 
+	// reactiveCh, when set by the caller (runServe wires in the RPM
+	// watcher's Triggered() channel), lets Run start a rescan immediately
+	// instead of waiting for the next periodic tick. Left nil when
+	// reactive scanning is unavailable (e.g. the watcher failed to start):
+	// a nil channel blocks forever in Run's select, so that case simply
+	// never fires and Run falls back to periodic-only scanning.
+	reactiveCh <-chan struct{}
+
 	// scanFn defaults to the package scan function; tests override it to
 	// inject failures. factsFn defaults to the package discoverFacts
 	// function; tests override it to avoid exercising the real
@@ -39,7 +47,7 @@ type rescanner struct {
 	// substitute a function returning a manually driven channel for
 	// precise control over Run's loop.
 	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
-	factsFn  func(hostPath string) map[string]string
+	factsFn  func(hostPath, trigger string) map[string]string
 	newDelay func(d time.Duration) <-chan time.Time
 }
 
@@ -55,33 +63,44 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 	}
 }
 
-// Run rescans every r.interval, publishing each successful result to cache.
-// If a rescan fails, the next attempt is scheduled sooner than the full
-// interval - with exponential backoff, capped at both rescanRetryMaxBackoff
-// and r.interval itself, so a retry is never slower than just waiting for
-// the next scheduled rescan would be. Blocks until ctx is cancelled.
+// Run rescans every r.interval, or immediately whenever r.reactiveCh fires,
+// publishing each successful result to cache. Both triggers share this one
+// loop and code path — reactive and scheduled rescans differ only in the
+// "trigger" fact stamped onto the result (see scanTriggerScheduled/
+// scanTriggerReactive) — so a reactive rescan also resets delay, meaning a
+// routine rescan never immediately follows one that just refreshed the same
+// data. If a rescan fails, the next attempt is scheduled sooner than the
+// full interval - with exponential backoff, capped at both
+// rescanRetryMaxBackoff and r.interval itself, so a retry is never slower
+// than just waiting for the next scheduled rescan would be. Blocks until
+// ctx is cancelled.
 func (r *rescanner) Run(ctx context.Context) {
 	backoff := rescanRetryBaseBackoff
 	delay := r.newDelay(r.interval)
 	for {
+		var trigger string
 		select {
 		case <-ctx.Done():
 			return
 		case <-delay:
-			log.Info("Starting rescan")
-			report, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
-			if err != nil {
-				retryIn := min(backoff, r.interval)
-				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
-				backoff = min(backoff*2, rescanRetryMaxBackoff)
-				delay = r.newDelay(retryIn)
-				continue
-			}
-			r.cache.SetReport(report, r.factsFn(r.hostPath))
-			log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
-			backoff = rescanRetryBaseBackoff
-			delay = r.newDelay(r.interval)
+			trigger = scanTriggerScheduled
+		case <-r.reactiveCh:
+			trigger = scanTriggerReactive
 		}
+
+		log.Infof("Starting %s rescan", trigger)
+		report, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
+		if err != nil {
+			retryIn := min(backoff, r.interval)
+			log.Errorf("%s rescan failed: %v; trying again in %v", trigger, err, retryIn)
+			backoff = min(backoff*2, rescanRetryMaxBackoff)
+			delay = r.newDelay(retryIn)
+			continue
+		}
+		r.cache.SetReport(report, r.factsFn(r.hostPath, trigger))
+		log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
+		backoff = rescanRetryBaseBackoff
+		delay = r.newDelay(r.interval)
 	}
 }
 

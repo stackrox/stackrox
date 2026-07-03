@@ -5,9 +5,11 @@ package watch
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/internal/hostprobe"
 )
 
 // candidateRPMDirs are RPM database directories to watch for package-change
@@ -55,7 +57,7 @@ func New(hostPath string) (*Watcher, error) {
 func addFirstWatchableDir(fsw *fsnotify.Watcher, hostPath string, dirs []string) (string, error) {
 	var errs []error
 	for _, dir := range dirs {
-		path := hostprobe.HostPathFor(hostPath, dir)
+		path := hostPathFor(hostPath, dir)
 		if err := fsw.Add(path); err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", path, err))
 			continue
@@ -63,6 +65,16 @@ func addFirstWatchableDir(fsw *fsnotify.Watcher, hostPath string, dirs []string)
 		return path, nil
 	}
 	return "", fmt.Errorf("no watchable RPM database directory found: %w", errors.Join(errs...))
+}
+
+// hostPathFor converts an absolute system path into the corresponding path
+// under hostPath. Same join+clean approach as discovery.hostPathFor.
+func hostPathFor(hostPath, path string) string {
+	if hostPath == "" || hostPath == string(os.PathSeparator) {
+		return path
+	}
+	trimmedPath := strings.TrimPrefix(path, string(os.PathSeparator))
+	return filepath.Clean(filepath.Join(hostPath, trimmedPath))
 }
 
 func (w *Watcher) run() {
