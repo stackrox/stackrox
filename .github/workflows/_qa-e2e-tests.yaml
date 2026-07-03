@@ -73,7 +73,6 @@ defaults:
     shell: bash
 
 env:
-  BUILD_ID: ${{ github.run_id }}
   # Lets keep this somewhat small in size, because at least the infractl CLI
   # enforces a 28-char limit for cluster names.
   CLUSTER_NAME: qa-e2e-${{ github.run_id }}-${{ github.run_attempt }}
