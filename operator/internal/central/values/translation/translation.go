@@ -271,6 +271,10 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 		cv.AddChild("notifierSecretsEncryption", &notifierSecretsEncryption)
 	}
 
+	if c.SigningKeyBundle != nil && c.SigningKeyBundle.Content != "" {
+		cv.SetStringValue("redHatSigningKeyBundle", c.SigningKeyBundle.Content)
+	}
+
 	return &cv, nil
 }
 

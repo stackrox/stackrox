@@ -393,6 +393,9 @@ func TestTranslate(t *testing.T) {
 							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 								Enabled: pointer.Bool(true),
 							},
+							SigningKeyBundle: &platform.SigningKeyBundleSpec{
+								Content: `{"keys": [{"name": "test-key", "pem": "test"}]}`,
+							},
 						},
 						Scanner: &platform.ScannerComponentSpec{
 							ScannerComponent: &scannerComponentPolicy,
@@ -656,6 +659,7 @@ func TestTranslate(t *testing.T) {
 					"notifierSecretsEncryption": map[string]interface{}{
 						"enabled": true,
 					},
+					"redHatSigningKeyBundle": `{"keys": [{"name": "test-key", "pem": "test"}]}`,
 				},
 				"env": map[string]interface{}{
 					"offlineMode": true,
@@ -1682,6 +1686,59 @@ func TestTranslatePartialMatch(t *testing.T) {
 				"central.db.source.connectionString": nil,
 				"central.db.source.minConns":         30,
 				"central.db.source.maxConns":         400,
+			},
+		},
+		"unset signing key bundle": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.redHatSigningKeyBundle": nil,
+			},
+		},
+		"set signing key bundle": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							SigningKeyBundle: &platform.SigningKeyBundleSpec{
+								Content: `{"keys": [{"name": "test-key", "pem": "test"}]}`,
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.redHatSigningKeyBundle": `{"keys": [{"name": "test-key", "pem": "test"}]}`,
+			},
+		},
+		"empty signing key bundle content": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							SigningKeyBundle: &platform.SigningKeyBundleSpec{
+								Content: "",
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.redHatSigningKeyBundle": nil,
 			},
 		},
 	}

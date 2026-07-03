@@ -568,6 +568,13 @@ spec:
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Provides a Red Hat signing key bundle for offline/air-gapped environments.
+          When set, the bundle is mounted into Central for image signature verification.
+        displayName: Red Hat Signing Key Bundle
+        path: central.signingKeyBundle
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
         displayName: Monitoring
         path: monitoring
@@ -877,6 +884,14 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          The signing key bundle content as a JSON string. When set, the bundle
+          is mounted into Central for image signature verification. This is
+          intended for offline/air-gapped environments. See the
+          bundle.example.json file in the Central pod at
+          /tmp/redhat-signing-keys/ for the expected format.
+        displayName: Bundle Content
+        path: central.signingKeyBundle.content
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
