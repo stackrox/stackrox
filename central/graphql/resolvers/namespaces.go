@@ -483,7 +483,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 }
 
-func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageComponents")
 	return resolver.root.ImageComponents(resolver.namespaceScopeContext(ctx), args)
 }
@@ -509,7 +509,7 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 	})
 }
 
-func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *namespaceResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.namespaceScopeContext(ctx), args)
 }

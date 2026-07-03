@@ -654,7 +654,7 @@ func getFixableRawQuery(fixable bool) (string, error) {
 func getIDList(ctx context.Context, resolvers interface{}) []string {
 	var list []string
 	switch res := resolvers.(type) {
-	case []ImageVulnerabilityResolver:
+	case []*imageCVEV2Resolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -662,11 +662,11 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []ImageComponentResolver:
+	case []*imageComponentV2Resolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []NodeVulnerabilityResolver:
+	case []*nodeCVEResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -674,11 +674,11 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []NodeComponentResolver:
+	case []*nodeComponentResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []ClusterVulnerabilityResolver:
+	case []*clusterCVEResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -712,7 +712,7 @@ func getNodeResolver(ctx context.Context, t *testing.T, resolver *Resolver, id s
 	return node
 }
 
-func getNodeComponentResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) NodeComponentResolver {
+func getNodeComponentResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) *nodeComponentResolver {
 	compID := graphql.ID(id)
 
 	comp, err := resolver.NodeComponent(ctx, IDQuery{ID: &compID})
@@ -721,7 +721,7 @@ func getNodeComponentResolver(ctx context.Context, t *testing.T, resolver *Resol
 	return comp
 }
 
-func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) NodeVulnerabilityResolver {
+func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *Resolver, id string) *nodeCVEResolver {
 	vulnID := graphql.ID(id)
 
 	vuln, err := resolver.NodeVulnerability(ctx, IDQuery{ID: &vulnID})

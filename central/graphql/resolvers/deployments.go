@@ -524,7 +524,7 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuer
 	return resolver.root.ImageCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
-func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
 	return resolver.root.ImageComponents(resolver.withDeploymentScopeContext(ctx), args)
 }
@@ -534,7 +534,7 @@ func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, arg
 	return resolver.root.ImageComponentCount(resolver.withDeploymentScopeContext(ctx), args)
 }
 
-func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
