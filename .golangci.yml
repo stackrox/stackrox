@@ -175,6 +175,7 @@ linters:
         - fmtappendf
         - mapsloop
         - minmax
+        - newexpr
         - rangeint
         - reflecttypefor
         - slicescontains
