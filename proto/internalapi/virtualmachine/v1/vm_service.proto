@@ -58,6 +58,14 @@ message ResponseMeta {
   // VM metadata from the scan (detected_os, os_version, activation_status, etc.).
   // Future: may also carry roxagent operational metrics.
   map<string, string> facts = 5;
+  // Opaque value seeded once per agent process lifetime (random/time-derived),
+  // held in memory only, never persisted to VM disk. Changes on every agent
+  // restart, unlike report_generation which resets to 1. Sensor should treat
+  // an epoch mismatch as "changed" regardless of report_generation, to avoid
+  // false-negative dedup when a restarted agent's reset generation coincides
+  // with Sensor's cached value for that VM. Zero means the agent predates this
+  // field; Sensor falls back to generation-only comparison in that case.
+  uint32 epoch = 6;
 }
 
 // --- Methods ---

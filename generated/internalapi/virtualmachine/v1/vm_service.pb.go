@@ -324,7 +324,15 @@ type ResponseMeta struct {
 	SupportedMethods []string `protobuf:"bytes,4,rep,name=supported_methods,json=supportedMethods,proto3" json:"supported_methods,omitempty"`
 	// VM metadata from the scan (detected_os, os_version, activation_status, etc.).
 	// Future: may also carry roxagent operational metrics.
-	Facts         map[string]string `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Facts map[string]string `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Opaque value seeded once per agent process lifetime (random/time-derived),
+	// held in memory only, never persisted to VM disk. Changes on every agent
+	// restart, unlike report_generation which resets to 1. Sensor should treat
+	// an epoch mismatch as "changed" regardless of report_generation, to avoid
+	// false-negative dedup when a restarted agent's reset generation coincides
+	// with Sensor's cached value for that VM. Zero means the agent predates this
+	// field; Sensor falls back to generation-only comparison in that case.
+	Epoch         uint32 `protobuf:"varint,6,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -392,6 +400,13 @@ func (x *ResponseMeta) GetFacts() map[string]string {
 		return x.Facts
 	}
 	return nil
+}
+
+func (x *ResponseMeta) GetEpoch() uint32 {
+	if x != nil {
+		return x.Epoch
+	}
+	return 0
 }
 
 type GetReportRequest struct {
@@ -581,13 +596,14 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd5\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x02\n" +
 	"\fResponseMeta\x12#\n" +
 	"\ragent_version\x18\x01 \x01(\tR\fagentVersion\x12J\n" +
 	"\x13report_generated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11reportGeneratedAt\x12+\n" +
 	"\x11report_generation\x18\x03 \x01(\rR\x10reportGeneration\x12+\n" +
 	"\x11supported_methods\x18\x04 \x03(\tR\x10supportedMethods\x12@\n" +
-	"\x05facts\x18\x05 \x03(\v2*.virtualmachine.v1.ResponseMeta.FactsEntryR\x05facts\x1a8\n" +
+	"\x05facts\x18\x05 \x03(\v2*.virtualmachine.v1.ResponseMeta.FactsEntryR\x05facts\x12\x14\n" +
+	"\x05epoch\x18\x06 \x01(\rR\x05epoch\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

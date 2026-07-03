@@ -131,6 +131,7 @@ func (m *ResponseMeta) CloneVT() *ResponseMeta {
 	r.AgentVersion = m.AgentVersion
 	r.ReportGeneratedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ReportGeneratedAt).CloneVT())
 	r.ReportGeneration = m.ReportGeneration
+	r.Epoch = m.Epoch
 	if rhs := m.SupportedMethods; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -432,6 +433,9 @@ func (this *ResponseMeta) EqualVT(that *ResponseMeta) bool {
 		if vx != vy {
 			return false
 		}
+	}
+	if this.Epoch != that.Epoch {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -793,6 +797,11 @@ func (m *ResponseMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Epoch != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Epoch))
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.Facts) > 0 {
 		for k := range m.Facts {
 			v := m.Facts[k]
@@ -1147,6 +1156,9 @@ func (m *ResponseMeta) SizeVT() (n int) {
 			mapEntrySize := 1 + len(k) + protohelpers.SizeOfVarint(uint64(len(k))) + 1 + len(v) + protohelpers.SizeOfVarint(uint64(len(v)))
 			n += mapEntrySize + 1 + protohelpers.SizeOfVarint(uint64(mapEntrySize))
 		}
+	}
+	if m.Epoch != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Epoch))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2027,6 +2039,25 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			m.Epoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Epoch |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3309,6 +3340,25 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Epoch", wireType)
+			}
+			m.Epoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Epoch |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
