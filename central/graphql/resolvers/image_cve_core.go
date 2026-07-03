@@ -172,7 +172,7 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 	})
 }
 
-func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
+func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]*imageCVEV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
 	query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).ProtoQuery()
 
@@ -192,12 +192,7 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 		cveResolvers[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver.root, data: v, flatData: nil}
 	}
 
-	// cast cves to the resolver
-	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
-	for _, res := range cveResolvers {
-		ret = append(ret, res)
-	}
-	return ret, nil
+	return cveResolvers, nil
 }
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {

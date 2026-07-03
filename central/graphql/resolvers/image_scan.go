@@ -17,7 +17,7 @@ func init() {
 	)
 }
 
-func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
+func (resolver *imageScanResolver) ImageComponents(_ context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	return resolver.root.ImageComponents(resolver.ctx, args)
 }
 

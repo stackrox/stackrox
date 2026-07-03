@@ -301,7 +301,7 @@ func (resolver *nodeResolver) NodeStatus(_ context.Context, _ RawQuery) (string,
 }
 
 // NodeComponents returns the components in the node.
-func (resolver *nodeResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]NodeComponentResolver, error) {
+func (resolver *nodeResolver) NodeComponents(ctx context.Context, args PaginatedQuery) ([]*nodeComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComponents")
 	return resolver.root.NodeComponents(resolver.nodeScopeContext(ctx), args)
 }
@@ -313,7 +313,7 @@ func (resolver *nodeResolver) NodeComponentCount(ctx context.Context, args RawQu
 }
 
 // TopNodeVulnerability returns the first node vulnerability with the top CVSS score.
-func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) TopNodeVulnerability(ctx context.Context, args RawQuery) (*nodeCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "TopNodeVulnerability")
 
 	return resolver.root.TopNodeVulnerability(resolver.nodeScopeContext(ctx), args)
@@ -330,7 +330,7 @@ func (resolver *nodeResolver) NodeCVECountBySeverity(ctx context.Context, args R
 }
 
 // NodeVulnerabilities returns the vulnerabilities in the node.
-func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]NodeVulnerabilityResolver, error) {
+func (resolver *nodeResolver) NodeVulnerabilities(ctx context.Context, args PaginatedQuery) ([]*nodeCVEResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeVulnerabilities")
 	return resolver.root.NodeVulnerabilities(resolver.nodeScopeContext(ctx), args)
 }
