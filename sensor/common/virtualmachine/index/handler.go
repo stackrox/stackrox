@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -17,6 +18,13 @@ type Handler interface {
 	common.ComplianceComponent
 
 	Send(ctx context.Context, vm *v1.IndexReport) error
+	// SendReactive enqueues a report produced by a reactive (event-triggered)
+	// rescan with priority over Send: at most one pending reactive report is
+	// kept per VM, and it is delivered ahead of the routine queue.
+	// generatedAt is roxagent's report-generation timestamp
+	// (ResponseMeta.report_generated_at), used only to measure Sensor-side
+	// delivery latency; it is never forwarded to Central.
+	SendReactive(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error
 }
 
 // VirtualMachineStore interface to the VirtualMachine store
@@ -34,5 +42,6 @@ func NewHandler(store VirtualMachineStore) Handler {
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
 		store:        store,
+		reactiveWake: make(chan struct{}, 1),
 	}
 }
