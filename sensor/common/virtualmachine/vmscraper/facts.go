@@ -42,7 +42,7 @@ func recordDnfStatusMetrics(dnfStatus string) {
 		metrics.VMDiscoveredDataDNFStatus.WithLabelValues("none").Inc()
 		return
 	}
-	for _, name := range strings.Split(dnfStatus, ", ") {
+	for name := range strings.SplitSeq(dnfStatus, ", ") {
 		if name == "" {
 			continue
 		}
