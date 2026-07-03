@@ -106,19 +106,13 @@ func (m *mockProtocolClient) reset() {
 }
 
 type mockSender struct {
-	sent                []*v4.IndexReport
-	sentReactive        []*v4.IndexReport
-	reactiveGeneratedAt []time.Time
+	sent            []*v4.IndexReport
+	sentGeneratedAt []time.Time
 }
 
-func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
 	m.sent = append(m.sent, report)
-	return nil
-}
-
-func (m *mockSender) SendReactive(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
-	m.sentReactive = append(m.sentReactive, report)
-	m.reactiveGeneratedAt = append(m.reactiveGeneratedAt, generatedAt)
+	m.sentGeneratedAt = append(m.sentGeneratedAt, generatedAt)
 	return nil
 }
 
@@ -715,7 +709,7 @@ func cachedGeneration(t *testing.T, s *VMScraper, key string) uint32 {
 	})
 }
 
-func TestVMScraper_RoutesReactiveTriggerToSendReactive(t *testing.T) {
+func TestVMScraper_PassesGeneratedAtForReactiveTrigger(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
 	sender := &mockSender{}
 	dialer := &mockDialer{}
@@ -727,13 +721,12 @@ func TestVMScraper_RoutesReactiveTriggerToSendReactive(t *testing.T) {
 	s := newTestScraper(store, sender, dialer, client)
 	s.pollOnce(context.Background())
 
-	assert.Empty(t, sender.sent, "reactive report should not go through Send")
-	require.Len(t, sender.sentReactive, 1)
-	require.Len(t, sender.reactiveGeneratedAt, 1)
-	assert.WithinDuration(t, generatedAt, sender.reactiveGeneratedAt[0], time.Second)
+	require.Len(t, sender.sent, 1)
+	require.Len(t, sender.sentGeneratedAt, 1)
+	assert.WithinDuration(t, generatedAt, sender.sentGeneratedAt[0], time.Second)
 }
 
-func TestVMScraper_DefaultsToScheduledWhenTriggerFactAbsent(t *testing.T) {
+func TestVMScraper_DefaultsToZeroGeneratedAtWhenTriggerFactAbsent(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
 	sender := &mockSender{}
 	dialer := &mockDialer{}
@@ -744,8 +737,9 @@ func TestVMScraper_DefaultsToScheduledWhenTriggerFactAbsent(t *testing.T) {
 	s := newTestScraper(store, sender, dialer, client)
 	s.pollOnce(context.Background())
 
-	assert.Len(t, sender.sent, 1, "should default to the scheduled path when scan_trigger is absent")
-	assert.Empty(t, sender.sentReactive)
+	require.Len(t, sender.sent, 1)
+	require.Len(t, sender.sentGeneratedAt, 1)
+	assert.True(t, sender.sentGeneratedAt[0].IsZero(), "should pass a zero generatedAt when scan_trigger is absent")
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
@@ -810,15 +804,11 @@ type safeSender struct {
 	sent int
 }
 
-func (s *safeSender) Send(_ context.Context, _ *virtualmachine.Info, _ *v4.IndexReport) error {
+func (s *safeSender) Send(_ context.Context, _ *virtualmachine.Info, _ *v4.IndexReport, _ time.Time) error {
 	s.mu.Lock()
 	s.sent++
 	s.mu.Unlock()
 	return nil
-}
-
-func (s *safeSender) SendReactive(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport, _ time.Time) error {
-	return s.Send(ctx, vm, report)
 }
 
 func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {

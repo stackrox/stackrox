@@ -17,14 +17,18 @@ import (
 type Handler interface {
 	common.ComplianceComponent
 
-	Send(ctx context.Context, vm *v1.IndexReport) error
-	// SendReactive enqueues a report produced by a reactive (event-triggered)
-	// rescan with priority over Send: at most one pending reactive report is
-	// kept per VM, and it is delivered ahead of the routine queue.
-	// generatedAt is roxagent's report-generation timestamp
-	// (ResponseMeta.report_generated_at), used only to measure Sensor-side
-	// delivery latency; it is never forwarded to Central.
-	SendReactive(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error
+	// Send enqueues a report for delivery to Central. Delivery is Fair FIFO
+	// across VMs: reports are handed to Central in the order their VM first
+	// queued one, regardless of trigger type. generatedAt is roxagent's
+	// report-generation timestamp (ResponseMeta.report_generated_at) for a
+	// reactive (event-triggered) report, or the zero value for a routine
+	// scheduled one; it is used only to measure Sensor-side reactive-update
+	// delivery latency and is never forwarded to Central. If this VM
+	// already has a not-yet-delivered report queued, the new one replaces
+	// it in place (coalescing) rather than queuing alongside it or moving
+	// its position in the queue — only the latest report for a VM is ever
+	// meaningful.
+	Send(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error
 }
 
 // VirtualMachineStore interface to the VirtualMachine store
@@ -42,6 +46,5 @@ func NewHandler(store VirtualMachineStore) Handler {
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
 		store:        store,
-		reactiveWake: make(chan struct{}, 1),
 	}
 }
