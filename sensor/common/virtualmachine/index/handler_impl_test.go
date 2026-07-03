@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -745,6 +746,17 @@ func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
 	s.Require().ErrorIs(err, errStartMoreThanOnce)
 }
 
+// reactiveLatencySampleCount reads the current sample count (number of
+// Observe() calls) of the SLA-measurement histogram directly off the
+// collector, since it's a plain Histogram (not a vec) shared across tests:
+// testutil.CollectAndCount would only ever report 1 (one time series exists),
+// not how many observations were made, so callers must compare deltas.
+func (s *virtualMachineHandlerSuite) reactiveLatencySampleCount() uint64 {
+	var m dto.Metric
+	s.Require().NoError(vmmetrics.VirtualMachineReactiveIndexReportLatencySeconds.Write(&m))
+	return m.GetHistogram().GetSampleCount()
+}
+
 func (s *virtualMachineHandlerSuite) TestSendReactive_DeliveredBeforeQueuedScheduledBacklog() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
@@ -758,6 +770,8 @@ func (s *virtualMachineHandlerSuite) TestSendReactive_DeliveredBeforeQueuedSched
 	s.store.EXPECT().GetFromCID(uint32(1)).Return(&virtualmachine.Info{ID: "vm-1"}).AnyTimes()
 	s.store.EXPECT().GetFromCID(uint32(2)).Return(&virtualmachine.Info{ID: "vm-2"}).AnyTimes()
 	s.store.EXPECT().GetFromCID(uint32(3)).Return(&virtualmachine.Info{ID: "vm-3"}).AnyTimes()
+
+	initialLatencyCount := s.reactiveLatencySampleCount()
 
 	// report1 is picked up by run()'s single goroutine and blocks trying to
 	// hand it to ResponsesC() (nobody is reading yet), which pins the loop
@@ -791,6 +805,12 @@ func (s *virtualMachineHandlerSuite) TestSendReactive_DeliveredBeforeQueuedSched
 	s.Equal("vm-1", received[0], "report1 was already in flight before the reactive report existed")
 	s.Equal("vm-3", received[1], "the reactive report must be delivered ahead of the queued scheduled backlog")
 	s.Equal("vm-2", received[2], "the scheduled backlog entry is delivered last")
+
+	// Only report3 (the reactive one) should have observed the SLA latency
+	// histogram: report1 and report2 went through the scheduled path with a
+	// zero-value generatedAt, which handleIndexReport must not record.
+	s.Equal(initialLatencyCount+1, s.reactiveLatencySampleCount(),
+		"exactly one observation (the reactive report) should be recorded; the two scheduled reports must not add samples")
 }
 
 func (s *virtualMachineHandlerSuite) TestSendReactive_UpsertReplacesOlderPendingForSameVM() {
