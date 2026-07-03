@@ -99,8 +99,6 @@ func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
 		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
-		ensureKeyBundleDirectory()
-		writeExampleBundle()
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 		startKeyBundleUpdater()
