@@ -13,3 +13,10 @@ func NewTestDatastore(_ *testing.T, db pgPkg.DB) Datastore {
 		store: store.New(db),
 	}
 }
+
+// NewBenchDatastore creates the data store for benchmarks.
+func NewBenchDatastore(db pgPkg.DB) Datastore {
+	return &datastoreImpl{
+		store: store.New(db),
+	}
+}
