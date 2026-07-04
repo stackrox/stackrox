@@ -43,8 +43,6 @@ func testCustomRule() *v1alpha1.CustomRule {
 				AvailableFixes: []v1alpha1.FixDefinition{
 					{Platform: "ocp4", Disruption: "low"},
 				},
-			},
-			CustomRulePayload: v1alpha1.CustomRulePayload{
 				ScannerType:   v1alpha1.ScannerTypeCEL,
 				Expression:    `input.configmap.data["marker"] == "present"`,
 				FailureReason: "ConfigMap marker not present",

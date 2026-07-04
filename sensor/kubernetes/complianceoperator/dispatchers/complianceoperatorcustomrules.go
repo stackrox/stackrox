@@ -50,18 +50,6 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		})
 	}
 
-	inputs := make([]*central.ComplianceOperatorCelInput, 0, len(customRule.Spec.Inputs))
-	for _, inp := range customRule.Spec.Inputs {
-		inputs = append(inputs, &central.ComplianceOperatorCelInput{
-			Name:              inp.Name,
-			ApiGroup:          inp.KubernetesInputSpec.Group,
-			ApiVersion:        inp.KubernetesInputSpec.APIVersion,
-			Resource:          inp.KubernetesInputSpec.Resource,
-			ResourceNamespace: inp.KubernetesInputSpec.ResourceNamespace,
-			ResourceName:      inp.KubernetesInputSpec.ResourceName,
-		})
-	}
-
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
@@ -84,7 +72,7 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 					OperatorKind:  central.ComplianceOperatorRuleV2_CUSTOM_RULE,
 					ScannerType:   string(customRule.Spec.ScannerType),
 					Expression:    customRule.Spec.Expression,
-					Inputs:        inputs,
+					Inputs:        inputPayloadsToCelInputs(customRule.Spec.Inputs),
 					FailureReason: customRule.Spec.FailureReason,
 					CustomRuleDetails: &central.ComplianceOperatorRuleV2_CustomRuleDetails{
 						Phase:        customRule.Status.Phase,
