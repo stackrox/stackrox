@@ -84,10 +84,10 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
 		}
 
-		// CEL fields are not in the v1.8.2 Go struct (RulePayload) but may be
-		// present in the K8s object if the cluster runs CO >= 1.9.0. Extract
-		// them from the raw unstructured data.
-		populateCelFieldsFromUnstructured(ruleV2, unstructuredObject.Object)
+		ruleV2.ScannerType = string(complianceRule.ScannerType)
+		ruleV2.Expression = complianceRule.RulePayload.Expression
+		ruleV2.FailureReason = complianceRule.RulePayload.FailureReason
+		ruleV2.Inputs = inputPayloadsToCelInputs(complianceRule.RulePayload.Inputs)
 
 		events = append(events, &central.SensorEvent{
 			Id:     id,

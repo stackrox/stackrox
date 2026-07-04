@@ -84,35 +84,26 @@ func TestRuleProcessEvent_WithoutV2Capability(t *testing.T) {
 	assert.Equal(t, rule.Title, v1Rule.GetTitle())
 }
 
-func TestRuleProcessEvent_CelFieldsFromUnstructured(t *testing.T) {
+func TestRuleProcessEvent_CelFields(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
 	rule := testRule()
-	obj := ruleToUnstructured(t, rule)
-
-	// Simulate a CO >= 1.9.0 Rule that has CEL fields in spec (not in the v1.8.2 Go struct).
-	spec, _ := obj.Object["spec"].(map[string]interface{})
-	if spec == nil {
-		spec = make(map[string]interface{})
-		obj.Object["spec"] = spec
-	}
-	spec["scannerType"] = "CEL"
-	spec["expression"] = `input.node.metadata.labels["secure"] == "true"`
-	spec["failureReason"] = "Node is not labeled secure"
-	spec["inputs"] = []interface{}{
-		map[string]interface{}{
-			"name": "node",
-			"kubernetesInputSpec": map[string]interface{}{
-				"apiVersion": "v1",
-				"resource":   "nodes",
-				"group":      "",
+	rule.ScannerType = v1alpha1.ScannerTypeCEL
+	rule.RulePayload.Expression = `input.node.metadata.labels["secure"] == "true"`
+	rule.RulePayload.FailureReason = "Node is not labeled secure"
+	rule.RulePayload.Inputs = []v1alpha1.InputPayload{
+		{
+			Name: "node",
+			KubernetesInputSpec: v1alpha1.KubernetesInputSpec{
+				APIVersion: "v1",
+				Resource:   "nodes",
 			},
 		},
 	}
 
 	dispatcher := NewRulesDispatcher()
-	event := dispatcher.ProcessEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
+	event := dispatcher.ProcessEvent(ruleToUnstructured(t, rule), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
 	require.Len(t, event.ForwardMessages, 2)
