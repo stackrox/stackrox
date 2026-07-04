@@ -172,7 +172,7 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 			require.Equal(b, s.rowCount, len(reportData.CVEResponses))
 
@@ -185,7 +185,7 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 
 			// Save to blob store (same as production DOWNLOAD path).
-			err = s.rg.saveReportData(s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -204,7 +204,7 @@ func BenchmarkMemory_Streaming(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(&ReportRequest{
+			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -228,7 +228,7 @@ func BenchmarkMemoryComparison(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 
 			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
@@ -237,7 +237,7 @@ func BenchmarkMemoryComparison(b *testing.B) {
 			after := heapAllocBytes()
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 
-			err = s.rg.saveReportData(s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -249,7 +249,7 @@ func BenchmarkMemoryComparison(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(&ReportRequest{
+			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -282,7 +282,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 			}
 
 			baseline := heapAllocBytes()
-			reportData, err := s.rg.getReportDataSQF(s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 			sample()
 
@@ -290,7 +290,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 			require.NoError(b, err)
 			sample()
 
-			err = s.rg.saveReportData(s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 			sample()
 
@@ -309,7 +309,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 			forceGC()
 			baseline := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(&ReportRequest{
+			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -334,7 +334,7 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 
 			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
@@ -348,7 +348,7 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			_, _, err = s.rg.blobStore.Get(reportGenCtx, "", &buf)
 			_ = err
 
-			err = s.rg.saveReportData(s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -360,7 +360,7 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(&ReportRequest{
+			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
