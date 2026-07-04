@@ -46,7 +46,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) buildStreamQuery(
 ) (*v1.Query, *walker.Schema) {
 	s.T().Helper()
 
-	rQuery, err := s.reportGenerator.buildReportQuery(snap, collection, time.Time{})
+	rQuery, err := s.reportGenerator.buildReportQuery(s.ctx, snap, collection, time.Time{})
 	s.Require().NoError(err)
 
 	cveFilterQ, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
