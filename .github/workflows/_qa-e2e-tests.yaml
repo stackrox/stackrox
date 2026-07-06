@@ -11,11 +11,6 @@ on:
         description: "Unique job name, e.g. gke-qa-e2e-tests"
         required: true
         type: string
-      trigger-label:
-        description: "PR label that triggers this workflow. Defaults to qa-e2e-tests-gha."
-        required: false
-        type: string
-        default: "qa-e2e-tests-gha"
       extra-env-vars:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
@@ -83,12 +78,6 @@ env:
 
 jobs:
   create-cluster:
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        inputs.trigger-label == '' ||
-        contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
-      )
     runs-on: ubuntu-slim
     steps:
       - name: Prepare infra args
@@ -111,12 +100,6 @@ jobs:
 
   qa-e2e-tests:
     needs: [create-cluster]
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        inputs.trigger-label == '' ||
-        contains(github.event.pull_request.labels.*.name, inputs.trigger-label)
-      )
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
