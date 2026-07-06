@@ -750,6 +750,12 @@ func (c *safeProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 	return makeReport(c.gen), nil
 }
 
+func (c *safeProtocolClient) callCount() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.calls
+}
+
 type safeSender struct {
 	mu   sync.Mutex
 	sent int
@@ -830,4 +836,59 @@ func TestClampPollInterval(t *testing.T) {
 			assert.Equal(t, tc.want, clampPollInterval(tc.in))
 		})
 	}
+}
+
+// --- Hammer mode (LOAD-TEST ONLY, see New) ---
+
+func TestNew_DefaultsToNonHammerMode(t *testing.T) {
+	s := New(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	assert.False(t, s.hammerMode)
+}
+
+func TestNew_HammerModeEnabled_SetsHammerMode(t *testing.T) {
+	t.Setenv("ROX_VM_VSOCK_LOADTEST_HAMMER_MODE", "true")
+	s := New(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	assert.True(t, s.hammerMode)
+}
+
+// TestVMScraper_HammerModePollsBackToBack proves hammer mode's run() loop
+// does not wait out the (deliberately very long) poll interval between
+// cycles -- if it did, this test would see at most 1 call within the
+// Eventually window instead of many.
+func TestVMScraper_HammerModePollsBackToBack(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
+	sender := &safeSender{}
+	dialer := &mockDialer{}
+	client := &safeProtocolClient{gen: 1}
+
+	s := newVMScraper(store, sender, dialer, client, true)
+	s.interval = time.Hour
+	s.concurrency = 1
+
+	require.NoError(t, s.Start())
+	defer s.Stop()
+
+	require.Eventually(t, func() bool {
+		return client.callCount() >= 5
+	}, time.Second, time.Millisecond, "hammer mode should poll back-to-back without waiting out the interval")
+}
+
+// TestVMScraper_NonHammerModeRespectsInterval is the control for the above:
+// with the same very long interval and non-hammer mode, only the initial
+// immediate poll should ever happen within the window.
+func TestVMScraper_NonHammerModeRespectsInterval(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
+	sender := &safeSender{}
+	dialer := &mockDialer{}
+	client := &safeProtocolClient{gen: 1}
+
+	s := newVMScraper(store, sender, dialer, client, false)
+	s.interval = time.Hour
+	s.concurrency = 1
+
+	require.NoError(t, s.Start())
+	defer s.Stop()
+
+	time.Sleep(50 * time.Millisecond)
+	assert.Equal(t, 1, client.callCount(), "non-hammer mode should only poll once (the immediate start-up poll) while waiting out a 1h interval")
 }

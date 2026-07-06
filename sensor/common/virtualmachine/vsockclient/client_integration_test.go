@@ -61,7 +61,7 @@ func newProtocolHarness(t *testing.T, opts protocolHarnessOptions) *protocolHarn
 	return &protocolHarness{
 		client:  NewClient(opts.capabilities, opts.maxResponseSize),
 		cache:   cache,
-		handler: roxagentvsock.NewHandler(cache, opts.agentVersion),
+		handler: roxagentvsock.NewHandler(roxagentvsock.NewCacheReportProvider(cache), opts.agentVersion),
 	}
 }
 
