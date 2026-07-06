@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -72,6 +74,9 @@ type VMScraper struct {
 	mu        sync.Mutex
 	vmState   map[string]*vmState
 	activeVMs set.StringSet
+
+	// hammerMode is LOAD-TEST ONLY: see New.
+	hammerMode bool
 }
 
 type vmState struct {
@@ -83,7 +88,23 @@ type vmState struct {
 var _ common.SensorComponent = (*VMScraper)(nil)
 
 // New creates a VMScraper with production defaults.
+//
+// LOAD-TEST ONLY: if ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true (never in a
+// release build), the scraper polls back-to-back with no wait between
+// cycles instead of respecting ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL.
+// pollOnce itself, and everything else about VMScraper (concurrency, dedup
+// logic, roxagent's maxConcurrentConns=1 limit on the other end), stays
+// completely unchanged -- this produces real, sustained contention rather
+// than simulating it.
 func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
+	hammerMode := !buildinfo.ReleaseBuild && os.Getenv("ROX_VM_VSOCK_LOADTEST_HAMMER_MODE") == "true"
+	if hammerMode {
+		log.Warn("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true — polling VMs back-to-back with no interval wait")
+	}
+	return newVMScraper(store, sender, dialer, client, hammerMode)
+}
+
+func newVMScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, hammerMode bool) *VMScraper {
 	return &VMScraper{
 		store:        store,
 		sender:       sender,
@@ -99,6 +120,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		vmState:      make(map[string]*vmState),
 		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
+		hammerMode:   hammerMode,
 	}
 }
 
@@ -141,6 +163,14 @@ func (s *VMScraper) run() {
 
 	// Poll immediately on start so VMs don't wait a full interval before first scrape.
 	s.pollOnce(ctx)
+
+	if s.hammerMode {
+		// LOAD-TEST ONLY: no wait between cycles -- see New.
+		for ctx.Err() == nil {
+			s.pollOnce(ctx)
+		}
+		return
+	}
 
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()

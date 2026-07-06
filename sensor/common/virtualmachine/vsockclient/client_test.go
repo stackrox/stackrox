@@ -82,6 +82,69 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 	assert.Equal(t, uint32(5), result.Meta.GetReportGeneration())
 }
 
+func TestNewClient_HammerModeEnabled_PopulatesFacts(t *testing.T) {
+	t.Setenv("ROX_VM_VSOCK_LOADTEST_HAMMER_MODE", "true")
+	t.Setenv("ROX_VM_VSOCK_LOADTEST_REPORT_SIZE", "large")
+	client := NewClient([]string{CapabilityReportV1}, 10<<20)
+	clientConn, agentConn := net.Pipe()
+	defer utils.IgnoreError(clientConn.Close)
+
+	go func() {
+		defer utils.IgnoreError(agentConn.Close)
+		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
+		require.NoError(t, err)
+
+		var req pb.VMServiceRequest
+		require.NoError(t, proto.Unmarshal(reqData, &req))
+		assert.Equal(t, "large", req.GetMeta().GetFacts()["report_size"])
+
+		resp := &pb.VMServiceResponse{
+			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+			Result: &pb.VMServiceResponse_GetReport{
+				GetReport: &pb.GetReportResponse{IndexReport: &v4.IndexReport{HashId: "loadtest-hash"}},
+			},
+		}
+		respData, err := proto.Marshal(resp)
+		require.NoError(t, err)
+		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
+	}()
+
+	result, err := client.GetReport(clientConn, 0, 0)
+	require.NoError(t, err)
+	assert.Equal(t, "loadtest-hash", result.IndexReport.GetHashId())
+}
+
+func TestNewClient_DoesNotPopulateFacts(t *testing.T) {
+	// Without ROX_VM_VSOCK_LOADTEST_HAMMER_MODE set, NewClient must keep
+	// sending no facts at all.
+	client := NewClient([]string{CapabilityReportV1}, 10<<20)
+	clientConn, agentConn := net.Pipe()
+	defer utils.IgnoreError(clientConn.Close)
+
+	go func() {
+		defer utils.IgnoreError(agentConn.Close)
+		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
+		require.NoError(t, err)
+
+		var req pb.VMServiceRequest
+		require.NoError(t, proto.Unmarshal(reqData, &req))
+		assert.Empty(t, req.GetMeta().GetFacts())
+
+		resp := &pb.VMServiceResponse{
+			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+			Result: &pb.VMServiceResponse_GetReport{
+				GetReport: &pb.GetReportResponse{IndexReport: &v4.IndexReport{HashId: "prod-hash"}},
+			},
+		}
+		respData, err := proto.Marshal(resp)
+		require.NoError(t, err)
+		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
+	}()
+
+	_, err := client.GetReport(clientConn, 0, 0)
+	require.NoError(t, err)
+}
+
 func TestSendGetReport_NilReportRejected(t *testing.T) {
 	client := NewClient(nil, 10<<20)
 	clientConn, agentConn := net.Pipe()
