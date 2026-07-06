@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -71,6 +72,28 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 					ExecFilePath:  "/bin/apt-get",
 					SignalArgs:    "install nmap",
 					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+			},
+			baselineStatuses:           makeBaselineStatuses(t, "LOCKED", "LOCKED"),
+			anomalousProcessesExecuted: []bool{false, false},
+			currentBaselineResults:     nil,
+			shouldBePersisted:          true,
+		},
+		{
+			name: "Locked process baseline, startup process and empty exec path are skipped",
+			baseline: &storage.ProcessBaseline{
+				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+			},
+			indicators: []*views.ProcessIndicatorRiskView{
+				{
+					ExecFilePath:  "",
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					ExecFilePath:       "apt-get",
+					ContainerName:      deployment.GetContainers()[0].GetName(),
+					ContainerStartTime: func() *time.Time { t := time.Now().Add(-10 * time.Second); return &t }(),
+					SignalTime:         func() *time.Time { t := time.Now().Add(-5 * time.Second); return &t }(),
 				},
 			},
 			baselineStatuses:           makeBaselineStatuses(t, "LOCKED", "LOCKED"),
@@ -245,13 +268,26 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 
 			mockBaselines.EXPECT().GetProcessBaseline(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.baseline, c.baseline != nil, c.baselineErr)
 			if c.indicators != nil {
-				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).Do(
-					func(_ context.Context, _ *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) {
-						for _, i := range c.indicators {
-							err := fn(i)
-							require.NoError(t, err)
+				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).
+					AnyTimes().
+					DoAndReturn(func(_ context.Context, q *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) error {
+						for _, sub := range q.GetConjunction().GetQueries() {
+							mfq := sub.GetBaseQuery().GetMatchFieldQuery()
+							if mfq == nil || mfq.GetField() != search.ContainerName.String() {
+								continue
+							}
+							name := strings.Trim(mfq.GetValue(), "\"")
+							for _, i := range c.indicators {
+								if i.ContainerName == name {
+									if err := fn(i); err != nil {
+										return err
+									}
+								}
+							}
+							return c.indicatorErr
 						}
-					}).Return(c.indicatorErr)
+						return c.indicatorErr
+					})
 			}
 
 			expectedBaselineResult := &storage.ProcessBaselineResults{

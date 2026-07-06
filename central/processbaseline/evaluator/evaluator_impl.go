@@ -58,7 +58,6 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 	containerNameToBaselinedProcesses := make(map[string]*set.StringSet)
 	containerNameToBaselineResults := make(map[string]*storage.ContainerNameAndBaselineStatus)
 
-	var hasAtLeastOneLockedBaseline bool
 	for _, container := range deployment.GetContainers() {
 		baseline, exists, err := e.baselines.GetProcessBaseline(evaluatorCtx, &storage.ProcessBaselineKey{
 			DeploymentId:  deployment.GetId(),
@@ -68,10 +67,6 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "fetching process baseline for deployment %s/%s/%s", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName())
-		}
-		baselineStatus := getBaselineStatus(baseline)
-		if baselineStatus == storage.ContainerNameAndBaselineStatus_LOCKED {
-			hasAtLeastOneLockedBaseline = true
 		}
 		containerNameToBaselineResults[container.GetName()] = &storage.ContainerNameAndBaselineStatus{
 			ContainerName:  container.GetName(),
@@ -86,13 +81,12 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 	}
 
-	if hasAtLeastOneLockedBaseline {
-		err = e.indicators.IterateOverProcessIndicatorsRiskView(evaluatorCtx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery(), func(process *views.ProcessIndicatorRiskView) error {
-			processSet, exists := containerNameToBaselinedProcesses[process.ContainerName]
-			// If no explicit baseline, then all processes are valid.
-			if !exists {
-				return nil
-			}
+	for containerName, processSet := range containerNameToBaselinedProcesses {
+		q := search.NewQueryBuilder().
+			AddExactMatches(search.DeploymentID, deployment.GetId()).
+			AddExactMatches(search.ContainerName, containerName).
+			ProtoQuery()
+		err = e.indicators.IterateOverProcessIndicatorsRiskView(evaluatorCtx, q, func(process *views.ProcessIndicatorRiskView) error {
 			baselineItem := processbaseline.BaselineItemFromProcessView(process)
 			if baselineItem == "" {
 				return nil
@@ -100,9 +94,9 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 			if processbaseline.IsStartupProcessView(process) {
 				return nil
 			}
-			if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
+			if !processSet.Contains(baselineItem) {
 				violatingProcesses = append(violatingProcesses, process)
-				containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
+				containerNameToBaselineResults[containerName].AnomalousProcessesExecuted = true
 			}
 			return nil
 		})
