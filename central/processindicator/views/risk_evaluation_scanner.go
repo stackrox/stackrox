@@ -6,9 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// RiskViewSelectProtos defines the column projections for process indicator
-// risk view queries. Order must match the scan destinations in
-// ProcessIndicatorRiskScanner.Dests.
+// RiskViewSelectProtos order must match ProcessIndicatorRiskScanner.Dests.
+// See also: central/alert/views/list_alert_scanner.go
 var RiskViewSelectProtos = []*v1.QuerySelect{
 	search.NewQuerySelect(search.ProcessID).Proto(),
 	search.NewQuerySelect(search.ContainerName).Proto(),
@@ -19,8 +18,7 @@ var RiskViewSelectProtos = []*v1.QuerySelect{
 	search.NewQuerySelect(search.ProcessArguments).Proto(),
 }
 
-// ProcessIndicatorRiskScanner holds pgx scan destinations for direct row
-// scanning, bypassing scany reflection.
+// ProcessIndicatorRiskScanner bypasses scany reflection for direct pgx scanning.
 type ProcessIndicatorRiskScanner struct {
 	ID                 string
 	ContainerName      string
@@ -31,8 +29,6 @@ type ProcessIndicatorRiskScanner struct {
 	SignalArgs         string
 }
 
-// Dests returns scan destination pointers in the order matching
-// RiskViewSelectProtos.
 func (s *ProcessIndicatorRiskScanner) Dests() []any {
 	return []any{
 		&s.ID, &s.ContainerName, &s.ExecFilePath,
@@ -41,7 +37,6 @@ func (s *ProcessIndicatorRiskScanner) Dests() []any {
 	}
 }
 
-// Build converts scanned values into a ProcessIndicatorRiskView.
 func (s *ProcessIndicatorRiskScanner) Build() ProcessIndicatorRiskView {
 	v := ProcessIndicatorRiskView{
 		ID:            s.ID,
