@@ -141,7 +141,7 @@ func ApplyAllIndexes(ctx context.Context, db postgres.DB, stmtTimeout time.Durat
 	}
 
 	log.Infof("Reconciling %d indexes: %d exist, %d invalid, %d to create",
-			len(desired), len(desired)-len(toCreate), len(toDrop), len(toCreate))
+		len(desired), len(desired)-len(toCreate), len(toDrop), len(toCreate))
 
 	for _, idx := range toDrop {
 		if err := dropInvalidIndex(ctx, db, idx.Name, stmtTimeout); err != nil {
