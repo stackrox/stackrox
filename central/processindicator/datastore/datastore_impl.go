@@ -192,7 +192,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	cloned := q.CloneVT()
-	cloned.Selects = views.RiskViewSelectProtos
+	cloned.Selects = views.RiskViewSelectProtos()
 
 	var scanner views.ProcessIndicatorRiskScanner
 	err := pgSearch.RunSelectDirectFn(ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, nil,

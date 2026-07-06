@@ -6,19 +6,21 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// RiskViewSelectProtos order must match ProcessIndicatorRiskScanner.Dests.
-// See also: central/alert/views/list_alert_scanner.go
-var RiskViewSelectProtos = []*v1.QuerySelect{
-	search.NewQuerySelect(search.ProcessID).Proto(),
-	search.NewQuerySelect(search.ContainerName).Proto(),
-	search.NewQuerySelect(search.ProcessExecPath).Proto(),
-	search.NewQuerySelect(search.ProcessContainerStartTime).Proto(),
-	search.NewQuerySelect(search.ProcessCreationTime).Proto(),
-	search.NewQuerySelect(search.ProcessName).Proto(),
-	search.NewQuerySelect(search.ProcessArguments).Proto(),
+// RiskViewSelectProtos returns fresh protos each call because standardizeFieldNamesInQuery mutates Field.Name in-place.
+// Order must match Dests() — RunSelectDirectFn maps columns to pointers by position.
+func RiskViewSelectProtos() []*v1.QuerySelect {
+	return []*v1.QuerySelect{
+		search.NewQuerySelect(search.ProcessID).Proto(),
+		search.NewQuerySelect(search.ContainerName).Proto(),
+		search.NewQuerySelect(search.ProcessExecPath).Proto(),
+		search.NewQuerySelect(search.ProcessContainerStartTime).Proto(),
+		search.NewQuerySelect(search.ProcessCreationTime).Proto(),
+		search.NewQuerySelect(search.ProcessName).Proto(),
+		search.NewQuerySelect(search.ProcessArguments).Proto(),
+	}
 }
 
-// ProcessIndicatorRiskScanner bypasses scany reflection for direct pgx scanning.
+// ProcessIndicatorRiskScanner avoids scany reflection overhead that caused OOM on large tenants during risk reprocessing.
 type ProcessIndicatorRiskScanner struct {
 	ID                 string
 	ContainerName      string
