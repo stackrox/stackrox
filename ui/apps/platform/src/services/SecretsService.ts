@@ -2,9 +2,7 @@ import queryString from 'qs';
 
 import type { ListSecret } from 'types/secret.proto';
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-// TODO: Move buildNestedRawQueryParams to searchUtils as a shared helper
-import { buildNestedRawQueryParams } from './ComplianceCommon';
+import { buildNestedRawQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';

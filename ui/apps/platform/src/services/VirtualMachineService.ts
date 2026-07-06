@@ -1,7 +1,7 @@
 import axios from 'services/instance';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
-import { buildNestedRawQueryParams } from './ComplianceCommon';
+import { buildNestedRawQueryParams } from 'utils/searchUtils';
 
 // Legacy API (v2/virtualmachines)
 
