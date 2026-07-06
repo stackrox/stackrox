@@ -1,0 +1,136 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.centralWorker.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: central-worker
+    {{- include "srox.labels" (list . "deployment" "central-worker") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "deployment" "central-worker") | nindent 4 }}
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{ .Release.Namespace }}
+      labels:
+        app: central-worker
+        {{- include "srox.podLabels" (list . "deployment" "central-worker") | nindent 8 }}
+      annotations:
+        {{- include "srox.podAnnotations" (list . "deployment" "central-worker") | nindent 8 }}
+    spec:
+      {{- if ._rox.centralWorker._nodeSelector }}
+      nodeSelector:
+        {{- ._rox.centralWorker._nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if ._rox.centralWorker.tolerations }}
+      tolerations:
+        {{- toYaml ._rox.centralWorker.tolerations | nindent 8 }}
+      {{- end }}
+      affinity:
+        {{- toYaml ._rox.centralWorker.affinity | nindent 8 }}
+      {{- if ._rox.centralWorker.priorityClassName }}
+      priorityClassName: {{ quote ._rox.centralWorker.priorityClassName }}
+      {{- end }}
+      serviceAccountName: central-worker
+      {{- if not (eq ._rox.env.openshift 4)}}
+      securityContext:
+        fsGroup: 4000
+        runAsUser: 4000
+      {{end}}
+      containers:
+      - name: central-worker
+        image: {{ ._rox.central.image.fullRef | quote }}
+        command:
+          - /stackrox/bin/central-worker
+        resources:
+          {{- ._rox.centralWorker._resources | nindent 10 }}
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_CENTRAL_WORKER_ENABLED
+          value: "true"
+        {{- include "srox.envVars" (list . "deployment" "central-worker" "central-worker") | nindent 8 }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8082
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          failureThreshold: 50
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8082
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: central-db-password
+          mountPath: /run/secrets/stackrox.io/db-password
+          readOnly: true
+        - name: central-external-db-volume
+          mountPath: /etc/ext-db
+        - name: etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        {{- if ._rox.central.notifierSecretsEncryption }}
+        {{- if ._rox.central.notifierSecretsEncryption.enabled }}
+        - name: central-encryption-key-chain
+          mountPath: /run/secrets/stackrox.io/central-encryption-key-chain
+          readOnly: true
+        {{- end }}
+        {{- end }}
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: central-certs-volume
+        secret:
+          defaultMode: 420
+          secretName: central-tls
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca
+          optional: true
+      - name: central-db-password
+        secret:
+          secretName: central-db-password
+      - name: central-external-db-volume
+        configMap:
+          name: central-external-db
+          optional: true
+      - name: etc-ssl-volume
+        emptyDir: {}
+      - name: etc-pki-volume
+        emptyDir: {}
+      {{- if ._rox.central.notifierSecretsEncryption }}
+      {{- if ._rox.central.notifierSecretsEncryption.enabled }}
+      - name: central-encryption-key-chain
+        secret:
+          secretName: central-encryption-key-chain
+      {{- end }}
+      {{- end }}
+      {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
+{{- end }}
