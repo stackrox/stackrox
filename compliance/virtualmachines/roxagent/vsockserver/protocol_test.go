@@ -34,7 +34,7 @@ func TestHandleRequest_GetReport(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta:   &pb.RequestMeta{RequestId: "req-1", Capabilities: []string{"report_v1"}},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: 0}},
@@ -59,7 +59,7 @@ func TestHandleRequest_GetReport_Unchanged(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta:   &pb.RequestMeta{RequestId: "req-2"},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: 1}},
@@ -76,7 +76,7 @@ func TestHandleRequest_GetReport_UnchangedWhenKnownEpochMatches(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	// Learn the handler's epoch from a first exchange (known_epoch=0, so
 	// Sensor has no cached epoch yet — falls back to generation-only).
 	firstResp := sendAndReceive(t, handler, &pb.VMServiceRequest{
@@ -112,7 +112,7 @@ func TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch(t *testing
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{RequestId: "req-epoch-mismatch"},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
@@ -141,7 +141,7 @@ func TestHandleRequest_GetReport_UnchangedWhenKnownEpochZero(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{RequestId: "req-epoch-zero"},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
@@ -161,7 +161,7 @@ func TestHandleRequest_GetReport_GenerationRegression(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
 
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{RequestId: "req-regression"},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
@@ -179,7 +179,7 @@ func TestHandleRequest_GetReport_GenerationRegression(t *testing.T) {
 
 func TestHandleRequest_NotReady(t *testing.T) {
 	cache := &ReportCache{}
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 	req := &pb.VMServiceRequest{
 		Meta:   &pb.RequestMeta{RequestId: "req-3"},
 		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}},
@@ -195,7 +195,7 @@ func TestHandleRequest_NotReady(t *testing.T) {
 func TestHandleRequest_UnknownMethod(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "x"}, nil)
-	handler := NewHandler(cache, "test-1.0.0")
+	handler := NewHandler(NewCacheReportProvider(cache), "test-1.0.0")
 
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{RequestId: "req-4"},
