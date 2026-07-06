@@ -21,6 +21,7 @@ jobs:
     if: inputs.should-run
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
+      tag: ${{ inputs.tag }}
       ci-job-name: ocp-4.22-qa-e2e-tests
       cluster-wait-timeout-minutes: 50
       infra-flavor: openshift-4

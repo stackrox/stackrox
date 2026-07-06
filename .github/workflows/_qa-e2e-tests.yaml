@@ -3,6 +3,10 @@ name: _qa-e2e-tests
 on:
   workflow_call:
     inputs:
+      tag:
+        description: "Image tag to test."
+        required: true
+        type: string
       ci-job-name:
         description: "Unique job name, e.g. gke-qa-e2e-tests"
         required: true
@@ -115,6 +119,8 @@ jobs:
       )
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
       ARTIFACT_DIR: ./junit-reports/
       USE_LOCAL_ROXCTL: "true"

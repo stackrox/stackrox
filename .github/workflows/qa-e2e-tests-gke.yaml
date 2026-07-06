@@ -21,6 +21,7 @@ jobs:
     if: inputs.should-run
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
+      tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests
       infra-flavor: gke-default
       infra-args: |
