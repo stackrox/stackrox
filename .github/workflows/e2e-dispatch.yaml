@@ -87,6 +87,9 @@ jobs:
                     'e2e-db-backup-restore-test',
                     'e2e-gke-upgrade-tests',
                     'e2e-nongroovy-tests',
+                    'qa-e2e-tests-gke',
+                    'qa-e2e-tests-ocp-4-22',
+                    'qa-e2e-tests-ocp-4-22-konflux',
                 ]}
 
             write('jobs', json.dumps(jobs))
@@ -181,4 +184,37 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  dispatch-qa-e2e-tests-gke:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/qa-e2e-tests-gke.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-gke }}
+    secrets: inherit
+    concurrency:
+      group: qa-e2e-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  dispatch-qa-e2e-tests-ocp-4-22:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/qa-e2e-tests-ocp-4.22.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-ocp-4-22 }}
+    secrets: inherit
+    concurrency:
+      group: qa-e2e-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  dispatch-qa-e2e-tests-ocp-4-22-konflux:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/qa-e2e-tests-ocp-4.22-konflux.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-ocp-4-22-konflux }}
+    secrets: inherit
+    concurrency:
+      group: qa-e2e-tests-ocp-4-22-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
