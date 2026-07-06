@@ -31,6 +31,10 @@ const (
 	// tickerSendTimeout is the maximum duration to wait for ticker send to enrichment goroutine.
 	// Short timeout provides fast failure detection if enrichment goroutine becomes unresponsive.
 	tickerSendTimeout = 50 * time.Millisecond
+
+	// sendCycleTimeout is the maximum duration to wait for a full enrich+send cycle to complete.
+	// Covers enrichment processing, entity lookups, channel writes, and goroutine scheduling.
+	sendCycleTimeout = enrichmentTimeout + sendToCentralTimeout
 )
 
 func TestSendNetworkFlows(t *testing.T) {
@@ -215,7 +219,8 @@ func (b *sendNetflowsSuite) TestUpdatesGetBufferedWhenUnread() {
 		b.thenTickerTicks()
 	}
 
-	// Wait for all 4 send cycles to complete before reading
+	// Wait for all 4 send cycles to complete before reading.
+	// thenTickerTicks guarantees that send() completed, but call to waitForSendCycles documents the intent.
 	b.waitForSendCycles(startingSendCycles + 4)
 
 	// should be able to read four buffered updates in sequence
@@ -247,7 +252,14 @@ func (b *sendNetflowsSuite) TestCallsDetectionEvenOnFullBuffer() {
 	b.assertNoMoreUpdatesToCentral()
 }
 
+// thenTickerTicks fires one enrichment cycle and blocks until both enrichment
+// AND send() complete. Two-phase synchronization:
+//  1. enrichmentDoneSignal — confirms enrichment finished (entity lookups done)
+//  2. sendCyclesCompleted — confirms send() wrote to the channel
+//
+// Lack of waiting for the sendCyclesCompleted caused flakiness in the test (ROX-29892).
 func (b *sendNetflowsSuite) thenTickerTicks() {
+	expected := b.m.sendCyclesCompleted.Load() + 1
 	b.m.enrichmentDoneSignal.Reset()
 	select {
 	case b.fakeTicker <- time.Now():
@@ -255,6 +267,7 @@ func (b *sendNetflowsSuite) thenTickerTicks() {
 		b.T().Fatal("ticker send blocked - enrichment goroutine not responsive")
 	}
 	b.waitForEnrichmentDone()
+	b.waitForSendCycles(expected)
 }
 
 func (b *sendNetflowsSuite) waitForEnrichmentDone() {
@@ -271,7 +284,7 @@ func (b *sendNetflowsSuite) waitForEnrichmentDone() {
 
 func (b *sendNetflowsSuite) waitForSendCycles(expectedCycles uint64) {
 	start := time.Now()
-	deadline := time.Now().Add(sendToCentralTimeout)
+	deadline := time.Now().Add(sendCycleTimeout)
 
 	for {
 		currentCycles := b.m.sendCyclesCompleted.Load()
@@ -327,6 +340,7 @@ func mustNotRead[T any](t *testing.T, ch chan T) {
 }
 
 func mustReadTimeout[T any](t *testing.T, ch chan T, timeout time.Duration) T {
+	t.Helper()
 	var result T
 	select {
 	case v, more := <-ch:

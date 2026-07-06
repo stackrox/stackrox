@@ -15,6 +15,8 @@ const (
 	DetectorAuditLogConsumer
 	DetectorDeploymentConsumer
 	DetectorScanResultConsumer
+	DetectorDeployAlertOutputConsumer
+	OutputQueueConsumer
 )
 
 var (
@@ -31,6 +33,8 @@ var (
 		DetectorAuditLogConsumer:            "DetectorAuditLog",
 		DetectorDeploymentConsumer:          "DetectorDeployment",
 		DetectorScanResultConsumer:          "DetectorScanResult",
+		DetectorDeployAlertOutputConsumer:   "DetectorDeployAlertOutput",
+		OutputQueueConsumer:                 "OutputQueue",
 	}
 )
 

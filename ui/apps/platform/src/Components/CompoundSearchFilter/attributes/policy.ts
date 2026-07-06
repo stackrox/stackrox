@@ -135,17 +135,6 @@ export const LastUpdated: CompoundSearchFilterAttribute = {
     inputType: 'date-picker',
 };
 
-export const SkipContainerType: CompoundSearchFilterAttribute = {
-    displayName: 'Skip container type',
-    filterChipLabel: 'Skip container type',
-    searchTerm: 'Skip Container Type',
-    inputType: 'select',
-    featureFlagDependency: ['ROX_EVALUATION_FILTER', 'ROX_INIT_CONTAINER_SUPPORT'],
-    inputProps: {
-        options: [{ value: 'SKIP_INIT', label: 'Skip init containers' }],
-    },
-};
-
 export const policyAttributes = [
     Name,
     Category,

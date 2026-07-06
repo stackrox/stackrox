@@ -310,4 +310,12 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 	assert.Contains(t, issue.Fields.Description, "myDeploymentID")
 	assert.Contains(t, issue.Fields.Description, "Fake policy")
 	assert.Equal(t, "P1", issue.Fields.Priority.Name)
+
+	assert.NoError(t, j.NetworkPolicyYAMLNotify(context.Background(), "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy", "test-cluster"))
+	require.Len(t, fj.createdIssues, 3)
+
+	issue = fj.createdIssues[2]
+	assert.Contains(t, issue.Fields.Summary, "test-cluster")
+	assert.Contains(t, issue.Fields.Description, "NetworkPolicy")
+	assert.Equal(t, "P2", issue.Fields.Priority.Name)
 }

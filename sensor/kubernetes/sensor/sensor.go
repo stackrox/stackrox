@@ -73,7 +73,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.SensorInternalPubSub.Enabled() {
 		log.Info("Internal PubSub system enabled")
 		var err error
-		internalMessageDispatcher, err = buildPubSubDispatcher()
+		internalMessageDispatcher, err = buildPubSubDispatcher(cfg.eventPipelineQueueSize)
 		if err != nil {
 			return nil, err
 		}

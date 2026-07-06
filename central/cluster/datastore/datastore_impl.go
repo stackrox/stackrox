@@ -19,6 +19,8 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -121,7 +123,12 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	cluster.Status.UpgradeStatus = upgradeStatus
-	return ds.clusterStorage.Upsert(ctx, cluster)
+
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
@@ -142,7 +149,11 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Expiry)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
@@ -159,7 +170,11 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) buildCache(ctx context.Context) error {
@@ -536,6 +551,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	if clusterHealthStatus.GetSensorHealthStatus() == oldHealth.GetSensorHealthStatus() && clusterHealthStatus.GetCollectorHealthStatus() == oldHealth.GetCollectorHealthStatus() {
 		return nil
 	}
+	defer refresh.RefreshTracker(metrics.Health)
 
 	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {

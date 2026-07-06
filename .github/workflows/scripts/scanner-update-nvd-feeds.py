@@ -5,9 +5,11 @@ Fetch NVD data from the JSON 2.0 feed archives and save into files.
 """
 
 import gzip
+import io
 import json
 import logging
 import os
+import time
 from urllib import request
 from urllib import parse
 
@@ -27,10 +29,24 @@ class FeedLoader:
 
     def fetch(self, year):
         url = parse.urljoin(self._base_url, f"nvdcve-2.0-{year}.json.gz")
-        self.log.info("fetching and decompressing: %s", url)
-        with request.urlopen(url, timeout=60) as resp:
-            with gzip.GzipFile(fileobj=resp) as gz:
-                data = json.load(gz)
+        backoff_time = 10
+        max_retries = 10
+        while True:
+            try:
+                self.log.info("fetching and decompressing: %s", url)
+                with request.urlopen(url, timeout=120) as resp:
+                    with gzip.GzipFile(fileobj=io.BytesIO(resp.read())) as gz:
+                        data = json.load(gz)
+                break
+            except Exception as e:
+                if max_retries > 0:
+                    self.log.warning("failed to fetch %s: %s", url, e)
+                    self.log.info("retrying in %d seconds...", backoff_time)
+                    time.sleep(backoff_time)
+                    backoff_time *= 2
+                    max_retries -= 1
+                else:
+                    raise
         yield from (v for v in data["vulnerabilities"]
         if v["cve"]["vulnStatus"].lower() != "rejected")
 

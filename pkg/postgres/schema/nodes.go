@@ -26,6 +26,9 @@ var (
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "nodes_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS nodes_sac_filter ON nodes USING hash (clusterid)"},
+		},
 	}
 
 	// NodesSchema is the go schema for table `nodes`.
@@ -69,7 +72,7 @@ const (
 type Nodes struct {
 	ID                      string            `gorm:"column:id;type:uuid;primaryKey"`
 	Name                    string            `gorm:"column:name;type:varchar"`
-	ClusterID               string            `gorm:"column:clusterid;type:uuid;index:nodes_sac_filter,type:hash"`
+	ClusterID               string            `gorm:"column:clusterid;type:uuid"`
 	ClusterName             string            `gorm:"column:clustername;type:varchar"`
 	Labels                  map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations             map[string]string `gorm:"column:annotations;type:jsonb"`

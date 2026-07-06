@@ -1,6 +1,8 @@
-//go:build test_e2e_vm
-
-package tests
+// Package vmhelpers provides helpers shared by the VM-scanning e2e suite and
+// its unit tests: loading VM scan configuration, KubeVirt/VSOCK cluster
+// preflight checks, compliance metrics setup, and Central/roxagent
+// interactions.
+package vmhelpers
 
 import (
 	"crypto/ed25519"
@@ -13,11 +15,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -39,14 +39,15 @@ var (
 	repo2CPEURL = env.RegisterSetting("ROXAGENT_REPO2CPE_URL", env.WithDefault(defaultRepo2CPEURL))
 )
 
-// vmSpec describes a VM to provision: container-disk image and guest SSH user.
-type vmSpec struct {
+// VMSpec describes a VM to provision: container-disk image and guest SSH user.
+type VMSpec struct {
 	Name      string
 	Image     string
 	GuestUser string
 }
 
-type vmScanConfig struct {
+// VMScanConfig contains the VM scanning test configuration derived from the environment.
+type VMScanConfig struct {
 	Images              []string // container-disk images (from VM_IMAGES, comma-separated)
 	GuestUsers          []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
 	VirtctlPath         string
@@ -62,8 +63,9 @@ type vmScanConfig struct {
 	ImagePullSecretPath string // Path to docker config JSON for private registries
 }
 
-func loadVMScanConfig() (*vmScanConfig, error) {
-	cfg := &vmScanConfig{}
+// LoadVMScanConfig reads the VM scanning configuration from the environment.
+func LoadVMScanConfig() (*VMScanConfig, error) {
+	cfg := &VMScanConfig{}
 
 	var err error
 	imagesRaw := strings.TrimSpace(os.Getenv("VM_IMAGES"))
@@ -86,7 +88,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 			cfg.GuestUsers = append(cfg.GuestUsers, strings.TrimSpace(u))
 		}
 	}
-	if cfg.VirtctlPath, err = discoverVirtctlPath(); err != nil {
+	if cfg.VirtctlPath, err = DiscoverVirtctlPath(); err != nil {
 		return nil, err
 	}
 	if cfg.RoxagentBinaryPath, err = discoverRoxagentBinaryPath(); err != nil {
@@ -99,7 +101,7 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	cfg.SSHPublicKey = strings.TrimSpace(os.Getenv("VM_SSH_PUBLIC_KEY"))
 	switch {
 	case strings.TrimSpace(cfg.SSHPrivateKey) == "" && cfg.SSHPublicKey == "":
-		priv, pub, genErr := generateEphemeralSSHKeypair()
+		priv, pub, genErr := GenerateEphemeralSSHKeypair()
 		if genErr != nil {
 			return nil, fmt.Errorf("VM_SSH_PRIVATE_KEY/VM_SSH_PUBLIC_KEY not set and ephemeral key generation failed: %w", genErr)
 		}
@@ -125,16 +127,16 @@ func loadVMScanConfig() (*vmScanConfig, error) {
 	return cfg, nil
 }
 
-// vmSpecs builds the VM specification list from the parsed images and guest
+// VMSpecs builds the VM specification list from the parsed images and guest
 // users. VM names are generated as vm-0, vm-1, etc.
-func (c *vmScanConfig) vmSpecs() []vmSpec {
-	specs := make([]vmSpec, len(c.Images))
+func (c *VMScanConfig) VMSpecs() []VMSpec {
+	specs := make([]VMSpec, len(c.Images))
 	for i, img := range c.Images {
 		user := defaultGuestUser
 		if i < len(c.GuestUsers) && c.GuestUsers[i] != "" {
 			user = c.GuestUsers[i]
 		}
-		specs[i] = vmSpec{
+		specs[i] = VMSpec{
 			Name:      fmt.Sprintf("vm-%d", i),
 			Image:     img,
 			GuestUser: user,
@@ -143,8 +145,8 @@ func (c *vmScanConfig) vmSpecs() []vmSpec {
 	return specs
 }
 
-// discoverVirtctlPath returns the VIRTCTL_PATH env var if set, otherwise searches $PATH.
-func discoverVirtctlPath() (string, error) {
+// DiscoverVirtctlPath returns the VIRTCTL_PATH env var if set, otherwise searches $PATH.
+func DiscoverVirtctlPath() (string, error) {
 	if v := strings.TrimSpace(os.Getenv("VIRTCTL_PATH")); v != "" {
 		info, err := os.Stat(v)
 		if err != nil {
@@ -182,12 +184,16 @@ func repoRoot() string {
 	if !ok {
 		return "."
 	}
-	return filepath.Clean(filepath.Join(filepath.Dir(file), ".."))
+	return repoRootFrom(file)
 }
 
-// generateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns
+func repoRootFrom(file string) string {
+	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
+}
+
+// GenerateEphemeralSSHKeypair creates a one-time ed25519 keypair and returns
 // the PEM-encoded private key and the OpenSSH authorized_keys public key line.
-func generateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized string, err error) {
+func GenerateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized string, err error) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
 		return "", "", fmt.Errorf("generate ed25519 key: %w", err)
@@ -205,12 +211,4 @@ func generateEphemeralSSHKeypair() (privateKeyPEM string, publicKeyAuthorized st
 	authorizedKey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
 
 	return string(pemData), authorizedKey, nil
-}
-
-func mustFindExecutable(t *testing.T, name string) string {
-	t.Helper()
-
-	path, err := exec.LookPath(name)
-	require.NoError(t, err)
-	return path
 }
