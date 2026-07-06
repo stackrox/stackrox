@@ -24,7 +24,6 @@ jobs:
       tag: ${{ inputs.tag }}
       ci-job-name: ocp-4.22-konflux-qa-e2e-tests
       cluster-wait-timeout-minutes: 50
-      konflux-images: true
       infra-flavor: openshift-4
       infra-args: |
         openshift-version=ocp/stable-4.22
@@ -40,4 +39,5 @@ jobs:
         ORCHESTRATOR_FLAVOR=openshift
         KUBERNETES_PROVIDER=ocp
         SFA_AGENT=true
+        USE_KONFLUX_IMAGES=true
     secrets: inherit

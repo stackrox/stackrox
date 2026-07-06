@@ -16,11 +16,6 @@ on:
         required: false
         type: string
         default: ""
-      konflux-images:
-        description: "Use Konflux-built images in tests instead of upstream images"
-        required: false
-        type: boolean
-        default: false
       infra-flavor:
         description: "Infra cluster flavor, e.g. gke-default, ocp-4"
         required: false
@@ -113,7 +108,6 @@ jobs:
       QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
       AWS_S3_BACKUP_TEST_BUCKET_REGION: us-east-2
       PYTHONUNBUFFERED: "1"
-      IMAGE_TAG_SUFFIX: ${{ needs.wait-for-images.outputs.tag_suffix }}
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
       - name: Checkout repo
@@ -142,9 +136,6 @@ jobs:
               echo "$line" >> "$GITHUB_ENV"
             fi
           done <<< "$EXTRA_ENV_VARS"
-          if [[ "${{ inputs.konflux-images }}" == "true" ]]; then
-            echo "USE_KONFLUX_IMAGES=true" >> "$GITHUB_ENV"
-          fi
 
       - name: Set up Cloud SDK
         if: startsWith(inputs.infra-flavor, 'gke')

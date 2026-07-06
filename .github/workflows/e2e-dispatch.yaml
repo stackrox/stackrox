@@ -106,6 +106,7 @@ jobs:
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
+      konflux_suffix: ${{ steps.konflux-suffix.outputs.suffix }}
     concurrency:
       group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
@@ -123,6 +124,16 @@ jobs:
         tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
         echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
         echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+    - name: Determine Konflux image tag suffix
+      id: konflux-suffix
+      # Mirrors the logic in konflux-tasks/determine-image-tag-task.yaml.
+      run: |
+        branch="${GITHUB_HEAD_REF:-${GITHUB_REF}}"
+        if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${branch}"; then
+          echo "suffix=" >> "$GITHUB_OUTPUT"
+        else
+          echo "suffix=-fast" >> "$GITHUB_OUTPUT"
+        fi
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
@@ -221,7 +232,7 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests-gha')
     uses: ./.github/workflows/qa-e2e-tests-ocp-4.22-konflux.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
+      tag: ${{ needs.wait-for-images.outputs.tag }}${{ needs.wait-for-images.outputs.konflux_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-ocp-4-22-konflux }}
     secrets: inherit
     concurrency:
