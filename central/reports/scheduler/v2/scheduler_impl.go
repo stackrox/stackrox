@@ -6,9 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
@@ -61,7 +59,6 @@ type scheduler struct {
 	// Stores cancel functions for running reports, keyed by report ID.
 	// Used to cancel in-flight database queries and blob store writes when a user cancels a PREPARING report.
 	runningReportCancels map[string]context.CancelCauseFunc
-	Schema               *graphql.Schema
 
 	/* Concurrency and synchronization related fields */
 	// isStarted will make sure only one scheduling routine runs for an instance of scheduler
@@ -93,18 +90,13 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 
 	cronScheduler := cron.New()
 	cronScheduler.Start()
-	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), resolvers.New())
-	if err != nil {
-		panic(err)
-	}
 	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
-		reportGenerator, validator, cronScheduler, ourSchema)
+		reportGenerator, validator, cronScheduler)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
-	reportGenerator reportGen.ReportGenerator, validator *validation.Validator, cronScheduler *cron.Cron,
-	schema *graphql.Schema) *scheduler {
+	reportGenerator reportGen.ReportGenerator, validator *validation.Validator, cronScheduler *cron.Cron) *scheduler {
 	s := &scheduler{
 		reportConfigToEntryIDs: make(map[string]cron.EntryID),
 		reportConfigDatastore:  reportConfigDatastore,
@@ -117,7 +109,6 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		readyForReports:        concurrency.NewSignal(),
 		runningReportConfigs:   set.NewStringSet(),
 		runningReportCancels:   make(map[string]context.CancelCauseFunc),
-		Schema:                 schema,
 		stopper:                concurrency.NewStopper(),
 		cron:                   cronScheduler,
 		concurrencySema:        semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
