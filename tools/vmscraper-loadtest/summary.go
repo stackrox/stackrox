@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper/loadtest"
 )
 
 // Metric names exposed by sensor/common/virtualmachine/metrics, duplicated
@@ -36,7 +37,14 @@ const (
 // cfg is echoed verbatim at the top of the report so that every result is
 // self-describing and reproducible -- no guessing what flags produced a given
 // number when the summary is copy-pasted elsewhere later.
-func printSummary(cfg runConfig) {
+//
+// ramp is non-nil only when --ramp was used; it adds a ramp-outcome line and
+// reports the backlog at the fleet size where the run actually stopped
+// (which may differ from cfg.numVMs). In non-ramp mode, farm.Count() always
+// equals cfg.numVMs and the backlog is a one-off snapshot rather than a
+// trend, but it's still a cheap correctness signal: a fixed-size run that
+// ends with a non-zero backlog was already falling behind.
+func printSummary(cfg runConfig, farm *loadtest.Farm, ramp *rampResult) {
 	families, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		log.Errorf("vmscraper-loadtest: gathering metrics for summary: %v", err)
@@ -52,6 +60,17 @@ func printSummary(cfg runConfig) {
 	tw := tabwriter.NewWriter(&b, 0, 0, 2, ' ', 0)
 
 	fmt.Fprintf(tw, "Config:\t%s\n", formatConfig(cfg))
+
+	finalVMs := farm.Count()
+	backlog := farm.BacklogCount(cfg.pollInterval)
+	if ramp != nil {
+		outcome := "no breach observed"
+		if ramp.breached {
+			outcome = fmt.Sprintf("backlog breach at %d VMs (last stable: %d)", ramp.finalVMs, ramp.lastStableVMs)
+		}
+		fmt.Fprintf(tw, "Ramp outcome:\t%s\n", outcome)
+	}
+	fmt.Fprintf(tw, "Farm size (final):\t%d VMs, backlog=%d (overdue by more than poll-interval=%s)\n", finalVMs, backlog, cfg.pollInterval)
 
 	cycles := gaugeOrCounterValue(byName[metricCyclesTotal])
 	vmsInCycle := gaugeOrCounterValue(byName[metricVMsInCycle])
@@ -140,10 +159,15 @@ func gaugeOrCounterValue(fam *dto.MetricFamily) float64 {
 // same names as the CLI flags, so a printed summary can be turned back into
 // the exact command line that produced it.
 func formatConfig(cfg runConfig) string {
-	return fmt.Sprintf(
-		"num-vms=%d num-packages=%d poll-interval=%s concurrency=%d per-vm-timeout=%s dial-latency=%s rescan-interval=%s always-changed=%t duration=%s",
+	base := fmt.Sprintf(
+		"num-vms=%d num-packages=%d poll-interval=%s concurrency=%d per-vm-timeout=%s dial-latency=%s rescan-interval=%s always-changed=%t duration=%s ramp=%t",
 		cfg.numVMs, cfg.numPackages, cfg.pollInterval, cfg.concurrency, cfg.perVMTimeout,
-		cfg.dialLatency, cfg.rescanInterval, cfg.alwaysChanged, cfg.duration)
+		cfg.dialLatency, cfg.rescanInterval, cfg.alwaysChanged, cfg.duration, cfg.ramp)
+	if !cfg.ramp {
+		return base
+	}
+	return fmt.Sprintf("%s ramp-step=%d ramp-step-cycles=%d ramp-max-vms=%d",
+		base, cfg.rampStep, cfg.rampStepCycles, cfg.rampMaxVMs)
 }
 
 // formatLabeledCounters renders every series of a labeled counter vec as

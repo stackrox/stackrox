@@ -122,6 +122,62 @@ func TestFarm_AlwaysChangedBumpsGenerationEveryDial(t *testing.T) {
 	}
 }
 
+// TestFarm_AddVMsGrowsFleetWithoutDisturbingExisting guards ramp mode's core
+// assumption: adding VMs mid-run must not reset or collide with VMs already
+// present (e.g. by reusing an index and generating a duplicate key).
+func TestFarm_AddVMsGrowsFleetWithoutDisturbingExisting(t *testing.T) {
+	farm := NewFarm(3, 5, 0, false)
+	require.Equal(t, 3, farm.Count())
+
+	dialer := NewFarmDialer(farm, 0)
+	client := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, testMaxResponseSize)
+	stream, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
+	require.NoError(t, err)
+	before, err := client.GetReport(stream, 0)
+	require.NoError(t, err)
+	_ = stream.Close()
+
+	farm.AddVMs(4)
+	assert.Equal(t, 7, farm.Count())
+	infos := farm.ListRunning()
+	assert.Len(t, infos, 7)
+	seen := make(map[string]bool, len(infos))
+	for _, info := range infos {
+		key := info.Namespace + "/" + info.Name
+		assert.False(t, seen[key], "duplicate VM key %q after AddVMs", key)
+		seen[key] = true
+	}
+
+	// The pre-existing VM's generation state must be untouched by growth.
+	stream2, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
+	require.NoError(t, err)
+	defer func() { _ = stream2.Close() }()
+	after, err := client.GetReport(stream2, before.Meta.GetReportGeneration())
+	require.NoError(t, err)
+	assert.True(t, after.Unchanged, "existing VM's generation should be unaffected by AddVMs")
+}
+
+// TestFarm_BacklogCountTracksOverdueVMs guards the ramp-mode saturation
+// signal: a VM counts as backlogged once it hasn't been successfully dialed
+// within pollInterval, and stops counting again once it has.
+func TestFarm_BacklogCountTracksOverdueVMs(t *testing.T) {
+	farm := NewFarm(2, 5, 0, false)
+	pollInterval := 20 * time.Millisecond
+
+	// Freshly created VMs are not immediately overdue.
+	assert.Equal(t, 0, farm.BacklogCount(pollInterval))
+
+	time.Sleep(2 * pollInterval)
+	assert.Equal(t, 2, farm.BacklogCount(pollInterval), "both VMs should be overdue after pollInterval with no dials")
+
+	dialer := NewFarmDialer(farm, 0)
+	stream, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
+	require.NoError(t, err)
+	_ = stream.Close()
+
+	assert.Equal(t, 1, farm.BacklogCount(pollInterval), "the just-dialed VM should no longer be overdue")
+}
+
 func TestFarmDialer_LatencyInjectionRespectsContextCancellation(t *testing.T) {
 	farm := NewFarm(1, 5, 0, false)
 	dialer := NewFarmDialer(farm, time.Hour)
