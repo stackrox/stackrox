@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
@@ -42,6 +43,11 @@ type FarmVM struct {
 	cache  *vsockserver.ReportCache
 	report *v4.IndexReport
 	facts  map[string]string
+
+	// lastScrape is a UnixNano timestamp of the last successful dial to this
+	// VM, used for backlog tracking (see Farm.BacklogCount). Initialized to
+	// creation time so a freshly added VM isn't immediately "overdue".
+	lastScrape atomic.Int64
 }
 
 // key returns the "namespace/name" identity used to look up a FarmVM.
@@ -53,13 +59,26 @@ func (vm *FarmVM) bump() {
 	vm.cache.SetReport(vm.report, vm.facts)
 }
 
+// markScraped records that this VM was just successfully contacted.
+//
+// intentional simplification: called on every successful dial, regardless
+// of whether the poll turns out to be "changed" or "unchanged" -- there is
+// no failure injection yet, so a successful dial in this harness is
+// equivalent to a successful end-to-end scrape. Upgrade path: move this to
+// after a confirmed successful read once failure injection exists.
+func (vm *FarmVM) markScraped() {
+	vm.lastScrape.Store(time.Now().UnixNano())
+}
+
 // Farm manages a fleet of synthetic VMs and implements vmscraper.RunningVMStore.
 type Farm struct {
 	rescanInterval time.Duration
 	alwaysChanged  bool
+	gen            *vmindexreport.Generator
 
-	mu  sync.RWMutex
-	vms map[string]*FarmVM
+	mu        sync.RWMutex
+	vms       map[string]*FarmVM
+	nextIndex int
 }
 
 // NewFarm creates numVMs synthetic VMs, each seeded with a report containing
@@ -79,13 +98,51 @@ type Farm struct {
 // means the expensive report-parsing path is barely exercised at all.
 func NewFarm(numVMs, numPackages int, rescanInterval time.Duration, alwaysChanged bool) *Farm {
 	gen := vmindexreport.NewGeneratorWithSeed(numPackages, reportGeneratorSeed)
-	f := &Farm{rescanInterval: rescanInterval, alwaysChanged: alwaysChanged, vms: make(map[string]*FarmVM, numVMs)}
-	for i := range numVMs {
-		vm := newFarmVM(i, gen)
+	f := &Farm{rescanInterval: rescanInterval, alwaysChanged: alwaysChanged, gen: gen, vms: make(map[string]*FarmVM, numVMs)}
+	for range numVMs {
+		vm := newFarmVM(f.nextIndex, gen)
 		f.vms[vm.key()] = vm
+		f.nextIndex++
 	}
 	log.Infof("loadtest farm: created %d synthetic VMs, %d packages/report, always_changed=%t", numVMs, numPackages, alwaysChanged)
 	return f
+}
+
+// AddVMs grows the farm by n additional synthetic VMs, without disturbing
+// any existing VM's state. Used by ramp mode to step the fleet size up
+// mid-run instead of tearing down and recreating the whole farm.
+func (f *Farm) AddVMs(n int) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for range n {
+		vm := newFarmVM(f.nextIndex, f.gen)
+		f.vms[vm.key()] = vm
+		f.nextIndex++
+	}
+}
+
+// Count returns the current number of VMs in the farm.
+func (f *Farm) Count() int {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return len(f.vms)
+}
+
+// BacklogCount returns the number of VMs whose time since last successful
+// scrape exceeds pollInterval -- the ramp-mode saturation signal: a Sensor
+// that's keeping up with the fleet sees this stay near zero, while one that
+// can't sees it grow without bound (see design spec, "Backlog gauge").
+func (f *Farm) BacklogCount(pollInterval time.Duration) int {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	now := time.Now()
+	count := 0
+	for _, vm := range f.vms {
+		if now.Sub(time.Unix(0, vm.lastScrape.Load())) > pollInterval {
+			count++
+		}
+	}
+	return count
 }
 
 func newFarmVM(index int, gen *vmindexreport.Generator) *FarmVM {
@@ -93,7 +150,7 @@ func newFarmVM(index int, gen *vmindexreport.Generator) *FarmVM {
 	facts := map[string]string{"detected_os": "RHEL", "os_version": "9.4"}
 	cache := &vsockserver.ReportCache{}
 	cache.SetReport(report, facts)
-	return &FarmVM{
+	vm := &FarmVM{
 		Namespace: Namespace,
 		Name:      fmt.Sprintf("vm-%d", index),
 		VSOCKCID:  uint32(1000 + index),
@@ -102,6 +159,8 @@ func newFarmVM(index int, gen *vmindexreport.Generator) *FarmVM {
 		report:    report,
 		facts:     facts,
 	}
+	vm.lastScrape.Store(time.Now().UnixNano())
+	return vm
 }
 
 // Get returns the FarmVM for namespace/name, or nil if not found. If the

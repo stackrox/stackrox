@@ -7,9 +7,9 @@
 // See docs/superpowers/specs/2026-07-03-vsock-pull-stress-test-design.md
 // (Part A) for the design this implements.
 //
-// This is a PoC: it does not yet implement uds/tcp transports, churn,
-// failure injection, the backlog gauge, or ramp mode from the design doc --
-// those are follow-up iterations once this validates the basic approach.
+// This is a PoC: it does not yet implement uds/tcp transports, churn, or
+// failure injection from the design doc -- those are follow-up iterations
+// once this validates the basic approach.
 package main
 
 import (
@@ -42,6 +42,10 @@ func main() {
 	rescanInterval := flag.Duration("rescan-interval", 2*time.Minute, "how often a random synthetic VM bumps its report generation (0 disables rescanning); ignored if --always-changed is set")
 	alwaysChanged := flag.Bool("always-changed", false, "bump every VM's report generation on every poll, so VMScraper always takes the full-report path instead of unchanged (recommended for measuring worst-case throughput/latency)")
 	metricsAddr := flag.String("metrics-addr", ":9091", "address to serve /metrics on")
+	ramp := flag.Bool("ramp", false, "ramp mode: start at --num-vms and step up by --ramp-step every --ramp-step-cycles poll intervals until the backlog gauge shows a sustained growing queue, automating the search for how many VMs a single Sensor can support (combine with --always-changed for a worst-case answer); --duration acts as a safety cap on total ramp time")
+	rampStep := flag.Int("ramp-step", 1000, "VMs to add per ramp step (--ramp only)")
+	rampStepCycles := flag.Int("ramp-step-cycles", 5, "poll intervals to hold at each ramp step before stepping up again; also the number of consecutive samples required to confirm a sustained backlog trend (--ramp only)")
+	rampMaxVMs := flag.Int("ramp-max-vms", 50000, "safety cap: stop ramping (without a confirmed breach) once this many VMs would be reached (--ramp only, 0 = unlimited)")
 	flag.Parse()
 
 	if err := run(runConfig{
@@ -55,6 +59,10 @@ func main() {
 		rescanInterval: *rescanInterval,
 		alwaysChanged:  *alwaysChanged,
 		metricsAddr:    *metricsAddr,
+		ramp:           *ramp,
+		rampStep:       *rampStep,
+		rampStepCycles: *rampStepCycles,
+		rampMaxVMs:     *rampMaxVMs,
 	}); err != nil {
 		log.Fatalf("vmscraper-loadtest: %v", err)
 	}
@@ -71,6 +79,10 @@ type runConfig struct {
 	rescanInterval time.Duration
 	alwaysChanged  bool
 	metricsAddr    string
+	ramp           bool
+	rampStep       int
+	rampStepCycles int
+	rampMaxVMs     int
 }
 
 func run(cfg runConfig) error {
@@ -95,20 +107,32 @@ func run(cfg runConfig) error {
 	server := startMetricsServer(cfg.metricsAddr)
 	defer func() { _ = server.Close() }()
 
-	log.Infof("vmscraper-loadtest: starting: %d VMs, poll interval %s, concurrency %d, per-VM timeout %s, dial latency %s, always_changed=%t, duration %s",
-		cfg.numVMs, cfg.pollInterval, cfg.concurrency, cfg.perVMTimeout, cfg.dialLatency, cfg.alwaysChanged, cfg.duration)
+	log.Infof("vmscraper-loadtest: starting: %d VMs, poll interval %s, concurrency %d, per-VM timeout %s, dial latency %s, always_changed=%t, ramp=%t, duration %s",
+		cfg.numVMs, cfg.pollInterval, cfg.concurrency, cfg.perVMTimeout, cfg.dialLatency, cfg.alwaysChanged, cfg.ramp, cfg.duration)
 	if err := scraper.Start(); err != nil {
 		return fmt.Errorf("starting scraper: %w", err)
 	}
 
-	select {
-	case <-time.After(cfg.duration):
-		log.Infof("vmscraper-loadtest: duration elapsed, stopping")
-	case <-ctx.Done():
-		log.Infof("vmscraper-loadtest: interrupted, stopping")
+	var ramp *rampResult
+	if cfg.ramp {
+		rampCtx, cancel := context.WithTimeout(ctx, cfg.duration)
+		result := runRamp(rampCtx, farm, cfg.pollInterval, rampConfig{
+			step:       cfg.rampStep,
+			stepCycles: cfg.rampStepCycles,
+			maxVMs:     cfg.rampMaxVMs,
+		})
+		cancel()
+		ramp = &result
+	} else {
+		select {
+		case <-time.After(cfg.duration):
+			log.Infof("vmscraper-loadtest: duration elapsed, stopping")
+		case <-ctx.Done():
+			log.Infof("vmscraper-loadtest: interrupted, stopping")
+		}
 	}
 	scraper.Stop()
-	printSummary(cfg)
+	printSummary(cfg, farm, ramp)
 	log.Infof("vmscraper-loadtest: full metrics still available at http://%s/metrics until this process exits", cfg.metricsAddr)
 	return nil
 }

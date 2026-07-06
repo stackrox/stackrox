@@ -44,5 +44,6 @@ func (d *FarmDialer) Dial(ctx context.Context, namespace, name string, _ uint32,
 
 	client, server := net.Pipe()
 	go vm.Handler.HandleConn(server)
+	vm.markScraped()
 	return client, nil
 }
