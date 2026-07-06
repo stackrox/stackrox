@@ -23,6 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/postgres"
+	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -78,6 +80,7 @@ type serviceImpl struct {
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
 	validator           *validation.Validator
+	db                  postgres.DB
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -122,6 +125,9 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 	err = s.scheduler.UpsertReportSchedule(createdReportConfig)
 	if err != nil {
 		return nil, err
+	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, id); err != nil {
+		log.Errorf("Failed to notify report config change: %v", err)
 	}
 
 	resp, err := s.convertProtoReportConfigurationToV2(createdReportConfig)
@@ -170,6 +176,9 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	err = s.scheduler.UpsertReportSchedule(updatedConfig)
 	if err != nil {
 		return nil, err
+	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId()); err != nil {
+		log.Errorf("Failed to notify report config change: %v", err)
 	}
 	return &apiV2.Empty{}, nil
 }
@@ -257,6 +266,9 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	}
 
 	s.scheduler.RemoveReportSchedule(id.GetId())
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId()); err != nil {
+		log.Errorf("Failed to notify report config deletion: %v", err)
+	}
 	return &apiV2.Empty{}, nil
 }
 
@@ -377,6 +389,9 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if err != nil {
 		return nil, err
 	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID); err != nil {
+		log.Errorf("Failed to notify report request submission: %v", err)
+	}
 
 	return &apiV2.RunReportResponse{
 		ReportConfigId: req.GetReportConfigId(),
@@ -408,6 +423,9 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 	if !cancelled {
 		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report job ID '%s' no longer queued."+
 			"It might already be preparing", req.GetId())
+	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestCancelled, req.GetId()); err != nil {
+		log.Errorf("Failed to notify report cancellation: %v", err)
 	}
 
 	return &apiV2.Empty{}, nil
@@ -491,6 +509,9 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
 	if err != nil {
 		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
+	}
+	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID); err != nil {
+		log.Errorf("Failed to notify report request submission: %v", err)
 	}
 
 	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
