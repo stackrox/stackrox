@@ -228,9 +228,11 @@ func (s *ImagesV2StoreSuite) TestUpsert_MigrationFromNewCVEModel() {
 	for _, comp := range foundImageV1.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
 			if _, ok := expectedTimestamps[vuln.GetCve()]; !ok {
+				// Round to microsecond precision to match what the upsert path stores.
+				fio := roundToMicroseconds(vuln.GetFirstImageOccurrence())
 				expectedTimestamps[vuln.GetCve()] = &timeFields{
 					createdAt:            protocompat.ConvertTimeToTimestampOrNil(&nextWeek),
-					firstImageOccurrence: vuln.GetFirstImageOccurrence(),
+					firstImageOccurrence: fio,
 				}
 			}
 		}
@@ -267,6 +269,7 @@ func (s *ImagesV2StoreSuite) TestUpsert() {
 	// for first image occurrence and first system time of a CVE
 	cloned.Scan.Components = getTestImageComponentsVerify()
 
+	reconcileVulnTimestamps(cloned)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	// Add a new component with "cve1" that has new times
@@ -285,6 +288,7 @@ func (s *ImagesV2StoreSuite) TestUpsert() {
 		Hash: foundImage.GetScan().GetHash(),
 	}
 	cloned.Scan.Components = append(cloned.Scan.Components, getComponent3Verify())
+	reconcileVulnTimestamps(cloned)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	// Replace all components removing "cve1".
@@ -300,6 +304,7 @@ func (s *ImagesV2StoreSuite) TestUpsert() {
 	cloned.Scan.Hashoneof = &storage.ImageScan_Hash{
 		Hash: foundImage.GetScan().GetHash(),
 	}
+	reconcileVulnTimestamps(cloned)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(s.store.Delete(s.ctx, image.GetId()))
