@@ -108,28 +108,39 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		return err
 	}
 
-	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself, so this initial fetch is mandatory.
-	// If it fails, startup fails rather than running a scan against no data.
-	// Start(ctx, true) blocks until that fetch completes, then keeps
-	// refreshing the file in the background.
-	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
-		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
-	if err := mappingDownloader.Start(ctx, true); err != nil {
-		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+	var (
+		handler           *vsockserver.Handler
+		mappingDownloader interface{ Stop() }
+		vmRescanner       *rescanner
+	)
+	if fakeReportProviderEnabled {
+		log.Warn("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true — serving canned reports instead of real host scan results, no periodic rescans")
+		handler = vsockserver.NewHandler(vsockserver.NewFakeReportProvider(), agentVersion)
+	} else {
+		// The mapping file must exist locally before the first scan can run:
+		// scan() never fetches it itself, so this initial fetch is mandatory.
+		// If it fails, startup fails rather than running a scan against no data.
+		// Start(ctx, true) blocks until that fetch completes, then keeps
+		// refreshing the file in the background.
+		dl := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
+			logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
+		if err := dl.Start(ctx, true); err != nil {
+			return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+		}
+		mappingDownloader = dl
+
+		cache := &vsockserver.ReportCache{}
+		vmRescanner = newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
+
+		report, err := scan(ctx, cfg.hostPath, mappingCachePath)
+		if err != nil {
+			return fmt.Errorf("initial scan: %w", err)
+		}
+		cache.SetReport(report, discoverFacts(cfg.hostPath))
+		log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
+
+		handler = vsockserver.NewHandler(vsockserver.NewCacheReportProvider(cache), agentVersion)
 	}
-
-	cache := &vsockserver.ReportCache{}
-	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
-
-	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
-	if err != nil {
-		return fmt.Errorf("initial scan: %w", err)
-	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
-	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
-
-	handler := vsockserver.NewHandler(cache, agentVersion)
 
 	// TLS is mandatory: sensor always dials with TLS, so a plaintext agent is
 	// unreachable. The KubeVirt CA (served by virt-handler on CID 2, port 1)
@@ -156,15 +167,22 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
-	wg.Go(func() { vmRescanner.Run(ctx) })
+	if !fakeReportProviderEnabled {
+		// The fake report provider's canned reports never change (only their
+		// per-response epoch does), so there's nothing for a rescan loop or a
+		// mapping refresh loop to do in load-test mode.
+		wg.Go(func() { vmRescanner.Run(ctx) })
+	}
 
 	<-ctx.Done()
-	// Wait for Serve's graceful drain (in-flight connections) and the
-	// rescan loop to finish before returning, so the process doesn't exit
-	// mid-drain or mid-scan. mappingDownloader.Stop waits for its own
-	// background refresh loop the same way, once ctx is already done.
+	// Wait for Serve's graceful drain (in-flight connections) and, unless in
+	// load-test mode, the rescan loop to finish before returning, so the
+	// process doesn't exit mid-drain or mid-scan. mappingDownloader.Stop waits
+	// for its own background refresh loop the same way, once ctx is already done.
 	wg.Wait()
-	mappingDownloader.Stop()
+	if mappingDownloader != nil {
+		mappingDownloader.Stop()
+	}
 	return nil
 }
 
