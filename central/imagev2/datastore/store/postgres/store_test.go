@@ -118,6 +118,9 @@ func (s *ImagesV2StoreSuite) TestStore() {
 	s.True(exists)
 	cloned := image.CloneVT()
 
+	// Reconcile FirstImageOccurrence timestamps: Postgres stores with
+	// microsecond precision, so nanoseconds are rounded during upsert.
+	reconcileVulnTimestamps(cloned)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	imageCount, err := s.store.Count(s.ctx, search.EmptyQuery())
@@ -135,6 +138,7 @@ func (s *ImagesV2StoreSuite) TestStore() {
 
 	// Reconcile the timestamps that are set during upsert.
 	cloned.LastUpdated = foundImage.GetLastUpdated()
+	reconcileVulnTimestamps(cloned)
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	s.NoError(s.store.Delete(s.ctx, image.GetId()))
@@ -675,6 +679,19 @@ func getComponent3Verify() *storage.EmbeddedImageScanComponent {
 				FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(&yesterday),
 			},
 		},
+	}
+}
+
+// reconcileVulnTimestamps rounds FirstImageOccurrence to microsecond precision
+// to match PostgreSQL's timestamp storage.
+func reconcileVulnTimestamps(image *storage.ImageV2) {
+	for _, comp := range image.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			if ts := vuln.GetFirstImageOccurrence(); ts != nil {
+				t := protocompat.NilOrTime(ts)
+				vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(t)
+			}
+		}
 	}
 }
 
