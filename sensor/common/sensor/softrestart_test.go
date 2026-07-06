@@ -120,12 +120,7 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	s.pubSubDispatcher = capturing
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, s.pubSubDispatcher.RegisterConsumerToLane(
-		pubsub.CoreSensorConsumer,
-		pubsub.SoftRestartTopic,
-		pubsub.SoftRestartLane,
-		s.makeSoftRestartCallback(),
-	))
+	s.registerSoftRestartHandler()
 
 	assert.Equal(t, pubsub.CoreSensorConsumer, capturing.consumerID)
 	assert.Equal(t, pubsub.SoftRestartTopic, capturing.topic)

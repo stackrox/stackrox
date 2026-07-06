@@ -311,21 +311,7 @@ func (s *Sensor) Start() {
 	}
 	log.Info("All components have started")
 
-	if features.SensorInternalPubSub.Enabled() {
-		if err := s.pubSubDispatcher.RegisterConsumerToLane(
-			pubsub.CoreSensorConsumer,
-			pubsub.SoftRestartTopic,
-			pubsub.SoftRestartLane,
-			s.makeSoftRestartCallback(),
-		); err != nil {
-			log.Panicf("Failed to register consumer for SoftRestart: %v", err)
-		}
-	} else {
-		err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.makeSoftRestartLegacyHandler())
-		if err != nil {
-			log.Warnf("Failed to register subscription to sensor internal message: %q", err)
-		}
-	}
+	s.registerSoftRestartHandler()
 
 	log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
 	go s.communicationWithCentralWithRetries(&centralReachable)
@@ -345,6 +331,24 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
 	}, nil
+}
+
+func (s *Sensor) registerSoftRestartHandler() {
+	if features.SensorInternalPubSub.Enabled() {
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.CoreSensorConsumer,
+			pubsub.SoftRestartTopic,
+			pubsub.SoftRestartLane,
+			s.makeSoftRestartCallback(),
+		); err != nil {
+			log.Panicf("Failed to register consumer for SoftRestart: %v", err)
+		}
+	} else {
+		err := s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.makeSoftRestartLegacyHandler())
+		if err != nil {
+			log.Warnf("Failed to register subscription to sensor internal message: %q", err)
+		}
+	}
 }
 
 func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
