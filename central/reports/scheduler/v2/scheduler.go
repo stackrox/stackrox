@@ -5,6 +5,7 @@ import (
 
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // Scheduler maintains the schedules for reports
@@ -31,6 +32,8 @@ type Scheduler interface {
 	// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
 	// This func will log errors if the scheduler fails to start.
 	Start()
+	// StartWithLock is like Start but first acquires a PostgreSQL advisory lock.
+	StartWithLock(db postgres.DB)
 	// Stop scheduler
 	Stop()
 }

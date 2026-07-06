@@ -36,6 +36,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -188,6 +189,17 @@ func (g *garbageCollectorImpl) Start() {
 }
 
 func (g *garbageCollectorImpl) pruneBasedOnConfig() {
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
+	if err != nil {
+		log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
+		return
+	}
+	if !acquired {
+		log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
+		return
+	}
+	defer release()
+
 	pvtConfig, err := g.config.GetPrivateConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
