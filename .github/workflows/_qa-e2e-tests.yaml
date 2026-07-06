@@ -110,7 +110,7 @@ jobs:
           wait: false
 
   qa-e2e-tests:
-    needs: [wait-for-images, create-cluster]
+    needs: [create-cluster]
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
