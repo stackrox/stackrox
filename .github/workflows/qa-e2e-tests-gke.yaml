@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   run:
+    if: inputs.should-run
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       ci-job-name: gke-qa-e2e-tests
