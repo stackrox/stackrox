@@ -2,9 +2,9 @@ import axios from 'services/instance';
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
 import qs from 'qs';
 
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { buildNestedRawQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import { buildNestedRawQueryParams, complianceV2Url } from './ComplianceCommon';
+import { complianceV2Url } from './ComplianceCommon';
 import type {
     ComplianceCheckResultStatusCount,
     ComplianceCheckStatusCount,
