@@ -470,9 +470,18 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 		return nil
 	}
 
+	// Acquire the GC lock to prevent concurrent garbage collection from
+	// deleting vuln rows while we insert uo_vuln references to them.
+	gcCtx, gcDone := u.locker.TryLock(lCtx, gcName)
+	defer gcDone()
+	if err := gcCtx.Err(); err != nil {
+		slog.InfoContext(ctx, "skipping: GC is running", "reason", err)
+		return nil
+	}
+
 	// Ensure there is an update timestamp for this bundle, and check if it's newer
 	// than this update.
-	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(lCtx, zipF.Name, prevTime)
+	lastTime, err := u.metadataStore.GetOrSetLastVulnerabilityUpdate(gcCtx, zipF.Name, prevTime)
 	if err != nil {
 		return fmt.Errorf("querying last update: %w", err)
 	}
@@ -495,11 +504,11 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 	}
 	defer dec.Close()
 
-	if err := u.importFunc(lCtx, dec); err != nil {
+	if err := u.importFunc(gcCtx, dec); err != nil {
 		return fmt.Errorf("importing vulnerabilities: %w", err)
 	}
 
-	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipTime)
+	err = u.metadataStore.SetLastVulnerabilityUpdate(gcCtx, zipF.Name, zipTime)
 	if err != nil {
 		return fmt.Errorf("updating timestamp (import was successful): %w", err)
 	}
