@@ -66,15 +66,24 @@ defaults:
   run:
     shell: bash
 
-env:
-  # Lets keep this somewhat small in size, because at least the infractl CLI
-  # enforces a 28-char limit for cluster names.
-  CLUSTER_NAME: qa-e2e-${{ github.run_id }}-${{ github.run_attempt }}
-
 jobs:
   create-cluster:
     runs-on: ubuntu-slim
+    outputs:
+      cluster-name: ${{ steps.cluster-name.outputs.name }}
     steps:
+      - name: Compute cluster name
+        id: cluster-name
+        env:
+          CI_JOB_NAME: ${{ inputs.ci-job-name }}
+        # infractl enforces a 28-char limit for cluster names.
+        run: |
+          run_id="${{ github.run_id }}"
+          prefix="${CI_JOB_NAME:0:19}"
+          name="${prefix}-${run_id: -6}-${{ github.run_attempt }}"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+          echo "CLUSTER_NAME=${name}" >> "$GITHUB_ENV"
+
       - name: Prepare infra args
         id: prepare-infra-args
         env:
@@ -97,6 +106,7 @@ jobs:
     needs: [create-cluster]
     runs-on: ubuntu-latest
     env:
+      CLUSTER_NAME: ${{ needs.create-cluster.outputs.cluster-name }}
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
@@ -328,6 +338,8 @@ jobs:
     if: ${{ always() }}
     needs: [create-cluster, qa-e2e-tests]
     runs-on: ubuntu-slim
+    env:
+      CLUSTER_NAME: ${{ needs.create-cluster.outputs.cluster-name }}
     steps:
       - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
 
