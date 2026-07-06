@@ -984,6 +984,13 @@ func cloneAndUpdateRiskPriority(image *storage.ImageV2) *storage.ImageV2 {
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1
+		for _, vuln := range component.GetVulns() {
+			// Round to microsecond precision to match PostgreSQL timestamp storage.
+			if ts := vuln.GetFirstImageOccurrence(); ts != nil {
+				t := protocompat.NilOrTime(ts)
+				vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(t)
+			}
+		}
 	}
 	return cloned
 }
