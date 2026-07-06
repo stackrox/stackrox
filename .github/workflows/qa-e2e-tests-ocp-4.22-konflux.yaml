@@ -1,16 +1,6 @@
 name: qa-e2e-tests-ocp-4.22-konflux
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - master
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - labeled
-      - synchronize
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
