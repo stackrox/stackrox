@@ -77,6 +77,11 @@ type CentralSpec struct {
 	// Config-as-Code configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Config-as-Code,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ConfigAsCode *ConfigAsCodeSpec `json:"configAsCode,omitempty"`
+
+	// Central Worker configuration. When enabled, pruning and reporting jobs run in a
+	// separate Deployment instead of inside Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Central Worker",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	CentralWorker *CentralWorkerSpec `json:"centralWorker,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -635,6 +640,16 @@ const (
 	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
+
+// CentralWorkerSpec defines settings for the central-worker Deployment.
+type CentralWorkerSpec struct {
+	// If set to true, pruning and reporting jobs run in a separate Deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Enabled"
+	Enabled *bool `json:"enabled,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	DeploymentSpec `json:",inline"`
+}
 
 type ConfigAsCodeSpec struct {
 	// If you want to deploy the Config as Code component, set this to "Enabled"

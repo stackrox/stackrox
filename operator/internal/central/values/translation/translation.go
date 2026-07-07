@@ -125,6 +125,7 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 	}
 
 	v.AddChild("configController", getConfigControllerValues(c.Spec.ConfigAsCode, deploymentDefaults))
+	v.AddChild("centralWorker", getCentralWorkerValues(c.Spec.CentralWorker, deploymentDefaults))
 
 	return v.Build()
 }
@@ -415,6 +416,27 @@ func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translatio
 	}
 
 	cv := translation.NewValuesBuilder()
+	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
+	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
+	if len(c.HostAliases) > 0 {
+		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
+	}
+
+	return &cv
+}
+
+func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+	if c == nil && !defaults.IsSet() {
+		return nil
+	}
+	if c == nil {
+		c = &platform.CentralWorkerSpec{}
+	}
+
+	cv := translation.NewValuesBuilder()
+	if c.Enabled != nil {
+		cv.SetBoolValue("enabled", *c.Enabled)
+	}
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 	if len(c.HostAliases) > 0 {
