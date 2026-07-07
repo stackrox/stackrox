@@ -27,10 +27,14 @@ type CveCore interface {
 	GetPublishDate() *time.Time
 }
 
-// EntitySeverityResult holds the top severity for a single entity (image or deployment).
-type EntitySeverityResult struct {
-	EntityID    string                        `db:"entity_id"`
-	TopSeverity storage.VulnerabilitySeverity `db:"top_severity"`
+type imageSeverityResult struct {
+	EntityID    string                        `db:"image_id"`
+	TopSeverity storage.VulnerabilitySeverity `db:"severity_max"`
+}
+
+type deploymentSeverityResult struct {
+	EntityID    string                        `db:"deployment_id"`
+	TopSeverity storage.VulnerabilitySeverity `db:"severity_max"`
 }
 
 // CveView interface is like a SQL view that provides functionality to fetch the image CVE data
