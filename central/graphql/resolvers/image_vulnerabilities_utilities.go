@@ -14,7 +14,9 @@ type imageCVEV2Resolver struct {
 	root *Resolver
 	data *storage.ImageCVEV2
 
-	flatData imagecveflat.CveFlat
+	flatData                   imagecveflat.CveFlat
+	preloadedExceptionCount    int32
+	hasPreloadedExceptionCount bool
 }
 
 func (resolver *Resolver) wrapImageCVEV2WithContext(ctx context.Context, value *storage.ImageCVEV2, ok bool, err error) (*imageCVEV2Resolver, error) {
