@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
 	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
@@ -123,25 +124,36 @@ func (v *imageCVECoreViewImpl) TopSeverityBatch(ctx context.Context, entityIDs [
 	if len(entityIDs) == 0 {
 		return nil, nil
 	}
-	cloned := q.CloneVT()
+	filtered := imagev2common.WithRowsFromImageV2Only(q.CloneVT())
+	cloned := search.ConjunctionQuery(filtered,
+		search.NewQueryBuilder().AddExactMatches(entityType, entityIDs...).ProtoQuery(),
+	)
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(entityType).Proto(),
 		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{Fields: []string{entityType.String()}}
-	cloned = search.ConjunctionQuery(cloned,
-		search.NewQueryBuilder().AddExactMatches(entityType, entityIDs...).ProtoQuery(),
-	)
 	cloned.Pagination = nil
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
 	result := make(map[string]storage.VulnerabilitySeverity, len(entityIDs))
-	err := pgSearch.RunSelectRequestForSchemaFn[EntitySeverityResult](queryCtx, v.db, v.schema, cloned, func(r *EntitySeverityResult) error {
-		result[r.EntityID] = r.TopSeverity
-		return nil
-	})
+	var err error
+	switch entityType {
+	case search.ImageID:
+		err = pgSearch.RunSelectRequestForSchemaFn[imageSeverityResult](queryCtx, v.db, v.schema, cloned, func(r *imageSeverityResult) error {
+			result[r.EntityID] = r.TopSeverity
+			return nil
+		})
+	case search.DeploymentID:
+		err = pgSearch.RunSelectRequestForSchemaFn[deploymentSeverityResult](queryCtx, v.db, v.schema, cloned, func(r *deploymentSeverityResult) error {
+			result[r.EntityID] = r.TopSeverity
+			return nil
+		})
+	default:
+		return nil, errors.Errorf("unsupported entity type for TopSeverityBatch: %s", entityType)
+	}
 	if err != nil {
 		return nil, err
 	}

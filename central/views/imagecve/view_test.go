@@ -530,6 +530,69 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreUnifiedViewWithPagination() {
 	}
 }
 
+func (s *ImageCVEViewTestSuite) TestTopSeverityBatch() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	imageIDs := make([]string, len(s.testImages))
+	for i, img := range s.testImages {
+		imageIDs[i] = img.GetId()
+	}
+
+	result, err := s.cveView.TopSeverityBatch(ctx, imageIDs, imageSearchField(), search.EmptyQuery())
+	s.NoError(err)
+	s.NotEmpty(result)
+
+	// Verify each image has a severity and it matches the max across its CVEs.
+	for _, img := range s.testImages {
+		sev, ok := result[img.GetId()]
+		s.True(ok, "image %s should have a severity", img.GetId())
+		s.NotEqual(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY, sev)
+
+		// Compute expected max severity from the image's components.
+		var expectedMax storage.VulnerabilitySeverity
+		for _, comp := range img.GetScan().GetComponents() {
+			for _, vuln := range comp.GetVulns() {
+				if vuln.GetSeverity() > expectedMax {
+					expectedMax = vuln.GetSeverity()
+				}
+			}
+		}
+		s.Equal(expectedMax, sev, "image %s: expected severity %s, got %s", img.GetId(), expectedMax, sev)
+	}
+}
+
+func (s *ImageCVEViewTestSuite) TestTopSeverityBatchWithFilter() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	imageIDs := make([]string, len(s.testImages))
+	for i, img := range s.testImages {
+		imageIDs[i] = img.GetId()
+	}
+
+	// Filter to only fixable CVEs.
+	q := search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()
+	result, err := s.cveView.TopSeverityBatch(ctx, imageIDs, imageSearchField(), q)
+	s.NoError(err)
+
+	// Images with no fixable CVEs should not appear in the result.
+	for id, sev := range result {
+		s.NotEqual(storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY, sev,
+			"image %s should have a non-unknown severity for fixable CVEs", id)
+	}
+}
+
+func (s *ImageCVEViewTestSuite) TestTopSeverityBatchEmpty() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	result, err := s.cveView.TopSeverityBatch(ctx, []string{}, imageSearchField(), search.EmptyQuery())
+	s.NoError(err)
+	s.Nil(result)
+
+	result, err = s.cveView.TopSeverityBatch(ctx, []string{"nonexistent-id"}, imageSearchField(), search.EmptyQuery())
+	s.NoError(err)
+	s.Empty(result)
+}
+
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
 		if tc.skipCountTests {
