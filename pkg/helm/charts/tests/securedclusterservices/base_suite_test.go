@@ -25,7 +25,6 @@ var (
 			Revision:  1,
 			IsInstall: true,
 		},
-		APIVersions: append(chartutil.DefaultVersionSet, "app.k8s.io/v1beta1/Application"),
 	}
 
 	// A values YAML that sets all generatable values explicitly, and causes all
