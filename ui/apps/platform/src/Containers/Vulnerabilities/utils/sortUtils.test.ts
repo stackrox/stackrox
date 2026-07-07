@@ -1,6 +1,7 @@
 import {
     getScoreVersionsForTopCVSS,
     getSeveritySortOptions,
+    getWorkloadCveOverviewSortFields,
     sortCveDistroList,
     syncSeveritySortOption,
 } from './sortUtils';
@@ -116,6 +117,38 @@ describe('getScoreVersionsForTopCVSS', () => {
                 { cvss: 9.4, scoreVersion: 'V2' },
             ])
         ).toEqual(['V1', 'V2', 'V3']);
+    });
+});
+
+describe('getWorkloadCveOverviewSortFields', () => {
+    it('should return severity count fields when useUnifiedView is false', () => {
+        const fields = getWorkloadCveOverviewSortFields('CVE', false);
+        expect(fields).toContainEqual([
+            'Critical Severity Count',
+            'Important Severity Count',
+            'Moderate Severity Count',
+            'Low Severity Count',
+            'Unknown Severity Count',
+        ]);
+    });
+
+    it('should return single Severity field when useUnifiedView is true', () => {
+        const cveFields = getWorkloadCveOverviewSortFields('CVE', true);
+        expect(cveFields).toContain('Severity');
+        expect(cveFields).not.toContainEqual(expect.arrayContaining(['Critical Severity Count']));
+
+        const imageFields = getWorkloadCveOverviewSortFields('Image', true);
+        expect(imageFields).toContain('Severity');
+
+        const deploymentFields = getWorkloadCveOverviewSortFields('Deployment', true);
+        expect(deploymentFields).toContain('Severity');
+    });
+
+    it('should preserve non-severity fields across all tabs', () => {
+        expect(getWorkloadCveOverviewSortFields('CVE', true)).toContain('CVE');
+        expect(getWorkloadCveOverviewSortFields('CVE', true)).toContain('CVSS');
+        expect(getWorkloadCveOverviewSortFields('Image', true)).toContain('Image');
+        expect(getWorkloadCveOverviewSortFields('Deployment', true)).toContain('Deployment');
     });
 });
 
