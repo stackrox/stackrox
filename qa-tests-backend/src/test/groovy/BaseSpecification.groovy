@@ -434,9 +434,8 @@ class BaseSpecification extends Specification {
     }
 
     static addRedHatImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
-                           Env.get("REDHAT_PASSWORD") == null)) {
-            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+        if (!Env.get("REDHAT_USERNAME") || !Env.get("REDHAT_PASSWORD")) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing or empty. " +
                     "(this is ok if your test does not use images from registry.redhat.io)"
             return
         }
@@ -444,8 +443,8 @@ class BaseSpecification extends Specification {
         orchestrator.createImagePullSecret(new Secret(
                 name: "redhat-image-pull-secret",
                 server: "https://registry.redhat.io",
-                username: Env.mustGetInCI("REDHAT_USERNAME", "{}"),
-                password: Env.mustGetInCI("REDHAT_PASSWORD", "{}"),
+                username: Env.get("REDHAT_USERNAME"),
+                password: Env.get("REDHAT_PASSWORD"),
                 namespace: ns
         ))
 
