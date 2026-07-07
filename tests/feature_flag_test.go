@@ -4,6 +4,7 @@ package tests
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -15,6 +16,9 @@ import (
 )
 
 func TestFeatureFlagSettings(t *testing.T) {
+	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
+		t.Skip("Skipping on OCP: ci_export uses cci-export which does not set shell variables, causing systemic mismatch between test runner and Central")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
