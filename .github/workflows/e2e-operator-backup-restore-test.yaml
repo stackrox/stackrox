@@ -77,26 +77,29 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: |
         source tests/e2e/lib.sh
-        source tests/scripts/setup-certs.sh
+        source tests/e2e/lib-compat.sh
         source scripts/ci/sensor-wait.sh
         export_test_environment
 
-        # Override: deploy via Operator (export_test_environment defaults to false)
         ci_export DEPLOY_STACKROX_VIA_OPERATOR true
 
         setup_deployment_env false false
 
-        # Deploy operator + Central + Sensor WITHOUT pausing reconciliation.
-        # The operator must remain active to re-adopt orphaned secrets after restore.
-        setup_podsecuritypolicies_config
-        deploy_stackrox_operator
-        deploy_central
-        export_central_basic_auth_creds
-        wait_for_api
-        setup_client_TLS_certs
-        deploy_sensor
-        sensor_wait
-        wait_for_collectors_to_be_operational
+        # Deploy via roxie (handles GKE without OLM).
+        # Reconciliation must NOT be paused so the Operator can re-adopt secrets after restore.
+        cat > /tmp/roxie-br-config.yaml <<ROXIE_EOF
+        central:
+          pauseReconciliation: false
+          spec:
+            central:
+              exposure:
+                loadBalancer:
+                  enabled: true
+        securedCluster:
+          pauseReconciliation: false
+        ROXIE_EOF
+
+        deploy_stackrox_with_roxie /tmp/roxie-br-config.yaml
 
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
 
