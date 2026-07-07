@@ -8,6 +8,8 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
+CONTAINER_ENGINE ?= docker
+
 podman =
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
@@ -17,10 +19,18 @@ endif
 ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
 	podman = yes
 endif
+# if docker is not available and podman is installed, use podman instead
+ifeq (,$(shell command -v docker 2>/dev/null))
+ifneq (,$(shell command -v podman 2>/dev/null))
+	podman = yes
+endif
+endif
+
 
 ifdef podman
 # Disable selinux for local podman builds.
 DOCKER_OPTS=--security-opt label=disable
+CONTAINER_ENGINE=podman
 else
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
@@ -236,7 +246,7 @@ config-controller-build-nodeps:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
 
 # fast is a dev mode options when using local dev
@@ -254,7 +264,7 @@ fast-sensor-kubernetes: sensor-kubernetes-build-dockerized
 .PHONY: fast-migrator
 fast-migrator:
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-migrator-build
 
 .PHONY: fast-migrator-build
 fast-migrator-build: migrator-build-nodeps
@@ -465,9 +475,10 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 
 .PHONY: build-volumes
 build-volumes:
+	$(SILENT)echo "Container Engine: ${CONTAINER_ENGINE}"
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
-	$(SILENT)docker volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOPATH_VOLUME_NAME)
-	$(SILENT)docker volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || docker volume create $(GOCACHE_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOPATH_VOLUME_NAME)
+	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOCACHE_VOLUME_NAME)
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
@@ -476,12 +487,12 @@ main-build: build-prep main-build-dockerized
 .PHONY: sensor-build-dockerized
 sensor-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) --rm -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-build
 
 .PHONY: sensor-kubernetes-build-dockerized
 sensor-kubernetes-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -e CI -e BUILD_TAG -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make sensor-kubernetes-build
 
 .PHONY: sensor-build
 sensor-build:
@@ -495,7 +506,7 @@ sensor-kubernetes-build:
 .PHONY: main-build-dockerized
 main-build-dockerized: build-volumes
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	$(CONTAINER_ENGINE) run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
@@ -738,7 +749,7 @@ syslog-image: syslog-build
 	-mkdir qa-tests-backend/test-images/syslog/bin
 	cp bin/linux_$(GOARCH)/syslog qa-tests-backend/test-images/syslog/bin/syslog
 	chmod +w qa-tests-backend/test-images/syslog/bin/syslog
-	docker build \
+	$(DOCKERBUILD) \
 		-t stackrox/qa:syslog_server_1_0 \
 		-t quay.io/rhacs-eng/qa:syslog_server_1_0 \
 		-f qa-tests-backend/test-images/syslog/Dockerfile qa-tests-backend/test-images/syslog
