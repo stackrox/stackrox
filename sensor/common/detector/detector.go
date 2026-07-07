@@ -875,6 +875,16 @@ func (d *detectorImpl) handleIndicatorEvent(event pubsub.Event) error {
 		return nil
 	}
 
+	// When the process signal pipeline publishes a raw indicator (no
+	// deployment snapshot), enrich it here before running detection.
+	if indicatorEvent.Deployment == nil {
+		enriched := d.enrichIndicator(indicatorEvent.Ctx, indicatorEvent.Indicator)
+		if enriched == nil {
+			return nil
+		}
+		indicatorEvent = enriched
+	}
+
 	d.detectAndAlertForIndicator(indicatorEvent)
 	return nil
 }
