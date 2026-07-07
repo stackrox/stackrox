@@ -1,4 +1,4 @@
-name: qa-e2e-tests-ocp-4.22
+name: qa-e2e-tests-ocp-4-22-konflux
 
 on:
   workflow_call:
@@ -14,11 +14,15 @@ on:
 
 jobs:
   run:
-    if: inputs.should-run
+    if: >-
+      inputs.should-run && (
+        github.event_name != 'pull_request' ||
+        contains(github.event.pull_request.labels.*.name, 'konflux-build')
+      )
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       tag: ${{ inputs.tag }}
-      ci-job-name: ocp-4.22-qa-e2e-tests
+      ci-job-name: qa-e2e-tests-ocp-4-22-konflux
       cluster-wait-timeout-minutes: 50
       infra-flavor: openshift-4
       infra-args: |
@@ -35,4 +39,5 @@ jobs:
         ORCHESTRATOR_FLAVOR=openshift
         KUBERNETES_PROVIDER=ocp
         SFA_AGENT=true
+        USE_KONFLUX_IMAGES=true
     secrets: inherit
