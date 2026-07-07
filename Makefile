@@ -23,6 +23,7 @@ endif
 ifeq (,$(shell command -v docker 2>/dev/null))
 ifneq (,$(shell command -v podman 2>/dev/null))
 	podman = yes
+	CONTAINER_ENGINE=podman
 endif
 endif
 
@@ -30,7 +31,6 @@ endif
 ifdef podman
 # Disable selinux for local podman builds.
 DOCKER_OPTS=--security-opt label=disable
-CONTAINER_ENGINE=podman
 else
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
