@@ -12,12 +12,15 @@ For an overview of both migration types and the decision flowchart, see
 ## When to use background migrations
 
 - All data backfills and transformations, regardless of table size. Central must tolerate partially migrated state (some rows backfilled, some not) while the migration runs
-- Creating indexes not covered by the code generator (e.g., partial indexes, expression indexes). Standard indexes are handled by proto tags (`sql:"index"` or
-  `sql:"background-index"`) and the background migration runner's index reconciliation.
+- Creating indexes not covered by the code generator (e.g., partial indexes, expression
+  indexes). Standard non-unique indexes are handled by proto tags (`sql:"index"`) and
+  the background migration runner's index reconciliation. Unique indexes are created at
+  startup via GORM — see [Index Management](../../migrator/README.md#index-management).
 
 **Do NOT use background migrations** for:
 - Schema-only changes (GORM AutoMigrate handles these)
-- Standard index creation (use `sql:"index"` or `sql:"background-index"` proto tags instead)
+- Standard index creation (use `sql:"index"` proto tags instead).
+  Unique indexes are always created at startup via GORM.
 - Setting static column defaults, use a startup migration with `ALTER COLUMN SET DEFAULT` because PSQL optimizes for that use case
 
 ## How it works
@@ -45,7 +48,7 @@ For each migration from current to target:
   └── Update seq num in DB (checkpoint)
         │
         ▼
-Reconcile background indexes (CREATE INDEX CONCURRENTLY)
+Reconcile indexes (CREATE INDEX CONCURRENTLY)
 ```
 
 The rollout checker ensures old-version Central pods are fully terminated before

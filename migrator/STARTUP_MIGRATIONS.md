@@ -125,7 +125,7 @@ func migrate(database *types.Databases) error {
 | Data backfills (any table size) | With RollingUpdate, old pods keep writing rows without the new column — backfill is immediately inconsistent | Background migration |
 | Serialized blob → column extraction | Old pods keep writing blobs without updating the extracted column | Background migration |
 | Index type conversions | Can be done concurrently without downtime | Background migration or proto tags |
-| `CREATE INDEX` on any table | Holds exclusive lock, blocks all writes | Proto tags (`sql:"index"` / `sql:"background-index"`) |
+| `CREATE INDEX` on any table | Holds exclusive lock, blocks all writes | Proto tags (`sql:"index"`) |
 | Schema-only changes (add column, add table) | Unnecessary — GORM AutoMigrate handles this | No migration needed |
 
 ## Writing tests
