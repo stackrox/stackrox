@@ -19,47 +19,38 @@ on:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
         type: string
-        default: ""
       infra-flavor:
         description: "Infra cluster flavor, e.g. gke-default, ocp-4"
-        required: false
         type: string
         default: "gke-default"
       infra-args:
         description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line"
-        required: false
         type: string
         default: |
           nodes=3
           machine-type=e2-standard-8
       infra-lifespan:
         description: "Infra cluster lifespan (auto-deleted after expiry)"
-        required: false
         type: string
         default: "5h"
       cluster-wait-timeout-minutes:
         description: "Timeout for waiting on cluster provisioning (OCP needs longer)"
-        required: false
         type: number
         default: 25
       job-timeout-minutes:
         description: "Overall job timeout"
-        required: false
         type: number
         default: 360
       part1-timeout-minutes:
         description: "Part 1 test timeout"
-        required: false
         type: number
         default: 250
       part2-timeout-minutes:
         description: "Part 2 test timeout"
-        required: false
         type: number
         default: 35
       db-backup-restore-timeout-minutes:
         description: "DB backup and restore test timeout"
-        required: false
         type: number
         default: 30
 
