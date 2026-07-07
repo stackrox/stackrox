@@ -1038,7 +1038,7 @@ roxctl ${tag}
 END
             ;;
         *-qa-e2e-tests)
-            local tag_sanitized; tag_sanitized="${tag//x/0}"
+            local tag_sanitized; tag_sanitized="$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)"
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
 release-operator ${tag_sanitized}
