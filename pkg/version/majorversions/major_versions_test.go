@@ -7,6 +7,55 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParseBumpsData(t *testing.T) {
+	tests := map[string]struct {
+		input   string
+		wantErr string
+	}{
+		"valid": {
+			input: `bumps:
+  - from: "3.74"
+    to: "4.0"`,
+		},
+		"duplicate to major": {
+			input: `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "3.99"
+    to: "4.0"`,
+			wantErr: "duplicate 'to' major 4",
+		},
+		"invalid from": {
+			input: `bumps:
+  - from: "bad"
+    to: "4.0"`,
+			wantErr: "invalid 'from' value",
+		},
+		"invalid to": {
+			input: `bumps:
+  - from: "3.74"
+    to: "nope"`,
+			wantErr: "invalid 'to' value",
+		},
+		"invalid yaml": {
+			input:   `[not valid`,
+			wantErr: "yaml:",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := parseBumpsData([]byte(tt.input))
+			if tt.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestGetPreviousYStream(t *testing.T) {
 	tests := map[string]struct {
 		major     int

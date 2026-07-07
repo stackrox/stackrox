@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -32,18 +33,29 @@ type parsedBump struct {
 var parsedBumps []parsedBump
 
 func init() {
+	bumps, err := parseBumpsData(rawData)
+	utils.CrashOnError(err)
+	parsedBumps = bumps
+}
+
+func parseBumpsData(data []byte) ([]parsedBump, error) {
 	var f bumpsFile
-	utils.CrashOnError(yaml.Unmarshal(rawData, &f))
-	seen := make(map[int]bool)
+	if err := yaml.Unmarshal(data, &f); err != nil {
+		return nil, err
+	}
+	var seen set.IntSet
+	var result []parsedBump
 	for _, b := range f.Bumps {
 		pb, err := parseBump(b)
-		utils.CrashOnError(err)
-		if seen[pb.ToMajor] {
-			utils.CrashOnError(fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", pb.ToMajor))
+		if err != nil {
+			return nil, err
 		}
-		seen[pb.ToMajor] = true
-		parsedBumps = append(parsedBumps, pb)
+		if !seen.Add(pb.ToMajor) {
+			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", pb.ToMajor)
+		}
+		result = append(result, pb)
 	}
+	return result, nil
 }
 
 func parseBump(b bump) (parsedBump, error) {
