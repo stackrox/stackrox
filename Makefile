@@ -475,7 +475,6 @@ bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
 
 .PHONY: build-volumes
 build-volumes:
-	$(SILENT)echo "Container Engine: ${CONTAINER_ENGINE}"
 	$(SILENT)mkdir -p $(CURDIR)/linux-gocache
 	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOPATH_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOPATH_VOLUME_NAME)
 	$(SILENT)$(CONTAINER_ENGINE) volume inspect $(GOCACHE_VOLUME_NAME) >/dev/null 2>&1 || $(CONTAINER_ENGINE) volume create $(GOCACHE_VOLUME_NAME)
