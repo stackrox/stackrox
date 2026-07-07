@@ -160,18 +160,13 @@ func (s *storeImpl) insertIntoImages(
 	}
 	common.SensorEventsDeduperCounter.With(prometheus.Labels{"status": "passed"}).Inc()
 
-	// Build cveTimeMap from incoming CVEs, rounding timestamps to microsecond
-	// precision to match PostgreSQL's timestamp storage. Then look up existing
-	// timestamps and preserve the earliest per CVE.
 	cveTimeMap := make(map[string]*timestamppb.Timestamp)
 	for _, cve := range parts.cvesV2 {
 		if cve.GetFirstImageOccurrence() == nil {
 			cve.FirstImageOccurrence = iTimestamp
 		}
-		rounded := roundToMicroseconds(cve.GetFirstImageOccurrence())
-		cve.FirstImageOccurrence = rounded
-		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; !ok || protoutils.After(val, rounded) {
-			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = rounded
+		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; !ok || protoutils.After(val, cve.GetFirstImageOccurrence()) {
+			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = cve.GetFirstImageOccurrence()
 		}
 	}
 
@@ -677,14 +672,6 @@ func getAllImageComponentCVEs(ctx context.Context, tx *postgres.Tx, imageID stri
 		result[compID] = append(result[compID], cve)
 	}
 	return result, nil
-}
-
-func roundToMicroseconds(ts *timestamppb.Timestamp) *timestamppb.Timestamp {
-	if ts == nil {
-		return nil
-	}
-	t := protocompat.NilOrTime(ts)
-	return protocompat.ConvertTimeToTimestampOrNil(t)
 }
 
 // getImageCVETimestamps returns the earliest FirstImageOccurrence per CVE name
