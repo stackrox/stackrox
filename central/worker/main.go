@@ -67,7 +67,7 @@ func main() {
 
 	collectionDatastore, _ := collectionDS.Singleton()
 	rl := newReportListener(
-		db,
+		globaldb.GetPostgres(),
 		scheduler,
 		reportConfigDS.Singleton(),
 		reportSnapshotDS.Singleton(),
