@@ -85,21 +85,10 @@ jobs:
 
         setup_deployment_env false false
 
-        # Deploy via roxie (handles GKE without OLM).
-        # Reconciliation must NOT be paused so the Operator can re-adopt secrets after restore.
-        cat > /tmp/roxie-br-config.yaml <<ROXIE_EOF
-        central:
-          pauseReconciliation: false
-          spec:
-            central:
-              exposure:
-                loadBalancer:
-                  enabled: true
-        securedCluster:
-          pauseReconciliation: false
-        ROXIE_EOF
-
-        deploy_stackrox_with_roxie /tmp/roxie-br-config.yaml
+        # Deploy via roxie compat layer (handles GKE without OLM).
+        # Roxie does not pause reconciliation by default, which is what we need:
+        # the Operator must remain active to re-adopt orphaned secrets after restore.
+        deploy_stackrox_with_roxie_compat
 
         echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
 
