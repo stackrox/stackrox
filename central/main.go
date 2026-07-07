@@ -68,6 +68,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
+	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
 	"github.com/stackrox/rox/central/cve/suppress"
@@ -177,10 +178,13 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
+	vulnmgmtREST "github.com/stackrox/rox/central/vulnmgmt/rest"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
+	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestServiceV2 "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -993,6 +997,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		})
 	}
+
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/v2/vulnmgmt/cves",
+		Authorizer:    user.With(permissions.View(resources.Image)),
+		ServerHandler: vulnmgmtREST.NewHandler(imagecveflat.Singleton(), imageCVEDS.Singleton(), vulnReqDataStore.Singleton()),
+		Compression:   true,
+	})
 
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
