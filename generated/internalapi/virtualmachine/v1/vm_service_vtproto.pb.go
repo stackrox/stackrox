@@ -160,7 +160,7 @@ func (m *GetReportRequest) CloneVT() *GetReportRequest {
 		return (*GetReportRequest)(nil)
 	}
 	r := new(GetReportRequest)
-	r.IfNewerThanGeneration = m.IfNewerThanGeneration
+	r.LastKnownGeneration = m.LastKnownGeneration
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -453,7 +453,7 @@ func (this *GetReportRequest) EqualVT(that *GetReportRequest) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.IfNewerThanGeneration != that.IfNewerThanGeneration {
+	if this.LastKnownGeneration != that.LastKnownGeneration {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -885,8 +885,8 @@ func (m *GetReportRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IfNewerThanGeneration != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.IfNewerThanGeneration))
+	if m.LastKnownGeneration != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LastKnownGeneration))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -1170,8 +1170,8 @@ func (m *GetReportRequest) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.IfNewerThanGeneration != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.IfNewerThanGeneration))
+	if m.LastKnownGeneration != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LastKnownGeneration))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2111,9 +2111,9 @@ func (m *GetReportRequest) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IfNewerThanGeneration", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownGeneration", wireType)
 			}
-			m.IfNewerThanGeneration = 0
+			m.LastKnownGeneration = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -2123,7 +2123,7 @@ func (m *GetReportRequest) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.IfNewerThanGeneration |= uint32(b&0x7F) << shift
+				m.LastKnownGeneration |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3412,9 +3412,9 @@ func (m *GetReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IfNewerThanGeneration", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LastKnownGeneration", wireType)
 			}
-			m.IfNewerThanGeneration = 0
+			m.LastKnownGeneration = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -3424,7 +3424,7 @@ func (m *GetReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.IfNewerThanGeneration |= uint32(b&0x7F) << shift
+				m.LastKnownGeneration |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

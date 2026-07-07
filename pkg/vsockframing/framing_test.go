@@ -30,7 +30,7 @@ func TestFraming(t *testing.T) {
 				var buf bytes.Buffer
 				require.NoError(t, WriteFrame(&buf, payload))
 				_, err := ReadFrame(&buf, 50)
-				assert.ErrorContains(t, err, "exceeds limit")
+				assert.ErrorIs(t, err, ErrFrameTooLarge)
 			},
 		},
 		"should round-trip empty payload": {
@@ -49,6 +49,13 @@ func TestFraming(t *testing.T) {
 				got, err := ReadFrame(&buf, 1024)
 				require.NoError(t, err)
 				assert.Empty(t, got)
+			},
+		},
+		"should error when stream is empty": {
+			run: func(t *testing.T) {
+				_, err := ReadFrame(bytes.NewReader(nil), 1024)
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, io.EOF)
 			},
 		},
 		"should error when length header is truncated": {
@@ -73,7 +80,7 @@ func TestFraming(t *testing.T) {
 				r, w := io.Pipe()
 				_ = w.Close()
 				err := WriteFrame(w, []byte("data"))
-				assert.Error(t, err)
+				assert.ErrorIs(t, err, io.ErrClosedPipe)
 				_ = r.Close()
 			},
 		},

@@ -31,8 +31,16 @@ const (
 	ErrorCode_ERROR_CODE_UNKNOWN_METHOD ErrorCode = 1
 	// Initial scan still in progress; retry next poll cycle.
 	ErrorCode_ERROR_CODE_NOT_READY ErrorCode = 2
-	// Malformed request or internal agent failure.
+	// Internal agent failure unrelated to the request's validity (e.g. unexpected
+	// panic, local I/O error).
 	ErrorCode_ERROR_CODE_INTERNAL ErrorCode = 3
+	// Request failed structural or semantic validation (e.g. unset oneof, empty
+	// request_id).
+	ErrorCode_ERROR_CODE_MALFORMED_REQUEST ErrorCode = 4
+	// Request payload exceeded the agent's configured size limit.
+	ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE ErrorCode = 5
+	// Agent is already serving another connection; retry after a backoff.
+	ErrorCode_ERROR_CODE_BUSY ErrorCode = 6
 )
 
 // Enum value maps for ErrorCode.
@@ -42,12 +50,18 @@ var (
 		1: "ERROR_CODE_UNKNOWN_METHOD",
 		2: "ERROR_CODE_NOT_READY",
 		3: "ERROR_CODE_INTERNAL",
+		4: "ERROR_CODE_MALFORMED_REQUEST",
+		5: "ERROR_CODE_REQUEST_TOO_LARGE",
+		6: "ERROR_CODE_BUSY",
 	}
 	ErrorCode_value = map[string]int32{
-		"ERROR_CODE_UNSPECIFIED":    0,
-		"ERROR_CODE_UNKNOWN_METHOD": 1,
-		"ERROR_CODE_NOT_READY":      2,
-		"ERROR_CODE_INTERNAL":       3,
+		"ERROR_CODE_UNSPECIFIED":       0,
+		"ERROR_CODE_UNKNOWN_METHOD":    1,
+		"ERROR_CODE_NOT_READY":         2,
+		"ERROR_CODE_INTERNAL":          3,
+		"ERROR_CODE_MALFORMED_REQUEST": 4,
+		"ERROR_CODE_REQUEST_TOO_LARGE": 5,
+		"ERROR_CODE_BUSY":              6,
 	}
 )
 
@@ -411,11 +425,12 @@ func (x *ResponseMeta) GetEpoch() uint32 {
 
 type GetReportRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Last generation known to Sensor. Agent responds unchanged if equal (strict
-	// equality). Use 0 to force a full report. See ADR-0006 §2, "Generation counter".
-	IfNewerThanGeneration uint32 `protobuf:"varint,1,opt,name=if_newer_than_generation,json=ifNewerThanGeneration,proto3" json:"if_newer_than_generation,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// Generation last observed by Sensor for this VM (see ResponseMeta.report_generation).
+	// Use 0 when no prior generation is known, which forces a full report. See
+	// ADR-0006 §2, "Generation counter", for how the agent uses this value.
+	LastKnownGeneration uint32 `protobuf:"varint,1,opt,name=last_known_generation,json=lastKnownGeneration,proto3" json:"last_known_generation,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *GetReportRequest) Reset() {
@@ -448,9 +463,9 @@ func (*GetReportRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetReportRequest) GetIfNewerThanGeneration() uint32 {
+func (x *GetReportRequest) GetLastKnownGeneration() uint32 {
 	if x != nil {
-		return x.IfNewerThanGeneration
+		return x.LastKnownGeneration
 	}
 	return 0
 }
@@ -459,7 +474,7 @@ type GetReportResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Full scan report; set when generation changed or forced (generation 0).
 	IndexReport *v4.IndexReport `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	// True when agent's generation matches if_newer_than_generation; index_report
+	// True when agent's generation matches last_known_generation; index_report
 	// is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
 	Unchanged     bool `protobuf:"varint,2,opt,name=unchanged,proto3" json:"unchanged,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -607,9 +622,9 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
-	"\x10GetReportRequest\x127\n" +
-	"\x18if_newer_than_generation\x18\x01 \x01(\rR\x15ifNewerThanGeneration\"m\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"F\n" +
+	"\x10GetReportRequest\x122\n" +
+	"\x15last_known_generation\x18\x01 \x01(\rR\x13lastKnownGeneration\"m\n" +
 	"\x11GetReportResponse\x12:\n" +
 	"\findex_report\x18\x01 \x01(\v2\x17.scanner.v4.IndexReportR\vindexReport\x12\x1c\n" +
 	"\tunchanged\x18\x02 \x01(\bR\tunchanged\"\xe0\x01\n" +
@@ -619,12 +634,15 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\adetails\x18\x03 \x03(\v2-.virtualmachine.v1.ErrorResponse.DetailsEntryR\adetails\x1a:\n" +
 	"\fDetailsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*y\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\xd2\x01\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19ERROR_CODE_UNKNOWN_METHOD\x10\x01\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_READY\x10\x02\x12\x17\n" +
-	"\x13ERROR_CODE_INTERNAL\x10\x03B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
+	"\x13ERROR_CODE_INTERNAL\x10\x03\x12 \n" +
+	"\x1cERROR_CODE_MALFORMED_REQUEST\x10\x04\x12 \n" +
+	"\x1cERROR_CODE_REQUEST_TOO_LARGE\x10\x05\x12\x13\n" +
+	"\x0fERROR_CODE_BUSY\x10\x06B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
 
 var (
 	file_internalapi_virtualmachine_v1_vm_service_proto_rawDescOnce sync.Once

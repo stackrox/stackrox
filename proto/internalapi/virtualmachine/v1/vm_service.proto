@@ -71,15 +71,16 @@ message ResponseMeta {
 // --- Methods ---
 
 message GetReportRequest {
-  // Last generation known to Sensor. Agent responds unchanged if equal (strict
-  // equality). Use 0 to force a full report. See ADR-0006 §2, "Generation counter".
-  uint32 if_newer_than_generation = 1;
+  // Generation last observed by Sensor for this VM (see ResponseMeta.report_generation).
+  // Use 0 when no prior generation is known, which forces a full report. See
+  // ADR-0006 §2, "Generation counter", for how the agent uses this value.
+  uint32 last_known_generation = 1;
 }
 
 message GetReportResponse {
   // Full scan report; set when generation changed or forced (generation 0).
   scanner.v4.IndexReport index_report = 1;
-  // True when agent's generation matches if_newer_than_generation; index_report
+  // True when agent's generation matches last_known_generation; index_report
   // is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
   bool unchanged = 2;
 }
@@ -100,6 +101,14 @@ enum ErrorCode {
   ERROR_CODE_UNKNOWN_METHOD = 1;
   // Initial scan still in progress; retry next poll cycle.
   ERROR_CODE_NOT_READY = 2;
-  // Malformed request or internal agent failure.
+  // Internal agent failure unrelated to the request's validity (e.g. unexpected
+  // panic, local I/O error).
   ERROR_CODE_INTERNAL = 3;
+  // Request failed structural or semantic validation (e.g. unset oneof, empty
+  // request_id).
+  ERROR_CODE_MALFORMED_REQUEST = 4;
+  // Request payload exceeded the agent's configured size limit.
+  ERROR_CODE_REQUEST_TOO_LARGE = 5;
+  // Agent is already serving another connection; retry after a backoff.
+  ERROR_CODE_BUSY = 6;
 }

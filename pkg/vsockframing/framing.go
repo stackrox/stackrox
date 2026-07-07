@@ -2,10 +2,15 @@ package vsockframing
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 )
+
+// ErrFrameTooLarge is returned by ReadFrame when the incoming frame's declared
+// length exceeds the caller-supplied maxSize.
+var ErrFrameTooLarge = errors.New("frame size exceeds limit")
 
 // WriteFrame writes a length-prefixed frame: [4-byte big-endian uint32 length][payload].
 func WriteFrame(w io.Writer, payload []byte) error {
@@ -29,7 +34,7 @@ func ReadFrame(r io.Reader, maxSize uint32) ([]byte, error) {
 		return nil, fmt.Errorf("reading frame length: %w", err)
 	}
 	if length > maxSize {
-		return nil, fmt.Errorf("frame size %d exceeds limit %d", length, maxSize)
+		return nil, fmt.Errorf("%w: %d exceeds limit %d", ErrFrameTooLarge, length, maxSize)
 	}
 	payload := make([]byte, length)
 	if _, err := io.ReadFull(r, payload); err != nil {
