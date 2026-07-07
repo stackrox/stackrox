@@ -8,6 +8,7 @@ import { Flex, Label, LabelGroup } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
@@ -24,7 +25,9 @@ import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
 import ImageNameLink from '../components/ImageNameLink';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../components/TopSeverityLabel';
 import type {
     SignatureVerificationResult,
     VulnerabilitySeverityLabel,
@@ -100,6 +103,7 @@ export const imageListQuery = gql`
                     total
                 }
             }
+            topImageCVESeverity(query: $query)
             operatingSystem
             deploymentCount(query: $query)
             watchStatus
@@ -151,6 +155,7 @@ export const imageV2ListQuery = gql`
                     total
                 }
             }
+            topImageCVESeverity(query: $query)
             operatingSystem
             deploymentCount(query: $query)
             watchStatus
@@ -190,6 +195,7 @@ export type Image = {
         low: { total: number };
         unknown: { total: number };
     };
+    topImageCVESeverity?: string;
     operatingSystem: string;
     deploymentCount: number;
     watchStatus: WatchStatus;
@@ -229,6 +235,8 @@ function ImageOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
@@ -295,6 +303,7 @@ function ImageOverviewTable({
                             id,
                             name,
                             imageCVECountBySeverity,
+                            topImageCVESeverity,
                             operatingSystem,
                             deploymentCount,
                             metadata,
@@ -410,15 +419,25 @@ function ImageOverviewTable({
                                         className={getVisibilityClass('cvesBySeverity')}
                                         dataLabel="CVEs by severity"
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="image"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {useUnifiedView ? (
+                                            <TopSeverityLabel
+                                                severity={
+                                                    topImageCVESeverity as
+                                                        | VulnerabilitySeverity
+                                                        | undefined
+                                                }
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="image"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Operating system"

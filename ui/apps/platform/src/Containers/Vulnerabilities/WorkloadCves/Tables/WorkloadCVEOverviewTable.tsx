@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import type useMap from 'hooks/useMap';
-import type { CveBaseInfo, VulnerabilityState } from 'types/cve.proto';
+import type { CveBaseInfo, VulnerabilityState, VulnerabilitySeverity } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
@@ -48,6 +48,8 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import KnownExploitLabel from '../../components/KnownExploitLabel';
 import KnownRansomwareCampaignLabel from '../../components/KnownRansomwareCampaignLabel';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
+import TopSeverityLabel from '../components/TopSeverityLabel';
+import CVESummaryContent from '../components/CVESummaryContent';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
@@ -159,6 +161,26 @@ export const cveListQuery = gql`
     }
 `;
 
+export const simplifiedCveListQuery = gql`
+    query getSimplifiedImageCVEList(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
+        imageCVEs(query: $query, pagination: $pagination) {
+            cve
+            topSeverity
+            topCVSS
+            topNvdCVSS
+            topEpssProbability
+            affectedImageCount
+            firstDiscoveredInSystem
+            publishedOn
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+        }
+    }
+`;
+
 export const unfilteredImageCountQuery = gql`
     query getUnfilteredImageCount {
         imageCount
@@ -171,25 +193,27 @@ export type CVEListQueryResult = {
 
 export type ImageCVE = {
     cve: string;
-    affectedImageCountBySeverity: {
+    affectedImageCountBySeverity?: {
         critical: { total: number };
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
         unknown: { total: number };
     };
+    topSeverity?: string;
+    topEpssProbability?: number;
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
     publishedOn: string | null;
     topNvdCVSS: number;
-    distroTuples: {
+    distroTuples?: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
         nvdCvss: number;
-        nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
+        nvdScoreVersion: string;
         cveBaseInfo: CveBaseInfo;
     }[];
     pendingExceptionCount: number;
@@ -313,10 +337,12 @@ function WorkloadCVEOverviewTable({
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map(
-                        (
-                            {
+                        (imageCve, rowIndex) => {
+                            const {
                                 cve,
                                 affectedImageCountBySeverity,
+                                topSeverity,
+                                topEpssProbability,
                                 topCVSS,
                                 topNvdCVSS,
                                 affectedImageCount,
@@ -324,26 +350,23 @@ function WorkloadCVEOverviewTable({
                                 publishedOn,
                                 distroTuples,
                                 pendingExceptionCount,
-                            },
-                            rowIndex
-                        ) => {
-                            const isExpanded = expandedRowSet.has(cve);
-                            const criticalCount = affectedImageCountBySeverity.critical.total;
-                            const importantCount = affectedImageCountBySeverity.important.total;
-                            const moderateCount = affectedImageCountBySeverity.moderate.total;
-                            const lowCount = affectedImageCountBySeverity.low.total;
-                            const unknownCount = affectedImageCountBySeverity.unknown.total;
+                            } = imageCve;
 
-                            const prioritizedDistros = sortCveDistroList(distroTuples);
-                            const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
-                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
-                                topNvdCVSS,
-                                distroTuples
-                            );
-                            const cveBaseInfo = getCveBaseInfoFromDistroTuples(distroTuples);
-                            const epssProbability = cveBaseInfo?.epss?.epssProbability;
-                            const summary =
-                                prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
+                            const isExpanded = expandedRowSet.has(cve);
+                            const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
+
+                            const criticalCount = affectedImageCountBySeverity?.critical.total ?? 0;
+                            const importantCount = affectedImageCountBySeverity?.important.total ?? 0;
+                            const moderateCount = affectedImageCountBySeverity?.moderate.total ?? 0;
+                            const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
+                            const unknownCount = affectedImageCountBySeverity?.unknown.total ?? 0;
+
+                            const prioritizedDistros = distroTuples ? sortCveDistroList(distroTuples) : [];
+                            const scoreVersions = distroTuples ? getScoreVersionsForTopCVSS(topCVSS, distroTuples) : [];
+                            const nvdScoreVersions = distroTuples ? getScoreVersionsForTopNvdCVSS(topNvdCVSS, distroTuples) : [];
+                            const cveBaseInfo = distroTuples ? getCveBaseInfoFromDistroTuples(distroTuples) : undefined;
+                            const epssProbability = useUnifiedView ? topEpssProbability : cveBaseInfo?.epss?.epssProbability;
+                            const summary = prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
                             const labels: ReactNode[] = [];
                             if (
@@ -415,14 +438,20 @@ function WorkloadCVEOverviewTable({
                                             dataLabel="Images by severity"
                                             className={getVisibilityClass('imagesBySeverity')}
                                         >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                filteredSeverities={filteredSeverities}
-                                            />
+                                            {useUnifiedView ? (
+                                                <TopSeverityLabel
+                                                    severity={topSeverity as VulnerabilitySeverity | undefined}
+                                                />
+                                            ) : (
+                                                <SeverityCountLabels
+                                                    criticalCount={criticalCount}
+                                                    importantCount={importantCount}
+                                                    moderateCount={moderateCount}
+                                                    lowCount={lowCount}
+                                                    unknownCount={unknownCount}
+                                                    filteredSeverities={filteredSeverities}
+                                                />
+                                            )}
                                         </Td>
                                         <Td
                                             dataLabel="Top CVSS"
@@ -521,7 +550,9 @@ function WorkloadCVEOverviewTable({
                                         <Td />
                                         <Td colSpan={colSpan - 1}>
                                             <ExpandableRowContent>
-                                                {summary ? (
+                                                {useUnifiedView ? (
+                                                    <CVESummaryContent cve={cve} />
+                                                ) : summary ? (
                                                     <Content component="p">{summary}</Content>
                                                 ) : (
                                                     <PartialCVEDataAlert />

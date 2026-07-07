@@ -35,51 +35,32 @@ export const aggregateByCreatedTime: SortAggregate = {
  * @returns The available sort fields
  */
 export function getWorkloadCveOverviewSortFields(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    useUnifiedView = false
 ): (string | string[])[] {
+    const severityFields: string | string[] = useUnifiedView
+        ? 'Severity'
+        : [
+              'Critical Severity Count',
+              'Important Severity Count',
+              'Moderate Severity Count',
+              'Low Severity Count',
+              'Unknown Severity Count',
+          ];
+
     switch (entityTab) {
         case 'CVE':
-            return [
-                'CVE',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'CVSS',
-                'Image Sha',
-                'CVE Created Time',
-            ];
+            return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
             return [
                 'Image',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
+                severityFields,
                 'Image OS',
                 'Image Created Time',
                 'Image Scan Time',
             ];
         case 'Deployment':
-            return [
-                'Deployment',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Cluster',
-                'Namespace',
-                'Created',
-            ];
+            return ['Deployment', severityFields, 'Cluster', 'Namespace', 'Created'];
         default:
             return ensureExhaustive(entityTab);
     }

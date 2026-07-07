@@ -4,6 +4,7 @@ import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { Truncate } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import TooltipTh from 'Components/TooltipTh';
@@ -12,7 +13,9 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TopSeverityLabel from '../components/TopSeverityLabel';
 import type { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
@@ -71,6 +74,7 @@ export const deploymentListQuery = gql`
                     total
                 }
             }
+            topImageCVESeverity(query: $query)
             clusterName
             namespace
             imageCount(query: $query)
@@ -90,6 +94,7 @@ export type Deployment = {
         low: { total: number };
         unknown: { total: number };
     };
+    topImageCVESeverity?: string;
     clusterName: string;
     namespace: string;
     imageCount: number;
@@ -113,6 +118,8 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -173,6 +180,7 @@ function DeploymentOverviewTable({
                             name,
                             type,
                             imageCVECountBySeverity,
+                            topImageCVESeverity,
                             clusterName,
                             namespace,
                             imageCount,
@@ -203,15 +211,25 @@ function DeploymentOverviewTable({
                                         dataLabel="CVEs by severity"
                                         className={getVisibilityClass('cvesBySeverity')}
                                     >
-                                        <SeverityCountLabels
-                                            criticalCount={criticalCount}
-                                            importantCount={importantCount}
-                                            moderateCount={moderateCount}
-                                            lowCount={lowCount}
-                                            unknownCount={unknownCount}
-                                            entity="deployment"
-                                            filteredSeverities={filteredSeverities}
-                                        />
+                                        {useUnifiedView ? (
+                                            <TopSeverityLabel
+                                                severity={
+                                                    topImageCVESeverity as
+                                                        | VulnerabilitySeverity
+                                                        | undefined
+                                                }
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                entity="deployment"
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
                                     </Td>
                                     <Td
                                         dataLabel="Cluster"

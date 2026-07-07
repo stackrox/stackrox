@@ -7,6 +7,7 @@ import type useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
 import type { VulnerabilityState } from 'types/cve.proto';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getTableUIState } from 'utils/getTableUIState';
 import type { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
@@ -57,12 +58,15 @@ function CVEsTableContainer({
     cveTableColumnOverrides,
 }: CVEsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
 
     const { error, loading, data } = useImageCves({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
         vulnerabilityState,
+        useUnifiedView,
     });
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
