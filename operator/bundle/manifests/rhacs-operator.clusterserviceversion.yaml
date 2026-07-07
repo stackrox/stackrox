@@ -180,6 +180,11 @@ spec:
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:hidden
           - description: |-
+              Configures the rollout strategy for the Central deployment.
+              The default is: Recreate.
+            displayName: Rollout Strategy
+            path: central.rolloutStrategy
+          - description: |-
               Allows overriding the default resource settings for this component. Please consult the documentation
               for an overview of default resource requirements and a sizing guide.
             displayName: Resources
