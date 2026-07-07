@@ -205,6 +205,11 @@ func TestGetPreviousYStream(t *testing.T) {
 			want:    &XyzVersion{X: 4, Y: 0, Z: 0},
 		},
 		{
+			name:    "major version 5 to 4.11.0",
+			version: XyzVersion{X: 5, Y: 0, Z: 0},
+			want:    &XyzVersion{X: 4, Y: 11, Z: 0},
+		},
+		{
 			name:    "trunk builds",
 			version: XyzVersion{X: 1, Y: 0, Z: 0},
 			want:    &XyzVersion{X: 0, Y: 0, Z: 0},

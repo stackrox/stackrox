@@ -51,9 +51,6 @@ test_excessive_args() {
     test_major_unknown "0.0.0" "0.0"
     test_major_unknown "2.0.0" "2.0"
     test_major_unknown "3.0.0" "3.0"
-    test_major_unknown "5.0.0" "5.0"
-    test_major_unknown "5.0.1" "5.0"
-    test_major_unknown "v5.0.x-nightly-12345" "5.0"
     test_major_unknown "199.0.88" "199.0"
 }
 
@@ -68,6 +65,9 @@ test_major_unknown() {
     test_happy "4.0.0" "3.74.0"
     test_happy "4.0.6" "3.74.0"
     test_happy "4.0.x-12-g8e6387" "3.74.0"
+    test_happy "5.0.0" "4.11.0"
+    test_happy "5.0.1" "4.11.0"
+    test_happy "v5.0.x-nightly-12345" "4.11.0"
     test_happy "1.0.0" "0.0.0"
     test_happy "v1.0.0" "0.0.0"
 }

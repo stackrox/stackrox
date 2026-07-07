@@ -1,0 +1,11 @@
+# History of major version bumps.
+# Each entry records the last minor release of the old major ("from")
+# and the first release of the new major ("to").
+# Used to compute previous Y-stream versions across major boundaries.
+bumps:
+  - from: "0.0"
+    to: "1.0"
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
