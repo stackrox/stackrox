@@ -56,72 +56,6 @@ const (
 	`
 )
 
-// region test variables
-
-var (
-	systemdStorageComponent = &storage.ImageComponentV2{
-		Id:        "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
-		Name:      "systemd",
-		Version:   "249.11-0ubuntu3.11",
-		Priority:  1,
-		Source:    storage.SourceType_OS,
-		RiskScore: 0,
-		SetTopCvss: &storage.ImageComponentV2_TopCvss{
-			TopCvss: 5.5,
-		},
-		OperatingSystem: "ubuntu:22.04",
-		ImageIdV2:       "4cd5259a-d1fc-5c81-ab1a-92484311441e",
-		FromBaseImage:   false,
-		LayerType:       storage.LayerType_APPLICATION,
-	}
-
-	systemdFlatComponent = &flatComponentV2{
-		component:       "systemd",
-		componentIDs:    []string{"systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"},
-		version:         "249.11-0ubuntu3.11",
-		operatingSystem: "ubuntu:22.04",
-		riskScore:       0,
-		topCVSS:         5.5,
-	}
-
-	cve2023x7008 = &storage.ImageCVEV2{
-		Id: "CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
-		CveBaseInfo: &storage.CVEInfo{
-			Cve:          "CVE-2023-7008",
-			CreatedAt:    protocompat.TimestampNow(),
-			ScoreVersion: storage.CVEInfo_V2,
-		},
-		Cvss:                 5.5,
-		Severity:             storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
-		NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
-		FirstImageOccurrence: protocompat.TimestampNow(),
-		State:                storage.VulnerabilityState_OBSERVED,
-		IsFixable:            true,
-		HasFixedBy: &storage.ImageCVEV2_FixedBy{
-			FixedBy: "249.11-0ubuntu3.12",
-		},
-		ComponentId: "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
-		ImageIdV2:   "4cd5259a-d1fc-5c81-ab1a-92484311441e",
-	}
-
-	now           = time.Now()
-	moderateVuln  = storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
-	observedState = storage.VulnerabilityState_OBSERVED
-
-	flatCVE2023x7008 = &flatCVEV2{
-		cve:                     "CVE-2023-7008",
-		cveIDs:                  []string{"CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"},
-		severity:                &moderateVuln,
-		topCVSS:                 5.5,
-		affectedImageCount:      1,
-		firstDiscoveredInSystem: &now,
-		firstImageOccurrence:    &now,
-		state:                   &observedState,
-	}
-)
-
-// endregion test variables
-
 // This test was extracted from TestGetImageComponentVulnerabilitiesGraphQL /
 // TestGetFixableCVEsForEntityWithGraphQLEngine / query_without_filters
 // for detailed tracing purpose.
@@ -140,8 +74,8 @@ func TestImageComponentGraphQLQuery(t *testing.T) {
 
 	componentID := "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"
 
-	setupImageComponentMocks(mockContainer)
-	setupImageComponentCVEMocks(mockContainer)
+	setupImageComponentMocks(mockCtrl, mockContainer)
+	setupImageComponentCVEMocks(mockCtrl, mockContainer)
 
 	response := schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 		map[string]interface{}{
@@ -193,7 +127,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TearDownTest() {
 func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEntityWithGraphQLEngine() {
 	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
 
-	setupImageComponentMocks(s.mockContainer)
+	setupImageComponentMocks(s.mockCtrl, s.mockContainer)
 
 	// Step 1: Find the systemd component ID using a separate query
 	findResponse := s.schema.Exec(ctx, findComponentID, "findComponent",
@@ -209,7 +143,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 	s.T().Run("query without filters", func(t *testing.T) {
 		// Execute the GraphQL query without vulnerability filters
-		setupImageComponentCVEMocks(s.mockContainer)
+		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
@@ -226,7 +160,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 	s.T().Run("query with vulnQuery filter", func(t *testing.T) {
 		// Execute the GraphQL query with CVE filter
-		setupImageComponentCVEMocks(s.mockContainer)
+		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
@@ -243,7 +177,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 	s.T().Run("query with fixable filter", func(t *testing.T) {
 		// Execute the GraphQL query with fixable filter
-		setupImageComponentCVEMocks(s.mockContainer)
+		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
@@ -259,7 +193,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 	s.T().Run("query with combined filters", func(t *testing.T) {
 		// Execute the GraphQL query with combined CVE and fixable filters
-		setupImageComponentCVEMocks(s.mockContainer)
+		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
 			map[string]interface{}{
@@ -287,40 +221,8 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 		assert.NotEmpty(t, response.Errors, "Query with invalid ID should produce errors")
 
 		if len(response.Errors) > 0 {
-			t.Logf("Expected error: %s", response.Errors[0].Error())
+			assert.ErrorContains(t, response.Errors[0].Unwrap(), "not all components could be found: invalid-component-id")
 		}
-	})
-}
-
-// TestGraphQLVariableTypes validates that the GraphQL engine properly handles different variable types
-func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGraphQLVariableTypes() {
-	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
-
-	s.T().Run("null variables", func(t *testing.T) {
-		// Find component first
-		setupImageComponentMocks(s.mockContainer)
-		setupImageComponentCVEMocks(s.mockContainer)
-
-		findResponse := s.schema.Exec(ctx, findComponentID, "findComponent", map[string]interface{}{
-			"query": "Component:systemd",
-		})
-
-		validateResponseHasNoError(t, findResponse)
-		componentIDs := validateComponentIDResponse(t, findResponse)
-		require.NotEmpty(t, componentIDs)
-		componentID := componentIDs[0]
-
-		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
-				"id": componentID,
-				// vulnQuery and scopeQuery are optional, so nil is valid
-			})
-
-		assert.Empty(t, response.Errors, "Query with nil optional variables should work")
-
-		var result queryResponse
-		require.NoError(t, json.Unmarshal(response.Data, &result))
-		assert.NotEmpty(t, result.Result.Vulnerabilities)
 	})
 }
 
@@ -346,7 +248,29 @@ func getImageComponentCVEResolver(t *testing.T, mockContainer *imageComponentCVE
 	return resolver
 }
 
-func setupImageComponentMocks(mockContainer *imageComponentCVEMocks) {
+func setupImageComponentMocks(mockCtrl *gomock.Controller, mockContainer *imageComponentCVEMocks) {
+	systemdFlatComponent := imageComponentFlatViewMocks.NewMockComponentFlat(mockCtrl)
+	systemdFlatComponent.EXPECT().GetComponent().AnyTimes().Return("systemd")
+	systemdFlatComponent.EXPECT().GetComponentIDs().AnyTimes().Return([]string{"systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"})
+	systemdFlatComponent.EXPECT().GetVersion().AnyTimes().Return("249.11-0ubuntu3.11")
+	systemdFlatComponent.EXPECT().GetTopCVSS().AnyTimes().Return(float32(5.5))
+	systemdFlatComponent.EXPECT().GetRiskScore().AnyTimes().Return(float32(0))
+	systemdFlatComponent.EXPECT().GetOperatingSystem().AnyTimes().Return("ubuntu:22.04")
+	systemdStorageComponent := &storage.ImageComponentV2{
+		Id:        "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		Name:      "systemd",
+		Version:   "249.11-0ubuntu3.11",
+		Priority:  1,
+		Source:    storage.SourceType_OS,
+		RiskScore: 0,
+		SetTopCvss: &storage.ImageComponentV2_TopCvss{
+			TopCvss: 5.5,
+		},
+		OperatingSystem: "ubuntu:22.04",
+		ImageIdV2:       "4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		FromBaseImage:   false,
+		LayerType:       storage.LayerType_APPLICATION,
+	}
 	mockContainer.imageComponentFlatView.EXPECT().
 		Get(gomock.Any(), gomock.Any()).
 		AnyTimes().Return([]imagecomponentflat.ComponentFlat{systemdFlatComponent}, nil)
@@ -358,7 +282,42 @@ func setupImageComponentMocks(mockContainer *imageComponentCVEMocks) {
 		AnyTimes().Return([]*storage.ImageComponentV2{systemdStorageComponent}, nil)
 }
 
-func setupImageComponentCVEMocks(mockContainer *imageComponentCVEMocks) {
+func setupImageComponentCVEMocks(mockCtrl *gomock.Controller, mockContainer *imageComponentCVEMocks) {
+	now := new(time.Now())
+	moderateVuln := new(storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY)
+	observedState := new(storage.VulnerabilityState_OBSERVED)
+
+	flatCVE2023x7008 := imageCVEFlatViewMocks.NewMockCveFlat(mockCtrl)
+	flatCVE2023x7008.EXPECT().GetCVE().AnyTimes().Return("CVE-2023-7008")
+	flatCVE2023x7008.EXPECT().GetCVEIDs().AnyTimes().Return([]string{"CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e"})
+	flatCVE2023x7008.EXPECT().GetSeverity().AnyTimes().Return(moderateVuln)
+	flatCVE2023x7008.EXPECT().GetTopCVSS().AnyTimes().Return(float32(5.5))
+	flatCVE2023x7008.EXPECT().GetTopNVDCVSS().AnyTimes().Return(float32(5.4))
+	flatCVE2023x7008.EXPECT().GetEPSSProbability().AnyTimes().Return(float32(0.45))
+	flatCVE2023x7008.EXPECT().GetAffectedImageCount().AnyTimes().Return(1)
+	flatCVE2023x7008.EXPECT().GetFirstDiscoveredInSystem().AnyTimes().Return(now)
+	flatCVE2023x7008.EXPECT().GetPublishDate().AnyTimes().Return(now)
+	flatCVE2023x7008.EXPECT().GetFirstImageOccurrence().AnyTimes().Return(now)
+	flatCVE2023x7008.EXPECT().GetState().AnyTimes().Return(observedState)
+	cve2023x7008 := &storage.ImageCVEV2{
+		Id: "CVE-2023-7008#0#systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          "CVE-2023-7008",
+			CreatedAt:    protocompat.TimestampNow(),
+			ScoreVersion: storage.CVEInfo_V2,
+		},
+		Cvss:                 5.5,
+		Severity:             storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
+		FirstImageOccurrence: protocompat.TimestampNow(),
+		State:                storage.VulnerabilityState_OBSERVED,
+		IsFixable:            true,
+		HasFixedBy: &storage.ImageCVEV2_FixedBy{
+			FixedBy: "249.11-0ubuntu3.12",
+		},
+		ComponentId: "systemd#0#4cd5259a-d1fc-5c81-ab1a-92484311441e",
+		ImageIdV2:   "4cd5259a-d1fc-5c81-ab1a-92484311441e",
+	}
 	mockContainer.imageCVEDS.EXPECT().
 		Search(gomock.Any(), gomock.Any()).
 		AnyTimes().Return([]searchPkg.Result{{ID: cve2023x7008.GetId()}}, nil)
@@ -406,7 +365,7 @@ func validateComponentIDResponse(t testing.TB, response *graphql.Response) []str
 func validateSingleVulnerabilityResponse(t testing.TB, response *graphql.Response) {
 	t.Helper()
 
-	var result queryResponse
+	var result testQueryResponse
 	require.NoError(t, json.Unmarshal(response.Data, &result))
 
 	require.Len(t, result.Result.Vulnerabilities, 1, "Should find exactly one fixable CVE-2023-7008")
@@ -416,7 +375,7 @@ func validateResponseContainsCVE2023x7008(t testing.TB, response *graphql.Respon
 	t.Helper()
 
 	// Parse the response
-	var result queryResponse
+	var result testQueryResponse
 	require.NoError(t, json.Unmarshal(response.Data, &result))
 
 	// Validate we got results
@@ -440,52 +399,6 @@ func validateResponseContainsCVE2023x7008(t testing.TB, response *graphql.Respon
 
 // endregion test helper functions
 
-// region helper mock types
-
-type flatComponentV2 struct {
-	component       string
-	componentIDs    []string
-	version         string
-	operatingSystem string
-	riskScore       float32
-	topCVSS         float32
-}
-
-func (c *flatComponentV2) GetComponent() string       { return c.component }
-func (c *flatComponentV2) GetComponentIDs() []string  { return c.componentIDs }
-func (c *flatComponentV2) GetVersion() string         { return c.version }
-func (c *flatComponentV2) GetTopCVSS() float32        { return c.topCVSS }
-func (c *flatComponentV2) GetRiskScore() float32      { return c.riskScore }
-func (c *flatComponentV2) GetOperatingSystem() string { return c.operatingSystem }
-
-type flatCVEV2 struct {
-	cve                     string
-	cveIDs                  []string
-	severity                *storage.VulnerabilitySeverity
-	topCVSS                 float32
-	topNVDCVSS              float32
-	epssProbability         float32
-	affectedImageCount      int
-	firstDiscoveredInSystem *time.Time
-	publishedDate           *time.Time
-	firstImageOccurrence    *time.Time
-	state                   *storage.VulnerabilityState
-}
-
-func (f *flatCVEV2) GetCVE() string                              { return f.cve }
-func (f *flatCVEV2) GetCVEIDs() []string                         { return f.cveIDs }
-func (f *flatCVEV2) GetSeverity() *storage.VulnerabilitySeverity { return f.severity }
-func (f *flatCVEV2) GetTopCVSS() float32                         { return f.topCVSS }
-func (f *flatCVEV2) GetTopNVDCVSS() float32                      { return f.topNVDCVSS }
-func (f *flatCVEV2) GetEPSSProbability() float32                 { return f.epssProbability }
-func (f *flatCVEV2) GetAffectedImageCount() int                  { return f.affectedImageCount }
-func (f *flatCVEV2) GetFirstDiscoveredInSystem() *time.Time      { return f.firstDiscoveredInSystem }
-func (f *flatCVEV2) GetPublishDate() *time.Time                  { return f.publishedDate }
-func (f *flatCVEV2) GetFirstImageOccurrence() *time.Time         { return f.firstImageOccurrence }
-func (f *flatCVEV2) GetState() *storage.VulnerabilityState       { return f.state }
-
-// endregion helper mock types
-
 // region helper test types
 
 type imageComponentCVEMocks struct {
@@ -496,19 +409,19 @@ type imageComponentCVEMocks struct {
 }
 
 // Response structure matching the GraphQL query
-type cveResponse struct {
+type testCVEResponse struct {
 	CVE            string  `json:"cve"`
 	CVSS           float64 `json:"cvss"`
 	Severity       string  `json:"severity"`
 	FixedByVersion string  `json:"fixedByVersion"`
 }
 
-type imageComponentResponse struct {
-	Vulnerabilities []cveResponse `json:"vulnerabilities"`
+type testImageComponentResponse struct {
+	Vulnerabilities []testCVEResponse `json:"vulnerabilities"`
 }
 
-type queryResponse struct {
-	Result imageComponentResponse `json:"result"`
+type testQueryResponse struct {
+	Result testImageComponentResponse `json:"result"`
 }
 
 // endregion helper test types
