@@ -180,3 +180,78 @@ func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
 }
+
+// Test that when we search secrets without including relationships, the deployment relationships are not queried.
+func (suite *SecretServiceTestSuite) TestSearchSecretsExtendedWithoutIncludeRelationships() {
+	expectedSecrets := []*storage.ListSecret{
+		{Id: "id1"},
+	}
+
+	emptyWithPag := search.EmptyQuery()
+	emptyWithPag.Pagination = &v1.QueryPagination{
+		Limit: maxSecretsReturned,
+	}
+
+	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return([]*storage.ListSecret{
+		{Id: "id1"},
+	}, nil)
+	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), gomock.Any()).Times(0)
+
+	response, err := suite.service.ListSecretsExtended((context.Context)(nil), &v1.ListSecretsExtendedRequest{IncludeRelationships: false})
+	protoassert.SlicesEqual(suite.T(), expectedSecrets, response.GetSecrets())
+	suite.NoError(err)
+}
+
+// Test that when we list secrets with including relationships, the deployment relationships are queried.
+func (suite *SecretServiceTestSuite) TestSearchSecretsExtendedWithIncludeRelationships() {
+	emptyWithPag := search.EmptyQuery()
+	emptyWithPag.Pagination = &v1.QueryPagination{
+		Limit: maxSecretsReturned,
+	}
+	secret := &storage.ListSecret{
+		Id:        "id1",
+		Name:      "secretname",
+		ClusterId: "cluster",
+		Namespace: "namespace",
+	}
+
+	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return([]*storage.ListSecret{secret}, nil)
+	psr := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, secret.GetClusterId()).
+		AddExactMatches(search.Namespace, secret.GetNamespace()).
+		AddExactMatches(search.SecretName, secret.GetName()).
+		ProtoQuery()
+	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), psr).Return([]*v1.SearchResult{
+		{Id: "d1", Name: "deployment1"},
+	}, nil)
+
+	response, err := suite.service.ListSecretsExtended((context.Context)(nil), &v1.ListSecretsExtendedRequest{IncludeRelationships: true})
+
+	expectedSecrets := []*storage.ListSecret{
+		{
+			Id:        "id1",
+			Name:      "secretname",
+			ClusterId: "cluster",
+			Namespace: "namespace",
+			Relationship: &storage.SecretRelationship{DeploymentRelationships: []*storage.SecretDeploymentRelationship{
+				{Id: "d1", Name: "deployment1"},
+			}},
+		},
+	}
+	protoassert.SlicesEqual(suite.T(), expectedSecrets, response.GetSecrets())
+	suite.NoError(err)
+}
+
+func (suite *SecretServiceTestSuite) TestSearchSecretsExtendedWithIncludeRelationshipsFailure() {
+	emptyWithPag := search.EmptyQuery()
+	emptyWithPag.Pagination = &v1.QueryPagination{
+		Limit: maxSecretsReturned,
+	}
+	suite.mockSecretStore.EXPECT().SearchListSecrets(gomock.Any(), emptyWithPag).Return([]*storage.ListSecret{
+		{Id: "id1"},
+	}, nil)
+	suite.mockDeploymentStore.EXPECT().SearchDeployments(gomock.Any(), gomock.Any()).Return(([]*v1.SearchResult)(nil), errors.New("failure"))
+
+	_, err := suite.service.ListSecretsExtended((context.Context)(nil), &v1.ListSecretsExtendedRequest{IncludeRelationships: true})
+	suite.Error(err)
+}

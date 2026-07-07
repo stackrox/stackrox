@@ -2,7 +2,6 @@ package migratetooperator
 
 import (
 	"github.com/spf13/cobra"
-
 	"github.com/stackrox/rox/pkg/migratetooperator"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	commonMigrate "github.com/stackrox/rox/roxctl/common/migratetooperator"

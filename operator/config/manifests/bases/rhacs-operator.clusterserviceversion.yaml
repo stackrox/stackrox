@@ -568,6 +568,11 @@ spec:
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Configures the rollout strategy for the Central deployment.
+          The default is: Recreate.
+        displayName: Rollout Strategy
+        path: central.rolloutStrategy
       - description: Monitoring configuration.
         displayName: Monitoring
         path: monitoring

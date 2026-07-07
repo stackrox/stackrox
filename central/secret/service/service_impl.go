@@ -30,6 +30,7 @@ var (
 			v1.SecretService_GetSecret_FullMethodName,
 			v1.SecretService_CountSecrets_FullMethodName,
 			v1.SecretService_ListSecrets_FullMethodName,
+			v1.SecretService_ListSecretsExtended_FullMethodName,
 		},
 	})
 )
@@ -57,16 +58,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetSecret returns the secret for the id.
-func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*storage.Secret, error) {
-	secret, exists, err := s.secrets.GetSecret(ctx, request.GetId())
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "secret with id '%s' does not exist", request.GetId())
-	}
+// common interface for secrets and list secrets based on identifying fields.
+type secretIdentity interface {
+	GetClusterId() string
+	GetNamespace() string
+	GetName() string
+}
 
+// getDeploymentRelationships returns the deployment relationships for a secret.
+func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, secret secretIdentity) ([]*storage.SecretDeploymentRelationship, error) {
 	psr := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, secret.GetClusterId()).
 		AddExactMatches(search.Namespace, secret.GetNamespace()).
@@ -77,7 +77,6 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 	if err != nil {
 		return nil, err
 	}
-
 	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &storage.SecretDeploymentRelationship{
@@ -85,6 +84,24 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 			Name: r.GetName(),
 		})
 	}
+	return deployments, nil
+}
+
+// GetSecret returns the secret for the id.
+func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*storage.Secret, error) {
+	secret, exists, err := s.secrets.GetSecret(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "secret with id '%s' does not exist", request.GetId())
+	}
+
+	deployments, err := s.getDeploymentRelationships(ctx, secret)
+	if err != nil {
+		return nil, err
+	}
+
 	secret.Relationship = &storage.SecretRelationship{
 		DeploymentRelationships: deployments,
 	}
@@ -106,18 +123,54 @@ func (s *serviceImpl) CountSecrets(ctx context.Context, request *v1.RawQuery) (*
 	return &v1.CountSecretsResponse{Count: int32(numSecrets)}, nil
 }
 
-// ListSecrets returns all secrets that match the query.
-func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v1.ListSecretsResponse, error) {
+func (s *serviceImpl) listSecrets(ctx context.Context, request *v1.ListSecretsExtendedRequest) ([]*storage.ListSecret, error) {
+	rawQuery := request.GetQuery()
 	// Fill in query.
-	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	parsedQuery, err := search.ParseQuery(rawQuery.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
 	// Fill in pagination.
-	paginated.FillPagination(parsedQuery, request.GetPagination(), maxSecretsReturned)
+	paginated.FillPagination(parsedQuery, rawQuery.GetPagination(), maxSecretsReturned)
 
 	secrets, err := s.secrets.SearchListSecrets(ctx, parsedQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	// This N+1 query pattern is only used when the caller explicitly requests the relationships, so
+	// is acceptable in the opt-in case.
+	if request.GetIncludeRelationships() {
+		for _, secret := range secrets {
+			deployments, err := s.getDeploymentRelationships(ctx, secret)
+			if err != nil {
+				return nil, err
+			}
+			secret.Relationship = &storage.SecretRelationship{
+				DeploymentRelationships: deployments,
+			}
+		}
+	}
+
+	return secrets, nil
+}
+
+// ListSecrets returns all secrets that match the query.
+func (s *serviceImpl) ListSecrets(ctx context.Context, request *v1.RawQuery) (*v1.ListSecretsResponse, error) {
+	secrets, err := s.listSecrets(ctx, &v1.ListSecretsExtendedRequest{
+		Query:                request,
+		IncludeRelationships: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &v1.ListSecretsResponse{Secrets: secrets}, nil
+}
+
+// ListSecretsExtended returns all secrets that match the query and optionally includes their workload relationships.
+func (s *serviceImpl) ListSecretsExtended(ctx context.Context, request *v1.ListSecretsExtendedRequest) (*v1.ListSecretsResponse, error) {
+	secrets, err := s.listSecrets(ctx, request)
 	if err != nil {
 		return nil, err
 	}

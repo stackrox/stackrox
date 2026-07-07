@@ -150,7 +150,7 @@ func ApplyAllIndexes(ctx context.Context, db postgres.DB, stmtTimeout time.Durat
 	}
 
 	for _, idx := range toCreate {
-		log.Infof("Creating index: %s", idx.Name)
+		log.Debugf("Creating index: %s", idx.Name)
 		stmtCtx, cancel := context.WithTimeout(ctx, stmtTimeout)
 		_, err := db.Exec(stmtCtx, idx.CreateSQL)
 		cancel()
