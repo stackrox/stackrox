@@ -29,9 +29,9 @@ Is the change schema-only (new column without backfill, new table)?
 └── NO →
     Adding an index?
     ├── YES → No migration needed. Use proto tags instead.
-    │         Is the table on the high-cardinality list below?
-    │         ├── YES → Use sql:"background-index=btree" (created non-blocking after startup)
-    │         └── NO  → Use sql:"index=btree" (created at startup)
+    │         Unique index?
+    │         ├── YES → Use sql:"index=category:unique" (created at startup via GORM)
+    │         └── NO  → Use sql:"index=btree" (created after startup by background runner)
     └── NO →
         Can the new column tolerate its zero value until normal operation populates it?
         ├── YES → No migration needed.
@@ -60,9 +60,9 @@ a background migration is in progress.
 | | Startup migration | Background migration |
 |---|---|---|
 | **Runs when** | Before Central starts (during upgrade) | After Central is running and rollout is complete |
-| **Central availability** | Central is **down** during execution | Central is **live** and serving traffic |
+| **Central availability** | New Central is not yet serving; with RollingUpdate the old Central continues serving | Central is **live** and serving traffic |
 | **Downtime impact** | Extends upgrade downtime (Recreate) or new pod startup time (RollingUpdate) | None |
-| **Concurrency** | Exclusive access to the database | Must handle concurrent reads/writes from Central |
+| **Concurrency** | Exclusive via advisory lock; with RollingUpdate old Central is still reading/writing | Must handle concurrent reads/writes from Central |
 | **Transaction support** | Version update wrapped in transaction; migration code itself is not automatically wrapped | No automatic transaction wrapping |
 | **When to use** | DDL/schema changes that GORM AutoMigrate cannot handle (e.g., `SET DEFAULT`, dropping tables, constraints) | All data backfills and transformations |
 | **Sequence tracking** | `CurrentDBVersionSeqNum` in `pkg/migrations/internal/seq_num.go` | `CurrentBgMigrationSeqNum` in `central/backgroundmigrations/seq_num.go` |
@@ -97,10 +97,11 @@ Central upgrade sequence:
   |  1. Migrator acquires advisory lock                      |
   |  2. Run startup migrations sequentially                  |
   |  3. GORM AutoMigrate applies all registered schemas      |
-  |  4. Apply startup indexes (CREATE INDEX CONCURRENTLY)    |
-  |  5. Release advisory lock                                |
+  |     (includes unique index creation)                     |
+  |  4. Release advisory lock                                |
   |                                                          |
-  |  Central is NOT serving traffic during this phase         |
+  |  New Central is NOT serving traffic during this phase.   |
+  |  With RollingUpdate, old Central continues serving.      |
   +----------------------------+-----------------------------+
                                |
                                v
@@ -109,7 +110,7 @@ Central upgrade sequence:
   |                                                          |
   |  6. Datastores initialize                                |
   |  7. gRPC/HTTP servers start                              |
-  |  8. Central is ready and serving traffic                  |
+  |  8. Central is ready and serving traffic                 |
   +----------------------------+-----------------------------+
                                |
                                v
@@ -117,14 +118,14 @@ Central upgrade sequence:
   |         BACKGROUND PHASE (concurrent)                    |
   |                                                          |
   |  Background Migrations:                                  |
-  |  9. Rollout checker waits for all old pods to terminate   |
+  |  9. Rollout checker waits for all old pods to terminate  |
   | 10. Acquire background migration advisory lock           |
   | 11. Run background migrations sequentially               |
   | 12. Each migration checkpoints progress on completion    |
-  | 13. Reconcile background indexes (CREATE INDEX           |
-  |     CONCURRENTLY for all background-index fields)        |
+  | 13. Reconcile indexes (CREATE INDEX CONCURRENTLY         |
+  |     for all non-unique index fields)                     |
   |                                                          |
-  |  Central IS serving traffic during this phase             |
+  |  Central IS serving traffic during this phase            |
   +----------------------------------------------------------+
 ```
 
@@ -162,35 +163,23 @@ and the workaround code replaced.
 
 ## Index Management
 
-All indexes are managed through proto tags and the code generator, not GORM struct tags.
-The generator produces complete `CREATE INDEX` SQL at codegen time; at runtime the SQL is
-executed verbatim. There are two creation paths depending on table size.
+All indexes are managed through proto tags and the code generator. Add `sql:"index"` to
+the proto field, then run `make proto-generated-srcs && make go-generated-srcs`.
 
-### Adding a new index
+| Index type | Proto tag | Created when | Created by |
+|---|---|---|---|
+| Non-unique | `sql:"index=btree"` | After startup, after all background migrations | Background runner via `CREATE INDEX CONCURRENTLY` |
+| Unique | `sql:"index=category:unique"` | At startup | GORM `ApplyAllSchemas()` |
+| SAC filter | Auto-generated for `Cluster ID` / `Namespace` fields | After startup | Background runner |
 
-1. Add the appropriate tag to the proto field:
-   - **Small or new tables**: `sql:"index=btree"` -- created at startup using
-     `CREATE INDEX CONCURRENTLY`
-   - **High-cardinality tables**: `sql:"background-index=btree"` -- created after startup
-     using `CREATE INDEX CONCURRENTLY`
-2. Run `make proto-generated-srcs && make go-generated-srcs` to regenerate schema code
-3. The generated `CreateStmts` will include `Indexes: []*postgres.IndexDefinition{...}` entries
-
-### How it works
-
-- **Startup indexes** (`sql:"index"`, `Background: false`): Created by
-  `schema.ApplyAllStartupIndexes()` before Central serves traffic. All indexes use
-  `CREATE INDEX CONCURRENTLY` to avoid locking the table.
-- **Background indexes** (`sql:"background-index"`, `Background: true`): Created by the
-  background migration runner using `CREATE INDEX CONCURRENTLY IF NOT EXISTS` after all
-  numbered migrations complete. Runs after Central starts serving traffic. Use this for
-  high-cardinality tables where index creation on large datasets is slow.
-- **SAC filter index**: Automatically generated for tables with `Cluster ID` or `Namespace`
-  search fields.
+Unique indexes are created at startup so new Central can rely on uniqueness guarantees
+from the moment it starts. Adding a unique index to an existing table is a special case —
+the old version must not produce non-unique rows during RollingUpdate, or index creation
+fails.
 
 ### Composite indexes
 
-To create a composite index across multiple fields, give them the same index name:
+Give fields the same index name to create a multi-column index:
 
 ```protobuf
 string auth_provider_id = 1; // @gotags: sql:"index=name:groups_unique;type:btree;category:unique"
@@ -198,19 +187,10 @@ string key = 2;              // @gotags: sql:"index=name:groups_unique;type:btre
 string value = 3;            // @gotags: sql:"index=name:groups_unique;type:btree;category:unique"
 ```
 
-### High-cardinality table indexes
-
-When adding **new** indexes to the tables listed in the
-[high-cardinality table list](#high-cardinality-tables-always-use-background-migrations),
-always use `background-index`.
-
-Existing indexes on these tables that were previously created by GORM at startup are now
-also managed by the code generator and applied outside of GORM.
-
 ## Writing migrations
 
 - **Startup migration**: See [STARTUP_MIGRATIONS.md](STARTUP_MIGRATIONS.md) for the full
-  guide including bootstrapping, data access patterns, frozen schemas, and testing.
+  guide including bootstrapping, DDL patterns, and testing.
 - **Background migration**: See [BACKGROUND_MIGRATIONS.md](../central/backgroundmigrations/BACKGROUND_MIGRATIONS.md)
   for the full guide including concurrency handling, batching patterns, and testing.
 
