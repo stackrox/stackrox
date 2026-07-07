@@ -19,6 +19,7 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests
+      ci-job-short-name: qa-e2e-gke
       infra-flavor: gke-default
       infra-args: |
         nodes=3

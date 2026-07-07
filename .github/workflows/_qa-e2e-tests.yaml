@@ -11,6 +11,10 @@ on:
         description: "Unique job name, e.g. gke-qa-e2e-tests"
         required: true
         type: string
+      ci-job-short-name:
+        description: "Short job name (ideally at most 20 characters long), used as prefix in length limited cluster names"
+        required: false
+        type: string
       extra-env-vars:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
@@ -76,13 +80,23 @@ jobs:
         id: cluster-name
         env:
           CI_JOB_NAME: ${{ inputs.ci-job-name }}
+          CI_JOB_SHORT_NAME: ${{ inputs.ci-job-short-name }}
         # infractl enforces a 28-char limit for cluster names.
         run: |
-          run_id="${{ github.run_id }}"
-          prefix="${CI_JOB_NAME:0:19}"
-          name="${prefix}-${run_id: -6}-${{ github.run_attempt }}"
-          echo "name=${name}" >> "$GITHUB_OUTPUT"
-          echo "CLUSTER_NAME=${name}" >> "$GITHUB_ENV"
+          cluster_name_max=28
+          prefix_length=20
+
+          prefix=${CI_JOB_SHORT_NAME:-$CI_JOB_NAME}
+          prefix=${prefix:0:$prefix_length}
+
+          hash_length=$((cluster_name_max - 1 - prefix_length))
+          hash_input="${CI_JOB_NAME}-${{ github.run_id }}-${{ github.run_attempt }}"
+          hash=$(echo "$hash_input" | sha256sum)
+          hash_truncated=${hash:0:$hash_length}
+
+          cluster_name="${prefix}-${hash_truncated}"
+          echo "name=${cluster_name}" >> "$GITHUB_OUTPUT"
+          echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
       - name: Prepare infra args
         id: prepare-infra-args

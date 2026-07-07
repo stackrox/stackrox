@@ -19,6 +19,7 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       ci-job-name: qa-e2e-tests-ocp-4-22
+      ci-job-short-name: qa-e2e-ocp422
       cluster-wait-timeout-minutes: 50
       infra-flavor: openshift-4
       infra-args: |
