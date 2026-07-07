@@ -34,9 +34,14 @@ var parsedBumps []parsedBump
 func init() {
 	var f bumpsFile
 	utils.CrashOnError(yaml.Unmarshal(rawData, &f))
+	seen := make(map[int]bool)
 	for _, b := range f.Bumps {
 		pb, err := parseBump(b)
 		utils.CrashOnError(err)
+		if seen[pb.ToMajor] {
+			utils.CrashOnError(fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", pb.ToMajor))
+		}
+		seen[pb.ToMajor] = true
 		parsedBumps = append(parsedBumps, pb)
 	}
 }
@@ -77,6 +82,7 @@ func parseMajorMinor(s string) (int, int, error) {
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.
 // If minor > 0, the previous Y-stream is simply major.(minor-1).
 // If minor == 0, it looks up the major version bump history to find what came before.
+// By definition, major version bumps always target X.0 (never X.N with N>0).
 func GetPreviousYStream(major, minor int) (prevMajor, prevMinor int, err error) {
 	if minor > 0 {
 		return major, minor - 1, nil
