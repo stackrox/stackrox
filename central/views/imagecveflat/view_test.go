@@ -340,6 +340,59 @@ func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatWithPagination() {
 	}
 }
 
+func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatUnifiedView() {
+	s.T().Setenv(features.VulnMgmtUnifiedCVEView.EnvVar(), "true")
+	if !features.VulnMgmtUnifiedCVEView.Enabled() {
+		s.T().Skip("Cannot enable VulnMgmtUnifiedCVEView")
+	}
+
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+			assert.Equal(t, len(expected), len(actual))
+			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
+		})
+	}
+}
+
+func (s *ImageCVEFlatViewTestSuite) TestGetImageCVEFlatUnifiedViewWithPagination() {
+	s.T().Setenv(features.VulnMgmtUnifiedCVEView.EnvVar(), "true")
+	if !features.VulnMgmtUnifiedCVEView.Enabled() {
+		s.T().Skip("Cannot enable VulnMgmtUnifiedCVEView")
+	}
+
+	for _, paginationTestCase := range s.paginationTestCases() {
+		baseTestCases := s.testCases()
+		for idx := range baseTestCases {
+			tc := &baseTestCases[idx]
+			if !tc.readOptions.IsDefault() {
+				continue
+			}
+			applyPaginationProps(tc, paginationTestCase)
+
+			s.T().Run(tc.desc, func(t *testing.T) {
+				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+				assert.Equal(t, len(expected), len(actual))
+				assertResponsesAreEqual(t, expected, actual, true)
+			})
+		}
+	}
+}
+
 func (s *ImageCVEFlatViewTestSuite) TestCountImageCVEFlat() {
 	for _, tc := range s.testCases() {
 		if tc.skipCountTests {

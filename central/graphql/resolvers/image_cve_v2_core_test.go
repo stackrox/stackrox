@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stretchr/testify/suite"
@@ -148,6 +150,29 @@ func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVECountWithQuery() {
 	response, err := s.resolver.ImageCVECount(s.ctx, *q)
 	s.NoError(err)
 	s.Equal(response, int32(3))
+}
+
+func (s *ImageCVEV2CoreResolverTestSuite) TestImageCVEResolverFields() {
+	q := &PaginatedQuery{}
+	expectedQ, err := q.AsV1QueryOrEmpty()
+	s.Require().NoError(err)
+
+	mockCore := imageCVEViewMock.NewMockCveCore(s.mockCtrl)
+	mockCore.EXPECT().GetTopSeverity().Return(storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY).AnyTimes()
+	mockCore.EXPECT().GetEPSSProbability().Return(float32(0.95)).AnyTimes()
+	mockCore.EXPECT().GetTopCVSS().Return(float32(9.8)).AnyTimes()
+	mockCore.EXPECT().GetTopNVDCVSS().Return(float32(9.5)).AnyTimes()
+
+	s.imageCVEView.EXPECT().Get(s.ctx, expectedQ, views.ReadOptions{}).Return([]imagecve.CveCore{mockCore}, nil)
+	response, err := s.resolver.ImageCVEs(s.ctx, *q)
+	s.NoError(err)
+	s.Require().Len(response, 1)
+
+	r := response[0]
+	s.Equal("CRITICAL_VULNERABILITY_SEVERITY", r.TopSeverity(s.ctx))
+	s.InDelta(0.95, r.TopEpssProbability(s.ctx), 0.001)
+	s.InDelta(9.8, r.TopCVSS(s.ctx), 0.001)
+	s.InDelta(9.5, r.TopNVDCVSS(s.ctx), 0.001)
 }
 
 func (s *ImageCVEV2CoreResolverTestSuite) TestGetImageCVEMalformed() {

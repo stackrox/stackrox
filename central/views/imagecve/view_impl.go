@@ -88,7 +88,10 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	var cveIDsToFilter []string
 	var err error
-	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
+	// When unified CVE view is enabled, severity counts are replaced with
+	// MAX(severity). This eliminates the need for a two-phase query because
+	// ORDER BY MAX(severity) DESC + LIMIT works in a single pass.
+	if !features.VulnMgmtUnifiedCVEView.Enabled() && (cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0) {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			return nil, err
@@ -194,7 +197,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	// TODO(ROX-26310): Update the search framework to inject required select.
 	// Add the severity selects if severity is a sort option to ensure we have the filtered
 	// list of CVEs ordered appropriately.
-	if common.IsSortBySeverityCounts(cloned) {
+	if !features.VulnMgmtUnifiedCVEView.Enabled() && common.IsSortBySeverityCounts(cloned) {
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
@@ -216,8 +219,10 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+		search.NewQuerySelect(search.EPSSProbablity).AggrFunc(aggregatefunc.Max).Proto(),
 	}
-	if !options.SkipGetImagesBySeverity {
+	if !options.SkipGetImagesBySeverity && !features.VulnMgmtUnifiedCVEView.Enabled() {
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(q, searchField).GetSelects()...,
 		)
