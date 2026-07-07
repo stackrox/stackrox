@@ -146,7 +146,7 @@ tasks.register<Test>("testParallel") {
 
 tasks.register<Test>("testRest") {
     useJUnitPlatform {
-        excludeTags("Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
+        excludeTags("Parallel", "Upgrade", "SensorBounce")
     }
 }
 
@@ -225,11 +225,6 @@ tasks.register<Test>("testSensorBounce") {
     }
 }
 
-tasks.register<Test>("testSensorBounceNext") {
-    useJUnitPlatform {
-        includeTags("SensorBounceNext")
-    }
-}
 
 tasks.register<JavaExec>("runSampleScript") {
     dependsOn("classes")
