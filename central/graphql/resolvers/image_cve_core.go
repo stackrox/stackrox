@@ -58,7 +58,9 @@ type imageCVECoreResolver struct {
 	root *Resolver
 	data imagecve.CveCore
 
-	subFieldQuery *v1.Query
+	subFieldQuery              *v1.Query
+	preloadedExceptionCount    int32
+	hasPreloadedExceptionCount bool
 }
 
 func (resolver *Resolver) wrapImageCVECoreWithContext(ctx context.Context, value imagecve.CveCore, err error) (*imageCVECoreResolver, error) {
@@ -125,8 +127,25 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	if err != nil {
 		return nil, err
 	}
+
 	for _, r := range ret {
 		r.subFieldQuery = query
+	}
+
+	if resolver.vulnReqStore != nil {
+		cveNames := make([]string, len(ret))
+		for i, r := range ret {
+			cveNames[i] = r.data.GetCVE()
+		}
+		exceptionCounts, batchErr := batchExceptionCounts(ctx, resolver.vulnReqStore, cveNames)
+		if batchErr != nil {
+			log.Warnf("batch exception count failed, falling back to per-CVE: %v", batchErr)
+		} else {
+			for _, r := range ret {
+				r.preloadedExceptionCount = exceptionCounts[r.data.GetCVE()]
+				r.hasPreloadedExceptionCount = true
+			}
+		}
 	}
 
 	return ret, nil
@@ -227,6 +246,10 @@ func (resolver *imageCVECoreResolver) PublishedOn(_ context.Context) *graphql.Ti
 
 func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args struct{ RequestStatus *[]*string }) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ExceptionCount")
+
+	if resolver.hasPreloadedExceptionCount {
+		return resolver.preloadedExceptionCount, nil
+	}
 
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
