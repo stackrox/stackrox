@@ -2,18 +2,14 @@
 
 set -e
 
+CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
+
 echo "Building with platform linux/${GOARCH}"
-if command -v docker buildx &>/dev/null; then
-    if docker info | grep buildx; then
-        docker buildx build --platform "linux/${GOARCH}" --load "$@"
-    else
-        docker build --platform "linux/${GOARCH}" "$@"
-    fi
-    exit 0
+
+buildx_enabled=$(${CONTAINER_ENGINE} info 2>/dev/null | grep -q buildx && echo true || echo false)
+
+if [[ "${CONTAINER_ENGINE}" == "docker" ]] && [[ "${buildx_enabled}" == "true" ]]; then
+    docker buildx build --platform "linux/${GOARCH}" --load "$@"
+else
+    ${CONTAINER_ENGINE} build --platform "linux/${GOARCH}" "$@"
 fi
-if command -v podman &>/dev/null; then
-    podman build --platform "linux/${GOARCH}" "$@"
-    exit 0
-fi
-echo "error: docker and podman are both not available"
-exit 1

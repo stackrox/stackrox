@@ -9,14 +9,17 @@ BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
 CONTAINER_ENGINE ?= docker
+export CONTAINER_ENGINE
 
 podman =
+# If CONTAINER_ENGINE is explicitly set to podman, detect it
+ifeq ($(CONTAINER_ENGINE),podman)
+	podman = yes
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
-ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+else ifneq (,$(findstring podman,$(shell $(CONTAINER_ENGINE) --version 2>/dev/null)))
 	podman = yes
-endif
-ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+else ifneq (,$(findstring Podman,$(shell $(CONTAINER_ENGINE) version 2>/dev/null)))
 	podman = yes
 endif
 # if docker is not available and podman is installed, use podman instead
@@ -730,7 +733,7 @@ scale-image: scale-build clean-image
 	cp bin/linux_$(GOARCH)/profiler scale/image/rhel/bin/profiler
 	cp bin/linux_$(GOARCH)/chaos scale/image/rhel/bin/chaos
 	chmod +w scale/image/rhel/bin/*
-	docker build \
+	$(CONTAINER_ENGINE) build \
 		-t stackrox/scale:$(TAG) \
 		-t quay.io/rhacs-eng/scale:$(TAG) \
 		-f scale/image/Dockerfile scale
@@ -739,7 +742,7 @@ webhookserver-image: webhookserver-build
 	-mkdir webhookserver/bin
 	cp bin/linux_$(GOARCH)/webhookserver webhookserver/bin/webhookserver
 	chmod +w webhookserver/bin/webhookserver
-	docker build \
+	$(CONTAINER_ENGINE) build \
 		-t stackrox/webhookserver:1.2 \
 		-t quay.io/rhacs-eng/webhookserver:1.2 \
 		-f webhookserver/Dockerfile webhookserver
