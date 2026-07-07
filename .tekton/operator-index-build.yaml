@@ -354,7 +354,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:75c5b9c2c910487007d4de42e86aae41d49751e6c7bcae7777c8bf630c31a3d8
+          image: registry.access.redhat.com/ubi9/go-toolset:1.26@sha256:b2bc0c6c92c56dce575ed1b2dec1ec9f8b345a80ef5e74d9bfd530b6b354feeb
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
