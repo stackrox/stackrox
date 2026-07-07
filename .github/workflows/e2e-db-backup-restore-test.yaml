@@ -11,6 +11,12 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -22,7 +28,7 @@ defaults:
 
 jobs:
   gke-db-backup-restore-test:
-    if: inputs.should-run
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
