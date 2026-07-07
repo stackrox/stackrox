@@ -71,4 +71,3 @@ export const NODE_NAME = gql`
         }
     }
 `;
-
