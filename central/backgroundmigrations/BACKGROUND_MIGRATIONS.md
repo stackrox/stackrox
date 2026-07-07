@@ -250,12 +250,6 @@ type indicatorRow struct {
 }
 
 func run(ctx context.Context, db postgres.DB) error {
-    conn, err := db.Acquire(ctx)
-    if err != nil {
-        return fmt.Errorf("acquiring connection: %w", err)
-    }
-    defer conn.Release()
-
     totalUpdated := 0
     lastID := ""
 
@@ -265,35 +259,65 @@ func run(ctx context.Context, db postgres.DB) error {
             return ctx.Err()
         }
 
-        rows, err := fetchBatch(ctx, conn, lastID)
+        rowsUpdated, newLastID, err := migrateBatch(ctx, db, lastID)
         if err != nil {
-            return fmt.Errorf("fetching batch after id %s: %w", lastID, err)
+            return fmt.Errorf("batch after id %s: %w", lastID, err)
         }
-        if len(rows) == 0 {
+        if newLastID == "" {
             break
         }
 
-        batch, err := buildBatchUpdates(rows)
-        if err != nil {
-            return err
-        }
-
-        if batch.Len() > 0 {
-            if err := sendBatch(ctx, conn, batch); err != nil {
-                return err
-            }
-        }
-
-        lastID = rows[len(rows)-1].id
-        totalUpdated += batch.Len()
+        lastID = newLastID
+        totalUpdated += rowsUpdated
     }
 
     log.Infof("backfill complete: %d rows updated", totalUpdated)
     return nil
 }
 
-func fetchBatch(ctx context.Context, conn *postgres.Conn, lastID string) ([]indicatorRow, error) {
-    rows, err := conn.Query(ctx, `
+// migrateBatch runs one batch inside an explicit transaction so that the
+// FOR UPDATE SKIP LOCKED row locks are held through the UPDATE statements.
+func migrateBatch(ctx context.Context, db postgres.DB, lastID string) (int, string, error) {
+    conn, err := db.Acquire(ctx)
+    if err != nil {
+        return 0, "", fmt.Errorf("acquiring connection: %w", err)
+    }
+    defer conn.Release()
+
+    tx, err := conn.Begin(ctx)
+    if err != nil {
+        return 0, "", fmt.Errorf("begin tx: %w", err)
+    }
+    defer func() { _ = tx.Rollback(ctx) }()
+
+    rows, err := fetchBatch(ctx, tx, lastID)
+    if err != nil {
+        return 0, "", err
+    }
+    if len(rows) == 0 {
+        return 0, "", nil
+    }
+
+    batch, err := buildBatchUpdates(rows)
+    if err != nil {
+        return 0, "", err
+    }
+
+    if batch.Len() > 0 {
+        if err := sendBatch(ctx, tx, batch); err != nil {
+            return 0, "", err
+        }
+    }
+
+    if err := tx.Commit(ctx); err != nil {
+        return 0, "", fmt.Errorf("commit: %w", err)
+    }
+
+    return batch.Len(), rows[len(rows)-1].id, nil
+}
+
+func fetchBatch(ctx context.Context, tx pgx.Tx, lastID string) ([]indicatorRow, error) {
+    rows, err := tx.Query(ctx, `
         SELECT id, serialized, signal_hostname
         FROM process_indicators
         WHERE id > $1
@@ -345,8 +369,8 @@ func buildBatchUpdates(rows []indicatorRow) (*pgx.Batch, error) {
     return batch, nil
 }
 
-func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) error {
-    results := conn.SendBatch(ctx, batch)
+func sendBatch(ctx context.Context, tx pgx.Tx, batch *pgx.Batch) error {
+    results := tx.SendBatch(ctx, batch)
     for i := 0; i < batch.Len(); i++ {
         if _, err := results.Exec(); err != nil {
             _ = results.Close()
@@ -361,6 +385,7 @@ func sendBatch(ctx context.Context, conn *postgres.Conn, batch *pgx.Batch) error
 
 | Decision | Rationale |
 |---|---|
+| Explicit transaction per batch | Ensures `FOR UPDATE` locks are held through the UPDATE statements. |
 | `FOR UPDATE SKIP LOCKED` | Locks rows to prevent conflicts with Central. Skips rows currently locked by Central. |
 | Primary key iteration (`id > $1 ORDER BY id`) | Uses the primary key index for efficient pagination. |
 | Skip rows where column already matches serialized blob | Avoids unnecessary writes. |
