@@ -12,6 +12,7 @@ import (
 	vStore "github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/premain"
@@ -40,6 +41,8 @@ func main() {
 	ensureDBCurrent(db)
 
 	healthSrv := startHealthServer()
+
+	go startMetricsServer()
 
 	log.Infof("central-worker is ready")
 
@@ -109,6 +112,11 @@ func startHealthServer() *http.Server {
 		}
 	}()
 	return srv
+}
+
+func startMetricsServer() {
+	pkgMetrics.NewServer(pkgMetrics.CentralWorkerSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
+	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralWorkerSubsystem.String())
 }
 
 func waitForTerminationSignal() {
