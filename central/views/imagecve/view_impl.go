@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -116,6 +117,35 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) TopSeverityBatch(ctx context.Context, entityIDs []string, entityType search.FieldLabel, q *v1.Query) (map[string]storage.VulnerabilitySeverity, error) {
+	if len(entityIDs) == 0 {
+		return nil, nil
+	}
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(entityType).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{Fields: []string{entityType.String()}}
+	cloned = search.ConjunctionQuery(cloned,
+		search.NewQueryBuilder().AddExactMatches(entityType, entityIDs...).ProtoQuery(),
+	)
+	cloned.Pagination = nil
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	result := make(map[string]storage.VulnerabilitySeverity, len(entityIDs))
+	err := pgSearch.RunSelectRequestForSchemaFn[EntitySeverityResult](queryCtx, v.db, v.schema, cloned, func(r *EntitySeverityResult) error {
+		result[r.EntityID] = r.TopSeverity
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
