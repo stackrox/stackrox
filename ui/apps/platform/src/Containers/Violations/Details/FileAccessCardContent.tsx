@@ -130,34 +130,51 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
             {file.meta && <Title headingLevel="h4">File metadata</Title>}
             {file.meta && (
                 <DescriptionList columnModifier={{ default: '2Col' }}>
-                    {file.meta.username && (
-                        <DescriptionListItem term="Owner" desc={file.meta.username} />
+                    {operation === 'OWNERSHIP_CHANGE' && (
+                        <>
+                            {file.meta.username && (
+                                <DescriptionListItem term="Owner" desc={file.meta.username} />
+                            )}
+                            {file.meta.group && (
+                                <DescriptionListItem term="Group" desc={file.meta.group} />
+                            )}
+                            {Number.isInteger(file.meta.uid) && (
+                                <DescriptionListItem term="UID" desc={file.meta.uid} />
+                            )}
+                            {Number.isInteger(file.meta.gid) && (
+                                <DescriptionListItem term="GID" desc={file.meta.gid} />
+                            )}
+                        </>
                     )}
-                    {file.meta.group && <DescriptionListItem term="Group" desc={file.meta.group} />}
-                    {Number.isInteger(file.meta.uid) && (
-                        <DescriptionListItem term="UID" desc={file.meta.uid} />
-                    )}
-                    {Number.isInteger(file.meta.gid) && (
-                        <DescriptionListItem term="GID" desc={file.meta.gid} />
-                    )}
-                    {Number.isInteger(file.meta.mode) && (
+                    {operation === 'PERMISSION_CHANGE' && Number.isInteger(file.meta.mode) && (
                         <DescriptionListItem
                             term="Permissions"
                             desc={`${formatFileMode(Number(file.meta.mode))} (${Number(file.meta.mode).toString(8).padStart(4, '0')})`}
                         />
                     )}
-                    {file.meta.aclType &&
-                        file.meta.aclType !== 'ACL_TYPE_UNSPECIFIED' && (
-                            <DescriptionListItem
-                                term="ACL type"
-                                desc={aclTypeLabels.get(file.meta.aclType) || file.meta.aclType}
-                            />
-                        )}
-                    {file.meta.aclEntries?.length > 0 && (
-                        <DescriptionListItem
-                            term="ACL entries"
-                            desc={file.meta.aclEntries.map(formatAclEntry).join(', ')}
-                        />
+                    {operation === 'ACL_CHANGE' && (
+                        <>
+                            {file.meta.aclType &&
+                                file.meta.aclType !== 'ACL_TYPE_UNSPECIFIED' && (
+                                    <DescriptionListItem
+                                        term="ACL type"
+                                        desc={
+                                            aclTypeLabels.get(file.meta.aclType) ||
+                                            file.meta.aclType
+                                        }
+                                    />
+                                )}
+                            {file.meta.aclEntries?.length > 0 && (
+                                <DescriptionListItem
+                                    term="ACL entries"
+                                    desc={file.meta.aclEntries.map((entry, i) => (
+                                        <div key={`${entry.tag}-${entry.id}-${i}`}>
+                                            {formatAclEntry(entry)}
+                                        </div>
+                                    ))}
+                                />
+                            )}
+                        </>
                     )}
                 </DescriptionList>
             )}
