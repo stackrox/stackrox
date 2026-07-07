@@ -50,15 +50,16 @@ type testImage interface {
 }
 
 type testCase struct {
-	desc           string
-	ctx            context.Context
-	q              *v1.Query
-	matchFilter    *filterImpl
-	less           lessFunc
-	readOptions    views.ReadOptions
-	expectedErr    string
-	skipCountTests bool
-	testOrder      bool
+	desc                 string
+	ctx                  context.Context
+	q                    *v1.Query
+	matchFilter          *filterImpl
+	less                 lessFunc
+	readOptions          views.ReadOptions
+	expectedErr          string
+	skipCountTests       bool
+	testOrder            bool
+	sortsBySeverityCount bool
 }
 
 type imageIDsPaginationTestCase struct {
@@ -439,6 +440,97 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 	}
 }
 
+func (s *ImageCVEViewTestSuite) TestGetImageCVECoreUnifiedView() {
+	s.T().Setenv(features.VulnMgmtUnifiedCVEView.EnvVar(), "true")
+	if !features.VulnMgmtUnifiedCVEView.Enabled() {
+		s.T().Skip("Cannot enable VulnMgmtUnifiedCVEView")
+	}
+
+	for _, tc := range s.testCases() {
+		if tc.sortsBySeverityCount {
+			continue
+		}
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+
+			// With unified view, severity counts are skipped — zero them in expected.
+			for _, entry := range expected {
+				if resp, ok := entry.(*imageCVECoreResponse); ok {
+					resp.ImagesWithCriticalSeverity = 0
+					resp.FixableImagesWithCriticalSeverity = 0
+					resp.ImagesWithImportantSeverity = 0
+					resp.FixableImagesWithImportantSeverity = 0
+					resp.ImagesWithModerateSeverity = 0
+					resp.FixableImagesWithModerateSeverity = 0
+					resp.ImagesWithLowSeverity = 0
+					resp.FixableImagesWithLowSeverity = 0
+					resp.ImagesWithUnknownSeverity = 0
+					resp.FixableImagesWithUnknownSeverity = 0
+				}
+			}
+
+			assertResponsesAreEqual(t, expected, actual, tc.testOrder)
+
+			// Verify TopSeverity and EPSS are populated.
+			for _, record := range actual {
+				assert.NotEqual(t, storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY, record.GetTopSeverity(),
+					"TopSeverity should be populated for CVE %s", record.GetCVE())
+			}
+		})
+	}
+}
+
+func (s *ImageCVEViewTestSuite) TestGetImageCVECoreUnifiedViewWithPagination() {
+	s.T().Setenv(features.VulnMgmtUnifiedCVEView.EnvVar(), "true")
+	if !features.VulnMgmtUnifiedCVEView.Enabled() {
+		s.T().Skip("Cannot enable VulnMgmtUnifiedCVEView")
+	}
+
+	for _, paginationTestCase := range s.paginationTestCases() {
+		baseTestCases := s.testCases()
+		for idx := range baseTestCases {
+			tc := &baseTestCases[idx]
+			if !tc.readOptions.IsDefault() || tc.sortsBySeverityCount {
+				continue
+			}
+			applyPaginationProps(tc, paginationTestCase)
+
+			s.T().Run(tc.desc, func(t *testing.T) {
+				actual, err := s.cveView.Get(sac.WithAllAccess(tc.ctx), tc.q, tc.readOptions)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				expected := s.compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
+				for _, entry := range expected {
+					if resp, ok := entry.(*imageCVECoreResponse); ok {
+						resp.ImagesWithCriticalSeverity = 0
+						resp.FixableImagesWithCriticalSeverity = 0
+						resp.ImagesWithImportantSeverity = 0
+						resp.FixableImagesWithImportantSeverity = 0
+						resp.ImagesWithModerateSeverity = 0
+						resp.FixableImagesWithModerateSeverity = 0
+						resp.ImagesWithLowSeverity = 0
+						resp.FixableImagesWithLowSeverity = 0
+						resp.ImagesWithUnknownSeverity = 0
+						resp.FixableImagesWithUnknownSeverity = 0
+					}
+				}
+				assertResponsesAreEqual(t, expected, actual, tc.testOrder)
+			})
+		}
+	}
+}
+
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
 		if tc.skipCountTests {
@@ -724,12 +816,13 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 				}),
 		},
 		{
-			desc:           "search all sort by critical severity most first",
-			ctx:            context.Background(),
-			q:              search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery(),
-			matchFilter:    matchAllFilter(),
-			skipCountTests: true,
-			testOrder:      true,
+			desc:                 "search all sort by critical severity most first",
+			ctx:                  context.Background(),
+			q:                    search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery(),
+			matchFilter:          matchAllFilter(),
+			skipCountTests:       true,
+			testOrder:            true,
+			sortsBySeverityCount: true,
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
 				return func(i, j int) bool {
 					if records[i].ImagesWithCriticalSeverity == records[j].ImagesWithCriticalSeverity {
@@ -1068,6 +1161,14 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 				}
 
 				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
+				if val.TopSeverity == nil || vuln.GetSeverity() > *val.TopSeverity {
+					sev := vuln.GetSeverity()
+					val.TopSeverity = &sev
+				}
+				epss := vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()
+				if val.EpssProbability == nil || epss > *val.EpssProbability {
+					val.EpssProbability = pointers.Float32(epss)
+				}
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
@@ -1464,6 +1565,8 @@ func assertResponsesAreEqual(t *testing.T, expected []CveCore, actual []CveCore,
 		assert.Equal(t, expected[i].GetCVE(), flatCVE.GetCVE())
 		assert.Equal(t, expected[i].GetTopCVSS(), flatCVE.GetTopCVSS())
 		assert.Equal(t, expected[i].GetTopNVDCVSS(), flatCVE.GetTopNVDCVSS())
+		assert.Equal(t, expected[i].GetTopSeverity(), flatCVE.GetTopSeverity())
+		assert.Equal(t, expected[i].GetEPSSProbability(), flatCVE.GetEPSSProbability())
 		assert.Equal(t, expected[i].GetAffectedImageCount(), flatCVE.GetAffectedImageCount())
 		assert.Equal(t, expected[i].GetFirstDiscoveredInSystem(), flatCVE.GetFirstDiscoveredInSystem())
 		assert.Equal(t, expected[i].GetPublishDate(), flatCVE.GetPublishDate())

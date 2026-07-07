@@ -41,6 +41,8 @@ func init() {
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
+				"topEpssProbability: Float!",
+				"topSeverity: String!",
 				"publishedOn: Time",
 				"topNvdCVSS: Float!",
 			}),
@@ -295,6 +297,14 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
+}
+
+func (resolver *imageCVECoreResolver) TopEpssProbability(_ context.Context) float64 {
+	return float64(resolver.data.GetEPSSProbability())
+}
+
+func (resolver *imageCVECoreResolver) TopSeverity(_ context.Context) string {
+	return resolver.data.GetTopSeverity().String()
 }
 
 func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {
