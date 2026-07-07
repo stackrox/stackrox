@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -29,6 +30,7 @@ func init() {
 			"imageComponentCount(query: String): Int!",
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
+			"topImageCVESeverity(query: String): String!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
 			"imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!",
@@ -182,6 +184,26 @@ func (resolver *imageV2Resolver) ImageCVECountBySeverity(ctx context.Context, q 
 	}
 	val, err := resolver.root.ImageCVEView.CountBySeverity(resolver.withImageScopeContext(ctx), query)
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
+}
+
+func (resolver *imageV2Resolver) TopImageCVESeverity(ctx context.Context, q RawQuery) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopImageCVESeverity")
+
+	if err := readImages(ctx); err != nil {
+		return "", err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+	result, err := resolver.root.ImageCVEView.TopSeverityBatch(ctx, []string{resolver.data.GetId()}, search.ImageID, query)
+	if err != nil {
+		return "", err
+	}
+	if sev, ok := result[resolver.data.GetId()]; ok {
+		return sev.String(), nil
+	}
+	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(), nil
 }
 
 func (resolver *imageV2Resolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
