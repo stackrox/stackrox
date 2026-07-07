@@ -87,6 +87,7 @@ jobs:
                     'e2e-db-backup-restore-test',
                     'e2e-gke-upgrade-tests',
                     'e2e-nongroovy-tests',
+                    'e2e-operator-backup-restore-test',
                 ]}
 
             write('jobs', json.dumps(jobs))
@@ -159,6 +160,17 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-operator-backup-restore-test:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-operator-backup-restore-test.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-operator-backup-restore-test }}
+    secrets: inherit
+    concurrency:
+      group: e2e-operator-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-gke-upgrade-tests:
