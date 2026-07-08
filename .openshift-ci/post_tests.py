@@ -102,7 +102,8 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
             if self.artifact_destination_prefix:
                 args.append(
                     os.path.join(
-                        self.artifact_destination_prefix, os.path.basename(source)
+                        self.artifact_destination_prefix, os.path.basename(
+                            source)
                     )
                 )
             self.run_with_best_effort(
