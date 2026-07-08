@@ -30,9 +30,12 @@ import (
 // TODO(ROX-31640): Add tests for using old legacy times back in unless ROX-29911 gets implemented
 // TODO(ROX-29911): add tests.
 var (
-	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
-	yesterday = time.Now().Add(-24 * time.Hour)
-	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
+	// Truncate to microsecond precision to match PostgreSQL's timestamp storage.
+	// This avoids sub-microsecond rounding mismatches when timestamps round-trip
+	// through the database column.
+	lastWeek  = time.Now().Add(-7 * 24 * time.Hour).Truncate(time.Microsecond)
+	yesterday = time.Now().Add(-24 * time.Hour).Truncate(time.Microsecond)
+	nextWeek  = time.Now().Add(7 * 24 * time.Hour).Truncate(time.Microsecond)
 )
 
 type ImagesV2StoreSuite struct {
