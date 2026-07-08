@@ -17,3 +17,7 @@ var SkipBackgroundMigrations = RegisterSetting("ROX_SKIP_BACKGROUND_MIGRATIONS")
 // BackgroundIndexTimeout is the per-statement timeout for CREATE INDEX CONCURRENTLY and
 // DROP INDEX CONCURRENTLY operations during background index reconciliation.
 var BackgroundIndexTimeout = registerDurationSetting("ROX_BACKGROUND_INDEX_TIMEOUT", 2*time.Hour)
+
+// SkipCollationReconciliation disables automatic collation version reconciliation
+// (REINDEX of affected indexes) during background migration.
+var SkipCollationReconciliation = RegisterBooleanSetting("ROX_SKIP_COLLATION_RECONCILIATION", false)
