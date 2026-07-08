@@ -22,14 +22,8 @@ var retestableCheckPrefixes = []string{
 	"e2e-",
 }
 
-func isAllowedCheckFailure(name string) bool {
-	return slices.ContainsFunc(allowedCheckFailurePrefixes, func(prefix string) bool {
-		return strings.HasPrefix(name, prefix)
-	})
-}
-
-func isRetestableCheck(name string) bool {
-	return slices.ContainsFunc(retestableCheckPrefixes, func(prefix string) bool {
+func hasAnyPrefix(name string, prefixes []string) bool {
+	return slices.ContainsFunc(prefixes, func(prefix string) bool {
 		return strings.HasPrefix(name, prefix)
 	})
 }
@@ -81,8 +75,9 @@ issues:
 		}
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
+		skippableCheckPrefixes := slices.Concat(allowedCheckFailurePrefixes, retestableCheckPrefixes)
 		for name, passed := range checks {
-			if passed || isAllowedCheckFailure(name) || isRetestableCheck(name) {
+			if passed || hasAnyPrefix(name, skippableCheckPrefixes) {
 				continue
 			}
 			log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
@@ -202,7 +197,7 @@ func shouldRetestFailedStatusesAndChecks(statuses map[string]string, comments []
 	}
 
 	for name, passed := range checks {
-		if !passed && isRetestableCheck(name) {
+		if !passed && hasAnyPrefix(name, retestableCheckPrefixes) {
 			return true
 		}
 	}
