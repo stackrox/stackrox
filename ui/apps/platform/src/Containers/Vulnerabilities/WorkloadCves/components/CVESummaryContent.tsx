@@ -1,4 +1,4 @@
-import { useQuery, gql } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
 import { Alert, Content, Spinner } from '@patternfly/react-core';
 
 import { sortCveDistroList } from '../../utils/sortUtils';
@@ -29,7 +29,7 @@ function CVESummaryContent({ cve }: CVESummaryContentProps) {
     }
 
     if (error) {
-        return <Alert variant="warning" isInline isPlain title="Unable to load CVE summary" />;
+        return <Alert component="p" variant="warning" isInline isPlain title="Unable to load CVE summary" />;
     }
 
     const distroTuples: { summary: string; operatingSystem: string }[] =
@@ -38,7 +38,7 @@ function CVESummaryContent({ cve }: CVESummaryContentProps) {
     const summary = prioritized.length > 0 ? prioritized[0].summary : '';
 
     if (!summary) {
-        return <Alert variant="info" isInline isPlain title="No summary available for this CVE" />;
+        return <Alert component="p" variant="info" isInline isPlain title="No summary available for this CVE" />;
     }
 
     return <Content component="p">{summary}</Content>;
