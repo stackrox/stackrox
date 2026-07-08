@@ -2,6 +2,8 @@ package evaluator
 
 import (
 	"context"
+	"maps"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processbaseline"
@@ -56,7 +58,7 @@ func (e *evaluator) persistResults(ctx context.Context, deployment *storage.Depl
 
 func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deployment) (violatingProcesses []*views.ProcessIndicatorRiskView, err error) {
 	containerNameToBaselinedProcesses := make(map[string]*set.StringSet)
-	containerNameToBaselineResults := make(map[string]*storage.ContainerNameAndBaselineStatus)
+	containerNameToBaselineResults := make(map[string]*storage.ContainerNameAndBaselineStatus, len(deployment.GetContainers()))
 
 	for _, container := range deployment.GetContainers() {
 		baseline, exists, err := e.baselines.GetProcessBaseline(evaluatorCtx, &storage.ProcessBaselineKey{
@@ -81,22 +83,20 @@ func (e *evaluator) EvaluateBaselinesAndPersistResult(deployment *storage.Deploy
 		}
 	}
 
-	for containerName, processSet := range containerNameToBaselinedProcesses {
+	if len(containerNameToBaselinedProcesses) > 0 {
 		q := search.NewQueryBuilder().
 			AddExactMatches(search.DeploymentID, deployment.GetId()).
-			AddExactMatches(search.ContainerName, containerName).
+			AddExactMatches(search.ContainerName, slices.Collect(maps.Keys(containerNameToBaselinedProcesses))...).
+			AddStrings(search.ProcessExecPath, search.NegateQueryString(search.ExactMatchString(""))).
 			ProtoQuery()
 		err = e.indicators.IterateOverProcessIndicatorsRiskView(evaluatorCtx, q, func(process *views.ProcessIndicatorRiskView) error {
-			baselineItem := processbaseline.BaselineItemFromProcessView(process)
-			if baselineItem == "" {
-				return nil
-			}
 			if processbaseline.IsStartupProcessView(process) {
 				return nil
 			}
-			if !processSet.Contains(baselineItem) {
+			processSet := containerNameToBaselinedProcesses[process.ContainerName]
+			if !processSet.Contains(processbaseline.BaselineItemFromProcessView(process)) {
 				violatingProcesses = append(violatingProcesses, process)
-				containerNameToBaselineResults[containerName].AnomalousProcessesExecuted = true
+				containerNameToBaselineResults[process.ContainerName].AnomalousProcessesExecuted = true
 			}
 			return nil
 		})

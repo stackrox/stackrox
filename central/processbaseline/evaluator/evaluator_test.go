@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -270,21 +269,13 @@ func TestProcessBaselineEvaluator(t *testing.T) {
 			if c.indicators != nil {
 				mockIndicators.EXPECT().IterateOverProcessIndicatorsRiskView(gomock.Any(), gomock.Any(), gomock.Any()).
 					AnyTimes().
-					DoAndReturn(func(_ context.Context, q *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) error {
-						for _, sub := range q.GetConjunction().GetQueries() {
-							mfq := sub.GetBaseQuery().GetMatchFieldQuery()
-							if mfq == nil || mfq.GetField() != search.ContainerName.String() {
-								continue
-							}
-							name := strings.Trim(mfq.GetValue(), "\"")
-							for _, i := range c.indicators {
-								if i.ContainerName == name {
-									if err := fn(i); err != nil {
-										return err
-									}
+					DoAndReturn(func(_ context.Context, _ *v1.Query, fn func(indicator *views.ProcessIndicatorRiskView) error) error {
+						for _, i := range c.indicators {
+							if i.ExecFilePath != "" {
+								if err := fn(i); err != nil {
+									return err
 								}
 							}
-							return c.indicatorErr
 						}
 						return c.indicatorErr
 					})
