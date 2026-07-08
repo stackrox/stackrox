@@ -75,6 +75,14 @@ message GetReportRequest {
   // Use 0 when no prior generation is known, which forces a full report. See
   // ADR-0006 §2, "Generation counter", for how the agent uses this value.
   uint32 last_known_generation = 1;
+  // Epoch last observed by Sensor for this VM (see ResponseMeta.epoch). 0 means
+  // unknown (first-ever request for this VM, or a Sensor build that predates
+  // this field) -- the agent should ignore epoch and fall back to
+  // generation-only comparison, exactly as if this field did not exist. This
+  // lets the agent detect a restart-coincidence false match (last_known_generation
+  // happens to equal the post-restart generation) and serve the full report in
+  // the same round trip, instead of Sensor needing a second, forced request.
+  uint32 known_epoch = 2;
 }
 
 message GetReportResponse {

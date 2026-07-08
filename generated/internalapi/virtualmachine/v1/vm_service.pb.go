@@ -429,8 +429,16 @@ type GetReportRequest struct {
 	// Use 0 when no prior generation is known, which forces a full report. See
 	// ADR-0006 §2, "Generation counter", for how the agent uses this value.
 	LastKnownGeneration uint32 `protobuf:"varint,1,opt,name=last_known_generation,json=lastKnownGeneration,proto3" json:"last_known_generation,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Epoch last observed by Sensor for this VM (see ResponseMeta.epoch). 0 means
+	// unknown (first-ever request for this VM, or a Sensor build that predates
+	// this field) -- the agent should ignore epoch and fall back to
+	// generation-only comparison, exactly as if this field did not exist. This
+	// lets the agent detect a restart-coincidence false match (last_known_generation
+	// happens to equal the post-restart generation) and serve the full report in
+	// the same round trip, instead of Sensor needing a second, forced request.
+	KnownEpoch    uint32 `protobuf:"varint,2,opt,name=known_epoch,json=knownEpoch,proto3" json:"known_epoch,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetReportRequest) Reset() {
@@ -466,6 +474,13 @@ func (*GetReportRequest) Descriptor() ([]byte, []int) {
 func (x *GetReportRequest) GetLastKnownGeneration() uint32 {
 	if x != nil {
 		return x.LastKnownGeneration
+	}
+	return 0
+}
+
+func (x *GetReportRequest) GetKnownEpoch() uint32 {
+	if x != nil {
+		return x.KnownEpoch
 	}
 	return 0
 }
@@ -622,9 +637,11 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"F\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"g\n" +
 	"\x10GetReportRequest\x122\n" +
-	"\x15last_known_generation\x18\x01 \x01(\rR\x13lastKnownGeneration\"m\n" +
+	"\x15last_known_generation\x18\x01 \x01(\rR\x13lastKnownGeneration\x12\x1f\n" +
+	"\vknown_epoch\x18\x02 \x01(\rR\n" +
+	"knownEpoch\"m\n" +
 	"\x11GetReportResponse\x12:\n" +
 	"\findex_report\x18\x01 \x01(\v2\x17.scanner.v4.IndexReportR\vindexReport\x12\x1c\n" +
 	"\tunchanged\x18\x02 \x01(\bR\tunchanged\"\xe0\x01\n" +

@@ -161,6 +161,7 @@ func (m *GetReportRequest) CloneVT() *GetReportRequest {
 	}
 	r := new(GetReportRequest)
 	r.LastKnownGeneration = m.LastKnownGeneration
+	r.KnownEpoch = m.KnownEpoch
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -454,6 +455,9 @@ func (this *GetReportRequest) EqualVT(that *GetReportRequest) bool {
 		return false
 	}
 	if this.LastKnownGeneration != that.LastKnownGeneration {
+		return false
+	}
+	if this.KnownEpoch != that.KnownEpoch {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -885,6 +889,11 @@ func (m *GetReportRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.KnownEpoch != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.KnownEpoch))
+		i--
+		dAtA[i] = 0x10
+	}
 	if m.LastKnownGeneration != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LastKnownGeneration))
 		i--
@@ -1172,6 +1181,9 @@ func (m *GetReportRequest) SizeVT() (n int) {
 	_ = l
 	if m.LastKnownGeneration != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.LastKnownGeneration))
+	}
+	if m.KnownEpoch != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.KnownEpoch))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2124,6 +2136,25 @@ func (m *GetReportRequest) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.LastKnownGeneration |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KnownEpoch", wireType)
+			}
+			m.KnownEpoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.KnownEpoch |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3425,6 +3456,25 @@ func (m *GetReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.LastKnownGeneration |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KnownEpoch", wireType)
+			}
+			m.KnownEpoch = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.KnownEpoch |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
