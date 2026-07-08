@@ -66,6 +66,7 @@ jobs:
                 ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
                 check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
             all_labels = p.stdout.strip().splitlines()
+        print(f'all_labels = {", ".join(all_labels)}')
 
         def should_run(job):
             if input.is_fork == 'true':
