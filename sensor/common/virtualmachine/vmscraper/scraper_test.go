@@ -52,10 +52,11 @@ type mockProtocolClient struct {
 
 type protocolCall struct {
 	ifNewerThan uint32
+	knownEpoch  uint32
 }
 
-func (m *mockProtocolClient) GetReport(_ io.ReadWriteCloser, ifNewerThan uint32) (*vsockclient.GetReportResult, error) {
-	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan})
+func (m *mockProtocolClient) GetReport(_ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
+	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan, knownEpoch: knownEpoch})
 	idx := m.callIdx
 	m.callIdx++
 	if idx < len(m.errQueue) && m.errQueue[idx] != nil {
@@ -109,6 +110,25 @@ func unchangedResult() *vsockclient.GetReportResult {
 	return &vsockclient.GetReportResult{
 		Unchanged: true,
 		Meta:      &pb.ResponseMeta{ReportGeneration: 1},
+	}
+}
+
+func makeReportWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
+	return &vsockclient.GetReportResult{
+		IndexReport: &v4.IndexReport{
+			State: "IndexFinished",
+		},
+		Meta: &pb.ResponseMeta{
+			ReportGeneration: gen,
+			Epoch:            epoch,
+		},
+	}
+}
+
+func unchangedResultWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
+	return &vsockclient.GetReportResult{
+		Unchanged: true,
+		Meta:      &pb.ResponseMeta{ReportGeneration: gen, Epoch: epoch},
 	}
 }
 
@@ -210,6 +230,100 @@ func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
 	assert.Len(t, sender.sent, 2, "should forward after 4h even if unchanged")
 }
 
+// TestVMScraper_ForwardsOnEpochMismatch reproduces the restart-collision
+// scenario: roxagent restarts and its report_generation counter (which resets
+// to 1 on every restart) coincidentally climbs back to the exact value Sensor
+// already has cached for this VM. This test exercises the client-side
+// fallback path (mockProtocolClient returns Unchanged with a mismatched
+// epoch, as an older roxagent that ignores knownEpoch would); a current
+// roxagent instead resolves this in the first round trip (see
+// vsockserver.protocol_test.go on the roxagent-serve branch).
+func TestVMScraper_ForwardsOnEpochMismatch(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(5, 100)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+
+	// Agent restarts and, before Sensor's next poll, coincidentally climbs back
+	// to generation=5 with a new epoch. roxagent's own generation-only check
+	// reports "unchanged"; Sensor must not trust that because the epoch moved.
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{
+		unchangedResultWithEpoch(5, 200),
+		makeReportWithEpoch(5, 200),
+	}
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 2, "epoch mismatch should force a second call for the full report")
+	assert.Equal(t, uint32(5), client.calls[0].ifNewerThan, "first call uses last generation")
+	assert.Equal(t, uint32(100), client.calls[0].knownEpoch, "first call sends the previously cached epoch")
+	assert.Equal(t, uint32(0), client.calls[1].ifNewerThan, "second call forces full report")
+	assert.Equal(t, uint32(0), client.calls[1].knownEpoch, "second (forced) call doesn't need to send an epoch")
+	assert.Len(t, sender.sent, 2, "should forward despite matching generation, because epoch changed")
+}
+
+// TestVMScraper_TrustsUnchangedWhenEpochZero ensures backward compatibility
+// with roxagent builds that predate the epoch field (always reporting epoch
+// 0): Sensor must keep trusting the generation-only Unchanged flag as before,
+// not treat every poll as a restart.
+func TestVMScraper_TrustsUnchangedWhenEpochZero(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(1, 0)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithEpoch(1, 0)}
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 1, "epoch 0 means the agent predates the field; no forced second call")
+	assert.Len(t, sender.sent, 1, "should not forward unchanged report from a pre-epoch agent")
+}
+
+// TestVMScraper_SendsKnownEpochOnRequest verifies Sensor sends its
+// last-cached epoch on every request, letting a current roxagent resolve a
+// restart-coincidence false match in a single round trip instead of relying
+// on the client-side fallback.
+func TestVMScraper_SendsKnownEpochOnRequest(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(1, 100)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 1)
+	assert.Equal(t, uint32(0), client.calls[0].knownEpoch, "first-ever request for a VM has no cached epoch")
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithEpoch(1, 100)}
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 1, "matching epoch and generation should resolve in a single round trip")
+	assert.Equal(t, uint32(100), client.calls[0].knownEpoch, "subsequent requests send the cached epoch")
+}
+
 func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
@@ -307,7 +421,7 @@ type safeProtocolClient struct {
 	calls int
 }
 
-func (c *safeProtocolClient) GetReport(_ io.ReadWriteCloser, _ uint32) (*vsockclient.GetReportResult, error) {
+func (c *safeProtocolClient) GetReport(_ io.ReadWriteCloser, _ uint32, _ uint32) (*vsockclient.GetReportResult, error) {
 	c.mu.Lock()
 	c.calls++
 	c.mu.Unlock()
