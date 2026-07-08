@@ -688,19 +688,6 @@ func roundToMicroseconds(ts *protocompat.Timestamp) *protocompat.Timestamp {
 	return protocompat.ConvertTimeToTimestampOrNil(t)
 }
 
-// reconcileVulnTimestamps rounds FirstImageOccurrence to microsecond precision
-// to match PostgreSQL's timestamp storage.
-func reconcileVulnTimestamps(image *storage.ImageV2) {
-	for _, comp := range image.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulns() {
-			if ts := vuln.GetFirstImageOccurrence(); ts != nil {
-				t := protocompat.NilOrTime(ts)
-				vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(t)
-			}
-		}
-	}
-}
-
 func getTestImageComponentsFixedCVE1() []*storage.EmbeddedImageScanComponent {
 	return []*storage.EmbeddedImageScanComponent{
 		{
