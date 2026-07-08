@@ -15,6 +15,7 @@ const (
 	DetectorDeploymentTopic
 	DetectorScanResultTopic
 	DetectorDeployAlertOutputTopic
+	ResolvedResourceEventTopic
 )
 
 var (
@@ -31,6 +32,7 @@ var (
 		DetectorDeploymentTopic:         "DetectorDeployment",
 		DetectorScanResultTopic:         "DetectorScanResult",
 		DetectorDeployAlertOutputTopic:  "DetectorDeployAlertOutput",
+		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
 	}
 )
 

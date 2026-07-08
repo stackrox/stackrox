@@ -108,42 +108,20 @@ class AdmissionControllerTest extends BaseSpecification {
 
         // Wait for policy propagation to sensor and admission controller
         // Verify by attempting to create a deployment that should be blocked
-        def latestTagDeployment = new Deployment()
-                .setName("setup-verification-latest")
+        def testDeployment = new Deployment()
+                .setName("setup-verification")
                 .setNamespace(TEST_NAMESPACE)
                 .setImage(BUSYBOX_LATEST_TAG_IMAGE)
                 .addLabel("app", "test")
 
         withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
-            def created = orchestrator.createDeploymentNoWait(latestTagDeployment)
+            def created = orchestrator.createDeploymentNoWait(testDeployment)
             assert !created // Should be blocked by latest tag policy
         }
 
         // Clean up if somehow it was created
         try {
-            orchestrator.deleteDeployment(latestTagDeployment)
-        } catch (Exception ignored) {
-            // Expected - deployment should not exist
-        }
-
-        // Wait for severity policy enforcement with cached scan data to propagate
-        // to the admission controller. The image was pre-scanned above, but the AC
-        // may not have fetched scan results from Central yet.
-        def severityDeployment = new Deployment()
-                .setName("setup-verification-severity")
-                .setNamespace(TEST_NAMESPACE)
-                .setImagePrefetcherAffinity()
-                .setImage(SCAN_INLINE_IMAGE_NAME_WITH_SHA)
-                .addLabel("app", "test")
-
-        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
-            def created = orchestrator.createDeploymentNoWait(severityDeployment)
-            assert !created // Should be blocked by severity policy
-        }
-
-        // Clean up if somehow it was created
-        try {
-            orchestrator.deleteDeployment(severityDeployment)
+            orchestrator.deleteDeployment(testDeployment)
         } catch (Exception ignored) {
             // Expected - deployment should not exist
         }
@@ -163,7 +141,21 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify admission controller enforcement on create: #desc"() {
         when:
         "Create a deployment that violates an enforced policy"
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        // Retry to allow time for the admission controller to fetch scan data from
+        // Central. Policies that require image enrichment (e.g. severity) may not
+        // evaluate on the first attempt if the AC pod handling this request hasn't
+        // cached the scan results yet. The retry is harmless for fast-path policies
+        // (latest tag, bypass) since they pass on the first attempt.
+        def created
+        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
+            created = orchestrator.createDeploymentNoWait(deployment)
+            if (created != launched) {
+                if (created) {
+                    deleteDeploymentWithCaution(deployment)
+                }
+                assert created == launched
+            }
+        }
 
         then:
         "Verify the admission controller allows or blocks based on policy and bypass annotation"

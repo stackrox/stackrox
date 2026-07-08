@@ -2,9 +2,8 @@ package datastore
 
 import (
 	"context"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"

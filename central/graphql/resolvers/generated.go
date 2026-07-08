@@ -14288,8 +14288,10 @@ func (resolver *secretResolver) Namespace(ctx context.Context) string {
 }
 
 func (resolver *secretResolver) Relationship(ctx context.Context) (*secretRelationshipResolver, error) {
-	resolver.ensureData(ctx)
 	value := resolver.data.GetRelationship()
+	if resolver.data == nil {
+		value = resolver.list.GetRelationship()
+	}
 	return resolver.root.wrapSecretRelationship(value, true, nil)
 }
 

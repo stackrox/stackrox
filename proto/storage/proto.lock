@@ -17110,6 +17110,11 @@
                 "id": 6,
                 "name": "created_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "relationship",
+                "type": "SecretRelationship"
               }
             ]
           },
