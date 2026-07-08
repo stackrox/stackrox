@@ -70,7 +70,9 @@ function NodeCvesOverviewPage() {
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const scannerV4NodeScanResultsPossible =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED') &&
+        isFeatureFlagEnabled('ROX_LEGACY_SCANNER');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
