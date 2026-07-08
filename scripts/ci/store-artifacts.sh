@@ -46,13 +46,7 @@ store_artifacts() {
     local gs_destination
     gs_destination=$(get_unique_gs_destination "${destination}")
 
-    if [[ -d "$path" ]]; then
-        info "Artifact size: $(du -sh "$path" | awk '{print $1}')"
-        info "Artifact file count: $(find "$path" -type f | wc -l | tr -d ' ')"
-    else
-        info "Artifact size: $(du -sh "$path" | awk '{print $1}')"
-    fi
-
+    info "Artifact size: $(du -sh "$path" | awk '{print $1}')"
     info "Writing to $gs_destination..."
     local exitstatus=0
     local tmp_out

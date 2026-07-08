@@ -87,10 +87,9 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
-    def _store_timeout_for(self, source, destination=None):
+    def _store_timeout_for(self, source):
         artifact_name = os.path.basename(source.rstrip(os.sep))
-        destination_name = os.path.basename((destination or "").rstrip(os.sep))
-        if artifact_name == "k8s-logs" or destination_name == "k8s-logs":
+        if artifact_name == "k8s-logs":
             return self.STORE_LARGE_TIMEOUT
         return self.STORE_TIMEOUT
 
@@ -100,15 +99,15 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
 
         for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
-            destination = None
             if self.artifact_destination_prefix:
-                destination = os.path.join(
-                    self.artifact_destination_prefix, os.path.basename(source)
+                args.append(
+                    os.path.join(
+                        self.artifact_destination_prefix, os.path.basename(source)
+                    )
                 )
-                args.append(destination)
             self.run_with_best_effort(
                 args,
-                timeout=self._store_timeout_for(source, destination),
+                timeout=self._store_timeout_for(source),
             )
 
         self._store_osci_artifacts()
