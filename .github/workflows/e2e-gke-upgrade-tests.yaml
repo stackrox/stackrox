@@ -11,6 +11,12 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -24,7 +30,7 @@ jobs:
 
   # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
-    if: inputs.should-run
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -54,6 +60,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
+      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -145,7 +152,8 @@ jobs:
         FinalPost(store_qa_tests_data=True).run()
 
     - name: Delete cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
@@ -168,7 +176,7 @@ jobs:
 
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
-    if: inputs.should-run
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -198,6 +206,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
+      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -288,7 +297,8 @@ jobs:
         FinalPost(store_qa_tests_data=True).run()
 
     - name: Delete cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
@@ -311,7 +321,7 @@ jobs:
 
   # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
-    if: inputs.should-run
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -341,6 +351,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
+      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -418,7 +429,8 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Delete cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
