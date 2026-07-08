@@ -11,6 +11,12 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -22,7 +28,7 @@ defaults:
 
 jobs:
   gke-nongroovy-e2e-tests:
-    if: inputs.should-run
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
@@ -66,9 +72,11 @@ jobs:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      id: create-cluster
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
+        GKE_SPOT: "true"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
@@ -162,14 +170,14 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"
           exit 0
         fi
-        source scripts/ci/gke.sh
-        teardown_gke_cluster false || echo "Cluster teardown failed"
+        scripts/ci/gke.sh teardown_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2

@@ -12,7 +12,7 @@ EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
-PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.8" "4.10.4" "4.11.0")
+PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.8" "4.10.4" "4.11.1")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"

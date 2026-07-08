@@ -12,7 +12,7 @@ on:
     - opened
     - reopened
     - synchronize
-    - labeled
+    - ready_for_review
 
 permissions:
   contents: read
@@ -39,17 +39,18 @@ jobs:
       id: determine
       shell: python
       env:
+        GH_TOKEN: ${{ github.token }}
         PYTHONUNBUFFERED: "1"
         input__event_name: ${{ github.event_name }}
-        input__event_action: ${{ github.event.action }}
-        input__labeled_with: ${{ github.event.label.name }}
         input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
         input__is_draft: ${{ github.event.pull_request.draft }}
-        input__all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
+        input__repo: ${{ github.repository }}
+        input__pr_number: ${{ github.event.pull_request.number }}
       run: |
         import json
         import os
+        import subprocess
         from types import SimpleNamespace
 
         input = SimpleNamespace(**{
@@ -59,10 +60,17 @@ jobs:
         for k, v in vars(input).items():
             print(f'{k} = {v}')
 
+        if input.event_name != 'pull_request':
+            all_labels = []
+        else:
+            p = subprocess.run(
+                ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
+                check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
+            all_labels = p.stdout.strip().splitlines()
+        print(f'all_labels = {", ".join(all_labels)}')
+
         def should_run(job):
             if input.is_fork == 'true':
-                return False
-            if input.event_action == 'labeled' and input.labeled_with != job:
                 return False
             if input.event_name != 'pull_request':
                 return True
@@ -72,7 +80,7 @@ jobs:
                 return False
             if input.is_draft != 'true':
                 return True
-            if f',{input.all_labels},'.find(f',{job},') >= 0:
+            if job in all_labels:
                 return True
             return False
 

@@ -89,7 +89,7 @@ class Env {
 
     protected String mustGetInternal(String key) {
         def value = envVars.get(key)
-        if (value == null) {
+        if (!value) {
             throw new RuntimeException("No value assigned for required key ${key}")
         }
         return value
@@ -97,7 +97,7 @@ class Env {
 
     protected String mustGetInCIInternal(String key, String defVal) {
         def value = envVars.get(key)
-        if (value == null) {
+        if (!value) {
             if (IN_CI) {
                 throw new RuntimeException("No value assigned for required key ${key}")
             }
