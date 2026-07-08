@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -79,6 +80,15 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			managerOpts = rhelVexOpts()
 		}
 		bundles[uSet] = managerOpts
+	}
+
+	if filter := os.Getenv("STACKROX_UPDATER_SOURCES"); filter != "" {
+		filtered, err := filterSources(bundles, filter)
+		if err != nil {
+			return err
+		}
+		stdlog.Printf("source filter active: running %d/%d sources: %v", len(filtered), len(bundles), strings.Split(filter, ","))
+		bundles = filtered
 	}
 
 	// Rate limit to ~16 requests/second by default.
@@ -225,6 +235,20 @@ func redhatCSAFOpts() []updates.ManagerOption {
 			"stackrox.rhel-csaf": csaf.NewFactory(),
 		}),
 	}
+}
+
+func filterSources(bundles map[string][]updates.ManagerOption, filter string) (map[string][]updates.ManagerOption, error) {
+	selected := strings.Split(filter, ",")
+	filtered := make(map[string][]updates.ManagerOption, len(selected))
+	for _, s := range selected {
+		s = strings.TrimSpace(s)
+		if o, ok := bundles[s]; ok {
+			filtered[s] = o
+		} else {
+			return nil, fmt.Errorf("unknown source: %q", s)
+		}
+	}
+	return filtered, nil
 }
 
 func zstdWriter(filename string) (io.WriteCloser, error) {
