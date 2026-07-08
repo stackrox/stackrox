@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	golog "log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -53,7 +52,7 @@ func init() {
 	// Set the http.DefaultTransport's Proxy function to one which reads from the proxy configuration file.
 	// Note: http.DefaultClient uses http.DefaultTransport.
 	if !proxy.UseWithDefaultTransport() {
-		golog.Println("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+		slog.Warn("failed to use proxy transport with default HTTP transport; some proxy features may not work")
 	}
 
 	memlimit.SetMemoryLimit()
@@ -70,7 +69,8 @@ func main() {
 	}
 	cfg, err := config.Read(*configPath)
 	if err != nil {
-		golog.Fatalf("failed to load configuration %q: %v", *configPath, err)
+		slog.Error("failed to load configuration", "path", *configPath, "reason", err)
+		os.Exit(1)
 	}
 
 	// Create cancellable context.
@@ -80,7 +80,8 @@ func main() {
 	// Initialize logging and setup context.
 	err = logging.Initialize(cfg.LogLevel)
 	if err != nil {
-		golog.Fatalf("failed to initialize logging: %v", err)
+		slog.Error("failed to initialize logging", "reason", err)
+		os.Exit(1)
 	}
 
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
