@@ -1,7 +1,6 @@
 import axios from './instance';
 
-import type { ApiSortOption } from 'types/search';
-import { getPaginationParams } from 'utils/searchUtils';
+import type { ApiSortOption, ApiSortOptionSingle } from 'types/search';
 
 export type CVEListItem = {
     cve: string;
@@ -31,6 +30,21 @@ export type CVEDetailResponse = {
     distroDetails: CVEDetailItem[];
 };
 
+function appendSortParams(params: URLSearchParams, sortOption: ApiSortOption | undefined) {
+    if (!sortOption) {
+        return;
+    }
+
+    const options: ApiSortOptionSingle[] = Array.isArray(sortOption) ? sortOption : [sortOption];
+
+    if (options.length > 0) {
+        params.set('pagination.sortOption.field', options[0].field);
+        if (options[0].reversed) {
+            params.set('pagination.sortOption.reversed', 'true');
+        }
+    }
+}
+
 export function fetchCVEList({
     query,
     page,
@@ -46,19 +60,18 @@ export function fetchCVEList({
     if (query) {
         params.set('query', query);
     }
-    const pagination = getPaginationParams({ page, perPage, sortOption });
-    if (pagination.offset) {
-        params.set('pagination.offset', String(pagination.offset));
+
+    const safePage = Math.max(1, page);
+    const safePerPage = Math.max(0, perPage);
+    const offset = (safePage - 1) * safePerPage;
+
+    if (offset) {
+        params.set('pagination.offset', String(offset));
     }
-    if (pagination.limit) {
-        params.set('pagination.limit', String(pagination.limit));
+    if (safePerPage) {
+        params.set('pagination.limit', String(safePerPage));
     }
-    if (pagination.sortOption) {
-        params.set('pagination.sortOption.field', pagination.sortOption.field);
-        if (pagination.sortOption.reversed) {
-            params.set('pagination.sortOption.reversed', 'true');
-        }
-    }
+    appendSortParams(params, sortOption);
 
     return axios
         .get<CVEListResponse>(`/api/v2/vulnmgmt/cves?${params.toString()}`)
