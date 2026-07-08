@@ -17,6 +17,8 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 source "$ROOT/tests/e2e/lib.sh"
 
 test_e2e() {
+    local output_dir="${1:-/tmp/e2e-test-logs}"
+
     info "Starting e2e tests"
 
     require_environment "KUBECONFIG"
@@ -74,7 +76,7 @@ test_e2e() {
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
+    collect_and_check_stackrox_logs "$output_dir" "initial_tests"
 
     # Give some time for previous tests to finish up
     wait_for_api
