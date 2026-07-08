@@ -1166,11 +1166,7 @@ func compileExpectedAffectedImageIDs(images []testImage, filter *filterImpl, les
 		}
 
 		for _, component := range image.GetScan().GetComponents() {
-			var vulnFilterPassed bool
 			if slices.ContainsFunc(component.GetVulns(), filter.matchVuln) {
-				vulnFilterPassed = true
-			}
-			if vulnFilterPassed {
 				affectedImages = append(affectedImages, image)
 				break
 			}
