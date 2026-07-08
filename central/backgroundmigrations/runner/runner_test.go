@@ -86,7 +86,7 @@ func (s *RunnerTestSuite) SetupSuite() {
 // due to connection pool timing, causing the next test to fail with
 // "advisory lock held by another instance".
 func (s *RunnerTestSuite) waitForAdvisoryUnlock() {
-	assert.EventuallyWithT(s.T(), func(t *assert.CollectT) {
+	require.EventuallyWithT(s.T(), func(t *assert.CollectT) {
 		dbConn, err := s.db.Acquire(s.ctx)
 		require.NoError(t, err)
 		require.NotNil(t, dbConn)
