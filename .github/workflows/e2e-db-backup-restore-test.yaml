@@ -131,6 +131,7 @@ jobs:
 
     - name: Teardown GKE cluster
       if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"

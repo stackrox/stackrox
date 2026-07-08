@@ -147,6 +147,7 @@ jobs:
 
     - name: Delete cluster
       if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
@@ -291,6 +292,7 @@ jobs:
 
     - name: Delete cluster
       if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
@@ -422,6 +424,7 @@ jobs:
 
     - name: Delete cluster
       if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: infractl delete "${CLUSTER_NAME}"
 
     - name: Publish test summary
