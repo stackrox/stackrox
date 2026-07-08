@@ -319,17 +319,20 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err := s.datastore.GetImage(ctx, testImage.GetId())
 	s.NoError(err)
 	s.True(found)
-	// Truncate to microsecond precision to match PostgreSQL's timestamp column storage.
-	// After database round-trip, FirstImageOccurrence may lose sub-microsecond precision.
-	truncatedLastUpdated := truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
 	for _, component := range testImage.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			cve.FirstImageOccurrence = truncatedLastUpdated
+			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
 	expectedImage := cloneAndUpdateRiskPriority(testImage)
+	// PostgreSQL timestamps have microsecond precision, so round both
+	// sides to microseconds before comparing.
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
@@ -350,6 +353,8 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
@@ -378,11 +383,13 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			// System Occurrence remains unchanged.
-			cve.FirstImageOccurrence = truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
+			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	s.mockRisk.EXPECT().RemoveRisk(gomock.Any(), testImage.GetId(), gomock.Any()).Return(nil)
@@ -393,6 +400,8 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Set all components to contain same cve.
@@ -415,10 +424,12 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 		// Components and Vulns are deduped, therefore, update testImage structure.
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			cve.FirstImageOccurrence = truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
+			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 		}
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
@@ -442,6 +453,8 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
@@ -464,6 +477,8 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
+	roundFirstImageOccurrence(expectedImage)
+	roundFirstImageOccurrence(storedImage)
 	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify no components exist.
@@ -982,12 +997,19 @@ func getTestImageV2(name string) *storage.ImageV2 {
 	}
 }
 
-func truncateTimestampToMicroseconds(ts *timestamppb.Timestamp) *timestamppb.Timestamp {
-	if ts == nil {
-		return nil
+// roundFirstImageOccurrence truncates all FirstImageOccurrence timestamps on
+// an image to microsecond precision. PostgreSQL timestamp columns have
+// microsecond precision, so both expected and actual must be truncated before
+// comparison.
+func roundFirstImageOccurrence(image *storage.ImageV2) {
+	for _, comp := range image.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			if ts := vuln.GetFirstImageOccurrence(); ts != nil {
+				t := ts.AsTime().Truncate(time.Microsecond)
+				vuln.FirstImageOccurrence = timestamppb.New(t)
+			}
+		}
 	}
-	t := ts.AsTime().Truncate(time.Microsecond)
-	return timestamppb.New(t)
 }
 
 func cloneAndUpdateRiskPriority(image *storage.ImageV2) *storage.ImageV2 {
