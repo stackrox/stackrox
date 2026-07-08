@@ -145,7 +145,7 @@ these dependencies carry real risk:
 
 ### Running an audit
 
-From the `ui/` directory:
+From the `ui/apps/platform/` directory:
 
 ```sh
 npm audit --omit=dev
