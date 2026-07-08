@@ -60,7 +60,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -151,10 +150,13 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=True).run()
 
-    - name: Delete cluster
-      if: always() && steps.create-cluster.outcome == 'success'
+    - name: Teardown cluster
+      if: always()
       continue-on-error: true
-      run: infractl delete "${CLUSTER_NAME}"
+      run: |
+        if ! infractl delete "${CLUSTER_NAME}"; then
+          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+        fi
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -206,7 +208,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -296,10 +297,13 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=True).run()
 
-    - name: Delete cluster
-      if: always() && steps.create-cluster.outcome == 'success'
+    - name: Teardown cluster
+      if: always()
       continue-on-error: true
-      run: infractl delete "${CLUSTER_NAME}"
+      run: |
+        if ! infractl delete "${CLUSTER_NAME}"; then
+          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+        fi
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -351,7 +355,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      id: create-cluster
       uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
@@ -428,10 +431,13 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Delete cluster
-      if: always() && steps.create-cluster.outcome == 'success'
+    - name: Teardown cluster
+      if: always()
       continue-on-error: true
-      run: infractl delete "${CLUSTER_NAME}"
+      run: |
+        if ! infractl delete "${CLUSTER_NAME}"; then
+          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+        fi
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
