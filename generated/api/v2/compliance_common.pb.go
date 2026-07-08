@@ -196,25 +196,32 @@ func (ComplianceProfileSummary_OperatorKind) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{11, 0}
 }
 
+// Next tag: 22
 type ComplianceRule struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Name          string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	RuleType      string                      `protobuf:"bytes,3,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
-	Severity      string                      `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
-	Standard      string                      `protobuf:"bytes,5,opt,name=standard,proto3" json:"standard,omitempty"`
-	Control       string                      `protobuf:"bytes,6,opt,name=control,proto3" json:"control,omitempty"`
-	Title         string                      `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                      `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale     string                      `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes         []*ComplianceRule_Fix       `protobuf:"bytes,10,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Id            string                      `protobuf:"bytes,11,opt,name=id,proto3" json:"id,omitempty"`
-	RuleId        string                      `protobuf:"bytes,12,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	ParentRule    string                      `protobuf:"bytes,13,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
-	Instructions  string                      `protobuf:"bytes,14,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Warning       string                      `protobuf:"bytes,15,opt,name=warning,proto3" json:"warning,omitempty"`
-	OperatorKind  ComplianceRule_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceRule_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState      `protogen:"open.v1"`
+	Name         string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	RuleType     string                      `protobuf:"bytes,3,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
+	Severity     string                      `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
+	Standard     string                      `protobuf:"bytes,5,opt,name=standard,proto3" json:"standard,omitempty"`
+	Control      string                      `protobuf:"bytes,6,opt,name=control,proto3" json:"control,omitempty"`
+	Title        string                      `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
+	Description  string                      `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale    string                      `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes        []*ComplianceRule_Fix       `protobuf:"bytes,10,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Id           string                      `protobuf:"bytes,11,opt,name=id,proto3" json:"id,omitempty"`
+	RuleId       string                      `protobuf:"bytes,12,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	ParentRule   string                      `protobuf:"bytes,13,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
+	Instructions string                      `protobuf:"bytes,14,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	Warning      string                      `protobuf:"bytes,15,opt,name=warning,proto3" json:"warning,omitempty"`
+	OperatorKind ComplianceRule_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceRule_OperatorKind" json:"operator_kind,omitempty"`
+	// CEL rule fields. Populated for rules with scanner_type "CEL".
+	ScannerType       string                            `protobuf:"bytes,17,opt,name=scanner_type,json=scannerType,proto3" json:"scanner_type,omitempty"`
+	Expression        string                            `protobuf:"bytes,18,opt,name=expression,proto3" json:"expression,omitempty"`
+	Inputs            []*ComplianceRule_CelInput        `protobuf:"bytes,19,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	FailureReason     string                            `protobuf:"bytes,20,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	CustomRuleDetails *ComplianceRule_CustomRuleDetails `protobuf:"bytes,21,opt,name=custom_rule_details,json=customRuleDetails,proto3" json:"custom_rule_details,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ComplianceRule) Reset() {
@@ -350,6 +357,41 @@ func (x *ComplianceRule) GetOperatorKind() ComplianceRule_OperatorKind {
 		return x.OperatorKind
 	}
 	return ComplianceRule_OPERATOR_KIND_UNSPECIFIED
+}
+
+func (x *ComplianceRule) GetScannerType() string {
+	if x != nil {
+		return x.ScannerType
+	}
+	return ""
+}
+
+func (x *ComplianceRule) GetExpression() string {
+	if x != nil {
+		return x.Expression
+	}
+	return ""
+}
+
+func (x *ComplianceRule) GetInputs() []*ComplianceRule_CelInput {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *ComplianceRule) GetFailureReason() string {
+	if x != nil {
+		return x.FailureReason
+	}
+	return ""
+}
+
+func (x *ComplianceRule) GetCustomRuleDetails() *ComplianceRule_CustomRuleDetails {
+	if x != nil {
+		return x.CustomRuleDetails
+	}
+	return nil
 }
 
 type ComplianceScanCluster struct {
@@ -1112,11 +1154,153 @@ func (x *ComplianceRule_Fix) GetDisruption() string {
 	return ""
 }
 
+// CelInput represents a Kubernetes resource input for a CEL rule expression.
+type ComplianceRule_CelInput struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ApiGroup          string                 `protobuf:"bytes,2,opt,name=api_group,json=apiGroup,proto3" json:"api_group,omitempty"`
+	ApiVersion        string                 `protobuf:"bytes,3,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	Resource          string                 `protobuf:"bytes,4,opt,name=resource,proto3" json:"resource,omitempty"`
+	ResourceNamespace string                 `protobuf:"bytes,5,opt,name=resource_namespace,json=resourceNamespace,proto3" json:"resource_namespace,omitempty"`
+	ResourceName      string                 `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ComplianceRule_CelInput) Reset() {
+	*x = ComplianceRule_CelInput{}
+	mi := &file_api_v2_compliance_common_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceRule_CelInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceRule_CelInput) ProtoMessage() {}
+
+func (x *ComplianceRule_CelInput) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_common_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceRule_CelInput.ProtoReflect.Descriptor instead.
+func (*ComplianceRule_CelInput) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0, 1}
+}
+
+func (x *ComplianceRule_CelInput) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CelInput) GetApiGroup() string {
+	if x != nil {
+		return x.ApiGroup
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CelInput) GetApiVersion() string {
+	if x != nil {
+		return x.ApiVersion
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CelInput) GetResource() string {
+	if x != nil {
+		return x.Resource
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CelInput) GetResourceNamespace() string {
+	if x != nil {
+		return x.ResourceNamespace
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CelInput) GetResourceName() string {
+	if x != nil {
+		return x.ResourceName
+	}
+	return ""
+}
+
+// CustomRuleDetails contains validation lifecycle fields specific to
+// Compliance Operator CustomRule resources. Only set when operator_kind
+// is CUSTOM_RULE.
+type ComplianceRule_CustomRuleDetails struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// phase is the validation phase of the CustomRule ("Ready" or "Error").
+	Phase string `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	// error_message contains the validation error when phase is "Error".
+	ErrorMessage  string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ComplianceRule_CustomRuleDetails) Reset() {
+	*x = ComplianceRule_CustomRuleDetails{}
+	mi := &file_api_v2_compliance_common_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ComplianceRule_CustomRuleDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ComplianceRule_CustomRuleDetails) ProtoMessage() {}
+
+func (x *ComplianceRule_CustomRuleDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_common_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ComplianceRule_CustomRuleDetails.ProtoReflect.Descriptor instead.
+func (*ComplianceRule_CustomRuleDetails) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0, 2}
+}
+
+func (x *ComplianceRule_CustomRuleDetails) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *ComplianceRule_CustomRuleDetails) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
 var File_api_v2_compliance_common_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v2/compliance_common.proto\x12\x02v2\x1a\x19api/v2/search_query.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf8\x04\n" +
+	"\x1eapi/v2/compliance_common.proto\x12\x02v2\x1a\x19api/v2/search_query.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8c\t\n" +
 	"\x0eComplianceRule\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
 	"\trule_type\x18\x03 \x01(\tR\bruleType\x12\x1a\n" +
@@ -1134,12 +1318,30 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"parentRule\x12\"\n" +
 	"\finstructions\x18\x0e \x01(\tR\finstructions\x12\x18\n" +
 	"\awarning\x18\x0f \x01(\tR\awarning\x12D\n" +
-	"\roperator_kind\x18\x10 \x01(\x0e2\x1f.v2.ComplianceRule.OperatorKindR\foperatorKind\x1aA\n" +
+	"\roperator_kind\x18\x10 \x01(\x0e2\x1f.v2.ComplianceRule.OperatorKindR\foperatorKind\x12!\n" +
+	"\fscanner_type\x18\x11 \x01(\tR\vscannerType\x12\x1e\n" +
+	"\n" +
+	"expression\x18\x12 \x01(\tR\n" +
+	"expression\x123\n" +
+	"\x06inputs\x18\x13 \x03(\v2\x1b.v2.ComplianceRule.CelInputR\x06inputs\x12%\n" +
+	"\x0efailure_reason\x18\x14 \x01(\tR\rfailureReason\x12T\n" +
+	"\x13custom_rule_details\x18\x15 \x01(\v2$.v2.ComplianceRule.CustomRuleDetailsR\x11customRuleDetails\x1aA\n" +
 	"\x03Fix\x12\x1a\n" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"H\n" +
+	"disruption\x1a\xcc\x01\n" +
+	"\bCelInput\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1b\n" +
+	"\tapi_group\x18\x02 \x01(\tR\bapiGroup\x12\x1f\n" +
+	"\vapi_version\x18\x03 \x01(\tR\n" +
+	"apiVersion\x12\x1a\n" +
+	"\bresource\x18\x04 \x01(\tR\bresource\x12-\n" +
+	"\x12resource_namespace\x18\x05 \x01(\tR\x11resourceNamespace\x12#\n" +
+	"\rresource_name\x18\x06 \x01(\tR\fresourceName\x1aN\n" +
+	"\x11CustomRuleDetails\x12\x14\n" +
+	"\x05phase\x18\x01 \x01(\tR\x05phase\x12#\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"H\n" +
 	"\fOperatorKind\x12\x1d\n" +
 	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\b\n" +
 	"\x04RULE\x10\x01\x12\x0f\n" +
@@ -1232,7 +1434,7 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_api_v2_compliance_common_proto_goTypes = []any{
 	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
 	(ComplianceRule_OperatorKind)(0),                  // 1: v2.ComplianceRule.OperatorKind
@@ -1250,29 +1452,33 @@ var file_api_v2_compliance_common_proto_goTypes = []any{
 	(*ComplianceProfileCheckRequest)(nil),             // 13: v2.ComplianceProfileCheckRequest
 	(*ComplianceProfileSummary)(nil),                  // 14: v2.ComplianceProfileSummary
 	(*ComplianceRule_Fix)(nil),                        // 15: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                     // 16: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                  // 17: v2.RawQuery
+	(*ComplianceRule_CelInput)(nil),                   // 16: v2.ComplianceRule.CelInput
+	(*ComplianceRule_CustomRuleDetails)(nil),          // 17: v2.ComplianceRule.CustomRuleDetails
+	(*timestamppb.Timestamp)(nil),                     // 18: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 19: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
 	15, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
 	1,  // 1: v2.ComplianceRule.operator_kind:type_name -> v2.ComplianceRule.OperatorKind
-	0,  // 2: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
-	5,  // 3: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	7,  // 4: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
-	6,  // 5: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
-	4,  // 6: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
-	5,  // 7: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	16, // 8: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
-	10, // 9: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	17, // 10: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	17, // 11: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
-	8,  // 12: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	2,  // 13: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	16, // 2: v2.ComplianceRule.inputs:type_name -> v2.ComplianceRule.CelInput
+	17, // 3: v2.ComplianceRule.custom_rule_details:type_name -> v2.ComplianceRule.CustomRuleDetails
+	0,  // 4: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
+	5,  // 5: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	7,  // 6: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
+	6,  // 7: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
+	4,  // 8: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
+	5,  // 9: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
+	18, // 10: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	10, // 11: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
+	19, // 12: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	19, // 13: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	8,  // 14: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
+	2,  // 15: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }
@@ -1287,7 +1493,7 @@ func file_api_v2_compliance_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_common_proto_rawDesc), len(file_api_v2_compliance_common_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -83,3 +83,58 @@ func TestRuleProcessEvent_WithoutV2Capability(t *testing.T) {
 	assert.Equal(t, rule.GetName(), v1Rule.GetName())
 	assert.Equal(t, rule.Title, v1Rule.GetTitle())
 }
+
+func TestRuleProcessEvent_CelFields(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	rule := testRule()
+	rule.ScannerType = v1alpha1.ScannerTypeCEL
+	rule.RulePayload.Expression = `input.node.metadata.labels["secure"] == "true"`
+	rule.RulePayload.FailureReason = "Node is not labeled secure"
+	rule.RulePayload.Inputs = []v1alpha1.InputPayload{
+		{
+			Name: "node",
+			KubernetesInputSpec: v1alpha1.KubernetesInputSpec{
+				APIVersion: "v1",
+				Resource:   "nodes",
+			},
+		},
+	}
+
+	dispatcher := NewRulesDispatcher()
+	event := dispatcher.ProcessEvent(ruleToUnstructured(t, rule), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.Len(t, event.ForwardMessages, 2)
+
+	v2Rule := event.ForwardMessages[1].GetComplianceOperatorRuleV2()
+	require.NotNil(t, v2Rule)
+	assert.Equal(t, "CEL", v2Rule.GetScannerType())
+	assert.Equal(t, `input.node.metadata.labels["secure"] == "true"`, v2Rule.GetExpression())
+	assert.Equal(t, "Node is not labeled secure", v2Rule.GetFailureReason())
+	require.Len(t, v2Rule.GetInputs(), 1)
+	assert.Equal(t, "node", v2Rule.GetInputs()[0].GetName())
+	assert.Equal(t, "v1", v2Rule.GetInputs()[0].GetApiVersion())
+	assert.Equal(t, "nodes", v2Rule.GetInputs()[0].GetResource())
+
+	assert.Nil(t, v2Rule.GetCustomRuleDetails())
+}
+
+func TestRuleProcessEvent_NoCelFields(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	rule := testRule()
+	dispatcher := NewRulesDispatcher()
+	event := dispatcher.ProcessEvent(ruleToUnstructured(t, rule), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	v2Rule := event.ForwardMessages[1].GetComplianceOperatorRuleV2()
+	require.NotNil(t, v2Rule)
+	assert.Empty(t, v2Rule.GetScannerType())
+	assert.Empty(t, v2Rule.GetExpression())
+	assert.Empty(t, v2Rule.GetFailureReason())
+	assert.Empty(t, v2Rule.GetInputs())
+	assert.Nil(t, v2Rule.GetCustomRuleDetails())
+}

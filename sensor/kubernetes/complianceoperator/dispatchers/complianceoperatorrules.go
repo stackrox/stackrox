@@ -67,26 +67,33 @@ func (c *RulesDispatcher) ProcessEvent(obj, _ interface{}, action central.Resour
 			})
 		}
 
+		ruleV2 := &central.ComplianceOperatorRuleV2{
+			RuleId:       complianceRule.ID,
+			Id:           id,
+			Name:         complianceRule.Name,
+			RuleType:     complianceRule.CheckType,
+			Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
+			Labels:       complianceRule.Labels,
+			Annotations:  complianceRule.Annotations,
+			Title:        complianceRule.Title,
+			Description:  complianceRule.Description,
+			Rationale:    complianceRule.Rationale,
+			Fixes:        fixes,
+			Warning:      complianceRule.Warning,
+			Instructions: complianceRule.Instructions,
+			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
+		}
+
+		ruleV2.ScannerType = string(complianceRule.ScannerType)
+		ruleV2.Expression = complianceRule.RulePayload.Expression
+		ruleV2.FailureReason = complianceRule.RulePayload.FailureReason
+		ruleV2.Inputs = inputPayloadsToCelInputs(complianceRule.RulePayload.Inputs)
+
 		events = append(events, &central.SensorEvent{
 			Id:     id,
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
-				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:       complianceRule.ID,
-					Id:           id,
-					Name:         complianceRule.Name,
-					RuleType:     complianceRule.CheckType,
-					Severity:     ruleSeverityToV2Severity(complianceRule.Severity),
-					Labels:       complianceRule.Labels,
-					Annotations:  complianceRule.Annotations,
-					Title:        complianceRule.Title,
-					Description:  complianceRule.Description,
-					Rationale:    complianceRule.Rationale,
-					Fixes:        fixes,
-					Warning:      complianceRule.Warning,
-					Instructions: complianceRule.Instructions,
-					OperatorKind: central.ComplianceOperatorRuleV2_RULE,
-				},
+				ComplianceOperatorRuleV2: ruleV2,
 			},
 		})
 	}

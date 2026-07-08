@@ -22,6 +22,21 @@ func severityToV2Severity(severity v1alpha1.ComplianceCheckResultSeverity) centr
 	}
 }
 
+func inputPayloadsToCelInputs(payloads []v1alpha1.InputPayload) []*central.ComplianceOperatorCelInput {
+	inputs := make([]*central.ComplianceOperatorCelInput, 0, len(payloads))
+	for _, inp := range payloads {
+		inputs = append(inputs, &central.ComplianceOperatorCelInput{
+			Name:              inp.Name,
+			ApiGroup:          inp.KubernetesInputSpec.Group,
+			ApiVersion:        inp.KubernetesInputSpec.APIVersion,
+			Resource:          inp.KubernetesInputSpec.Resource,
+			ResourceNamespace: inp.KubernetesInputSpec.ResourceNamespace,
+			ResourceName:      inp.KubernetesInputSpec.ResourceName,
+		})
+	}
+	return inputs
+}
+
 func ruleSeverityToV2Severity(severity string) central.ComplianceOperatorRuleSeverity {
 	switch severity {
 	case "high":
