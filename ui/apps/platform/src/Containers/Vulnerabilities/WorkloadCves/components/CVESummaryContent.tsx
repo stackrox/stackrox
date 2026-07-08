@@ -32,7 +32,8 @@ function CVESummaryContent({ cve }: CVESummaryContentProps) {
         return <Alert variant="warning" isInline isPlain title="Unable to load CVE summary" />;
     }
 
-    const distroTuples = data?.imageCVE?.distroTuples ?? [];
+    const distroTuples: { summary: string; operatingSystem: string }[] =
+        data?.imageCVE?.distroTuples ?? [];
     const prioritized = sortCveDistroList(distroTuples);
     const summary = prioritized.length > 0 ? prioritized[0].summary : '';
 
