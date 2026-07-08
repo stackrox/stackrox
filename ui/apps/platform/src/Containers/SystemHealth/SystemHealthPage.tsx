@@ -78,6 +78,8 @@ function SystemHealthPage() {
                             <VulnerabilityDefinitionsHealthCard
                                 component="SCANNER"
                                 pollingCount={pollingCountSlower}
+                                disabled={!isLegacyScannerEnabled}
+                                disabledMessage="Legacy scanner is disabled"
                             />
                         </GridItem>
                     )}
@@ -117,7 +119,10 @@ function SystemHealthPage() {
                     </GridItem>
                     {isLegacyScannerEnabled && (
                         <GridItem span={12}>
-                            <CertificateCard component="SCANNER" pollingCount={pollingCountSlower} />
+                            <CertificateCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                            />
                         </GridItem>
                     )}
                     {isScannerV4Enabled && (
@@ -125,6 +130,31 @@ function SystemHealthPage() {
                             <CertificateCard
                                 component="SCANNER_V4"
                                 pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && (
+                        <GridItem span={12}>
+                            <hr />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && hasReadAccessForAdministration && (
+                        <GridItem span={12}>
+                            <VulnerabilityDefinitionsHealthCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                                disabled={!isLegacyScannerEnabled}
+                                disabledMessage="Legacy scanner is disabled"
+                            />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && (
+                        <GridItem span={12}>
+                            <CertificateCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                                disabled={!isLegacyScannerEnabled}
+                                disabledMessage="Legacy scanner is disabled"
                             />
                         </GridItem>
                     )}
