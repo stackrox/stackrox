@@ -703,6 +703,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mode: Int!",
 		"uid: Int!",
 		"username: String!",
+		"xattrName: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileAccess_Operation(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
@@ -8338,6 +8339,11 @@ func (resolver *fileAccess_FileMetadataResolver) Uid(ctx context.Context) int32 
 
 func (resolver *fileAccess_FileMetadataResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
+	return value
+}
+
+func (resolver *fileAccess_FileMetadataResolver) XattrName(ctx context.Context) string {
+	value := resolver.data.GetXattrName()
 	return value
 }
 

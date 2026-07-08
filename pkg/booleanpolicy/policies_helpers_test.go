@@ -373,6 +373,52 @@ func newFileAccessPolicy(eventSource storage.EventSource, operations []storage.F
 	}
 }
 
+// newFileAccessPolicyWithStringOps is like newFileAccessPolicy but accepts
+// operation names as strings. This is needed for virtual operation names
+// like "XATTR_CHANGE" that don't correspond to a proto enum value.
+func newFileAccessPolicyWithStringOps(eventSource storage.EventSource, operations []string, negate bool, paths ...string) *storage.Policy {
+	var pathValues []*storage.PolicyValue
+	for _, path := range paths {
+		pathValues = append(pathValues, &storage.PolicyValue{Value: path})
+	}
+
+	policyGroups := []*storage.PolicyGroup{
+		{
+			FieldName: fieldnames.FilePath,
+			Values:    pathValues,
+		},
+	}
+
+	var operationValues []*storage.PolicyValue
+	for _, op := range operations {
+		operationValues = append(operationValues, &storage.PolicyValue{Value: op})
+	}
+
+	if len(operationValues) != 0 {
+		policyGroups = append(policyGroups, &storage.PolicyGroup{
+			FieldName: fieldnames.FileOperation,
+			Values:    operationValues,
+			Negate:    negate,
+		})
+	}
+
+	return &storage.Policy{
+		Id:            uuid.NewV4().String(),
+		PolicyVersion: "1.1",
+		Name:          "File Access Policy",
+		Severity:      storage.Severity_HIGH_SEVERITY,
+		Categories:    []string{"File System"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName:  "section 1",
+				PolicyGroups: policyGroups,
+			},
+		},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     eventSource,
+	}
+}
+
 func newDualPathPolicy(actualPath, effectivePath string, operations []storage.FileAccess_Operation) *storage.Policy {
 	policyGroups := []*storage.PolicyGroup{
 		{

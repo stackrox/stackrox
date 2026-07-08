@@ -22,6 +22,7 @@ export type FileMetadata = {
     mode: number | null; // only relevant for PERMISSION_CHANGE events
     username: string | null; // only relevant for OWNERSHIP_CHANGE events
     group: string | null; // only relevant for OWNERSHIP_CHANGE events
+    xattrName: string | null; // only relevant for XATTR_SET and XATTR_REMOVE events
 };
 
 export type FileOperation =
@@ -30,4 +31,6 @@ export type FileOperation =
     | 'RENAME'
     | 'PERMISSION_CHANGE'
     | 'OWNERSHIP_CHANGE'
-    | 'OPEN';
+    | 'OPEN'
+    | 'XATTR_SET'
+    | 'XATTR_REMOVE';

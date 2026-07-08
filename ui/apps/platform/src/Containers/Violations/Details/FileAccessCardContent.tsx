@@ -12,6 +12,8 @@ const fileOperations: Map<FileOperation, string> = new Map([
     ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
+    ['XATTR_SET', 'Xattr set'],
+    ['XATTR_REMOVE', 'Xattr removed'],
 ]);
 
 function formatOperation(operation: FileOperation): string {
@@ -114,6 +116,9 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                             term="Permissions"
                             desc={`${formatFileMode(Number(file.meta.mode))} (${Number(file.meta.mode).toString(8).padStart(4, '0')})`}
                         />
+                    )}
+                    {file.meta.xattrName && (
+                        <DescriptionListItem term="Attribute name" desc={file.meta.xattrName} />
                     )}
                 </DescriptionList>
             )}
