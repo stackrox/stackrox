@@ -1289,7 +1289,8 @@ jobs:
       - build-and-push-db
     if: >-
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.title, 'CVE-')
+      contains(github.event.pull_request.title, 'CVE-') &&
+      (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
     permissions:
       id-token: write
     strategy:
@@ -1333,7 +1334,8 @@ jobs:
     if: >-
       always() &&
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.title, 'CVE-')
+      contains(github.event.pull_request.title, 'CVE-') &&
+      (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
     permissions:
       pull-requests: write
     env:
@@ -1368,6 +1370,7 @@ jobs:
         run: |
           mkdir -p scan-results-flat
           infra_failure=false
+          shopt -s nullglob
           for dir in scan-results/cve-verify_*/; do
             image_name="$(basename "$dir" | sed 's/^cve-verify_//' | sed 's/\.json$//')"
             if [[ -f "${dir}scan-result.json" ]]; then
@@ -1377,6 +1380,7 @@ jobs:
               infra_failure=true
             fi
           done
+          shopt -u nullglob
           # If no artifacts were downloaded at all, the directory won't exist
           if [[ ! -d scan-results ]] || [[ -z "$(ls scan-results-flat/ 2>/dev/null)" ]]; then
             infra_failure=true
@@ -1392,16 +1396,19 @@ jobs:
             --scan-dir scan-results-flat)"
           exit_code=$?
           set -e
+          delimiter="$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
           {
-            echo "comment<<COMMENT_EOF"
+            echo "comment<<${delimiter}"
             echo "$comment_body"
-            echo "COMMENT_EOF"
+            echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
           echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
 
       - name: Post PR comment
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_BODY: ${{ steps.verify.outputs.comment }}
         run: |
           if [[ "${{ steps.flatten.outputs.infra-failure }}" == "true" && "${{ steps.verify.outputs.exit-code }}" != "1" ]]; then
             gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat <<'COMMENT_EOF'
@@ -1415,8 +1422,7 @@ jobs:
           COMMENT_EOF
           )"
           else
-            gh pr comment "${{ github.event.pull_request.number }}" \
-              --body "${{ steps.verify.outputs.comment }}"
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$COMMENT_BODY"
           fi
 
       - name: Fail if CVE still present
