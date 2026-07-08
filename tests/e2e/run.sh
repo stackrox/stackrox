@@ -43,6 +43,10 @@ test_e2e() {
     deploy_optional_e2e_components
     deploy_stackrox
 
+    # Background streamers are not explicitly stopped. They die when the CI
+    # runner terminates, same as the port-forward processes in setup_proxy_tests.
+    start_continuous_log_streaming "$output_dir"
+
     rm -f FAIL
 
     prepare_for_endpoints_test
