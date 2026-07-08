@@ -41,6 +41,17 @@ test_e2e() {
     deploy_optional_e2e_components
     deploy_stackrox
 
+    # Stream Central logs and namespace events in background to preserve data
+    # across pod reschedulings. Point-in-time log collection loses logs from
+    # pods that are deleted before collection runs (ROX-35267).
+    local streaming_log_dir="/tmp/e2e-test-logs/streaming"
+    mkdir -p "$streaming_log_dir"
+    (while true; do
+        kubectl logs -f -l app=central -n stackrox --all-containers --prefix --timestamps 2>&1 || true
+        sleep 2
+    done) >> "$streaming_log_dir/central.log" 2>&1 &
+    kubectl get events -n stackrox --watch -o wide >> "$streaming_log_dir/events.log" 2>&1 &
+
     rm -f FAIL
 
     prepare_for_endpoints_test
