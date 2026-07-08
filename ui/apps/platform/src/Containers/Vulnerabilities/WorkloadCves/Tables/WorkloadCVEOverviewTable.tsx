@@ -18,7 +18,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import type useMap from 'hooks/useMap';
-import type { CveBaseInfo, VulnerabilityState, VulnerabilitySeverity } from 'types/cve.proto';
+import type { CveBaseInfo, VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import TooltipTh from 'Components/TooltipTh';
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
 import CvssFormatted from 'Components/CvssFormatted';
@@ -336,234 +336,235 @@ function WorkloadCVEOverviewTable({
                 emptyProps={{ message: 'No CVEs have been observed in the system' }}
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
-                    data.map(
-                        (imageCve, rowIndex) => {
-                            const {
-                                cve,
-                                affectedImageCountBySeverity,
-                                topSeverity,
-                                topEpssProbability,
-                                topCVSS,
-                                topNvdCVSS,
-                                affectedImageCount,
-                                firstDiscoveredInSystem,
-                                publishedOn,
-                                distroTuples,
-                                pendingExceptionCount,
-                            } = imageCve;
+                    data.map((imageCve, rowIndex) => {
+                        const {
+                            cve,
+                            affectedImageCountBySeverity,
+                            topSeverity,
+                            topEpssProbability,
+                            topCVSS,
+                            topNvdCVSS,
+                            affectedImageCount,
+                            firstDiscoveredInSystem,
+                            publishedOn,
+                            distroTuples,
+                            pendingExceptionCount,
+                        } = imageCve;
 
-                            const isExpanded = expandedRowSet.has(cve);
-                            const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
+                        const isExpanded = expandedRowSet.has(cve);
+                        const useUnifiedView = isFeatureFlagEnabled(
+                            'ROX_VULN_MGMT_UNIFIED_CVE_VIEW'
+                        );
 
-                            const criticalCount = affectedImageCountBySeverity?.critical.total ?? 0;
-                            const importantCount = affectedImageCountBySeverity?.important.total ?? 0;
-                            const moderateCount = affectedImageCountBySeverity?.moderate.total ?? 0;
-                            const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
-                            const unknownCount = affectedImageCountBySeverity?.unknown.total ?? 0;
+                        const criticalCount = affectedImageCountBySeverity?.critical.total ?? 0;
+                        const importantCount = affectedImageCountBySeverity?.important.total ?? 0;
+                        const moderateCount = affectedImageCountBySeverity?.moderate.total ?? 0;
+                        const lowCount = affectedImageCountBySeverity?.low.total ?? 0;
+                        const unknownCount = affectedImageCountBySeverity?.unknown.total ?? 0;
 
-                            const prioritizedDistros = distroTuples ? sortCveDistroList(distroTuples) : [];
-                            const scoreVersions = distroTuples ? getScoreVersionsForTopCVSS(topCVSS, distroTuples) : [];
-                            const nvdScoreVersions = distroTuples ? getScoreVersionsForTopNvdCVSS(topNvdCVSS, distroTuples) : [];
-                            const cveBaseInfo = distroTuples ? getCveBaseInfoFromDistroTuples(distroTuples) : undefined;
-                            const epssProbability = useUnifiedView ? topEpssProbability : cveBaseInfo?.epss?.epssProbability;
-                            const summary = prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
+                        const prioritizedDistros = distroTuples
+                            ? sortCveDistroList(distroTuples)
+                            : [];
+                        const scoreVersions = distroTuples
+                            ? getScoreVersionsForTopCVSS(topCVSS, distroTuples)
+                            : [];
+                        const nvdScoreVersions = distroTuples
+                            ? getScoreVersionsForTopNvdCVSS(topNvdCVSS, distroTuples)
+                            : [];
+                        const cveBaseInfo = distroTuples
+                            ? getCveBaseInfoFromDistroTuples(distroTuples)
+                            : undefined;
+                        const epssProbability = useUnifiedView
+                            ? topEpssProbability
+                            : cveBaseInfo?.epss?.epssProbability;
+                        const summary =
+                            prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
-                            const labels: ReactNode[] = [];
-                            if (
-                                isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                                isFeatureFlagEnabled('ROX_CISA_KEV') &&
-                                hasKnownExploit(cveBaseInfo?.exploit)
-                            ) {
-                                // Add in cveListQuery following epss:
-                                // exploit {
-                                //     knownRansomwareCampaignUse
-                                // }
-                                labels.push(<KnownExploitLabel key="exploit" isCompact />);
-                                if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
-                                    labels.push(
-                                        <KnownRansomwareCampaignLabel
-                                            key="knownRansomwareCampaignUse"
-                                            isCompact
-                                        />
-                                    );
-                                }
-                            }
-                            if (pendingExceptionCount > 0) {
+                        const labels: ReactNode[] = [];
+                        if (
+                            isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+                            isFeatureFlagEnabled('ROX_CISA_KEV') &&
+                            hasKnownExploit(cveBaseInfo?.exploit)
+                        ) {
+                            // Add in cveListQuery following epss:
+                            // exploit {
+                            //     knownRansomwareCampaignUse
+                            // }
+                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
+                            if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                 labels.push(
-                                    <PendingExceptionLabel
-                                        key="pendingExceptionCount"
-                                        cve={cve}
+                                    <KnownRansomwareCampaignLabel
+                                        key="knownRansomwareCampaignUse"
                                         isCompact
-                                        vulnerabilityState={vulnerabilityState}
                                     />
                                 );
                             }
+                        }
+                        if (pendingExceptionCount > 0) {
+                            labels.push(
+                                <PendingExceptionLabel
+                                    key="pendingExceptionCount"
+                                    cve={cve}
+                                    isCompact
+                                    vulnerabilityState={vulnerabilityState}
+                                />
+                            );
+                        }
 
-                            // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
-                            // and assumes adjacent empty cell has no paddingTop.
-                            return (
-                                <Tbody key={cve} isExpanded={isExpanded}>
-                                    <Tr
-                                        style={
-                                            labels.length !== 0
-                                                ? { borderBlockEnd: 'none' }
-                                                : undefined
-                                        }
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
+                        return (
+                            <Tbody key={cve} isExpanded={isExpanded}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
+                                    <Td
+                                        expand={{
+                                            rowIndex,
+                                            isExpanded,
+                                            onToggle: () => expandedRowSet.toggle(cve),
+                                        }}
+                                    />
+                                    <CVESelectionTd
+                                        className={getVisibilityClass('cveSelection')}
+                                        selectedCves={selectedCves}
+                                        rowIndex={rowIndex}
+                                        item={{
+                                            cve,
+                                            summary,
+                                            numAffectedImages: affectedImageCount,
+                                        }}
+                                    />
+                                    <Td dataLabel="CVE" modifier="nowrap">
+                                        <Link to={urlBuilder.cveDetails(cve, vulnerabilityState)}>
+                                            {cve}
+                                        </Link>
+                                    </Td>
+                                    <Td
+                                        dataLabel="Images by severity"
+                                        className={getVisibilityClass('imagesBySeverity')}
                                     >
-                                        <Td
-                                            expand={{
-                                                rowIndex,
-                                                isExpanded,
-                                                onToggle: () => expandedRowSet.toggle(cve),
-                                            }}
+                                        {useUnifiedView ? (
+                                            <TopSeverityLabel
+                                                severity={
+                                                    topSeverity as VulnerabilitySeverity | undefined
+                                                }
+                                            />
+                                        ) : (
+                                            <SeverityCountLabels
+                                                criticalCount={criticalCount}
+                                                importantCount={importantCount}
+                                                moderateCount={moderateCount}
+                                                lowCount={lowCount}
+                                                unknownCount={unknownCount}
+                                                filteredSeverities={filteredSeverities}
+                                            />
+                                        )}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Top CVSS"
+                                        className={getVisibilityClass('topCvss')}
+                                    >
+                                        <CvssFormatted
+                                            cvss={topCVSS}
+                                            scoreVersion={
+                                                scoreVersions.length > 0
+                                                    ? scoreVersions.join('/')
+                                                    : undefined
+                                            }
                                         />
-                                        <CVESelectionTd
-                                            className={getVisibilityClass('cveSelection')}
-                                            selectedCves={selectedCves}
-                                            rowIndex={rowIndex}
-                                            item={{
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('topNvdCvss')}
+                                        dataLabel="Top NVD CVSS"
+                                    >
+                                        <CvssFormatted
+                                            cvss={topNvdCVSS ?? 0}
+                                            scoreVersion={nvdScoreVersions.join('/')}
+                                        />
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('epssProbability')}
+                                        dataLabel="EPSS probability"
+                                    >
+                                        {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Affected images"
+                                        className={getVisibilityClass('affectedImages')}
+                                        modifier="nowrap"
+                                    >
+                                        {affectedImageCount}/{unfilteredImageCount} affected images
+                                    </Td>
+                                    <Td
+                                        dataLabel="First discovered"
+                                        className={getVisibilityClass('firstDiscovered')}
+                                        modifier="nowrap"
+                                    >
+                                        <DateDistance date={firstDiscoveredInSystem} />
+                                    </Td>
+                                    <Td
+                                        dataLabel="Published"
+                                        className={getVisibilityClass('publishedOn')}
+                                        modifier="nowrap"
+                                    >
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('requestDetails')}
+                                        dataLabel="Request details"
+                                    >
+                                        {vulnerabilityState !== 'OBSERVED' && (
+                                            <ExceptionDetailsCell
+                                                cve={cve}
+                                                vulnerabilityState={vulnerabilityState}
+                                            />
+                                        )}
+                                    </Td>
+                                    <Td isActionCell className={getVisibilityClass('rowActions')}>
+                                        <ActionsColumn
+                                            popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                            items={createTableActions({
                                                 cve,
                                                 summary,
                                                 numAffectedImages: affectedImageCount,
-                                            }}
+                                            })}
                                         />
-                                        <Td dataLabel="CVE" modifier="nowrap">
-                                            <Link
-                                                to={urlBuilder.cveDetails(cve, vulnerabilityState)}
-                                            >
-                                                {cve}
-                                            </Link>
+                                    </Td>
+                                </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr style={isExpanded ? { borderBlockEnd: 'none' } : undefined}>
+                                        <Td colSpan={2} />
+                                        <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
                                         </Td>
-                                        <Td
-                                            dataLabel="Images by severity"
-                                            className={getVisibilityClass('imagesBySeverity')}
-                                        >
+                                    </Tr>
+                                )}
+                                <Tr isExpanded={isExpanded}>
+                                    <Td />
+                                    <Td colSpan={colSpan - 1}>
+                                        <ExpandableRowContent>
                                             {useUnifiedView ? (
-                                                <TopSeverityLabel
-                                                    severity={topSeverity as VulnerabilitySeverity | undefined}
-                                                />
+                                                <CVESummaryContent cve={cve} />
+                                            ) : summary ? (
+                                                <Content component="p">{summary}</Content>
                                             ) : (
-                                                <SeverityCountLabels
-                                                    criticalCount={criticalCount}
-                                                    importantCount={importantCount}
-                                                    moderateCount={moderateCount}
-                                                    lowCount={lowCount}
-                                                    unknownCount={unknownCount}
-                                                    filteredSeverities={filteredSeverities}
-                                                />
+                                                <PartialCVEDataAlert />
                                             )}
-                                        </Td>
-                                        <Td
-                                            dataLabel="Top CVSS"
-                                            className={getVisibilityClass('topCvss')}
-                                        >
-                                            <CvssFormatted
-                                                cvss={topCVSS}
-                                                scoreVersion={
-                                                    scoreVersions.length > 0
-                                                        ? scoreVersions.join('/')
-                                                        : undefined
-                                                }
-                                            />
-                                        </Td>
-                                        <Td
-                                            className={getVisibilityClass('topNvdCvss')}
-                                            dataLabel="Top NVD CVSS"
-                                        >
-                                            <CvssFormatted
-                                                cvss={topNvdCVSS ?? 0}
-                                                scoreVersion={nvdScoreVersions.join('/')}
-                                            />
-                                        </Td>
-                                        <Td
-                                            className={getVisibilityClass('epssProbability')}
-                                            dataLabel="EPSS probability"
-                                        >
-                                            {formatEpssProbabilityAsPercent(epssProbability)}
-                                        </Td>
-                                        <Td
-                                            dataLabel="Affected images"
-                                            className={getVisibilityClass('affectedImages')}
-                                            modifier="nowrap"
-                                        >
-                                            {affectedImageCount}/{unfilteredImageCount} affected
-                                            images
-                                        </Td>
-                                        <Td
-                                            dataLabel="First discovered"
-                                            className={getVisibilityClass('firstDiscovered')}
-                                            modifier="nowrap"
-                                        >
-                                            <DateDistance date={firstDiscoveredInSystem} />
-                                        </Td>
-                                        <Td
-                                            dataLabel="Published"
-                                            className={getVisibilityClass('publishedOn')}
-                                            modifier="nowrap"
-                                        >
-                                            {publishedOn ? (
-                                                <DateDistance date={publishedOn} />
-                                            ) : (
-                                                'Not available'
-                                            )}
-                                        </Td>
-                                        <Td
-                                            className={getVisibilityClass('requestDetails')}
-                                            dataLabel="Request details"
-                                        >
-                                            {vulnerabilityState !== 'OBSERVED' && (
-                                                <ExceptionDetailsCell
-                                                    cve={cve}
-                                                    vulnerabilityState={vulnerabilityState}
-                                                />
-                                            )}
-                                        </Td>
-                                        <Td
-                                            isActionCell
-                                            className={getVisibilityClass('rowActions')}
-                                        >
-                                            <ActionsColumn
-                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                items={createTableActions({
-                                                    cve,
-                                                    summary,
-                                                    numAffectedImages: affectedImageCount,
-                                                })}
-                                            />
-                                        </Td>
-                                    </Tr>
-                                    {labels.length !== 0 && (
-                                        <Tr
-                                            style={
-                                                isExpanded ? { borderBlockEnd: 'none' } : undefined
-                                            }
-                                        >
-                                            <Td colSpan={2} />
-                                            <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
-                                                <LabelGroup numLabels={labels.length}>
-                                                    {labels}
-                                                </LabelGroup>
-                                            </Td>
-                                        </Tr>
-                                    )}
-                                    <Tr isExpanded={isExpanded}>
-                                        <Td />
-                                        <Td colSpan={colSpan - 1}>
-                                            <ExpandableRowContent>
-                                                {useUnifiedView ? (
-                                                    <CVESummaryContent cve={cve} />
-                                                ) : summary ? (
-                                                    <Content component="p">{summary}</Content>
-                                                ) : (
-                                                    <PartialCVEDataAlert />
-                                                )}
-                                            </ExpandableRowContent>
-                                        </Td>
-                                    </Tr>
-                                </Tbody>
-                            );
-                        }
-                    )
+                                        </ExpandableRowContent>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })
                 }
             />
         </Table>

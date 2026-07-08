@@ -52,13 +52,7 @@ export function getWorkloadCveOverviewSortFields(
         case 'CVE':
             return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return [
-                'Image',
-                severityFields,
-                'Image OS',
-                'Image Created Time',
-                'Image Scan Time',
-            ];
+            return ['Image', severityFields, 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             return ['Deployment', severityFields, 'Cluster', 'Namespace', 'Created'];
         default:

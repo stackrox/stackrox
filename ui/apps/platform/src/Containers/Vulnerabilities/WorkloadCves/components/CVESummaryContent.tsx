@@ -38,14 +38,7 @@ function CVESummaryContent({ cve }: CVESummaryContentProps) {
     const summary = prioritized.length > 0 ? prioritized[0].summary : '';
 
     if (!summary) {
-        return (
-            <Alert
-                variant="info"
-                isInline
-                isPlain
-                title="No summary available for this CVE"
-            />
-        );
+        return <Alert variant="info" isInline isPlain title="No summary available for this CVE" />;
     }
 
     return <Content component="p">{summary}</Content>;
