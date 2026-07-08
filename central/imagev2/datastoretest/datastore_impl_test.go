@@ -319,10 +319,13 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err := s.datastore.GetImage(ctx, testImage.GetId())
 	s.NoError(err)
 	s.True(found)
+	// Truncate to microsecond precision to match PostgreSQL's timestamp column storage.
+	// After database round-trip, FirstImageOccurrence may lose sub-microsecond precision.
+	truncatedLastUpdated := truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
 	for _, component := range testImage.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
+			cve.FirstImageOccurrence = truncatedLastUpdated
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
@@ -375,7 +378,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
 			// System Occurrence remains unchanged.
-			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
+			cve.FirstImageOccurrence = truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
 	}
@@ -412,7 +415,7 @@ func (s *ImageV2DataStoreTestSuite) TestImageDeletes() {
 		// Components and Vulns are deduped, therefore, update testImage structure.
 		for _, cve := range component.GetVulns() {
 			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
+			cve.FirstImageOccurrence = truncateTimestampToMicroseconds(storedImage.GetLastUpdated())
 		}
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
@@ -977,6 +980,14 @@ func getTestImageV2(name string) *storage.ImageV2 {
 		RiskScore: 30,
 		Priority:  1,
 	}
+}
+
+func truncateTimestampToMicroseconds(ts *timestamppb.Timestamp) *timestamppb.Timestamp {
+	if ts == nil {
+		return nil
+	}
+	t := ts.AsTime().Truncate(time.Microsecond)
+	return timestamppb.New(t)
 }
 
 func cloneAndUpdateRiskPriority(image *storage.ImageV2) *storage.ImageV2 {
