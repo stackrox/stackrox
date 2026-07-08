@@ -54,7 +54,7 @@ type IndexReportSender interface {
 
 // ProtocolClient performs the request/response protocol over a stream.
 type ProtocolClient interface {
-	GetReport(stream io.ReadWriteCloser, ifNewerThan uint32) (*vsockclient.GetReportResult, error)
+	GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error)
 }
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
@@ -76,6 +76,7 @@ type VMScraper struct {
 
 type vmState struct {
 	lastGeneration  uint32
+	lastEpoch       uint32
 	lastForwardedAt time.Time
 }
 
@@ -215,7 +216,11 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	defer func() { _ = stream.Close() }()
 
 	readStart := s.now()
-	result, err := s.client.GetReport(stream, state.lastGeneration)
+	// knownEpoch lets a current roxagent make the complete "changed or not"
+	// decision server-side and serve the full report in this same round trip
+	// on a restart-coincidence false match, instead of relying solely on the
+	// client-side fallback below.
+	result, err := s.client.GetReport(stream, state.lastGeneration, state.lastEpoch)
 	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
 	if err != nil {
 		s.handleGetReportError(key, err)
@@ -223,11 +228,25 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	}
 
 	if result.Unchanged {
-		if s.now().Sub(state.lastForwardedAt) <= mandatoryRefreshAfter {
+		// Backward-compat fallback: against a current roxagent that honors
+		// knownEpoch, an epoch mismatch is already resolved in the response
+		// above (Unchanged would be false), so this branch is effectively
+		// dead code. It only matters against an agent that predates the
+		// knownEpoch request field and ignores it, where roxagent's
+		// generation-only comparison can produce a false "unchanged" right
+		// after a restart (report_generation resets to 1 and coincidentally
+		// re-matches Sensor's cached value).
+		epoch := result.Meta.GetEpoch()
+		epochMismatch := epoch != 0 && epoch != state.lastEpoch
+		if !epochMismatch && s.now().Sub(state.lastForwardedAt) <= mandatoryRefreshAfter {
 			s.registerScrapedVM(scrapedVMs, vm)
 			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
+		}
+		if epochMismatch {
+			log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
+				key, state.lastEpoch, epoch, state.lastGeneration)
 		}
 		stream2, err := s.dialer.Dial(vmCtx, vm.Namespace, vm.Name, port, true)
 		if err != nil {
@@ -237,7 +256,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		}
 		defer func() { _ = stream2.Close() }()
 
-		result, err = s.client.GetReport(stream2, 0)
+		result, err = s.client.GetReport(stream2, 0, 0)
 		if err != nil {
 			s.handleGetReportError(key, err)
 			return false
@@ -264,6 +283,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	}
 
 	state.lastGeneration = result.Meta.GetReportGeneration()
+	state.lastEpoch = result.Meta.GetEpoch()
 	state.lastForwardedAt = s.now()
 	s.registerScrapedVM(scrapedVMs, vm)
 

@@ -27,7 +27,7 @@ func TestSendGetReport_Success(t *testing.T) {
 		require.NoError(t, proto.Unmarshal(reqData, &req))
 		assert.NotEmpty(t, req.GetMeta().GetRequestId())
 		assert.Equal(t, []string{CapabilityReportV1}, req.GetMeta().GetCapabilities())
-		assert.Equal(t, uint32(0), req.GetGetReport().GetIfNewerThanGeneration())
+		assert.Equal(t, uint32(0), req.GetGetReport().GetLastKnownGeneration())
 
 		resp := &pb.VMServiceResponse{
 			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
@@ -42,7 +42,7 @@ func TestSendGetReport_Success(t *testing.T) {
 		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
 	}()
 
-	result, err := client.GetReport(clientConn, 0)
+	result, err := client.GetReport(clientConn, 0, 0)
 	require.NoError(t, err)
 	assert.Equal(t, "test-hash", result.IndexReport.GetHashId())
 	assert.False(t, result.Unchanged)
@@ -56,8 +56,13 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 
 	go func() {
 		defer utils.IgnoreError(agentConn.Close)
-		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
+		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
 		require.NoError(t, err)
+
+		var req pb.VMServiceRequest
+		require.NoError(t, proto.Unmarshal(reqData, &req))
+		assert.Equal(t, uint32(5), req.GetGetReport().GetLastKnownGeneration())
+		assert.Equal(t, uint32(42), req.GetGetReport().GetKnownEpoch())
 
 		resp := &pb.VMServiceResponse{
 			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 5},
@@ -70,7 +75,7 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
 	}()
 
-	result, err := client.GetReport(clientConn, 5)
+	result, err := client.GetReport(clientConn, 5, 42)
 	require.NoError(t, err)
 	assert.Nil(t, result.IndexReport)
 	assert.True(t, result.Unchanged)
@@ -98,7 +103,7 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
 	}()
 
-	_, err := client.GetReport(clientConn, 0)
+	_, err := client.GetReport(clientConn, 0, 0)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "IndexReport is nil")
 }
@@ -149,7 +154,7 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 				require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
 			}()
 
-			_, err := client.GetReport(clientConn, 0)
+			_, err := client.GetReport(clientConn, 0, 0)
 			require.Error(t, err)
 			assert.ErrorIs(t, err, tc.wantErr)
 			if tc.wantInMsg != "" {

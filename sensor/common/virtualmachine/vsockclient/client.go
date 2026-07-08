@@ -43,9 +43,13 @@ func NewClient(capabilities []string, maxResponseSize int) *Client {
 	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
 }
 
-// GetReport sends a GetReportRequest and returns the response.
+// GetReport sends a GetReportRequest and returns the response. knownEpoch is
+// the last epoch Sensor observed for this VM (see ResponseMeta.epoch); pass 0
+// when unknown. Sending it lets the agent detect a restart-coincidence false
+// match and serve the full report in this same round trip, instead of the
+// caller needing a second, forced request.
 // The stream must be an io.ReadWriteCloser (from MultiDialer.Dial).
-func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32) (*GetReportResult, error) {
+func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*GetReportResult, error) {
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{
 			RequestId:    uuid.NewV4().String(),
@@ -53,7 +57,8 @@ func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32) (*GetR
 		},
 		Method: &pb.VMServiceRequest_GetReport{
 			GetReport: &pb.GetReportRequest{
-				IfNewerThanGeneration: ifNewerThan,
+				LastKnownGeneration: ifNewerThan,
+				KnownEpoch:          knownEpoch,
 			},
 		},
 	}
