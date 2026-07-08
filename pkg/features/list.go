@@ -145,6 +145,9 @@ var (
 
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
+
+	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
