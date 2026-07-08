@@ -443,8 +443,8 @@ class BaseSpecification extends Specification {
         orchestrator.createImagePullSecret(new Secret(
                 name: "redhat-image-pull-secret",
                 server: "https://registry.redhat.io",
-                username: Env.get("REDHAT_USERNAME"),
-                password: Env.get("REDHAT_PASSWORD"),
+                username: Env.mustGetInCI("REDHAT_USERNAME", "{}"),
+                password: Env.mustGetInCI("REDHAT_PASSWORD", "{}"),
                 namespace: ns
         ))
 
