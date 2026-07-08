@@ -50,7 +50,13 @@ test_e2e() {
         kubectl logs -f -l app=central -n stackrox --all-containers --prefix --timestamps 2>&1 || true
         sleep 2
     done) >> "$streaming_log_dir/central.log" 2>&1 &
-    kubectl get events -n stackrox --watch -o wide >> "$streaming_log_dir/events.log" 2>&1 &
+    local central_stream_pid=$!
+    (while true; do
+        kubectl get events -n stackrox --watch -o wide 2>&1 || true
+        sleep 2
+    done) >> "$streaming_log_dir/events.log" 2>&1 &
+    local events_stream_pid=$!
+    trap 'kill $central_stream_pid $events_stream_pid 2>/dev/null || true' EXIT
 
     rm -f FAIL
 
