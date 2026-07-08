@@ -544,7 +544,8 @@ class IntegrationsTest extends BaseSpecification {
     def "Verify S3 Compatible Integration: #integrationName"() {
         when:
         "the integration is tested"
-        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(integrationName, endpoint, urlStyle)
+        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(
+                integrationName, endpoint, urlStyle, bucket, region, accessKeyId, accessKey)
 
         then:
         "verify test integration"
@@ -558,16 +559,12 @@ class IntegrationsTest extends BaseSpecification {
 
         // Cloudflare R2 requires an active credit card subscription to access the buckets.
         // See BitWarden item `06917dbc-17be-40f9-b8e1-b1a1015ce473` for the account details.
-        integrationName                          | endpoint
-        | urlStyle
-        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
-        | S3URLStyle.S3_URL_STYLE_PATH
-        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
-        | S3URLStyle.S3_URL_STYLE_PATH
-        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
-        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
-        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
-        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
+        integrationName                          | endpoint                                        | urlStyle                              | bucket                               | region                                | accessKeyId                              | accessKey
+        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()                | S3URLStyle.S3_URL_STYLE_PATH          | Env.mustGetCloudflareR2BucketName()  | Env.mustGetCloudflareR2BucketRegion() | Env.mustGetCloudflareR2AccessKeyID()     | Env.mustGetCloudflareR2SecretAccessKey()
+        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"   | S3URLStyle.S3_URL_STYLE_PATH          | Env.mustGetCloudflareR2BucketName()  | Env.mustGetCloudflareR2BucketRegion() | Env.mustGetCloudflareR2AccessKeyID()     | Env.mustGetCloudflareR2SecretAccessKey()
+        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()                | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED | Env.mustGetCloudflareR2BucketName()  | Env.mustGetCloudflareR2BucketRegion() | Env.mustGetCloudflareR2AccessKeyID()     | Env.mustGetCloudflareR2SecretAccessKey()
+        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"   | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED | Env.mustGetCloudflareR2BucketName()  | Env.mustGetCloudflareR2BucketRegion() | Env.mustGetCloudflareR2AccessKeyID()     | Env.mustGetCloudflareR2SecretAccessKey()
+        "ODF S3/path-based"                      | Env.mustGetODFS3Endpoint()                       | S3URLStyle.S3_URL_STYLE_PATH          | Env.mustGetODFS3BucketName()         | Env.mustGetODFS3BucketRegion()        | Env.mustGetODFS3AccessKeyID()            | Env.mustGetODFS3SecretAccessKey()
     }
 
     @Unroll

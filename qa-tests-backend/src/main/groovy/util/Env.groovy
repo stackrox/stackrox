@@ -287,6 +287,26 @@ class Env {
         return mustGet("CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY")
     }
 
+    static String mustGetODFS3Endpoint() {
+        return mustGet("ODF_S3_BACKUP_TEST_ENDPOINT")
+    }
+
+    static String mustGetODFS3BucketName() {
+        return mustGet("ODF_S3_BACKUP_TEST_BUCKET_NAME")
+    }
+
+    static String mustGetODFS3BucketRegion() {
+        return mustGet("ODF_S3_BACKUP_TEST_REGION")
+    }
+
+    static String mustGetODFS3AccessKeyID() {
+        return mustGet("ODF_S3_BACKUP_TEST_ACCESS_KEY_ID")
+    }
+
+    static String mustGetODFS3SecretAccessKey() {
+        return mustGet("ODF_S3_BACKUP_TEST_SECRET_ACCESS_KEY")
+    }
+
     static String mustGetGCSBucketName() {
         return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
     }
