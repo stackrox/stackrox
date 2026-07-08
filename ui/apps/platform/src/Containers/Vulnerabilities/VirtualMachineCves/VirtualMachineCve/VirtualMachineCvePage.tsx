@@ -23,7 +23,7 @@ function VirtualMachineCvePage() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - ${cveId}`} />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewCvePath}>
                         CVEs
@@ -32,7 +32,7 @@ function VirtualMachineCvePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <VirtualMachineCvePageHeader cveDetail={cveDetail} />
             </PageSection>
         </>
