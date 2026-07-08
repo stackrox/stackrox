@@ -43,15 +43,19 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	if err := yaml.Unmarshal(data, &f); err != nil {
 		return nil, err
 	}
-	var seen set.IntSet
+	var seenTo set.IntSet
+	var seenFrom set.IntSet
 	var result []parsedBump
 	for _, b := range f.Bumps {
 		pb, err := parseBump(b)
 		if err != nil {
 			return nil, err
 		}
-		if !seen.Add(pb.ToMajor) {
+		if !seenTo.Add(pb.ToMajor) {
 			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", pb.ToMajor)
+		}
+		if !seenFrom.Add(pb.FromMajor) {
+			return nil, fmt.Errorf("duplicate 'from' major %d in major_version_bumps.yaml", pb.FromMajor)
 		}
 		result = append(result, pb)
 	}
