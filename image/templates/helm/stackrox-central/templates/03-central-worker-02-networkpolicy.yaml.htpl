@@ -10,29 +10,9 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "networkpolicy" "central-worker") | nindent 4 }}
 spec:
+  policyTypes:
+  - Ingress
   podSelector:
     matchLabels:
       app: central-worker
-  policyTypes:
-  - Ingress
-  - Egress
-  egress:
-  - to:
-    - podSelector:
-        matchLabels:
-          app: central-db
-    ports:
-    - port: 5432
-      protocol: TCP
-  - to:
-    - namespaceSelector: {}
-    ports:
-    - port: 53
-      protocol: UDP
-    - port: 53
-      protocol: TCP
-    - port: 5353
-      protocol: UDP
-    - port: 5353
-      protocol: TCP
 {{- end }}
