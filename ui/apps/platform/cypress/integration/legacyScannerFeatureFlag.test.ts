@@ -50,6 +50,32 @@ describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
 
             cy.get(scannerCredentialExpiryBanner).should('not.exist');
         });
+
+        it('should show disabled vuln definitions card with message on System Health page', () => {
+            const currentDatetime = new Date('2020-12-10T02:04:59.377369440Z');
+            const lastUpdatedTimestamp = '2020-12-09T03:04:59.377369440Z';
+
+            const staticResponseMap = {
+                [integrationHealthVulnDefinitionsAlias]: {
+                    body: { lastUpdatedTimestamp },
+                },
+            };
+
+            setClock(currentDatetime);
+            visitSystemHealthWithKeysRemoved([credentialForScannerExpiryAlias], staticResponseMap);
+
+            cy.get(vulnDefinitionsCardSelector).should('exist');
+            cy.get(vulnDefinitionsCardSelector).should('have.css', 'opacity', '0.5');
+            cy.get(vulnDefinitionsCardSelector).should('contain', 'Legacy scanner is disabled');
+        });
+
+        it('should show disabled scanner certificate card with message on System Health page', () => {
+            visitSystemHealthWithKeysRemoved([credentialForScannerExpiryAlias]);
+
+            cy.get(scannerCertificateCardSelector).should('exist');
+            cy.get(scannerCertificateCardSelector).should('have.css', 'opacity', '0.5');
+            cy.get(scannerCertificateCardSelector).should('contain', 'Legacy scanner is disabled');
+        });
     });
 
     describe('when enabled', () => {

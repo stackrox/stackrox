@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { Icon, Spinner } from '@patternfly/react-core';
 import {
+    BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -31,6 +32,12 @@ export const SuccessIcon = (
 export const WarningIcon = (
     <Icon>
         <ExclamationTriangleIcon color="var(--pf-t--global--icon--color--status--warning--default)" />
+    </Icon>
+);
+
+export const DisabledIcon = (
+    <Icon>
+        <BanIcon color="var(--pf-t--global--icon--color--disabled)" />
     </Icon>
 );
 
