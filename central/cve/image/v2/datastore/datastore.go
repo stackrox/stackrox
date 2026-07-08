@@ -24,12 +24,17 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
+
+	GetDigestsWithMostV1CVEs(ctx context.Context, limit int) ([]string, error)
+	GetV1CVEsByDigests(ctx context.Context, digests []string) ([]*CVETimestampsView, error)
+	GetV2CVEsByImageIDs(ctx context.Context, imageIDs []string) ([]*CVETimestampsView, error)
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store) DataStore {
+func New(storage store.Store, db postgres.DB) DataStore {
 	ds := &datastoreImpl{
 		storage: storage,
+		db:      db,
 	}
 	return ds
 }
@@ -37,5 +42,5 @@ func New(storage store.Store) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	return New(dbstore)
+	return New(dbstore, pool)
 }

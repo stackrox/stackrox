@@ -19,11 +19,11 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestImageCVEV2DataStoreV1Filter(t *testing.T) {
-	suite.Run(t, new(ImageCVEV2DataStoreV1FilterTestSuite))
+func TestImageCVEV2DataStore(t *testing.T) {
+	suite.Run(t, new(ImageCVEV2DataStoreTestSuite))
 }
 
-type ImageCVEV2DataStoreV1FilterTestSuite struct {
+type ImageCVEV2DataStoreTestSuite struct {
 	suite.Suite
 
 	testDB   *pgtest.TestPostgres
@@ -33,7 +33,7 @@ type ImageCVEV2DataStoreV1FilterTestSuite struct {
 	v2Image *storage.ImageV2
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) SetupSuite() {
+func (s *ImageCVEV2DataStoreTestSuite) SetupSuite() {
 	if !features.FlattenImageData.Enabled() {
 		s.T().Skip("Skipping test because FlattenImageData feature flag is disabled")
 	}
@@ -56,7 +56,7 @@ func (s *ImageCVEV2DataStoreV1FilterTestSuite) SetupSuite() {
 	s.cveStore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) expectedV2CVEs() set.StringSet {
+func (s *ImageCVEV2DataStoreTestSuite) expectedV2CVEs() set.StringSet {
 	cves := set.NewStringSet()
 	for _, comp := range s.v2Image.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
@@ -66,7 +66,7 @@ func (s *ImageCVEV2DataStoreV1FilterTestSuite) expectedV2CVEs() set.StringSet {
 	return cves
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestCountExcludesV1() {
+func (s *ImageCVEV2DataStoreTestSuite) TestCountExcludesV1() {
 	expectedCVEs := s.expectedV2CVEs()
 
 	count, err := s.cveStore.Count(s.ctx, search.EmptyQuery())
@@ -74,7 +74,7 @@ func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestCountExcludesV1() {
 	s.Assert().Equal(expectedCVEs.Cardinality(), count)
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestSearchExcludesV1() {
+func (s *ImageCVEV2DataStoreTestSuite) TestSearchExcludesV1() {
 	expectedCVEs := s.expectedV2CVEs()
 
 	results, err := s.cveStore.Search(s.ctx, search.EmptyQuery())
@@ -82,7 +82,7 @@ func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestSearchExcludesV1() {
 	s.Assert().Equal(expectedCVEs.Cardinality(), len(results))
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestSearchRawImageCVEsExcludesV1() {
+func (s *ImageCVEV2DataStoreTestSuite) TestSearchRawImageCVEsExcludesV1() {
 	expectedCVEs := s.expectedV2CVEs()
 
 	cves, err := s.cveStore.SearchRawImageCVEs(s.ctx, search.EmptyQuery())
@@ -95,10 +95,61 @@ func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestSearchRawImageCVEsExcludesV1(
 	s.Assert().Equal(expectedCVEs, returnedCVEs)
 }
 
-func (s *ImageCVEV2DataStoreV1FilterTestSuite) TestSearchImageCVEsExcludesV1() {
+func (s *ImageCVEV2DataStoreTestSuite) TestSearchImageCVEsExcludesV1() {
 	expectedCVEs := s.expectedV2CVEs()
 
 	results, err := s.cveStore.SearchImageCVEs(s.ctx, search.EmptyQuery())
 	s.Require().NoError(err)
 	s.Assert().Equal(expectedCVEs.Cardinality(), len(results))
+}
+
+func (s *ImageCVEV2DataStoreTestSuite) TestGetDigestsWithMostV1CVEs() {
+	digests, err := s.cveStore.GetDigestsWithMostV1CVEs(s.ctx, 10)
+	s.Require().NoError(err)
+	s.Assert().Len(digests, 1, "should return exactly the one V1 image digest")
+	s.Assert().Equal("sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7", digests[0])
+}
+
+func (s *ImageCVEV2DataStoreTestSuite) TestGetV1CVEsByDigests() {
+	v1Digest := "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7"
+
+	v1CVEs, err := s.cveStore.GetV1CVEsByDigests(s.ctx, []string{v1Digest})
+	s.Require().NoError(err)
+	s.Assert().NotEmpty(v1CVEs)
+
+	for _, cve := range v1CVEs {
+		s.Assert().Equal(v1Digest, cve.GetImageID(), "all rows should belong to the V1 digest")
+		s.Assert().Empty(cve.GetImageIDV2(), "V1 rows should have no V2 image ID")
+		s.Assert().NotEmpty(cve.GetCVE(), "CVE name should be populated")
+		s.Assert().NotEmpty(cve.GetID(), "row ID should be populated")
+	}
+}
+
+func (s *ImageCVEV2DataStoreTestSuite) TestGetV2CVEsByImageIDs() {
+	v2ImageID := s.v2Image.GetId()
+
+	v2CVEs, err := s.cveStore.GetV2CVEsByImageIDs(s.ctx, []string{v2ImageID})
+	s.Require().NoError(err)
+	s.Assert().NotEmpty(v2CVEs)
+
+	expectedCVEs := s.expectedV2CVEs()
+	returnedCVEs := set.NewStringSet()
+	for _, cve := range v2CVEs {
+		s.Assert().Equal(v2ImageID, cve.GetImageIDV2(), "all rows should belong to the V2 image")
+		s.Assert().NotEmpty(cve.GetCVE())
+		returnedCVEs.Add(cve.GetCVE())
+	}
+	s.Assert().Equal(expectedCVEs, returnedCVEs)
+}
+
+func (s *ImageCVEV2DataStoreTestSuite) TestGetV1CVEsByDigests_EmptyInput() {
+	v1CVEs, err := s.cveStore.GetV1CVEsByDigests(s.ctx, nil)
+	s.Require().NoError(err)
+	s.Assert().Empty(v1CVEs)
+}
+
+func (s *ImageCVEV2DataStoreTestSuite) TestGetV2CVEsByImageIDs_EmptyInput() {
+	v2CVEs, err := s.cveStore.GetV2CVEsByImageIDs(s.ctx, nil)
+	s.Require().NoError(err)
+	s.Assert().Empty(v2CVEs)
 }

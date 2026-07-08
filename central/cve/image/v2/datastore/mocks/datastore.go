@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -102,6 +103,51 @@ func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.I
 func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+}
+
+// GetDigestsWithMostV1CVEs mocks base method.
+func (m *MockDataStore) GetDigestsWithMostV1CVEs(ctx context.Context, limit int) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDigestsWithMostV1CVEs", ctx, limit)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDigestsWithMostV1CVEs indicates an expected call of GetDigestsWithMostV1CVEs.
+func (mr *MockDataStoreMockRecorder) GetDigestsWithMostV1CVEs(ctx, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDigestsWithMostV1CVEs", reflect.TypeOf((*MockDataStore)(nil).GetDigestsWithMostV1CVEs), ctx, limit)
+}
+
+// GetV1CVEsByDigests mocks base method.
+func (m *MockDataStore) GetV1CVEsByDigests(ctx context.Context, digests []string) ([]*datastore.CVETimestampsView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetV1CVEsByDigests", ctx, digests)
+	ret0, _ := ret[0].([]*datastore.CVETimestampsView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetV1CVEsByDigests indicates an expected call of GetV1CVEsByDigests.
+func (mr *MockDataStoreMockRecorder) GetV1CVEsByDigests(ctx, digests any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetV1CVEsByDigests", reflect.TypeOf((*MockDataStore)(nil).GetV1CVEsByDigests), ctx, digests)
+}
+
+// GetV2CVEsByImageIDs mocks base method.
+func (m *MockDataStore) GetV2CVEsByImageIDs(ctx context.Context, imageIDs []string) ([]*datastore.CVETimestampsView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetV2CVEsByImageIDs", ctx, imageIDs)
+	ret0, _ := ret[0].([]*datastore.CVETimestampsView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetV2CVEsByImageIDs indicates an expected call of GetV2CVEsByImageIDs.
+func (mr *MockDataStoreMockRecorder) GetV2CVEsByImageIDs(ctx, imageIDs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetV2CVEsByImageIDs", reflect.TypeOf((*MockDataStore)(nil).GetV2CVEsByImageIDs), ctx, imageIDs)
 }
 
 // Search mocks base method.

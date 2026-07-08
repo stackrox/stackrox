@@ -29,6 +29,7 @@ type Store interface {
 
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error
+	NullImageScanHashes(ctx context.Context, ids []string) error
 
 	UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error
 

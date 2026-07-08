@@ -68,6 +68,8 @@ var (
 	NVDCVSS            = newFieldLabel("NVD CVSS")
 	ImpactScore        = newFieldLabel("Impact Score")
 	VulnerabilityState = newFieldLabel("Vulnerability State")
+	CVEImageID         = newFieldLabel("CVE Image ID")
+	CVEImageIDV2       = newFieldLabel("CVE Image ID V2")
 	CVEOrphaned        = newFieldLabel("CVE Orphaned")
 	CVEOrphanedTime    = newFieldLabel("CVE Orphaned Time")
 	EPSSProbablity     = newFieldLabel("EPSS Probability")

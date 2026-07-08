@@ -302,6 +302,18 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ds.storage.Exists(ctx, id)
 }
 
+func (ds *datastoreImpl) NullImageScanHashes(ctx context.Context, ids []string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "NullImageScanHashes")
+
+	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return ds.storage.NullImageScanHashes(ctx, ids)
+}
+
 func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err

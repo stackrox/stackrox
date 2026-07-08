@@ -197,7 +197,7 @@ message ImageCVEV2 {
   // within the component
   string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   // was hash index, making it btree
-  string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree,allow-null"
+  string image_id = 2 [deprecated = true]; // @gotags: search:"CVE Image ID,hidden" sql:"fk(Image:id),index=btree,allow-null"
   CVEInfo cve_base_info = 3;
   // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS"
@@ -219,7 +219,7 @@ message ImageCVEV2 {
   string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
   storage.Advisory advisory = 14;
 
-  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+  string image_id_v2 = 15; // @gotags: search:"CVE Image ID V2,hidden" sql:"fk(ImageV2:id),index=btree,allow-null"
 
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"

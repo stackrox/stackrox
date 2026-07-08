@@ -129,6 +129,15 @@ const (
 			SELECT 1 FROM deployments_containers dc
 			WHERE dc.image_idv2 = img.id
 		)`
+
+	deleteImageCVEsByIDs = `DELETE FROM ` + schema.ImageCvesV2TableName + ` WHERE id = ANY($1)`
+
+	deleteOrphanedV1Components = `DELETE FROM ` + schema.ImageComponentV2TableName + `
+		WHERE imageid = ANY($1) AND imageidv2 IS NULL
+		AND NOT EXISTS (
+			SELECT 1 FROM ` + schema.ImageCvesV2TableName + `
+			WHERE ` + schema.ImageCvesV2TableName + `.componentid = ` + schema.ImageComponentV2TableName + `.id
+		)`
 )
 
 var (
@@ -306,4 +315,28 @@ func GetInactiveImageIdentifiers(ctx context.Context, pool postgres.DB, retentio
 			return &img, nil
 		})
 	})
+}
+
+// DeleteImageCVEsByIDs deletes image CVE rows by their IDs.
+func DeleteImageCVEsByIDs(ctx context.Context, pool postgres.DB, ids []string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	_, err := pool.Exec(pruneCtx, deleteImageCVEsByIDs, ids)
+	return errors.Wrap(err, "deleting V1 image CVEs")
+}
+
+// DeleteOrphanedV1Components deletes V1 image components that no longer have any CVE rows referencing them.
+func DeleteOrphanedV1Components(ctx context.Context, pool postgres.DB, digests []string) error {
+	if len(digests) == 0 {
+		return nil
+	}
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	_, err := pool.Exec(pruneCtx, deleteOrphanedV1Components, digests)
+	return errors.Wrap(err, "deleting orphaned V1 image components")
 }

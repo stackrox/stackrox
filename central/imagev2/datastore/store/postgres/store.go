@@ -984,6 +984,35 @@ func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*view
 	return results, err
 }
 
+type imageIDsByDigestView struct {
+	ImageIDs    []string `db:"image_id"`
+	ImageDigest string   `db:"image_sha"`
+}
+
+// GetImageIDsForDigests returns V2 image IDs grouped by digest.
+func (s *storeImpl) GetImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	if len(digests) == 0 {
+		return nil, nil
+	}
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, digests...).
+		ProtoQuery()
+	q.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageID).Distinct().Proto(),
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+	}
+	q.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.ImageSHA.String()},
+	}
+
+	result := make(map[string][]string, len(digests))
+	err := pgSearch.RunSelectRequestForSchemaFn[imageIDsByDigestView](ctx, s.db, pkgSchema.ImagesV2Schema, q, func(row *imageIDsByDigestView) error {
+		result[row.ImageDigest] = row.ImageIDs
+		return nil
+	})
+	return result, err
+}
+
 // UpdateVulnState updates the state of a vulnerability in the store.
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")

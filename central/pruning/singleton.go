@@ -5,6 +5,7 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
+	imageCVEV2Datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -56,6 +57,7 @@ func Singleton() GarbageCollector {
 			blobDS.Singleton(),
 			nodeCVEDS.Singleton(),
 			roleDataStore.Singleton(),
+			imageCVEV2Datastore.Singleton(),
 		)
 	})
 	return gc

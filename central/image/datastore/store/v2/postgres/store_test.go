@@ -406,6 +406,30 @@ func (s *ImagesStoreSuite) TestGetMany() {
 	s.Equal(2, len(returnedImages))
 }
 
+func (s *ImagesStoreSuite) TestNullImageScanHashes() {
+	image := getTestImage("sha256:nullhashtest")
+	s.Require().NoError(s.store.Upsert(s.ctx, image))
+
+	// Verify the image has a scan hash after upsert.
+	found, exists, err := s.store.Get(s.ctx, image.GetId())
+	s.Require().NoError(err)
+	s.Require().True(exists)
+	s.Assert().NotNil(found.GetScan().GetHashoneof(), "scan hash should be set after upsert")
+
+	// Null the scan hash.
+	s.Require().NoError(s.store.NullImageScanHashes(s.ctx, []string{image.GetId()}))
+
+	// Verify the scan hash is nil.
+	found, exists, err = s.store.Get(s.ctx, image.GetId())
+	s.Require().NoError(err)
+	s.Require().True(exists)
+	s.Assert().Nil(found.GetScan().GetHashoneof(), "scan hash should be nil after NullImageScanHashes")
+}
+
+func (s *ImagesStoreSuite) TestNullImageScanHashes_EmptyInput() {
+	s.Require().NoError(s.store.NullImageScanHashes(s.ctx, nil))
+}
+
 func getTestImage(id string) *storage.Image {
 	return &storage.Image{
 		Id: id,

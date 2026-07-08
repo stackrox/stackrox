@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -205,6 +206,10 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 		return ds.imageDataStore.DeleteImages(ctx, ids...)
 	}
 	return ds.imageV2DataStore.DeleteImages(ctx, ids...)
+}
+
+func (ds *datastoreImpl) NullImageScanHashes(_ context.Context, _ []string) error {
+	return utils.ShouldErr(errors.New("NullImageScanHashes is not supported through the mapper datastore"))
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {

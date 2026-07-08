@@ -1730,7 +1730,7 @@ type ImageCVEV2 struct {
 	// was hash index, making it btree
 	//
 	// Deprecated: Marked as deprecated in storage/cve.proto.
-	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree,allow-null"` // @gotags: sql:"fk(Image:id),index=btree,allow-null"
+	ImageId     string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"CVE Image ID,hidden" sql:"fk(Image:id),index=btree,allow-null"` // @gotags: search:"CVE Image ID,hidden" sql:"fk(Image:id),index=btree,allow-null"
 	CveBaseInfo *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	// cvss stores ACS preferred cvss score
 	Cvss        float32               `protobuf:"fixed32,4,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS"`                                           // @gotags: search:"CVSS"
@@ -1750,7 +1750,7 @@ type ImageCVEV2 struct {
 	HasFixedBy  isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
 	ComponentId string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
 	Advisory    *Advisory               `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty"`
-	ImageIdV2   string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+	ImageIdV2   string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" search:"CVE Image ID V2,hidden" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: search:"CVE Image ID V2,hidden" sql:"fk(ImageV2:id),index=btree,allow-null"
 	// Timestamp when the fix for this CVE was made available according to the sources.
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
