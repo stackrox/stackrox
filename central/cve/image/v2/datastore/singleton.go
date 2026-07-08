@@ -13,9 +13,10 @@ var (
 )
 
 func initialize() {
-	storage := pgStore.New(globaldb.GetPostgres())
+	pool := globaldb.GetPostgres()
+	storage := pgStore.New(pool)
 
-	ds = New(storage)
+	ds = New(storage, pool)
 }
 
 // Singleton returns a singleton instance of cve datastore
