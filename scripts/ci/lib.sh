@@ -625,7 +625,7 @@ _image_prefetcher_prebuilt_start() {
     # _image_prefetcher_prebuilt_await
 
     case "$CI_JOB_NAME" in
-    *qa-e2e-tests)
+    *qa-e2e-tests|*byodb*)
         image_prefetcher_start_set qa-e2e
         _set_quay_pull_policy
         ;;
@@ -794,7 +794,7 @@ _image_prefetcher_prebuilt_await() {
     # at the last moment before any of the prebuilt images is used. (See other existing examples.)
     # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
 
-    *qa-e2e-tests)
+    *qa-e2e-tests|*byodb*)
         image_prefetcher_await_set qa-e2e
         ;;
     *nongroovy-e2e-tests)
