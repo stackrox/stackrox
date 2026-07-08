@@ -11,6 +11,12 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
 
 jobs:
   run:
