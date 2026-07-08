@@ -21,6 +21,7 @@ central/reports/service/v2/service_impl_test.go
 central/sensor/service/connection/sensor-central-data-flow.excalidraw.svg
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
+central/views/imagecve/view_test.go
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
 deploy/charts/monitoring/dashboards/*.json
