@@ -19,6 +19,9 @@ inputs:
   spot:
     description: Use spot (preemptible) VMs for cost savings
     default: "true"
+  auto-cleanup:
+    description: Auto-delete cluster when job ends (disable for multi-job workflows)
+    default: "true"
 
 runs:
   using: composite
@@ -49,7 +52,7 @@ runs:
         provision_gke_cluster "${CLUSTER_ID}"
 
     - name: Register GKE cluster cleanup
-      if: always()
+      if: always() && inputs.auto-cleanup == 'true'
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       with:
         shell: bash
