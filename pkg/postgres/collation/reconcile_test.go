@@ -85,19 +85,13 @@ func (s *CollationSuite) TestAffectedIndexes_FiltersCorrectly() {
 	s.False(foundTextHash, "HASH index on text column should be excluded")
 }
 
+// TestReconcile_NoMismatch_Noop verifies Reconcile returns nil immediately on a
+// healthy database and leaves the collation state unchanged. Full mismatch
+// testing (actual reindex + refresh) requires a multi-glibc environment.
 func (s *CollationSuite) TestReconcile_NoMismatch_Noop() {
 	err := Reconcile(s.ctx, s.testDB.DB, 30*time.Second)
 	s.NoError(err, "Reconcile should be a no-op when no mismatch exists")
-}
 
-// TestReconcile_ReindexesAndRefreshes verifies Reconcile executes without error
-// on a healthy database. Full mismatch testing requires a multi-glibc environment
-// (e.g., initdb under glibc 2.28, then run under glibc 2.34).
-func (s *CollationSuite) TestReconcile_ReindexesAndRefreshes() {
-	err := Reconcile(s.ctx, s.testDB.DB, 30*time.Second)
-	s.NoError(err)
-
-	// Verify no mismatch after reconcile.
 	_, _, mismatch, err := CheckMismatch(s.ctx, s.testDB.DB)
 	s.NoError(err)
 	s.False(mismatch)

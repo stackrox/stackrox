@@ -51,6 +51,7 @@ func AffectedIndexes(ctx context.Context, db postgres.DB) ([]IndexInfo, error) {
 		JOIN pg_class t ON t.oid = i.indrelid
 		JOIN pg_am am ON am.oid = c.relam
 		WHERE am.amname = 'btree'
+		  AND i.indisvalid
 		  AND c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
 		  AND EXISTS (
 		      SELECT 1 FROM unnest(i.indcollation) AS colloid WHERE colloid != 0
