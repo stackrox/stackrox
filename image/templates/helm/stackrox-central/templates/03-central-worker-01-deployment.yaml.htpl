@@ -50,7 +50,7 @@ spec:
       - name: central-worker
         image: {{ ._rox.central.image.fullRef | quote }}
         command:
-          - /stackrox/bin/central-worker
+          - /stackrox/central-worker
         resources:
           {{- ._rox.centralWorker._resources | nindent 10 }}
         env:
