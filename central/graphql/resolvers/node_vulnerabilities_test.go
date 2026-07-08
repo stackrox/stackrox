@@ -17,6 +17,8 @@ func TestNodeVulnerabilityResolverType(t *testing.T) {
 	//
 	// This can break graphQL queries to the system until
 	// https://github.com/graph-gophers/graphql-go/issues/763 is fixed.
+	//
+	// TODO(ROX-35654): Unskip this tests.
 	t.Skip("Interface and implementation types do not have aligned method indices.")
 	resolverInterface := reflect.TypeOf((*NodeVulnerabilityResolver)(nil)).Elem()
 	resolverImplType := reflect.TypeOf((*nodeCVEResolver)(nil))

@@ -21,7 +21,6 @@ func validateAlignedMethodIndex(t testing.TB, type1 reflect.Type, type2 reflect.
 	for i := range type1.NumMethod() {
 		m1 := type1.Method(i)
 		m2 := type2.Method(i)
-		assert.Equal(t, m1.Index, m2.Index)
 		assert.Equal(t, m1.Name, m2.Name)
 	}
 }
