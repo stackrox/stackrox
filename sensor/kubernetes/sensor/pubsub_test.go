@@ -19,7 +19,7 @@ func (e *testEvent) Topic() pubsub.Topic { return e.topic }
 func (e *testEvent) Lane() pubsub.LaneID { return e.lane }
 
 func TestBuildPubSubDispatcher_CreatesWorkingDispatcher(t *testing.T) {
-	disp, err := buildPubSubDispatcher()
+	disp, err := buildPubSubDispatcher(10)
 	require.NoError(t, err)
 	defer disp.Stop()
 
