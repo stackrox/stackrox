@@ -3,6 +3,7 @@ import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useInterval from 'hooks/useInterval';
+import useIsLegacyScannerEnabled from 'hooks/useIsLegacyScannerEnabled';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 
@@ -29,6 +30,7 @@ function SystemHealthPage() {
     const hasReadAccessForCluster = hasReadAccess('Cluster');
     const hasReadAccessForIntegration = hasReadAccess('Integration');
 
+    const isLegacyScannerEnabled = useIsLegacyScannerEnabled();
     const isScannerV4Enabled = useIsScannerV4Enabled();
 
     const [pollingCountFaster, setPollingCountFaster] = useState(0);
@@ -71,7 +73,7 @@ function SystemHealthPage() {
                     <GridItem span={12}>
                         <CentralDatabaseHealthCard />
                     </GridItem>
-                    {hasReadAccessForAdministration && (
+                    {isLegacyScannerEnabled && hasReadAccessForAdministration && (
                         <GridItem span={12}>
                             <VulnerabilityDefinitionsHealthCard
                                 component="SCANNER"
@@ -113,9 +115,14 @@ function SystemHealthPage() {
                     <GridItem span={12}>
                         <CertificateCard component="CENTRAL_DB" pollingCount={pollingCountSlower} />
                     </GridItem>
-                    <GridItem span={12}>
-                        <CertificateCard component="SCANNER" pollingCount={pollingCountSlower} />
-                    </GridItem>
+                    {isLegacyScannerEnabled && (
+                        <GridItem span={12}>
+                            <CertificateCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
                     {isScannerV4Enabled && (
                         <GridItem span={12}>
                             <CertificateCard
