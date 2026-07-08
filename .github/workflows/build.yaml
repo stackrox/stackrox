@@ -1278,6 +1278,151 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  verify-cve-fix-scan:
+    name: "CVE scan: ${{ matrix.image }}:${{ needs.define-job-matrix.outputs.build-tag }}"
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - push-main-manifests
+      - push-scanner-manifests
+      - push-operator-manifests
+      - build-and-push-db
+    if: >-
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.title, 'CVE-')
+    permissions:
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "central-db",
+            "main",
+            "roxctl",
+            "scanner-v4",
+            "scanner-v4-db",
+            "stackrox-operator",
+          ]
+    steps:
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
+        with:
+          image: rhacs-eng/${{ matrix.image }}
+          version: ${{ needs.define-job-matrix.outputs.build-tag }}
+          wait-limit: "1800"
+          summary-prefix: "CVE-fix-verify:"
+          quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+      - name: Upload scan result artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        with:
+          name: cve-verify_${{ matrix.image }}.json
+          path: ${{ steps.scan-image.outputs.result-path }}
+          retention-days: 7
+
+  verify-cve-fix:
+    name: "CVE fix verification"
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - verify-cve-fix-scan
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      contains(github.event.pull_request.title, 'CVE-')
+    permissions:
+      pull-requests: write
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Extract CVE IDs from PR title
+        id: extract-cves
+        run: |
+          cves="$(echo "$PR_TITLE" | grep -oiE 'CVE-[0-9]{4}-[0-9]+' | tr '[:lower:]' '[:upper:]' | sort -u | paste -sd ',' -)"
+          if [[ -z "$cves" ]]; then
+            echo "No CVE IDs found in PR title: $PR_TITLE" >&2
+            exit 1
+          fi
+          echo "cves=${cves}" >> "$GITHUB_OUTPUT"
+          echo "Found CVE IDs: ${cves}"
+
+      - name: Download all scan artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        with:
+          pattern: cve-verify_*.json
+          path: scan-results
+          merge-multiple: false
+
+      - name: Flatten scan results
+        id: flatten
+        run: |
+          mkdir -p scan-results-flat
+          infra_failure=false
+          for dir in scan-results/cve-verify_*/; do
+            image_name="$(basename "$dir" | sed 's/^cve-verify_//' | sed 's/\.json$//')"
+            if [[ -f "${dir}scan-result.json" ]]; then
+              cp "${dir}scan-result.json" "scan-results-flat/${image_name}.json"
+            else
+              echo "::warning::No scan result for ${image_name}"
+              infra_failure=true
+            fi
+          done
+          # If no artifacts were downloaded at all, the directory won't exist
+          if [[ ! -d scan-results ]] || [[ -z "$(ls scan-results-flat/ 2>/dev/null)" ]]; then
+            infra_failure=true
+          fi
+          echo "infra-failure=${infra_failure}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify CVE fix
+        id: verify
+        run: |
+          set +e
+          comment_body="$(bash .github/workflows/scripts/verify-cve-fix.sh \
+            --cves "${{ steps.extract-cves.outputs.cves }}" \
+            --scan-dir scan-results-flat)"
+          exit_code=$?
+          set -e
+          {
+            echo "comment<<COMMENT_EOF"
+            echo "$comment_body"
+            echo "COMMENT_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ steps.flatten.outputs.infra-failure }}" == "true" && "${{ steps.verify.outputs.exit-code }}" != "1" ]]; then
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat <<'COMMENT_EOF'
+          **CVE Fix Verification: COULD NOT RUN** :warning:
+
+          The vulnerability scan could not complete due to an infrastructure error:
+
+          > One or more image scans failed to produce results.
+
+          **Action required:** Please verify manually that your CVE fix is effective before merging this PR. You can do this by running `roxctl image scan` locally against the built images, or by re-running this workflow.
+          COMMENT_EOF
+          )"
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" \
+              --body "${{ steps.verify.outputs.comment }}"
+          fi
+
+      - name: Fail if CVE still present
+        if: steps.verify.outputs.exit-code == '1'
+        run: exit 1
+
   slack-on-build-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -1302,6 +1447,7 @@ jobs:
       - pre-build-ui
       - push-matching-collector-scanner
       - scan-go-binaries
+      - verify-cve-fix
     permissions:
       actions: read
     steps:
