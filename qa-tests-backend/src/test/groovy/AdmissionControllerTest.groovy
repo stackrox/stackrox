@@ -64,6 +64,8 @@ class AdmissionControllerTest extends BaseSpecification {
             .addAnnotation("admission.stackrox.io/break-glass", "yay")
 
     def setupSpec() {
+        ImageService.waitForScannerIntegration()
+
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
