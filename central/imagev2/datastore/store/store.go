@@ -36,4 +36,6 @@ type Store interface {
 	GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error)
 	// GetListImagesView retrieves the fields needed for ListImage responses
 	GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error)
+	// GetImageIDsForDigests returns V2 image IDs grouped by digest.
+	GetImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error)
 }
