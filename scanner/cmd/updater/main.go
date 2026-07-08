@@ -8,9 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/quay/claircore/toolkit/log"
-	"github.com/quay/zlog/v2"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
@@ -28,17 +27,9 @@ func initializeLogging() error {
 			levelErr = err
 		}
 	}
-	hostname, err := os.Hostname()
-	if err != nil {
+	if err := logging.Initialize(level); err != nil {
 		return err
 	}
-	h := zlog.NewHandler(os.Stdout, &zlog.Options{
-		Level:      level,
-		ContextKey: log.AttrsKey,
-		LevelKey:   log.LevelKey,
-	})
-	logger := slog.New(h).With("host", hostname)
-	slog.SetDefault(logger)
 	if levelErr != nil {
 		slog.Warn("invalid log level, using info", "var", logLevelEnvVar, "reason", levelErr)
 	}

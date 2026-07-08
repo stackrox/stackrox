@@ -12,8 +12,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/quay/claircore/toolkit/log"
-	"github.com/quay/zlog/v2"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
@@ -79,7 +78,7 @@ func main() {
 	defer cancel()
 
 	// Initialize logging and setup context.
-	err = initializeLogging(cfg.LogLevel)
+	err = logging.Initialize(cfg.LogLevel)
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
@@ -135,21 +134,6 @@ func main() {
 	signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 	sig := <-sigC
 	slog.InfoContext(ctx, "signal received", "signal", sig.String())
-}
-
-func initializeLogging(logLevel slog.Level) error {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-	h := zlog.NewHandler(os.Stdout, &zlog.Options{
-		Level:      logLevel,
-		ContextKey: log.AttrsKey,
-		LevelKey:   log.LevelKey,
-	})
-	logger := slog.New(h).With("host", hostname)
-	slog.SetDefault(logger)
-	return nil
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.
