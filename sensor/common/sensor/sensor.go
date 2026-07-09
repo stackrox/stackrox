@@ -40,7 +40,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
 const (
@@ -353,7 +352,7 @@ func (s *Sensor) registerSoftRestartHandler() {
 
 func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
 	return func(e pubsub.Event) error {
-		evt, ok := e.(*listener.SoftRestartEvent)
+		evt, ok := e.(*pubsub.SoftRestartEvent)
 		if !ok {
 			return errors.Errorf("unexpected event type: %T", e)
 		}

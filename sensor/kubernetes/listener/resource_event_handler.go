@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	sensorMetrics "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processfilter"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	listenerUtils "github.com/stackrox/rox/sensor/kubernetes/listener/utils"
@@ -82,7 +83,7 @@ func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubS
 		}
 		log.Info(status.String())
 		if features.SensorInternalPubSub.Enabled() {
-			if err := pubSubDispatcher.Publish(&SoftRestartEvent{Text: text, Validity: ctx}); err != nil {
+			if err := pubSubDispatcher.Publish(&pubsub.SoftRestartEvent{Text: text, Validity: ctx}); err != nil {
 				log.Errorf("Unable to publish SoftRestartEvent: %v", err)
 			}
 			return
@@ -522,7 +523,7 @@ func (k *listenerImpl) handleAllEvents() {
 		k.outputQueue.Send(syncedEvent)
 	}
 	if features.SensorInternalPubSub.Enabled() {
-		utils.Should(k.pubSubDispatcher.Publish(&ResourceSyncFinishedEvent{
+		utils.Should(k.pubSubDispatcher.Publish(&pubsub.ResourceSyncFinishedEvent{
 			Text: "Finished the k8s resource sync", Validity: k.context,
 		}))
 	} else {

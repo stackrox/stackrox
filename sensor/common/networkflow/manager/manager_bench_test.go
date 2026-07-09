@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"go.uber.org/mock/gomock"
 )
 
@@ -62,7 +61,7 @@ func BenchmarkResourceSyncDelivery(b *testing.B) {
 		updatecomputer.New(),
 	).(*networkFlowManager)
 
-	event := &listener.ResourceSyncFinishedEvent{Validity: context.Background()}
+	event := &pubsub.ResourceSyncFinishedEvent{Validity: context.Background()}
 	legacyMsg := &internalmessage.SensorInternalMessage{
 		Kind:     internalmessage.SensorMessageResourceSyncFinished,
 		Text:     "bench sync",

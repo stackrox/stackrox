@@ -42,8 +42,8 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_PublishesSoftRestartEvent(t *te
 	)
 	cb(&watcher.Status{Available: true})
 
-	require.IsType(t, &SoftRestartEvent{}, capturedEvent)
-	evt := capturedEvent.(*SoftRestartEvent)
+	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
+	evt := capturedEvent.(*pubsub.SoftRestartEvent)
 	assert.Equal(t, expectedText, evt.Text)
 }
 
@@ -133,8 +133,8 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable(t *testing
 	)
 	cb(&watcher.Status{Available: false})
 
-	require.IsType(t, &SoftRestartEvent{}, capturedEvent)
-	assert.Equal(t, expectedText, capturedEvent.(*SoftRestartEvent).Text)
+	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
+	assert.Equal(t, expectedText, capturedEvent.(*pubsub.SoftRestartEvent).Text)
 }
 
 // TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet verifies
@@ -186,6 +186,6 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext(t *testing.T) 
 	)
 	cb(&watcher.Status{Available: true})
 
-	require.IsType(t, &SoftRestartEvent{}, capturedEvent)
-	assert.True(t, capturedEvent.(*SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
+	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
+	assert.True(t, capturedEvent.(*pubsub.SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
 }

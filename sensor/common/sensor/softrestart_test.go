@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/pubsub"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -76,7 +75,7 @@ func sensorForCallbackTest() *Sensor {
 // returns when the central connection has not been established yet.
 func TestSoftRestartCallback_NilCommunication(t *testing.T) {
 	s := sensorForCallbackTest()
-	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{Text: "restart"}))
+	require.NoError(t, s.makeSoftRestartCallback()(&pubsub.SoftRestartEvent{Text: "restart"}))
 }
 
 // TestSoftRestartCallback_StopsConnection verifies that the callback calls
@@ -86,7 +85,7 @@ func TestSoftRestartCallback_StopsConnection(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{Text: "restart"}))
+	require.NoError(t, s.makeSoftRestartCallback()(&pubsub.SoftRestartEvent{Text: "restart"}))
 	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called exactly once")
 }
 
@@ -109,7 +108,7 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	assert.Equal(t, pubsub.SoftRestartLane, capturing.laneID)
 	require.NotNil(t, capturing.callback)
 
-	require.NoError(t, capturing.callback(&listener.SoftRestartEvent{Text: "CRD resources changed"}))
+	require.NoError(t, capturing.callback(&pubsub.SoftRestartEvent{Text: "CRD resources changed"}))
 	assert.Equal(t, 1, fakeCC.stopCount, "callback must call Stop() on centralCommunication")
 }
 
@@ -123,7 +122,7 @@ func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{
+	require.NoError(t, s.makeSoftRestartCallback()(&pubsub.SoftRestartEvent{
 		Text:     "expired restart",
 		Validity: ctx,
 	}))
@@ -137,7 +136,7 @@ func TestSoftRestartCallback_WrongEventType(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	err := s.makeSoftRestartCallback()(&listener.ResourceSyncFinishedEvent{})
+	err := s.makeSoftRestartCallback()(&pubsub.ResourceSyncFinishedEvent{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected event type")
 	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for wrong event type")

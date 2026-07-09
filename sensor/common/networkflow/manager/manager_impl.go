@@ -33,7 +33,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
-	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
 const connectionDeletionGracePeriod = 5 * time.Minute
@@ -193,7 +192,7 @@ func NewManager(
 			pubsub.ResourceSyncFinishedTopic,
 			pubsub.ResourceSyncFinishedLane,
 			func(e pubsub.Event) error {
-				evt, ok := e.(*listener.ResourceSyncFinishedEvent)
+				evt, ok := e.(*pubsub.ResourceSyncFinishedEvent)
 				if !ok {
 					return errors.Errorf("unexpected event type: %T", e)
 				}

@@ -1,9 +1,7 @@
-package listener
+package pubsub
 
 import (
 	"context"
-
-	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 // SoftRestartEvent is published when a CRD watcher triggers a connection soft restart.
@@ -12,9 +10,9 @@ type SoftRestartEvent struct {
 	Validity context.Context
 }
 
-func (e *SoftRestartEvent) Topic() pubsub.Topic { return pubsub.SoftRestartTopic }
-func (e *SoftRestartEvent) Lane() pubsub.LaneID { return pubsub.SoftRestartLane }
-func (e *SoftRestartEvent) String() string      { return e.Text }
+func (e *SoftRestartEvent) Topic() Topic   { return SoftRestartTopic }
+func (e *SoftRestartEvent) Lane() LaneID   { return SoftRestartLane }
+func (e *SoftRestartEvent) String() string { return e.Text }
 
 // IsExpired reports whether the event's validity context has been cancelled.
 func (e *SoftRestartEvent) IsExpired() bool {
@@ -35,8 +33,8 @@ type ResourceSyncFinishedEvent struct {
 	Validity context.Context
 }
 
-func (e *ResourceSyncFinishedEvent) Topic() pubsub.Topic { return pubsub.ResourceSyncFinishedTopic }
-func (e *ResourceSyncFinishedEvent) Lane() pubsub.LaneID { return pubsub.ResourceSyncFinishedLane }
+func (e *ResourceSyncFinishedEvent) Topic() Topic { return ResourceSyncFinishedTopic }
+func (e *ResourceSyncFinishedEvent) Lane() LaneID { return ResourceSyncFinishedLane }
 
 // IsExpired reports whether the event's validity context has been cancelled.
 func (e *ResourceSyncFinishedEvent) IsExpired() bool {
