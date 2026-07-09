@@ -999,7 +999,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	}
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/api/v2/vulnmgmt/cves",
+		Route:         "/api/v2/vulnmgmt/cves/",
 		Authorizer:    user.With(permissions.View(resources.Image)),
 		ServerHandler: vulnmgmtREST.NewHandler(imagecveflat.Singleton(), imageCVEDS.Singleton(), vulnReqDataStore.Singleton()),
 		Compression:   true,
