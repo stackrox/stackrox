@@ -1309,6 +1309,12 @@ jobs:
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
+        # The composite action fails on ANY fixable CRITICAL/IMPORTANT CVE in
+        # the image, not just the CVE(s) this PR is verifying. The scan
+        # result artifact is still produced (uploaded via if: always() below)
+        # and is what verify-cve-fix.sh actually checks, so a red X here must
+        # not fail this job / block the PR on unrelated pre-existing CVEs.
+        continue-on-error: true
         with:
           image: rhacs-eng/${{ matrix.image }}
           version: ${{ needs.define-job-matrix.outputs.build-tag }}
@@ -1319,11 +1325,10 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cve-verify_${{ matrix.image }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
-          retention-days: 7
 
   verify-cve-fix:
     name: "CVE fix verification"
@@ -1359,11 +1364,10 @@ jobs:
           echo "Found CVE IDs: ${cves}"
 
       - name: Download all scan artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        uses: ./.github/actions/download-artifact-with-retry
         with:
           pattern: cve-verify_*.json
           path: scan-results
-          merge-multiple: false
 
       - name: Flatten scan results
         id: flatten
@@ -1381,10 +1385,20 @@ jobs:
             fi
           done
           shopt -u nullglob
-          # If no artifacts were downloaded at all, the directory won't exist
-          if [[ ! -d scan-results ]] || [[ -z "$(ls scan-results-flat/ 2>/dev/null)" ]]; then
-            infra_failure=true
-          fi
+          # Verify every image verify-cve-fix-scan is expected to scan
+          # (kept in sync with that job's matrix) actually produced a
+          # result. A matrix leg that fails before reaching the scan step
+          # (e.g. a wait-for-image timeout or central-login flake) never
+          # uploads an artifact at all, so it wouldn't otherwise be
+          # detected by the loop above and could silently narrow the
+          # verdict to fewer than all 6 images.
+          expected_images=(central-db main roxctl scanner-v4 scanner-v4-db stackrox-operator)
+          for image in "${expected_images[@]}"; do
+            if [[ ! -f "scan-results-flat/${image}.json" ]]; then
+              echo "::warning::No scan result artifact was produced for ${image}"
+              infra_failure=true
+            fi
+          done
           echo "infra-failure=${infra_failure}" >> "$GITHUB_OUTPUT"
 
       - name: Verify CVE fix
