@@ -2,7 +2,7 @@ package declarativeconfig
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"maps"
 	"os"
 	"path"
@@ -22,18 +22,18 @@ import (
 func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 	cases := map[string]struct {
 		fileContents        map[string][]byte
-		initialCachedFiles  map[string]md5CheckSum
+		initialCachedFiles  map[string]checkSum
 		expectedResult      bool
-		expectedCachedFiles map[string]md5CheckSum
+		expectedCachedFiles map[string]checkSum
 	}{
 		"empty cache should signal updated files and cache should be populated": {
 			fileContents: map[string][]byte{
 				"test-file": []byte("test content"),
 			},
-			initialCachedFiles: map[string]md5CheckSum{},
+			initialCachedFiles: map[string]checkSum{},
 			expectedResult:     true,
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+			expectedCachedFiles: map[string]checkSum{
+				"test-file": sha256.Sum256([]byte("test content")),
 			},
 		},
 		"pre-populated cache containing the new file should not signal updated files": {
@@ -41,13 +41,13 @@ func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 				"test-file":        []byte("test content"),
 				"test-second-file": []byte("second test content"),
 			},
-			initialCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content")),
-				"test-second-file": md5.Sum([]byte("second test content")),
+			initialCachedFiles: map[string]checkSum{
+				"test-file":        sha256.Sum256([]byte("test content")),
+				"test-second-file": sha256.Sum256([]byte("second test content")),
 			},
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content")),
-				"test-second-file": md5.Sum([]byte("second test content")),
+			expectedCachedFiles: map[string]checkSum{
+				"test-file":        sha256.Sum256([]byte("test content")),
+				"test-second-file": sha256.Sum256([]byte("second test content")),
 			},
 		},
 		"pre-populated cache containing the new file but different contents should signal updated files": {
@@ -55,14 +55,14 @@ func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 				"test-file":        []byte("test content"),
 				"test-second-file": []byte("second test content"),
 			},
-			initialCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content but different")),
-				"test-second-file": md5.Sum([]byte("second test content")),
+			initialCachedFiles: map[string]checkSum{
+				"test-file":        sha256.Sum256([]byte("test content but different")),
+				"test-second-file": sha256.Sum256([]byte("second test content")),
 			},
 			expectedResult: true,
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content")),
-				"test-second-file": md5.Sum([]byte("second test content")),
+			expectedCachedFiles: map[string]checkSum{
+				"test-file":        sha256.Sum256([]byte("test content")),
+				"test-second-file": sha256.Sum256([]byte("second test content")),
 			},
 		},
 	}
@@ -80,31 +80,31 @@ func TestWatchHandler_CompareHashesForChanges(t *testing.T) {
 func TestWatchHandler_CheckForDeletedFiles(t *testing.T) {
 	cases := map[string]struct {
 		fileContents        map[string][]byte
-		initialCachedFiles  map[string]md5CheckSum
+		initialCachedFiles  map[string]checkSum
 		expectedResult      bool
-		expectedCachedFiles map[string]md5CheckSum
+		expectedCachedFiles map[string]checkSum
 	}{
 		"cache containing the file contents should not signal update": {
 			fileContents: map[string][]byte{
 				"test-file": []byte("test content"),
 			},
-			initialCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+			initialCachedFiles: map[string]checkSum{
+				"test-file": sha256.Sum256([]byte("test content")),
 			},
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+			expectedCachedFiles: map[string]checkSum{
+				"test-file": sha256.Sum256([]byte("test content")),
 			},
 		},
 		"cache containing a deleted file should signal update": {
 			fileContents: map[string][]byte{
 				"test-file": []byte("test content"),
 			},
-			initialCachedFiles: map[string]md5CheckSum{
-				"test-file":        md5.Sum([]byte("test content")),
-				"second-test-file": md5.Sum([]byte("other test content")),
+			initialCachedFiles: map[string]checkSum{
+				"test-file":        sha256.Sum256([]byte("test content")),
+				"second-test-file": sha256.Sum256([]byte("other test content")),
 			},
-			expectedCachedFiles: map[string]md5CheckSum{
-				"test-file": md5.Sum([]byte("test content")),
+			expectedCachedFiles: map[string]checkSum{
+				"test-file": sha256.Sum256([]byte("test content")),
 			},
 			expectedResult: true,
 		},
@@ -157,8 +157,8 @@ func TestWatchHandler_WithEmptyDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 4. Assert on the cached file hashes.
-	expectedCache := map[string]md5CheckSum{
-		"role": md5.Sum(yamlBytes),
+	expectedCache := map[string]checkSum{
+		"role": sha256.Sum256(yamlBytes),
 	}
 	assert.Eventually(t, func() bool {
 		wh.mutex.RLock()
@@ -205,8 +205,8 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Assert on the cached file hashes.
-	expectedCache := map[string]md5CheckSum{
-		"role": md5.Sum(roleBytes),
+	expectedCache := map[string]checkSum{
+		"role": sha256.Sum256(roleBytes),
 	}
 	assert.Eventually(t, func() bool {
 		wh.mutex.RLock()
@@ -238,9 +238,9 @@ func TestWatchHandler_WithPrefilledDirectory(t *testing.T) {
 	require.NoError(t, err)
 
 	// 5. Assert on the cached file hashes.
-	expectedCache = map[string]md5CheckSum{
-		"role":           md5.Sum(roleBytes),
-		"permission-set": md5.Sum(permissionSetBytes),
+	expectedCache = map[string]checkSum{
+		"role":           sha256.Sum256(roleBytes),
+		"permission-set": sha256.Sum256(permissionSetBytes),
 	}
 	assert.Eventually(t, func() bool {
 		wh.mutex.RLock()
@@ -286,8 +286,8 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// 3. Assert on the cached file hashes.
-	expectedCache := map[string]md5CheckSum{
-		"role": md5.Sum(yamlBytes),
+	expectedCache := map[string]checkSum{
+		"role": sha256.Sum256(yamlBytes),
 	}
 	assert.Eventually(t, func() bool {
 		wh.mutex.RLock()
@@ -303,7 +303,7 @@ func TestWatchHandler_WithRemovedFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	// 6. Assert on the cached file hashes.
-	expectedCache = map[string]md5CheckSum{}
+	expectedCache = map[string]checkSum{}
 	assert.Eventually(t, func() bool {
 		wh.mutex.RLock()
 		defer wh.mutex.RUnlock()

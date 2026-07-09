@@ -41,6 +41,12 @@ func WithValidityExpiringInDays() IssueCertOption {
 	}
 }
 
+func withCRSProfile() IssueCertOption {
+	return func(o *issueOptions) {
+		o.signerProfile = crsProfile
+	}
+}
+
 // WithValidityNotBefore requests certificates with customized validity start time
 func WithValidityNotBefore(notBefore time.Time) IssueCertOption {
 	return func(o *issueOptions) {

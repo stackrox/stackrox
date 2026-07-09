@@ -2,7 +2,6 @@ package cryptoutils
 
 import (
 	"crypto/rand"
-	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/sha512"
 	"testing"
@@ -14,12 +13,6 @@ func BenchmarkCertFingerprintChoices(b *testing.B) {
 	if n < len(fakeCert) || err != nil {
 		b.Fatalf("Expected %d bytes of randomness but got %d with error %v", len(fakeCert), n, err)
 	}
-	b.Run("SHA-1", func(b *testing.B) {
-		for b.Loop() {
-			sum := sha1.Sum(fakeCert)
-			_ = formatID(sum[:])
-		}
-	})
 	b.Run("SHA-256", func(b *testing.B) {
 		for b.Loop() {
 			sum := sha256.Sum256(fakeCert)

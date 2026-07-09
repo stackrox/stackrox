@@ -2,7 +2,7 @@ package declarativeconfig
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"maps"
@@ -24,7 +24,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type md5CheckSum = [16]byte
+type checkSum = [32]byte
 
 //go:generate mockgen-wrapper
 type declarativeConfigContentUpdater interface {
@@ -33,7 +33,7 @@ type declarativeConfigContentUpdater interface {
 
 type watchHandler struct {
 	updater          declarativeConfigContentUpdater
-	cachedFileHashes map[string]md5CheckSum
+	cachedFileHashes map[string]checkSum
 	mutex            sync.RWMutex
 	id               string
 }
@@ -42,7 +42,7 @@ func newWatchHandler(id string, updater declarativeConfigContentUpdater) *watchH
 	return &watchHandler{
 		updater:          updater,
 		id:               id,
-		cachedFileHashes: map[string]md5CheckSum{},
+		cachedFileHashes: map[string]checkSum{},
 	}
 }
 
@@ -127,7 +127,7 @@ func (w *watchHandler) compareHashesForChanges(fileContents map[string][]byte) b
 	var changedFiles bool
 	for fileName, fileContent := range fileContents {
 		cachedHash, ok := w.cachedFileHashes[fileName]
-		fileHash := md5.Sum(fileContent)
+		fileHash := sha256.Sum256(fileContent)
 		if !ok || !bytes.Equal(cachedHash[:], fileHash[:]) {
 			w.cachedFileHashes[fileName] = fileHash
 			changedFiles = true

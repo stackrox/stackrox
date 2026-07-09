@@ -3,8 +3,8 @@ package aws
 import (
 	"crypto/x509"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/utils"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 // awsCerts lists all known AWS certificates as of time of writing.

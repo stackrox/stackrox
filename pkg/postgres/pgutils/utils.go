@@ -27,13 +27,8 @@ var (
 	// Do not change this strategy after PostgresDB released. It has global impact on the
 	// names of PostgresDB tables, columns etc.
 	// If you have to, consider making a data migration plan.
-	NamingStrategy = schema.NamingStrategy{
-		TablePrefix:   "",
-		SingularTable: false,
-		NameReplacer:  nil,
-		NoLowerCase:   false,
-	}
-	pgxPoolDSNRegex = regexp.MustCompile(`(^| )(pool_max_conns|pool_min_conns|pool_max_conn_lifetime|pool_max_conn_idle_time|pool_health_check_period)=\S+`)
+	NamingStrategy  schema.Namer = fipsNamingStrategy{}
+	pgxPoolDSNRegex              = regexp.MustCompile(`(^| )(pool_max_conns|pool_min_conns|pool_max_conn_lifetime|pool_max_conn_idle_time|pool_health_check_period)=\S+`)
 )
 
 // Logger for Raw SQL portion of migration.

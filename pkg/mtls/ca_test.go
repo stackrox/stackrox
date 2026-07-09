@@ -1,11 +1,17 @@
 package mtls
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
 	"testing"
 	"time"
 
-	"github.com/cloudflare/cfssl/csr"
-	"github.com/cloudflare/cfssl/initca"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,10 +39,7 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 		},
 	}
 
-	cert, _, key, err := initca.New(&csr.CertificateRequest{
-		CN: "Fake CA",
-	})
-	require.NoError(t, err)
+	cert, key := generateTestCA(t, "Fake CA")
 
 	ca, err := LoadCAForSigning(cert, key)
 	require.NoError(t, err)
@@ -54,10 +57,7 @@ func Test_CA_IssueCertForSubject(t *testing.T) {
 }
 
 func Test_CA_LoadForValidation(t *testing.T) {
-	certPEM, _, keyPEM, err := initca.New(&csr.CertificateRequest{
-		CN: "Fake CA",
-	})
-	require.NoError(t, err)
+	certPEM, keyPEM := generateTestCA(t, "Fake CA")
 
 	ca, err := LoadCAForValidation(certPEM)
 	require.NoError(t, err)
@@ -85,10 +85,7 @@ func Test_CA_LoadForValidation(t *testing.T) {
 	assert.Equal(t, CentralSubject, subject, "extracted subject should match issued one")
 
 	// issue a leaf certificate with an unrelated CA and try to validate it
-	unrelatedCertPEM, _, unrelatedKeyPEM, err := initca.New(&csr.CertificateRequest{
-		CN: "Unrelated CA",
-	})
-	require.NoError(t, err)
+	unrelatedCertPEM, unrelatedKeyPEM := generateTestCA(t, "Unrelated CA")
 
 	unrelatedSigningCA, err := LoadCAForSigning(unrelatedCertPEM, unrelatedKeyPEM)
 	require.NoError(t, err)
@@ -98,4 +95,41 @@ func Test_CA_LoadForValidation(t *testing.T) {
 
 	_, err = ca.ValidateAndExtractSubject(unrelatedIssuedCert.X509Cert)
 	require.Error(t, err, "expected validation to fail for unrelated CA")
+}
+
+func generateTestCA(t *testing.T, commonName string) (certPEM, keyPEM []byte) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	serial, err := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 64))
+	require.NoError(t, err)
+	serial.Add(serial, big.NewInt(1))
+
+	pubDER, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	require.NoError(t, err)
+	ski := sha256.Sum256(pubDER)
+
+	now := time.Now()
+	template := &x509.Certificate{
+		SerialNumber:          serial,
+		Subject:               pkix.Name{CommonName: commonName},
+		NotBefore:             now,
+		NotAfter:              now.Add(365 * 24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+		MaxPathLen:            0,
+		MaxPathLenZero:        true,
+		SubjectKeyId:          ski[:20],
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	certPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	require.NoError(t, err)
+	keyPEM = pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+	return certPEM, keyPEM
 }

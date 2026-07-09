@@ -32,6 +32,7 @@ operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
+operator/internal/central/extensions/reconcile_tls_test.go
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_builtin_test.go
 pkg/booleanpolicy/runtime_criteria_test.go

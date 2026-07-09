@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 )
 
 // AddCertToFileMap adds `cert.pem` and `key.pem` entries for the given certificate (prefixed with

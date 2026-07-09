@@ -3,9 +3,9 @@ package userpki
 import (
 	"testing"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	helpers "github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
 )
 

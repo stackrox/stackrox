@@ -1,10 +1,10 @@
 package branding
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"testing"
 
-	"github.com/cloudflare/cfssl/scan/crypto/sha256"
 	"github.com/stretchr/testify/assert"
 )
 
