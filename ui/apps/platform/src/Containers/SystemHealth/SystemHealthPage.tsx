@@ -117,7 +117,10 @@ function SystemHealthPage() {
                     </GridItem>
                     {isLegacyScannerEnabled && (
                         <GridItem span={12}>
-                            <CertificateCard component="SCANNER" pollingCount={pollingCountSlower} />
+                            <CertificateCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                            />
                         </GridItem>
                     )}
                     {isScannerV4Enabled && (

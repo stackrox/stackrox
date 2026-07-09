@@ -3,11 +3,9 @@ import dateFns from 'date-fns';
 import withAuth from '../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../helpers/request';
 import {
-    credentialForScannerExpiryAlias,
     integrationHealthVulnDefinitionsAlias,
     setClock,
     visitSystemHealth,
-    visitSystemHealthWithKeysRemoved,
 } from '../helpers/systemHealth';
 import { visitIntegrationsDashboard } from './integrations/integrations.helpers';
 import { visitSystemConfigurationWithScannerCredentialExpiryBanner } from './credentialExpiry/credentialExpiry.helpers';
@@ -18,8 +16,7 @@ const vulnDefinitionsCardSelector =
     '.pf-v6-c-card:contains("StackRox Scanner Vulnerability Definitions")';
 const scannerCertificateCardSelector = '.pf-v6-c-card:contains("Scanner certificate")';
 const scannerCredentialExpiryBanner = '.pf-v6-c-banner:contains("Scanner certificate")';
-const stackRoxScannerTileSelector =
-    '[data-testid="integration-tile"]:contains("StackRox Scanner")';
+const stackRoxScannerTileSelector = '[data-testid="integration-tile"]:contains("StackRox Scanner")';
 const nodeCveScannerInfoBoxSelector = '.pf-v6-c-alert:contains("StackRox Scanner")';
 
 describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
