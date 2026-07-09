@@ -98,9 +98,11 @@ test_e2e() {
 
     wait_for_api
     setup_workload_identities
+    trap cleanup_workload_identities EXIT
     info "E2E external backup tests"
     make -C tests external-backup-tests || touch FAIL
     cleanup_workload_identities
+    trap - EXIT
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }
