@@ -7,7 +7,9 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
 import { getVMCVEDetail } from 'services/VirtualMachineService';
 
+import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { getOverviewPagePath } from '../../utils/searchUtils';
+import AffectedVirtualMachinesSummaryCard from './AffectedVirtualMachinesSummaryCard';
 import VirtualMachineCvePageHeader from './VirtualMachineCvePageHeader';
 
 const virtualMachineCveOverviewCvePath = getOverviewPagePath('VirtualMachine', {
@@ -18,7 +20,7 @@ function VirtualMachineCvePage() {
     const { cveId } = useParams<{ cveId: string }>();
 
     const fetchCveDetail = useCallback(() => getVMCVEDetail(cveId ?? ''), [cveId]);
-    const { data: cveDetail } = useRestQuery(fetchCveDetail);
+    const { data: cveDetail, isLoading, error } = useRestQuery(fetchCveDetail);
 
     return (
         <>
@@ -34,6 +36,22 @@ function VirtualMachineCvePage() {
             <Divider component="div" />
             <PageSection>
                 <VirtualMachineCvePageHeader cveDetail={cveDetail} />
+            </PageSection>
+            <Divider component="div" />
+            <PageSection>
+                <SummaryCardLayout error={error} isLoading={isLoading}>
+                    <SummaryCard
+                        data={cveDetail}
+                        loadingText="Loading affected virtual machines summary"
+                        renderer={({ data }) => (
+                            <AffectedVirtualMachinesSummaryCard
+                                affectedVirtualMachinesCount={data.affectedVmCount}
+                                totalVirtualMachinesCount={data.totalVmCount}
+                                affectedGuestOsCount={data.affectedGuestOsCount}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
             </PageSection>
         </>
     );
