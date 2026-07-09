@@ -1367,14 +1367,7 @@ jobs:
 
       - name: Extract CVE IDs from PR title
         id: extract-cves
-        run: |
-          cves="$(echo "$PR_TITLE" | grep -oiE 'CVE-[0-9]{4}-[0-9]+' | tr '[:lower:]' '[:upper:]' | sort -u | paste -sd ',' -)"
-          if [[ -z "$cves" ]]; then
-            echo "No CVE IDs found in PR title: $PR_TITLE" >&2
-            exit 1
-          fi
-          echo "cves=${cves}" >> "$GITHUB_OUTPUT"
-          echo "Found CVE IDs: ${cves}"
+        run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
 
       - name: Download all scan artifacts
         uses: ./.github/actions/download-artifact-with-retry
@@ -1384,73 +1377,29 @@ jobs:
 
       - name: Flatten scan results
         id: flatten
-        run: |
-          mkdir -p scan-results-flat
-          infra_failure=false
-          shopt -s nullglob
-          for dir in scan-results/cve-verify_*/; do
-            image_name="$(basename "$dir" | sed 's/^cve-verify_//' | sed 's/\.json$//')"
-            if [[ -f "${dir}scan-result.json" ]]; then
-              cp "${dir}scan-result.json" "scan-results-flat/${image_name}.json"
-            else
-              echo "::warning::No scan result for ${image_name}"
-              infra_failure=true
-            fi
-          done
-          shopt -u nullglob
-          # Verify every image verify-cve-fix-scan is expected to scan
-          # (kept in sync with that job's matrix) actually produced a
-          # result. A matrix leg that fails before reaching the scan step
-          # (e.g. a wait-for-image timeout or central-login flake) never
-          # uploads an artifact at all, so it wouldn't otherwise be
-          # detected by the loop above and could silently narrow the
-          # verdict to fewer than all 6 images.
-          expected_images=(central-db main roxctl scanner-v4 scanner-v4-db stackrox-operator)
-          for image in "${expected_images[@]}"; do
-            if [[ ! -f "scan-results-flat/${image}.json" ]]; then
-              echo "::warning::No scan result artifact was produced for ${image}"
-              infra_failure=true
-            fi
-          done
-          echo "infra-failure=${infra_failure}" >> "$GITHUB_OUTPUT"
+        run: >-
+          .github/workflows/scripts/flatten-cve-scan-results.sh
+          --source-dir scan-results
+          --dest-dir scan-results-flat
+          --expected-images central-db,main,roxctl,scanner-v4,scanner-v4-db,stackrox-operator
 
       - name: Verify CVE fix
         id: verify
-        run: |
-          set +e
-          comment_body="$(bash .github/workflows/scripts/verify-cve-fix.sh \
-            --cves "${{ steps.extract-cves.outputs.cves }}" \
-            --scan-dir scan-results-flat)"
-          exit_code=$?
-          set -e
-          delimiter="$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
-          {
-            echo "comment<<${delimiter}"
-            echo "$comment_body"
-            echo "${delimiter}"
-          } >> "$GITHUB_OUTPUT"
-          echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
+        run: >-
+          .github/workflows/scripts/run-cve-fix-verification.sh
+          --cves "${{ steps.extract-cves.outputs.cves }}"
+          --scan-dir scan-results-flat
 
       - name: Post PR comment
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
-        run: |
-          if [[ "${{ steps.flatten.outputs.infra-failure }}" == "true" && "${{ steps.verify.outputs.exit-code }}" != "1" ]]; then
-            gh pr comment "${{ github.event.pull_request.number }}" --body "$(cat <<'COMMENT_EOF'
-          **CVE Fix Verification: COULD NOT RUN** :warning:
-
-          The vulnerability scan could not complete due to an infrastructure error:
-
-          > One or more image scans failed to produce results.
-
-          **Action required:** Please verify manually that your CVE fix is effective before merging this PR. You can do this by running `roxctl image scan` locally against the built images, or by re-running this workflow.
-          COMMENT_EOF
-          )"
-          else
-            gh pr comment "${{ github.event.pull_request.number }}" --body "$COMMENT_BODY"
-          fi
+        run: >-
+          .github/workflows/scripts/post-cve-fix-comment.sh
+          --pr-number "${{ github.event.pull_request.number }}"
+          --infra-failure "${{ steps.flatten.outputs.infra-failure }}"
+          --exit-code "${{ steps.verify.outputs.exit-code }}"
 
       - name: Fail if CVE still present
         if: steps.verify.outputs.exit-code == '1'
