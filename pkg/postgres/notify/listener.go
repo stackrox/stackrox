@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,7 +21,7 @@ const reconnectDelay = 5 * time.Second
 type Handler func(channel, payload string)
 
 // Listener listens on one or more PostgreSQL NOTIFY channels and dispatches
-// notifications to a handler. It holds a dedicated connection from the pool
+// notifications to a handler. It holds a dedicated connection outside the pool
 // for the lifetime of the listener and automatically reconnects on failure.
 type Listener struct {
 	db       postgres.DB
@@ -58,19 +59,14 @@ func (l *Listener) Listen(ctx context.Context) {
 }
 
 func (l *Listener) listenLoop(ctx context.Context) error {
-	conn, err := l.db.Acquire(ctx)
+	conn, err := hijackConn(ctx, l.db)
 	if err != nil {
 		return fmt.Errorf("acquiring connection: %w", err)
 	}
-	defer conn.Release()
-
-	pgxConn, err := underlyingConn(conn)
-	if err != nil {
-		return err
-	}
+	defer conn.Close(context.Background())
 
 	for _, ch := range l.channels {
-		if _, err := pgxConn.Exec(ctx, "LISTEN "+ch); err != nil {
+		if _, err := conn.Exec(ctx, "LISTEN "+pgx.Identifier{ch}.Sanitize()); err != nil {
 			return fmt.Errorf("LISTEN %s: %w", ch, err)
 		}
 	}
@@ -78,7 +74,7 @@ func (l *Listener) listenLoop(ctx context.Context) error {
 	log.Infof("Notification listener started on channels: %v", l.channels)
 
 	for {
-		notification, err := pgxConn.WaitForNotification(ctx)
+		notification, err := conn.WaitForNotification(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
 				return nil
@@ -92,18 +88,23 @@ func (l *Listener) listenLoop(ctx context.Context) error {
 func (l *Listener) dispatchNotification(n *pgconn.Notification) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("Panic in notification handler for channel %q: %v", n.Channel, r)
+			log.Errorf("Panic in notification handler for channel %q: %v\n%s", n.Channel, r, debug.Stack())
 		}
 	}()
 	l.handler(n.Channel, n.Payload)
 }
 
-// underlyingConn extracts the *pgx.Conn from the pool wrapper.
-// pgxpool.Conn exposes .Conn() which returns the underlying *pgx.Conn
-// that has WaitForNotification.
-func underlyingConn(conn *postgres.Conn) (*pgx.Conn, error) {
-	if c, ok := conn.PgxPoolConn.(*pgxpool.Conn); ok {
-		return c.Conn(), nil
+// hijackConn acquires a connection from the pool and permanently removes it
+// via Hijack. The caller owns the returned *pgx.Conn and must close it.
+func hijackConn(ctx context.Context, db postgres.DB) (*pgx.Conn, error) {
+	poolConn, err := db.Acquire(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return nil, fmt.Errorf("cannot extract *pgx.Conn from connection wrapper (type: %T)", conn.PgxPoolConn)
+	c, ok := poolConn.PgxPoolConn.(*pgxpool.Conn)
+	if !ok {
+		poolConn.Release()
+		return nil, fmt.Errorf("cannot hijack connection (type: %T)", poolConn.PgxPoolConn)
+	}
+	return c.Hijack(), nil
 }
