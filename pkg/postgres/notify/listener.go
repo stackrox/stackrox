@@ -63,7 +63,7 @@ func (l *Listener) listenLoop(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("acquiring connection: %w", err)
 	}
-	defer conn.Close(context.Background())
+	defer func() { _ = conn.Close(context.Background()) }()
 
 	for _, ch := range l.channels {
 		if _, err := conn.Exec(ctx, "LISTEN "+pgx.Identifier{ch}.Sanitize()); err != nil {
