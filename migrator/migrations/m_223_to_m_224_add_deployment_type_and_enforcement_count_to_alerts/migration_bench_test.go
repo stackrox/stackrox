@@ -117,10 +117,7 @@ func insertBenchAlerts(b *testing.B, ctx context.Context, db *pghelper.TestPostg
 
 	batchInsertSize := 1000
 	for start := 0; start < numAlerts; start += batchInsertSize {
-		end := start + batchInsertSize
-		if end > numAlerts {
-			end = numAlerts
-		}
+		end := min(start+batchInsertSize, numAlerts)
 
 		query := `INSERT INTO alerts (id, policy_id, policy_name, lifecyclestage, clusterid, clustername,
 			namespace, deployment_id, deployment_name, deployment_inactive,

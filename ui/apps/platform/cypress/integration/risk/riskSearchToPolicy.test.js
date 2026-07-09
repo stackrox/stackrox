@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 
 import { selectors as riskSelectors } from './Risk.selectors';
 
-const riskUrl = '/main/risk';
+const riskUrl = '/main/risk/workloads';
 const policiesUrl = '/main/policy-management/policies';
 const policySelectors = {
     nextButton: '.btn:contains("Next")',

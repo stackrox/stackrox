@@ -1,6 +1,8 @@
 package k8srbac
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -60,10 +62,5 @@ func (w *wildcardable) Grants(first, second *storage.PolicyRule) bool {
 
 // IsWildcarded returns if the field is wildcarded in the input rule.
 func (w *wildcardable) IsWildcarded(rule *storage.PolicyRule) bool {
-	for _, v := range w.Get(rule) {
-		if v == wildcard {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(w.Get(rule), wildcard)
 }

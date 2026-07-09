@@ -11,7 +11,7 @@ import {
     accessControlPath,
     clustersPathWithParam,
     policiesPath,
-    riskPath,
+    riskWorkloadPath,
     urlEntityListTypes,
     urlEntityTypes,
     userRolePath,
@@ -28,7 +28,7 @@ type ParamsWithContext = {
 
 const nonWorkflowUseCasePathEntries = Object.entries({
     CLUSTERS: clustersPathWithParam,
-    RISK: riskPath,
+    RISK: riskWorkloadPath,
     VIOLATIONS: violationsPath,
     POLICIES: policiesPath,
     USER: userRolePath, // however, it matches workflow list path
