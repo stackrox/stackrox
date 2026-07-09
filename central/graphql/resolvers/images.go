@@ -278,7 +278,12 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]*imageComponentV2Resolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	imgResolver, err := resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return imgResolver, nil
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
