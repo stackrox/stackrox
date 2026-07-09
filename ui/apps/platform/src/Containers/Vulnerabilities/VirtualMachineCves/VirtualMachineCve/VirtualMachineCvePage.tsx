@@ -7,6 +7,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
 import { getVMCVEDetail } from 'services/VirtualMachineService';
 
+import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import AffectedVirtualMachinesSummaryCard from './AffectedVirtualMachinesSummaryCard';
@@ -48,6 +49,17 @@ function VirtualMachineCvePage() {
                                 affectedVirtualMachinesCount={data.affectedVmCount}
                                 totalVirtualMachinesCount={data.totalVmCount}
                                 affectedGuestOsCount={data.affectedGuestOsCount}
+                            />
+                        )}
+                    />
+                    <SummaryCard
+                        data={cveDetail}
+                        loadingText="Loading virtual machines by CVE severity summary"
+                        renderer={({ data }) => (
+                            <BySeveritySummaryCard
+                                title="VMs by severity"
+                                severityCounts={data.vmSeverityCounts}
+                                hiddenSeverities={new Set()}
                             />
                         )}
                     />
