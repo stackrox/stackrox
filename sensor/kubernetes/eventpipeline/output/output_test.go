@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/centralbound"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -20,20 +21,14 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// testDispatcher extends pubSubRegister with Publish and Stop so tests can
-// send events through the real dispatcher machinery.
-type testDispatcher interface {
-	pubSubRegister
-	Publish(pubsub.Event) error
-	Stop()
-}
-
-// outputTestEnv bundles the output queue, its dispatcher (if pubsub), and a
-// helper to send events through the correct path.
+// outputTestEnv bundles the output queue, its dispatcher (if pubsub), and the
+// central-bound bridge so tests can send events through the correct path and
+// read back forwarded messages regardless of mode.
 type outputTestEnv struct {
 	queue    component.OutputQueue
 	pubsub   bool
-	dispatch testDispatcher
+	dispatch pubSubDispatcher
+	bridge   *centralbound.Bridge
 }
 
 func newOutputTestEnv(t *testing.T, det *mocks.MockDetector, pubsubEnabled bool, queueSize int) *outputTestEnv {
@@ -41,13 +36,20 @@ func newOutputTestEnv(t *testing.T, det *mocks.MockDetector, pubsubEnabled bool,
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubsubEnabled))
 
 	env := &outputTestEnv{pubsub: pubsubEnabled}
-	var reg pubSubRegister
+	var reg pubSubDispatcher
 	if pubsubEnabled {
 		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+			lane.NewBlockingLane(pubsub.CentralBoundLane),
 		}))
 		require.NoError(t, err)
 		t.Cleanup(d.Stop)
+
+		bridge, err := centralbound.NewBridge(d)
+		require.NoError(t, err)
+		env.bridge = bridge
+		t.Cleanup(bridge.Stop)
+
 		env.dispatch = d
 		reg = d
 	}
@@ -65,6 +67,13 @@ func (e *outputTestEnv) send(t *testing.T, event *component.ResourceEvent) {
 	} else {
 		e.queue.Send(event)
 	}
+}
+
+func (e *outputTestEnv) responsesC() <-chan *message.ExpiringMessage {
+	if e.pubsub {
+		return e.bridge.ResponsesC()
+	}
+	return e.queue.ResponsesC()
 }
 
 func shouldHaveForwarded(t *testing.T, ch <-chan *message.ExpiringMessage) {
@@ -130,7 +139,7 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 
 					env.send(t, tc.message)
 					synctest.Wait()
-					tc.assertion(t, env.queue.ResponsesC())
+					tc.assertion(t, env.responsesC())
 				})
 			})
 		}
@@ -182,7 +191,7 @@ func Test_OutputQueue_ForwardMessages(t *testing.T) {
 
 					env.send(t, tc.message)
 					synctest.Wait()
-					tc.assertion(t, env.queue.ResponsesC())
+					tc.assertion(t, env.responsesC())
 				})
 			})
 		}
@@ -236,6 +245,7 @@ func Test_ProcessResourceEvent_WrongType(t *testing.T) {
 
 	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
 		lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+		lane.NewBlockingLane(pubsub.CentralBoundLane),
 	}))
 	require.NoError(t, err)
 	t.Cleanup(d.Stop)
@@ -258,9 +268,14 @@ func Test_ProcessResourceEvent_StopRequested(t *testing.T) {
 
 		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+			lane.NewBlockingLane(pubsub.CentralBoundLane),
 		}))
 		require.NoError(t, err)
 		t.Cleanup(d.Stop)
+
+		bridge, err := centralbound.NewBridge(d)
+		require.NoError(t, err)
+		defer bridge.Stop()
 
 		q, err := New(det, 10, d)
 		assert.NoError(t, err)
@@ -274,6 +289,15 @@ func Test_ProcessResourceEvent_StopRequested(t *testing.T) {
 		event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
 		assert.NoError(t, d.Publish(event))
 		synctest.Wait()
-		shouldNotHaveForwarded(t, q.ResponsesC())
+		shouldNotHaveForwarded(t, bridge.ResponsesC())
 	})
+}
+
+func Test_OutputQueue_PubSubEnabled_ResponsesCReturnsNil(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	det := mocks.NewMockDetector(ctrl)
+
+	env := newOutputTestEnv(t, det, true, 10)
+	assert.Nil(t, env.queue.ResponsesC(), "ResponsesC must return nil in PubSub mode")
 }
