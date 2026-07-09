@@ -91,7 +91,7 @@ jobs:
                 file.write(line + '\n')
 
             jobs = { job: should_run(job) for job in [
-                    'e2e-byodb-test',
+                    'e2e-byodb-tests',
                     'e2e-db-backup-restore-test',
                     'e2e-gke-upgrade-tests',
                     'e2e-nongroovy-tests',
@@ -147,15 +147,15 @@ jobs:
           rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
-  e2e-byodb-test:
+  e2e-byodb-tests:
     needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-byodb-test.yaml
+    uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-test }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-tests }}
     secrets: inherit
     concurrency:
-      group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-db-backup-restore-test:
