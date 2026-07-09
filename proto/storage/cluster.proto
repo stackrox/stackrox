@@ -223,6 +223,15 @@ message ClusterCertExpiryStatus {
   google.protobuf.Timestamp sensor_cert_not_before = 2;
 }
 
+enum SensorVersionCompatibility {
+  SENSOR_VERSION_COMPATIBILITY_UNKNOWN               = 0;
+  SENSOR_VERSION_COMPATIBILITY_MATCHED               = 1;
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND      = 2;
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD       = 3;
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND    = 4;
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD     = 5;
+}
+
 message ClusterStatus {
   string sensor_version = 1;
   // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
@@ -231,6 +240,7 @@ message ClusterStatus {
   OrchestratorMetadata orchestrator_metadata = 4;
   ClusterUpgradeStatus upgrade_status = 5;
   ClusterCertExpiryStatus cert_expiry_status = 6;
+  SensorVersionCompatibility sensor_version_compatibility = 7;
 }
 
 message ClusterUpgradeStatus {

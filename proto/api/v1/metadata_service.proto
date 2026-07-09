@@ -24,6 +24,9 @@ message Metadata {
 
   // Do not use this field. It will always contain "VALID"
   LicenseStatus license_status = 4 [deprecated = true];
+
+  // X.Y versions of sensors that are compatible with this central.
+  repeated string compatible_sensor_versions = 5;
 }
 
 message TrustInfo {

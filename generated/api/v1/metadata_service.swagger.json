@@ -301,6 +301,13 @@
         "licenseStatus": {
           "$ref": "#/definitions/MetadataLicenseStatus",
           "title": "Do not use this field. It will always contain \"VALID\""
+        },
+        "compatibleSensorVersions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "X.Y versions of sensors that are compatible with this central."
         }
       }
     },
