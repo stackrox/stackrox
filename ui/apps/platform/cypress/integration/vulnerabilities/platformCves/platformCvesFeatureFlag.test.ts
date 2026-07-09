@@ -41,7 +41,7 @@ describe('Platform CVEs - Feature Flag Gating', () => {
         it('should not show the "Kubernetes components" item in the More Views dropdown', () => {
             visit('/main/vulnerabilities/user-workloads');
             cy.get(`${pf6.menuToggle}:contains("More Views")`).click();
-            cy.get(`${pf6.dropdown}:contains("Kubernetes components")`).should('not.exist');
+            cy.get(`${pf6.dropdownItem}:contains("Kubernetes components")`).should('not.exist');
         });
 
         it('should show a not found page when navigated to directly', () => {
