@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
+	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -45,17 +46,6 @@ func (c *capturingDispatcher) RegisterConsumerToLane(id pubsub.ConsumerID, t pub
 func (c *capturingDispatcher) Publish(_ pubsub.Event) error { return nil }
 func (c *capturingDispatcher) Stop()                        {}
 
-// stubEvent is a minimal pubsub.Event that does not implement IsExpired.
-type stubEvent struct{}
-
-func (s *stubEvent) Topic() pubsub.Topic { return pubsub.ResourceSyncFinishedTopic }
-func (s *stubEvent) Lane() pubsub.LaneID { return pubsub.ResourceSyncFinishedLane }
-
-// expiredEvent implements the IsExpired interface to simulate a stale event.
-type expiredEvent struct{ stubEvent }
-
-func (e *expiredEvent) IsExpired() bool { return true }
-
 func newManagerForPubSubTest(t *testing.T, dispatcher *capturingDispatcher) (Manager, *networkFlowManager) {
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
@@ -84,12 +74,12 @@ func TestNewManager_PubSubEnabled_RegistersResourceSyncConsumer(t *testing.T) {
 	_, mgr := newManagerForPubSubTest(t, capturing)
 
 	require.NotNil(t, capturing.callback, "expected RegisterConsumerToLane to be called with a non-nil callback")
-	assert.Equal(t, pubsub.NetworkFlowManagerConsumer, capturing.consumerID)
+	assert.Equal(t, pubsub.NetworkFlowManagerResourceSyncConsumer, capturing.consumerID)
 	assert.Equal(t, pubsub.ResourceSyncFinishedTopic, capturing.topic)
 	assert.Equal(t, pubsub.ResourceSyncFinishedLane, capturing.laneID)
 
 	assert.False(t, mgr.initialSync.Load(), "initialSync must be false before the event fires")
-	require.NoError(t, capturing.callback(&stubEvent{}))
+	require.NoError(t, capturing.callback(&listener.ResourceSyncFinishedEvent{}))
 	assert.True(t, mgr.initialSync.Load(), "initialSync must be true after ResourceSyncFinished fires")
 }
 
@@ -104,7 +94,7 @@ func TestNewManager_PubSubEnabled_CallbackHonorsStopper(t *testing.T) {
 
 	require.NotNil(t, capturing.callback)
 	mgr.stopper.Client().Stop()
-	require.NoError(t, capturing.callback(&stubEvent{}))
+	require.NoError(t, capturing.callback(&listener.ResourceSyncFinishedEvent{}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync when stopper is triggered")
 }
 
@@ -140,8 +130,28 @@ func TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing.T) {
 	_, mgr := newManagerForPubSubTest(t, capturing)
 
 	require.NotNil(t, capturing.callback)
-	require.NoError(t, capturing.callback(&expiredEvent{}))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	require.NoError(t, capturing.callback(&listener.ResourceSyncFinishedEvent{Validity: ctx}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for an expired event")
+}
+
+// TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType verifies that
+// the callback returns an error when it receives an unexpected event type.
+func TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	capturing := &capturingDispatcher{}
+	_, mgr := newManagerForPubSubTest(t, capturing)
+
+	require.NotNil(t, capturing.callback)
+
+	err := capturing.callback(&listener.SoftRestartEvent{Text: "wrong type"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected event type")
+	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for wrong event type")
 }
 
 // TestNewManager_PubSubEnabled_RealDispatcher creates a real PubSub dispatcher
@@ -172,7 +182,7 @@ func TestNewManager_PubSubEnabled_RealDispatcher(t *testing.T) {
 
 	assert.False(t, mgr.initialSync.Load())
 
-	require.NoError(t, disp.Publish(&stubEvent{}))
+	require.NoError(t, disp.Publish(&listener.ResourceSyncFinishedEvent{}))
 
 	assert.Eventually(t, func() bool {
 		return mgr.initialSync.Load()
@@ -196,7 +206,7 @@ func TestNewManager_PubSubEnabled_ConcurrentCallbacks(t *testing.T) {
 	for range goroutines {
 		go func() {
 			defer wg.Done()
-			_ = capturing.callback(&stubEvent{})
+			_ = capturing.callback(&listener.ResourceSyncFinishedEvent{})
 		}()
 	}
 	wg.Wait()

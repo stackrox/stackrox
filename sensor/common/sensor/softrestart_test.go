@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -75,7 +76,7 @@ func sensorForCallbackTest() *Sensor {
 // returns when the central connection has not been established yet.
 func TestSoftRestartCallback_NilCommunication(t *testing.T) {
 	s := sensorForCallbackTest()
-	require.NoError(t, s.makeSoftRestartCallback()(nil))
+	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{Text: "restart"}))
 }
 
 // TestSoftRestartCallback_StopsConnection verifies that the callback calls
@@ -85,31 +86,12 @@ func TestSoftRestartCallback_StopsConnection(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, s.makeSoftRestartCallback()(nil))
+	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{Text: "restart"}))
 	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called exactly once")
 }
 
-// stubSoftRestartEvent is a minimal non-expired event.
-type stubSoftRestartEvent struct{}
-
-func (s *stubSoftRestartEvent) Topic() pubsub.Topic { return pubsub.SoftRestartTopic }
-func (s *stubSoftRestartEvent) Lane() pubsub.LaneID { return pubsub.SoftRestartLane }
-
-// stringerSoftRestartEvent implements fmt.Stringer so the Stringer branch is exercised.
-type stringerSoftRestartEvent struct {
-	stubSoftRestartEvent
-	text string
-}
-
-func (s *stringerSoftRestartEvent) String() string { return s.text }
-
-// expiredSoftRestartEvent simulates a stale event whose validity has expired.
-type expiredSoftRestartEvent struct{ stubSoftRestartEvent }
-
-func (e *expiredSoftRestartEvent) IsExpired() bool { return true }
-
 // TestSensor_PubSubEnabled_SoftRestartConsumerRegistration verifies that the
-// dispatcher is called with CoreSensorConsumer + SoftRestartTopic and that the
+// dispatcher is called with SensorSoftRestartConsumer + SoftRestartTopic and that the
 // captured callback drives Stop() on the active connection.
 func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
@@ -122,12 +104,12 @@ func TestSensor_PubSubEnabled_SoftRestartConsumerRegistration(t *testing.T) {
 
 	s.registerSoftRestartHandler()
 
-	assert.Equal(t, pubsub.CoreSensorConsumer, capturing.consumerID)
+	assert.Equal(t, pubsub.SensorSoftRestartConsumer, capturing.consumerID)
 	assert.Equal(t, pubsub.SoftRestartTopic, capturing.topic)
 	assert.Equal(t, pubsub.SoftRestartLane, capturing.laneID)
 	require.NotNil(t, capturing.callback)
 
-	require.NoError(t, capturing.callback(&stubSoftRestartEvent{}))
+	require.NoError(t, capturing.callback(&listener.SoftRestartEvent{Text: "CRD resources changed"}))
 	assert.Equal(t, 1, fakeCC.stopCount, "callback must call Stop() on centralCommunication")
 }
 
@@ -138,31 +120,27 @@ func TestSoftRestartCallback_SkipsExpiredEvent(t *testing.T) {
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	require.NoError(t, s.makeSoftRestartCallback()(&expiredSoftRestartEvent{}))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	require.NoError(t, s.makeSoftRestartCallback()(&listener.SoftRestartEvent{
+		Text:     "expired restart",
+		Validity: ctx,
+	}))
 	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for an expired event")
 }
 
-// TestSoftRestartCallback_StringerEvent verifies that the callback handles an
-// event that implements fmt.Stringer (exercises the Stringer type-assertion branch).
-func TestSoftRestartCallback_StringerEvent(t *testing.T) {
+// TestSoftRestartCallback_WrongEventType verifies that the callback returns an
+// error when it receives an event that is not a *listener.SoftRestartEvent.
+func TestSoftRestartCallback_WrongEventType(t *testing.T) {
 	s := sensorForCallbackTest()
 	fakeCC := &fakeCentralComm{}
 	s.centralCommunication = fakeCC
 
-	evt := &stringerSoftRestartEvent{text: "CRD resources changed"}
-	require.NoError(t, s.makeSoftRestartCallback()(evt))
-	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called for a Stringer event")
-}
-
-// TestSoftRestartCallback_NonStringerEvent verifies that the callback handles
-// an event that does NOT implement fmt.Stringer (exercises the else branch).
-func TestSoftRestartCallback_NonStringerEvent(t *testing.T) {
-	s := sensorForCallbackTest()
-	fakeCC := &fakeCentralComm{}
-	s.centralCommunication = fakeCC
-
-	require.NoError(t, s.makeSoftRestartCallback()(&stubSoftRestartEvent{}))
-	assert.Equal(t, 1, fakeCC.stopCount, "Stop() must be called for a non-Stringer event")
+	err := s.makeSoftRestartCallback()(&listener.ResourceSyncFinishedEvent{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unexpected event type")
+	assert.Equal(t, 0, fakeCC.stopCount, "Stop() must not be called for wrong event type")
 }
 
 // TestSensor_PubSubDisabled_SoftRestartViaInternalmessage verifies the legacy

@@ -3,7 +3,6 @@ package sensor
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"strconv"
 	"sync/atomic"
@@ -41,6 +40,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
 const (
@@ -336,7 +336,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 func (s *Sensor) registerSoftRestartHandler() {
 	if features.SensorInternalPubSub.Enabled() {
 		if err := s.pubSubDispatcher.RegisterConsumerToLane(
-			pubsub.CoreSensorConsumer,
+			pubsub.SensorSoftRestartConsumer,
 			pubsub.SoftRestartTopic,
 			pubsub.SoftRestartLane,
 			s.makeSoftRestartCallback(),
@@ -353,39 +353,36 @@ func (s *Sensor) registerSoftRestartHandler() {
 
 func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
 	return func(e pubsub.Event) error {
-		if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+		evt, ok := e.(*listener.SoftRestartEvent)
+		if !ok {
+			return errors.Errorf("unexpected event type: %T", e)
+		}
+		if evt.IsExpired() {
 			return nil
 		}
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-			return nil
-		}
-		if str, ok := e.(fmt.Stringer); ok {
-			log.Infof("Connection restart requested: %s", str)
-		} else {
-			log.Infof("Connection restart requested")
-		}
-		s.centralCommunication.Stop()
+		s.handleSoftRestart(evt.Text)
 		return nil
 	}
 }
 
 func (s *Sensor) makeSoftRestartLegacyHandler() func(*internalmessage.SensorInternalMessage) {
-	return func(message *internalmessage.SensorInternalMessage) {
-		if message.IsExpired() {
+	return func(msg *internalmessage.SensorInternalMessage) {
+		if msg.IsExpired() {
 			return
 		}
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-			return
-		}
-		log.Infof("Connection restart requested: %s", message.Text)
-		s.centralCommunication.Stop()
+		s.handleSoftRestart(msg.Text)
 	}
+}
+
+func (s *Sensor) handleSoftRestart(text string) {
+	s.centralCommunicationLock.Lock()
+	defer s.centralCommunicationLock.Unlock()
+	if s.centralCommunication == nil {
+		log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+		return
+	}
+	log.Infof("Connection restart requested: %s", text)
+	s.centralCommunication.Stop()
 }
 
 // Stop shuts down background tasks.

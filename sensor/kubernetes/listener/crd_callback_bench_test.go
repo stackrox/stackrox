@@ -42,7 +42,7 @@ func BenchmarkCrdCallbackPublish(b *testing.B) {
 		}
 		defer disp.Stop()
 		if err := disp.RegisterConsumerToLane(
-			pubsub.CoreSensorConsumer,
+			pubsub.SensorSoftRestartConsumer,
 			pubsub.SoftRestartTopic,
 			pubsub.SoftRestartLane,
 			func(_ pubsub.Event) error {

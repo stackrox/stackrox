@@ -26,16 +26,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
+	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"go.uber.org/mock/gomock"
 )
-
-type benchSyncEvent struct {
-	validity context.Context
-}
-
-func (e *benchSyncEvent) Topic() pubsub.Topic { return pubsub.ResourceSyncFinishedTopic }
-func (e *benchSyncEvent) Lane() pubsub.LaneID { return pubsub.ResourceSyncFinishedLane }
-func (e *benchSyncEvent) IsExpired() bool     { return false }
 
 func BenchmarkResourceSyncDelivery(b *testing.B) {
 	mockCtrl := gomock.NewController(b)
@@ -69,7 +62,7 @@ func BenchmarkResourceSyncDelivery(b *testing.B) {
 		updatecomputer.New(),
 	).(*networkFlowManager)
 
-	event := &benchSyncEvent{validity: context.Background()}
+	event := &listener.ResourceSyncFinishedEvent{Validity: context.Background()}
 	legacyMsg := &internalmessage.SensorInternalMessage{
 		Kind:     internalmessage.SensorMessageResourceSyncFinished,
 		Text:     "bench sync",

@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/kubernetes/listener"
 )
 
 const connectionDeletionGracePeriod = 5 * time.Minute
@@ -188,11 +189,15 @@ func NewManager(
 
 	if features.SensorInternalPubSub.Enabled() {
 		if err := pubSubDispatcher.RegisterConsumerToLane(
-			pubsub.NetworkFlowManagerConsumer,
+			pubsub.NetworkFlowManagerResourceSyncConsumer,
 			pubsub.ResourceSyncFinishedTopic,
 			pubsub.ResourceSyncFinishedLane,
 			func(e pubsub.Event) error {
-				if v, ok := e.(interface{ IsExpired() bool }); ok && v.IsExpired() {
+				evt, ok := e.(*listener.ResourceSyncFinishedEvent)
+				if !ok {
+					return errors.Errorf("unexpected event type: %T", e)
+				}
+				if evt.IsExpired() {
 					return nil
 				}
 				select {
