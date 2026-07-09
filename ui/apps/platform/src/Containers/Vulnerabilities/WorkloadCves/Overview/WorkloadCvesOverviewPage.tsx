@@ -194,7 +194,10 @@ function WorkloadCvesOverviewPage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(
+            activeEntityTabKey,
+            isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW')
+        ),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
