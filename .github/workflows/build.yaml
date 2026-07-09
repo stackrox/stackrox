@@ -1331,7 +1331,13 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        if: always()
+        # Skip (instead of erroring) when the scan step failed before it got
+        # far enough to set result-path (e.g. a wait-for-image timeout) -
+        # continue-on-error above means that failure wouldn't otherwise stop
+        # this step, and actions/upload-artifact hard-errors on an empty
+        # required `path` input. verify-cve-fix's own missing-image check
+        # still catches and reports this case non-blockingly.
+        if: always() && steps.scan-image.outputs.result-path != ''
         uses: ./.github/actions/upload-artifact-with-retry
         with:
           name: cve-verify_${{ matrix.image }}.json
