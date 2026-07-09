@@ -98,7 +98,14 @@ jobs:
                 ]}
 
             write('jobs', json.dumps(jobs))
-            write('dispatch-any', str(any(jobs.values())).lower())
+
+            # dispatch_any==False is a shortcut to prevent executing the further workflow for draft PRs which don't
+            # qualify for running any actual e2e jobs.
+            # We must make sure that dispatch_any is True for non-drafts even if no actual jobs are to be dispatched
+            # (the case of UI-only PRs) because this lets GHA enter the corresponding workflows and skip the test jobs
+            # inside them "in proper way" that allows to satisfy branch protection rules.
+            dispatch_any = any(jobs.values()) or input.is_draft != 'true'
+            write('dispatch-any', str(dispatch_any).lower())
 
   # Waits for images to be built so we don't start testing until they are available.
   wait-for-images:
