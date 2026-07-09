@@ -1,15 +1,17 @@
 package data
 
-import "github.com/stackrox/rox/generated/internalapi/compliance"
+import (
+	"maps"
+
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+)
 
 // FlattenFileMap takes a map of file paths to File objects and returns a map with all recursively nested Files in a single top level map of path to File.
 func FlattenFileMap(toFlatten map[string]*compliance.File) map[string]*compliance.File {
 	totalNodeFiles := make(map[string]*compliance.File)
 	for path, file := range toFlatten {
 		expanded := expandFile(file)
-		for k, v := range expanded {
-			totalNodeFiles[k] = v
-		}
+		maps.Copy(totalNodeFiles, expanded)
 		totalNodeFiles[path] = file
 	}
 	return totalNodeFiles
@@ -19,9 +21,7 @@ func expandFile(parent *compliance.File) map[string]*compliance.File {
 	expanded := make(map[string]*compliance.File)
 	for _, child := range parent.GetChildren() {
 		childExpanded := expandFile(child)
-		for k, v := range childExpanded {
-			expanded[k] = v
-		}
+		maps.Copy(expanded, childExpanded)
 	}
 	expanded[parent.GetPath()] = parent
 	return expanded

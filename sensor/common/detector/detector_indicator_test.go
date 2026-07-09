@@ -79,7 +79,7 @@ func TestIndicatorPipeline(t *testing.T) {
 				t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 
 				synctest.Test(t, func(t *testing.T) {
-					d, ds, nps := createTestDetector(t, pubSubEnabled)
+					d, ds, nps, _ := createTestDetector(t, pubSubEnabled)
 					tc.setupMocks(ds, nps)
 					if tc.setupDetector != nil {
 						tc.setupDetector(d)
@@ -128,7 +128,7 @@ func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
 			t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 
 			synctest.Test(t, func(t *testing.T) {
-				d, ds, nps := createTestDetector(t, pubSubEnabled)
+				d, ds, nps, _ := createTestDetector(t, pubSubEnabled)
 				d.unifiedDetector = &fakeUnifiedDetector{
 					alerts: []*storage.Alert{{Id: "alert-1", Policy: &storage.Policy{Id: "p1"}}},
 				}
@@ -187,7 +187,7 @@ func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
 			t.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 
 			synctest.Test(t, func(t *testing.T) {
-				d, ds, nps := createTestDetectorWithBufferSize(t, pubSubEnabled, bufferSize)
+				d, ds, nps, _ := createTestDetectorWithBufferSize(t, pubSubEnabled, bufferSize)
 				d.unifiedDetector = &fakeUnifiedDetector{
 					alerts: []*storage.Alert{{Id: "alert-1", Policy: &storage.Policy{Id: "p1"}}},
 				}

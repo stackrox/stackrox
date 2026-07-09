@@ -57,10 +57,7 @@ func getIdxField(s *Schema) Field {
 		SQLType:    "integer",
 		ModelType:  reflect.TypeOf(0).String(),
 		Options: PostgresOptions{
-			Ignored: false,
-			Index: []*PostgresIndexOptions{
-				{IndexType: "btree"},
-			},
+			Ignored:    false,
 			PrimaryKey: true,
 		},
 	}
@@ -165,6 +162,15 @@ func (s *Schema) Root() *Schema {
 		curr = curr.Parent
 	}
 	return curr
+}
+
+// ShallowCopyWithoutChildren returns a copy of the schema with Children cleared.
+// The copy shares all other fields (Fields, References, etc.) with the original.
+// This is used to build queries that skip child table JOINs.
+func (s *Schema) ShallowCopyWithoutChildren() *Schema {
+	cp := *s
+	cp.Children = nil
+	return &cp
 }
 
 // SetOptionsMap sets options map for the schema.

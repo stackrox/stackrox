@@ -1,42 +1,18 @@
-import { selectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import DndSimulatorDataTransfer from '../../helpers/dndSimulatorDataTransfer';
+import { hasFeatureFlag } from '../../helpers/features';
 import {
     cloneFirstPolicyFromTable,
     doPolicyRowAction,
     editFirstPolicyFromTable,
     goToStep3,
     visitPolicies,
-} from '../../helpers/policies';
-import { hasFeatureFlag } from '../../helpers/features';
-
-const dataTransfer = new DndSimulatorDataTransfer();
-
-function dragFieldIntoSection(fieldSelector) {
-    cy.get(fieldSelector).trigger('mousedown', { which: 1 });
-    cy.get(fieldSelector).trigger('dragstart', { dataTransfer });
-    cy.get(fieldSelector).trigger('drag');
-    cy.get(selectors.step3.policySection.dropTarget).trigger('dragover', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('drop', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('dragend', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('mouseup', { which: 1 });
-}
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
+import { dragFieldIntoSection, expandCriteriaCategory } from './policyWizard.helpers';
 
 function addPolicyFieldCard(index) {
-    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('mousedown', { which: 1 });
-    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('dragstart', { dataTransfer });
-    cy.get(selectors.step3.policyCriteria.key).eq(index).trigger('drag');
-    cy.get(selectors.step3.policySection.dropTarget).trigger('dragover', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('drop', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('dragend', { dataTransfer });
-    cy.get(selectors.step3.policySection.dropTarget).trigger('mouseup', { which: 1 });
-}
-
-function clickPolicyKeyGroup(categoryName) {
-    cy.get(
-        `${selectors.step3.policyCriteria.keyGroup}:contains(${categoryName}) .pf-v6-c-expandable-section__toggle button`
-    ).click();
+    dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:eq(${index})`);
 }
 
 function goToPoliciesAndCloneToStep3() {
@@ -84,7 +60,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
             expect(values).to.have.length(GROUPS_AVAILABLE_FOR_DEPLOY_POLICY);
         });
 
-        clickPolicyKeyGroup('Image registry');
+        expandCriteriaCategory('Image registry');
         cy.get(`${selectors.step3.policyCriteria.key}:first`).scrollIntoView();
         cy.get(`${selectors.step3.policyCriteria.key}:first`).should('be.visible');
     });
@@ -124,7 +100,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should allow the user to add/delete a policy field card in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
-            clickPolicyKeyGroup('Image registry');
+            expandCriteriaCategory('Image registry');
             // add policy field card
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
@@ -145,7 +121,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should allow the user to add multiple non-duplicate policy field cards in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
-            clickPolicyKeyGroup('Image registry');
+            expandCriteriaCategory('Image registry');
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(1);
@@ -159,7 +135,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
         it('should not be able to add duplicate policy field cards in the same policy section', () => {
             goToPoliciesAndCloneToStep3();
 
-            clickPolicyKeyGroup('Image registry');
+            expandCriteriaCategory('Image registry');
             cy.get(selectors.step3.policyCriteria.groupCards).then((cards) => {
                 addPolicyFieldCard(0);
                 addPolicyFieldCard(0);
@@ -176,7 +152,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image registry');
+                expandCriteriaCategory('Image registry');
                 // add field values for Image Registry
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
@@ -203,7 +179,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Storage');
+                expandCriteriaCategory('Storage');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Mounted volume writability')`
                 );
@@ -217,7 +193,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image registry');
+                expandCriteriaCategory('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -233,7 +209,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Storage');
+                expandCriteriaCategory('Storage');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Mounted volume writability')`
                 );
@@ -246,7 +222,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image registry');
+                expandCriteriaCategory('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -261,7 +237,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image contents');
+                expandCriteriaCategory('Image contents');
                 dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('Image age')`);
                 cy.get(selectors.step3.policyCriteria.value.addBtn).first().click();
                 cy.get(selectors.step3.policyCriteria.booleanOperator).should('be.disabled');
@@ -274,7 +250,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image scanning');
+                expandCriteriaCategory('Image scanning');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image scan status')`
                 );
@@ -300,7 +276,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Container configuration');
+                expandCriteriaCategory('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Seccomp profile type')`
                 );
@@ -323,7 +299,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image registry');
+                expandCriteriaCategory('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Image registry')`
                 );
@@ -336,7 +312,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Container configuration');
+                expandCriteriaCategory('Container configuration');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Drop capabilities')`
                 );
@@ -354,7 +330,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
 
-                clickPolicyKeyGroup('Image scanning');
+                expandCriteriaCategory('Image scanning');
                 // eq(0) to specify CVSS instead of NVD CVSS
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('CVSS'):eq(0)`
@@ -381,7 +357,7 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
 
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
-                clickPolicyKeyGroup('Image registry');
+                expandCriteriaCategory('Image registry');
                 dragFieldIntoSection(
                     `${selectors.step3.policyCriteria.key}:contains('Require image signature')`
                 );

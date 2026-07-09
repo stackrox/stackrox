@@ -2,7 +2,7 @@ package search
 
 import (
 	"errors"
-	"sort"
+	"slices"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
@@ -42,9 +42,7 @@ func ParseFieldMap(query string) (map[FieldLabel][]string, error) {
 
 // SortFieldLabels takes a list of field labels and returns a sorted list of field labels
 func SortFieldLabels(fieldLabels []FieldLabel) []FieldLabel {
-	sort.Slice(fieldLabels, func(i, j int) bool {
-		return fieldLabels[i] < fieldLabels[j]
-	})
+	slices.Sort(fieldLabels)
 	return fieldLabels
 }
 

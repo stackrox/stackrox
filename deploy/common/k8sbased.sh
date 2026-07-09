@@ -415,10 +415,17 @@ function launch_central {
         )
       fi
 
-      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-false}" != "false" ]]; then
-        helm_args+=(
-          --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
-        )
+      if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+        if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+          helm_args+=(
+            --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
+          )
+        fi
+        if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+          helm_args+=(
+            --set-json "customize.envVars.SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
+          )
+        fi
       fi
 
       if [[ -n "$EXTERNAL_DB" ]]; then
@@ -551,6 +558,10 @@ function launch_central {
                 ${ORCH_CMD} -n stackrox patch deployment scanner-v4-db --patch "$(cat "${common_dir}/scanner-v4-db-patch.yaml")"
                 if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
                   ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
+                fi
+                if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+                  ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher \
+                    "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
                 fi
               fi
             else

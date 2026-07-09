@@ -177,6 +177,7 @@ class PostClusterTest(StoreArtifacts):
             "openshift-etcd",
             "openshift-controller-manager",
             "openshift-compliance",
+            "openshift-kube-apiserver",
             "openshift-ingress",
             "openshift-marketplace",
         ]

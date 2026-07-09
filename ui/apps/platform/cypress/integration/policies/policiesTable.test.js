@@ -1,5 +1,4 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors, url } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import { addCheckboxSelectFilter } from '../../helpers/compoundFilters';
 import { generateNameWithDate } from '../../helpers/formHelpers';
@@ -10,7 +9,8 @@ import {
     editFirstPolicyFromTable,
     visitPolicies,
     visitPoliciesFromLeftNav,
-} from '../../helpers/policies';
+} from './Policies.helpers';
+import { selectors, url } from './Policies.selectors';
 import {
     assertSortedItems,
     callbackForPairOfAscendingPolicySeverityValuesFromElements,

@@ -87,10 +87,6 @@ while read -r line; do
 
     read -r version ref <<< "$line"
 
-    # We only append `-rc` if reference is a "release version" reference, and
-    # use RC is true, setting to false by default.
-    append_rc="false"
-
     case $ref in
         heads/*)
             resolved_tag="${ref#heads/}"
@@ -101,7 +97,6 @@ while read -r line; do
         *)
             # Assume anything else is a release version reference.
             resolved_tag=${version_map[$ref]:-}
-            [[ "$use_rc" == "true" ]] && append_rc="true"
             ;;
     esac
 
@@ -127,7 +122,8 @@ while read -r line; do
             ;;
     esac
 
-    if [[ "$append_rc" == "true" ]]; then
+    # RC builds upload to the RC stream (e.g. v2-rc).
+    if [[ "$use_rc" == "true" ]]; then
         version="$version-rc"
     fi
 

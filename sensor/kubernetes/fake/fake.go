@@ -36,6 +36,7 @@ import (
 	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 )
 
 const (
@@ -101,12 +102,18 @@ func init() {
 
 // clientSetImpl implements our client.Interface
 type clientSetImpl struct {
+	restConfig        *rest.Config
 	kubernetes        kubernetes.Interface
 	dynamic           dynamic.Interface
 	openshiftApps     appVersioned.Interface
 	openshiftConfig   configVersioned.Interface
 	openshiftRoute    routeVersioned.Interface
 	openshiftOperator operatorVersioned.Interface
+}
+
+// RESTConfig returns the REST configuration injected via WithRESTConfig, or nil if none was set.
+func (c *clientSetImpl) RESTConfig() *rest.Config {
+	return c.restConfig
 }
 
 // Kubernetes returns the fake Kubernetes clientset
@@ -145,6 +152,7 @@ type WorkloadManager struct {
 	fakeClient                *fake.Clientset
 	dynamicClient             *fakeDynamic.FakeDynamicClient
 	client                    client.Interface
+	restConfig                *rest.Config
 	processPool               *ProcessPool
 	labelsPool                *labelsPoolPerNamespace
 	endpointPool              *EndpointPool
@@ -182,6 +190,7 @@ type WorkloadManagerConfig struct {
 	externalIpPool *pool
 	containerPool  *pool
 	storagePath    string
+	restConfig     *rest.Config
 }
 
 // ConfigDefaults default configuration
@@ -246,6 +255,12 @@ func (c *WorkloadManagerConfig) WithStoragePath(path string) *WorkloadManagerCon
 	return c
 }
 
+// WithRESTConfig configures the WorkloadManagerConfig's REST config.
+func (c *WorkloadManagerConfig) WithRESTConfig(restConfig *rest.Config) *WorkloadManagerConfig {
+	c.restConfig = restConfig
+	return c
+}
+
 // Client returns the mock client
 func (w *WorkloadManager) Client() client.Interface {
 	return w.client
@@ -283,6 +298,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		db:                   db,
 		workload:             &workload,
 		originatorCache:      NewOriginatorCache(),
+		restConfig:           config.restConfig,
 		labelsPool:           config.labelsPool,
 		endpointPool:         config.endpointPool,
 		ipPool:               config.ipPool,
@@ -487,6 +503,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	dynClient := fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, customListKinds)
 
 	clientSet := &clientSetImpl{
+		restConfig: w.restConfig,
 		kubernetes: w.fakeClient,
 		dynamic:    dynClient,
 	}

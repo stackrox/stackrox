@@ -23,6 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const configControllerM2MAudience = "central.stackrox.io"
+
 var (
 	_ DataStore = (*datastoreImpl)(nil)
 
@@ -257,6 +259,7 @@ func newKubeM2MConfig(kubeSAIssuer string) *storage.AuthMachineToMachineConfig {
 		TokenExpirationDuration: "1h",
 		Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
 		Issuer:                  kubeSAIssuer,
+		Audience:                configControllerM2MAudience,
 	}
 }
 
@@ -285,6 +288,14 @@ func (d *datastoreImpl) configureConfigControllerAccess(kubeSAConfig *storage.Au
 			ValueExpression: configControllerServiceAccountName,
 			Role:            "Configuration Controller",
 		})
+	}
+
+	// Above we ensure that the config-controller mapping is always present.
+	// But we only set the audience on upgraded configs when the config-controller
+	// mapping is the only mapping. If users added their own mappings, their tokens
+	// may not carry the custom audience, so enforcing it could break their setup.
+	if kubeSAConfig.GetAudience() == "" && len(kubeSAConfig.GetMappings()) == 1 {
+		kubeSAConfig.Audience = configControllerM2MAudience
 	}
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(

@@ -1,56 +1,42 @@
 name: e2e-nongroovy-tests
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
   workflow_dispatch:
-  push:
-    tags:
-    - '*-nightly-*'
-    branches:
-    - master
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  wait-for-images:
-    if: >-
-      github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
-    - name: Wait for images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: |
-          rhacs-eng/main:${{ env.tag }}
-          rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
-          rhacs-eng/collector:${{ env.tag }}
-
   gke-nongroovy-e2e-tests:
-    needs: [ wait-for-images ]
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-nongroovy-e2e-tests
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
@@ -59,6 +45,7 @@ jobs:
       SENSOR_HELM_MANAGED: "true"
       SCANNER_V4_DB_STORAGE_CLASS: faster
       ROX_SCANNER_V4: "false"
+      PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
     steps:
 
@@ -67,6 +54,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -84,9 +72,11 @@ jobs:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      id: create-cluster
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
+        GKE_SPOT: "true"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
@@ -97,12 +87,6 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        source scripts/ci/gke.sh
-        wait_for_cluster
-
     - name: Build roxctl
       # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
       # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/
@@ -111,10 +95,12 @@ jobs:
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -125,7 +111,6 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -163,7 +148,6 @@ jobs:
       if: failure() || github.event_name == 'push'
       shell: python
       env:
-        PYTHONUNBUFFERED: "1"
         ROX_USERNAME: admin
       run: |
         import os, sys
@@ -179,8 +163,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -188,14 +170,14 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"
           exit 0
         fi
-        source scripts/ci/gke.sh
-        teardown_gke_cluster false || echo "Cluster teardown failed"
+        scripts/ci/gke.sh teardown_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2

@@ -322,19 +322,30 @@ type ReportConfiguration struct {
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportConfiguration_VulnReportFilters
-	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	Filter isReportConfiguration_Filter `protobuf_oneof:"filter"`
+	// Deprecated: V1 field. Use resource_scope instead.
+	//
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	ScopeId string `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	// Deprecated: V1 field. Use repeated notifiers instead.
+	//
 	// Types that are valid to be assigned to NotifierConfig:
 	//
 	//	*ReportConfiguration_EmailConfig
-	NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
-	Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
-	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
-	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
-	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
-	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+	NotifierConfig isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
+	Schedule       *Schedule                            `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	// Deprecated: V1 field. Use ReportSnapshot.report_status instead.
+	//
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	LastRunStatus *ReportLastRunStatus `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
+	// Deprecated: V1 field. Use ReportSnapshot.report_status.completed_at instead.
+	//
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
+	LastSuccessfulRunTime *timestamppb.Timestamp   `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
+	ResourceScope         *ResourceScope           `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
+	Notifiers             []*NotifierConfiguration `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	Creator               *SlimUser                `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
+	Version               int32                    `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // V1 configs (version 0 and 1) have been removed by migration m_221_to_m_222. Only version=2 (V2) configs exist.
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -413,6 +424,7 @@ func (x *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters
 	return nil
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *ReportConfiguration) GetScopeId() string {
 	if x != nil {
 		return x.ScopeId
@@ -427,6 +439,7 @@ func (x *ReportConfiguration) GetNotifierConfig() isReportConfiguration_Notifier
 	return nil
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *ReportConfiguration) GetEmailConfig() *EmailNotifierConfiguration {
 	if x != nil {
 		if x, ok := x.NotifierConfig.(*ReportConfiguration_EmailConfig); ok {
@@ -443,6 +456,7 @@ func (x *ReportConfiguration) GetSchedule() *Schedule {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *ReportConfiguration) GetLastRunStatus() *ReportLastRunStatus {
 	if x != nil {
 		return x.LastRunStatus
@@ -450,6 +464,7 @@ func (x *ReportConfiguration) GetLastRunStatus() *ReportLastRunStatus {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *ReportConfiguration) GetLastSuccessfulRunTime() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastSuccessfulRunTime
@@ -500,6 +515,7 @@ type isReportConfiguration_NotifierConfig interface {
 }
 
 type ReportConfiguration_EmailConfig struct {
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 	EmailConfig *EmailNotifierConfiguration `protobuf:"bytes,7,opt,name=email_config,json=emailConfig,proto3,oneof"`
 }
 
@@ -566,8 +582,11 @@ func (x *ReportLastRunStatus) GetErrorMsg() string {
 }
 
 type VulnerabilityReportFilters struct {
-	state           protoimpl.MessageState                 `protogen:"open.v1"`
-	Fixability      VulnerabilityReportFilters_Fixability  `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	state      protoimpl.MessageState                `protogen:"open.v1"`
+	Fixability VulnerabilityReportFilters_Fixability `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	// Deprecated: V1 field. Use the cves_since oneof instead.
+	//
+	// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 	SinceLastReport bool                                   `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport,proto3" json:"since_last_report,omitempty"`
 	Severities      []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,proto3,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
 	ImageTypes      []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
@@ -627,6 +646,7 @@ func (x *VulnerabilityReportFilters) GetFixability() VulnerabilityReportFilters_
 	return VulnerabilityReportFilters_BOTH
 }
 
+// Deprecated: Marked as deprecated in storage/report_configuration.proto.
 func (x *VulnerabilityReportFilters) GetSinceLastReport() bool {
 	if x != nil {
 		return x.SinceLastReport
@@ -988,19 +1008,19 @@ var File_storage_report_configuration_proto protoreflect.FileDescriptor
 
 const file_storage_report_configuration_proto_rawDesc = "" +
 	"\n" +
-	"\"storage/report_configuration.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a+storage/report_notifier_configuration.proto\x1a!storage/resource_collection.proto\x1a\x12storage/role.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xa0\x06\n" +
+	"\"storage/report_configuration.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x11storage/cve.proto\x1a+storage/report_notifier_configuration.proto\x1a!storage/resource_collection.proto\x1a\x12storage/role.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xb0\x06\n" +
 	"\x13ReportConfiguration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12;\n" +
 	"\x04type\x18\x04 \x01(\x0e2'.storage.ReportConfiguration.ReportTypeR\x04type\x12U\n" +
-	"\x13vuln_report_filters\x18\x05 \x01(\v2#.storage.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12\x19\n" +
-	"\bscope_id\x18\x06 \x01(\tR\ascopeId\x12H\n" +
-	"\femail_config\x18\a \x01(\v2#.storage.EmailNotifierConfigurationH\x01R\vemailConfig\x12-\n" +
-	"\bschedule\x18\b \x01(\v2\x11.storage.ScheduleR\bschedule\x12D\n" +
-	"\x0flast_run_status\x18\t \x01(\v2\x1c.storage.ReportLastRunStatusR\rlastRunStatus\x12S\n" +
+	"\x13vuln_report_filters\x18\x05 \x01(\v2#.storage.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12\x1d\n" +
+	"\bscope_id\x18\x06 \x01(\tB\x02\x18\x01R\ascopeId\x12L\n" +
+	"\femail_config\x18\a \x01(\v2#.storage.EmailNotifierConfigurationB\x02\x18\x01H\x01R\vemailConfig\x12-\n" +
+	"\bschedule\x18\b \x01(\v2\x11.storage.ScheduleR\bschedule\x12H\n" +
+	"\x0flast_run_status\x18\t \x01(\v2\x1c.storage.ReportLastRunStatusB\x02\x18\x01R\rlastRunStatus\x12W\n" +
 	"\x18last_successful_run_time\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\x15lastSuccessfulRunTime\x12=\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampB\x02\x18\x01R\x15lastSuccessfulRunTime\x12=\n" +
 	"\x0eresource_scope\x18\v \x01(\v2\x16.storage.ResourceScopeR\rresourceScope\x12<\n" +
 	"\tnotifiers\x18\f \x03(\v2\x1e.storage.NotifierConfigurationR\tnotifiers\x12+\n" +
 	"\acreator\x18\r \x01(\v2\x11.storage.SlimUserR\acreator\x12\x18\n" +
@@ -1016,12 +1036,12 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\terror_msg\x18\x03 \x01(\tR\berrorMsg\"%\n" +
 	"\tRunStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\v\n" +
-	"\aFAILURE\x10\x01\"\xc4\x06\n" +
+	"\aFAILURE\x10\x01\"\xc8\x06\n" +
 	"\x1aVulnerabilityReportFilters\x12N\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2..storage.VulnerabilityReportFilters.FixabilityR\n" +
-	"fixability\x12*\n" +
-	"\x11since_last_report\x18\x02 \x01(\bR\x0fsinceLastReport\x12>\n" +
+	"fixability\x12.\n" +
+	"\x11since_last_report\x18\x02 \x01(\bB\x02\x18\x01R\x0fsinceLastReport\x12>\n" +
 	"\n" +
 	"severities\x18\x03 \x03(\x0e2\x1e.storage.VulnerabilitySeverityR\n" +
 	"severities\x12N\n" +

@@ -25,17 +25,21 @@ message ReportConfiguration {
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
   }
-  string scope_id = 6; // @gotags: search:"Embedded Collection ID"
+  // Deprecated: V1 field. Use resource_scope instead.
+  string scope_id = 6 [deprecated = true]; // @gotags: search:"Embedded Collection ID"
+  // Deprecated: V1 field. Use repeated notifiers instead.
   oneof notifier_config {
-    EmailNotifierConfiguration email_config = 7;
+    EmailNotifierConfiguration email_config = 7 [deprecated = true];
   }
   storage.Schedule schedule = 8;
-  ReportLastRunStatus last_run_status = 9;
-  google.protobuf.Timestamp last_successful_run_time = 10;
+  // Deprecated: V1 field. Use ReportSnapshot.report_status instead.
+  ReportLastRunStatus last_run_status = 9 [deprecated = true];
+  // Deprecated: V1 field. Use ReportSnapshot.report_status.completed_at instead.
+  google.protobuf.Timestamp last_successful_run_time = 10 [deprecated = true];
   ResourceScope resource_scope = 11;
   repeated NotifierConfiguration notifiers = 12;
   SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
-  int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+  int32 version = 14; // V1 configs (version 0 and 1) have been removed by migration m_221_to_m_222. Only version=2 (V2) configs exist.
 }
 
 message ReportLastRunStatus {
@@ -61,7 +65,8 @@ message VulnerabilityReportFilters {
   }
 
   Fixability fixability = 1;
-  bool since_last_report = 2;
+  // Deprecated: V1 field. Use the cves_since oneof instead.
+  bool since_last_report = 2 [deprecated = true];
   repeated VulnerabilitySeverity severities = 3;
   repeated ImageType image_types = 4;
   oneof cves_since {

@@ -1,66 +1,52 @@
 name: e2e-byodb-test
 
 on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
   workflow_dispatch:
-  push:
-    branches:
-    - master
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - labeled
-    - synchronize
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  wait-for-images:
-    if: >-
-      !github.event.pull_request.head.repo.fork && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'e2e-byodb-test')
-      )
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
-      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
-    - name: Wait for images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: |
-          rhacs-eng/main:${{ env.tag }}
-          rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
-          rhacs-eng/collector:${{ env.tag }}
-
   gke-byodb-test:
-    needs: [ wait-for-images ]
+    if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-byodb-test
-      ARTIFACT_DIR: ./junit-reports/
+      ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ORCHESTRATOR_FLAVOR: k8s
       KUBERNETES_PROVIDER: gke
       POSTGRES_VERSION: "17"
       LONGTERM_LICENSE: "unused"
+      BYODB_TEST: "true"
       ROX_RISK_REPROCESSING_INTERVAL: "15s"
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: "30s"
-    timeout-minutes: 120
+      PYTHONUNBUFFERED: "1"
+    timeout-minutes: 150
     steps:
 
     - name: Checkout repo
@@ -68,6 +54,7 @@ jobs:
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -85,9 +72,11 @@ jobs:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      id: create-cluster
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
+        GKE_SPOT: "true"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
@@ -98,22 +87,18 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        source scripts/ci/gke.sh
-        wait_for_cluster
-
     - name: Build roxctl
       run: |
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access
+    - name: Verify kubectl access and wait for cluster to stabilize
+      timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -124,7 +109,6 @@ jobs:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -137,6 +121,8 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
+        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION || 'us-east-2' }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}
@@ -150,15 +136,18 @@ jobs:
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
         GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_NO_ACCESS_KEY_V2 }}
         GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2: ${{ secrets.GOOGLE_ARTIFACT_REGISTRY_SERVICE_ACCOUNT_V2 }}
+        GHCR_REGISTRY_USER: ${{ secrets.GHCR_REGISTRY_USER }}
+        GHCR_REGISTRY_PASSWORD: ${{ secrets.GHCR_REGISTRY_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
+        SLACK_ALT_WEBHOOK: ${{ secrets.SLACK_ALT_WEBHOOK }}
         OCM_OFFLINE_TOKEN: ${{ secrets.OCM_OFFLINE_TOKEN }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_ID: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_ID }}
         CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET: ${{ secrets.CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET }}
         BUILD_ID: ${{ github.run_id }}
-      timeout-minutes: 90
+      timeout-minutes: 110
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
@@ -173,7 +162,6 @@ jobs:
       if: failure() || github.event_name == 'push'
       shell: python
       env:
-        PYTHONUNBUFFERED: "1"
         ROX_USERNAME: admin
       run: |
         import os, sys
@@ -189,8 +177,6 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
-      env:
-        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -198,14 +184,14 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && steps.create-cluster.outcome == 'success'
+      continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"
           exit 0
         fi
-        source scripts/ci/gke.sh
-        teardown_gke_cluster false || echo "Cluster teardown failed"
+        scripts/ci/gke.sh teardown_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2

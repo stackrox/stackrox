@@ -65,7 +65,7 @@ const routeMatcherMapForAuthenticatedRoutes = {
  * @param {string} pageUrl
  * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
  * @param {Record<string, RouteHandler>} [staticResponseMap]
- * @param {WaitOptions} [waitOptions]
+ * @param {Parameters<typeof waitForResponses>[1]} [waitOptions]
  * @returns {Cypress.Chainable<Interception[] | Interception}
  */
 export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
@@ -82,7 +82,7 @@ export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) 
  * @param {string} pageUrl
  * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
  * @param {Record<string, RouteHandler>} [staticResponseMap]
- * @param {WaitOptions} [waitOptions]
+ * @param {Parameters<typeof waitForResponses>[1]} [waitOptions]
  * @returns {Cypress.Chainable<Interception[] | Interception}
  */
 export function visitConsole(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {

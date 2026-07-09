@@ -17,9 +17,8 @@ import (
 
 func TestFeatureFlagSettings(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
-		t.Skip("Temporarily skipping this test on OCP: TODO(ROX-25171)")
+		t.Skip("Skipping on OCP: ci_export uses cci-export which does not set shell variables, causing systemic mismatch between test runner and Central")
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
