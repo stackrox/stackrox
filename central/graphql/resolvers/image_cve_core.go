@@ -112,7 +112,11 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 		return nil, err
 	}
 
-	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
+	readOpts := views.ReadOptions{}
+	if features.VulnMgmtUnifiedCVEView.Enabled() {
+		readOpts.SkipGetImagesBySeverity = true
+	}
+	cves, err := resolver.ImageCVEView.Get(ctx, query, readOpts)
 	if err != nil {
 		return nil, err
 	}
