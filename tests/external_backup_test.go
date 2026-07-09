@@ -395,9 +395,9 @@ func runBackupLifecycleTest(t *testing.T, service v1.ExternalBackupServiceClient
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	created, err := service.PostExternalBackup(ctx, backup)
 	require.NoError(t, err)
-	cancel()
 
 	t.Cleanup(func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
