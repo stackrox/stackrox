@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	stdlog "log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -89,9 +88,11 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		parsedInterval, err := time.ParseDuration(configuredInterval)
 		switch {
 		case err != nil:
-			stdlog.Printf("invalid interval, using default (%v): %v", interval, err)
+			slog.WarnContext(ctx, "invalid interval, using default",
+				"default", interval, "reason", err)
 		case parsedInterval < interval:
-			stdlog.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
+			slog.WarnContext(ctx, "interval is too small, using default",
+				"interval", parsedInterval, "default", interval)
 		default:
 			interval = parsedInterval
 		}
