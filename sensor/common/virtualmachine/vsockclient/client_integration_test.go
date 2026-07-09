@@ -56,7 +56,7 @@ func newProtocolHarness(t testing.TB, opts protocolHarnessOptions) *protocolHarn
 	}
 }
 
-func (h *protocolHarness) getReport(ifNewerThan uint32) (*GetReportResult, error) {
+func (h *protocolHarness) getReport(ifNewerThan, knownEpoch uint32) (*GetReportResult, error) {
 	h.t.Helper()
 
 	clientConn, agentConn := net.Pipe()
@@ -68,7 +68,7 @@ func (h *protocolHarness) getReport(ifNewerThan uint32) (*GetReportResult, error
 		h.handler.HandleConn(agentConn)
 	}()
 
-	result, err := h.client.GetReport(clientConn, ifNewerThan)
+	result, err := h.client.GetReport(clientConn, ifNewerThan, knownEpoch)
 	<-done
 	return result, err
 }
@@ -80,6 +80,7 @@ func TestGetReportIntegration(t *testing.T) {
 		seedFacts    map[string]string
 		agentVersion string
 		ifNewerThan  uint32
+		knownEpoch   uint32
 		// Expectations
 		wantErr     error
 		checkResult func(t *testing.T, result *GetReportResult)
@@ -149,7 +150,7 @@ func TestGetReportIntegration(t *testing.T) {
 				agentVersion: tc.agentVersion,
 			})
 
-			result, err := h.getReport(tc.ifNewerThan)
+			result, err := h.getReport(tc.ifNewerThan, tc.knownEpoch)
 
 			if tc.wantErr != nil {
 				require.Error(t, err)
@@ -162,6 +163,47 @@ func TestGetReportIntegration(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestGetReportIntegration_KnownEpochSingleRoundTrip drives a real Client
+// against a real roxagent Handler to verify the single-round-trip contract:
+// report_generation resets to 1 on every roxagent restart, so a restarted
+// agent can coincidentally match a generation Sensor already has cached.
+// Before known_epoch, Sensor could only detect this from the response epoch
+// and had to make a second, forced request. Now the agent resolves it
+// itself, in the same response, using the epoch Sensor reports knowing.
+func TestGetReportIntegration_KnownEpochSingleRoundTrip(t *testing.T) {
+	h := newProtocolHarness(t, protocolHarnessOptions{
+		seedReport: &v4.IndexReport{HashId: "epoch-test-hash"},
+	})
+
+	// First-ever request for this VM: Sensor has no cached epoch yet.
+	first, err := h.getReport(0, 0)
+	require.NoError(t, err)
+	require.False(t, first.Unchanged)
+	epoch := first.Meta.GetEpoch()
+	require.NotZero(t, epoch, "agent should seed a non-zero epoch")
+
+	t.Run("unchanged in a single round trip when known epoch matches", func(t *testing.T) {
+		result, err := h.getReport(1, epoch)
+		require.NoError(t, err)
+		assert.True(t, result.Unchanged)
+		assert.Nil(t, result.IndexReport)
+	})
+
+	t.Run("full report in a single round trip when known epoch mismatches despite matching generation", func(t *testing.T) {
+		result, err := h.getReport(1, epoch+1)
+		require.NoError(t, err)
+		assert.False(t, result.Unchanged, "epoch mismatch must be resolved in this same response, not a second dial")
+		require.NotNil(t, result.IndexReport)
+		assert.Equal(t, "epoch-test-hash", result.IndexReport.GetHashId())
+	})
+
+	t.Run("unchanged when known epoch is zero (backward compat: falls back to generation-only)", func(t *testing.T) {
+		result, err := h.getReport(1, 0)
+		require.NoError(t, err)
+		assert.True(t, result.Unchanged)
+	})
 }
 
 // --- Compatibility persona helpers ---
@@ -181,7 +223,7 @@ func exchangeWithResponder(t *testing.T, client *Client, ifNewerThan uint32, res
 		responder(agentConn)
 	}()
 
-	result, err := client.GetReport(clientConn, ifNewerThan)
+	result, err := client.GetReport(clientConn, ifNewerThan, 0)
 	<-done
 	return result, err
 }
@@ -190,7 +232,7 @@ func exchangeWithResponder(t *testing.T, client *Client, ifNewerThan uint32, res
 //   - supports only get_report
 //   - does not advertise supported_methods
 //   - does not include facts or report_generated_at
-//   - always returns the full report (ignores if_newer_than_generation)
+//   - always returns the full report (ignores last_known_generation)
 //   - returns UNKNOWN_METHOD for anything else
 func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
@@ -237,7 +279,7 @@ func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn)
 //   - advertises extra supported_methods beyond get_report
 //   - still handles get_report correctly
 //   - includes richer metadata (facts, supported_methods)
-//   - supports if_newer_than_generation (unchanged semantics)
+//   - supports last_known_generation (unchanged semantics)
 //   - returns UNKNOWN_METHOD for methods it doesn't recognize
 func futureAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
@@ -263,7 +305,7 @@ func futureAgentResponder(report *v4.IndexReport, generation uint32) func(net.Co
 
 		switch {
 		case req.GetGetReport() != nil:
-			if req.GetGetReport().GetIfNewerThanGeneration() == generation {
+			if req.GetGetReport().GetLastKnownGeneration() == generation {
 				resp.Result = &pb.VMServiceResponse_GetReport{
 					GetReport: &pb.GetReportResponse{Unchanged: true},
 				}
@@ -312,7 +354,7 @@ func TestGetReportCompatibility(t *testing.T) {
 				assert.Empty(t, result.Meta.GetFacts())
 			},
 		},
-		"old agent should always return full report ignoring if_newer_than": {
+		"old agent should always return full report ignoring last_known_generation": {
 			responder:   oldAgentResponder(report, 1),
 			ifNewerThan: 1,
 			checkResult: func(t *testing.T, result *GetReportResult) {
