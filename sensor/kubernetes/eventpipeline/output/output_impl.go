@@ -53,9 +53,7 @@ func (q *outputQueueImpl) Start() error {
 // Stop the outputQueueImpl component
 func (q *outputQueueImpl) Stop() {
 	if features.SensorInternalPubSub.Enabled() {
-		// No goroutine was started; signal stopped so the Wait below returns immediately.
-		// TODO(ROX-35054): Remove stopper usage once ResponsesC is migrated to PubSub.
-		q.stopper.Flow().ReportStopped()
+		return
 	}
 	if !q.stopper.Client().Stopped().IsDone() {
 		defer func() {
@@ -68,11 +66,6 @@ func (q *outputQueueImpl) Stop() {
 // ProcessResourceEvent is the PubSub callback invoked by the dispatcher when a resolved
 // resource event is published by the resolver (ResolvedResourceEventTopic).
 func (q *outputQueueImpl) ProcessResourceEvent(event pubsub.Event) error {
-	select {
-	case <-q.stopper.Flow().StopRequested():
-		return nil
-	default:
-	}
 	msg, ok := event.(*component.ResourceEvent)
 	if !ok {
 		return errors.New("unable to convert event to *component.ResourceEvent")

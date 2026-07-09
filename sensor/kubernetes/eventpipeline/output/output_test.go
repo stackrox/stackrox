@@ -260,36 +260,24 @@ func Test_ProcessResourceEvent_WrongType(t *testing.T) {
 	assert.ErrorContains(t, err, "unable to convert event to *component.ResourceEvent")
 }
 
-func Test_ProcessResourceEvent_StopRequested(t *testing.T) {
+func Test_PubSubEnabled_StopIsNoOp(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		det := mocks.NewMockDetector(ctrl)
+		det.EXPECT().ReprocessDeployments()
 
-		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
-			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
-			lane.NewBlockingLane(pubsub.CentralBoundLane),
-		}))
-		require.NoError(t, err)
-		t.Cleanup(d.Stop)
+		env := newOutputTestEnv(t, det, true, 10)
+		require.NoError(t, env.queue.Start())
 
-		bridge, err := centralbound.NewBridge(d)
-		require.NoError(t, err)
-		defer bridge.Stop()
+		env.queue.Stop()
 
-		q, err := New(det, 10, d)
-		assert.NoError(t, err)
-		assert.NoError(t, q.Start())
-		q.Stop()
-
-		event := &component.ResourceEvent{
+		env.send(t, &component.ResourceEvent{
 			Context:         context.Background(),
 			ForwardMessages: []*central.SensorEvent{{Id: "x"}},
-		}
-		event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
-		assert.NoError(t, d.Publish(event))
+		})
 		synctest.Wait()
-		shouldNotHaveForwarded(t, bridge.ResponsesC())
+		shouldHaveForwarded(t, env.responsesC())
 	})
 }
 
