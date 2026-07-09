@@ -154,7 +154,7 @@ func TestQueueScheduledReportsSkipsEmptyResourceScope(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(mockReportConfigDS, nil, nil, nil, nil, nil, cronScheduler, nil)
+	s := newSchedulerImpl(mockReportConfigDS, nil, nil, nil, nil, nil, cronScheduler)
 	s.queueScheduledReports()
 
 	// Only the two valid configs should have been scheduled
@@ -173,7 +173,7 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler, nil)
+	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler)
 
 	started := make(chan struct{})
 	done := make(chan struct{})
@@ -221,7 +221,7 @@ func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler, nil)
+	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler)
 
 	started := make(chan struct{})
 	done := make(chan struct{})
@@ -268,7 +268,7 @@ func TestCancelReportRequestReturnsFalseForUnknownReport(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(nil, nil, nil, nil, nil, nil, cronScheduler, nil)
+	s := newSchedulerImpl(nil, nil, nil, nil, nil, nil, cronScheduler)
 
 	cancelled, err := s.CancelReportRequest(context.Background(), "nonexistent-id")
 	assert.NoError(t, err)
@@ -352,7 +352,7 @@ func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, nil, cronScheduler, nil)
+	s := newSchedulerImpl(nil, mockSnapshotStore, nil, nil, nil, nil, cronScheduler)
 
 	req := &reportGen.ReportRequest{
 		ReportSnapshot: &storage.ReportSnapshot{
