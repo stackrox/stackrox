@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -153,6 +155,8 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForA
 		pullChecker: &fakePullChecker{scraped: map[string]bool{"100": true}},
 	}
 
+	suppressedBefore := testutil.ToFloat64(metrics.IndexReportsSuppressed)
+
 	// CID 100 has both push and pull active simultaneously. When both modes
 	// coexist, pull takes precedence and the push report must be suppressed
 	// to avoid sending duplicate data to Central.
@@ -163,6 +167,8 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForA
 	s.Require().NoError(err)
 	s.Assert().True(resp.GetSuccess())
 	s.Assert().False(sendCalled, "Send must NOT be called when pull is active for this VM")
+	s.Assert().Equal(suppressedBefore+1, testutil.ToFloat64(metrics.IndexReportsSuppressed),
+		"suppressing a push report must increment IndexReportsSuppressed")
 
 	// CID 200 uses push only (not being pulled). Its push report must be
 	// forwarded to Central as usual.
@@ -172,6 +178,8 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForA
 	s.Require().NoError(err)
 	s.Assert().True(resp.GetSuccess())
 	s.Assert().True(sendCalled, "Send MUST be called when push is the only mode for this VM")
+	s.Assert().Equal(suppressedBefore+1, testutil.ToFloat64(metrics.IndexReportsSuppressed),
+		"a forwarded (non-suppressed) push report must NOT increment IndexReportsSuppressed")
 }
 
 type fakePullChecker struct {

@@ -62,6 +62,7 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 
 	if s.pullChecker != nil && s.pullChecker.IsActivelyScraped(ir.GetVsockCid()) {
 		log.Debugf("Dropping push-mode report for vsock_cid=%q (VM is actively scraped via pull)", ir.GetVsockCid())
+		metrics.IndexReportsSuppressed.Inc()
 		return &sensor.UpsertVirtualMachineIndexReportResponse{Success: true}, nil
 	}
 
