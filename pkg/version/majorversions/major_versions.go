@@ -57,9 +57,13 @@ type parsedBump struct {
 var parsedBumps []parsedBump
 
 func init() {
-	bumps, err := parseBumpsData(rawData)
+	parsedBumps = mustParseBumpsData(rawData)
+}
+
+func mustParseBumpsData(data []byte) []parsedBump {
+	bumps, err := parseBumpsData(data)
 	utils.CrashOnError(err)
-	parsedBumps = bumps
+	return bumps
 }
 
 func parseBumpsData(data []byte) ([]parsedBump, error) {

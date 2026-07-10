@@ -7,6 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMustParseBumpsDataPanicsOnInvalidInput(t *testing.T) {
+	assert.Panics(t, func() {
+		mustParseBumpsData([]byte(`[not valid yaml`))
+	})
+}
+
 func TestParseBumpsData(t *testing.T) {
 	tests := map[string]struct {
 		input   string
@@ -61,8 +67,7 @@ func TestParseBumpsData(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := parseBumpsData([]byte(tt.input))
 			if tt.wantErr != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
+				assert.ErrorContains(t, err, tt.wantErr)
 				return
 			}
 			require.NoError(t, err)
@@ -106,8 +111,7 @@ func TestGetPreviousYStream(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, err := GetPreviousYStream(tt.input)
 			if tt.wantErr != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErr)
+				assert.ErrorContains(t, err, tt.wantErr)
 				return
 			}
 			require.NoError(t, err)
