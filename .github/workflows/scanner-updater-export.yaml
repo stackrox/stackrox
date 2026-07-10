@@ -1,0 +1,200 @@
+name: Scanner updater export
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        description: "Updater name (e.g. alpine, nvd, osv)"
+        required: true
+        type: string
+      ref:
+        description: "Git reference to build the updater from"
+        required: true
+        type: string
+      object:
+        description: "Full GCS object path (gs://bucket/prefix/stream/sources/updater/data.json.zst)"
+        required: true
+        type: string
+      manual_url:
+        description: "URL to manual vulnerability data YAML"
+        required: true
+        type: string
+      skip_freshness_check:
+        description: "When true, bypass the freshness recheck (used for PR validation)"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      GCP_SERVICE_ACCOUNT_STACKROX_CI:
+        required: true
+      GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER:
+        required: true
+      SLACK_ONCALL_SCANNER_WEBHOOK:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  recheck:
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.check.outputs.result }}
+    concurrency:
+      group: scanner-updater-export-${{ inputs.object }}
+      cancel-in-progress: false
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Authenticate with GCS
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Recheck freshness
+      id: check
+      env:
+        GCS_OBJECT: ${{ inputs.object }}
+        UPDATER_SOURCE: ${{ inputs.source }}
+        SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+        SKIP_FRESHNESS_CHECK: ${{ inputs.skip_freshness_check }}
+      run: |
+        if [[ "$SKIP_FRESHNESS_CHECK" == "true" ]]; then
+            echo "result=run" >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+        # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
+        if ./.github/workflows/scripts/scanner-updater-check-freshness.sh; then
+            echo "result=skip" >> "$GITHUB_OUTPUT"
+        elif [[ $? -eq 1 ]]; then
+            echo "result=run" >> "$GITHUB_OUTPUT"
+        else
+            echo "result=error" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Notify on recheck error
+      if: github.event_name != 'pull_request' && steps.check.outputs.result == 'error'
+      env:
+        OBJECT: ${{ inputs.object }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability updater freshness check failed for *${OBJECT}*: <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
+
+    - name: Fail on recheck error
+      if: steps.check.outputs.result == 'error'
+      run: exit 1
+
+  update:
+    needs: recheck
+    if: needs.recheck.outputs.result == 'run'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: scanner-updater-export-${{ inputs.object }}
+      cancel-in-progress: false
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1
+      volumes:
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    env:
+      UPDATER_SOURCE: ${{ inputs.source }}
+      ROX_GIT_REF: ${{ inputs.ref }}
+      GCS_OBJECT: ${{ inputs.object }}
+      STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
+    steps:
+    - name: Checkout repository (master for local actions)
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        free-disk-space: 50
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout updater ref
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.ref }}
+        persist-credentials: false
+
+    - name: Download NVD
+      if: inputs.source == 'nvd'
+      run: |
+        set -eu
+        url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+        curl --fail --silent --show-error \
+          --retry 3 --retry-all-errors --retry-delay 5 \
+          --connect-timeout 10 --max-time 300 \
+          -o nvd.zip "$url"
+        echo "STACKROX_NVD_ZIP_PATH=$PWD/nvd.zip" >> "$GITHUB_ENV"
+
+    - name: Build updater
+      run: |
+        echo "Building updater for $UPDATER_SOURCE from ref $ROX_GIT_REF..."
+        make tag
+        make -C scanner bin/updater
+
+    - name: Run updater
+      env:
+        MANUAL_URL: ${{ inputs.manual_url }}
+      run: |
+        set -eu
+        export STACKROX_SCANNER_V4_UPDATER_SOURCES="$UPDATER_SOURCE"
+        mkdir -p bundles
+        scanner/bin/updater export --manual-url "$MANUAL_URL" bundles
+
+    - name: Authenticate with GCS for upload
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Upload to GCS
+      run: |
+        set -eu
+        src="bundles/${UPDATER_SOURCE}.json.zst"
+        if [[ ! -f "$src" ]]; then
+            echo >&2 "ERROR: expected output file not found: $src"
+            exit 1
+        fi
+
+        digest="sha256:$(sha256sum "$src" | cut -d' ' -f1)"
+        completed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+        gcloud storage cp "$src" "$GCS_OBJECT" \
+          --custom-metadata="git-ref=$ROX_GIT_REF,content-digest=$digest,refresh-completed-at=$completed_at"
+
+        echo "Uploaded $src -> $GCS_OBJECT (digest=$digest)"
+
+    - name: Notify on failure
+      if: failure() && github.event_name != 'pull_request'
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability updater *${UPDATER_SOURCE}* failed: <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
+
+    - name: Checkout repository (cleanup)
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      if: always()
+      with:
+        fetch-depth: 0
+        persist-credentials: false
