@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -32,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -445,15 +447,25 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
-	// Process each vulnerability bundle in the .zip archive.
+	// Process vulnerability bundles concurrently. Each bundle operates on independent
+	// updater namespaces and holds its own PostgreSQL advisory lock, so parallel
+	// execution is safe.
+	g, gCtx := errgroup.WithContext(ctx)
+	g.SetLimit(runtime.GOMAXPROCS(0))
 	for _, bundleF := range bundles {
-		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
-		slog.InfoContext(bundleCtx, "starting bundle update")
-		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
-			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
-		}
-		slog.InfoContext(bundleCtx, "completed bundle update")
+		g.Go(func() error {
+			bundleCtx := log.With(gCtx, "bundle", bundleF.Name)
+			slog.InfoContext(bundleCtx, "starting bundle update")
+			if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
+				slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
+				return fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+			}
+			slog.InfoContext(bundleCtx, "completed bundle update")
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return false, err
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).

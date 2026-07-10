@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/klauspost/compress/zstd"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -30,6 +32,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/errgroup"
 )
 
 var _ updates.LockSource = (*testLocker)(nil)
@@ -759,6 +762,132 @@ func TestUpdater_Import(t *testing.T) {
 		assert.Error(t, err, "iterating on vulnerabilities: fake error")
 		if !cmp.Equal(got, want) {
 			t.Error(cmp.Diff(got, want))
+		}
+	})
+}
+
+func createZstZip(tb testing.TB, bundleNames []string) []byte {
+	tb.Helper()
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, name := range bundleNames {
+		w, err := zw.Create(name)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		enc, err := zstd.NewWriter(w)
+		if err != nil {
+			tb.Fatal(err)
+		}
+		enc.Close()
+	}
+	if err := zw.Close(); err != nil {
+		tb.Fatal(err)
+	}
+	return buf.Bytes()
+}
+
+func BenchmarkMultiBundleUpdate(b *testing.B) {
+	bundleNames := []string{
+		"alpine.json.zst", "debian.json.zst", "epss.json.zst",
+		"manual.json.zst", "nvd.json.zst", "osv.json.zst",
+		"rhel-vex.json.zst", "stackrox-rhel-csaf.json.zst", "ubuntu.json.zst",
+	}
+	zipData := createZstZip(b, bundleNames)
+
+	now, _ := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
+	prevTime := now.Add(-time.Minute)
+
+	const importDelay = 50 * time.Millisecond
+
+	setup := func(b *testing.B) *Updater {
+		b.Helper()
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeContent(w, r, "test-file", now, bytes.NewReader(zipData))
+		}))
+		b.Cleanup(srv.Close)
+
+		ctrl := gomock.NewController(b)
+		store := mocks.NewMockMatcherStore(ctrl)
+		metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+		metadataStore.EXPECT().
+			GetLastVulnerabilityUpdate(gomock.Any()).
+			Return(prevTime, nil).AnyTimes()
+		metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(prevTime, nil).AnyTimes()
+		metadataStore.EXPECT().
+			SetLastVulnerabilityUpdate(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(nil).AnyTimes()
+		metadataStore.EXPECT().
+			GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(nil).AnyTimes()
+		store.EXPECT().
+			Distributions(gomock.Any()).
+			Return(nil, nil).AnyTimes()
+
+		return &Updater{
+			locker:        &testLocker{locker: updates.NewLocalLockSource()},
+			store:         store,
+			metadataStore: metadataStore,
+			client:        srv.Client(),
+			urls:          []string{srv.URL},
+			root:          b.TempDir(),
+			skipGC:        true,
+			importFunc: func(_ context.Context, _ io.Reader) error {
+				time.Sleep(importDelay)
+				return nil
+			},
+			retryDelay:  1 * time.Second,
+			retryMax:    1,
+			distManager: newDistManager(store),
+		}
+	}
+
+	b.Run("sequential", func(b *testing.B) {
+		u := setup(b)
+		b.ResetTimer()
+		for range b.N {
+			ctx := context.Background()
+			zipFile, zipTime, err := u.fetch(ctx, prevTime)
+			if err != nil {
+				b.Fatal(err)
+			}
+			zipInfo, _ := zipFile.Stat()
+			zipReader, _ := zip.NewReader(zipFile, zipInfo.Size())
+			for _, f := range zipReader.File {
+				if err := u.updateBundle(ctx, f, zipTime, prevTime); err != nil {
+					b.Fatal(err)
+				}
+			}
+			zipFile.Close()
+			os.Remove(zipFile.Name())
+		}
+	})
+
+	b.Run("parallel", func(b *testing.B) {
+		u := setup(b)
+		b.ResetTimer()
+		for range b.N {
+			ctx := context.Background()
+			zipFile, zipTime, err := u.fetch(ctx, prevTime)
+			if err != nil {
+				b.Fatal(err)
+			}
+			zipInfo, _ := zipFile.Stat()
+			zipReader, _ := zip.NewReader(zipFile, zipInfo.Size())
+			g, gCtx := errgroup.WithContext(ctx)
+			for _, f := range zipReader.File {
+				g.Go(func() error {
+					return u.updateBundle(gCtx, f, zipTime, prevTime)
+				})
+			}
+			if err := g.Wait(); err != nil {
+				b.Fatal(err)
+			}
+			zipFile.Close()
+			os.Remove(zipFile.Name())
 		}
 	})
 }
