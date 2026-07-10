@@ -1416,6 +1416,7 @@ jobs:
           --pr-number "${{ github.event.pull_request.number }}"
           --infra-failure "${{ steps.flatten.outputs.infra-failure }}"
           --exit-code "${{ steps.verify.outputs.exit-code }}"
+          --missing-images "${{ steps.flatten.outputs.missing-images }}"
 
       - name: Fail if CVE still present
         if: steps.verify.outputs.exit-code == '1'
