@@ -1,6 +1,8 @@
 package updater
 
 import (
+	"maps"
+	"slices"
 	"testing"
 
 	"github.com/quay/claircore/libvuln/updates"
@@ -9,62 +11,44 @@ import (
 )
 
 func TestFilterSources(t *testing.T) {
-	allSources := map[string][]updates.ManagerOption{
-		"alpine":             nil,
-		"aws":                nil,
-		"debian":             nil,
-		"epss":               nil,
-		"manual":             nil,
-		"nvd":                nil,
-		"oracle":             nil,
-		"osv":                nil,
-		"photon":             nil,
-		"rhel-vex":           nil,
-		"stackrox-rhel-csaf": nil,
-		"suse":               nil,
-		"ubuntu":             nil,
+	bundles := map[string][]updates.ManagerOption{
+		"alpha":   nil,
+		"bravo":   nil,
+		"charlie": nil,
 	}
 
 	tests := map[string]struct {
-		filter    string
+		selected  []string
 		wantKeys  []string
 		wantError string
 	}{
 		"single source": {
-			filter:   "alpine",
-			wantKeys: []string{"alpine"},
+			selected: []string{"alpha"},
+			wantKeys: []string{"alpha"},
 		},
 		"multiple sources": {
-			filter:   "alpine,nvd,osv",
-			wantKeys: []string{"alpine", "nvd", "osv"},
-		},
-		"whitespace trimming": {
-			filter:   " alpine , nvd ",
-			wantKeys: []string{"alpine", "nvd"},
+			selected: []string{"alpha", "charlie"},
+			wantKeys: []string{"alpha", "charlie"},
 		},
 		"unknown source": {
-			filter:    "alpine,bogus",
+			selected:  []string{"alpha", "bogus"},
 			wantError: `unknown source: "bogus"`,
 		},
 		"all sources": {
-			filter:   "alpine,aws,debian,epss,manual,nvd,oracle,osv,photon,rhel-vex,stackrox-rhel-csaf,suse,ubuntu",
-			wantKeys: []string{"alpine", "aws", "debian", "epss", "manual", "nvd", "oracle", "osv", "photon", "rhel-vex", "stackrox-rhel-csaf", "suse", "ubuntu"},
+			selected: []string{"alpha", "bravo", "charlie"},
+			wantKeys: []string{"alpha", "bravo", "charlie"},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			result, err := filterSources(allSources, tc.filter)
+			result, err := filterSources(bundles, tc.selected)
 			if tc.wantError != "" {
 				require.ErrorContains(t, err, tc.wantError)
 				return
 			}
 			require.NoError(t, err)
-			var gotKeys []string
-			for k := range result {
-				gotKeys = append(gotKeys, k)
-			}
-			assert.ElementsMatch(t, tc.wantKeys, gotKeys)
+			assert.ElementsMatch(t, tc.wantKeys, slices.Collect(maps.Keys(result)))
 		})
 	}
 }

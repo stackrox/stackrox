@@ -152,7 +152,7 @@ func New(ctx context.Context, opts Opts) (*Updater, error) {
 	}
 	u.iterateFunc = jsonblob.Iterate
 
-	u.vulnBundleAllowlist = set.NewFrozenSet(normalizeAllowlist(opts.VulnBundleAllowlist)...)
+	u.vulnBundleAllowlist = set.NewFrozenSet(opts.VulnBundleAllowlist...)
 
 	u.tryRemoveExiting()
 
@@ -628,19 +628,6 @@ func isRetryableDialError(err error) bool {
 		return false
 	}
 	return errors.Is(err, syscall.ECONNREFUSED) || opErr.Timeout()
-}
-
-// normalizeAllowlist trims whitespace from each entry and drops empty strings.
-// This handles cases the allowed names are configured with surrounding spaces,
-// e.g. from a comma-separated environment variable or YAML value.
-func normalizeAllowlist(entries []string) []string {
-	result := make([]string, 0, len(entries))
-	for _, s := range entries {
-		if t := strings.TrimSpace(s); t != "" {
-			result = append(result, t)
-		}
-	}
-	return result
 }
 
 // isBundleAllowed reports whether the named bundle file should be imported.

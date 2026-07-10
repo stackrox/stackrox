@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/klauspost/compress/zstd"
@@ -50,6 +49,9 @@ var (
 
 type ExportOptions struct {
 	ManualVulnURL string
+	// Sources restricts which updaters run. When nil or empty, all updaters run.
+	// Values must be pre-normalized (trimmed, no empty entries).
+	Sources []string
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
@@ -82,12 +84,12 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		bundles[uSet] = managerOpts
 	}
 
-	if filter := os.Getenv("STACKROX_UPDATER_SOURCES"); filter != "" {
-		filtered, err := filterSources(bundles, filter)
+	if len(opts.Sources) > 0 {
+		filtered, err := filterSources(bundles, opts.Sources)
 		if err != nil {
-			return err
+			return fmt.Errorf("filtering sources: %w", err)
 		}
-		stdlog.Printf("source filter active: running %d/%d sources: %v", len(filtered), len(bundles), strings.Split(filter, ","))
+		slog.InfoContext(ctx, "source filter active", "running", len(filtered), "total", len(bundles), "sources", opts.Sources)
 		bundles = filtered
 	}
 
@@ -237,11 +239,9 @@ func redhatCSAFOpts() []updates.ManagerOption {
 	}
 }
 
-func filterSources(bundles map[string][]updates.ManagerOption, filter string) (map[string][]updates.ManagerOption, error) {
-	selected := strings.Split(filter, ",")
+func filterSources(bundles map[string][]updates.ManagerOption, selected []string) (map[string][]updates.ManagerOption, error) {
 	filtered := make(map[string][]updates.ManagerOption, len(selected))
 	for _, s := range selected {
-		s = strings.TrimSpace(s)
 		if o, ok := bundles[s]; ok {
 			filtered[s] = o
 		} else {
