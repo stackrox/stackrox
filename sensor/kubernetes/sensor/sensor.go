@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -350,7 +349,7 @@ func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.In
 		VsockCid: cidStr,
 		IndexV4:  report,
 	}); err != nil {
-		return fmt.Errorf("sending index report: %w", err)
+		return errors.Wrap(err, "sending index report")
 	}
 	return nil
 }
