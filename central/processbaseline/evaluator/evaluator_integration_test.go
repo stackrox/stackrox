@@ -928,6 +928,17 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestEmptyExecPathAndU
 	}
 	suite.addLockedBaseline(baseline)
 
+	unlockedBaseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			DeploymentId:  deployment.GetId(),
+			ContainerName: unlockedContainer,
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
+		},
+		Elements: []*storage.BaselineElement{},
+	}
+	suite.addLockedBaseline(unlockedBaseline)
+
 	makeIndicator := func(container, execPath string) *storage.ProcessIndicator {
 		return &storage.ProcessIndicator{
 			Id:            uuid.NewV4().String(),
