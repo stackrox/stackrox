@@ -235,6 +235,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForDeployments(deploymentType any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForDeployments", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForDeployments), deploymentType)
 }
 
+// ForInferenceServices mocks base method.
+func (m *MockDispatcherRegistry) ForInferenceServices() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForInferenceServices")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForInferenceServices indicates an expected call of ForInferenceServices.
+func (mr *MockDispatcherRegistryMockRecorder) ForInferenceServices() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForInferenceServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForInferenceServices))
+}
+
 // ForJobs mocks base method.
 func (m *MockDispatcherRegistry) ForJobs() resources.Dispatcher {
 	m.ctrl.T.Helper()

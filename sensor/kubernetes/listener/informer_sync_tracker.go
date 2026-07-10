@@ -48,6 +48,7 @@ const (
 	informerStatefulSets                  = "StatefulSets"
 	informerVirtualMachineInstances       = "VirtualMachineInstances"
 	informerVirtualMachines               = "VirtualMachines"
+	informerInferenceServices             = "InferenceServices"
 )
 
 // noRegistrationsTimeout is the duration to wait for any informer to be registered before logging a warning.

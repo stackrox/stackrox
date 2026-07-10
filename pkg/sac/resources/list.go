@@ -69,6 +69,7 @@ var (
 
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
+	AIWorkload                       = newResourceMetadata("AIWorkload", permissions.NamespaceScope)
 	VirtualMachine                   = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)
 	VulnerabilityManagementApprovals = newResourceMetadata("VulnerabilityManagementApprovals",
 		permissions.GlobalScope)
