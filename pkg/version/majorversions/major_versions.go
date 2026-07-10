@@ -14,6 +14,32 @@ import (
 //go:embed major_version_bumps.yaml
 var rawData []byte
 
+// XYVersion represents a major.minor version number.
+type XYVersion struct {
+	X int
+	Y int
+}
+
+func (v XYVersion) String() string {
+	return fmt.Sprintf("%d.%d", v.X, v.Y)
+}
+
+func parseXYVersion(s string) (XYVersion, error) {
+	parts := strings.SplitN(s, ".", 2)
+	if len(parts) != 2 {
+		return XYVersion{}, fmt.Errorf("expected major.minor format, got %q", s)
+	}
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return XYVersion{}, fmt.Errorf("invalid major %q: %w", parts[0], err)
+	}
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return XYVersion{}, fmt.Errorf("invalid minor %q: %w", parts[1], err)
+	}
+	return XYVersion{X: major, Y: minor}, nil
+}
+
 type bump struct {
 	From string `yaml:"from"`
 	To   string `yaml:"to"`
@@ -24,10 +50,8 @@ type bumpsFile struct {
 }
 
 type parsedBump struct {
-	FromMajor int
-	FromMinor int
-	ToMajor   int
-	ToMinor   int
+	From XYVersion
+	To   XYVersion
 }
 
 var parsedBumps []parsedBump
@@ -47,66 +71,40 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	var seenFrom set.IntSet
 	var result []parsedBump
 	for _, b := range f.Bumps {
-		pb, err := parseBump(b)
+		from, err := parseXYVersion(b.From)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid 'from' value %q: %w", b.From, err)
 		}
-		if !seenTo.Add(pb.ToMajor) {
-			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", pb.ToMajor)
+		to, err := parseXYVersion(b.To)
+		if err != nil {
+			return nil, fmt.Errorf("invalid 'to' value %q: %w", b.To, err)
 		}
-		if !seenFrom.Add(pb.FromMajor) {
-			return nil, fmt.Errorf("duplicate 'from' major %d in major_version_bumps.yaml", pb.FromMajor)
+		if to.Y != 0 {
+			return nil, fmt.Errorf("'to' value %q must have minor version 0", b.To)
 		}
-		result = append(result, pb)
+		if !seenTo.Add(to.X) {
+			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", to.X)
+		}
+		if !seenFrom.Add(from.X) {
+			return nil, fmt.Errorf("duplicate 'from' major %d in major_version_bumps.yaml", from.X)
+		}
+		result = append(result, parsedBump{From: from, To: to})
 	}
 	return result, nil
-}
-
-func parseBump(b bump) (parsedBump, error) {
-	fromMajor, fromMinor, err := parseMajorMinor(b.From)
-	if err != nil {
-		return parsedBump{}, fmt.Errorf("invalid 'from' value %q: %w", b.From, err)
-	}
-	toMajor, toMinor, err := parseMajorMinor(b.To)
-	if err != nil {
-		return parsedBump{}, fmt.Errorf("invalid 'to' value %q: %w", b.To, err)
-	}
-	return parsedBump{
-		FromMajor: fromMajor,
-		FromMinor: fromMinor,
-		ToMajor:   toMajor,
-		ToMinor:   toMinor,
-	}, nil
-}
-
-func parseMajorMinor(s string) (int, int, error) {
-	parts := strings.SplitN(s, ".", 2)
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("expected major.minor format, got %q", s)
-	}
-	major, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid major %q: %w", parts[0], err)
-	}
-	minor, err := strconv.Atoi(parts[1])
-	if err != nil {
-		return 0, 0, fmt.Errorf("invalid minor %q: %w", parts[1], err)
-	}
-	return major, minor, nil
 }
 
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.
 // If minor > 0, the previous Y-stream is simply major.(minor-1).
 // If minor == 0, it looks up the major version bump history to find what came before.
 // By definition, major version bumps always target X.0 (never X.N with N>0).
-func GetPreviousYStream(major, minor int) (prevMajor, prevMinor int, err error) {
-	if minor > 0 {
-		return major, minor - 1, nil
+func GetPreviousYStream(v XYVersion) (XYVersion, error) {
+	if v.Y > 0 {
+		return XYVersion{X: v.X, Y: v.Y - 1}, nil
 	}
 	for _, b := range parsedBumps {
-		if b.ToMajor == major && b.ToMinor == 0 {
-			return b.FromMajor, b.FromMinor, nil
+		if b.To.X == v.X {
+			return b.From, nil
 		}
 	}
-	return 0, 0, fmt.Errorf("don't know the previous Y-Stream for %d.%d", major, minor)
+	return XYVersion{}, fmt.Errorf("don't know the previous Y-Stream for %s", v)
 }

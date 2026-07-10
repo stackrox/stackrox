@@ -89,11 +89,11 @@ func (v XyzVersion) IsEqualOrBefore(other XyzVersion) bool {
 // Y-Stream versions have patch number = 0 (e.g., 3.73.0, 3.74.0, 4.0.0)
 // Major version bump history is read from pkg/version/majorversions/major_version_bumps.yaml.
 func GetPreviousYStream(v XyzVersion) (*XyzVersion, error) {
-	prevMajor, prevMinor, err := majorversions.GetPreviousYStream(v.X, v.Y)
+	prev, err := majorversions.GetPreviousYStream(majorversions.XYVersion{X: v.X, Y: v.Y})
 	if err != nil {
 		return nil, err
 	}
-	result := XyzVersion{X: prevMajor, Y: prevMinor, Z: 0}
+	result := XyzVersion{X: prev.X, Y: prev.Y, Z: 0}
 	return &result, nil
 }
 
