@@ -4,7 +4,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -12,8 +11,6 @@ import (
 )
 
 const defaultBufferSize = 100
-
-var log = logging.LoggerForModule()
 
 // Bridge is a SensorComponent that subscribes to the CentralBound PubSub
 // topic and forwards received events to a ResponsesC channel. This allows
