@@ -17,6 +17,8 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 source "$ROOT/tests/e2e/lib.sh"
 
 test_e2e() {
+    local output_dir="${1:-/tmp/e2e-test-logs}"
+
     info "Starting e2e tests"
 
     require_environment "KUBECONFIG"
@@ -40,6 +42,10 @@ test_e2e() {
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
     deploy_stackrox
+
+    # Background streamers are not explicitly stopped. They die when the CI
+    # runner terminates, same as the port-forward processes in setup_proxy_tests.
+    start_continuous_log_streaming "$output_dir"
 
     rm -f FAIL
 
@@ -74,7 +80,7 @@ test_e2e() {
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
+    collect_and_check_stackrox_logs "$output_dir" "initial_tests"
 
     # Give some time for previous tests to finish up
     wait_for_api

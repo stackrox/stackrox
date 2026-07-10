@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var deploymentLoaderType = reflect.TypeOf(storage.Deployment{})
+var deploymentLoaderType = reflect.TypeFor[storage.Deployment]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), func() interface{} {
 		return NewDeploymentLoader(datastore.Singleton(), deploymentsView.Singleton())
 	})
 }

@@ -1,20 +1,17 @@
 package admissioncontroller
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"slices"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 func isEnforcedDeployTimePolicy(policy *storage.Policy) bool {
 	if policy.GetDisabled() {
 		return false
 	}
 
-	isDeployLifecycle := false
-	for _, stage := range policy.GetLifecycleStages() {
-		if stage == storage.LifecycleStage_DEPLOY {
-			isDeployLifecycle = true
-			break
-		}
-	}
-	if !isDeployLifecycle {
+	if !slices.Contains(policy.GetLifecycleStages(), storage.LifecycleStage_DEPLOY) {
 		return false
 	}
 

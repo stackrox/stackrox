@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	golog "log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,8 +11,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/quay/claircore/toolkit/log"
-	"github.com/quay/zlog/v2"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
@@ -32,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/indexer"
+	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/matcher"
 	"github.com/stackrox/rox/scanner/services"
@@ -54,7 +52,7 @@ func init() {
 	// Set the http.DefaultTransport's Proxy function to one which reads from the proxy configuration file.
 	// Note: http.DefaultClient uses http.DefaultTransport.
 	if !proxy.UseWithDefaultTransport() {
-		golog.Println("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+		slog.Warn("failed to use proxy transport with default HTTP transport; some proxy features may not work")
 	}
 
 	memlimit.SetMemoryLimit()
@@ -71,7 +69,8 @@ func main() {
 	}
 	cfg, err := config.Read(*configPath)
 	if err != nil {
-		golog.Fatalf("failed to load configuration %q: %v", *configPath, err)
+		slog.Error("failed to load configuration", "path", *configPath, "reason", err)
+		os.Exit(1)
 	}
 
 	// Create cancellable context.
@@ -79,9 +78,10 @@ func main() {
 	defer cancel()
 
 	// Initialize logging and setup context.
-	err = initializeLogging(cfg.LogLevel)
+	err = logging.Initialize(cfg.LogLevel)
 	if err != nil {
-		golog.Fatalf("failed to initialize logging: %v", err)
+		slog.Error("failed to initialize logging", "reason", err)
+		os.Exit(1)
 	}
 
 	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
@@ -135,21 +135,6 @@ func main() {
 	signal.Notify(sigC, unix.SIGINT, unix.SIGTERM)
 	sig := <-sigC
 	slog.InfoContext(ctx, "signal received", "signal", sig.String())
-}
-
-func initializeLogging(logLevel slog.Level) error {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-	h := zlog.NewHandler(os.Stdout, &zlog.Options{
-		Level:      logLevel,
-		ContextKey: log.AttrsKey,
-		LevelKey:   log.LevelKey,
-	})
-	logger := slog.New(h).With("host", hostname)
-	slog.SetDefault(logger)
-	return nil
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.

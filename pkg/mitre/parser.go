@@ -3,6 +3,7 @@ package mitre
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -229,12 +230,7 @@ func generateBundle(
 }
 
 func appliesToDomain(mitreObj mitreObject, domain Domain) bool {
-	for _, d := range mitreObj.XMitreDomains {
-		if d == domain {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(mitreObj.XMitreDomains, domain)
 }
 
 func appliesToAnyPlatform(mitreObj mitreObject, platforms map[Platform]struct{}) ([]Platform, bool) {

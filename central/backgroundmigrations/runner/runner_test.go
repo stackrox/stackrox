@@ -81,8 +81,31 @@ func (s *RunnerTestSuite) SetupSuite() {
 	schema.ApplyAllSchemas(s.ctx, gormDB)
 }
 
+// waitForAdvisoryUnlock ensures no pool connection holds the background migration
+// advisory lock. Tests that use Start()/Stop() may leave the lock briefly held
+// due to connection pool timing, causing the next test to fail with
+// "advisory lock held by another instance".
+func (s *RunnerTestSuite) waitForAdvisoryUnlock() {
+	require.EventuallyWithT(s.T(), func(t *assert.CollectT) {
+		dbConn, err := s.db.Acquire(s.ctx)
+		require.NoError(t, err)
+		require.NotNil(t, dbConn)
+
+		defer dbConn.Release()
+		var acquired bool
+		err = dbConn.QueryRow(s.ctx, "SELECT pg_try_advisory_lock($1)", bgMigrationAdvisoryLockID).Scan(&acquired)
+		require.NoError(t, err)
+		require.True(t, acquired)
+
+		_, err = dbConn.Exec(s.ctx, "SELECT pg_advisory_unlock($1)", bgMigrationAdvisoryLockID)
+		assert.NoError(t, err)
+	}, time.Second, 50*time.Millisecond, "advisory lock still held")
+}
+
 func (s *RunnerTestSuite) SetupTest() {
 	migrations.ResetRegistryForTesting(s.T())
+
+	s.waitForAdvisoryUnlock()
 
 	_, err := s.db.Exec(s.ctx,
 		"DELETE FROM "+schema.BackgroundMigrationVersionsTableName)

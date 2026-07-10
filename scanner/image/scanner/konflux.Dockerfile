@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:75c5b9c2c910487007d4de42e86aae41d49751e6c7bcae7777c8bf630c31a3d8 AS builder
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -16,9 +16,9 @@ WORKDIR /src
 
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:fdf68a4f5f88cca14ae906bbec6e0fbbffe92b5b91e73e0862c961234d63b986 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:35de56a9413112f1474e392ebc35e0cf6f0fb484c8e8877bbae59b513694b41f AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:37a15896602263cb998cd3c21919efb433adf9dbd3a7c961da5d8e3083a0db82 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:8bf0e8f20737e9c8a68c8a498299e9504ab397b1b1f2837acb2fef12ec698f0e AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 
