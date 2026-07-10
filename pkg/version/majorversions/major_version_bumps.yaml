@@ -3,8 +3,6 @@
 # release of the new major ("to"). The "to" minor is always 0.
 # Used to compute previous Y-stream versions across major boundaries.
 bumps:
-  - from: "0.0"  # 0.0.0 was never released; used for downstream trunk builds
-    to: "1.0"
   - from: "3.74"
     to: "4.0"
   - from: "4.11"

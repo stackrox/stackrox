@@ -92,10 +92,6 @@ func TestGetPreviousYStream(t *testing.T) {
 			major: 5, minor: 0,
 			wantMajor: 4, wantMinor: 11,
 		},
-		"trunk builds 1.0 -> 0.0": {
-			major: 1, minor: 0,
-			wantMajor: 0, wantMinor: 0,
-		},
 		"unknown major": {
 			major: 99, minor: 0,
 			wantErr: "don't know the previous Y-Stream for 99.0",
