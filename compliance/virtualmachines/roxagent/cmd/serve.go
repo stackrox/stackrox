@@ -199,7 +199,11 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 		Repo2CPEMappingFile: mappingFilePath,
 		PackageDBFilter:     "",
 	}
-	return index.NewNodeIndexer(cfg).IndexNode(ctx)
+	report, err := index.NewNodeIndexer(cfg).IndexNode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("indexing node: %w", err)
+	}
+	return report, nil
 }
 
 func discoverFacts(hostPath string) map[string]string {
