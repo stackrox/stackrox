@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v3"
 )
 
@@ -22,6 +23,10 @@ type XYVersion struct {
 
 func (v XYVersion) String() string {
 	return fmt.Sprintf("%d.%d", v.X, v.Y)
+}
+
+func (v XYVersion) semverString() string {
+	return fmt.Sprintf("v%d.%d.0", v.X, v.Y)
 }
 
 func parseXYVersion(s string) (XYVersion, error) {
@@ -52,6 +57,10 @@ type bumpsFile struct {
 type parsedBump struct {
 	From XYVersion
 	To   XYVersion
+}
+
+func (v XYVersion) Compare(other XYVersion) int {
+	return semver.Compare(v.semverString(), other.semverString())
 }
 
 var parsedBumps []parsedBump
@@ -85,6 +94,9 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 		}
 		if to.Y != 0 {
 			return nil, fmt.Errorf("'to' value %q must have minor version 0", b.To)
+		}
+		if from.Compare(to) >= 0 {
+			return nil, fmt.Errorf("'from' %s must be less than 'to' %s", from, to)
 		}
 		if !seenTo.Add(to.X) {
 			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", to.X)

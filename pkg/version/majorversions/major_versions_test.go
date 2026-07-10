@@ -39,6 +39,12 @@ func TestParseBumpsData(t *testing.T) {
     to: "5.0"`,
 			wantErr: "duplicate 'from' major 3",
 		},
+		"from must be less than to": {
+			input: `bumps:
+  - from: "5.0"
+    to: "4.0"`,
+			wantErr: "'from' 5.0 must be less than 'to' 4.0",
+		},
 		"to minor must be zero": {
 			input: `bumps:
   - from: "3.74"
