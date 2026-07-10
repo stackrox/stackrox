@@ -36,9 +36,6 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      # The cluster name must be no longer than 26 characters.
-      CLUSTER_NAME: e2e-cent-${{ github.run_id }}-${{ github.run_attempt }}
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
@@ -59,15 +56,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: ${{ env.CLUSTER_NAME }}
-        lifespan: 3h # Keep in sync with job's timeout-minutes
-        args: nodes=3,machine-type=e2-standard-8
-        wait: false
+    - name: Create GKE cluster
+      env:
+        MACHINE_TYPE: e2-standard-8
+        NUM_NODES: "3"
+        GKE_SPOT: "true"
+      timeout-minutes: 20
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster cent-up
+        {
+          echo "CLUSTER_NAME=${CLUSTER_NAME}"
+          echo "ZONE=${ZONE}"
+          echo "KUBECONFIG=${HOME}/.kube/config"
+        } >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -82,13 +84,6 @@ jobs:
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
-
-    - name: Wait for the cluster and grab artifacts
-      timeout-minutes: 25
-      run: |
-        infractl wait "${CLUSTER_NAME}"
-        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
@@ -150,11 +145,15 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=True).run()
 
-    - name: Teardown cluster
+    - name: Teardown GKE cluster
       if: always()
       continue-on-error: true
       run: |
-        if ! infractl delete "${CLUSTER_NAME}"; then
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
           echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
           exit 6
         fi
@@ -185,9 +184,6 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      # The cluster name must be no longer than 26 characters.
-      CLUSTER_NAME: e2e-pg-${{ github.run_id }}-${{ github.run_attempt }}
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-postgres
@@ -208,15 +204,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: ${{ env.CLUSTER_NAME }}
-        lifespan: 3h # Keep in sync with job's timeout-minutes
-        args: nodes=3,machine-type=e2-standard-8
-        wait: false
+    - name: Create GKE cluster
+      env:
+        MACHINE_TYPE: e2-standard-8
+        NUM_NODES: "3"
+        GKE_SPOT: "true"
+      timeout-minutes: 20
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster pg-up
+        {
+          echo "CLUSTER_NAME=${CLUSTER_NAME}"
+          echo "ZONE=${ZONE}"
+          echo "KUBECONFIG=${HOME}/.kube/config"
+        } >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -231,13 +232,6 @@ jobs:
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
-
-    - name: Wait for the cluster and grab artifacts
-      timeout-minutes: 25
-      run: |
-        infractl wait "${CLUSTER_NAME}"
-        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
@@ -298,11 +292,15 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=True).run()
 
-    - name: Teardown cluster
+    - name: Teardown GKE cluster
       if: always()
       continue-on-error: true
       run: |
-        if ! infractl delete "${CLUSTER_NAME}"; then
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
           echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
           exit 6
         fi
@@ -333,9 +331,6 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
-      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      # The cluster name must be no longer than 26 characters.
-      CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
       # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
       # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-sensor
@@ -356,15 +351,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@79f8a64e6701be953c23ef1718fcc186a2fb0d0d # ratchet:stackrox/actions/infra/create-cluster@v1
-      with:
-        token: ${{ secrets.INFRA_TOKEN }}
-        flavor: gke-default
-        name: ${{ env.CLUSTER_NAME }}
-        lifespan: 1h # Keep in sync with job's timeout-minutes
-        args: nodes=3,machine-type=e2-standard-8
-        wait: false
+    - name: Create GKE cluster
+      env:
+        MACHINE_TYPE: e2-standard-8
+        NUM_NODES: "3"
+        GKE_SPOT: "true"
+      timeout-minutes: 20
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster sens-up
+        {
+          echo "CLUSTER_NAME=${CLUSTER_NAME}"
+          echo "ZONE=${ZONE}"
+          echo "KUBECONFIG=${HOME}/.kube/config"
+        } >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -379,13 +379,6 @@ jobs:
 
     - name: Build roxctl and upgrader
       run: make roxctl_linux-amd64 upgrader
-
-    - name: Wait for the cluster and grab artifacts
-      timeout-minutes: 25
-      run: |
-        infractl wait "${CLUSTER_NAME}"
-        infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-        echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
@@ -433,11 +426,15 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Teardown cluster
+    - name: Teardown GKE cluster
       if: always()
       continue-on-error: true
       run: |
-        if ! infractl delete "${CLUSTER_NAME}"; then
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then
+          echo "No cluster to teardown"
+          exit 0
+        fi
+        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
           echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
           exit 6
         fi

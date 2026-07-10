@@ -16,8 +16,8 @@ func TestMessageType(t *testing.T) {
 	}{
 		{given: "", expected: nil},
 		{given: "unknown.type", expected: nil},
-		{given: "storage.Cluster", expected: reflect.TypeOf(&storage.Cluster{})},
-		{given: "google.protobuf.Any", expected: reflect.TypeOf(&anypb.Any{})},
+		{given: "storage.Cluster", expected: reflect.TypeFor[*storage.Cluster]()},
+		{given: "google.protobuf.Any", expected: reflect.TypeFor[*anypb.Any]()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.given, func(t *testing.T) {

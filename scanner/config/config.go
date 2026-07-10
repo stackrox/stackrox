@@ -424,7 +424,7 @@ func stringToSlogLevelFunc() mapstructure.DecodeHookFunc {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
-		if t != reflect.TypeOf(slog.LevelInfo) {
+		if t != reflect.TypeFor[slog.Level]() {
 			return data, nil
 		}
 		return parseSlogLevel(data.(string))
