@@ -66,38 +66,17 @@ jobs:
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin,beta"
-
     - name: Create GKE cluster
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
-        GKE_SPOT: "true"
-      timeout-minutes: 20
-      run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster byodb
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+      uses: ./.github/actions/create-gke-cluster
+      with:
+        cluster-name: byodb
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: |
         make roxctl_linux-amd64
         sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
         echo "${HOME}/go/bin" >> "$GITHUB_PATH"
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
@@ -182,18 +161,7 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Teardown GKE cluster
-      if: always()
-      continue-on-error: true
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
+    # Cluster teardown is handled automatically by the create-gke-cluster action's post-step.
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2

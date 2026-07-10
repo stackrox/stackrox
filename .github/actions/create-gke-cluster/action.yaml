@@ -1,0 +1,80 @@
+name: Create GKE cluster
+description: >
+  Creates a GKE cluster via scripts/ci/gke.sh, waits for readiness,
+  and registers automatic teardown. Exports CLUSTER_NAME, ZONE, and
+  KUBECONFIG to GITHUB_ENV for subsequent steps.
+
+inputs:
+  cluster-name:
+    description: Cluster identifier passed to provision_gke_cluster
+    required: true
+  gcp-account:
+    description: GCP service account JSON for authentication
+    required: true
+  nodes:
+    description: Number of GKE nodes
+    default: "3"
+  machine-type:
+    description: GKE machine type
+    default: e2-standard-8
+  spot:
+    description: Use spot (preemptible) VMs for cost savings
+    default: "true"
+  auto-cleanup:
+    description: Register automatic teardown when the job ends (disable for multi-job workflows that manage cleanup separately)
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Auth gcloud
+      uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ inputs.gcp-account }}
+        export_environment_variables: true
+        create_credentials_file: true
+
+    - name: Setup gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Create GKE cluster
+      id: create-cluster
+      shell: bash
+      env:
+        CLUSTER_ID: ${{ inputs.cluster-name }}
+        MACHINE_TYPE: ${{ inputs.machine-type }}
+        NUM_NODES: ${{ inputs.nodes }}
+        GKE_SPOT: ${{ inputs.spot }}
+      timeout-minutes: 20
+      run: |
+        source scripts/ci/gke.sh
+        provision_gke_cluster "${CLUSTER_ID}"
+        {
+          echo "CLUSTER_NAME=${CLUSTER_NAME}"
+          echo "ZONE=${ZONE}"
+          echo "KUBECONFIG=${HOME}/.kube/config"
+        } >> "$GITHUB_ENV"
+
+    - name: Wait for cluster
+      shell: bash
+      timeout-minutes: 5
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
+
+    - name: Register automatic teardown
+      if: always() && inputs.auto-cleanup == 'true' && steps.create-cluster.outcome == 'success'
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "Teardown registered for ${CLUSTER_NAME} in ${ZONE}"
+        post: |
+          if [ -z "${CLUSTER_NAME:-}" ]; then
+            echo "No CLUSTER_NAME — cluster was never created"
+            exit 0
+          fi
+          echo "Tearing down GKE cluster ${CLUSTER_NAME}"
+          scripts/ci/gke.sh teardown_gke_cluster false || echo "Teardown failed — cluster may need manual cleanup"
