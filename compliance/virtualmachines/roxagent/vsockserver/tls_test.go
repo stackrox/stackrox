@@ -1,0 +1,490 @@
+package vsockserver
+
+import (
+	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"math/big"
+	"net"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// testCA generates a self-signed CA cert + key and returns the PEM-encoded cert
+// along with the parsed structures.
+func testCA(t *testing.T) (caPEM []byte, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) {
+	t.Helper()
+	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{CommonName: "test-ca"},
+		NotBefore:             time.Now().Add(-time.Hour),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageCRLSign,
+		BasicConstraintsValid: true,
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &caKey.PublicKey, caKey)
+	require.NoError(t, err)
+
+	caCert, err = x509.ParseCertificate(certDER)
+	require.NoError(t, err)
+
+	caPEM = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
+	return caPEM, caCert, caKey
+}
+
+// testLeafCert creates a leaf certificate signed by the given CA.
+func testLeafCert(t *testing.T, caCert *x509.Certificate, caKey *ecdsa.PrivateKey) tls.Certificate {
+	t.Helper()
+	leafKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject:      pkix.Name{CommonName: "test-leaf"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, template, caCert, &leafKey.PublicKey, caKey)
+	require.NoError(t, err)
+
+	return tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  leafKey,
+	}
+}
+
+// testServerCert creates a self-signed server certificate for TLS listener.
+func testServerCert(t *testing.T) tls.Certificate {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(100),
+		Subject:      pkix.Name{CommonName: "test-server"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		DNSNames:     []string{"localhost"},
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, template, template, &key.PublicKey, key)
+	require.NoError(t, err)
+
+	return tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  key,
+	}
+}
+
+func TestCARefresher_InitialFetch(t *testing.T) {
+	caPEM, _, _ := testCA(t)
+
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) { return caPEM, nil }),
+		WithRefreshInterval(time.Hour),
+	)
+
+	ctx := t.Context()
+	go r.Start(ctx)
+
+	require.Eventually(t, func() bool {
+		_, ok := r.freshCachedPool()
+		return ok
+	}, time.Second, 10*time.Millisecond, "Start should complete the initial fetch")
+
+	cfg := r.TLSConfig()
+	require.NotNil(t, cfg)
+	assert.Equal(t, tls.RequireAndVerifyClientCert, cfg.ClientAuth)
+	assert.Equal(t, uint16(tls.VersionTLS12), cfg.MinVersion)
+
+	// GetConfigForClient should return a config with the CA pool.
+	inner, err := cfg.GetConfigForClient(&tls.ClientHelloInfo{})
+	require.NoError(t, err)
+	require.NotNil(t, inner)
+	assert.NotNil(t, inner.ClientCAs)
+}
+
+// TestCARefresher_TryInitialFetch_FailureIsNonFatal documents that a
+// permanently failing initial fetch - the expected state at boot in
+// namespace-isolated VSOCK mode, where the CA service doesn't exist until a
+// real connection arrives - is reported for logging but never fatal. Start
+// (used by cmd/serve.go) has no error return at all for exactly this reason.
+func TestCARefresher_TryInitialFetch_FailureIsNonFatal(t *testing.T) {
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			return nil, assert.AnError
+		}),
+		WithFetchTimeout(time.Second),
+	)
+
+	err := r.TryInitialFetch(context.Background())
+	require.Error(t, err)
+	assert.ErrorIs(t, err, assert.AnError)
+
+	ctx := t.Context()
+	go r.Start(ctx) // must not panic/block forever despite the fetch function always failing
+}
+
+func TestCARefresher_InvalidPEM(t *testing.T) {
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			return []byte("not-a-valid-pem"), nil
+		}),
+		WithFetchTimeout(time.Second),
+	)
+
+	err := r.TryInitialFetch(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "no valid certificates")
+}
+
+func TestCARefresher_HandshakeFetchesOnColdCache(t *testing.T) {
+	caPEM, caCert, caKey := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		fetchCount.Add(1)
+		return caPEM, nil
+	}))
+
+	// Deliberately never call Start/TryInitialFetch/RunRefreshLoop: the
+	// cache starts out completely cold, mirroring roxagent immediately
+	// after boot in KubeVirt's namespace-isolated VSOCK mode, where the CA
+	// service does not exist until a real connection arrives. The fix under
+	// test is that the handshake itself - not any independent schedule -
+	// is what populates the cache.
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, caCert, caKey)
+	doTLSHandshake(t, r, serverCert, clientCert)
+
+	assert.Equal(t, int32(1), fetchCount.Load(), "the handshake should have triggered exactly one fetch")
+}
+
+func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
+	caPEM, caCert, caKey := testCA(t)
+
+	// available toggles whether the fake CA service is reachable, modeling
+	// KubeVirt's on-demand System.CABundle service existing only for the
+	// duration of a virt-handler dial+handshake.
+	var available atomic.Bool
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		if !available.Load() {
+			return nil, assert.AnError
+		}
+		return caPEM, nil
+	}))
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+
+	tlsCfg := r.TLSConfig()
+	tlsCfg.Certificates = []tls.Certificate{testServerCert(t)}
+	clientCert := testLeafCert(t, caCert, caKey)
+	clientTLS := &tls.Config{Certificates: []tls.Certificate{clientCert}, InsecureSkipVerify: true}
+
+	dial := func() error {
+		serverErr := make(chan error, 1)
+		go func() {
+			conn, err := ln.Accept()
+			if err != nil {
+				serverErr <- err
+				return
+			}
+			tlsConn := tls.Server(conn, tlsCfg)
+			err = tlsConn.Handshake()
+			_ = tlsConn.Close()
+			serverErr <- err
+		}()
+
+		clientConn, dialErr := tls.Dial("tcp", ln.Addr().String(), clientTLS)
+		if dialErr == nil {
+			_ = clientConn.Close()
+		}
+		return <-serverErr
+	}
+
+	// CA service "closed": the handshake must fail, not fall back to some
+	// stale/empty pool.
+	available.Store(false)
+	assert.Error(t, dial(), "handshake should fail while the CA service is unavailable")
+
+	// CA service "open": the very next handshake must succeed, with no
+	// independent warm-up ever having occurred.
+	available.Store(true)
+	assert.NoError(t, dial(), "handshake should succeed once the CA service becomes available")
+}
+
+func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
+	caPEM, _, _ := testCA(t)
+
+	var fetchCount atomic.Int32
+	release := make(chan struct{})
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		fetchCount.Add(1)
+		<-release // block until the test says every caller has arrived
+		return caPEM, nil
+	}))
+
+	const callers = 5
+	results := make(chan error, callers)
+	for i := 0; i < callers; i++ {
+		go func() {
+			_, err := r.ensureFreshPool(context.Background())
+			results <- err
+		}()
+	}
+
+	// Give every goroutine a chance to reach the coalesced fetch before
+	// letting it complete.
+	time.Sleep(50 * time.Millisecond)
+	close(release)
+
+	for i := 0; i < callers; i++ {
+		require.NoError(t, <-results)
+	}
+	assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
+}
+
+func TestCARefresher_Refresh(t *testing.T) {
+	ca1PEM, ca1Cert, ca1Key := testCA(t)
+	ca2PEM, ca2Cert, ca2Key := testCA(t)
+
+	var callCount atomic.Int32
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			n := callCount.Add(1)
+			if n == 1 {
+				return ca1PEM, nil
+			}
+			return ca2PEM, nil
+		}),
+		WithRefreshInterval(20*time.Millisecond),
+	)
+
+	ctx := t.Context()
+	go r.Start(ctx)
+
+	require.Eventually(t, func() bool {
+		return callCount.Load() >= 2
+	}, time.Second, 10*time.Millisecond, "should have refreshed at least once")
+
+	// The second CA is now active.
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, ca2Cert, ca2Key)
+	doTLSHandshake(t, r, serverCert, clientCert)
+
+	// The first CA was fully rotated out (not merely appended to): a
+	// refresher bug that unioned pools instead of replacing them would pass
+	// unnoticed without this assertion.
+	oldClientCert := testLeafCert(t, ca1Cert, ca1Key)
+	doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+}
+
+func TestCARefresher_RefreshFailure_KeepsOldCA(t *testing.T) {
+	caPEM, caCert, caKey := testCA(t)
+
+	var callCount atomic.Int32
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			n := callCount.Add(1)
+			if n == 1 {
+				return caPEM, nil
+			}
+			return nil, assert.AnError
+		}),
+		WithRefreshInterval(20*time.Millisecond),
+	)
+
+	ctx := t.Context()
+	go r.Start(ctx)
+
+	require.Eventually(t, func() bool {
+		return callCount.Load() >= 2
+	}, time.Second, 10*time.Millisecond, "should have attempted a refresh past the initial fetch")
+
+	// Original CA should still work.
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, caCert, caKey)
+	doTLSHandshake(t, r, serverCert, clientCert)
+}
+
+// TestCARefresher_StaleCacheTriggersRefetchDuringHandshake covers rotation
+// picked up by the handshake path itself, as opposed to TestCARefresher_Refresh
+// (which covers the background loop). RunRefreshLoop/Start are deliberately
+// never invoked here, so the only thing that can possibly notice the cache
+// has gone stale and fetch a replacement is ensureFreshPool being called from
+// GetConfigForClient during a real handshake.
+func TestCARefresher_StaleCacheTriggersRefetchDuringHandshake(t *testing.T) {
+	ca1PEM, _, _ := testCA(t)
+	ca2PEM, ca2Cert, ca2Key := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			if fetchCount.Add(1) == 1 {
+				return ca1PEM, nil
+			}
+			return ca2PEM, nil
+		}),
+		WithRefreshInterval(20*time.Millisecond),
+	)
+
+	// Warm the cache with CA1 via a direct call, not Start, to keep the
+	// background loop out of the picture entirely.
+	_, err := r.ensureFreshPool(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, int32(1), fetchCount.Load())
+
+	// Let the cache go stale.
+	time.Sleep(30 * time.Millisecond)
+
+	// The next handshake presents a CA2-signed client cert. It can only
+	// succeed if the handshake path itself noticed the staleness and
+	// fetched a replacement pool inline.
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, ca2Cert, ca2Key)
+	doTLSHandshake(t, r, serverCert, clientCert)
+
+	assert.Equal(t, int32(2), fetchCount.Load(), "the stale handshake should have triggered exactly one refetch")
+}
+
+// TestCARefresher_OverlapBundleTrustsBothOldAndNewCA models KubeVirt's real
+// rotation behavior: during the overlap window, the CA service returns a
+// bundle containing *both* the old and new CA concatenated (not a hard swap
+// from one to the other), specifically so nothing already holding an
+// old-CA-signed cert breaks mid-rotation. AppendCertsFromPEM and
+// x509.CertPool both natively support multiple CAs in one bundle, so this is
+// mostly a regression/documentation test rather than new capability.
+func TestCARefresher_OverlapBundleTrustsBothOldAndNewCA(t *testing.T) {
+	oldCAPEM, oldCACert, oldCAKey := testCA(t)
+	newCAPEM, newCACert, newCAKey := testCA(t)
+	overlapBundle := append(append([]byte{}, oldCAPEM...), newCAPEM...)
+
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		return overlapBundle, nil
+	}))
+
+	serverCert := testServerCert(t)
+
+	oldClientCert := testLeafCert(t, oldCACert, oldCAKey)
+	doTLSHandshake(t, r, serverCert, oldClientCert)
+
+	newClientCert := testLeafCert(t, newCACert, newCAKey)
+	doTLSHandshake(t, r, serverCert, newClientCert)
+}
+
+func TestCARefresher_TLSHandshake(t *testing.T) {
+	caPEM, caCert, caKey := testCA(t)
+
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) { return caPEM, nil }),
+	)
+
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, caCert, caKey)
+	doTLSHandshake(t, r, serverCert, clientCert)
+}
+
+func TestCARefresher_TLSHandshake_WrongCA(t *testing.T) {
+	caPEM, _, _ := testCA(t)
+	_, wrongCACert, wrongCAKey := testCA(t)
+
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) { return caPEM, nil }),
+	)
+
+	serverCert := testServerCert(t)
+	wrongClientCert := testLeafCert(t, wrongCACert, wrongCAKey)
+	doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+}
+
+// doTLSHandshake performs a full TLS handshake between a server using the
+// refresher's TLS config and a client presenting the given cert.
+func doTLSHandshake(t *testing.T, r *CARefresher, serverCert, clientCert tls.Certificate) {
+	t.Helper()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+
+	tlsCfg := r.TLSConfig()
+	tlsCfg.Certificates = []tls.Certificate{serverCert}
+
+	serverErr := make(chan error, 1)
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			serverErr <- err
+			return
+		}
+		tlsConn := tls.Server(conn, tlsCfg)
+		err = tlsConn.Handshake()
+		_ = tlsConn.Close()
+		serverErr <- err
+	}()
+
+	clientTLS := &tls.Config{
+		Certificates:       []tls.Certificate{clientCert},
+		InsecureSkipVerify: true,
+	}
+	clientConn, err := tls.Dial("tcp", ln.Addr().String(), clientTLS)
+	require.NoError(t, err, "client dial should succeed")
+	_ = clientConn.Close()
+
+	require.NoError(t, <-serverErr, "server handshake should succeed")
+}
+
+// doTLSHandshakeFails performs a TLS handshake between a server using the
+// refresher's TLS config and a client presenting the given cert, and asserts
+// that the server-side handshake is rejected (e.g. because clientCert isn't
+// signed by any CA in the refresher's currently active pool).
+func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tls.Certificate) {
+	t.Helper()
+
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer func() { _ = ln.Close() }()
+
+	tlsCfg := r.TLSConfig()
+	tlsCfg.Certificates = []tls.Certificate{serverCert}
+
+	serverErr := make(chan error, 1)
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			serverErr <- err
+			return
+		}
+		tlsConn := tls.Server(conn, tlsCfg)
+		serverErr <- tlsConn.Handshake()
+		_ = tlsConn.Close()
+	}()
+
+	clientTLS := &tls.Config{
+		Certificates:       []tls.Certificate{clientCert},
+		InsecureSkipVerify: true,
+	}
+	clientConn, err := tls.Dial("tcp", ln.Addr().String(), clientTLS)
+	if err == nil {
+		_ = clientConn.Close()
+	}
+
+	assert.Error(t, <-serverErr, "server handshake should fail")
+}
