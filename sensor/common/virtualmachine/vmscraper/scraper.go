@@ -169,7 +169,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	g.SetLimit(s.concurrency)
 
 	for _, vm := range vms {
-		liveKeys.Add(vm.Namespace + "/" + vm.Name)
+		liveKeys.Add(vmKey(vm))
 		g.Go(func() error {
 			if s.scrapeVM(gCtx, vm, scrapedVMs) {
 				successCount.Add(1)
@@ -190,40 +190,22 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 }
 
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrapedVMs set.StringSet) bool {
-	key := vm.Namespace + "/" + vm.Name
+	key := vmKey(vm)
 	state := s.getOrCreateState(key)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
 
 	totalStart := s.now()
+	port := getVsockPort()
 
 	log.Debugf("VMScraper: dialing roxagent on %q with TLS", key)
-	dialStart := s.now()
-	port := getVsockPort()
-	stream, err := s.dialer.Dial(vmCtx, vm.Namespace, vm.Name, port, true)
-	metrics.PullDialDurationSeconds.Observe(time.Since(dialStart).Seconds())
-	if err != nil {
-		if vmCtx.Err() != nil {
-			log.Warnf("VMScraper: dialing roxagent on %q timed out: %v", key, err)
-			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
-		} else {
-			log.Warnf("VMScraper: dialing roxagent on %q failed: %v", key, err)
-			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusDialError).Inc()
-		}
-		return false
-	}
-	defer func() { _ = stream.Close() }()
-
-	readStart := s.now()
 	// knownEpoch lets a current roxagent make the complete "changed or not"
 	// decision server-side and serve the full report in this same round trip
 	// on a restart-coincidence false match, instead of relying solely on the
 	// client-side fallback below.
-	result, err := s.client.GetReport(stream, state.lastGeneration, state.lastEpoch)
-	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
-	if err != nil {
-		s.handleGetReportError(key, err)
+	result, ok := s.dialAndGetReport(vmCtx, vm, key, port, state.lastGeneration, state.lastEpoch)
+	if !ok {
 		return false
 	}
 
@@ -248,17 +230,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 			log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
 				key, state.lastEpoch, epoch, state.lastGeneration)
 		}
-		stream2, err := s.dialer.Dial(vmCtx, vm.Namespace, vm.Name, port, true)
-		if err != nil {
-			log.Warnf("VMScraper: re-dialing roxagent on %q for mandatory refresh failed: %v", key, err)
-			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusDialError).Inc()
-			return false
-		}
-		defer func() { _ = stream2.Close() }()
-
-		result, err = s.client.GetReport(stream2, 0, 0)
-		if err != nil {
-			s.handleGetReportError(key, err)
+		result, ok = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
+		if !ok {
 			return false
 		}
 	}
@@ -287,14 +260,44 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	state.lastForwardedAt = s.now()
 	s.registerScrapedVM(scrapedVMs, vm)
 
-	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, dial=%s, read=%s, total=%s",
+	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
 		key, state.lastGeneration, len(result.IndexReport.GetContents().GetPackages()), reportSize,
-		time.Since(dialStart).Truncate(time.Millisecond),
-		time.Since(readStart).Truncate(time.Millisecond),
 		time.Since(totalStart).Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
 	return true
+}
+
+// dialAndGetReport dials the VM and issues a single GetReport request,
+// recording dial/read latency metrics and classifying dial failures
+// (timeout vs. other) consistently. scrapeVM calls this twice on the
+// mandatory-refresh/epoch-mismatch path (see the Unchanged branch above),
+// and previously duplicated this logic inline for each call — which had
+// let the second call's dial silently skip the latency metrics.
+func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Info, key string, port, ifNewerThan, knownEpoch uint32) (*vsockclient.GetReportResult, bool) {
+	dialStart := s.now()
+	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
+	metrics.PullDialDurationSeconds.Observe(time.Since(dialStart).Seconds())
+	if err != nil {
+		if ctx.Err() != nil {
+			log.Warnf("VMScraper: dialing roxagent on %q timed out: %v", key, err)
+			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
+		} else {
+			log.Warnf("VMScraper: dialing roxagent on %q failed: %v", key, err)
+			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusDialError).Inc()
+		}
+		return nil, false
+	}
+	defer func() { _ = stream.Close() }()
+
+	readStart := s.now()
+	result, err := s.client.GetReport(stream, ifNewerThan, knownEpoch)
+	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
+	if err != nil {
+		s.handleGetReportError(key, err)
+		return nil, false
+	}
+	return result, true
 }
 
 func (s *VMScraper) handleGetReportError(key string, err error) {
@@ -314,8 +317,13 @@ func (s *VMScraper) handleGetReportError(key string, err error) {
 	}
 }
 
+// vmKey returns the identifier used for vmState and activeVMs lookups.
+func vmKey(vm *virtualmachine.Info) string {
+	return vm.Namespace + "/" + vm.Name
+}
+
 func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachine.Info) {
-	key := vm.Namespace + "/" + vm.Name
+	key := vmKey(vm)
 	// Register both identifiers so IsActivelyScraped works whether the
 	// caller uses "namespace/name" (pull path) or a CID string (push path).
 	concurrency.WithLock(&s.mu, func() {
