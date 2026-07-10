@@ -192,7 +192,7 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...*allowedPackage) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unquoting import path %s", spec.Path.Value)
 	}
 
 	if err := checkForbidden(impPath, packageName); err != nil {

@@ -2,91 +2,59 @@ package vsockdialer
 
 import (
 	"errors"
-	"fmt"
 	"io"
-	"net/url"
+	"net"
 	"testing"
 
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/client-go/rest"
 )
 
-func TestBuildWSURL(t *testing.T) {
-	params := url.Values{}
-	params.Set("port", "1024")
-	params.Set("tls", "true")
-
-	cases := map[string]struct {
-		host    string
-		wantURL string
-		wantErr string // substring to match against the error; empty means no error expected
-	}{
-		"should rewrite https to wss": {
-			host:    "https://api.example.com:6443",
-			wantURL: "wss://api.example.com:6443/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
-		},
-		"should rewrite http to ws": {
-			host:    "http://localhost:8080",
-			wantURL: "ws://localhost:8080/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
-		},
-		"should reject unsupported scheme": {
-			host:    "ftp://api.example.com",
-			wantErr: "unsupported scheme",
-		},
-		"should reject unparseable host": {
-			host:    "https://api.example.com:abc",
-			wantErr: "parsing host",
-		},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			got, err := buildWSURL(&rest.Config{Host: tc.host}, "virtualmachineinstances", "ns1", "vm-a", "vsock", params)
-			if tc.wantErr != "" {
-				require.ErrorContains(t, err, tc.wantErr)
-				return
-			}
-			require.NoError(t, err)
-			assert.Equal(t, tc.wantURL, got)
-		})
-	}
+// fakeConn is a minimal net.Conn whose Read returns a fixed error, enough to
+// exercise closeCodeConn's translation without a real websocket connection.
+type fakeConn struct {
+	net.Conn
+	readErr error
 }
 
-func TestTransportClosedErr(t *testing.T) {
+func (c *fakeConn) Read([]byte) (int, error) {
+	return 0, c.readErr
+}
+
+func TestCloseCodeConn_Read(t *testing.T) {
 	cases := map[string]struct {
-		err      error
-		wantNil  bool
-		wantCode int
+		readErr   error
+		wantCode  int
+		wantPlain bool // true if the error should pass through unchanged
 	}{
-		"should return nil for a non-close error": {
-			err:     errors.New("boom"),
-			wantNil: true,
+		"passes a non-close error through unchanged": {
+			readErr:   errors.New("boom"),
+			wantPlain: true,
 		},
-		"should classify a plain io.EOF with no structured code": {
-			err:      io.EOF,
-			wantCode: 0,
+		"passes a plain io.EOF through unchanged": {
+			readErr:   io.EOF,
+			wantPlain: true,
 		},
-		"should preserve the close code from a websocket.CloseError": {
-			err:      &websocket.CloseError{Code: websocket.CloseAbnormalClosure, Text: "abnormal closure"},
+		"translates an abnormal websocket.CloseError to a structured closedError": {
+			readErr:  &websocket.CloseError{Code: websocket.CloseAbnormalClosure, Text: "abnormal closure"},
 			wantCode: websocket.CloseAbnormalClosure,
-		},
-		"should preserve the close code from a wrapped websocket.CloseError": {
-			err:      fmt.Errorf("read: %w", &websocket.CloseError{Code: websocket.CloseNormalClosure, Text: "bye"}),
-			wantCode: websocket.CloseNormalClosure,
 		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got := transportClosedErr(tc.err)
-			if tc.wantNil {
-				assert.Nil(t, got)
+			conn := &closeCodeConn{Conn: &fakeConn{readErr: tc.readErr}}
+			_, err := conn.Read(make([]byte, 1))
+
+			if tc.wantPlain {
+				assert.Equal(t, tc.readErr, err)
 				return
 			}
-			require.NotNil(t, got)
-			code, _ := got.CloseCode()
+
+			var closeErr *closedError
+			require.ErrorAs(t, err, &closeErr)
+			code, _ := closeErr.CloseCode()
 			assert.Equal(t, tc.wantCode, code)
-			assert.ErrorIs(t, got, io.EOF)
 		})
 	}
 }

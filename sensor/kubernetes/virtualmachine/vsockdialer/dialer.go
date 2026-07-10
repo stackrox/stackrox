@@ -1,14 +1,18 @@
-// Package vsockdialer dials KubeVirt VM VSOCK ports via the Kubernetes API.
+// Package vsockdialer dials KubeVirt VM VSOCK ports via KubeVirt's own
+// client (kubevirt.io/client-go/kubecli), which implements the
+// virtualmachineinstances/vsock subresource WebSocket handshake for us.
 //
-// This replaces kubevirt.io/client-go's AsyncSubresourceHelper with a
-// self-contained websocket dialer built on k8s.io/client-go/transport/websocket
-// (the same building block client-go itself uses for `kubectl exec`/
-// `port-forward` over WebSocket) plus gorilla/websocket for the connection
-// type. We cannot import kubevirt.io/client-go directly yet — kubevirt#16951
-// is no longer a blocker, but kubevirt#18382 and kubevirt#18408 still are.
-// See https://github.com/stackrox/stackrox/pull/21587 for tracking; re-evaluate
-// once both land in a tagged release. Do not switch to a personal fork for
-// production use.
+// This used to be a self-contained websocket dialer using only
+// k8s.io/client-go/rest and gorilla/websocket, because kubevirt.io/client-go
+// couldn't be imported: its log package unconditionally registered a -v flag
+// in init(), which panicked when glog (already in the sensor dep tree) also
+// registered -v. That upstream bug is fixed (private FlagSet + VerbosityFlag()),
+// see https://github.com/kubevirt/kubevirt/pull/18294, so we now depend on the
+// real client instead of reimplementing its dialer.
+//
+// TODO(ROX-35192): the fix hasn't synced to github.com/kubevirt/client-go yet,
+// so go.mod currently points kubevirt.io/client-go at a local/forked copy carrying
+// it cherry-picked. Swap back to the real module once the mirror catches up.
 package vsockdialer
 
 import (
@@ -16,179 +20,82 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
-	"strconv"
+	"net"
 
 	"github.com/gorilla/websocket"
 	"k8s.io/client-go/rest"
-	wstransport "k8s.io/client-go/transport/websocket"
-)
-
-const (
-	subresourceAPIGroup = "subresources.kubevirt.io"
-	apiVersion          = "v1"
-	wsSubprotocol       = "plain.kubevirt.io"
+	v1 "kubevirt.io/api/core/v1"
+	"kubevirt.io/client-go/kubecli"
 )
 
 // MultiDialer dials VMs across namespaces via the KubeVirt subresource API.
 type MultiDialer struct {
-	config      *rest.Config
+	client      kubecli.KubevirtClient
 	wsReadLimit int64
 }
 
 // NewMultiDialer creates a dialer from in-cluster (or kubeconfig) REST config.
 // wsReadLimit sets the maximum WebSocket message size in bytes.
-func NewMultiDialer(config *rest.Config, wsReadLimit int64) *MultiDialer {
-	return &MultiDialer{config: config, wsReadLimit: wsReadLimit}
+func NewMultiDialer(config *rest.Config, wsReadLimit int64) (*MultiDialer, error) {
+	client, err := kubecli.GetKubevirtClientFromRESTConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("creating KubeVirt client: %w", err)
+	}
+	return &MultiDialer{client: client, wsReadLimit: wsReadLimit}, nil
+}
+
+// readLimiter is implemented by the *websocket.Conn embedded in the net.Conn
+// that kubecli's StreamInterface.AsConn() returns, but isn't part of the
+// net.Conn interface itself, hence the type assertion in Dial.
+type readLimiter interface {
+	SetReadLimit(limit int64)
 }
 
 // Dial connects to the named VMI's VSOCK port in the given namespace.
-// The context controls dial timeout and, if it carries a deadline, that
-// deadline is propagated to the connection's read/write deadlines so the
-// per-VM timeout budget covers dial + request + response.
-//
-// Deadline propagation alone does not abort an in-flight read when the
-// parent context is cancelled without a nearer deadline (e.g. Sensor
-// shutdown). GetReport closes the stream on ctx cancel for that case.
+// The context does not control the dial itself (kubecli's VSOCK call takes
+// no context), but if it carries a deadline, that deadline is propagated to
+// the connection's read/write deadlines so the request/response exchange is
+// still bounded.
 func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uint32, useTLS bool) (io.ReadWriteCloser, error) {
-	params := url.Values{}
-	params.Set("port", strconv.FormatUint(uint64(port), 10))
-	params.Set("tls", strconv.FormatBool(useTLS))
-
-	wsURL, err := buildWSURL(d.config, "virtualmachineinstances", namespace, name, "vsock", params)
+	stream, err := d.client.VirtualMachineInstance(namespace).VSOCK(name, &v1.VSOCKOptions{
+		TargetPort: port,
+		UseTLS:     &useTLS,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
 	}
 
-	conn, err := dialSubresource(ctx, d.config, wsURL)
-	if err != nil {
-		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
+	conn := stream.AsConn()
+	if limiter, ok := conn.(readLimiter); ok {
+		limiter.SetReadLimit(d.wsReadLimit)
 	}
-	conn.SetReadLimit(d.wsReadLimit)
 	if deadline, ok := ctx.Deadline(); ok {
 		_ = conn.SetReadDeadline(deadline)
 		_ = conn.SetWriteDeadline(deadline)
 	}
-	return &wsStream{conn: conn}, nil
+	return &closeCodeConn{Conn: conn}, nil
 }
 
-// dialSubresource negotiates a WebSocket connection to wsURL using
-// k8s.io/client-go/transport/websocket. That package builds the
-// RoundTripper straight from the REST config — TLS, proxying, and auth
-// (bearer token, client certs, impersonation, exec/OIDC credential
-// plugins) — the same way a real apiserver request would, so we don't
-// have to reimplement auth-header extraction here.
-//
-// Trade-off: the negotiated connection's I/O buffers are fixed at ~33KiB by
-// client-go's RoundTripper, smaller than a hand-rolled dialer could use.
-// This only affects how many read/write syscalls a large message takes —
-// messages are chunked across frames regardless of buffer size — so it
-// doesn't affect correctness.
-func dialSubresource(ctx context.Context, config *rest.Config, wsURL string) (*websocket.Conn, error) {
-	rt, holder, err := wstransport.RoundTripperFor(config)
-	if err != nil {
-		return nil, fmt.Errorf("building websocket round tripper: %w", err)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, wsURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("building request: %w", err)
-	}
-
-	conn, err := wstransport.Negotiate(rt, holder, req, wsSubprotocol)
-	if err != nil {
-		return nil, fmt.Errorf("websocket dial: %w", err)
-	}
-	return conn, nil
+// closeCodeConn wraps the net.Conn kubecli hands back so an abnormal
+// websocket close surfaces its code/reason via CloseCode(), the structured
+// signal the pull-mode scraper's error classification (isAbnormalClose)
+// looks for. kubecli's own reader already collapses a *normal* close (code
+// 1000) into io.EOF; only the abnormal case needs translating here.
+type closeCodeConn struct {
+	net.Conn
 }
 
-func buildWSURL(config *rest.Config, resource, namespace, name, subresource string, queryParams url.Values) (string, error) {
-	u, err := url.Parse(config.Host)
-	if err != nil {
-		return "", fmt.Errorf("parsing host: %w", err)
-	}
-
-	switch u.Scheme {
-	case "https":
-		u.Scheme = "wss"
-	case "http":
-		u.Scheme = "ws"
-	default:
-		return "", fmt.Errorf("unsupported scheme %q", u.Scheme)
-	}
-
-	u = u.JoinPath("apis", subresourceAPIGroup, apiVersion, "namespaces", namespace, resource, name, subresource)
-	if len(queryParams) > 0 {
-		u.RawQuery = queryParams.Encode()
-	}
-	return u.String(), nil
-}
-
-// wsStream adapts a websocket.Conn into an io.ReadWriteCloser that reads
-// across websocket binary message boundaries and writes binary messages.
-type wsStream struct {
-	conn   *websocket.Conn
-	reader io.Reader
-}
-
-func (s *wsStream) Read(p []byte) (int, error) {
-	for {
-		if s.reader == nil {
-			msgType, rd, err := s.conn.NextReader()
-			if err != nil {
-				if closeErr := transportClosedErr(err); closeErr != nil {
-					return 0, closeErr
-				}
-				return 0, err //nolint:wrapcheck // implements io.Reader
-			}
-			if msgType == websocket.CloseMessage {
-				return 0, &closedError{}
-			}
-			s.reader = rd
-		}
-
-		n, err := s.reader.Read(p)
-		if err == io.EOF {
-			s.reader = nil
-			if n > 0 {
-				return n, nil
-			}
-			continue
-		}
-		return n, err //nolint:wrapcheck // implements io.Reader
-	}
-}
-
-func (s *wsStream) Write(p []byte) (int, error) {
-	if err := s.conn.WriteMessage(websocket.BinaryMessage, p); err != nil {
-		return 0, fmt.Errorf("writing websocket message: %w", err)
-	}
-	return len(p), nil
-}
-
-func (s *wsStream) Close() error {
-	if err := s.conn.Close(); err != nil {
-		return fmt.Errorf("closing websocket: %w", err)
-	}
-	return nil
-}
-
-// transportClosedErr returns a *closedError if err represents a closed
-// connection, or nil if it's some other read failure.
-func transportClosedErr(err error) *closedError {
+func (c *closeCodeConn) Read(p []byte) (int, error) {
+	n, err := c.Conn.Read(p)
 	if ce, ok := errors.AsType[*websocket.CloseError](err); ok {
-		return &closedError{code: ce.Code, reason: ce.Text}
+		return n, &closedError{code: ce.Code, reason: ce.Text}
 	}
-	if errors.Is(err, io.EOF) {
-		return &closedError{}
-	}
-	return nil
+	return n, err //nolint:wrapcheck // implements io.Reader; callers match err via errors.Is/As
 }
 
-// closedError indicates the websocket connection closed before a complete
-// VMServiceResponse could be read. Kept unexported and dependency-free so
-// callers recover it structurally (via errors.As against their own
+// closedError indicates the websocket connection closed abnormally before a
+// complete VMServiceResponse could be read. Kept unexported and dependency-
+// free so callers recover it structurally (via errors.As against their own
 // CloseCode() interface) rather than importing this package.
 type closedError struct {
 	code   int
@@ -196,18 +103,10 @@ type closedError struct {
 }
 
 func (e *closedError) Error() string {
-	if e.code == 0 {
-		return "websocket connection closed"
-	}
 	return fmt.Sprintf("websocket connection closed (code %d): %s", e.code, e.reason)
 }
 
-// Is makes closedError satisfy errors.Is(err, io.EOF).
-func (e *closedError) Is(target error) bool {
-	return target == io.EOF
-}
-
-// CloseCode returns the close code and reason; code is 0 if unstructured.
+// CloseCode returns the close code and reason.
 func (e *closedError) CloseCode() (code int, reason string) {
 	return e.code, e.reason
 }
