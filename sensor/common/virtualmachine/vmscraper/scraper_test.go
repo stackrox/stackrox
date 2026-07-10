@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -406,11 +407,25 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 
 // --- Thread-safe mocks for concurrent tests ---
 
+// delayDialer sleeps for delay on every Dial and tracks the highest number
+// of Dial calls observed in flight at once, so tests can assert on actual
+// concurrency instead of inferring it from wall-clock elapsed time (which is
+// prone to flaking under CI load/GC pauses).
 type delayDialer struct {
-	delay time.Duration
+	delay       time.Duration
+	inFlight    atomic.Int32
+	maxObserved atomic.Int32
 }
 
 func (d *delayDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	cur := d.inFlight.Add(1)
+	defer d.inFlight.Add(-1)
+	for {
+		prevMax := d.maxObserved.Load()
+		if cur <= prevMax || d.maxObserved.CompareAndSwap(prevMax, cur) {
+			break
+		}
+	}
 	time.Sleep(d.delay)
 	return nopCloser{}, nil
 }
@@ -469,13 +484,16 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 		now:         time.Now,
 	}
 
-	start := time.Now()
 	s.pollOnce(context.Background())
-	elapsed := time.Since(start)
 
-	sequentialMin := dialDelay * numVMs
-	require.Less(t, elapsed, sequentialMin,
-		"concurrent scraping (%v) should be faster than sequential minimum (%v)", elapsed, sequentialMin)
 	assert.Equal(t, numVMs, sender.sent)
 	assert.Equal(t, numVMs, client.calls)
+	// Direct concurrency signal instead of a wall-clock inference: with
+	// concurrency == numVMs, all dials should be in flight together at some
+	// point during the cycle. A threshold below numVMs still proves
+	// concurrent (rather than sequential) execution without being flaky
+	// about exactly how many overlap under scheduler/CI load.
+	maxObserved := dialer.maxObserved.Load()
+	require.Greater(t, maxObserved, int32(1),
+		"expected multiple VMs to be dialed concurrently, observed max concurrency of %d", maxObserved)
 }
