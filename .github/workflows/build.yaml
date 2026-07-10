@@ -1279,6 +1279,10 @@ jobs:
         directory: 'junit-reports'
 
   verify-cve-fix-scan:
+    # Shows the root build-tag even for stackrox-operator, whose actual
+    # scanned tag differs (see "Determine image tag to scan" step below):
+    # job-level `name:` can't reference `steps.*.outputs`, only
+    # github/needs/strategy/matrix, so it can't reflect the resolved tag.
     name: "CVE scan: ${{ matrix.image }}:${{ needs.define-job-matrix.outputs.build-tag }}"
     runs-on: ubuntu-latest
     needs:
@@ -1313,6 +1317,18 @@ jobs:
           fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Determine image tag to scan
+        id: determine-tag
+        # stackrox-operator is pushed under a different tag than the rest of
+        # the matrix (see determine-cve-scan-image-tag.sh); this resolves
+        # the actual tag to poll for so that leg doesn't hit the
+        # wait-for-image timeout below looking for a tag that was never
+        # pushed.
+        run: >-
+          .github/workflows/scripts/determine-cve-scan-image-tag.sh
+          --image "${{ matrix.image }}"
+          --default-tag "${{ needs.define-job-matrix.outputs.build-tag }}"
+
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
@@ -1324,7 +1340,7 @@ jobs:
         continue-on-error: true
         with:
           image: rhacs-eng/${{ matrix.image }}
-          version: ${{ needs.define-job-matrix.outputs.build-tag }}
+          version: ${{ steps.determine-tag.outputs.tag }}
           wait-limit: "1800"
           summary-prefix: "CVE-fix-verify:"
           quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
