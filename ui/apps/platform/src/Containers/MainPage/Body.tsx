@@ -43,6 +43,7 @@ import {
     userBasePath,
     violationsBasePath,
     vulnManagementPath,
+    vulnerabilitiesAIWorkloadsPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
@@ -267,6 +268,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
             () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
         ),
         path: vulnerabilitiesVirtualMachineCvesPath,
+    },
+    'vulnerabilities/ai-workloads': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/AIWorkloads/AIWorkloadsPage')
+        ),
+        path: vulnerabilitiesAIWorkloadsPath,
     },
     // Note: currently 'platform' is an implementation of the user-workloads view and
     // it is expected that this will change in the future as these views diverge

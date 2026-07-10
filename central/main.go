@@ -16,6 +16,7 @@ import (
 	administrationUsageDataStore "github.com/stackrox/rox/central/administration/usage/datastore/securedunits"
 	administrationUsageInjector "github.com/stackrox/rox/central/administration/usage/injector"
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
+	aiworkloadService "github.com/stackrox/rox/central/aiworkload/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
@@ -498,6 +499,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		} else {
 			servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
 		}
+	}
+
+	if features.AIWorkloads.Enabled() {
+		servicesToRegister = append(servicesToRegister, aiworkloadService.Singleton())
 	}
 
 	if features.BaseImageDetection.Enabled() {
