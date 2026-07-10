@@ -1,12 +1,14 @@
 // Package vsockdialer dials KubeVirt VM VSOCK ports via the Kubernetes API.
 //
 // This replaces kubevirt.io/client-go's AsyncSubresourceHelper with a
-// self-contained websocket dialer using only k8s.io/client-go/rest and
-// gorilla/websocket. We cannot import kubevirt.io/client-go because its
-// log package unconditionally registers a -v flag in init(), which panics
-// when glog (already in the sensor dep tree) also registers -v.
-// Upstream code: https://github.com/kubevirt/kubevirt/blob/main/staging/src/kubevirt.io/client-go/log/log.go#L88
-// Upstream bug:  https://github.com/kubevirt/kubevirt/issues/16951
+// self-contained websocket dialer built on k8s.io/client-go/transport/websocket
+// (the same building block client-go itself uses for `kubectl exec`/
+// `port-forward` over WebSocket) plus gorilla/websocket for the connection
+// type. We cannot import kubevirt.io/client-go directly yet — kubevirt#16951
+// is no longer a blocker, but kubevirt#18382 and kubevirt#18408 still are.
+// See https://github.com/stackrox/stackrox/pull/21587 for tracking; re-evaluate
+// once both land in a tagged release. Do not switch to a personal fork for
+// production use.
 package vsockdialer
 
 import (
@@ -14,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -22,13 +23,13 @@ import (
 
 	"github.com/gorilla/websocket"
 	"k8s.io/client-go/rest"
+	wstransport "k8s.io/client-go/transport/websocket"
 )
 
 const (
 	subresourceAPIGroup = "subresources.kubevirt.io"
 	apiVersion          = "v1"
 	wsSubprotocol       = "plain.kubevirt.io"
-	wsBufferSize        = 1 << 20 // 1 MiB I/O buffer; not a message size limit (larger messages are chunked internally)
 )
 
 // MultiDialer dials VMs across namespaces via the KubeVirt subresource API.
@@ -57,7 +58,12 @@ func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uin
 	params.Set("port", strconv.FormatUint(uint64(port), 10))
 	params.Set("tls", strconv.FormatBool(useTLS))
 
-	conn, err := dialSubresource(ctx, d.config, "virtualmachineinstances", namespace, name, "vsock", params)
+	wsURL, err := buildWSURL(d.config, "virtualmachineinstances", namespace, name, "vsock", params)
+	if err != nil {
+		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
+	}
+
+	conn, err := dialSubresource(ctx, d.config, wsURL)
 	if err != nil {
 		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
 	}
@@ -69,45 +75,32 @@ func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uin
 	return &wsStream{conn: conn}, nil
 }
 
-func dialSubresource(ctx context.Context, config *rest.Config, resource, namespace, name, subresource string, queryParams url.Values) (*websocket.Conn, error) {
-	wsURL, err := buildWSURL(config, resource, namespace, name, subresource, queryParams)
+// dialSubresource negotiates a WebSocket connection to wsURL using
+// k8s.io/client-go/transport/websocket. That package builds the
+// RoundTripper straight from the REST config — TLS, proxying, and auth
+// (bearer token, client certs, impersonation, exec/OIDC credential
+// plugins) — the same way a real apiserver request would, so we don't
+// have to reimplement auth-header extraction here.
+//
+// Trade-off: the negotiated connection's I/O buffers are fixed at ~33KiB by
+// client-go's RoundTripper, smaller than a hand-rolled dialer could use.
+// This only affects how many read/write syscalls a large message takes —
+// messages are chunked across frames regardless of buffer size — so it
+// doesn't affect correctness.
+func dialSubresource(ctx context.Context, config *rest.Config, wsURL string) (*websocket.Conn, error) {
+	rt, holder, err := wstransport.RoundTripperFor(config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("building websocket round tripper: %w", err)
 	}
 
-	headers, err := authHeaders(config)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, wsURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("building request: %w", err)
 	}
 
-	tlsConfig, err := rest.TLSConfigFor(config)
+	conn, err := wstransport.Negotiate(rt, holder, req, wsSubprotocol)
 	if err != nil {
-		return nil, fmt.Errorf("TLS config: %w", err)
-	}
-
-	proxy := http.ProxyFromEnvironment
-	if config.Proxy != nil {
-		proxy = config.Proxy
-	}
-
-	dialer := &websocket.Dialer{
-		Proxy:           proxy,
-		TLSClientConfig: tlsConfig,
-		WriteBufferSize: wsBufferSize,
-		ReadBufferSize:  wsBufferSize,
-		Subprotocols:    []string{wsSubprotocol},
-		NetDialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, network, addr)
-		},
-	}
-
-	conn, resp, err := dialer.DialContext(ctx, wsURL, headers)
-	if err != nil {
-		code := 0
-		if resp != nil {
-			code = resp.StatusCode
-		}
-		return nil, fmt.Errorf("websocket dial (status %d): %w", code, err)
+		return nil, fmt.Errorf("websocket dial: %w", err)
 	}
 	return conn, nil
 }
@@ -134,29 +127,6 @@ func buildWSURL(config *rest.Config, resource, namespace, name, subresource stri
 		u.RawQuery = queryParams.Encode()
 	}
 	return u.String(), nil
-}
-
-// authHeaders extracts auth headers (bearer token, client certs, impersonation)
-// that rest.HTTPWrappersForConfig injects into requests.
-func authHeaders(config *rest.Config) (http.Header, error) {
-	capture := &headerCapture{}
-	rt, err := rest.HTTPWrappersForConfig(config, capture)
-	if err != nil {
-		return nil, fmt.Errorf("wrapping transport: %w", err)
-	}
-	probe, err := http.NewRequest(http.MethodGet, config.Host, nil)
-	if err != nil {
-		return nil, fmt.Errorf("building probe request: %w", err)
-	}
-	_, _ = rt.RoundTrip(probe)
-	return capture.headers, nil
-}
-
-type headerCapture struct{ headers http.Header }
-
-func (h *headerCapture) RoundTrip(req *http.Request) (*http.Response, error) {
-	h.headers = req.Header.Clone()
-	return &http.Response{StatusCode: http.StatusOK, Body: http.NoBody}, nil
 }
 
 // wsStream adapts a websocket.Conn into an io.ReadWriteCloser that reads
