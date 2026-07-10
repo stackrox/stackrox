@@ -64,7 +64,7 @@ jobs:
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster cent-up
+        provision_gke_cluster roxci
         {
           echo "CLUSTER_NAME=${CLUSTER_NAME}"
           echo "ZONE=${ZONE}"
@@ -212,7 +212,7 @@ jobs:
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster pg-up
+        provision_gke_cluster roxci
         {
           echo "CLUSTER_NAME=${CLUSTER_NAME}"
           echo "ZONE=${ZONE}"
@@ -359,7 +359,7 @@ jobs:
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster sens-up
+        provision_gke_cluster roxci
         {
           echo "CLUSTER_NAME=${CLUSTER_NAME}"
           echo "ZONE=${ZONE}"

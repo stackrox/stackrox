@@ -65,7 +65,7 @@ jobs:
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
-        provision_gke_cluster dbbr
+        provision_gke_cluster roxci
         {
           echo "CLUSTER_NAME=${CLUSTER_NAME}"
           echo "ZONE=${ZONE}"
