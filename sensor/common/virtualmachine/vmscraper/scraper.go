@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,8 +24,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 var log = logging.LoggerForModule()
