@@ -30,6 +30,17 @@ var IndexReportsReceived = prometheus.NewCounter(
 	},
 )
 
+// IndexReportsSuppressed counts push-mode index reports dropped because the
+// VM is actively scraped via pull mode.
+var IndexReportsSuppressed = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_index_reports_suppressed_total",
+		Help:      "Total number of push-mode virtual machine index reports suppressed because the VM is actively scraped via pull mode",
+	},
+)
+
 // IndexReportsSent is a counter for the number of virtual machine index reports sent.
 // Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsSent = prometheus.NewCounterVec(
@@ -244,6 +255,7 @@ func init() {
 	prometheus.MustRegister(
 		// Push-mode metrics.
 		IndexReportsReceived,
+		IndexReportsSuppressed,
 		IndexReportsSent,
 		VirtualMachineIndexReportHandlingDurationMilliseconds,
 		IndexReportProcessingDurationMilliseconds,
