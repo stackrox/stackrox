@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -38,8 +39,14 @@ type Client struct {
 }
 
 // NewClient creates a protocol client with the given Sensor capabilities
-// and maximum response size in bytes.
+// and maximum response size in bytes. maxResponseSize is clamped to
+// [1, math.MaxUint32] since it's narrowed to uint32 when passed to
+// vsockframing.ReadFrame; an out-of-range value (e.g. from a misconfigured
+// size setting) would otherwise wrap into a bogus, silently-wrong limit.
 func NewClient(capabilities []string, maxResponseSize int) *Client {
+	if maxResponseSize <= 0 || int64(maxResponseSize) > math.MaxUint32 {
+		maxResponseSize = math.MaxUint32
+	}
 	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
 }
 
