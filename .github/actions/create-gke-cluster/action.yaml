@@ -43,18 +43,20 @@ runs:
         MACHINE_TYPE: ${{ inputs.machine-type }}
         NUM_NODES: ${{ inputs.nodes }}
         GKE_SPOT: ${{ inputs.spot }}
-      timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster "${CLUSTER_ID}"
+        timeout 20m bash -c '
+          source scripts/ci/gke.sh
+          provision_gke_cluster "${CLUSTER_ID}"
+        '
 
     - name: Wait for cluster
       shell: bash
-      timeout-minutes: 5
       run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
+        timeout 5m bash -c '
+          kubectl cluster-info
+          kubectl get nodes
+          scripts/ci/gke.sh wait_for_cluster
+        '
 
     - name: Register automatic teardown
       if: always()
