@@ -58,12 +58,9 @@ runs:
       with:
         shell: bash
         run: echo "Teardown registered for ${CLUSTER_NAME} in ${ZONE}"
-        post: |
-          if [ -z "${CLUSTER_NAME:-}" ]; then
-            echo "No CLUSTER_NAME — cluster was never created"
-            exit 0
-          fi
-          echo "Tearing down GKE cluster ${CLUSTER_NAME}"
+        post: >-
+          if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME — cluster was never created"; exit 0; fi;
+          echo "Tearing down GKE cluster ${CLUSTER_NAME}";
           if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-            echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details.";
           fi
