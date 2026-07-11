@@ -43,9 +43,7 @@ runs:
         MACHINE_TYPE: ${{ inputs.machine-type }}
         NUM_NODES: ${{ inputs.nodes }}
         GKE_SPOT: ${{ inputs.spot }}
-      run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster "${CLUSTER_ID}"
+      run: scripts/ci/gke.sh provision_gke_cluster "${CLUSTER_ID}"
 
     - name: Wait for cluster
       shell: bash
