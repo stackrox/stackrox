@@ -20,9 +20,6 @@ inputs:
   spot:
     description: Use spot (preemptible) VMs for cost savings
     default: "true"
-  auto-cleanup:
-    description: Register automatic teardown when the job ends (disable for multi-job workflows that manage cleanup separately)
-    default: "true"
 
 runs:
   using: composite
@@ -66,7 +63,7 @@ runs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Register automatic teardown
-      if: always() && inputs.auto-cleanup == 'true' && steps.create-cluster.outcome == 'success'
+      if: always() && steps.create-cluster.outcome == 'success'
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       with:
         shell: bash
@@ -77,4 +74,6 @@ runs:
             exit 0
           fi
           echo "Tearing down GKE cluster ${CLUSTER_NAME}"
-          scripts/ci/gke.sh teardown_gke_cluster false || echo "Teardown failed — cluster may need manual cleanup"
+          if ! scripts/ci/gke.sh teardown_gke_cluster false; then
+            echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+          fi
