@@ -1,8 +1,8 @@
 name: Create GKE cluster
 description: >
   Creates a GKE cluster via scripts/ci/gke.sh, waits for readiness,
-  and registers automatic teardown. Exports CLUSTER_NAME, ZONE, and
-  KUBECONFIG to GITHUB_ENV for subsequent steps.
+  and registers automatic teardown. CLUSTER_NAME and ZONE are exported
+  to GITHUB_ENV via ci_export for subsequent steps.
 
 inputs:
   cluster-name:
@@ -37,7 +37,6 @@ runs:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
-      id: create-cluster
       shell: bash
       env:
         CLUSTER_ID: ${{ inputs.cluster-name }}
@@ -48,11 +47,6 @@ runs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster "${CLUSTER_ID}"
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
 
     - name: Wait for cluster
       shell: bash
@@ -63,7 +57,7 @@ runs:
         scripts/ci/gke.sh wait_for_cluster
 
     - name: Register automatic teardown
-      if: always() && steps.create-cluster.outcome == 'success'
+      if: always()
       uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
       with:
         shell: bash
