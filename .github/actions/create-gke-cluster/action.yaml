@@ -48,6 +48,7 @@ runs:
     - name: Wait for cluster
       shell: bash
       run: |
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
