@@ -72,4 +72,4 @@ runs:
           if [ -n "${DESTROY_CLUSTER_OUTCOME:-}" ]; then echo "Teardown already handled by workflow step"; exit 0; fi;
           if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME — cluster was never created"; exit 0; fi;
           echo "Safety-net teardown for ${CLUSTER_NAME} (workflow step did not run)";
-          scripts/ci/gke.sh teardown_and_report_gke_cluster false || true
+          scripts/ci/gke.sh teardown_and_report_gke_cluster true || true

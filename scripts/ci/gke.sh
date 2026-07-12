@@ -360,6 +360,7 @@ teardown_and_report_gke_cluster() {
     local canceled="${1:-false}"
 
     require_environment "CLUSTER_NAME"
+    require_environment "ZONE"
 
     if teardown_gke_cluster "$canceled"; then
         set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed"
@@ -377,6 +378,7 @@ teardown_and_report_gke_cluster() {
 
     set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed"
     save_junit_success "Cluster" "Destroy GKE"
+    return 0
 }
 
 create_log_explorer_links() {
