@@ -228,6 +228,8 @@ create_cluster() {
         return 1
     fi
 
+    ci_export KUBECONFIG "${KUBECONFIG:-${HOME}/.kube/config}"
+
     add_a_maintenance_exclusion
 }
 

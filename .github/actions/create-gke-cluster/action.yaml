@@ -1,8 +1,8 @@
 name: Create GKE cluster
 description: >
   Creates a GKE cluster via scripts/ci/gke.sh, waits for readiness,
-  and registers automatic teardown. CLUSTER_NAME and ZONE are exported
-  to GITHUB_ENV via ci_export for subsequent steps.
+  and registers automatic teardown. CLUSTER_NAME, ZONE, and KUBECONFIG
+  are exported to GITHUB_ENV via ci_export for subsequent steps.
 
 inputs:
   cluster-name:
@@ -48,7 +48,6 @@ runs:
     - name: Wait for cluster
       shell: bash
       run: |
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
