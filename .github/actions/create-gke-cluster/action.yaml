@@ -61,6 +61,11 @@ runs:
         post: >-
           if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME — cluster was never created"; exit 0; fi;
           echo "Tearing down GKE cluster ${CLUSTER_NAME}";
-          if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details.";
+          if scripts/ci/gke.sh teardown_gke_cluster false; then exit 0; fi;
+          echo "Teardown returned an error — checking if cluster still exists";
+          if gcloud container clusters describe "${CLUSTER_NAME}" 2>/dev/null; then
+          echo "::error::Teardown FAILED — cluster ${CLUSTER_NAME} in ${ZONE} still exists and may need manual cleanup";
+          exit 1;
+          else
+          echo "Cluster ${CLUSTER_NAME} no longer exists — no cleanup needed";
           fi
