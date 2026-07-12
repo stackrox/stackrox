@@ -69,22 +69,7 @@ runs:
         shell: bash
         run: echo "Teardown registered for ${CLUSTER_NAME} in ${ZONE}"
         post: >-
-          source scripts/ci/lib.sh || true;
+          if [ -n "${DESTROY_CLUSTER_OUTCOME:-}" ]; then echo "Teardown already handled by workflow step"; exit 0; fi;
           if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME — cluster was never created"; exit 0; fi;
-          echo "Tearing down GKE cluster ${CLUSTER_NAME}";
-          if scripts/ci/gke.sh teardown_gke_cluster false; then
-          set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed" || true;
-          save_junit_success "Cluster" "Destroy GKE" || true;
-          exit 0;
-          fi;
-          echo "Teardown returned an error — checking if cluster still exists";
-          if gcloud container clusters describe "${CLUSTER_NAME}" 2>/dev/null; then
-          set_ci_shared_export DESTROY_CLUSTER_OUTCOME "failed" || true;
-          save_junit_failure "Cluster" "Destroy GKE" "Cluster ${CLUSTER_NAME} in ${ZONE} still exists after teardown" || true;
-          echo "::error::Teardown FAILED — cluster ${CLUSTER_NAME} in ${ZONE} still exists and may need manual cleanup";
-          exit 1;
-          else
-          set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed" || true;
-          save_junit_success "Cluster" "Destroy GKE" || true;
-          echo "Cluster ${CLUSTER_NAME} no longer exists — no cleanup needed";
-          fi
+          echo "Safety-net teardown for ${CLUSTER_NAME} (workflow step did not run)";
+          scripts/ci/gke.sh teardown_and_report_gke_cluster false || true
