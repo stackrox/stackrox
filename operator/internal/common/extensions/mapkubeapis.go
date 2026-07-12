@@ -32,13 +32,6 @@ func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option, mapper 
 	config := MapKubeAPIsExtensionConfig{
 		MapFile:    mapFile,
 		RESTMapper: mapper,
-		DubiousAPIs: []schema.GroupVersionKind{
-			{
-				Group:   "networking.istio.io",
-				Version: "v1alpha3",
-				Kind:    "DestinationRule",
-			},
-		},
 	}
 	extension := MapKubeAPIsExtension(config)
 	return append(opts, pkgReconciler.WithPreExtension(extension))
