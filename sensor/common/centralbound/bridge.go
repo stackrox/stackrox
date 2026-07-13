@@ -59,11 +59,11 @@ func (b *Bridge) handleEvent(e pubsub.Event) error {
 // Start is a no-op; the consumer is registered at construction time.
 func (b *Bridge) Start() error { return nil }
 
-// Stop closes the ResponsesC channel so centralSenderImpl's forwardResponses
-// goroutine exits cleanly.
+// Stop signals the bridge to stop forwarding events. It does not close
+// responsesC because the PubSub dispatcher may still invoke handleEvent
+// until Sensor tears it down later in the shutdown sequence.
 func (b *Bridge) Stop() {
 	b.stopper.Client().Stop()
-	close(b.responsesC)
 }
 
 // Notify is a no-op; the bridge does not react to lifecycle events.
