@@ -93,6 +93,8 @@ jobs:
         docker cp "${cid}:/usr/bin/roxctl" roxctl
         docker rm "${cid}"
         sudo install -m 0755 roxctl /usr/local/bin/roxctl
+        # go-junit-report is go-installed by 'make -C tests' and must be on PATH
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5

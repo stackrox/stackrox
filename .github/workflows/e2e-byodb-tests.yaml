@@ -91,7 +91,11 @@ jobs:
         cid="$(docker create "quay.io/rhacs-eng/roxctl:${MAIN_IMAGE_TAG}")"
         docker cp "${cid}:/usr/bin/roxctl" roxctl
         docker rm "${cid}"
+        # tests/byodb/lib.sh checks for the binary at $TEST_ROOT/bin/linux_amd64/roxctl
+        mkdir -p bin/linux_amd64
+        install -m 0755 roxctl bin/linux_amd64/roxctl
         sudo install -m 0755 roxctl /usr/local/bin/roxctl
+        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
