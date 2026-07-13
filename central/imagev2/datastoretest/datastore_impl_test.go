@@ -80,7 +80,7 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.componentDataStore = imageComponentDS.New(s.testDB.DB, componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
-	s.cveDataStore = imageCVEDS.New(cveStorage)
+	s.cveDataStore = imageCVEDS.New(cveStorage, s.testDB.DB)
 
 	cveInfoStorage := imageCVEInfoPostgres.New(s.testDB.DB)
 	s.cveInfoDataStore = imageCVEInfoDS.New(cveInfoStorage)
