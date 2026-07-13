@@ -99,15 +99,18 @@ type wrongEvent struct{}
 func (w *wrongEvent) Topic() pubsub.Topic { return pubsub.CentralBoundTopic }
 func (w *wrongEvent) Lane() pubsub.LaneID { return pubsub.CentralBoundLane }
 
-func TestBridge_StopClosesChannel(t *testing.T) {
+func TestBridge_HandleEventAfterStopDoesNotPanic(t *testing.T) {
 	capturing := &capturingDispatcher{}
 	b, err := NewBridge(capturing)
 	require.NoError(t, err)
 
 	b.Stop()
 
-	_, open := <-b.ResponsesC()
-	assert.False(t, open, "ResponsesC must be closed after Stop()")
+	assert.NotPanics(t, func() {
+		_ = capturing.callback(&CentralBoundEvent{
+			Msg: message.New(&central.MsgFromSensor{}),
+		})
+	})
 }
 
 func TestBridge_ConcurrentPublish(t *testing.T) {
