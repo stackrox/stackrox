@@ -278,7 +278,7 @@ dump_vmi_status() {
 # Returns 0 if the VM is reachable, 1 otherwise.
 ssh_probe_with_key() {
     local vm_name="$1"
-    virtctl ssh \
+    grep -q "SSH_PROBE_OK" < <(virtctl ssh \
         --namespace "$NAMESPACE" \
         --identity-file "$AUTOMATION_SSH_PRIVKEY" \
         --local-ssh-opts="-o StrictHostKeyChecking=no" \
@@ -286,7 +286,7 @@ ssh_probe_with_key() {
         --local-ssh-opts="-o BatchMode=yes" \
         --local-ssh-opts="-o ConnectTimeout=10" \
         --command "echo SSH_PROBE_OK" \
-        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep -q "SSH_PROBE_OK"
+        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null)
 }
 
 # Extracts the VM password from the infractl artifacts directory.
@@ -328,14 +328,14 @@ adopt_vm_with_password() {
     # Use sshpass to inject automation public key (base64-encode to avoid shell injection)
     local auto_pub_b64
     auto_pub_b64="$(echo "$auto_pub" | base64 -w0)"
-    if sshpass -p "$password" virtctl ssh \
+    if grep -q "ADOPT_OK" < <(sshpass -p "$password" virtctl ssh \
         --namespace "$NAMESPACE" \
         --local-ssh-opts="-o StrictHostKeyChecking=no" \
         --local-ssh-opts="-o UserKnownHostsFile=/dev/null" \
         --local-ssh-opts="-o ConnectTimeout=10" \
         --local-ssh-opts="-o PubkeyAuthentication=no" \
         --command "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo ${auto_pub_b64} | base64 -d >> ~/.ssh/authorized_keys && sort -u -o ~/.ssh/authorized_keys ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && echo ADOPT_OK" \
-        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null | grep -q "ADOPT_OK"; then
+        "${SSH_USER}@vmi/${vm_name}" 2>/dev/null); then
         echo "  Adopted $vm_name — automation key injected."
         return 0
     fi

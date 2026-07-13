@@ -96,7 +96,7 @@ cache_is_fresh() {
         now_epoch=$(date +%s)
         (( (now_epoch - mod_epoch) < CACHE_MAX_AGE_S ))
     else
-        find "$CACHE_FILE" -maxdepth 0 -mmin "-$(( CACHE_MAX_AGE_S / 60 ))" | grep -q .
+        grep -q . < <(find "$CACHE_FILE" -maxdepth 0 -mmin "-$(( CACHE_MAX_AGE_S / 60 ))")
     fi
 }
 
