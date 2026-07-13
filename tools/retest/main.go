@@ -95,8 +95,8 @@ issues:
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		skippableCheckPrefixes := slices.Concat(allowedCheckFailurePrefixes, retestableCheckPrefixes)
-		for name, passed := range checks {
-			if passed || hasAnyPrefix(name, skippableCheckPrefixes) {
+		for name, state := range checks {
+			if state != jobFailure || hasAnyPrefix(name, skippableCheckPrefixes) {
 				continue
 			}
 			log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
@@ -144,11 +144,10 @@ var (
 	testJob       = regexp.MustCompile(`/test\s+(.*)`)
 )
 
-func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) (comments []string, skipped []skipReason) {
+func commentsToCreate(statuses map[string]jobState, jobsToRetest []string, shouldRetest bool) (comments []string, skipped []skipReason) {
 	for _, job := range jobsToRetest {
-		state := statuses[job]
-		if state == "pending" {
-			skipped = append(skipped, skipReason{job: job, message: fmt.Sprintf("already %s", state)})
+		if statuses[job] == jobPending {
+			skipped = append(skipped, skipReason{job: job, message: "already pending"})
 			continue
 		}
 		comments = append(comments, "/test "+job)
@@ -218,7 +217,7 @@ const retestComment = "/retest"
 
 // skipRetestReason reports why a "/retest" comment should not be issued.
 // It returns nil when a retest is warranted, and a human-readable reason otherwise.
-func skipRetestReason(statuses map[string]string, comments []string, checks map[string]bool) error {
+func skipRetestReason(statuses map[string]jobState, comments []string, checks map[string]jobState) error {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -229,14 +228,14 @@ func skipRetestReason(statuses map[string]string, comments []string, checks map[
 		return fmt.Errorf("PR has already been retested %d times", retested)
 	}
 
-	for name, passed := range checks {
-		if !passed && hasAnyPrefix(name, retestableCheckPrefixes) {
+	for name, state := range checks {
+		if state == jobFailure && hasAnyPrefix(name, retestableCheckPrefixes) {
 			return nil
 		}
 	}
 
-	for _, status := range statuses {
-		if status == "failure" {
+	for _, state := range statuses {
+		if state == jobFailure {
 			return nil
 		}
 	}

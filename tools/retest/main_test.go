@@ -249,9 +249,9 @@ func Test_jobsToRetestFromComments(t *testing.T) {
 // been retested.
 func Test_skipRetestReason(t *testing.T) {
 	tests := map[string]struct {
-		statuses          map[string]string
+		statuses          map[string]jobState
 		comments          []string
-		checks            map[string]bool
+		checks            map[string]jobState
 		wantSkipReasonMsg string
 	}{
 		"nil": {
@@ -260,66 +260,66 @@ func Test_skipRetestReason(t *testing.T) {
 			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"empty": {
-			statuses:          map[string]string{},
+			statuses:          map[string]jobState{},
 			comments:          []string{},
 			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"all success": {
-			statuses: map[string]string{
-				"a": "success",
-				"b": "success",
-				"c": "success",
+			statuses: map[string]jobState{
+				"a": jobOK,
+				"b": jobOK,
+				"c": jobOK,
 			},
 			comments:          []string{},
 			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"one failure": {
-			statuses: map[string]string{
-				"a": "success",
-				"b": "failure",
-				"c": "success",
+			statuses: map[string]jobState{
+				"a": jobOK,
+				"b": jobFailure,
+				"c": jobOK,
 			},
 			comments: []string{},
 		},
 		"one failure but already retested once": {
-			statuses: map[string]string{
-				"a": "success",
-				"b": "failure",
-				"c": "success",
+			statuses: map[string]jobState{
+				"a": jobOK,
+				"b": jobFailure,
+				"c": jobOK,
 			},
 			comments: []string{"/retest"},
 		},
 		"one failure but already retested too many times": {
-			statuses: map[string]string{
-				"a": "success",
-				"b": "failure",
-				"c": "success",
+			statuses: map[string]jobState{
+				"a": jobOK,
+				"b": jobFailure,
+				"c": jobOK,
 			},
 			comments:          []string{"/retest", "/retest", "/retest", "/retest"},
 			wantSkipReasonMsg: "PR has already been retested 4 times",
 		},
 		"failed e2e check triggers retest": {
-			statuses: map[string]string{},
+			statuses: map[string]jobState{},
 			comments: []string{},
-			checks:   map[string]bool{"e2e-gke-tests": false},
+			checks:   map[string]jobState{"e2e-gke-tests": jobFailure},
 		},
 		"failed e2e check but already retested too many times": {
-			statuses:          map[string]string{},
+			statuses:          map[string]jobState{},
 			comments:          []string{"/retest", "/retest", "/retest", "/retest"},
-			checks:            map[string]bool{"e2e-gke-tests": false},
+			checks:            map[string]jobState{"e2e-gke-tests": jobFailure},
 			wantSkipReasonMsg: "PR has already been retested 4 times",
 		},
 		"failed e2e check with prow success": {
-			statuses: map[string]string{
-				"a": "success",
+			statuses: map[string]jobState{
+				"a": jobOK,
 			},
 			comments: []string{},
-			checks:   map[string]bool{"e2e-gke-tests": false},
+			checks:   map[string]jobState{"e2e-gke-tests": jobFailure},
 		},
 		"passing e2e check does not trigger retest": {
-			statuses:          map[string]string{},
+			statuses:          map[string]jobState{},
 			comments:          []string{},
-			checks:            map[string]bool{"e2e-gke-tests": true},
+			checks:            map[string]jobState{"e2e-gke-tests": jobOK},
 			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 	}
@@ -341,7 +341,7 @@ func Test_skipRetestReason(t *testing.T) {
 func Test_commentsToCreate(t *testing.T) {
 	tests := []struct {
 		name         string
-		statuses     map[string]string
+		statuses     map[string]jobState
 		jobsToRetest []string
 		shouldRetest bool
 		wantComments []string
@@ -355,59 +355,59 @@ func Test_commentsToCreate(t *testing.T) {
 		},
 		{
 			name:         "empty",
-			statuses:     map[string]string{},
+			statuses:     map[string]jobState{},
 			jobsToRetest: []string{},
 			wantComments: nil,
 		},
 		{
 			name:         "competed",
-			statuses:     map[string]string{"job-1": "succeeded"},
+			statuses:     map[string]jobState{"job-1": jobOK},
 			jobsToRetest: []string{"job-1"},
 			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "competed",
-			statuses:     map[string]string{"job-1": "pending"},
+			statuses:     map[string]jobState{"job-1": jobPending},
 			jobsToRetest: []string{"job-1"},
 			wantComments: nil,
 			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
 		},
 		{
 			name:         "competed",
-			statuses:     map[string]string{"job-1": "succeeded"},
+			statuses:     map[string]jobState{"job-1": jobOK},
 			jobsToRetest: []string{"job-1"},
 			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "retest",
-			statuses:     map[string]string{"job-1": "failure"},
+			statuses:     map[string]jobState{"job-1": jobFailure},
 			jobsToRetest: []string{},
 			shouldRetest: true,
 			wantComments: []string{"/retest"},
 		},
 		{
 			name:         "retest",
-			statuses:     map[string]string{"job-1": "failure"},
+			statuses:     map[string]jobState{"job-1": jobFailure},
 			jobsToRetest: []string{},
 			wantComments: nil,
 		},
 		{
 			name:         "just test no retest",
-			statuses:     map[string]string{"job-1": "failure"},
+			statuses:     map[string]jobState{"job-1": jobFailure},
 			jobsToRetest: []string{"job-1"},
 			shouldRetest: true,
 			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "pending job is skipped even with trimmed name",
-			statuses:     map[string]string{"job-1": "pending"},
+			statuses:     map[string]jobState{"job-1": jobPending},
 			jobsToRetest: []string{"job-1"},
 			wantComments: nil,
 			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
 		},
 		{
 			name:         "multiple jobs — pending skipped, completed retested",
-			statuses:     map[string]string{"job-1": "pending", "job-2": "failure"},
+			statuses:     map[string]jobState{"job-1": jobPending, "job-2": jobFailure},
 			jobsToRetest: []string{"job-1", "job-2"},
 			wantComments: []string{"/test job-2"},
 			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
