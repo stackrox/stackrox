@@ -327,7 +327,13 @@ func (r *CARefresher) ensureFreshPool(ctx context.Context) (*x509.CertPool, erro
 			return pool, nil
 		}
 
-		fetchCtx, cancel := context.WithTimeout(ctx, r.fetchTimeout)
+		// ctx here belongs to whichever single caller happened to trigger
+		// this fetch, but the result is shared with every other concurrent
+		// caller waiting on it too. Don't let that one caller's own
+		// cancellation (e.g. its handshake being torn down) abort the fetch
+		// for everyone else: detach from ctx's cancellation/deadline with
+		// WithoutCancel, and bound the fetch by r.fetchTimeout alone.
+		fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), r.fetchTimeout)
 		defer cancel()
 
 		ca, fetchErr := r.fetchCA(fetchCtx)
