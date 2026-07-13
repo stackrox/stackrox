@@ -56,41 +56,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create GKE cluster
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
-        GKE_SPOT: "true"
-      timeout-minutes: 20
-      run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster cent-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
-
     - name: Docker login to Quay.io
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+    - name: Create GKE cluster
+      uses: ./.github/actions/create-gke-cluster
       with:
-        install_components: "gke-gcloud-auth-plugin"
+        cluster-name: cent-up
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
@@ -147,16 +126,9 @@ jobs:
 
     - name: Teardown GKE cluster
       if: always()
-      continue-on-error: true
       run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then exit 0; fi
+        scripts/ci/gke.sh teardown_and_report_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -204,41 +176,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create GKE cluster
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
-        GKE_SPOT: "true"
-      timeout-minutes: 20
-      run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster pg-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
-
     - name: Docker login to Quay.io
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+    - name: Create GKE cluster
+      uses: ./.github/actions/create-gke-cluster
       with:
-        install_components: "gke-gcloud-auth-plugin"
+        cluster-name: pg-up
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
@@ -294,16 +245,9 @@ jobs:
 
     - name: Teardown GKE cluster
       if: always()
-      continue-on-error: true
       run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then exit 0; fi
+        scripts/ci/gke.sh teardown_and_report_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
@@ -351,41 +295,20 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create GKE cluster
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
-        GKE_SPOT: "true"
-      timeout-minutes: 20
-      run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster sens-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
-
     - name: Docker login to Quay.io
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+    - name: Create GKE cluster
+      uses: ./.github/actions/create-gke-cluster
       with:
-        install_components: "gke-gcloud-auth-plugin"
+        cluster-name: sens-up
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl and upgrader
       run: make roxctl_linux-amd64 upgrader
-
-    - name: Verify kubectl access and wait for cluster to stabilize
-      timeout-minutes: 5
-      run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
@@ -428,16 +351,9 @@ jobs:
 
     - name: Teardown GKE cluster
       if: always()
-      continue-on-error: true
       run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
+        if [[ -z "${CLUSTER_NAME:-}" ]]; then exit 0; fi
+        scripts/ci/gke.sh teardown_and_report_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
