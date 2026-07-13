@@ -211,7 +211,7 @@ var (
 func commentsToCreate(statuses map[string]jobState, jobsToRetest []string, shouldRetest bool) (comments []string, skipped []skipReason) {
 	for _, job := range jobsToRetest {
 		if statuses[job] == jobPending {
-			skipped = append(skipped, skipReason{job: job, message: "already pending"})
+			skipped = append(skipped, skipReason{job: job, message: "job is pending"})
 			continue
 		}
 		comments = append(comments, "/test "+job)

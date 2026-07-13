@@ -22,8 +22,8 @@ func Test_logSkipReason(t *testing.T) {
 			wantLog: fmt.Sprintf(`#%d not issuing /retest: no failing status or retestable check found`, testPRNumber),
 		},
 		"job-level reason": {
-			reason:  skipReason{job: "job-name-1", message: "already pending"},
-			wantLog: fmt.Sprintf(`#%d not issuing /test "job-name-1": already pending`, testPRNumber),
+			reason:  skipReason{job: "job-name-1", message: "job is pending"},
+			wantLog: fmt.Sprintf(`#%d not issuing /test "job-name-1": job is pending`, testPRNumber),
 		},
 	}
 	for name, tt := range tests {
@@ -404,7 +404,7 @@ func Test_commentsToCreate(t *testing.T) {
 			statuses:     map[string]jobState{"job-1": jobPending},
 			jobsToRetest: []string{"job-1"},
 			wantComments: nil,
-			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
+			wantSkipped:  []skipReason{{job: "job-1", message: "job is pending"}},
 		},
 		{
 			name:         "competed",
@@ -437,14 +437,14 @@ func Test_commentsToCreate(t *testing.T) {
 			statuses:     map[string]jobState{"job-1": jobPending},
 			jobsToRetest: []string{"job-1"},
 			wantComments: nil,
-			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
+			wantSkipped:  []skipReason{{job: "job-1", message: "job is pending"}},
 		},
 		{
 			name:         "multiple jobs — pending skipped, completed retested",
 			statuses:     map[string]jobState{"job-1": jobPending, "job-2": jobFailure},
 			jobsToRetest: []string{"job-1", "job-2"},
 			wantComments: []string{"/test job-2"},
-			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
+			wantSkipped:  []skipReason{{job: "job-1", message: "job is pending"}},
 		},
 	}
 	for _, tt := range tests {
@@ -574,7 +574,7 @@ func Test_decideRetest(t *testing.T) {
 				jobsToRetest: []string{"job-name-1"},
 				skipped: []skipReason{
 					{message: "no failing status or retestable check found"},
-					{job: "job-name-1", message: "already pending"},
+					{job: "job-name-1", message: "job is pending"},
 				},
 				comment: "",
 			},
