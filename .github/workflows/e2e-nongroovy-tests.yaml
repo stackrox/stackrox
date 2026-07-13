@@ -70,7 +70,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: nongroovy
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
@@ -146,12 +145,6 @@ jobs:
         sys.path.append('.openshift-ci')
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
-
-    - name: Teardown GKE cluster
-      if: always()
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then exit 0; fi
-        scripts/ci/gke.sh teardown_and_report_gke_cluster false
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
