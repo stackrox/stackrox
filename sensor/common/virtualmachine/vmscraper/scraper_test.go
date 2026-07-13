@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/set"
@@ -363,6 +364,72 @@ func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 	client.resultQueue = []*vsockclient.GetReportResult{makeReport(2)}
 	s.pollOnce(context.Background())
 	assert.Len(t, sender.sent, 2, "should forward on generation change")
+}
+
+// TestVMScraper_NACK reproduces a scenario where Central NACKs a report
+// (e.g. Scanner was still starting up). Without resetting the cached
+// generation, the next poll would see roxagent report "unchanged"
+// (report_generation didn't change) and skip resending, stranding the VM
+// until mandatoryRefreshAfter (4h) instead of retrying on the next poll
+// interval. It also verifies a NACK for an unrelated VM ID leaves the known
+// VM's state untouched instead of forcing a spurious resend.
+func TestVMScraper_NACK(t *testing.T) {
+	cases := map[string]struct {
+		nackResourceID             string
+		pollResultAfterNack        *vsockclient.GetReportResult
+		wantIfNewerThanOnRetryPoll uint32
+		wantTotalSent              int
+	}{
+		"resets generation and forces an immediate resend when NACK matches the running VM": {
+			nackResourceID:             "vm-a-id:100",
+			pollResultAfterNack:        makeReport(1),
+			wantIfNewerThanOnRetryPoll: 0, // on the second poll, the scraper should ask for a full report
+			wantTotalSent:              2,
+		},
+		"is a no-op when NACK references an unrelated VM ID": {
+			nackResourceID:             "unknown-vm-id:999",
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1, // on the second poll, the scraper should keep trusting the old generation
+			wantTotalSent:              1,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			sender := &mockSender{}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+			}
+
+			s := newTestScraper(store, sender, dialer, client)
+			s.pollOnce(context.Background())
+			require.Len(t, sender.sent, 1)
+
+			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      central.SensorACK_NACK,
+						ResourceId:  tc.nackResourceID,
+					},
+				},
+			})
+			require.NoError(t, err)
+
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{tc.pollResultAfterNack}
+			s.pollOnce(context.Background())
+
+			require.Len(t, client.calls, 1)
+			assert.Equal(t, tc.wantIfNewerThanOnRetryPoll, client.calls[0].ifNewerThan,
+				"generation the scraper requests on the poll following the NACK")
+			assert.Len(t, sender.sent, tc.wantTotalSent, "total reports handed to the sender across both polls")
+		})
+	}
 }
 
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {

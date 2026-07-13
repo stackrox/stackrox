@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -143,10 +144,76 @@ func (s *VMScraper) Stop() {
 
 func (s *VMScraper) Capabilities() []centralsensor.SensorCapability { return nil }
 func (s *VMScraper) Notify(_ common.SensorComponentEvent)           {}
-func (s *VMScraper) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+
+// Accepts reports whether this component wants to see SensorACK messages
+// for VM index reports.
+func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
+	sensorAck := msg.GetSensorAck()
+	return sensorAck != nil && sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
+}
+
+// ProcessMessage logs SensorACK/NACK messages that Central sends for VM
+// index reports pulled by this scraper.
+func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+	sensorAck := msg.GetSensorAck()
+	if sensorAck == nil {
+		return nil
+	}
+
+	switch sensorAck.GetAction() {
+	case central.SensorACK_ACK:
+		// TODO(ROX-35722): placeholder, no action taken on ACK yet.
+		log.Infof("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
+	case central.SensorACK_NACK:
+		s.handleNACK(sensorAck.GetResourceId())
+		log.Infof("VMScraper: received negative acknowledgement for resource_id=%q, reason=%q", sensorAck.GetResourceId(), sensorAck.GetReason())
+	default:
+		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
+	}
 	return nil
 }
-func (s *VMScraper) Accepts(_ *central.MsgToSensor) bool         { return false }
+
+// handleNACK reacts to Central rejecting a previously-sent VM index report by
+// clearing the VM's cached generation, so the next poll fetches and resends a
+// full report instead of trusting roxagent's "unchanged" response and
+// waiting for the next mandatoryRefreshAfter window.
+func (s *VMScraper) handleNACK(resourceID string) {
+	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
+	if key == "" {
+		log.Debugf("VMScraper: could not resolve VM for NACKed resource_id=%q; nothing to reset", resourceID)
+		return
+	}
+
+	concurrency.WithLock(&s.mu, func() {
+		if state, ok := s.vmState[key]; ok {
+			// Sensor and roxagent must not agree on 'unchanged' when Central NACKed;
+			// force a full report on the next poll instead.
+			state.lastGeneration = 0
+		}
+	})
+}
+
+// findKeyByVMID returns the vmState key ("namespace/name") for the currently
+// running VM with the given ID, or "" if none matches.
+func (s *VMScraper) findKeyByVMID(vmID string) string {
+	if vmID == "" {
+		return ""
+	}
+	for _, vm := range s.store.ListRunning() {
+		if string(vm.ID) == vmID {
+			return vmKey(vm)
+		}
+	}
+	return ""
+}
+
+// vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
+// (format "vmID:vsockCID"; see central/sensor/service/common.VMIndexACKResourceID).
+func vmIDFromResourceID(resourceID string) string {
+	vmID, _, _ := strings.Cut(resourceID, ":")
+	return vmID
+}
+
 func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
 
 func (s *VMScraper) run() {
