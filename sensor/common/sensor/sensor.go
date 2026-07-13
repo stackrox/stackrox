@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -352,28 +353,25 @@ func (s *Sensor) registerSoftRestartHandler() {
 
 func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
 	return func(e pubsub.Event) error {
-		evt, ok := e.(*pubsub.SoftRestartEvent)
+		evt, ok := e.(*events.SoftRestartEvent)
 		if !ok {
 			return errors.Errorf("unexpected event type: %T", e)
 		}
-		if evt.IsExpired() {
-			return nil
-		}
-		s.handleSoftRestart(evt.Text)
+		s.handleSoftRestart(evt.Text, evt.IsExpired())
 		return nil
 	}
 }
 
 func (s *Sensor) makeSoftRestartLegacyHandler() func(*internalmessage.SensorInternalMessage) {
 	return func(msg *internalmessage.SensorInternalMessage) {
-		if msg.IsExpired() {
-			return
-		}
-		s.handleSoftRestart(msg.Text)
+		s.handleSoftRestart(msg.Text, msg.IsExpired())
 	}
 }
 
-func (s *Sensor) handleSoftRestart(text string) {
+func (s *Sensor) handleSoftRestart(text string, expired bool) {
+	if expired {
+		return
+	}
 	s.centralCommunicationLock.Lock()
 	defer s.centralCommunicationLock.Unlock()
 	if s.centralCommunication == nil {

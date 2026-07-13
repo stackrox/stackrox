@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/events"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
@@ -78,7 +79,7 @@ func TestNewManager_PubSubEnabled_RegistersResourceSyncConsumer(t *testing.T) {
 	assert.Equal(t, pubsub.ResourceSyncFinishedLane, capturing.laneID)
 
 	assert.False(t, mgr.initialSync.Load(), "initialSync must be false before the event fires")
-	require.NoError(t, capturing.callback(&pubsub.ResourceSyncFinishedEvent{}))
+	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{}))
 	assert.True(t, mgr.initialSync.Load(), "initialSync must be true after ResourceSyncFinished fires")
 }
 
@@ -93,7 +94,7 @@ func TestNewManager_PubSubEnabled_CallbackHonorsStopper(t *testing.T) {
 
 	require.NotNil(t, capturing.callback)
 	mgr.stopper.Client().Stop()
-	require.NoError(t, capturing.callback(&pubsub.ResourceSyncFinishedEvent{}))
+	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync when stopper is triggered")
 }
 
@@ -133,7 +134,7 @@ func TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	require.NoError(t, capturing.callback(&pubsub.ResourceSyncFinishedEvent{Validity: ctx}))
+	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{Validity: ctx}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for an expired event")
 }
 
@@ -147,7 +148,7 @@ func TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType(t *testing.T) {
 
 	require.NotNil(t, capturing.callback)
 
-	err := capturing.callback(&pubsub.SoftRestartEvent{Text: "wrong type"})
+	err := capturing.callback(&events.SoftRestartEvent{Text: "wrong type"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected event type")
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for wrong event type")
@@ -181,7 +182,7 @@ func TestNewManager_PubSubEnabled_RealDispatcher(t *testing.T) {
 
 	assert.False(t, mgr.initialSync.Load())
 
-	require.NoError(t, disp.Publish(&pubsub.ResourceSyncFinishedEvent{}))
+	require.NoError(t, disp.Publish(&events.ResourceSyncFinishedEvent{}))
 
 	assert.Eventually(t, func() bool {
 		return mgr.initialSync.Load()
@@ -205,7 +206,7 @@ func TestNewManager_PubSubEnabled_ConcurrentCallbacks(t *testing.T) {
 	for range goroutines {
 		go func() {
 			defer wg.Done()
-			_ = capturing.callback(&pubsub.ResourceSyncFinishedEvent{})
+			_ = capturing.callback(&events.ResourceSyncFinishedEvent{})
 		}()
 	}
 	wg.Wait()

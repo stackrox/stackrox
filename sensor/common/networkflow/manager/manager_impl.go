@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -192,7 +193,7 @@ func NewManager(
 			pubsub.ResourceSyncFinishedTopic,
 			pubsub.ResourceSyncFinishedLane,
 			func(e pubsub.Event) error {
-				evt, ok := e.(*pubsub.ResourceSyncFinishedEvent)
+				evt, ok := e.(*events.ResourceSyncFinishedEvent)
 				if !ok {
 					return errors.Errorf("unexpected event type: %T", e)
 				}
@@ -204,7 +205,10 @@ func NewManager(
 					return nil
 				default:
 				}
-				mgr.Notify(common.SensorComponentEventResourceSyncFinished)
+				mgr.handleResourceSyncFinished()
+				if mgr.purger != nil {
+					mgr.purger.Notify(common.SensorComponentEventResourceSyncFinished)
+				}
 				return nil
 			},
 		); err != nil {
@@ -320,7 +324,6 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowManager"))
-	// Ensure that the sub-components are notified after this manager processes the notification.
 	defer func() {
 		if m.purger != nil {
 			m.purger.Notify(e)
@@ -328,12 +331,15 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	}()
 	switch e {
 	case common.SensorComponentEventResourceSyncFinished:
-		if m.initialSync.CompareAndSwap(false, true) {
-			m.enricherTicker.Reset(enricherCycle)
-		}
+		m.handleResourceSyncFinished()
 	case common.SensorComponentEventOfflineMode:
-		// In offline mode with event buffering enabled, we continue operation
 		return
+	}
+}
+
+func (m *networkFlowManager) handleResourceSyncFinished() {
+	if m.initialSync.CompareAndSwap(false, true) {
+		m.enricherTicker.Reset(enricherCycle)
 	}
 }
 

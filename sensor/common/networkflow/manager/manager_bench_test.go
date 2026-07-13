@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/events"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
@@ -61,7 +62,7 @@ func BenchmarkResourceSyncDelivery(b *testing.B) {
 		updatecomputer.New(),
 	).(*networkFlowManager)
 
-	event := &pubsub.ResourceSyncFinishedEvent{Validity: context.Background()}
+	event := &events.ResourceSyncFinishedEvent{Validity: context.Background()}
 	legacyMsg := &internalmessage.SensorInternalMessage{
 		Kind:     internalmessage.SensorMessageResourceSyncFinished,
 		Text:     "bench sync",

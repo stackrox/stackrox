@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	listenerMocks "github.com/stackrox/rox/sensor/kubernetes/listener/mocks"
@@ -42,8 +43,8 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_PublishesSoftRestartEvent(t *te
 	)
 	cb(&watcher.Status{Available: true})
 
-	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
-	evt := capturedEvent.(*pubsub.SoftRestartEvent)
+	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+	evt := capturedEvent.(*events.SoftRestartEvent)
 	assert.Equal(t, expectedText, evt.Text)
 }
 
@@ -133,8 +134,8 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable(t *testing
 	)
 	cb(&watcher.Status{Available: false})
 
-	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
-	assert.Equal(t, expectedText, capturedEvent.(*pubsub.SoftRestartEvent).Text)
+	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+	assert.Equal(t, expectedText, capturedEvent.(*events.SoftRestartEvent).Text)
 }
 
 // TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet verifies
@@ -186,6 +187,6 @@ func TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext(t *testing.T) 
 	)
 	cb(&watcher.Status{Available: true})
 
-	require.IsType(t, &pubsub.SoftRestartEvent{}, capturedEvent)
-	assert.True(t, capturedEvent.(*pubsub.SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
+	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+	assert.True(t, capturedEvent.(*events.SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
 }
