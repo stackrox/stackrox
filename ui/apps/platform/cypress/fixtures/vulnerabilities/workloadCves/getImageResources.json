@@ -1,0 +1,20 @@
+{
+    "data": {
+        "image": {
+            "id": "sha256:abcxyz",
+            "deploymentCount": 1,
+            "deployments": [
+                {
+                    "id": "mock-deployment-001",
+                    "name": "central",
+                    "type": "Deployment",
+                    "clusterName": "remote",
+                    "namespace": "stackrox",
+                    "created": "2024-03-01T17:45:32.757812569Z",
+                    "__typename": "Deployment"
+                }
+            ],
+            "__typename": "Image"
+        }
+    }
+}
