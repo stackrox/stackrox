@@ -70,7 +70,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: byodb
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: |

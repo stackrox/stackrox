@@ -56,7 +56,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: dbbr
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       # The test uses roxctl for central backup/restore operations
