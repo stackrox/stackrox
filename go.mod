@@ -163,7 +163,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.31.1
+	gorm.io/gorm v1.31.2
 	helm.sh/helm/v3 v3.21.2
 	k8s.io/api v0.36.2
 	k8s.io/apiextensions-apiserver v0.36.2
