@@ -64,7 +64,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v5.0.0
+    - uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # ratchet:codecov/codecov-action@v5.0.0
       with:
         use_oidc: true
         flags: go-unit-tests
@@ -176,7 +176,7 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - uses: codecov/codecov-action@ab904c41d6ece82784817410c45d8b8c02684457 # ratchet:codecov/codecov-action@v5.0.0
+    - uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # ratchet:codecov/codecov-action@v5.0.0
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
