@@ -72,71 +72,135 @@ func run(ctx context.Context, client *github.Client) error {
 	}
 	log.Printf("Found %d PRs", search.GetTotal())
 
-issues:
 	for _, pr := range search.Issues {
-		prNumber := pr.GetNumber()
-		log.Printf("#%d retrieving...: %s", prNumber, pr.GetHTMLURL())
-		prDetails, _, err := client.PullRequests.Get(ctx, s, s, prNumber)
-		if err != nil {
-			log.Printf("#%d could not get PR details: %v", prNumber, err)
-			continue
-		}
-		userComments, allComments, err := commentsForPrByUser(ctx, client, prNumber, user.GetID())
-		if err != nil {
-			log.Printf("#%d could not get allComments: %v", prNumber, err)
-			continue
-		}
-		log.Printf("#%d has %d allComments by %s and %d in total", prNumber, len(userComments), user.GetLogin(), len(allComments))
-		checks, err := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
-		if err != nil {
-			log.Printf("#%d could not get checks: %v", prNumber, err)
-			continue
-		}
-		log.Printf("#%d has %d completed checks", prNumber, len(checks))
-
-		skippableCheckPrefixes := slices.Concat(allowedCheckFailurePrefixes, retestableCheckPrefixes)
-		for name, state := range checks {
-			if state != jobFailure || hasAnyPrefix(name, skippableCheckPrefixes) {
-				continue
-			}
-			log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
-			continue issues
-		}
-
-		statuses, err := statusesForPR(ctx, client, prDetails.GetStatusesURL())
-		if err != nil {
-			log.Printf("#%d could not get statuses: %v", prNumber, err)
-			continue
-		}
-		log.Printf("#%d has %d statuses", prNumber, len(statuses))
-		jobsToRetest, jobSkips, err := jobsToRetestFromComments(userComments, allComments)
-		if err != nil {
-			log.Printf("#%d could not get jobs to retest: %v", prNumber, err)
-			for _, c := range userComments {
-				if c == err.Error() {
-					continue issues
-				}
-			}
-			errorComment := fmt.Sprintf(":x: There was an error with a comment. "+
-				"Please edit or remove it and issue a proper command\n%s", err.Error())
-			createComment(ctx, client, prNumber, errorComment)
-			continue
-		}
-		for _, skip := range jobSkips {
-			logSkipReason(prNumber, skip)
-		}
-		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		retestReason := skipRetestReason(statuses, userComments, checks)
-		if retestReason != nil {
-			logSkipReason(prNumber, skipReason{message: retestReason.Error()})
-		}
-		newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestReason == nil)
-		for _, skip := range testSkips {
-			logSkipReason(prNumber, skip)
-		}
-		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
+		processPR(ctx, client, user, pr)
 	}
 	return nil
+}
+
+// processPR fetches everything needed to decide what to do about a single
+// PR, delegates the actual decision to the pure functions below, and
+// carries out whatever they decided (post a comment, or do nothing). It
+// deliberately contains no branching logic of its own beyond "did this
+// GitHub call fail" and "what did the decision say to do" — every
+// interesting decision lives in failingCheck/decideRetest, which are
+// unit-tested directly instead of only through this function's GitHub I/O.
+func processPR(ctx context.Context, client *github.Client, user *github.User, pr *github.Issue) {
+	prNumber := pr.GetNumber()
+	log.Printf("#%d retrieving...: %s", prNumber, pr.GetHTMLURL())
+	prDetails, _, err := client.PullRequests.Get(ctx, s, s, prNumber)
+	if err != nil {
+		log.Printf("#%d could not get PR details: %v", prNumber, err)
+		return
+	}
+	userComments, allComments, err := commentsForPrByUser(ctx, client, prNumber, user.GetID())
+	if err != nil {
+		log.Printf("#%d could not get allComments: %v", prNumber, err)
+		return
+	}
+	log.Printf("#%d has %d allComments by %s and %d in total", prNumber, len(userComments), user.GetLogin(), len(allComments))
+
+	checks, err := checksForCommit(ctx, client, prDetails.GetHead().GetSHA())
+	if err != nil {
+		log.Printf("#%d could not get checks: %v", prNumber, err)
+		return
+	}
+	log.Printf("#%d has %d completed checks", prNumber, len(checks))
+
+	if name := failingCheck(checks); name != "" {
+		log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
+		return
+	}
+
+	statuses, err := statusesForPR(ctx, client, prDetails.GetStatusesURL())
+	if err != nil {
+		log.Printf("#%d could not get statuses: %v", prNumber, err)
+		return
+	}
+	log.Printf("#%d has %d statuses", prNumber, len(statuses))
+
+	decision := decideRetest(userComments, allComments, checks, statuses)
+	if decision.commentParseErr != "" {
+		log.Printf("#%d could not get jobs to retest: %s", prNumber, decision.commentParseErr)
+		if decision.alreadyReported {
+			return
+		}
+		createComment(ctx, client, prNumber, fmt.Sprintf(":x: There was an error with a comment. "+
+			"Please edit or remove it and issue a proper command\n%s", decision.commentParseErr))
+		return
+	}
+
+	log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(decision.jobsToRetest, ", "))
+	for _, skip := range decision.skipped {
+		logSkipReason(prNumber, skip)
+	}
+	createComment(ctx, client, prNumber, decision.comment)
+}
+
+// failingCheck returns the name of a failing check that isn't covered by
+// allowedCheckFailurePrefixes/retestableCheckPrefixes, or "" if none is
+// found. Such a check means the whole PR is skipped, as opposed to the
+// skipReason vocabulary below which is about withholding one job/action
+// within a PR that otherwise gets processed.
+func failingCheck(checks map[string]jobState) string {
+	skippableCheckPrefixes := slices.Concat(allowedCheckFailurePrefixes, retestableCheckPrefixes)
+	names := make([]string, 0, len(checks))
+	for name := range checks {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	for _, name := range names {
+		if checks[name] != jobFailure || hasAnyPrefix(name, skippableCheckPrefixes) {
+			continue
+		}
+		return name
+	}
+	return ""
+}
+
+// retestDecision is the outcome of evaluating a PR's comments together
+// with its checks/statuses: which comment (if any) to post, and every
+// skipReason explaining why some other action was withheld.
+type retestDecision struct {
+	// commentParseErr is set when a "/retest-times" comment could not be
+	// parsed. When set, jobsToRetest/skipped/comment below are unused.
+	commentParseErr string
+	// alreadyReported is true when commentParseErr was already posted as a
+	// comment in an earlier run, so nothing new needs to be said now.
+	alreadyReported bool
+
+	jobsToRetest []string
+	skipped      []skipReason
+	comment      string
+}
+
+// decideRetest is a pure function of already-fetched PR data: it composes
+// jobsToRetestFromComments, skipRetestReason and commentsToCreate, plus the
+// "was this malformed comment already reported" check, into one decision.
+// Keeping it pure (no GitHub I/O, no logging) means the whole per-PR
+// decision pipeline can be unit tested with plain data.
+func decideRetest(userComments, allComments []string, checks, statuses map[string]jobState) retestDecision {
+	jobsToRetest, jobSkips, err := jobsToRetestFromComments(userComments, allComments)
+	if err != nil {
+		return retestDecision{
+			commentParseErr: err.Error(),
+			alreadyReported: slices.Contains(userComments, err.Error()),
+		}
+	}
+
+	retestReason := skipRetestReason(statuses, userComments, checks)
+	skipped := jobSkips
+	if retestReason != nil {
+		skipped = append(skipped, skipReason{message: retestReason.Error()})
+	}
+	newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestReason == nil)
+	skipped = append(skipped, testSkips...)
+
+	return retestDecision{
+		jobsToRetest: jobsToRetest,
+		skipped:      skipped,
+		comment:      strings.Join(newComments, "\n"),
+	}
 }
 
 var (

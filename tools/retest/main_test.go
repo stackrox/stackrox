@@ -1,10 +1,44 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+// Test_logSkipReason checks the exact log line logSkipReason produces for a
+// PR-level reason (job == "") versus a job-level reason.
+func Test_logSkipReason(t *testing.T) {
+	const testPRNumber = 7
+	tests := map[string]struct {
+		reason  skipReason
+		wantLog string
+	}{
+		"PR-level reason": {
+			reason:  skipReason{message: "no failing status or retestable check found"},
+			wantLog: fmt.Sprintf(`#%d not issuing /retest: no failing status or retestable check found`, testPRNumber),
+		},
+		"job-level reason": {
+			reason:  skipReason{job: "job-name-1", message: "already pending"},
+			wantLog: fmt.Sprintf(`#%d not issuing /test "job-name-1": already pending`, testPRNumber),
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			original := log.Writer()
+			log.SetOutput(&buf)
+			t.Cleanup(func() { log.SetOutput(original) })
+
+			logSkipReason(testPRNumber, tt.reason)
+
+			assert.Contains(t, buf.String(), tt.wantLog)
+		})
+	}
+}
 
 // Test_jobsToRetestFromComments checks which jobs jobsToRetestFromComments
 // decides still need a fresh "/test <job>" comment, given how many retests a
@@ -418,6 +452,138 @@ func Test_commentsToCreate(t *testing.T) {
 			gotComments, gotSkipped := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest)
 			assert.Equal(t, tt.wantComments, gotComments)
 			assert.Equal(t, tt.wantSkipped, gotSkipped)
+		})
+	}
+}
+
+// Test_failingCheck checks which check (if any) failingCheck reports as
+// grounds for skipping a PR entirely, given its completed checks.
+func Test_failingCheck(t *testing.T) {
+	tests := map[string]struct {
+		checks   map[string]jobState
+		wantName string
+	}{
+		"nil": {
+			checks:   nil,
+			wantName: "",
+		},
+		"all ok": {
+			checks: map[string]jobState{
+				"lint":         jobOK,
+				"codecov/repo": jobOK,
+			},
+			wantName: "",
+		},
+		"failing but allowed prefix": {
+			checks: map[string]jobState{
+				"codecov/repo": jobFailure,
+			},
+			wantName: "",
+		},
+		"failing but retestable prefix": {
+			checks: map[string]jobState{
+				"e2e-gke-tests": jobFailure,
+			},
+			wantName: "",
+		},
+		"failing non-skippable check": {
+			checks: map[string]jobState{
+				"lint": jobFailure,
+			},
+			wantName: "lint",
+		},
+		"multiple failing non-skippable checks — lowest name wins deterministically": {
+			checks: map[string]jobState{
+				"unit-tests": jobFailure,
+				"lint":       jobFailure,
+			},
+			wantName: "lint",
+		},
+		"one failing non-skippable among otherwise-ok and skippable checks": {
+			checks: map[string]jobState{
+				"codecov/repo":  jobFailure,
+				"e2e-gke-tests": jobFailure,
+				"lint":          jobOK,
+				"unit-tests":    jobFailure,
+			},
+			wantName: "unit-tests",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			gotName := failingCheck(tt.checks)
+			assert.Equal(t, tt.wantName, gotName)
+		})
+	}
+}
+
+// Test_decideRetest checks the end-to-end per-PR decision (comment to post,
+// skip reasons, and the malformed-comment special case) that decideRetest
+// derives from already-fetched comments/checks/statuses, without any
+// GitHub I/O.
+func Test_decideRetest(t *testing.T) {
+	tests := map[string]struct {
+		userComments []string
+		allComments  []string
+		checks       map[string]jobState
+		statuses     map[string]jobState
+		want         retestDecision
+	}{
+		"malformed retest-times comment, not previously reported": {
+			allComments: []string{"/retest-times 101 job-name-1"},
+			want: retestDecision{
+				commentParseErr: `invalid retest number requested: "/retest-times 101 job-name-1"`,
+				alreadyReported: false,
+			},
+		},
+		"malformed retest-times comment, already reported by the bot": {
+			userComments: []string{`invalid retest number requested: "/retest-times 101 job-name-1"`},
+			allComments:  []string{"/retest-times 101 job-name-1"},
+			want: retestDecision{
+				commentParseErr: `invalid retest number requested: "/retest-times 101 job-name-1"`,
+				alreadyReported: true,
+			},
+		},
+		"nothing to do": {
+			statuses: map[string]jobState{"a": jobOK},
+			want: retestDecision{
+				jobsToRetest: []string{},
+				skipped:      []skipReason{{message: "no failing status or retestable check found"}},
+				comment:      "",
+			},
+		},
+		"failing status triggers /retest": {
+			statuses: map[string]jobState{"a": jobFailure},
+			want: retestDecision{
+				jobsToRetest: []string{},
+				comment:      "/retest",
+			},
+		},
+		"requested job is tested; a specific job request never also triggers a blanket /retest": {
+			allComments: []string{"/retest-times 1 job-name-1"},
+			statuses:    map[string]jobState{"job-name-2": jobFailure},
+			want: retestDecision{
+				jobsToRetest: []string{"job-name-1"},
+				comment:      "/test job-name-1",
+			},
+		},
+		"requested job is pending, so only skipped — no failing status means no /retest either": {
+			allComments: []string{"/retest-times 1 job-name-1"},
+			statuses:    map[string]jobState{"job-name-1": jobPending},
+			want: retestDecision{
+				jobsToRetest: []string{"job-name-1"},
+				skipped: []skipReason{
+					{message: "no failing status or retestable check found"},
+					{job: "job-name-1", message: "already pending"},
+				},
+				comment: "",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := decideRetest(tt.userComments, tt.allComments, tt.checks, tt.statuses)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
