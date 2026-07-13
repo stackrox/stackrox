@@ -604,10 +604,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 			privateConfig, err := config.GetPrivateConfig(ctx)
 			require.NoError(t, err, "failed to get config")
-			// Garbage collect all of the images
 			gc.collectImages(privateConfig)
 
-			// Grab the  actual remaining images and make sure they match the images expected to be remaining
 			if features.FlattenImageData.Enabled() {
 				remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
 				require.NoError(t, err)
@@ -2924,7 +2922,7 @@ func (s *PruningTestSuite) TestBuildV2CVEMap() {
 	cve1 := "CVE-2024-0001"
 	cve2 := "CVE-2024-0002"
 
-	views := []*imageCVEV2Datastore.CVETimestampsView{
+	views := []*imageCVEV2Datastore.CVETimeView{
 		{ImageIDV2: &v2ID1, CVE: &cve1},
 		{ImageIDV2: &v2ID1, CVE: &cve2},
 		{ImageIDV2: &v2ID2, CVE: &cve1},
@@ -2939,8 +2937,6 @@ func (s *PruningTestSuite) TestBuildV2CVEMap() {
 func (s *PruningTestSuite) TestFindPruneableCVEs() {
 	now := time.Now()
 	later := now.Add(time.Hour)
-	fixable := true
-	notFixable := false
 
 	digest := "sha256:abc"
 	v2ID := "v2-id-1"
@@ -2952,55 +2948,37 @@ func (s *PruningTestSuite) TestFindPruneableCVEs() {
 	}
 
 	cases := map[string]struct {
-		v1CVEs     []*imageCVEV2Datastore.CVETimestampsView
-		v2CVEMap   map[string]map[string]*imageCVEV2Datastore.CVETimestampsView
+		v1CVEs     []*imageCVEV2Datastore.CVETimeView
+		v2CVEMap   map[string]map[string]*imageCVEV2Datastore.CVETimeView
 		wantPruned int
 	}{
 		"fully migrated": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimestampsView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, IsFixable: &fixable,
-					CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: &now},
+			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
+				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
 			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimestampsView{
+			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
 				v2ID: {
-					cveName: {ImageIDV2: &v2ID, CVE: &cveName, IsFixable: &fixable,
-						CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: &now},
+					cveName: {ImageIDV2: &v2ID, CVE: &cveName, FirstImageOccurrence: &now},
 				},
 			},
 			wantPruned: 1,
 		},
-		"not migrated - fix_available not migrated": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimestampsView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, IsFixable: &fixable,
-					CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: &now},
+		"not migrated - first_image_occurrence later in V2": {
+			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
+				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
 			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimestampsView{
+			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
 				v2ID: {
-					cveName: {ImageIDV2: &v2ID, CVE: &cveName, IsFixable: &fixable,
-						CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: &later},
+					cveName: {ImageIDV2: &v2ID, CVE: &cveName, FirstImageOccurrence: &later},
 				},
 			},
 			wantPruned: 0,
 		},
-		"fix_available skipped when v1 not fixable": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimestampsView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, IsFixable: &notFixable,
-					CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: &now},
-			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimestampsView{
-				v2ID: {
-					cveName: {ImageIDV2: &v2ID, CVE: &cveName, IsFixable: &fixable,
-						CreatedAt: &now, FirstImageOccurrence: &now, FixAvailableTimestamp: nil},
-				},
-			},
-			wantPruned: 1,
-		},
 		"CVE missing in V2": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimestampsView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, IsFixable: &notFixable,
-					CreatedAt: &now, FirstImageOccurrence: &now},
+			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
+				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
 			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimestampsView{
+			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
 				v2ID: {},
 			},
 			wantPruned: 0,
@@ -3019,7 +2997,7 @@ func (s *PruningTestSuite) TestFindPruneableCVEs() {
 	}
 }
 
-func (s *PruningTestSuite) TestPruneV1CVEBatch() {
+func (s *PruningTestSuite) TestPruneImageV1CVEBatch() {
 	if !features.FlattenImageData.Enabled() {
 		s.T().Skip("Skipping: FlattenImageData not enabled")
 	}
@@ -3045,10 +3023,26 @@ func (s *PruningTestSuite) TestPruneV1CVEBatch() {
 
 	cveDS := imageCVEV2Datastore.GetTestPostgresDataStore(s.T(), s.pool)
 
-	// Verify V1 CVE rows exist before pruning for both images.
-	v1CVEsBefore, err := cveDS.GetV1CVEsByDigests(s.ctx, []string{v1Digest, v1DigestNoTwin})
+	countV1CVEs := func(digest string) int {
+		var count int
+		err := s.pool.QueryRow(s.ctx,
+			"SELECT COUNT(*) FROM image_cves_v2 WHERE imageid = $1 AND imageidv2 IS NULL", digest,
+		).Scan(&count)
+		require.NoError(s.T(), err)
+		return count
+	}
+
+	v1CountBefore := countV1CVEs(v1Digest)
+	v1NoTwinCountBefore := countV1CVEs(v1DigestNoTwin)
+	require.Greater(s.T(), v1CountBefore, 0, "V1 CVE rows should exist before pruning")
+	require.Greater(s.T(), v1NoTwinCountBefore, 0, "V1 CVE rows should exist before pruning")
+
+	var v2CVECountBefore int
+	err := s.pool.QueryRow(s.ctx,
+		"SELECT COUNT(*) FROM image_cves_v2 WHERE imageidv2 = $1", v2ImageV2.GetId(),
+	).Scan(&v2CVECountBefore)
 	require.NoError(s.T(), err)
-	require.NotEmpty(s.T(), v1CVEsBefore, "V1 CVE rows should exist before pruning")
+	require.Greater(s.T(), v2CVECountBefore, 0)
 
 	gc := newGarbageCollector(nil, nil, v1ImageDS, v2ImageDS, nil, nil, nil,
 		nil, nil, nil, nil, nil,
@@ -3056,24 +3050,19 @@ func (s *PruningTestSuite) TestPruneV1CVEBatch() {
 		nil, nil, nil, cveDS).(*garbageCollectorImpl)
 	gc.postgres = s.pool
 
-	pruned, err := gc.pruneV1CVEBatch([]string{v1Digest, v1DigestNoTwin})
+	pruned, err := gc.pruneImageV1CVEBatch()
 	require.NoError(s.T(), err)
 	s.Assert().Greater(pruned, 0, "should prune at least one V1 CVE row")
 
-	// Verify V1 CVE rows are gone for the image with a V2 twin.
-	v1CVEsAfter, err := cveDS.GetV1CVEsByDigests(s.ctx, []string{v1Digest})
-	require.NoError(s.T(), err)
-	s.Assert().Empty(v1CVEsAfter, "all V1 CVE rows should be pruned for migrated image")
+	s.Assert().Equal(0, countV1CVEs(v1Digest), "all V1 CVE rows should be pruned for migrated image")
+	s.Assert().Equal(v1NoTwinCountBefore, countV1CVEs(v1DigestNoTwin), "V1 CVE rows should be preserved for image without V2 twin")
 
-	// Verify V1 CVE rows still exist for the image without a V2 twin.
-	v1CVEsNoTwin, err := cveDS.GetV1CVEsByDigests(s.ctx, []string{v1DigestNoTwin})
+	var v2CVECountAfter int
+	err = s.pool.QueryRow(s.ctx,
+		"SELECT COUNT(*) FROM image_cves_v2 WHERE imageidv2 = $1", v2ImageV2.GetId(),
+	).Scan(&v2CVECountAfter)
 	require.NoError(s.T(), err)
-	s.Assert().NotEmpty(v1CVEsNoTwin, "V1 CVE rows should be preserved for image without V2 twin")
-
-	// Verify V2 CVE rows still exist.
-	v2CVEs, err := cveDS.GetV2CVEsByImageIDs(s.ctx, []string{v2ImageV2.GetId()})
-	require.NoError(s.T(), err)
-	s.Assert().NotEmpty(v2CVEs, "V2 CVE rows should be preserved")
+	s.Assert().Equal(v2CVECountBefore, v2CVECountAfter, "V2 CVE rows should be preserved")
 
 	// Verify scan hash was nulled on the pruned V1 image.
 	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")

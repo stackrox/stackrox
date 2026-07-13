@@ -80,7 +80,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	s.componentDataStore = imageComponentDS.New(s.db, componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.db)
-	cveDataStore := imageCVEDS.New(cveStorage)
+	cveDataStore := imageCVEDS.New(cveStorage, s.db)
 	s.cveDataStore = cveDataStore
 
 	cveInfoStorage := imageCVEInfoPostgres.New(s.db)
