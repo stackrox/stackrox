@@ -86,8 +86,6 @@ function SystemHealthPage() {
                             <VulnerabilityDefinitionsHealthCard
                                 component="SCANNER"
                                 pollingCount={pollingCountSlower}
-                                disabled={!isLegacyScannerEnabled}
-                                disabledMessage="Legacy scanner is disabled"
                             />
                         </GridItem>
                     )}
@@ -152,7 +150,7 @@ function SystemHealthPage() {
                                 component="SCANNER"
                                 pollingCount={pollingCountSlower}
                                 disabled={!isLegacyScannerEnabled}
-                                disabledMessage="Legacy scanner is disabled"
+                                disabledMessage="Legacy Scanner [deprecated] has been disabled by your administrator"
                             />
                         </GridItem>
                     )}
@@ -162,7 +160,7 @@ function SystemHealthPage() {
                                 component="SCANNER"
                                 pollingCount={pollingCountSlower}
                                 disabled={!isLegacyScannerEnabled}
-                                disabledMessage="Legacy scanner is disabled"
+                                disabledMessage="Legacy scanner [deprecated] has been disabled by your administrator"
                             />
                         </GridItem>
                     )}

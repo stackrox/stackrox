@@ -376,7 +376,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                                 <PageTitle title="Kubernetes components - Disabled" />
                                 <FeatureDisabledMessage
                                     title="Kubernetes components"
-                                    message="This functionality has been disabled by your administrator."
+                                    message="The Legacy Scanner [deprecated] has been disabled by your administrator."
                                     actionText="Go to Vulnerability Management"
                                     url={vulnerabilitiesUserWorkloadsPath}
                                 />
