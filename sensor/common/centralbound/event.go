@@ -16,5 +16,8 @@ func (e *CentralBoundEvent) Lane() pubsub.LaneID { return pubsub.CentralBoundLan
 
 // IsExpired delegates to the wrapped message's context.
 func (e *CentralBoundEvent) IsExpired() bool {
+	if e.Msg == nil {
+		return false
+	}
 	return e.Msg.IsExpired()
 }
