@@ -72,11 +72,13 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Build roxctl
+    - name: Get roxctl
       # The test uses roxctl for central backup/restore operations
       run: |
-        make roxctl_linux-amd64
-        echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
+        cid="$(docker create "quay.io/rhacs-eng/roxctl:${MAIN_IMAGE_TAG}")"
+        docker cp "${cid}:/usr/bin/roxctl" roxctl
+        docker rm "${cid}"
+        sudo install -m 0755 roxctl /usr/local/bin/roxctl
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5

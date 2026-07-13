@@ -86,13 +86,13 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
-    - name: Build roxctl
-      # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
-      # Copy to /usr/local/bin so it survives bats tests which mv the binary out of bin/
+    - name: Get roxctl
+      # Installed to /usr/local/bin so it survives bats tests which mv the binary out of bin/
       run: |
-        make roxctl_linux-amd64
-        sudo cp bin/linux_amd64/roxctl /usr/local/bin/roxctl
-        echo "${HOME}/go/bin" >> "$GITHUB_PATH"
+        cid="$(docker create "quay.io/rhacs-eng/roxctl:${MAIN_IMAGE_TAG}")"
+        docker cp "${cid}:/usr/bin/roxctl" roxctl
+        docker rm "${cid}"
+        sudo install -m 0755 roxctl /usr/local/bin/roxctl
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
