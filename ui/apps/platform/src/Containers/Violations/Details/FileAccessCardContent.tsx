@@ -45,7 +45,7 @@ const octalToPermission: Record<string, string> = {
 };
 
 function formatOctalDigit(digit: number): string {
-    return octalToPermission[String(digit & 7)] || '---';
+    return octalToPermission[String(digit % 8)] || '---';
 }
 
 function formatAclEntry(entry: AclEntry): string {
@@ -154,21 +154,17 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                     )}
                     {operation === 'ACL_CHANGE' && (
                         <>
-                            {file.meta.aclType &&
-                                file.meta.aclType !== 'ACL_TYPE_UNSPECIFIED' && (
-                                    <DescriptionListItem
-                                        term="ACL type"
-                                        desc={
-                                            aclTypeLabels.get(file.meta.aclType) ||
-                                            file.meta.aclType
-                                        }
-                                    />
-                                )}
+                            {file.meta.aclType && file.meta.aclType !== 'ACL_TYPE_UNSPECIFIED' && (
+                                <DescriptionListItem
+                                    term="ACL type"
+                                    desc={aclTypeLabels.get(file.meta.aclType) || file.meta.aclType}
+                                />
+                            )}
                             {file.meta.aclEntries?.length > 0 && (
                                 <DescriptionListItem
                                     term="ACL entries"
-                                    desc={file.meta.aclEntries.map((entry, i) => (
-                                        <div key={`${entry.tag}-${entry.id}-${i}`}>
+                                    desc={file.meta.aclEntries.map((entry) => (
+                                        <div key={`${entry.tag}-${entry.id}-${entry.perm}`}>
                                             {formatAclEntry(entry)}
                                         </div>
                                     ))}
