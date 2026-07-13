@@ -7,6 +7,7 @@ import { selectors } from '../../integration/vulnerabilities/workloadCves/Worklo
 import { selectors as vulnerabilitiesSelectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
 import pf6 from '../../selectors/pf6';
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from '../../helpers/request';
+import { interceptWorkloadCveFixtures } from '../routes';
 
 function visitFirstCve() {
     withOcpAuth();
@@ -23,6 +24,10 @@ function visitFirstCve() {
 }
 
 describe('Security vulnerabilities - CVE Detail page', () => {
+    beforeEach(() => {
+        interceptWorkloadCveFixtures();
+    });
+
     it('should navigate to the CVE Detail page and account for the project filter', () => {
         visitFirstCve().then(() => {
             // Verify that "All projects" is selected
