@@ -2,6 +2,7 @@ import dateFns from 'date-fns';
 
 import withAuth from '../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../helpers/request';
+import { visit } from '../helpers/visit';
 import {
     integrationHealthVulnDefinitionsAlias,
     setClock,
@@ -75,6 +76,14 @@ describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
             cy.get(scannerCertificateCardSelector).should('exist');
             cy.get(scannerCertificateCardSelector).should('have.css', 'opacity', '0.5');
             cy.get(scannerCertificateCardSelector).should('contain', 'Legacy scanner is disabled');
+        });
+
+        it('should show disabled feature page for Platform CVEs', () => {
+            visit('/main/vulnerabilities/platform-cves');
+
+            cy.get('h1').should('contain', 'Kubernetes components');
+            cy.get('body').should('contain', 'disabled by your administrator');
+            cy.get('a:contains("Go to Vulnerability Management")').should('exist');
         });
     });
 
