@@ -103,32 +103,23 @@ func (s *ImageCVEV2DataStoreTestSuite) TestSearchImageCVEsExcludesV1() {
 	s.Assert().Equal(expectedCVEs.Cardinality(), len(results))
 }
 
-func (s *ImageCVEV2DataStoreTestSuite) TestGetDigestsWithMostV1CVEs() {
-	digests, err := s.cveStore.GetDigestsWithMostV1CVEs(s.ctx, 10)
-	s.Require().NoError(err)
-	s.Assert().Len(digests, 1, "should return exactly the one V1 image digest")
-	s.Assert().Equal("sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7", digests[0])
-}
-
-func (s *ImageCVEV2DataStoreTestSuite) TestGetV1CVEsByDigests() {
-	v1Digest := "sha256:50fa59cca653c51d194974830826ff7a9d9095175f78caf40d5423d3fb12c4f7"
-
-	v1CVEs, err := s.cveStore.GetV1CVEsByDigests(s.ctx, []string{v1Digest})
+func (s *ImageCVEV2DataStoreTestSuite) TestGetImageV1CVETimes() {
+	v1CVEs, err := s.cveStore.GetImageV1CVETimes(s.ctx, 1000)
 	s.Require().NoError(err)
 	s.Assert().NotEmpty(v1CVEs)
 
 	for _, cve := range v1CVEs {
-		s.Assert().Equal(v1Digest, cve.GetImageID(), "all rows should belong to the V1 digest")
+		s.Assert().NotEmpty(cve.GetImageID(), "V1 rows should have an image ID (digest)")
 		s.Assert().Empty(cve.GetImageIDV2(), "V1 rows should have no V2 image ID")
 		s.Assert().NotEmpty(cve.GetCVE(), "CVE name should be populated")
 		s.Assert().NotEmpty(cve.GetID(), "row ID should be populated")
 	}
 }
 
-func (s *ImageCVEV2DataStoreTestSuite) TestGetV2CVEsByImageIDs() {
+func (s *ImageCVEV2DataStoreTestSuite) TestGetImageV2CVETimes() {
 	v2ImageID := s.v2Image.GetId()
 
-	v2CVEs, err := s.cveStore.GetV2CVEsByImageIDs(s.ctx, []string{v2ImageID})
+	v2CVEs, err := s.cveStore.GetImageV2CVETimes(s.ctx, []string{v2ImageID})
 	s.Require().NoError(err)
 	s.Assert().NotEmpty(v2CVEs)
 
@@ -142,14 +133,14 @@ func (s *ImageCVEV2DataStoreTestSuite) TestGetV2CVEsByImageIDs() {
 	s.Assert().Equal(expectedCVEs, returnedCVEs)
 }
 
-func (s *ImageCVEV2DataStoreTestSuite) TestGetV1CVEsByDigests_EmptyInput() {
-	v1CVEs, err := s.cveStore.GetV1CVEsByDigests(s.ctx, nil)
+func (s *ImageCVEV2DataStoreTestSuite) TestGetImageV1CVETimes_ZeroLimit() {
+	v1CVEs, err := s.cveStore.GetImageV1CVETimes(s.ctx, 0)
 	s.Require().NoError(err)
 	s.Assert().Empty(v1CVEs)
 }
 
-func (s *ImageCVEV2DataStoreTestSuite) TestGetV2CVEsByImageIDs_EmptyInput() {
-	v2CVEs, err := s.cveStore.GetV2CVEsByImageIDs(s.ctx, nil)
+func (s *ImageCVEV2DataStoreTestSuite) TestGetImageV2CVETimes_EmptyInput() {
+	v2CVEs, err := s.cveStore.GetImageV2CVETimes(s.ctx, nil)
 	s.Require().NoError(err)
 	s.Assert().Empty(v2CVEs)
 }

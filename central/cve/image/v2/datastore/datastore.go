@@ -25,9 +25,8 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
 
-	GetDigestsWithMostV1CVEs(ctx context.Context, limit int) ([]string, error)
-	GetV1CVEsByDigests(ctx context.Context, digests []string) ([]*CVETimestampsView, error)
-	GetV2CVEsByImageIDs(ctx context.Context, imageIDs []string) ([]*CVETimestampsView, error)
+	GetImageV1CVETimes(ctx context.Context, limit int) ([]*CVETimeView, error)
+	GetImageV2CVETimes(ctx context.Context, imageIDs []string) ([]*CVETimeView, error)
 }
 
 // New returns a new instance of a DataStore.
