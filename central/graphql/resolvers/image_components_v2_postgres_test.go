@@ -614,7 +614,7 @@ func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context,
 	return image
 }
 
-func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) *imageComponentV2Resolver {
+func (s *GraphQLImageComponentV2TestSuite) getImageComponentResolver(ctx context.Context, id string) ImageComponentResolver {
 	vulnID := graphql.ID(id)
 	vuln, err := s.resolver.ImageComponent(ctx, IDQuery{ID: &vulnID})
 	assert.NoError(s.T(), err)
@@ -643,7 +643,7 @@ func (s *GraphQLImageComponentV2TestSuite) getComponentIDMap(images []*storage.I
 	}
 }
 
-func verifyLocationAndLayerIndex(ctx context.Context, t *testing.T, component *imageComponentV2Resolver, assertEmpty bool) {
+func verifyLocationAndLayerIndex(ctx context.Context, t *testing.T, component ImageComponentResolver, assertEmpty bool) {
 	if strings.EqualFold(component.Source(ctx), storage.SourceType_OS.String()) {
 		return
 	}
