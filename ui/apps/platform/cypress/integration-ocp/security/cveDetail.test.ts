@@ -5,6 +5,7 @@ import { selectProject } from '../../helpers/ocpConsole';
 import { assertSearchEntities } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.helpers';
 import { selectors } from '../../integration/vulnerabilities/workloadCves/WorkloadCves.selectors';
 import { selectors as vulnerabilitiesSelectors } from '../../integration/vulnerabilities/vulnerabilities.selectors';
+import { interceptWorkloadCveFixtures } from '../routes';
 
 function visitFirstCve() {
     withOcpAuth();
@@ -22,6 +23,10 @@ function visitFirstCve() {
 }
 
 describe('Security vulnerabilities - CVE Detail page', () => {
+    beforeEach(() => {
+        interceptWorkloadCveFixtures();
+    });
+
     it('should navigate to the CVE Detail page and account for the project filter', () => {
         visitFirstCve().then(() => {
             selectProject('All Projects');
