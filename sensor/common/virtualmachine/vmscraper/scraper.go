@@ -162,11 +162,10 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 
 	switch sensorAck.GetAction() {
 	case central.SensorACK_ACK:
-		// TODO(ROX-35722): placeholder, no action taken on ACK yet.
-		log.Infof("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
+		// No action needed on ACK currently.
+		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
 	case central.SensorACK_NACK:
 		s.handleNACK(sensorAck.GetResourceId())
-		log.Infof("VMScraper: received negative acknowledgement for resource_id=%q, reason=%q", sensorAck.GetResourceId(), sensorAck.GetReason())
 	default:
 		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
 	}
