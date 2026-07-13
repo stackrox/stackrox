@@ -20,12 +20,16 @@ import (
 )
 
 const (
-	dbOpenRetries         = 10
-	dbTimeBetweenRetries  = 10 * time.Second
-	healthAddr            = ":8082"
+	dbOpenRetries              = 10
+	dbTimeBetweenRetries       = 10 * time.Second
+	healthAddr                 = ":8082"
+	defaultWorkerPoolMaxConns  = 20
 )
 
-var log = logging.LoggerForModule()
+var (
+	log            = logging.LoggerForModule()
+	workerPoolSize = env.RegisterIntegerSetting("ROX_WORKER_DB_POOL_MAX_CONNS", defaultWorkerPoolMaxConns)
+)
 
 func main() {
 	premain.StartMain()
@@ -40,7 +44,7 @@ func main() {
 
 	ensureDBCurrent(db)
 
-	healthSrv := startHealthServer()
+	startHealthServer()
 
 	go startMetricsServer()
 
@@ -49,11 +53,6 @@ func main() {
 	waitForTerminationSignal()
 
 	log.Infof("central-worker shutting down")
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer shutdownCancel()
-	if err := healthSrv.Shutdown(shutdownCtx); err != nil {
-		log.Errorf("Health server shutdown error: %v", err)
-	}
 }
 
 func initDB(ctx context.Context) postgres.DB {
@@ -67,8 +66,11 @@ func initDB(ctx context.Context) postgres.DB {
 		dbConfig.ConnConfig.Database = activeDB
 	}
 
-	poolMaxConns := env.RegisterIntegerSetting("ROX_WORKER_DB_POOL_MAX_CONNS", 20)
-	dbConfig.MaxConns = int32(poolMaxConns.IntegerSetting())
+	poolVal := workerPoolSize.IntegerSetting()
+	if poolVal < 1 {
+		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be >= 1, got %d", poolVal)
+	}
+	dbConfig.MaxConns = int32(poolVal)
 
 	var db postgres.DB
 	if err := retry.WithRetry(func() error {
@@ -93,7 +95,7 @@ func ensureDBCurrent(db postgres.DB) {
 	log.Infof("DB version verified")
 }
 
-func startHealthServer() *http.Server {
+func startHealthServer() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -106,12 +108,19 @@ func startHealthServer() *http.Server {
 		Addr:    healthAddr,
 		Handler: mux,
 	}
+
+	errCh := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Errorf("Health server error: %v", err)
+			errCh <- err
 		}
 	}()
-	return srv
+
+	select {
+	case err := <-errCh:
+		log.Fatalf("Health server failed to start: %v", err)
+	case <-time.After(1 * time.Second):
+	}
 }
 
 func startMetricsServer() {
