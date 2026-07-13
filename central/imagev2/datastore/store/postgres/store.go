@@ -260,10 +260,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	if err := s.deleteImageComponents(ctx, tx, imageID); err != nil {
 		return err
 	}
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{
@@ -316,10 +313,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 }
 
 func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimestamp *timestamppb.Timestamp, cveTimeMap map[string]*timestamppb.Timestamp, objs ...*storage.ImageCVEV2) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
+	batchSize := min(len(objs), pgSearch.MaxBatchSize)
 	inputRows := make([][]interface{}, 0, batchSize)
 
 	copyCols := []string{

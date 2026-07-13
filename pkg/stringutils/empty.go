@@ -16,22 +16,12 @@ func AllEmpty(strs ...string) bool {
 
 // AllNotEmpty returns true if all the strings that are passed are not empty.
 func AllNotEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s == "" {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(strs, "")
 }
 
 // AtLeastOneEmpty returns true if at least one of the strings is empty
 func AtLeastOneEmpty(strs ...string) bool {
-	for _, s := range strs {
-		if s == "" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(strs, "")
 }
 
 // FirstNonEmpty returns the first string that is non-empty in the variadic or returns an empty string

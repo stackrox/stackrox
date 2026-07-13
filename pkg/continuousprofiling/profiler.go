@@ -3,6 +3,7 @@ package continuousprofiling
 import (
 	"net/url"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/grafana/pyroscope-go"
@@ -185,10 +186,5 @@ func SetupClient(cfg *pyroscope.Config, opts ...OptionFunc) error {
 }
 
 func profileTypeEnabled(profile pyroscope.ProfileType, profiles ...pyroscope.ProfileType) bool {
-	for _, p := range profiles {
-		if p == profile {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(profiles, profile)
 }
