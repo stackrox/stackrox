@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:75c5b9c2c910487007d4de42e86aae41d49751e6c7bcae7777c8bf630c31a3d8 AS go-builder
 
 RUN dnf -y install --allowerasing jq
 

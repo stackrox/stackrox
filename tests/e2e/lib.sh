@@ -1354,6 +1354,43 @@ summarize_check_output() {
     echo "${output}"
 }
 
+# start_continuous_log_streaming starts a background process that continuously
+# streams logs from StackRox pods to files. This preserves logs across pod
+# replacements (deployment rollouts) and container restarts, where kubectl's
+# single-previous-container limitation would otherwise lose intermediate logs.
+# See ROX-35267.
+start_continuous_log_streaming() {
+    if [[ "$#" -lt 1 ]]; then
+        die "missing args. usage: start_continuous_log_streaming <output-dir> [namespace]"
+    fi
+
+    local dir="$1"
+    local ns="${2:-stackrox}"
+    mkdir -p "$dir"
+
+    info "Starting continuous log streaming for namespace $ns to $dir"
+
+    local labels=("app=central" "app=sensor" "app=scanner-v4-indexer" "app=scanner-v4-matcher")
+
+    for label in "${labels[@]}"; do
+        local app_name="${label#app=}"
+        local log_file="$dir/${app_name}-continuous.log"
+        (
+            while true; do
+                pod=$(kubectl -n "$ns" get pod -l "$label" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || { sleep 2; continue; }
+                [[ -n "$pod" ]] || { sleep 2; continue; }
+                echo "--- streaming from $pod ($(date -Iseconds)) ---" >> "$log_file"
+                kubectl -n "$ns" logs -f --timestamps "$pod" >> "$log_file" 2>/dev/null || true
+                echo "--- stream from $pod ended ($(date -Iseconds)) ---" >> "$log_file"
+                sleep 1
+            done
+        ) &
+    done
+
+    info "Continuous log streaming started for: ${labels[*]}"
+}
+
+
 collect_and_check_stackrox_logs() {
     if [[ "$#" -ne 2 ]]; then
         die "missing args. usage: collect_and_check_stackrox_logs <output-dir> <test_stage>"

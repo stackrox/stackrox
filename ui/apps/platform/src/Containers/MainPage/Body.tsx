@@ -35,6 +35,8 @@ import {
     policiesBasePath,
     policyManagementBasePath,
     riskBasePath,
+    riskSecretsBasePath,
+    riskWorkloadsBasePath,
     searchPath,
     systemConfigPath,
     systemHealthPath,
@@ -208,8 +210,16 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
         path: policyManagementBasePath,
     },
-    risk: {
+    'risk/secrets': {
+        component: asyncComponent(() => import('Containers/Risk/Secrets/SecretsPage')),
+        path: riskSecretsBasePath,
+    },
+    'risk/workloads': {
         component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        path: riskWorkloadsBasePath,
+    },
+    risk: {
+        component: RiskRedirect,
         path: riskBasePath,
     },
     search: {
@@ -305,6 +315,12 @@ function WorkloadCvesRedirect() {
         vulnerabilitiesAllImagesPath
     );
 
+    return <Navigate to={`${newPath}${location.search}`} replace />;
+}
+
+function RiskRedirect() {
+    const location = useLocation();
+    const newPath = location.pathname.replace(riskBasePath, riskWorkloadsBasePath);
     return <Navigate to={`${newPath}${location.search}`} replace />;
 }
 

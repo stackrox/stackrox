@@ -161,13 +161,7 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 	includedClusterIDs := set.NewStringSet()
 	includedNamespacesByClusterID := make(map[string]set.StringSet)
 	for clusterID, namespaces := range r.Clusters {
-		fullAccess := false
-		for _, ns := range namespaces {
-			if ns == "*" {
-				fullAccess = true
-				break
-			}
-		}
+		fullAccess := slices.Contains(namespaces, "*")
 		if fullAccess {
 			includedClusterIDs.Add(clusterID)
 			continue

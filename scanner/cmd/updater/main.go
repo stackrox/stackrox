@@ -4,16 +4,37 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
 
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
+
+const logLevelEnvVar = "STACKROX_SCANNER_V4_UPDATER_LOG_LEVEL"
+
+func initializeLogging() error {
+	level := slog.LevelInfo
+	var levelErr error
+	if v := os.Getenv(logLevelEnvVar); v != "" {
+		if err := level.UnmarshalText([]byte(v)); err != nil {
+			level = slog.LevelInfo
+			levelErr = err
+		}
+	}
+	if err := logging.Initialize(level); err != nil {
+		return err
+	}
+	if levelErr != nil {
+		slog.Warn("invalid log level, using info", "var", logLevelEnvVar, "reason", levelErr)
+	}
+	return nil
+}
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
 	const timeout = 3 * time.Hour
@@ -27,13 +48,19 @@ func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOption
 }
 
 func main() {
+	if err := initializeLogging(); err != nil {
+		slog.Error("failed to initialize logging", "reason", err)
+		os.Exit(1)
+	}
+
 	var ctx = context.Background()
 
 	var rootCmd = &cobra.Command{
-		Use:          "updater",
-		Version:      version.Version,
-		SilenceUsage: true,
-		Short:        "StackRox Scanner vulnerability updater",
+		Use:           "updater",
+		Version:       version.Version,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		Short:         "StackRox Scanner vulnerability updater",
 	}
 
 	var exportCmd = &cobra.Command{
@@ -91,6 +118,7 @@ func main() {
 	rootCmd.AddCommand(exportCmd, importCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		slog.Error("updater failed", "reason", err)
+		os.Exit(1)
 	}
 }

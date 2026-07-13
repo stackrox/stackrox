@@ -1,5 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import navigationSelectors from '../../selectors/navigation';
+import { hasFeatureFlag } from '../../helpers/features';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import pf6 from '../../selectors/pf6';
 
@@ -19,7 +20,8 @@ describe('Risk', () => {
         it('should have selected item in nav bar', () => {
             visitRiskDeployments('Platform view');
 
-            cy.get(RiskPageSelectors.risk).should('have.class', 'pf-m-current');
+            const navText = hasFeatureFlag('ROX_UI_SECRETS_PAGE_MIGRATION') ? 'Workloads' : 'Risk';
+            cy.get(`${pf6.navItem} a:contains("${navText}")`).should('have.class', 'pf-m-current');
         });
 
         it('should maintain active horizontal nav state on detail page for each view', () => {

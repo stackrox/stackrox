@@ -3,6 +3,7 @@ package networkflowupdate
 import (
 	"context"
 	"math"
+	"slices"
 	"testing"
 	"time"
 
@@ -456,12 +457,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 			// not discoveredEntity3 since the flow was filtered
 		}
 
-		for i := range expectedEntities {
-			if updatedEntity.GetInfo().EqualVT(expectedEntities[i]) {
-				return true
-			}
-		}
-		return false
+		return slices.ContainsFunc(expectedEntities, updatedEntity.GetInfo().EqualVT)
 	}), true).Times(2).Return(nil)
 
 	// Run test.
