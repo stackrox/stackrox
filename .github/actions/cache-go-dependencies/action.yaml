@@ -33,9 +33,12 @@ runs:
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        # REPRO BRANCH: hard-coded to the specific stale master cache (jwt/v4 as direct dep)
+        # that was restored during the original failure on PR #21258.
+        # The original key go-build-v2-style-check-amd64-99c24583e6710b52-efd15a5cc3a51dc5d3040c71d45d94be8ef2b5c1
+        # expired; using the current master equivalent (same go.mod state: jwt/v4 direct).
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-style-check-amd64-be1e0f6e78eb7815-e423ef7381722c55ec96c27903375f4564957f36
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
@@ -43,9 +46,12 @@ runs:
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        # REPRO BRANCH: hard-coded to the specific stale master cache (jwt/v4 as direct dep)
+        # that was restored during the original failure on PR #21258.
+        # The original key go-build-v2-style-check-amd64-99c24583e6710b52-efd15a5cc3a51dc5d3040c71d45d94be8ef2b5c1
+        # expired; using the current master equivalent (same go.mod state: jwt/v4 direct).
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-style-check-amd64-be1e0f6e78eb7815-e423ef7381722c55ec96c27903375f4564957f36
 
     - name: Mark GOCACHE entries for stale detection
       run: |
