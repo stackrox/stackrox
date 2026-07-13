@@ -70,6 +70,12 @@ jobs:
     - name: Build roxctl
       run: make roxctl_linux-amd64
 
+    - name: Wait for cluster
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
+
     - name: Run pre-test
       shell: python
       env:
@@ -183,6 +189,12 @@ jobs:
     - name: Build roxctl
       run: make roxctl_linux-amd64
 
+    - name: Wait for cluster
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
+
     - name: Run pre-test
       shell: python
       env:
@@ -294,6 +306,12 @@ jobs:
 
     - name: Build roxctl and upgrader
       run: make roxctl_linux-amd64 upgrader
+
+    - name: Wait for cluster
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
 
     - name: Run pre-test
       shell: python
