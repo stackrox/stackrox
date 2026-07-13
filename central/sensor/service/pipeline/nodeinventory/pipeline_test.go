@@ -13,9 +13,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -67,6 +69,16 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				a.injector = &recordingInjector{}
 			},
 			wantInjectorContain: []*central.NodeInventoryACK{},
+		},
+		{
+			name: "when LegacyScanner is disabled then ACK and discard",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, false)
+				a.msg = createMsg("node1")
+				a.msg.GetEvent().GetNodeInventory().NodeName = "test-node"
+				a.injector = &recordingInjector{}
+			},
+			wantInjectorContain: []*central.NodeInventoryACK{{Action: central.NodeInventoryACK_ACK, NodeName: "test-node"}},
 		},
 		{
 			name: "when event action is CREATE_RESOURCE then do not ignore event",
