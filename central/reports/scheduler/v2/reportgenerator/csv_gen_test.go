@@ -3,6 +3,7 @@ package reportgenerator
 import (
 	"archive/zip"
 	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,10 +88,7 @@ func TestCsvReportName(t *testing.T) {
 	assert.Contains(t, name, "RHACS_Vulnerability_Report_My Report_")
 	assert.Contains(t, name, ".csv")
 
-	longName := ""
-	for i := 0; i < 100; i++ {
-		longName += "a"
-	}
+	longName := strings.Repeat("a", 100)
 	name = csvReportName(longName)
 	assert.Contains(t, name, "...")
 }

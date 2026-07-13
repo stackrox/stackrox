@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
+	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
+	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
@@ -23,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -83,10 +86,27 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 	require.NoError(b, err)
 
 	blobStore := blobDS.NewBenchDatastore(testDB.DB)
+	reportSnapshotStore := reportSnapshotDS.GetTestPostgresDataStore(b, testDB.DB)
 
-	rg := newReportGeneratorImpl(testDB, nil, resolver.DeploymentDataStore,
+	rg := newReportGeneratorImpl(testDB, reportSnapshotStore, resolver.DeploymentDataStore,
 		watchedImageDatastore, collectionQueryResolver, nil, blobStore, clusterDatastore,
 		nsDatastore, resolver.ImageCVEV2DataStore, schema)
+
+	// pgtest limits all pools to pool_max_conns=1, which deadlocks the streaming path.
+	// generateReportStreamingDownload requires three simultaneous connections:
+	//   1. cursor transaction (rg.db) — held for the entire stream
+	//   2. blob store Upsert (blobStore) — one long-lived txn wrapping the large-object write
+	//   3. imageCVE2Datastore.GetBatch — called from the goroutine every refLinkBatchSize rows
+	//      while the blob store txn (2) already holds the only testDB.DB connection
+	// Replace rg.db and rg.blobStore with a shared pool that allows enough simultaneous
+	// connections so none of the three block each other.
+	multiConnCfg := testDB.DB.Config().Copy()
+	multiConnCfg.Config.MaxConns = 4
+	multiConnPool, err := postgres.New(context.Background(), multiConnCfg)
+	require.NoError(b, err)
+	b.Cleanup(func() { multiConnPool.Close() })
+	rg.db = multiConnPool
+	rg.blobStore = blobDS.NewBenchDatastore(multiConnPool)
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
@@ -133,6 +153,18 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 	snap := testReportSnapshot(collection.GetId(), storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
+	// generateReportStreamingDownload calls updateReportStatus, which upserts the snapshot into
+	// report_snapshots. That table has a FK to report_configurations, so the parent config row
+	// must exist before the first update. Seed it with the ID the fixture already uses.
+	reportConfigStore := reportConfigDS.GetTestPostgresDataStore(b, testDB.DB)
+	_, err = reportConfigStore.AddReportConfiguration(ctx, &storage.ReportConfiguration{
+		Id:   snap.GetReportConfigurationId(),
+		Name: "bench-report-config",
+		Type: storage.ReportConfiguration_VULNERABILITY,
+	})
+	require.NoError(b, err)
+	// updateReportStatus also requires a non-empty ReportId.
+	snap.ReportId = uuid.NewV4().String()
 
 	// Each image has 2 CVEs, so:
 	//   deployed rows = 2 clusters * numNamespacesPerCluster * numDeploymentsPerNamespace * 2
@@ -169,10 +201,13 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 	b.Run("getReportData+GenerateCSV+saveReportData", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			// Fresh loaders context per iteration so loader-cached connections
+			// are not accumulated across iterations, which would exhaust the pool.
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 			require.Equal(b, s.rowCount, len(reportData.CVEResponses))
 
@@ -185,7 +220,7 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 
 			// Save to blob store (same as production DOWNLOAD path).
-			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -201,10 +236,11 @@ func BenchmarkMemory_Streaming(b *testing.B) {
 	b.Run("generateReportStreamingDownload", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
+			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -225,10 +261,11 @@ func BenchmarkMemoryComparison(b *testing.B) {
 	b.Run("InMemory", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 
 			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
@@ -237,7 +274,7 @@ func BenchmarkMemoryComparison(b *testing.B) {
 			after := heapAllocBytes()
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 
-			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -246,10 +283,11 @@ func BenchmarkMemoryComparison(b *testing.B) {
 	b.Run("Streaming", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
+			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -271,6 +309,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 	b.Run("InMemory_Peak", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			var peak uint64
 
@@ -282,7 +321,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 			}
 
 			baseline := heapAllocBytes()
-			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 			sample()
 
@@ -290,7 +329,7 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 			require.NoError(b, err)
 			sample()
 
-			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 			sample()
 
@@ -306,10 +345,11 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 	b.Run("Streaming_Peak", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			baseline := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
+			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -331,10 +371,11 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 	b.Run("InMemory", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			reportData, err := s.rg.getReportDataSQF(s.ctx, s.snap, s.collection, time.Time{})
+			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
 			require.NoError(b, err)
 
 			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
@@ -348,7 +389,7 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			_, _, err = s.rg.blobStore.Get(reportGenCtx, "", &buf)
 			_ = err
 
-			err = s.rg.saveReportData(s.ctx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
 			require.NoError(b, err)
 		}
 	})
@@ -357,10 +398,11 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 	b.Run("Streaming", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(s.ctx, &ReportRequest{
+			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},

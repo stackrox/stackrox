@@ -163,6 +163,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	var reportData *ReportData
 	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 		if features.VulnerabilityReportStreamingDownload.Enabled() {
+			log.Info("Streaming report generation")
 			return rg.generateReportStreamingDownload(ctx, req)
 		}
 		return rg.generateReportInMemoryDownload(ctx, req)
@@ -302,13 +303,13 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 		if err != nil {
 			return err
 		}
-		if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 			q := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 			q.Pagination = deployedImagesQueryParts.Pagination
 			q.Selects = deployedImagesQueryParts.Selects
 			queries = append(queries, querySpec{schema: deployedImagesQueryParts.Schema, query: q})
 		}
-		if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
+		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
 			watchedImages, err := rg.getWatchedImages(ctx)
 			if err != nil {
 				return err
@@ -353,7 +354,9 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 			if writerErr != nil {
 				pw.CloseWithError(writerErr)
 			} else {
-				pw.Close()
+				if err := pw.Close(); err != nil {
+					log.Errorf("Error closing pipe writer: %v", err)
+				}
 			}
 		}()
 
