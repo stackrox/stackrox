@@ -23,10 +23,11 @@ inputs:
     default: "true"
   wait-for-cluster:
     description: >
-      Wait for cluster readiness before returning. Set to "false" to skip and
-      add an explicit 'scripts/ci/gke.sh wait_for_cluster' step later, allowing
-      parallel work (e.g. builds) while the cluster stabilizes.
-    default: "true"
+      Wait for cluster readiness before returning. Defaults to "false": callers
+      should add an explicit 'scripts/ci/gke.sh wait_for_cluster' step after any
+      parallel work (e.g. builds), allowing the cluster to stabilize concurrently.
+      Set to "true" only when no parallel work is available.
+    default: "false"
 
 runs:
   using: composite

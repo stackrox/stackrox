@@ -63,6 +63,12 @@ jobs:
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
 
+    - name: Wait for cluster
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
+
     - name: Run pre-test
       shell: python
       env:
