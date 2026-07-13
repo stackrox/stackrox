@@ -48,9 +48,7 @@ _Note: Similar instructions apply when using
    to deploy the StackRox k8s app. Make sure that your git working directory is
    clean and that the branch that you're on has a corresponding tag from CI (see
    Roxbot comment for a PR branch). Alternatively, you can specify the image tag
-   you want to deploy by setting the `MAIN_IMAGE_TAG` env var. If
-   `npm run deploy-local` fails, see this
-   [Knowledge Base article for debugging instructions](https://github.com/stackrox/dev-docs/blob/main/docs/troubleshooting/Troubleshooting-local-deployment.md).
+   you want to deploy by setting the `MAIN_IMAGE_TAG` env var.
 
 1. **Start** - Start your local dev server by running `npm run start`. This will build
    the application in watch mode. To see
@@ -64,9 +62,21 @@ repo, and repeat the steps above._
 
 #### Using a Remote StackRox Deployment
 
-To develop the front-end platform locally, but use a remote Central, please
-refer to the detailed instructions in the how-to article
-[Use remote Central for local front-end dev](https://github.com/stackrox/dev-docs/blob/main/docs/knowledge-base/%5BFE%5D%20Use-remote-Central-for-local-front-end-dev.md)
+To point your local dev server at a remote Central, set `UI_START_TARGET` to
+the remote endpoint and start the dev server:
+
+```sh
+UI_START_TARGET=https://<central-ip>:443 npm run start
+```
+
+Prefer using a publicly accessible IP or load balancer for the remote Central.
+`kubectl port-forward` can be used as a last resort if no accessible IP is
+available, but it is unreliable — connections drop on machine sleep and under
+load.
+
+See [`apps/platform/README.md`](./apps/platform/README.md#running-the-development-server)
+for all available proxy environment variables (`UI_START_TARGET`,
+`UI_CUSTOM_PROXIES`).
 
 ### IDEs
 
@@ -118,3 +128,50 @@ extensions installed:
 
 -   [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi?hl=en)
 -   [Redux DevTools](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en) (for legacy Redux code inspection)
+
+## Dependency Vulnerability Management
+
+### Why audit UI dependencies?
+
+StackRox UI bundles many npm dependencies into minified JS. Vulnerabilities in
+these dependencies carry real risk:
+
+-   Customers may expose the StackRox UI to the public (relying on
+    authentication only), making client-side vulnerabilities exploitable.
+-   Government and enterprise contracts often require timely remediation of
+    known critical vulnerabilities.
+-   Annual penetration testing reports go to customers — discovered
+    vulnerabilities require explanation and a timeline of exposure.
+
+### Running an audit
+
+From the `ui/apps/platform/` directory:
+
+```sh
+npm audit --omit=dev
+```
+
+The `--omit=dev` flag limits the audit to production dependencies (dev and
+optional dependencies are not shipped to users). HIGH and CRITICAL findings are prioritized according to ProdSec guidelines.
+
+### Updating a vulnerable dependency
+
+**Direct dependency** — update it in `package.json`:
+
+```sh
+npm install <package>@<fixed-version>
+```
+
+**Indirect (transitive) dependency** — when the vulnerable package is pulled in
+by another dependency:
+
+1. Check whether the parent package's version range already accepts the fixed
+   version (e.g. `"dompurify": "^2.0.3"` accepts `2.0.7`).
+2. If it does, delete the vulnerable package's entry from `package-lock.json`
+   and run `npm install`. npm will resolve to the latest version allowed by the
+   parent's range.
+3. If the parent's range does not accept the fix, check for a newer version of
+   the parent package that widens the range, or use
+   [`npm overrides`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides)
+   as a last resort.
+4. Commit the updated `package-lock.json`.

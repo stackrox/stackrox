@@ -444,7 +444,7 @@ func generateViewBasedRequestName(user *storage.SlimUser) string {
 	now := time.Now()
 	date := now.Format("Jan02")
 	year := now.Format("2006")
-	shortUUID := strings.Split(uuid.NewV4().String(), "-")[0]
+	shortUUID, _, _ := strings.Cut(uuid.NewV4().String(), "-")
 	return fmt.Sprintf("%s-%s-%s-%s", shortName, strings.ToLower(date), year, shortUUID)
 }
 

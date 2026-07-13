@@ -3,6 +3,7 @@ package k8srbac
 import (
 	"encoding/base64"
 	"fmt"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -91,11 +92,8 @@ func GetAllSubjects(bindings []*storage.K8SRoleBinding, kinds ...storage.Subject
 	subjectsSet := NewSubjectSet()
 	for _, binding := range bindings {
 		for _, subject := range GetSubjectsAdjustedByKind(binding) {
-			for _, kind := range kinds {
-				if subject.GetKind() == kind {
-					subjectsSet.Add(subject)
-					break
-				}
+			if slices.Contains(kinds, subject.GetKind()) {
+				subjectsSet.Add(subject)
 			}
 		}
 	}

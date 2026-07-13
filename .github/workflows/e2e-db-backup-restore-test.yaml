@@ -58,7 +58,6 @@ jobs:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
-      id: create-cluster
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
@@ -136,14 +135,17 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always() && steps.create-cluster.outcome == 'success'
+      if: always()
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
           echo "No cluster to teardown"
           exit 0
         fi
-        scripts/ci/gke.sh teardown_gke_cluster false
+        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
+          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+          exit 6
+        fi
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2

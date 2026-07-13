@@ -17,6 +17,6 @@ type retryableError struct {
 
 // IsRetryable returns if the error is an instance of RetryableError
 func IsRetryable(e error) bool {
-	var retryableError *retryableError
-	return errors.As(e, &retryableError)
+	_, retryable := errors.AsType[*retryableError](e)
+	return retryable
 }

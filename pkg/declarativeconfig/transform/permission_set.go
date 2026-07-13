@@ -12,7 +12,7 @@ import (
 var _ Transformer = (*permissionSetTransform)(nil)
 
 var (
-	permissionSetType = reflect.TypeOf((*storage.PermissionSet)(nil))
+	permissionSetType = reflect.TypeFor[*storage.PermissionSet]()
 )
 
 type permissionSetTransform struct{}

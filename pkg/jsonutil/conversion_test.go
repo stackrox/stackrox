@@ -3,6 +3,7 @@ package jsonutil
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 
@@ -83,7 +84,7 @@ func verifyJSONToProtoToJSON(t *testing.T, inputJSON string, options []Conversio
 	assert.NoError(t, err)
 	assert.JSONEq(t, inputJSON, convertedJSON)
 
-	if contains(options, OptCompact) {
+	if slices.Contains(options, OptCompact) {
 		assert.Equal(t, inputJSON, convertedJSON)
 	}
 }

@@ -3,6 +3,7 @@ package reportgenerator
 import (
 	"bytes"
 	"context"
+	"slices"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -270,7 +271,7 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+	if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 		query := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 		query.Pagination = deployedImagesQueryParts.Pagination
 		query.Selects = deployedImagesQueryParts.Selects
@@ -290,7 +291,7 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 	}
 
 	numWatchedImageResults := 0
-	if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
+	if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
 		watchedImages, err := rg.getWatchedImages(ctx)
 		if err != nil {
 			return nil, err
@@ -534,16 +535,6 @@ func (rg *reportGeneratorImpl) logAndUpsertError(ctx context.Context, reportErr 
 		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
 			req.ReportSnapshot.GetName(), req.ReportSnapshot.GetReportId(), err)
 	}
-}
-
-func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
-	target storage.VulnerabilityReportFilters_ImageType) bool {
-	for _, typ := range imageTypes {
-		if typ == target {
-			return true
-		}
-	}
-	return false
 }
 
 func selectSchema() *walker.Schema {
