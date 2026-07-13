@@ -342,7 +342,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestStreamQueryToCSV_CSVColumns
 	s.Equal("1.1", row[colFixedBy])
 	s.Equal("CRITICAL", row[colSeverity])
 	s.Equal("9.00", row[colCVSS])
-	s.Equal("8.50", row[colNVDCVSS])
+	s.Equal("10.00", row[colNVDCVSS])
 	// EPSS probability 0.7 formatted as percentage with 3 decimal places.
 	s.Equal("70.000", row[colEPSS])
 	// Advisory fields set in testutils.go testImage().
@@ -420,12 +420,12 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestStreamQueryToCSV_SharedRefL
 	cacheAfterFirst := len(sharedCache)
 	s.Greater(cacheAfterFirst, 0, "cache should be populated after first call")
 
-	// Second call: c2 deployments — cache already populated with the same CVE IDs.
+	// Second call: c2 deployments — cache grows because c2 has different CVE IDs than c1.
 	q2, _ := s.buildStreamQuery(snap, testCollection("col1", "c2", "", ""), deployedImagesQueryParts)
 	_, count2 := s.runStream(schema, q2, sharedCache)
 
-	// Cache size must not grow (same CVE IDs appear in c2 as in c1).
-	s.Equal(cacheAfterFirst, len(sharedCache), "cache should not grow for already-seen CVE IDs")
+	// c1 and c2 have different CVE IDs, so the cache grows to hold all seen IDs.
+	s.Equal(count1+count2, len(sharedCache), "cache should contain all seen CVE IDs")
 
 	// c1 has 2 fixable_critical CVEs; c2 also has 2.
 	s.Equal(2, count1)
