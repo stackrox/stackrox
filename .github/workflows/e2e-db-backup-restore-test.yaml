@@ -113,12 +113,6 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Teardown GKE cluster
-      if: always()
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then exit 0; fi
-        scripts/ci/gke.sh teardown_and_report_gke_cluster false
-
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
