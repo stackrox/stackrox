@@ -21,6 +21,12 @@ inputs:
   spot:
     description: Use spot (preemptible) VMs for cost savings
     default: "true"
+  wait-for-cluster:
+    description: >
+      Wait for cluster readiness before returning. Set to "false" to skip and
+      add an explicit 'scripts/ci/gke.sh wait_for_cluster' step later, allowing
+      parallel work (e.g. builds) while the cluster stabilizes.
+    default: "true"
 
 runs:
   using: composite
@@ -58,6 +64,7 @@ runs:
         fi
 
     - name: Wait for cluster
+      if: inputs.wait-for-cluster != 'false'
       shell: bash
       run: |
         kubectl cluster-info
