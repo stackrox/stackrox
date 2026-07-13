@@ -66,7 +66,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: cent-up
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
@@ -180,7 +179,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: pg-up
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
       run: make roxctl_linux-amd64
@@ -293,7 +291,6 @@ jobs:
       uses: ./.github/actions/create-gke-cluster
       with:
         cluster-name: sens-up
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl and upgrader
       run: make roxctl_linux-amd64 upgrader
