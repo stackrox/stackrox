@@ -50,8 +50,7 @@ func NormalizeUIEndpoint(endpoint string) (string, error) {
 	default:
 		// "missing port in address" is the only expected error here — malformed
 		// inputs like unbracketed IPv6 are already rejected by GetServerFromURL.
-		var addrErr *net.AddrError
-		if errors.As(err, &addrErr) && addrErr.Err == missingPortErr {
+		if addrErr, converted := errors.AsType[*net.AddrError](err); converted && addrErr.Err == missingPortErr {
 			return hostPort + ":443", nil
 		}
 		return "", errox.InvalidArgs.Newf("UI endpoint %q is not a valid host[:port]: %v", endpoint, err)

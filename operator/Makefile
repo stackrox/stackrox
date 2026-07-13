@@ -192,6 +192,7 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 	$(MAKE) docker-push-index
 
 ##@ Dependencies download
+include $(PROJECT_DIR)/../make/goproxy.mk
 include $(PROJECT_DIR)/../make/gotools.mk
 
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)

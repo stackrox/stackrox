@@ -17,5 +17,8 @@
         "eslint-config-prettier": "^8.5.0",
         "har-to-k6": "^0.13.1",
         "prettier": "^2.7.1"
+    },
+    "overrides": {
+        "js-yaml": "~4.3.0"
     }
 }

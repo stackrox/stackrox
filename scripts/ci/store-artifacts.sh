@@ -46,6 +46,7 @@ store_artifacts() {
     local gs_destination
     gs_destination=$(get_unique_gs_destination "${destination}")
 
+    info "Artifact size: $(du -sh "$path" | awk '{print $1}')"
     info "Writing to $gs_destination..."
     local exitstatus=0
     local tmp_out
