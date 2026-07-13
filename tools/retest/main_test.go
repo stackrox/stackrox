@@ -230,22 +230,22 @@ func Test_retestNTimes(t *testing.T) {
 	}
 }
 
-func Test_shouldRetest(t *testing.T) {
+func Test_skipRetestReason(t *testing.T) {
 	tests := map[string]struct {
-		statuses map[string]string
-		comments []string
-		checks   map[string]bool
-		want     bool
+		statuses          map[string]string
+		comments          []string
+		checks            map[string]bool
+		wantSkipReasonMsg string
 	}{
 		"nil": {
-			statuses: nil,
-			comments: nil,
-			want:     false,
+			statuses:          nil,
+			comments:          nil,
+			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"empty": {
-			statuses: map[string]string{},
-			comments: []string{},
-			want:     false,
+			statuses:          map[string]string{},
+			comments:          []string{},
+			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"all success": {
 			statuses: map[string]string{
@@ -253,8 +253,8 @@ func Test_shouldRetest(t *testing.T) {
 				"b": "success",
 				"c": "success",
 			},
-			comments: []string{},
-			want:     false,
+			comments:          []string{},
+			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 		"one failure": {
 			statuses: map[string]string{
@@ -263,7 +263,6 @@ func Test_shouldRetest(t *testing.T) {
 				"c": "success",
 			},
 			comments: []string{},
-			want:     true,
 		},
 		"one failure but already retested once": {
 			statuses: map[string]string{
@@ -272,7 +271,6 @@ func Test_shouldRetest(t *testing.T) {
 				"c": "success",
 			},
 			comments: []string{"/retest"},
-			want:     true,
 		},
 		"one failure but already retested too many times": {
 			statuses: map[string]string{
@@ -280,20 +278,19 @@ func Test_shouldRetest(t *testing.T) {
 				"b": "failure",
 				"c": "success",
 			},
-			comments: []string{"/retest", "/retest", "/retest", "/retest"},
-			want:     false,
+			comments:          []string{"/retest", "/retest", "/retest", "/retest"},
+			wantSkipReasonMsg: "PR has already been retested 4 times",
 		},
 		"failed e2e check triggers retest": {
 			statuses: map[string]string{},
 			comments: []string{},
 			checks:   map[string]bool{"e2e-gke-tests": false},
-			want:     true,
 		},
 		"failed e2e check but already retested too many times": {
-			statuses: map[string]string{},
-			comments: []string{"/retest", "/retest", "/retest", "/retest"},
-			checks:   map[string]bool{"e2e-gke-tests": false},
-			want:     false,
+			statuses:          map[string]string{},
+			comments:          []string{"/retest", "/retest", "/retest", "/retest"},
+			checks:            map[string]bool{"e2e-gke-tests": false},
+			wantSkipReasonMsg: "PR has already been retested 4 times",
 		},
 		"failed e2e check with prow success": {
 			statuses: map[string]string{
@@ -301,19 +298,22 @@ func Test_shouldRetest(t *testing.T) {
 			},
 			comments: []string{},
 			checks:   map[string]bool{"e2e-gke-tests": false},
-			want:     true,
 		},
 		"passing e2e check does not trigger retest": {
-			statuses: map[string]string{},
-			comments: []string{},
-			checks:   map[string]bool{"e2e-gke-tests": true},
-			want:     false,
+			statuses:          map[string]string{},
+			comments:          []string{},
+			checks:            map[string]bool{"e2e-gke-tests": true},
+			wantSkipReasonMsg: "no failing status or retestable check found",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := shouldRetestFailedStatusesAndChecks(tt.statuses, tt.comments, tt.checks)
-			assert.Equal(t, tt.want, got)
+			got := skipRetestReason(tt.statuses, tt.comments, tt.checks)
+			if tt.wantSkipReasonMsg == "" {
+				assert.NoError(t, got)
+			} else {
+				assert.EqualError(t, got, tt.wantSkipReasonMsg)
+			}
 		})
 	}
 }

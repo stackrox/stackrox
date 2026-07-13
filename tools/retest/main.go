@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -104,7 +105,11 @@ issues:
 			continue
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatusesAndChecks(statuses, userComments, checks))
+		reason := skipRetestReason(statuses, userComments, checks)
+		if reason != nil {
+			log.Printf("#%d not issuing /retest: %v", prNumber, reason)
+		}
+		newComments := commentsToCreate(statuses, jobsToRetest, reason == nil)
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -120,6 +125,7 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	for _, job := range jobsToRetest {
 		state := statuses[job]
 		if state == "pending" {
+			log.Printf("Not issuing /test %q because it is already %s", job, state)
 			continue
 		}
 		comments = append(comments, "/test "+job)
@@ -174,6 +180,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	for job, times := range jobsToRetest {
 		toTest := times - testedJobs[job]
 		if toTest < 1 {
+			log.Printf("Exceeded max number (%d) of retests for %q: already tested %d times", times, job, testedJobs[job])
 			continue
 		}
 		missingTests = append(missingTests, job)
@@ -185,7 +192,9 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 
 const retestComment = "/retest"
 
-func shouldRetestFailedStatusesAndChecks(statuses map[string]string, comments []string, checks map[string]bool) bool {
+// skipRetestReason reports why a "/retest" comment should not be issued.
+// It returns nil when a retest is warranted, and a human-readable reason otherwise.
+func skipRetestReason(statuses map[string]string, comments []string, checks map[string]bool) error {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -193,19 +202,19 @@ func shouldRetestFailedStatusesAndChecks(statuses map[string]string, comments []
 		}
 	}
 	if retested > 3 {
-		return false
+		return fmt.Errorf("PR has already been retested %d times", retested)
 	}
 
 	for name, passed := range checks {
 		if !passed && hasAnyPrefix(name, retestableCheckPrefixes) {
-			return true
+			return nil
 		}
 	}
 
 	for _, status := range statuses {
 		if status == "failure" {
-			return true
+			return nil
 		}
 	}
-	return false
+	return errors.New("no failing status or retestable check found")
 }
