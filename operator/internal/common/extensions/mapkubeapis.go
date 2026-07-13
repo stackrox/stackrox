@@ -38,6 +38,11 @@ func AddMapKubeAPIsExtensionIfMapFileExists(opts []pkgReconciler.Option, mapper 
 				Version: "v1alpha3",
 				Kind:    "DestinationRule",
 			},
+			{
+				Group:   "app.k8s.io",
+				Version: "v1beta1",
+				Kind:    "Application",
+			},
 		},
 	}
 	extension := MapKubeAPIsExtension(config)
