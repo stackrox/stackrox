@@ -139,10 +139,7 @@ func getImageCVETimestampsFull(ctx context.Context, tx *postgres.Tx, imageID str
 // while distant components have mostly distinct CVEs.
 func buildBenchImage(numComponents, vulnsPerComponent, cvePoolSize int) *storage.ImageV2 {
 	now := time.Now()
-	stride := cvePoolSize / numComponents
-	if stride < 1 {
-		stride = 1
-	}
+	stride := max(1, cvePoolSize/numComponents)
 
 	components := make([]*storage.EmbeddedImageScanComponent, 0, numComponents)
 	for i := 0; i < numComponents; i++ {
