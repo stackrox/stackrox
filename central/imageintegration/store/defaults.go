@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
@@ -179,12 +180,19 @@ var (
 			},
 		},
 	}
+)
 
-	// DelayedIntegrations are default integrations to be added only when the trigger function returns true
-	DelayedIntegrations = []DelayedIntegration{
+// GetDelayedIntegrations returns default integrations to be added only when
+// the trigger function returns true.
+func GetDelayedIntegrations() []DelayedIntegration {
+	if !features.LegacyScanner.Enabled() {
+		return nil
+	}
+
+	return []DelayedIntegration{
 		makeDelayedIntegration(defaultScanner, func() scanners.Creator {
 			_, creator := clairify.Creator(nil)
 			return creator
 		}),
 	}
-)
+}

@@ -395,7 +395,7 @@ func startServices() {
 		platformReprocessor.Singleton().Start()
 	}
 
-	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
+	go registerDelayedIntegrations(iiStore.GetDelayedIntegrations())
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
@@ -708,9 +708,15 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
+	numIntegrations := len(integrationsInput)
+	if numIntegrations == 0 {
+		log.Debug("No delayed integrations to register")
+		return
+	}
+
 	integrationManager := enrichment.ManagerSingleton()
 
-	integrations := make(map[int]iiStore.DelayedIntegration, len(integrationsInput))
+	integrations := make(map[int]iiStore.DelayedIntegration, numIntegrations)
 	for k, v := range integrationsInput {
 		integrations[k] = v
 	}
