@@ -12,7 +12,6 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
 
 type datastoreImpl struct {
@@ -97,84 +96,50 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return cves, nil
 }
 
-type digestCVECountView struct {
-	ImageID  *string `db:"cve_image_id"`
-	CVECount int     `db:"cve_id_count"`
-}
-
-// GetDigestsWithMostV1CVEs returns up to `limit` image digests that have V1 CVE rows
-// (imageid set, imageidv2 NULL), ordered by CVE count descending.
-func (ds *datastoreImpl) GetDigestsWithMostV1CVEs(ctx context.Context, limit int) ([]string, error) {
-	q := pkgSearch.NewQueryBuilder().
-		AddNullField(pkgSearch.CVEImageIDV2).
-		ProtoQuery()
-	q.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.CVEImageID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVEID).AggrFunc(aggregatefunc.Count).Proto(),
-	}
-	q.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{pkgSearch.CVEImageID.String()},
-	}
-	q.Pagination = pkgSearch.NewPagination().
-		Limit(int32(limit)).
-		AddSortOption(pkgSearch.NewSortOption(pkgSearch.CVEID).AggregateBy(aggregatefunc.Count, false).Reversed(true)).
-		Proto()
-
-	var digests []string
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *digestCVECountView) error {
-		if row.ImageID != nil {
-			digests = append(digests, *row.ImageID)
-		}
-		return nil
-	})
-	return digests, err
-}
-
-func (ds *datastoreImpl) GetV1CVEsByDigests(ctx context.Context, digests []string) ([]*CVETimestampsView, error) {
-	if len(digests) == 0 {
+func (ds *datastoreImpl) GetImageV1CVETimes(ctx context.Context, limit int) ([]*CVETimeView, error) {
+	if limit <= 0 {
 		return nil, nil
 	}
 	q := pkgSearch.NewQueryBuilder().
-		AddExactMatches(pkgSearch.CVEImageID, digests...).
 		AddNullField(pkgSearch.CVEImageIDV2).
 		ProtoQuery()
-	q.Selects = cveTimestampsViewSelects()
+	q.Selects = cveTimeViewSelects()
+	q.Pagination = pkgSearch.NewPagination().
+		Limit(int32(limit)).
+		Proto()
 
-	var results []*CVETimestampsView
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimestampsView) error {
+	var results []*CVETimeView
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimeView) error {
 		results = append(results, row)
 		return nil
 	})
 	return results, err
 }
 
-func (ds *datastoreImpl) GetV2CVEsByImageIDs(ctx context.Context, imageIDs []string) ([]*CVETimestampsView, error) {
+func (ds *datastoreImpl) GetImageV2CVETimes(ctx context.Context, imageIDs []string) ([]*CVETimeView, error) {
 	if len(imageIDs) == 0 {
 		return nil, nil
 	}
 	q := pkgSearch.NewQueryBuilder().
 		AddExactMatches(pkgSearch.CVEImageIDV2, imageIDs...).
 		ProtoQuery()
-	q.Selects = cveTimestampsViewSelects()
+	q.Selects = cveTimeViewSelects()
 
-	var results []*CVETimestampsView
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimestampsView) error {
+	var results []*CVETimeView
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimeView) error {
 		results = append(results, row)
 		return nil
 	})
 	return results, err
 }
 
-func cveTimestampsViewSelects() []*v1.QuerySelect {
+func cveTimeViewSelects() []*v1.QuerySelect {
 	return []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.CVEID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.CVEImageID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.CVEImageIDV2).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.CVE).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Fixable).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVECreatedTime).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.FirstImageOccurrenceTimestamp).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVEFixAvailable).Proto(),
 	}
 }
 
