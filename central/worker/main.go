@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,10 +21,10 @@ import (
 )
 
 const (
-	dbOpenRetries              = 10
-	dbTimeBetweenRetries       = 10 * time.Second
-	healthAddr                 = ":8082"
-	defaultWorkerPoolMaxConns  = 20
+	dbOpenRetries             = 10
+	dbTimeBetweenRetries      = 10 * time.Second
+	healthAddr                = ":8082"
+	defaultWorkerPoolMaxConns = 20
 )
 
 var (
@@ -67,8 +68,8 @@ func initDB(ctx context.Context) postgres.DB {
 	}
 
 	poolVal := workerPoolSize.IntegerSetting()
-	if poolVal < 1 {
-		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be >= 1, got %d", poolVal)
+	if poolVal < 1 || poolVal > math.MaxInt32 {
+		log.Fatalf("ROX_WORKER_DB_POOL_MAX_CONNS must be between 1 and %d, got %d", math.MaxInt32, poolVal)
 	}
 	dbConfig.MaxConns = int32(poolVal)
 
@@ -121,6 +122,12 @@ func startHealthServer() {
 		log.Fatalf("Health server failed to start: %v", err)
 	case <-time.After(1 * time.Second):
 	}
+
+	go func() {
+		if err := <-errCh; err != nil {
+			log.Fatalf("Health server failed: %v", err)
+		}
+	}()
 }
 
 func startMetricsServer() {
