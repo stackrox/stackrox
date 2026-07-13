@@ -14,6 +14,7 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
@@ -35,6 +36,7 @@ import VirtualMachinePageHeader from './VirtualMachinePageHeader';
 import VirtualMachinePageComponents from './VirtualMachinePageComponents';
 import VirtualMachinePageDetails from './VirtualMachinePageDetails';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
+import VirtualMachinePageVulnerabilitiesLegacy from './VirtualMachinePageVulnerabilitiesLegacy';
 
 const VULNERABILITIES_TAB_ID = 'vulnerabilities-tab-content';
 const COMPONENTS_TAB_ID = 'components-tab-content';
@@ -61,6 +63,10 @@ const defaultVulnerabilitiesSortOption = {
 
 function VirtualMachinePage() {
     const { virtualMachineId } = useParams() as { virtualMachineId: string };
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isEnhancedDataModelEnabled = isFeatureFlagEnabled(
+        'ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL'
+    );
     const urlPagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const urlSearch = useURLSearch();
     const urlSorting = useURLSort({
@@ -169,14 +175,20 @@ function VirtualMachinePage() {
             >
                 {activeTabKey === vulnTabKey && (
                     <TabContent id={VULNERABILITIES_TAB_ID}>
-                        <VirtualMachinePageVulnerabilities
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
-                            urlSearch={urlSearch}
-                            urlSorting={urlSorting}
-                            urlPagination={urlPagination}
-                        />
+                        {isEnhancedDataModelEnabled ? (
+                            <VirtualMachinePageVulnerabilities
+                                virtualMachineId={virtualMachineId}
+                            />
+                        ) : (
+                            <VirtualMachinePageVulnerabilitiesLegacy
+                                virtualMachine={virtualMachine}
+                                isLoadingVirtualMachine={isLoading}
+                                errorVirtualMachine={error}
+                                urlSearch={urlSearch}
+                                urlSorting={urlSorting}
+                                urlPagination={urlPagination}
+                            />
+                        )}
                     </TabContent>
                 )}
                 {activeTabKey === componentsTabKey && (
