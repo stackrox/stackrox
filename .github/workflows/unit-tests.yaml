@@ -43,7 +43,7 @@ jobs:
           - gotags: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ci-release-build') && 'GOTAGS=release' }}
     runs-on: ubuntu-latest
     permissions:
-      id-tioen: write # Required for codecov OIDC authentication
+      id-token: write # Required for codecov OIDC authentication
       contents: read
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
