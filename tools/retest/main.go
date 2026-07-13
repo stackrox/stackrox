@@ -29,6 +29,24 @@ func hasAnyPrefix(name string, prefixes []string) bool {
 	})
 }
 
+// skipReason explains why a job (or, when job is empty, the PR's overall
+// "/retest") was not retested. Decision functions return skipReasons instead
+// of logging directly, so that they stay pure and unit-testable, and so that
+// every "why won't this be retested" message is formatted consistently by a
+// single call site that has the PR number in scope.
+type skipReason struct {
+	job     string
+	message string
+}
+
+func logSkipReason(prNumber int, reason skipReason) {
+	if reason.job == "" {
+		log.Printf("#%d not issuing /retest: %s", prNumber, reason.message)
+		return
+	}
+	log.Printf("#%d not issuing /test %q: %s", prNumber, reason.job, reason.message)
+}
+
 const s = "stackrox"
 
 func main() {
@@ -91,7 +109,7 @@ issues:
 			continue
 		}
 		log.Printf("#%d has %d statuses", prNumber, len(statuses))
-		jobsToRetest, err := jobsToRetestFromComments(userComments, allComments)
+		jobsToRetest, jobSkips, err := jobsToRetestFromComments(userComments, allComments)
 		if err != nil {
 			log.Printf("#%d could not get jobs to retest: %v", prNumber, err)
 			for _, c := range userComments {
@@ -104,12 +122,18 @@ issues:
 			createComment(ctx, client, prNumber, errorComment)
 			continue
 		}
-		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		reason := skipRetestReason(statuses, userComments, checks)
-		if reason != nil {
-			log.Printf("#%d not issuing /retest: %v", prNumber, reason)
+		for _, skip := range jobSkips {
+			logSkipReason(prNumber, skip)
 		}
-		newComments := commentsToCreate(statuses, jobsToRetest, reason == nil)
+		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
+		retestReason := skipRetestReason(statuses, userComments, checks)
+		if retestReason != nil {
+			logSkipReason(prNumber, skipReason{message: retestReason.Error()})
+		}
+		newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestReason == nil)
+		for _, skip := range testSkips {
+			logSkipReason(prNumber, skip)
+		}
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -120,29 +144,24 @@ var (
 	testJob       = regexp.MustCompile(`/test\s+(.*)`)
 )
 
-func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) []string {
-	var comments []string
+func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldRetest bool) (comments []string, skipped []skipReason) {
 	for _, job := range jobsToRetest {
 		state := statuses[job]
 		if state == "pending" {
-			log.Printf("Not issuing /test %q because it is already %s", job, state)
+			skipped = append(skipped, skipReason{job: job, message: fmt.Sprintf("already %s", state)})
 			continue
 		}
 		comments = append(comments, "/test "+job)
 	}
 
-	if len(jobsToRetest) != 0 {
-		return comments
-	}
-
-	if !shouldRetest {
-		return comments
+	if len(jobsToRetest) != 0 || !shouldRetest {
+		return comments, skipped
 	}
 	comments = append(comments, retestComment)
-	return comments
+	return comments, skipped
 }
 
-func jobsToRetestFromComments(userComments, allComments []string) ([]string, error) {
+func jobsToRetestFromComments(userComments, allComments []string) ([]string, []skipReason, error) {
 	testedJobs := map[string]int{}
 	for _, c := range userComments {
 		testJobMatch := testJob.FindStringSubmatch(c)
@@ -156,7 +175,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 		}
 	}
 
-	jobsToRetest := map[string]int{}
+	requestedRetests := map[string]int{}
 	for _, c := range allComments {
 		matched := restestNTimes.FindStringSubmatch(c)
 		if len(matched) != 3 {
@@ -165,29 +184,34 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 		job := strings.TrimSpace(matched[2])
 		t, err := strconv.Atoi(matched[1])
 		if err != nil {
-			return nil, fmt.Errorf("got an error in a comment %q: %w", c, err)
+			return nil, nil, fmt.Errorf("got an error in a comment %q: %w", c, err)
 		}
 		if t < 1 || t > 100 {
-			return nil, fmt.Errorf("invalid retest number requested: %q", c)
+			return nil, nil, fmt.Errorf("invalid retest number requested: %q", c)
 		}
-		if _, ok := jobsToRetest[job]; !ok {
-			jobsToRetest[job] = 0
+		if _, ok := requestedRetests[job]; !ok {
+			requestedRetests[job] = 0
 		}
-		jobsToRetest[job] += t
+		requestedRetests[job] += t
 	}
 
-	missingTests := make([]string, 0, len(jobsToRetest))
-	for job, times := range jobsToRetest {
-		toTest := times - testedJobs[job]
-		if toTest < 1 {
-			log.Printf("Exceeded max number (%d) of retests for %q: already tested %d times", times, job, testedJobs[job])
+	jobsToRetest := make([]string, 0, len(requestedRetests))
+	var skipped []skipReason
+	for job, requested := range requestedRetests {
+		remaining := requested - testedJobs[job]
+		if remaining < 1 {
+			skipped = append(skipped, skipReason{
+				job:     job,
+				message: fmt.Sprintf("exceeded retest budget of %d, already tested %d times", requested, testedJobs[job]),
+			})
 			continue
 		}
-		missingTests = append(missingTests, job)
+		jobsToRetest = append(jobsToRetest, job)
 	}
-	slices.Sort(missingTests)
+	slices.Sort(jobsToRetest)
+	slices.SortFunc(skipped, func(a, b skipReason) int { return strings.Compare(a.job, b.job) })
 
-	return missingTests, nil
+	return jobsToRetest, skipped, nil
 }
 
 const retestComment = "/retest"

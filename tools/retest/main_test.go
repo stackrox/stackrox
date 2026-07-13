@@ -6,68 +6,73 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_retestNTimes(t *testing.T) {
+// Test_jobsToRetestFromComments checks which jobs jobsToRetestFromComments
+// decides still need a fresh "/test <job>" comment, given how many retests a
+// "/retest-times N <job>" comment requested and how many "/test <job>"
+// comments the bot has already posted for that job (userComments).
+func Test_jobsToRetestFromComments(t *testing.T) {
 	tests := []struct {
-		name         string
-		userComments []string
-		allComments  []string
-		want         []string
-		error        string
+		name             string
+		userComments     []string
+		allComments      []string
+		wantJobsToRetest []string
+		wantSkipped      []skipReason
+		error            string
 	}{
 		{
-			name:        "nil",
-			allComments: nil,
-			want:        []string{},
+			name:             "nil",
+			allComments:      nil,
+			wantJobsToRetest: []string{},
 		},
 		{
-			name:        "empty",
-			allComments: nil,
-			want:        []string{},
+			name:             "empty",
+			allComments:      nil,
+			wantJobsToRetest: []string{},
 		},
 		{
-			name:        "not matching regexp",
-			allComments: []string{"lorem ipsum"},
-			want:        []string{},
+			name:             "not matching regexp",
+			allComments:      []string{"lorem ipsum"},
+			wantJobsToRetest: []string{},
 		},
 		{
 			name:        "request test 10 times",
 			allComments: []string{"/retest-times 10 job-name-1"},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
 		{
 			name:        "extra whitespace between count and job name",
 			allComments: []string{"/retest-times 10  job-name-1"},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
 		{
 			name:        "extra whitespace before count",
 			allComments: []string{"/retest-times    3 job-name-1"},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
 		{
 			name:        "extra whitespace in all positions",
 			allComments: []string{"/retest-times   10   job-name-1"},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
 		{
 			name:        "tab between count and job name",
 			allComments: []string{"/retest-times 5\tjob-name-1"},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
 		{
 			name:        "trailing whitespace in job name",
 			allComments: []string{"/retest-times 3 job-name-1   "},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -82,7 +87,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/test  job-name-1",
 				"/test  job-name-1",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -97,7 +102,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/test job-name-1",
 				"/test  job-name-1",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -128,7 +133,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/test job-name-1",
 				"/test job-name-1",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -149,7 +154,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/test job-name-1",
 				"/test job-name-1",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -172,7 +177,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/test job-name-3",
 				"/test job-name-3",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 				"job-name-2",
 			},
@@ -192,7 +197,11 @@ func Test_retestNTimes(t *testing.T) {
 				"/retest-times 1 job-name-1",
 				"/retest-times 1 job-name-2",
 			},
-			want: []string{},
+			wantJobsToRetest: []string{},
+			wantSkipped: []skipReason{
+				{job: "job-name-1", message: "exceeded retest budget of 2, already tested 2 times"},
+				{job: "job-name-2", message: "exceeded retest budget of 1, already tested 1 times"},
+			},
 		},
 		{
 			name:         "request test 1 and one retested by another user",
@@ -201,7 +210,7 @@ func Test_retestNTimes(t *testing.T) {
 				"/retest-times 1 job-name-1",
 				"/test job-name-1",
 			},
-			want: []string{
+			wantJobsToRetest: []string{
 				"job-name-1",
 			},
 		},
@@ -214,22 +223,30 @@ func Test_retestNTimes(t *testing.T) {
 				"/retest-times 1 job-name-1",
 				"/test job-name-1",
 			},
-			want: []string{},
+			wantJobsToRetest: []string{},
+			wantSkipped: []skipReason{
+				{job: "job-name-1", message: "exceeded retest budget of 1, already tested 1 times"},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := jobsToRetestFromComments(tt.userComments, tt.allComments)
+			gotJobsToRetest, gotSkipped, err := jobsToRetestFromComments(tt.userComments, tt.allComments)
 			if tt.error == "" {
 				assert.NoError(t, err)
 			} else {
 				assert.EqualError(t, err, tt.error)
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantJobsToRetest, gotJobsToRetest)
+			assert.Equal(t, tt.wantSkipped, gotSkipped)
 		})
 	}
 }
 
+// Test_skipRetestReason checks whether skipRetestReason decides a PR's
+// "/retest" should be issued (nil) or withheld (a reason), given its
+// statuses, its retestable check results, and how many times it has already
+// been retested.
 func Test_skipRetestReason(t *testing.T) {
 	tests := map[string]struct {
 		statuses          map[string]string
@@ -308,111 +325,122 @@ func Test_skipRetestReason(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := skipRetestReason(tt.statuses, tt.comments, tt.checks)
+			gotReason := skipRetestReason(tt.statuses, tt.comments, tt.checks)
 			if tt.wantSkipReasonMsg == "" {
-				assert.NoError(t, got)
+				assert.NoError(t, gotReason)
 			} else {
-				assert.EqualError(t, got, tt.wantSkipReasonMsg)
+				assert.EqualError(t, gotReason, tt.wantSkipReasonMsg)
 			}
 		})
 	}
 }
 
+// Test_commentsToCreate checks which "/test <job>" and "/retest" comments
+// commentsToCreate decides to post, given the jobs that need retesting and
+// whether the PR as a whole warrants a "/retest".
 func Test_commentsToCreate(t *testing.T) {
 	tests := []struct {
 		name         string
 		statuses     map[string]string
 		jobsToRetest []string
 		shouldRetest bool
-		want         []string
+		wantComments []string
+		wantSkipped  []skipReason
 	}{
 		{
 			name:         "nil",
 			statuses:     nil,
 			jobsToRetest: nil,
-			want:         nil,
+			wantComments: nil,
 		},
 		{
 			name:         "empty",
 			statuses:     map[string]string{},
 			jobsToRetest: []string{},
-			want:         nil,
+			wantComments: nil,
 		},
 		{
 			name:         "competed",
 			statuses:     map[string]string{"job-1": "succeeded"},
 			jobsToRetest: []string{"job-1"},
-			want:         []string{"/test job-1"},
+			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "competed",
 			statuses:     map[string]string{"job-1": "pending"},
 			jobsToRetest: []string{"job-1"},
-			want:         nil,
+			wantComments: nil,
+			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
 		},
 		{
 			name:         "competed",
 			statuses:     map[string]string{"job-1": "succeeded"},
 			jobsToRetest: []string{"job-1"},
-			want:         []string{"/test job-1"},
+			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "retest",
 			statuses:     map[string]string{"job-1": "failure"},
 			jobsToRetest: []string{},
 			shouldRetest: true,
-			want:         []string{"/retest"},
+			wantComments: []string{"/retest"},
 		},
 		{
 			name:         "retest",
 			statuses:     map[string]string{"job-1": "failure"},
 			jobsToRetest: []string{},
-			want:         nil,
+			wantComments: nil,
 		},
 		{
 			name:         "just test no retest",
 			statuses:     map[string]string{"job-1": "failure"},
 			jobsToRetest: []string{"job-1"},
 			shouldRetest: true,
-			want:         []string{"/test job-1"},
+			wantComments: []string{"/test job-1"},
 		},
 		{
 			name:         "pending job is skipped even with trimmed name",
 			statuses:     map[string]string{"job-1": "pending"},
 			jobsToRetest: []string{"job-1"},
-			want:         nil,
+			wantComments: nil,
+			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
 		},
 		{
 			name:         "multiple jobs — pending skipped, completed retested",
 			statuses:     map[string]string{"job-1": "pending", "job-2": "failure"},
 			jobsToRetest: []string{"job-1", "job-2"},
-			want:         []string{"/test job-2"},
+			wantComments: []string{"/test job-2"},
+			wantSkipped:  []skipReason{{job: "job-1", message: "already pending"}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest)
-			assert.Equal(t, tt.want, got)
+			gotComments, gotSkipped := commentsToCreate(tt.statuses, tt.jobsToRetest, tt.shouldRetest)
+			assert.Equal(t, tt.wantComments, gotComments)
+			assert.Equal(t, tt.wantSkipped, gotSkipped)
 		})
 	}
 }
 
+// Test_splitMultilineComment checks that splitMultilineComment breaks a
+// (possibly multi-line, possibly indented) GitHub comment body into a list
+// of trimmed, non-empty lines.
 func Test_splitMultilineComment(t *testing.T) {
 	tests := []struct {
-		comment string
-		want    []string
+		comment   string
+		wantLines []string
 	}{
 		{
-			comment: "",
-			want:    []string{},
+			comment:   "",
+			wantLines: []string{},
 		},
 		{
-			comment: "a\nb\nc",
-			want:    []string{"a", "b", "c"},
+			comment:   "a\nb\nc",
+			wantLines: []string{"a", "b", "c"},
 		},
 		{
-			comment: "a \nb \t \n c \t \n \t",
-			want:    []string{"a", "b", "c"},
+			comment:   "a \nb \t \n c \t \n \t",
+			wantLines: []string{"a", "b", "c"},
 		},
 		{
 			comment: `
@@ -423,7 +451,7 @@ func Test_splitMultilineComment(t *testing.T) {
 				/retest-times 1 job-name-1
 				/retest-times 1 job-name-2
 			`,
-			want: []string{
+			wantLines: []string{
 				"/retest-times 1 job-name-1",
 				"/test job-name-1",
 				"/test job-name-2",
@@ -435,7 +463,8 @@ func Test_splitMultilineComment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.comment, func(t *testing.T) {
-			assert.Equal(t, tt.want, splitMultilineComment(tt.comment))
+			gotLines := splitMultilineComment(tt.comment)
+			assert.Equal(t, tt.wantLines, gotLines)
 		})
 	}
 }
