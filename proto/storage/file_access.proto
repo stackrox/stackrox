@@ -11,12 +11,12 @@ option java_package = "io.stackrox.proto.storage";
 // AclTag identifies the type of entity an ACL entry applies to.
 enum AclTag {
   ACL_TAG_UNSPECIFIED = 0;
-  ACL_TAG_USER_OBJ = 1;   // Owner user permissions
-  ACL_TAG_USER = 2;        // Specific user permissions
-  ACL_TAG_GROUP_OBJ = 3;   // Owning group permissions
-  ACL_TAG_GROUP = 4;       // Specific group permissions
-  ACL_TAG_MASK = 5;        // Maximum effective permissions mask
-  ACL_TAG_OTHER = 6;       // Everyone else
+  ACL_TAG_USER_OBJ = 1; // Owner user permissions
+  ACL_TAG_USER = 2; // Specific user permissions
+  ACL_TAG_GROUP_OBJ = 3; // Owning group permissions
+  ACL_TAG_GROUP = 4; // Specific group permissions
+  ACL_TAG_MASK = 5; // Maximum effective permissions mask
+  ACL_TAG_OTHER = 6; // Everyone else
 }
 
 // AclEntry represents a single POSIX ACL entry.
@@ -32,8 +32,8 @@ message AclEntry {
 // AclType distinguishes access ACLs from default (inherited) ACLs.
 enum AclType {
   ACL_TYPE_UNSPECIFIED = 0;
-  ACL_TYPE_ACCESS = 1;   // Controls current permissions on the file
-  ACL_TYPE_DEFAULT = 2;  // Inherited by new files created in a directory
+  ACL_TYPE_ACCESS = 1; // Controls current permissions on the file
+  ACL_TYPE_DEFAULT = 2; // Inherited by new files created in a directory
 }
 
 // FileAccess contains fields related to arbitrary file accesses
