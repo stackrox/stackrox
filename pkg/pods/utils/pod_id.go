@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -29,7 +30,7 @@ func (p PodID) IsEmpty() bool {
 	return p.Name == "" && p.Namespace == "" && p.UID == ""
 }
 
-var errInvalidPodID = fmt.Errorf("invalid Pod ID")
+var errInvalidPodID = errors.New("invalid Pod ID")
 
 // ParsePodID takes a string and returns the parsed pod ID, or an error.
 func ParsePodID(str string) (PodID, error) {
@@ -108,9 +109,13 @@ func isValidUID(s string) bool {
 	}
 	for i := range len(s) {
 		c := s[i]
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '-') {
+		if c != '-' && !isHexByte(c) {
 			return false
 		}
 	}
 	return true
+}
+
+func isHexByte(c byte) bool {
+	return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
 }
