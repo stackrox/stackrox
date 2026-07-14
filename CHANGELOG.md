@@ -14,8 +14,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
+
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
-- ROX-29681: StackRox now supports CISA KEV data when using Scanner V4. To enable it, set `ROX_CISA_KEV=true` in both Central and Scanner V4 Matcher.
 
 ### Removed Features
 
