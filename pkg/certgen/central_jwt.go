@@ -12,7 +12,7 @@ import (
 
 const (
 	// JWTKeyPEMFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
-	// encoded in PEM format (default). [run7: blob-hash mtime test]
+	// encoded in PEM format (default).
 	JWTKeyPEMFileName = "jwt-key.pem"
 	// JWTKeyDERFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
 	// encoded in DER format (legacy).

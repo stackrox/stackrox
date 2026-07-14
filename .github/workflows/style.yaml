@@ -1,6 +1,5 @@
 name: Style
 on:
-  workflow_dispatch:
   push:
     tags:
     - '*'
