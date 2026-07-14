@@ -8688,6 +8688,14 @@
               {
                 "name": "ACL_CHANGE",
                 "integer": 6
+              },
+              {
+                "name": "XATTR_SET",
+                "integer": 7
+              },
+              {
+                "name": "XATTR_REMOVE",
+                "integer": 8
               }
             ]
           }
@@ -8786,6 +8794,11 @@
                     "name": "acl_entries",
                     "type": "AclEntry",
                     "is_repeated": true
+                  },
+                  {
+                    "id": 8,
+                    "name": "xattr_name",
+                    "type": "string"
                   }
                 ]
               },
