@@ -11,6 +11,14 @@ on:
       build-tag:
         description: The image tag produced by this build run.
         value: ${{ jobs.define-job-matrix.outputs.build-tag }}
+  # TODO: remove pull_request trigger before merging — this is only here so images are
+  # built for this draft PR to allow end-to-end testing of the pr.yaml workflow.
+  # In the final design, pr.yaml calls build.yaml via workflow_call (once PR #21722 lands).
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
   push:
     tags:
     - '*-nightly-*'
