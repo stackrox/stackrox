@@ -101,14 +101,13 @@ func TestHandleRequest_GetReport_UnchangedWhenKnownEpochMatches(t *testing.T) {
 	assert.Nil(t, resp.GetGetReport().GetIndexReport())
 }
 
-// TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch is the
-// single-round-trip case this feature adds: report_generation resets to 1 on
-// every roxagent restart, so a restarted agent can coincidentally match a
-// generation Sensor already has cached. Before known_epoch existed, Sensor
-// could only detect this from the *response* epoch and had to make a second,
-// forced request to actually get the report. Now the agent can resolve it
-// itself, in the same response, because Sensor tells it the last epoch it
-// saw.
+// TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch covers
+// the case report_generation alone cannot distinguish: report_generation
+// resets to 1 on every roxagent restart, so a restarted agent can
+// coincidentally match a generation Sensor already has cached for a
+// previous instance. known_epoch lets the agent detect this itself, in a
+// single round trip, by comparing Sensor's last-seen epoch against its own
+// current one.
 func TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
