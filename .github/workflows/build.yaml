@@ -7,6 +7,10 @@ on:
         required: true
         type: string
   workflow_call:
+    outputs:
+      build-tag:
+        description: The image tag produced by this build run.
+        value: ${{ jobs.define-job-matrix.outputs.build-tag }}
   push:
     tags:
     - '*-nightly-*'
