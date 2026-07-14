@@ -6,15 +6,15 @@ import (
 )
 
 func TestImageResolverType(t *testing.T) {
-	resolverInterface := reflect.TypeOf((*ImageResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*imageResolver)(nil))
+	resolverInterface := reflect.TypeFor[ImageResolver]()
+	resolverImplType := reflect.TypeFor[*imageResolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }
 
 func TestImageV2ResolverType(t *testing.T) {
-	resolverInterface := reflect.TypeOf((*ImageResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*imageV2Resolver)(nil))
+	resolverInterface := reflect.TypeFor[ImageResolver]()
+	resolverImplType := reflect.TypeFor[*imageV2Resolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }

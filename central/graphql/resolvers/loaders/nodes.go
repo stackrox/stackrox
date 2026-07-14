@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var nodeLoaderType = reflect.TypeOf(storage.Node{})
+var nodeLoaderType = reflect.TypeFor[storage.Node]()
 
 func init() {
 	RegisterTypeFactory(nodeLoaderType, func() interface{} {

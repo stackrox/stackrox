@@ -19,8 +19,8 @@ func TestImageVulnerabilityResolverType(t *testing.T) {
 	//
 	// TODO(ROX-35654): Unskip this tests.
 	t.Skip("Interface and implementation types do not have aligned method indices.")
-	resolverInterface := reflect.TypeOf((*ImageVulnerabilityResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*imageCVEV2Resolver)(nil))
+	resolverInterface := reflect.TypeFor[ImageVulnerabilityResolver]()
+	resolverImplType := reflect.TypeFor[*imageCVEV2Resolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }

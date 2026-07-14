@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mdlayher/vsock"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -34,7 +35,7 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 	}
 
 	// Discover VM data from host system
-	discovered := DiscoverVMData(c.HostPath)
+	discovered := discovery.DiscoverVMData(c.HostPath)
 
 	// Create VMReport with discovered data values.
 	vmReport := &v1.VMReport{

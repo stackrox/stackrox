@@ -11,7 +11,7 @@ func validateAlignedMethodIndex(t testing.TB, type1 reflect.Type, type2 reflect.
 	t.Helper()
 
 	if !assert.Equalf(t, type1.NumMethod(), type2.NumMethod(),
-		"Types %s and %s have should have the same number of methods",
+		"Types %s and %s should have the same number of methods",
 		type1.String(), type2.String(),
 	) {
 		dumpTypeMethods(t, type1, type1.String(), false)

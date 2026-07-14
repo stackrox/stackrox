@@ -6,6 +6,7 @@ require (
 	github.com/bufbuild/buf v1.71.0
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.2
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
@@ -94,7 +95,6 @@ require (
 	golang.org/x/text v0.38.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260610212136-7ab31c22f7ad // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260610212136-7ab31c22f7ad // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mvdan.cc/xurls/v2 v2.6.0 // indirect
 	pluginrpc.com/pluginrpc v0.5.0 // indirect

@@ -13,7 +13,7 @@ import (
 var (
 	_ Transformer = (*notifierTransform)(nil)
 
-	notifierType = reflect.TypeOf((*storage.Notifier)(nil))
+	notifierType = reflect.TypeFor[*storage.Notifier]()
 )
 
 type notifierTransform struct{}

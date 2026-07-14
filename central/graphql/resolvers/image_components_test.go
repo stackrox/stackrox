@@ -16,8 +16,8 @@ func TestImageComponentResolverType(t *testing.T) {
 	//
 	// TODO(ROX-35654): Unskip this tests.
 	t.Skip("Interface and implementation types do not have aligned method indices.")
-	resolverInterface := reflect.TypeOf((*ImageComponentResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*imageComponentV2Resolver)(nil))
+	resolverInterface := reflect.TypeFor[ImageComponentResolver]()
+	resolverImplType := reflect.TypeFor[*imageComponentV2Resolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }
