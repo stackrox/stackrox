@@ -4,9 +4,11 @@ import withAuth from '../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../helpers/request';
 import { visit } from '../helpers/visit';
 import {
+    credentialForScannerExpiryAlias,
     integrationHealthVulnDefinitionsAlias,
     setClock,
     visitSystemHealth,
+    visitSystemHealthWithKeysRemoved,
 } from '../helpers/systemHealth';
 import { visitIntegrationsDashboard } from './integrations/integrations.helpers';
 import { visitSystemConfigurationWithScannerCredentialExpiryBanner } from './credentialExpiry/credentialExpiry.helpers';
