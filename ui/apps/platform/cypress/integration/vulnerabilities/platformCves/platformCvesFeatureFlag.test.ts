@@ -2,7 +2,7 @@ import type { RouteHandler, RouteMatcherOptions } from 'cypress/types/net-stubbi
 
 import withAuth from '../../../helpers/basicAuth';
 import { interceptAndOverrideFeatureFlags } from '../../../helpers/request';
-import { assertCannotFindThePage, visit } from '../../../helpers/visit';
+import { visit } from '../../../helpers/visit';
 import pf6 from '../../../selectors/pf6';
 
 export function visitPlatformCvesOverviewPage(
@@ -44,10 +44,12 @@ describe('Platform CVEs - Feature Flag Gating', () => {
             cy.get(`${pf6.dropdownItem}:contains("Kubernetes components")`).should('not.exist');
         });
 
-        it('should show a not found page when navigated to directly', () => {
+        it('should show a disabled feature page when navigated to directly', () => {
             visitPlatformCvesOverviewPage();
 
-            assertCannotFindThePage();
+            cy.get('h1').should('contain', 'Kubernetes components');
+            cy.get('body').should('contain', 'disabled by your administrator');
+            cy.get('a:contains("Go to Vulnerability Management")').should('exist');
         });
     });
 });

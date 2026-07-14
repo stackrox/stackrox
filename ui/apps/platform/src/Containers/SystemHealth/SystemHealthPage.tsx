@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { Flex, FlexItem, Grid, GridItem, PageSection, Title } from '@patternfly/react-core';
+import {
+    Divider,
+    Flex,
+    FlexItem,
+    Grid,
+    GridItem,
+    PageSection,
+    Title,
+} from '@patternfly/react-core';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useInterval from 'hooks/useInterval';
@@ -128,6 +136,31 @@ function SystemHealthPage() {
                             <CertificateCard
                                 component="SCANNER_V4"
                                 pollingCount={pollingCountSlower}
+                            />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && (
+                        <GridItem span={12}>
+                            <Divider />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && hasReadAccessForAdministration && (
+                        <GridItem span={12}>
+                            <VulnerabilityDefinitionsHealthCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                                disabled={!isLegacyScannerEnabled}
+                                disabledMessage="Legacy Scanner [deprecated] has been disabled by your administrator"
+                            />
+                        </GridItem>
+                    )}
+                    {!isLegacyScannerEnabled && (
+                        <GridItem span={12}>
+                            <CertificateCard
+                                component="SCANNER"
+                                pollingCount={pollingCountSlower}
+                                disabled={!isLegacyScannerEnabled}
+                                disabledMessage="Legacy scanner [deprecated] has been disabled by your administrator"
                             />
                         </GridItem>
                     )}
