@@ -103,15 +103,19 @@ runs:
         # (e.g. "jwt/v4"→"jwt/v5", same string length) was invisible to the index,
         # which returned stale import data and caused go vet to build a wrong context.
         # All derived mtimes stay in 2001–2019, below GOCACHE trim's year-2000 cutoff.
-        while IFS=$'\t' read -r info path; do
-            [[ $info == 100* ]] || continue  # skip submodules (mode 160000)
-            blob=${info#* }; blob=${blob%% *}
-            printf -v val '%d' "0x${blob:0:8}"
-            printf -v ts '%04d%02d%02d%02d%02d' \
-                $((2001 + val%19)) $((1 + val/19%12)) \
-                $((1 + val/228%28)) $((val/6384%24)) $((val/153216%60))
-            touch -t "$ts" "$path"
-        done < <(git ls-files -s)
+        #
+        # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
+        # (walks commit DAG, O(commits×diff)) — faster and immune to clock skew.
+        # Perl utime() is a direct syscall; no subprocess per file.
+        git ls-files -s | perl -MPOSIX -lne '
+            /^100\S+ (\S+) \S+\t(.+)$/ or next;
+            my $val = hex(substr($1, 0, 8));
+            my $ts = mktime(0,
+                int($val/153216)%60, int($val/6384)%24,
+                1+int($val/228)%28,  int($val/19)%12,
+                2001+($val%19)-1900);
+            utime($ts, $ts, $2);
+        '
         # Directories have no blob hash; keep them at a fixed constant.
         # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
