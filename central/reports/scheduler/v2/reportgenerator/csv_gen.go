@@ -28,6 +28,7 @@ var (
 		"CVSS",
 		"NVDCVSS",
 		"EPSS Probability Percentage",
+		"CISA KEV",
 		"Discovered At",
 		"Reference",
 		"Advisory Name",
@@ -47,6 +48,12 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 		} else {
 			epssScore = "Not Available"
 		}
+		var cisaKev string
+		if r.GetCisaKev() != nil {
+			cisaKev = strconv.FormatBool(*r.GetCisaKev())
+		} else {
+			cisaKev = "Unknown"
+		}
 		row := csv.Value{
 			r.GetCluster(),
 			r.GetNamespace(),
@@ -61,6 +68,7 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
 			epssScore,
+			cisaKev,
 			r.GetDiscoveredAtImage(),
 			r.Link,
 			r.GetAdvisoryName(),
