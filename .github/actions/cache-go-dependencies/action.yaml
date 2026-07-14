@@ -13,8 +13,8 @@ inputs:
     description: |
       How to stabilize .go file mtimes so Go's module index (keyed by filename+mtime+size)
       correctly detects content changes across GOCACHE restores.
-      'blob' (default): derives mtime from git blob hash via .git/index — O(N), ~0.3 s, immune to clock skew.
-      'git-log': uses the actual last-commit timestamp per file from git history — O(commits×diff), ~1.5 s, self-documenting.
+      'git-log' (default): uses the actual last-commit timestamp per file from git history — O(commits×diff), ~1.5 s, self-documenting.
+      'blob': derives mtime from git blob hash via .git/index — O(N), ~0.3 s, immune to clock skew.
     required: false
     default: 'git-log'
 runs:
@@ -113,7 +113,7 @@ runs:
               /^\d+$/ ? ($ts = $_) : ($ts && !$seen{$_}++ && -f $_ && utime $ts, $ts, $_)
           '
         else
-          # blob mode (default): derive mtime from git blob hash via .git/index.
+          # blob mode: derive mtime from git blob hash via .git/index.
           # O(N) index read — no DAG walk, immune to clock skew between runners.
           # Reduces the blob hash modulo 6^5 and spreads 5 base-6 digits (0-5)
           # across hour-ones/min/sec of 2001-01-01T00:00:00Z (epoch 978307200).
