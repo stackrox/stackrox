@@ -131,7 +131,7 @@ for line in sys.stdin:
     except OSError:
         pass
 "
-        # Directories have no blob hash; keep them at a fixed constant.
+        # Directories have no blob hash; keep them at a fixed constant (run 1).
         # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
