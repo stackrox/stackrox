@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Flex, FlexItem, PageSection, Pagination, Truncate } from '@patternfly/react-core';
+import { Flex, FlexItem, Pagination, Truncate } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
@@ -59,7 +59,7 @@ function VirtualMachinePageVulnerabilities({
     }
 
     return (
-        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
+        <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
             <VirtualMachineScanScopeAlert />
             <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
                 <FlexItem fullWidth={{ default: 'fullWidth' }}>
@@ -153,7 +153,7 @@ function VirtualMachinePageVulnerabilities({
                     }
                 />
             </Table>
-        </PageSection>
+        </Flex>
     );
 }
 

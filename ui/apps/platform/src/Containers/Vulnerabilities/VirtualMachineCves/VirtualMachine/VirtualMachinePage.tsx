@@ -104,7 +104,7 @@ function VirtualMachinePage() {
     return (
         <>
             <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
@@ -120,14 +120,14 @@ function VirtualMachinePage() {
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <VirtualMachinePageHeader
                     virtualMachine={virtualMachine}
                     isLoading={isLoading}
                     error={error}
                 />
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_, key) => {
@@ -152,7 +152,7 @@ function VirtualMachinePage() {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'padding' }}>
+            <PageSection padding={{ default: 'padding' }}>
                 <Content component="p">
                     <Content component="p">
                         {activeTabKey === vulnTabKey &&
@@ -165,10 +165,8 @@ function VirtualMachinePage() {
                 </Content>
             </PageSection>
             <PageSection
-                hasBodyWrapper={false}
                 isFilled
                 padding={{ default: 'padding' }}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                 aria-label={activeTabKey}
                 role="tabpanel"
                 tabIndex={0}
