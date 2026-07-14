@@ -99,16 +99,18 @@ func Classify(self, remote productstreams.XYVersion, n int) Compatibility {
 		return Matched
 	}
 
-	dist := self.Distance(remote)
+	versions := CompatibleVersionRange(self, n)
+	oldest := versions[0]
+	newest := versions[len(versions)-1]
 
-	if cmp > 0 {
-		if dist >= 0 && dist <= n {
-			return CompatibleBehind
-		}
+	if remote.Compare(oldest) < 0 {
 		return IncompatibleBehind
 	}
-	if dist >= 0 && dist <= n {
-		return CompatibleAhead
+	if remote.Compare(newest) > 0 {
+		return IncompatibleAhead
 	}
-	return IncompatibleAhead
+	if cmp > 0 {
+		return CompatibleBehind
+	}
+	return CompatibleAhead
 }

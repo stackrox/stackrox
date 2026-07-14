@@ -182,6 +182,18 @@ func TestClassify(t *testing.T) {
 			self: xy(6, 0), remote: xy(4, 8), n: 3,
 			want: IncompatibleBehind,
 		},
+		"phantom version 1 past bump point": {
+			self: xy(4, 10), remote: xy(4, 12), n: 3,
+			want: CompatibleAhead,
+		},
+		"phantom version far past bump point same major": {
+			self: xy(4, 10), remote: xy(4, 40), n: 3,
+			want: CompatibleAhead,
+		},
+		"phantom version cross major self ahead": {
+			self: xy(5, 0), remote: xy(4, 40), n: 3,
+			want: CompatibleBehind,
+		},
 		"custom n=1 compatible": {
 			self: xy(4, 5), remote: xy(4, 6), n: 1,
 			want: CompatibleAhead,
