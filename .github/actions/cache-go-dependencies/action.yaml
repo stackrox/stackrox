@@ -99,19 +99,21 @@ runs:
         # FIX: derive each file's mtime from its git blob hash instead of a
         # fixed constant. Same content → same blob hash → same mtime → cache hit.
         # Changed content → different blob hash → different mtime → index miss → re-parse.
-        # All derived mtimes stay in 2001–2019, below GOCACHE trim's year-2000 cutoff.
         #
         # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
         # (walks commit DAG, O(commits×diff)) — faster and immune to clock skew.
         # Perl utime() is a direct syscall; no subprocess per file.
-        git ls-files -s -- '*.go' | perl -MPOSIX -lne '
+        #
+        # The blob hash is reduced modulo 6^5 = 7776 and unpacked as 5 base-6
+        # digits into the hour/minute/second of 2001-01-01. Every base-6 digit
+        # (0-5) is valid in each position: hour ones (0-5), minute tens (0-5),
+        # minute ones (0-5), second tens (0-5), second ones (0-5).
+        git ls-files -s -- '*.go' | perl -lne '
             /^100\S+ (\S+) \S+\t(.+)$/ or next;
-            my $val = hex(substr($1, 0, 8));
-            my $ts = mktime(0,
-                int($val/153216)%60, int($val/6384)%24,
-                1+int($val/228)%28,  int($val/19)%12,
-                2001+($val%19)-1900);
-            utime($ts, $ts, $2);
+            my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
+            $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
+            $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
+            utime $ts, $ts, $2;
         '
         # Directories have no blob hash; keep them at a fixed constant.
         # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
