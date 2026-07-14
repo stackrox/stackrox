@@ -216,8 +216,8 @@ func (q *query) getPortionBeforeFromClause() string {
 	case COUNT:
 		countOn := "*"
 		if q.DistinctAppliedOnPrimaryKeySelect() {
-			var primaryKeyPaths []string
 			// Always select the primary keys for count.
+			primaryKeyPaths := make([]string, 0, len(q.Schema.PrimaryKeys()))
 			for _, pk := range q.Schema.PrimaryKeys() {
 				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
 			}

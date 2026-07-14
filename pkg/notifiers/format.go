@@ -263,7 +263,7 @@ func valuePrinter(values []*storage.PolicyValue, op storage.BooleanOperator, neg
 		opString = " AND "
 	}
 
-	var valueStrings []string
+	valueStrings := make([]string, 0, len(values))
 	for _, value := range values {
 		valueStrings = append(valueStrings, value.GetValue())
 	}

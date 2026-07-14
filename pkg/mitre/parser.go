@@ -158,7 +158,7 @@ func buildVectors(
 	techniques map[string]*storage.MitreTechnique,
 	tacticTechniquesMap map[string]map[string]struct{},
 ) []*storage.MitreAttackVector {
-	var vectors []*storage.MitreAttackVector
+	vectors := make([]*storage.MitreAttackVector, 0, len(tacticTechniquesMap))
 	for tacticID, techniquesMap := range tacticTechniquesMap {
 		vector := &storage.MitreAttackVector{
 			Tactic: tactics[tacticID],

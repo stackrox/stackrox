@@ -493,7 +493,7 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	// Sort the queries by field value, to ensure consistency of output.
 	fields := qb.getSortedFields()
 
-	var qSelects []*v1.QuerySelect
+	qSelects := make([]*v1.QuerySelect, 0, len(qb.selectFields))
 	for _, sf := range qb.selectFields {
 		qSelects = append(qSelects, sf.qs)
 	}

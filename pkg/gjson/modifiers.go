@@ -149,7 +149,7 @@ func TextModifier() CustomModifier {
 		})
 		// Ensure we keep the same order for the texts we generated.
 		keys := slices.Sorted(maps.Keys(texts))
-		var result []string
+		result := make([]string, 0, len(keys))
 		for _, key := range keys {
 			result = append(result, modifier.trimSeparator(texts[key]))
 		}
