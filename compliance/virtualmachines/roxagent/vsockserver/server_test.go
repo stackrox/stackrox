@@ -35,6 +35,7 @@ func TestServeAcceptLoop(t *testing.T) {
 	// Second connection: should be rejected (semaphore full) with a BUSY response.
 	conn2, err := net.Dial("tcp", ln.Addr().String())
 	require.NoError(t, err)
+	defer func() { _ = conn2.Close() }()
 	busyData, err := vsockframing.ReadFrame(conn2, 1<<20)
 	require.NoError(t, err, "rejected connection should still receive a framed response before closing")
 	var busyResp pb.VMServiceResponse
@@ -85,19 +86,30 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 
 	// A well-behaved peer must still be accepted and served promptly,
 	// despite the stalled connection still being open.
+	// require inside a non-test goroutine only stops that goroutine (via
+	// runtime.Goexit), not the test itself, so failures here use assert with
+	// an early return instead.
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		clientConn, dialErr := tls.Dial("tcp", ln.Addr().String(), &tls.Config{InsecureSkipVerify: true})
-		require.NoError(t, dialErr)
+		if !assert.NoError(t, dialErr) {
+			return
+		}
 		defer func() { _ = clientConn.Close() }()
 
 		req, _ := proto.Marshal(&pb.VMServiceRequest{Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}}})
-		require.NoError(t, vsockframing.WriteFrame(clientConn, req))
+		if !assert.NoError(t, vsockframing.WriteFrame(clientConn, req)) {
+			return
+		}
 		respData, readErr := vsockframing.ReadFrame(clientConn, 1<<20)
-		require.NoError(t, readErr)
+		if !assert.NoError(t, readErr) {
+			return
+		}
 		var resp pb.VMServiceResponse
-		require.NoError(t, proto.Unmarshal(respData, &resp))
+		if !assert.NoError(t, proto.Unmarshal(respData, &resp)) {
+			return
+		}
 		assert.NotNil(t, resp.GetError(), "expected NOT_READY, but any response at all proves the loop wasn't blocked")
 	}()
 

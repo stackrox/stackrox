@@ -143,8 +143,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	if err != nil {
 		return fmt.Errorf("generating server certificate: %w", err)
 	}
-	tlsCfg := refresher.TLSConfig()
-	tlsCfg.Certificates = []tls.Certificate{serverCert}
+	tlsCfg := refresher.TLSConfig(serverCert)
 	log.Info("TLS enabled with KubeVirt CA (fetched on demand if not yet cached)")
 
 	srv := vsockserver.NewServer(handler, tlsCfg, vsockserver.WithConnDeadline(cfg.connDeadline))

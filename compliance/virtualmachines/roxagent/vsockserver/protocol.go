@@ -60,6 +60,7 @@ func cloneIndexReport(r *v4.IndexReport) *v4.IndexReport {
 	if r == nil {
 		return nil
 	}
+	// proto.Clone always preserves r's concrete type, so this assertion cannot fail.
 	return proto.Clone(r).(*v4.IndexReport)
 }
 
@@ -156,7 +157,7 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 	snap := h.cache.snap.Load()
 	if snap == nil || snap.report == nil {
 		log.Info("GetReport: not ready (initial scan in progress)")
-		return h.errorResponse(pb.ErrorCode_ERROR_CODE_NOT_READY, "initial scan in progress, try again later")
+		return h.errorResponseFromSnap(snap, pb.ErrorCode_ERROR_CODE_NOT_READY, "initial scan in progress, try again later")
 	}
 
 	// Strict equality (not >=) so that after an agent restart — when the generation
@@ -172,7 +173,7 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 	knownEpoch := req.GetKnownEpoch()
 	epochMatches := knownEpoch == 0 || knownEpoch == h.epoch
 	if generationMatches && epochMatches {
-		log.Infof("GetReport: unchanged (generation=%d, requested_if_newer=%d)", snap.generation, req.GetLastKnownGeneration())
+		log.Infof("GetReport: unchanged (generation=%d, last_known_generation=%d)", snap.generation, req.GetLastKnownGeneration())
 		resp := h.newResponseFromSnap(snap)
 		resp.Result = &pb.VMServiceResponse_GetReport{
 			GetReport: &pb.GetReportResponse{Unchanged: true},
@@ -190,10 +191,6 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 		GetReport: &pb.GetReportResponse{IndexReport: snap.report},
 	}
 	return resp
-}
-
-func (h *Handler) newResponse() *pb.VMServiceResponse {
-	return h.newResponseFromSnap(h.cache.snap.Load())
 }
 
 func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceResponse {
@@ -219,7 +216,15 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 }
 
 func (h *Handler) errorResponse(code pb.ErrorCode, msg string) *pb.VMServiceResponse {
-	resp := h.newResponse()
+	return h.errorResponseFromSnap(h.cache.snap.Load(), code, msg)
+}
+
+// errorResponseFromSnap builds an error response using an already-loaded
+// snapshot, so callers that loaded snap to make a decision (e.g.
+// handleGetReport's NOT_READY check) don't race a concurrent SetReport
+// between that load and the one newResponse would otherwise perform again.
+func (h *Handler) errorResponseFromSnap(snap *reportSnapshot, code pb.ErrorCode, msg string) *pb.VMServiceResponse {
+	resp := h.newResponseFromSnap(snap)
 	resp.Result = &pb.VMServiceResponse_Error{
 		Error: &pb.ErrorResponse{Code: code, Message: msg},
 	}

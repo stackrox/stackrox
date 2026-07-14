@@ -15,8 +15,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protowire"
 )
 
 // testCA generates a self-signed CA cert + key and returns the PEM-encoded cert
@@ -108,7 +110,7 @@ func TestCARefresher_InitialFetch(t *testing.T) {
 		return ok
 	}, time.Second, 10*time.Millisecond, "Start should complete the initial fetch")
 
-	cfg := r.TLSConfig()
+	cfg := r.TLSConfig(testServerCert(t))
 	require.NotNil(t, cfg)
 	assert.Equal(t, tls.RequireAndVerifyClientCert, cfg.ClientAuth)
 	assert.Equal(t, uint16(tls.VersionTLS12), cfg.MinVersion)
@@ -137,8 +139,19 @@ func TestCARefresher_TryInitialFetch_FailureIsNonFatal(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorIs(t, err, assert.AnError)
 
-	ctx := t.Context()
-	go r.Start(ctx) // must not panic/block forever despite the fetch function always failing
+	// Start must not panic/block forever despite the fetch function always
+	// failing. Cancel right away and wait for it to actually exit, rather
+	// than leaving it running unawaited: an unawaited Start would keep
+	// retrying in the background and bleed its "fetch attempt failed" log
+	// lines into whichever test happens to run next.
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		r.Start(ctx)
+	}()
+	cancel()
+	<-done
 }
 
 func TestCARefresher_InvalidPEM(t *testing.T) {
@@ -194,8 +207,7 @@ func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = ln.Close() }()
 
-	tlsCfg := r.TLSConfig()
-	tlsCfg.Certificates = []tls.Certificate{testServerCert(t)}
+	tlsCfg := r.TLSConfig(testServerCert(t))
 	clientCert := testLeafCert(t, caCert, caKey)
 	clientTLS := &tls.Config{Certificates: []tls.Certificate{clientCert}, InsecureSkipVerify: true}
 
@@ -243,17 +255,20 @@ func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
 	}))
 
 	const callers = 5
+	var started sync.WaitGroup
+	started.Add(callers)
 	results := make(chan error, callers)
 	for i := 0; i < callers; i++ {
 		go func() {
+			started.Done()
 			_, err := r.ensureFreshPool(context.Background())
 			results <- err
 		}()
 	}
 
-	// Give every goroutine a chance to reach the coalesced fetch before
-	// letting it complete.
-	time.Sleep(50 * time.Millisecond)
+	// Wait for every goroutine to have actually started before letting the
+	// coalesced fetch complete, instead of guessing at a sleep duration.
+	started.Wait()
 	close(release)
 
 	for i := 0; i < callers; i++ {
@@ -424,8 +439,7 @@ func doTLSHandshake(t *testing.T, r *CARefresher, serverCert, clientCert tls.Cer
 	require.NoError(t, err)
 	defer func() { _ = ln.Close() }()
 
-	tlsCfg := r.TLSConfig()
-	tlsCfg.Certificates = []tls.Certificate{serverCert}
+	tlsCfg := r.TLSConfig(serverCert)
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -462,8 +476,7 @@ func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tl
 	require.NoError(t, err)
 	defer func() { _ = ln.Close() }()
 
-	tlsCfg := r.TLSConfig()
-	tlsCfg.Certificates = []tls.Certificate{serverCert}
+	tlsCfg := r.TLSConfig(serverCert)
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -487,4 +500,89 @@ func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tl
 	}
 
 	assert.Error(t, <-serverErr, "server handshake should fail")
+}
+
+func TestExtractBundleRaw(t *testing.T) {
+	payload := []byte("test-ca-pem-bytes")
+
+	tests := map[string]struct {
+		input      []byte
+		wantRaw    []byte
+		wantErrMsg string
+	}{
+		"well-formed Raw field": {
+			input:   protowire.AppendBytes(protowire.AppendTag(nil, 1, protowire.BytesType), payload),
+			wantRaw: payload,
+		},
+		"empty input": {
+			input:      nil,
+			wantErrMsg: "Bundle.Raw field not found in KubeVirt CA response",
+		},
+		"unknown varint field skipped before Raw field appears": {
+			input: protowire.AppendBytes(
+				protowire.AppendTag(
+					protowire.AppendVarint(protowire.AppendTag(nil, 2, protowire.VarintType), 5),
+					1, protowire.BytesType),
+				payload),
+			wantRaw: payload,
+		},
+		"unknown fixed32 field skipped before Raw field appears": {
+			input: protowire.AppendBytes(
+				protowire.AppendTag(
+					protowire.AppendFixed32(protowire.AppendTag(nil, 3, protowire.Fixed32Type), 0xdeadbeef),
+					1, protowire.BytesType),
+				payload),
+			wantRaw: payload,
+		},
+		"unknown fixed64 field skipped before Raw field appears": {
+			input: protowire.AppendBytes(
+				protowire.AppendTag(
+					protowire.AppendFixed64(protowire.AppendTag(nil, 4, protowire.Fixed64Type), 0xdeadbeefdeadbeef),
+					1, protowire.BytesType),
+				payload),
+			wantRaw: payload,
+		},
+		"truncated tag (mid-varint cutoff)": {
+			// 0x80 has its continuation bit set but no follow-up byte, so
+			// ConsumeTag's underlying varint read can never terminate.
+			input:      []byte{0x80},
+			wantErrMsg: "malformed KubeVirt Bundle response",
+		},
+		"malformed bytes field: length prefix exceeds remaining data": {
+			input: append(
+				protowire.AppendVarint(protowire.AppendTag(nil, 1, protowire.BytesType), 100),
+				[]byte{0x01, 0x02}..., // far fewer than the 100 bytes the length prefix claims
+			),
+			wantErrMsg: "malformed protobuf bytes field",
+		},
+		"malformed varint field": {
+			input:      append(protowire.AppendTag(nil, 2, protowire.VarintType), 0x80),
+			wantErrMsg: "malformed protobuf varint field",
+		},
+		"malformed fixed32 field: too few bytes": {
+			input:      append(protowire.AppendTag(nil, 3, protowire.Fixed32Type), 0x01, 0x02),
+			wantErrMsg: "malformed protobuf fixed32 field",
+		},
+		"malformed fixed64 field: too few bytes": {
+			input:      append(protowire.AppendTag(nil, 4, protowire.Fixed64Type), 0x01, 0x02, 0x03),
+			wantErrMsg: "malformed protobuf fixed64 field",
+		},
+		"unsupported wire type (group)": {
+			input:      protowire.AppendTag(nil, 1, protowire.StartGroupType),
+			wantErrMsg: "unsupported protobuf wire type",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			raw, err := extractBundleRaw(tc.input)
+			if tc.wantErrMsg != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErrMsg)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantRaw, raw)
+		})
+	}
 }

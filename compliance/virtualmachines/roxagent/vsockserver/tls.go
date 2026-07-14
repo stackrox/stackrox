@@ -61,6 +61,10 @@ func FetchKubeVirtCA(ctx context.Context) ([]byte, error) {
 		"passthrough:///vsock",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(_ context.Context, _ string) (net.Conn, error) {
+			// ctx only bounds the gRPC Invoke after the dial completes: vsock.Dial has no
+			// context-aware variant, so a hung dial (e.g. a kernel-level VSOCK bug) would
+			// leak this goroutine. Not a known operational concern today since VSOCK
+			// connects complete near-instantly.
 			return vsock.Dial(kubevirtCACID, kubevirtCAPort, nil)
 		}),
 	)
@@ -108,6 +112,9 @@ func (rawBytesCodec) Unmarshal(data []byte, v any) error {
 	return nil
 }
 
+// Name returns "proto" so gRPC negotiates the same content-type/codec the
+// server already expects; this codec doesn't actually do protobuf
+// marshaling itself (see Marshal/Unmarshal above), it just passes raw bytes through.
 func (rawBytesCodec) Name() string { return "proto" }
 
 // extractBundleRaw decodes the KubeVirt Bundle protobuf response and
@@ -392,28 +399,32 @@ func (r *CARefresher) cachedPool() (*x509.CertPool, time.Time, bool) {
 	return res.pool, res.fetchedAt, res.ok
 }
 
-// TLSConfig returns a *tls.Config that validates KubeVirt client certs.
-// The returned config fetches a fresh CA pool on each handshake via
-// GetConfigForClient whenever the cache is empty or stale - see the
-// CARefresher doc comment for why this, not any independent schedule, is
-// what makes CA verification actually work in namespace-isolated VSOCK mode.
-func (r *CARefresher) TLSConfig() *tls.Config {
-	cfg := &tls.Config{
-		ClientAuth: tls.RequireAndVerifyClientCert,
-		MinVersion: tls.VersionTLS12,
+// TLSConfig returns a *tls.Config that presents serverCert and validates
+// KubeVirt client certs. The returned config fetches a fresh CA pool on
+// each handshake via GetConfigForClient whenever the cache is empty or
+// stale - see the CARefresher doc comment for why this, not any
+// independent schedule, is what makes CA verification actually work in
+// namespace-isolated VSOCK mode.
+//
+// serverCert is baked in at construction time rather than left for the
+// caller to set on the returned config afterward, so there is no window in
+// which a config with no certificate could be handed to a listener.
+func (r *CARefresher) TLSConfig(serverCert tls.Certificate) *tls.Config {
+	return &tls.Config{
+		Certificates: []tls.Certificate{serverCert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		MinVersion:   tls.VersionTLS12,
+		GetConfigForClient: func(info *tls.ClientHelloInfo) (*tls.Config, error) {
+			pool, err := r.ensureFreshPool(info.Context())
+			if err != nil {
+				return nil, fmt.Errorf("fetching KubeVirt CA for TLS handshake: %w", err)
+			}
+			return &tls.Config{
+				Certificates: []tls.Certificate{serverCert},
+				ClientAuth:   tls.RequireAndVerifyClientCert,
+				ClientCAs:    pool,
+				MinVersion:   tls.VersionTLS12,
+			}, nil
+		},
 	}
-	// Capture cfg so the callback can forward Certificates set by the caller.
-	cfg.GetConfigForClient = func(info *tls.ClientHelloInfo) (*tls.Config, error) {
-		pool, err := r.ensureFreshPool(info.Context())
-		if err != nil {
-			return nil, fmt.Errorf("fetching KubeVirt CA for TLS handshake: %w", err)
-		}
-		return &tls.Config{
-			Certificates: cfg.Certificates,
-			ClientAuth:   tls.RequireAndVerifyClientCert,
-			ClientCAs:    pool,
-			MinVersion:   tls.VersionTLS12,
-		}, nil
-	}
-	return cfg
 }
