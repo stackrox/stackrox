@@ -192,9 +192,9 @@ export function listVMCVEAffectedVMs(
 
 export function listVMCVEsByVM(
     vmId: string,
-    { searchFilter, page, perPage }: SearchQueryOptions
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
 ): Promise<ListVMCVEsByVMResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, searchFilter });
+    const params = buildNestedRawQueryParams({ page, perPage, searchFilter, sortOption });
     return axios
         .get<ListVMCVEsByVMResponse>(`/v2/virtualmachines/${vmId}/cves?${params}`)
         .then((response) => response.data);

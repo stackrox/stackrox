@@ -11,6 +11,7 @@ import useSet from 'hooks/useSet';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
 import { listVMCVEsByVM } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
@@ -21,7 +22,24 @@ import {
     virtualMachineCVESearchFilterConfig,
     virtualMachineComponentSearchFilterConfig,
 } from '../../searchFilterConfig';
+import {
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+} from '../../utils/sortFields';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
+
+const sortFields = [
+    CVE_SORT_FIELD,
+    CVE_SEVERITY_SORT_FIELD,
+    CVE_STATUS_SORT_FIELD,
+    CVSS_SORT_FIELD,
+    CVE_EPSS_PROBABILITY_SORT_FIELD,
+];
+
+const defaultSortOption = { field: CVE_SEVERITY_SORT_FIELD, direction: 'desc' } as const;
 
 const searchFilterConfig = [
     virtualMachineCVESearchFilterConfig,
@@ -37,12 +55,17 @@ function VirtualMachinePageVulnerabilities({
 }: VirtualMachinePageVulnerabilitiesProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
     const expandedRowSet = useSet<string>();
     const colSpan = 7;
 
     const fetchCVEs = useCallback(
-        () => listVMCVEsByVM(virtualMachineId, { searchFilter, page, perPage }),
-        [virtualMachineId, searchFilter, page, perPage]
+        () => listVMCVEsByVM(virtualMachineId, { searchFilter, page, perPage, sortOption }),
+        [virtualMachineId, searchFilter, page, perPage, sortOption]
     );
     const { data, isLoading, error } = useRestQuery(fetchCVEs);
 
@@ -88,11 +111,13 @@ function VirtualMachinePageVulnerabilities({
                 <Thead noWrap>
                     <Tr>
                         <Th screenReaderText="Row expansion" />
-                        <Th>CVE</Th>
-                        <Th>CVE severity</Th>
-                        <Th>CVE status</Th>
-                        <Th>CVSS</Th>
-                        <Th>EPSS probability</Th>
+                        <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
+                        <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
+                        <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
+                        <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
+                        <Th sort={getSortParams(CVE_EPSS_PROBABILITY_SORT_FIELD)}>
+                            EPSS probability
+                        </Th>
                         <Th>Affected components</Th>
                     </Tr>
                 </Thead>
