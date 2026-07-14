@@ -107,7 +107,7 @@ function CertificateCard({
             : healthIconMap[getCredentialExpiryVariant(expirationDate, currentDatetime)];
 
     return (
-        <Card isCompact style={disabled ? { opacity: 0.5 } : undefined}>
+        <Card isCompact isDisabled={disabled ? true : undefined}>
             <CardHeader>
                 <Flex className="pf-v6-u-flex-grow-1">
                     <FlexItem>{icon}</FlexItem>

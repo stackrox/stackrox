@@ -372,7 +372,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route
                         path={`${vulnerabilitiesPlatformCvesPath}/*`}
                         element={
-                            <PageSection hasBodyWrapper={false}>
+                            <PageSection>
                                 <PageTitle title="Kubernetes components - Disabled" />
                                 <FeatureDisabledMessage
                                     title="Kubernetes components"

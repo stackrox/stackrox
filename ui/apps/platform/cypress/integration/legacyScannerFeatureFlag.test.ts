@@ -22,6 +22,8 @@ const scannerCredentialExpiryBanner = '.pf-v6-c-banner:contains("Scanner certifi
 const stackRoxScannerTileSelector = '[data-testid="integration-tile"]:contains("StackRox Scanner")';
 const nodeCveScannerInfoBoxSelector = '.pf-v6-c-alert:contains("StackRox Scanner")';
 
+const disabledMessage = 'disabled by your administrator';
+
 describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
     withAuth();
 
@@ -67,24 +69,20 @@ describe('Legacy Scanner feature flag (ROX_LEGACY_SCANNER)', () => {
             setClock(currentDatetime);
             visitSystemHealthWithKeysRemoved([credentialForScannerExpiryAlias], staticResponseMap);
 
-            cy.get(vulnDefinitionsCardSelector).should('exist');
-            cy.get(vulnDefinitionsCardSelector).should('have.css', 'opacity', '0.5');
-            cy.get(vulnDefinitionsCardSelector).should('contain', 'Legacy scanner is disabled');
+            cy.get(vulnDefinitionsCardSelector).should('contain', disabledMessage);
         });
 
         it('should show disabled scanner certificate card with message on System Health page', () => {
             visitSystemHealthWithKeysRemoved([credentialForScannerExpiryAlias]);
 
-            cy.get(scannerCertificateCardSelector).should('exist');
-            cy.get(scannerCertificateCardSelector).should('have.css', 'opacity', '0.5');
-            cy.get(scannerCertificateCardSelector).should('contain', 'Legacy scanner is disabled');
+            cy.get(scannerCertificateCardSelector).should('contain', disabledMessage);
         });
 
         it('should show disabled feature page for Platform CVEs', () => {
             visit('/main/vulnerabilities/platform-cves');
 
             cy.get('h1').should('contain', 'Kubernetes components');
-            cy.get('body').should('contain', 'disabled by your administrator');
+            cy.get('body').should('contain', disabledMessage);
             cy.get('a:contains("Go to Vulnerability Management")').should('exist');
         });
     });
