@@ -842,7 +842,25 @@ func execInDeployment(t *testing.T, client kubernetes.Interface, deploymentName,
 	require.NoError(t, err, "listing pods for deployment %q", deploymentName)
 	require.NotEmpty(t, podList.Items, "no pods found for deployment %q", deploymentName)
 
-	podName := podList.Items[0].Name
+	var readyPods []coreV1.Pod
+	for _, p := range podList.Items {
+		if p.Status.Phase != coreV1.PodRunning {
+			continue
+		}
+		allReady := true
+		for _, cs := range p.Status.ContainerStatuses {
+			if !cs.Ready {
+				allReady = false
+				break
+			}
+		}
+		if allReady {
+			readyPods = append(readyPods, p)
+		}
+	}
+	require.NotEmpty(t, readyPods, "no running+ready pods found for deployment %q", deploymentName)
+
+	podName := readyPods[0].Name
 
 	args := make([]string, 0, 5+len(command))
 	args = append(args, "exec", "-n", namespace, podName, "--")
