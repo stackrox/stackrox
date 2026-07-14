@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -20,12 +22,18 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/sync"
 )
+
+// mappingCachePath is where the repository-to-CPE mapping file (see
+// mappingRefresher) is cached; scans always read from this file, never the
+// network, so a slow or unavailable mapping endpoint never blocks or fails
+// a scan directly. Hardcoded for now; make it a --mapping-cache-path flag
+// later if reviewers ask for it to be configurable.
+var mappingCachePath = filepath.Join(os.TempDir(), "roxagent-repo2cpe.json")
 
 // Set via -ldflags at build time.
 var agentVersion = "development" //XDef:STABLE_MAIN_VERSION
-
-const mappingClientTimeout = 30 * time.Second
 
 // Bounds enforced on the corresponding CLI flags in serveConfig.validate.
 const (
@@ -97,9 +105,19 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		return err
 	}
 
-	cache := &vsockserver.ReportCache{}
+	// The mapping file must exist locally before the first scan can run:
+	// scan() never fetches it itself (see mappingRefresher doc comment), so
+	// this initial fetch is mandatory, not best-effort - if it fails after
+	// retries, startup fails rather than running a scan against no data.
+	mr := newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
+	if err := mr.fetchOnce(ctx); err != nil {
+		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+	}
 
-	report, err := scan(ctx, cfg.hostPath, cfg.repoCPEURL)
+	cache := &vsockserver.ReportCache{}
+	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
+
+	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
@@ -137,41 +155,31 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	}
 	log.Infof("Listening on VSOCK port %d (pull mode)", cfg.port)
 
-	serveDone := make(chan struct{})
-	go func() {
-		defer close(serveDone)
-		srv.Serve(ctx, ln)
-	}()
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() { defer wg.Done(); srv.Serve(ctx, ln) }()
+	go func() { defer wg.Done(); vmRescanner.Run(ctx) }()
+	go func() { defer wg.Done(); mr.Run(ctx) }()
 
-	ticker := time.NewTicker(cfg.rescanInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			// Wait for Serve's graceful drain (in-flight connections) to finish
-			// before returning, so the process doesn't exit mid-drain.
-			<-serveDone
-			return nil
-		case <-ticker.C:
-			log.Info("Starting periodic rescan")
-			r, err := scan(ctx, cfg.hostPath, cfg.repoCPEURL)
-			if err != nil {
-				log.Errorf("Rescan failed: %v", err)
-				continue
-			}
-			cache.SetReport(r, discoverFacts(cfg.hostPath))
-			log.Infof("Rescan complete, report updated. Num packages: %d", len(r.GetContents().GetPackages()))
-		}
-	}
+	<-ctx.Done()
+	// Wait for Serve's graceful drain (in-flight connections), the rescan
+	// loop, and the mapping refresh loop to finish before returning, so the
+	// process doesn't exit mid-drain, mid-scan, or mid-fetch.
+	wg.Wait()
+	return nil
 }
 
-func scan(ctx context.Context, hostPath, repoCPEURL string) (*v4.IndexReport, error) {
+// scan indexes the VM filesystem at hostPath, consulting the
+// repository-to-CPE mapping data cached at mappingFilePath. It never makes
+// a network call itself: mappingRefresher is solely responsible for
+// keeping mappingFilePath fresh (see its doc comment for why the fetch is
+// decoupled from every individual scan).
+func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
 	cfg := index.NodeIndexerConfig{
-		HostPath:           hostPath,
-		Client:             &http.Client{Transport: proxy.RoundTripper()},
-		Repo2CPEMappingURL: repoCPEURL,
-		Timeout:            mappingClientTimeout,
-		PackageDBFilter:    "",
+		HostPath:            hostPath,
+		Client:              &http.Client{Transport: proxy.RoundTripper()},
+		Repo2CPEMappingFile: mappingFilePath,
+		PackageDBFilter:     "",
 	}
 	return index.NewNodeIndexer(cfg).IndexNode(ctx)
 }
