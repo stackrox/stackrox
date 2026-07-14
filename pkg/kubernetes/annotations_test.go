@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/maputil"
@@ -50,12 +51,14 @@ func TestTrimAnnotationsRace(t *testing.T) {
 	TrimAnnotations(&obj)
 	assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 
+	var wg sync.WaitGroup
 	for range numGoroutines {
-		go func() {
+		wg.Go(func() {
 			for range numIterations {
 				TrimAnnotations(&obj)
 				assert.Equal(t, expectedTrimmedAnnotations, obj.GetAnnotations())
 			}
-		}()
+		})
 	}
+	wg.Wait()
 }
