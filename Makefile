@@ -832,9 +832,9 @@ roxvet: skip-dirs := operator/pkg/clientset /generated/ /mocks
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go list ./... \
-	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
-	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -tags "sql_integration test_e2e test_e2e_vm test race destructive integration scanner_db_integration compliance externalbackups"
+	$(SILENT)bash -o pipefail -c 'go list ./... \
+	    | $(foreach d,$(skip-dirs),grep -v '"'"'$(d)'"'"' |) \
+	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -tags "sql_integration test_e2e test_e2e_vm test race destructive integration scanner_db_integration compliance externalbackups"'
 
 ##########
 ## Misc ##
