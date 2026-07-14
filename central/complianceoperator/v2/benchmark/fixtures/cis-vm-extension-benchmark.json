@@ -1,0 +1,16 @@
+{
+  "name": "CIS Red Hat OpenShift Virtual Machine Extension Benchmark",
+  "provider": "CIS",
+  "shortName": "Virtualization",
+  "profiles": [
+    {
+      "profileName": "ocp4-cis-vm-extension"
+    },
+    {
+      "profileName": "ocp4-cis-vm-extension-node"
+    },
+    {
+      "profileName": "ocp4-cis-vm-extension-1-1"
+    }
+  ]
+}

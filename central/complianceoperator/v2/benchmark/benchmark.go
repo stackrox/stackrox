@@ -22,7 +22,8 @@ var (
 		regexp.MustCompile(".+-nerc-cip$|.+-nerc-cip-.+"): {shortName: "NERC-CIP", provider: "NERC"},
 		regexp.MustCompile(".+-pci-dss$|.+-pci-dss-.+"):   {shortName: "PCI-DSS", provider: "PCI"},
 
-		regexp.MustCompile("^ocp4-cis$|^ocp4-cis-.+"):               {shortName: "CIS-OCP", provider: "CIS"},
+		regexp.MustCompile(".+-cis-vm-extension($|-.+)"):             {shortName: "Virtualization", provider: "CIS"},
+		regexp.MustCompile("^ocp4-cis$|^ocp4-cis-(?:node|[0-9]).*"): {shortName: "CIS-OCP", provider: "CIS"},
 		regexp.MustCompile("^ocp4-high$|^ocp4-high-.+"):             {shortName: "NIST-800-53", provider: "NIST"},
 		regexp.MustCompile("^ocp4-moderate$|^ocp4-moderate-.+"):     {shortName: "NIST-800-53", provider: "NIST"},
 		regexp.MustCompile("^rhcos4-high$|^rhcos4-high-.+"):         {shortName: "NIST-800-53", provider: "NIST"},
