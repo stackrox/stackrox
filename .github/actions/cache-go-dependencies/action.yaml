@@ -9,6 +9,14 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  mtime-mode:
+    description: |
+      How to stabilize .go file mtimes so Go's module index (keyed by filename+mtime+size)
+      correctly detects content changes across GOCACHE restores.
+      'blob' (default): derives mtime from git blob hash via .git/index — O(N), ~0.3 s, immune to clock skew.
+      'git-log': uses the actual last-commit timestamp per file from git history — O(commits×diff), ~1.5 s, self-documenting.
+    required: false
+    default: 'blob'
 runs:
   using: composite
   steps:
@@ -93,29 +101,33 @@ runs:
 
     - name: Stabilize file mtimes for Go test cache and module index
       run: |
-        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
-        # Go's module index caches parsed imports by (filename, mtime, size).
-        #
-        # FIX: derive each file's mtime from its git blob hash instead of a
-        # fixed constant. Same content → same blob hash → same mtime → cache hit.
-        # Changed content → different blob hash → different mtime → index miss → re-parse.
-        #
-        # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
-        # (walks commit DAG, O(commits×diff)) — faster and immune to clock skew.
-        # Perl utime() is a direct syscall; no subprocess per file.
-        #
-        # The blob hash is reduced modulo 6^5 = 7776 and unpacked as 5 base-6
-        # digits into the hour/minute/second of 2001-01-01. Every base-6 digit
-        # (0-5) is valid in each position: hour ones (0-5), minute tens (0-5),
-        # minute ones (0-5), second tens (0-5), second ones (0-5).
-        git ls-files -s -- '*.go' | perl -lne '
-            /^100\S+ (\S+) \S+\t(.+)$/ or next;
-            my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
-            $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
-            $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
-            utime $ts, $ts, $2;
-        '
-        # Directories have no blob hash; keep them at a fixed constant.
-        # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
+        # Go's module index (stored in $GOCACHE) caches each .go file's parsed
+        # imports under the key (filename, mtime, size). Without mtime
+        # stabilisation, git checkout sets all mtimes to wall-clock time, which
+        # varies between runners and causes every module index lookup to miss.
+        if [[ '${{ inputs.mtime-mode }}' == 'git-log' ]]; then
+          # git-log mode: set each .go file's mtime to the timestamp of the
+          # commit that last modified it. Self-documenting — the mtime reflects
+          # the actual modification history. Walks the commit DAG so O(commits).
+          git log --format='%ct' --name-only --diff-filter=ACM -- '*.go' | perl -lne '
+              /^\d+$/ ? ($ts = $_) : ($ts && !$seen{$_}++ && -f $_ && utime $ts, $ts, $_)
+          '
+        else
+          # blob mode (default): derive mtime from git blob hash via .git/index.
+          # O(N) index read — no DAG walk, immune to clock skew between runners.
+          # Reduces the blob hash modulo 6^5 and spreads 5 base-6 digits (0-5)
+          # across hour-ones/min/sec of 2001-01-01T00:00:00Z (epoch 978307200).
+          # Every base-6 digit fits its position: hour ones 0-5, minute/second
+          # tens 0-5, minute/second ones 0-5 — all valid without clamping.
+          git ls-files -s -- '*.go' | perl -lne '
+              /^100\S+ (\S+) \S+\t(.+)$/ or next;
+              my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
+              $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
+              $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
+              utime $ts, $ts, $2;
+          '
+        fi
+        # Directories have no per-file hash; a fixed constant is fine since
+        # directory membership changes appear as .go file mtime changes.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
