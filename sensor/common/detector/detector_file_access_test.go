@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -121,7 +120,7 @@ func TestFileAccessPipeline(t *testing.T) {
 					require.NoError(t, d.Start())
 					defer d.Stop()
 
-					d.Notify(common.SensorComponentEventCentralReachable)
+					goOnline(t, d)
 
 					d.ProcessFileAccess(context.Background(), tc.access)
 					synctest.Wait()
@@ -183,7 +182,7 @@ func TestFileAccessPipelineOfflineBlocks(t *testing.T) {
 				default:
 				}
 
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 				synctest.Wait()
 
 				select {
@@ -243,7 +242,7 @@ func TestFileAccessPipelineDropsWhenFull(t *testing.T) {
 				default:
 				}
 
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 				synctest.Wait()
 
 				// The legacy queue holds exactly bufferSize items.

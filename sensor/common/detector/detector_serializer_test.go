@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/sensor/common"
 	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +32,7 @@ func TestSerializerOlderUpdateIsIgnored(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 
 				// CREATE with timestamp 100
 				depNew := &storage.Deployment{
@@ -80,7 +79,7 @@ func TestSerializerCreateEnforces(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 
 				dep := &storage.Deployment{Id: "dep-1", Name: "test", Namespace: "default"}
 				d.ProcessDeployment(context.Background(), dep, central.ResourceAction_CREATE_RESOURCE)
@@ -105,7 +104,7 @@ func TestSerializerRemoveDeletesFromProcessingMap(t *testing.T) {
 				require.NoError(t, d.Start())
 				defer d.Stop()
 
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 
 				dep := &storage.Deployment{Id: "dep-1", Name: "test", Namespace: "default"}
 
@@ -200,7 +199,7 @@ func TestSerializerPubSubStopUnblocksOutputSend(t *testing.T) {
 
 		require.NoError(t, d.Start())
 
-		d.Notify(common.SensorComponentEventCentralReachable)
+		goOnline(t, d)
 
 		dep := &storage.Deployment{Id: "dep-1", Name: "test", Namespace: "default"}
 		d.ProcessDeployment(context.Background(), dep, central.ResourceAction_CREATE_RESOURCE)
