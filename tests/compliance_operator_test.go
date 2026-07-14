@@ -73,8 +73,9 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 			ocpRun = run
 		}
 	}
+	require.NotNilf(t, rhcosRun, "no compliance run started for standard %s", rhcosProfileName)
+	require.NotNilf(t, ocpRun, "no compliance run started for standard %s", ocp4ProfileName)
 
-	// Retry logic
 	// Wait for the run to complete
 	err = retry.WithRetry(func() error {
 		statusRunResp, err := managementService.GetRunStatuses(context.Background(), &v1.GetComplianceRunStatusesRequest{
@@ -103,16 +104,18 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 
 	// rhcos4 results
 
-	rhcosResults, _ := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
+	rhcosResults, err := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
 		StandardId: rhcosRun.GetStandardId(),
 		ClusterId:  rhcosRun.GetClusterId(),
 	})
+	require.NoError(t, err)
 
 	// ocp4 results
-	ocpResults, _ := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
+	ocpResults, err := complianceService.GetRunResults(context.Background(), &v1.GetComplianceRunResultsRequest{
 		StandardId: ocpRun.GetStandardId(),
 		ClusterId:  ocpRun.GetClusterId(),
 	})
+	require.NoError(t, err)
 
 	return rhcosResults.GetResults(), ocpResults.GetResults()
 }
