@@ -16,7 +16,7 @@ inputs:
       'blob' (default): derives mtime from git blob hash via .git/index — O(N), ~0.3 s, immune to clock skew.
       'git-log': uses the actual last-commit timestamp per file from git history — O(commits×diff), ~1.5 s, self-documenting.
     required: false
-    default: 'blob'
+    default: 'git-log'
 runs:
   using: composite
   steps:
