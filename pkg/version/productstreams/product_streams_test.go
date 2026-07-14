@@ -151,6 +151,146 @@ func formatBumps(bumps []parsedBump) string {
 	return strings.Join(parts, ";")
 }
 
+func TestGetNextYStream(t *testing.T) {
+	tests := map[string]struct {
+		input XYVersion
+		want  XYVersion
+	}{
+		"normal increment": {
+			input: XYVersion{X: 4, Y: 5},
+			want:  XYVersion{X: 4, Y: 6},
+		},
+		"bump crossing 3.74 -> 4.0": {
+			input: XYVersion{X: 3, Y: 74},
+			want:  XYVersion{X: 4, Y: 0},
+		},
+		"bump crossing 4.11 -> 5.0": {
+			input: XYVersion{X: 4, Y: 11},
+			want:  XYVersion{X: 5, Y: 0},
+		},
+		"no bump at boundary": {
+			input: XYVersion{X: 5, Y: 3},
+			want:  XYVersion{X: 5, Y: 4},
+		},
+		"version before bump point": {
+			input: XYVersion{X: 4, Y: 10},
+			want:  XYVersion{X: 4, Y: 11},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := GetNextYStream(tt.input)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestParseXYFromVersionString(t *testing.T) {
+	tests := map[string]struct {
+		input   string
+		want    XYVersion
+		wantErr string
+	}{
+		"simple X.Y": {
+			input: "4.11",
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"X.Y.Z release": {
+			input: "4.11.2",
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"rc version": {
+			input: "5.0.0-rc.1",
+			want:  XYVersion{X: 5, Y: 0},
+		},
+		"nightly version": {
+			input: "4.11.x-nightly-20210405",
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"dev version with git hash": {
+			input: "4.11.x-123-gabcdef1234",
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"legacy 4-component format": {
+			input: "3.0.61.1",
+			want:  XYVersion{X: 3, Y: 61},
+		},
+		"legacy 4-component with x patch": {
+			input: "3.0.49.x-1-ga0897a21ee",
+			want:  XYVersion{X: 3, Y: 49},
+		},
+		"single component": {
+			input:   "4",
+			wantErr: "expected at least major.minor format",
+		},
+		"empty string": {
+			input:   "",
+			wantErr: "expected at least major.minor format",
+		},
+		"non-numeric major": {
+			input:   "abc.11",
+			wantErr: "invalid major",
+		},
+		"non-numeric minor": {
+			input:   "4.abc",
+			wantErr: "invalid minor",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := ParseXYFromVersionString(tt.input)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestDistance(t *testing.T) {
+	tests := map[string]struct {
+		a    XYVersion
+		b    XYVersion
+		want int
+	}{
+		"same version": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 5}, want: 0,
+		},
+		"within same major": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 8}, want: 3,
+		},
+		"reversed order": {
+			a: XYVersion{X: 4, Y: 8}, b: XYVersion{X: 4, Y: 5}, want: 3,
+		},
+		"across one bump": {
+			a: XYVersion{X: 4, Y: 11}, b: XYVersion{X: 5, Y: 0}, want: 1,
+		},
+		"across bump with distance": {
+			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 1}, want: 3,
+		},
+		"across two bumps": {
+			a: XYVersion{X: 3, Y: 73}, b: XYVersion{X: 5, Y: 1}, want: 15,
+		},
+		"adjacent": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 6}, want: 1,
+		},
+		"missing bump data": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 6, Y: 0}, want: -1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.a.Distance(tt.b)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGetPreviousYStream(t *testing.T) {
 	tests := map[string]struct {
 		input   XYVersion

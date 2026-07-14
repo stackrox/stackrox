@@ -111,6 +111,86 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	return result, nil
 }
 
+// Distance returns the absolute distance in Y-stream releases between v
+// and other, correctly walking through major version bumps.
+// Returns -1 if the walk cannot reach other (missing bump data).
+func (v XYVersion) Distance(other XYVersion) int {
+	lo, hi := v, other
+	if other.Compare(v) < 0 {
+		lo, hi = other, v
+	}
+	dist := 0
+	cur := lo
+	for cur != hi {
+		next := GetNextYStream(cur)
+		dist++
+		if next.Compare(hi) > 0 {
+			return -1
+		}
+		if next.X == cur.X && next.X < hi.X {
+			if !hasBumpAhead(cur.X, next.Y) {
+				return -1
+			}
+		}
+		cur = next
+	}
+	return dist
+}
+
+func hasBumpAhead(major, minY int) bool {
+	for _, b := range parsedBumps {
+		if b.From.X == major && b.From.Y >= minY {
+			return true
+		}
+	}
+	return false
+}
+
+// GetNextYStream returns the next Y-stream version for a given major.minor.
+// If v matches a bump's From field, the next version is the bump's To
+// (e.g., {4,11} -> {5,0}). Otherwise, it is simply {v.X, v.Y+1}.
+func GetNextYStream(v XYVersion) XYVersion {
+	for _, b := range parsedBumps {
+		if b.From == v {
+			return b.To
+		}
+	}
+	return XYVersion{X: v.X, Y: v.Y + 1}
+}
+
+// ParseXYFromVersionString extracts the major.minor (X.Y) components from
+// a full version string. It accepts formats such as "4.11", "4.11.2",
+// "4.11.0-rc.1", "4.11.x-123-gabcdef1234", and the legacy 4-component
+// format "3.0.61.1" (where parts[1] is the marketing minor, skipped).
+func ParseXYFromVersionString(version string) (XYVersion, error) {
+	before, _, _ := strings.Cut(version, "-")
+	parts := strings.Split(before, ".")
+	switch {
+	case len(parts) == 4:
+		major, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
+		}
+		minor, err := strconv.Atoi(parts[2])
+		if err != nil {
+			return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[2], version, err)
+		}
+		return XYVersion{X: major, Y: minor}, nil
+	case len(parts) >= 2:
+		major, err := strconv.Atoi(parts[0])
+		if err != nil {
+			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
+		}
+		minor, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[1], version, err)
+		}
+		return XYVersion{X: major, Y: minor}, nil
+	default:
+		return XYVersion{}, fmt.Errorf("expected at least major.minor format, got %q", version)
+	}
+}
+
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.
 // If minor > 0, the previous Y-stream is simply major.(minor-1).
 // If minor == 0, it looks up the major version bump history from major_version_bumps.yaml.
