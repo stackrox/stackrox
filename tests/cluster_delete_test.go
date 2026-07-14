@@ -105,7 +105,11 @@ func TestClusterDeletion(t *testing.T) {
 			t.Logf("deployment count is still not zero: %d", counts.DeploymentCount)
 		}
 
-		if previous.DeploymentCount > 0 && previous.DeploymentCount > counts.DeploymentCount {
+		if counts.PodCount < previous.PodCount ||
+			counts.ClusterCount < previous.ClusterCount ||
+			counts.NodeCount < previous.NodeCount ||
+			counts.DeploymentCount < previous.DeploymentCount ||
+			counts.SecretCount < previous.SecretCount {
 			noChangeCount = 0
 		} else {
 			noChangeCount++
