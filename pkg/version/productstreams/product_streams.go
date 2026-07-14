@@ -111,33 +111,6 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	return result, nil
 }
 
-// Distance returns the absolute distance in Y-stream releases between v
-// and other, correctly walking through major version bumps.
-// Returns -1 if the walk cannot reach other (missing bump data) or if
-// other is a phantom version past a bump point.
-func (v XYVersion) Distance(other XYVersion) int {
-	lo, hi := v, other
-	if other.Compare(v) < 0 {
-		lo, hi = other, v
-	}
-	dist := 0
-	cur := lo
-	for cur != hi {
-		next := GetNextYStream(cur)
-		dist++
-		if next.Compare(hi) > 0 {
-			return -1
-		}
-		if next.X == cur.X && next.X < hi.X {
-			if _, ok := findBumpFrom(cur.X); !ok {
-				return -1
-			}
-		}
-		cur = next
-	}
-	return dist
-}
-
 // NaiveDistance returns the distance between v and other using bumps only
 // to cross major boundaries and linear Y arithmetic within the target
 // major. This handles phantom versions (past a bump point that was

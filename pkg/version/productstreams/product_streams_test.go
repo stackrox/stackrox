@@ -264,48 +264,6 @@ func TestParseXYFromVersionString(t *testing.T) {
 	}
 }
 
-func TestDistance(t *testing.T) {
-	overrideTestBumps(t)
-
-	tests := map[string]struct {
-		a    XYVersion
-		b    XYVersion
-		want int
-	}{
-		"same version": {
-			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 5}, want: 0,
-		},
-		"within same major": {
-			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 8}, want: 3,
-		},
-		"reversed order": {
-			a: XYVersion{X: 4, Y: 8}, b: XYVersion{X: 4, Y: 5}, want: 3,
-		},
-		"across one bump": {
-			a: XYVersion{X: 4, Y: 11}, b: XYVersion{X: 5, Y: 0}, want: 1,
-		},
-		"across bump with distance": {
-			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 1}, want: 3,
-		},
-		"across two bumps": {
-			a: XYVersion{X: 3, Y: 73}, b: XYVersion{X: 5, Y: 1}, want: 15,
-		},
-		"adjacent": {
-			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 6}, want: 1,
-		},
-		"missing bump data": {
-			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 6, Y: 0}, want: -1,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := tt.a.Distance(tt.b)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestNaiveDistance(t *testing.T) {
 	overrideTestBumps(t)
 
