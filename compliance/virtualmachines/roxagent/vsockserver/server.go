@@ -23,26 +23,52 @@ const (
 	maxAcceptRetryDelay = 1 * time.Second
 )
 
-// connDeadline bounds the entire lifetime of one accepted connection -
+// DefaultConnDeadline bounds the entire lifetime of one accepted connection -
 // TLS handshake plus request/response - so a stalled or malicious peer
 // can hold at most one goroutine and one semaphore slot for this long,
 // never more, and never blocks Serve's accept loop itself (see below).
-const connDeadline = 30 * time.Second
+// Overridable via WithConnDeadline; see that option's doc for the
+// availability/DoS trade-off involved in changing it.
+const DefaultConnDeadline = 30 * time.Second
 
 // Server listens on a VSOCK port and dispatches connections to the Handler.
 // tlsCfg must be non-nil in production: sensor always dials TLS, so a
 // plaintext listener is unreachable. The nil path is retained only for
 // testing convenience.
 type Server struct {
-	handler *Handler
-	tlsCfg  *tls.Config
-	sem     *semaphore.Weighted // enforces at most one concurrent HandleConn
-	wg      sync.WaitGroup
+	handler      *Handler
+	tlsCfg       *tls.Config
+	sem          *semaphore.Weighted // enforces at most one concurrent HandleConn
+	wg           sync.WaitGroup
+	connDeadline time.Duration
+}
+
+// ServerOption configures optional Server parameters.
+type ServerOption func(*Server)
+
+// WithConnDeadline overrides the per-connection deadline (TLS handshake plus
+// request/response, see defaultConnDeadline). Raising it tolerates slower
+// legitimate connections (e.g. under host resource contention) but also
+// lets a stalled or malicious peer occupy the single in-flight-connection
+// slot for longer; lowering it does the opposite. Callers should validate
+// the value against sane bounds before passing it here - this type does not
+// second-guess it.
+func WithConnDeadline(d time.Duration) ServerOption {
+	return func(s *Server) { s.connDeadline = d }
 }
 
 // NewServer creates a VSOCK server. tlsCfg should be non-nil in production.
-func NewServer(handler *Handler, tlsCfg *tls.Config) *Server {
-	return &Server{handler: handler, tlsCfg: tlsCfg, sem: semaphore.NewWeighted(maxConcurrentConns)}
+func NewServer(handler *Handler, tlsCfg *tls.Config, opts ...ServerOption) *Server {
+	s := &Server{
+		handler:      handler,
+		tlsCfg:       tlsCfg,
+		sem:          semaphore.NewWeighted(maxConcurrentConns),
+		connDeadline: DefaultConnDeadline,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // Serve accepts connections on ln and handles each one.
@@ -93,7 +119,7 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 		// may ever block on, or a single stalled/malicious peer could
 		// prevent every subsequent connection (including the legitimate
 		// one) from ever being accepted.
-		_ = conn.SetDeadline(time.Now().Add(connDeadline))
+		_ = conn.SetDeadline(time.Now().Add(s.connDeadline))
 
 		// TryAcquire is non-blocking, so deciding here - synchronously, in
 		// accept order - keeps "first accepted wins the slot" deterministic,

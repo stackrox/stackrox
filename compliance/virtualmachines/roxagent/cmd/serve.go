@@ -27,10 +27,21 @@ var agentVersion = "development" //XDef:STABLE_MAIN_VERSION
 
 const mappingClientTimeout = 30 * time.Second
 
-// minRescanInterval guards against a misconfigured, too-frequent rescan
-// cadence hammering the VM's disk; it has no effect on ACS itself, only on
-// load imposed on the scanned VM.
-const minRescanInterval = 5 * time.Minute
+// Bounds enforced on the corresponding CLI flags in serveConfig.validate.
+const (
+	// minRescanInterval guards against a misconfigured, too-frequent
+	// rescan cadence hammering the VM's disk; it has no effect on ACS
+	// itself, only on load imposed on the scanned VM.
+	minRescanInterval = 5 * time.Minute
+
+	// connDeadline bounds one connection's TLS handshake plus
+	// request/response. Its range balances tolerating slow-but-legitimate
+	// connections (e.g. under host resource contention) against limiting
+	// how long a stalled or malicious peer can occupy the agent's single
+	// in-flight-connection slot (see vsockserver.WithConnDeadline).
+	minConnDeadline = 5 * time.Second
+	maxConnDeadline = 5 * time.Minute
+)
 
 // ServeCmd returns the "serve" cobra subcommand for pull-mode operation.
 func ServeCmd(ctx context.Context) *cobra.Command {
@@ -49,6 +60,12 @@ func ServeCmd(ctx context.Context) *cobra.Command {
 		fmt.Sprintf("Interval between rescans (minimum %v)", minRescanInterval))
 	cmd.Flags().DurationVar(&cfg.caFetchTimeout, "ca-fetch-timeout", 10*time.Second,
 		"Timeout for each KubeVirt CA fetch attempt over VSOCK")
+	cmd.Flags().DurationVar(&cfg.connDeadline, "conn-deadline", vsockserver.DefaultConnDeadline,
+		fmt.Sprintf("Max time allowed for one connection's TLS handshake and request/response "+
+			"(range %v-%v). Raising it tolerates slower legitimate connections (e.g. under host "+
+			"resource contention) at the cost of letting a stalled or malicious peer occupy the "+
+			"agent's single in-flight-connection slot for longer; lowering it does the opposite.",
+			minConnDeadline, maxConnDeadline))
 	return cmd
 }
 
@@ -59,6 +76,7 @@ type serveConfig struct {
 	repoCPEURL     string
 	rescanInterval time.Duration
 	caFetchTimeout time.Duration
+	connDeadline   time.Duration
 }
 
 func (c serveConfig) validate() error {
@@ -67,6 +85,9 @@ func (c serveConfig) validate() error {
 	}
 	if c.caFetchTimeout <= 0 {
 		return errors.New("ca-fetch-timeout must be greater than 0")
+	}
+	if c.connDeadline < minConnDeadline || c.connDeadline > maxConnDeadline {
+		return fmt.Errorf("conn-deadline must be between %v and %v (got %v)", minConnDeadline, maxConnDeadline, c.connDeadline)
 	}
 	return nil
 }
@@ -108,7 +129,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	tlsCfg.Certificates = []tls.Certificate{serverCert}
 	log.Info("TLS enabled with KubeVirt CA (fetched on demand if not yet cached)")
 
-	srv := vsockserver.NewServer(handler, tlsCfg)
+	srv := vsockserver.NewServer(handler, tlsCfg, vsockserver.WithConnDeadline(cfg.connDeadline))
 
 	ln, err := vsock.Listen(cfg.port, nil)
 	if err != nil {

@@ -16,6 +16,7 @@ func validServeConfig() serveConfig {
 	return serveConfig{
 		rescanInterval: minRescanInterval,
 		caFetchTimeout: time.Second,
+		connDeadline:   minConnDeadline,
 	}
 }
 
@@ -48,6 +49,14 @@ func TestRunServe_ValidatesFlags(t *testing.T) {
 		"should error when ca fetch timeout is negative": {
 			mutate:      func(c *serveConfig) { c.caFetchTimeout = -time.Second },
 			errContains: "ca-fetch-timeout",
+		},
+		"should error when conn deadline is below the minimum": {
+			mutate:      func(c *serveConfig) { c.connDeadline = minConnDeadline - time.Second },
+			errContains: "conn-deadline",
+		},
+		"should error when conn deadline is above the maximum": {
+			mutate:      func(c *serveConfig) { c.connDeadline = maxConnDeadline + time.Second },
+			errContains: "conn-deadline",
 		},
 	}
 
