@@ -99,9 +99,6 @@ runs:
         # FIX: derive each file's mtime from its git blob hash instead of a
         # fixed constant. Same content → same blob hash → same mtime → cache hit.
         # Changed content → different blob hash → different mtime → index miss → re-parse.
-        # Previously all files got 200101010000; a size-neutral import change
-        # (e.g. "jwt/v4"→"jwt/v5", same string length) was invisible to the index,
-        # which returned stale import data and caused go vet to build a wrong context.
         # All derived mtimes stay in 2001–2019, below GOCACHE trim's year-2000 cutoff.
         #
         # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
