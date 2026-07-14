@@ -1138,7 +1138,7 @@ func combineStrings(toCombine [][]string) []string {
 	for _, category := range toCombine {
 		maxIterations *= len(category)
 	}
-	for i := 0; i < maxIterations; i++ {
+	for range maxIterations {
 		combination := ""
 		for i := range indices {
 			if i > 0 {

@@ -86,8 +86,8 @@ func makeConvoyProfile(clusterID, profileName string, ruleNames []string) *stora
 
 func seedProfiles(tb testing.TB, mgr *managerImpl, numClusters, profilesPerCluster int, ruleNames []string) {
 	tb.Helper()
-	for c := 0; c < numClusters; c++ {
-		for p := 0; p < profilesPerCluster; p++ {
+	for c := range numClusters {
+		for p := range profilesPerCluster {
 			profile := makeConvoyProfile(fmt.Sprintf("cluster-%d", c), fmt.Sprintf("profile-%d", p), ruleNames)
 			require.NoError(tb, mgr.AddProfile(profile))
 		}

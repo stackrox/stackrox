@@ -1,10 +1,10 @@
 package kubernetes
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
