@@ -9,6 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testBumpsYAML = `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
+`
+
+func overrideTestBumps(t *testing.T) {
+	OverrideBumpsForTesting(t, []byte(testBumpsYAML))
+}
+
 func TestMustParseBumpsDataPanicsOnInvalidInput(t *testing.T) {
 	assert.Panics(t, func() {
 		mustParseBumpsData([]byte(`[not valid yaml`))
@@ -152,6 +163,8 @@ func formatBumps(bumps []parsedBump) string {
 }
 
 func TestGetNextYStream(t *testing.T) {
+	overrideTestBumps(t)
+
 	tests := map[string]struct {
 		input XYVersion
 		want  XYVersion
@@ -252,6 +265,8 @@ func TestParseXYFromVersionString(t *testing.T) {
 }
 
 func TestDistance(t *testing.T) {
+	overrideTestBumps(t)
+
 	tests := map[string]struct {
 		a    XYVersion
 		b    XYVersion
@@ -292,6 +307,8 @@ func TestDistance(t *testing.T) {
 }
 
 func TestNaiveDistance(t *testing.T) {
+	overrideTestBumps(t)
+
 	tests := map[string]struct {
 		a    XYVersion
 		b    XYVersion
@@ -335,6 +352,8 @@ func TestNaiveDistance(t *testing.T) {
 }
 
 func TestGetPreviousYStream(t *testing.T) {
+	overrideTestBumps(t)
+
 	tests := map[string]struct {
 		input   XYVersion
 		want    XYVersion

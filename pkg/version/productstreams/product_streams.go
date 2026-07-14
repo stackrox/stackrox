@@ -177,6 +177,16 @@ func findBumpFrom(major int) (parsedBump, bool) {
 	return parsedBump{}, false
 }
 
+// OverrideBumpsForTesting replaces the parsed bump data with the given YAML
+// for the duration of the test, restoring the original data on cleanup.
+func OverrideBumpsForTesting(t interface {
+	Cleanup(func())
+}, data []byte) {
+	old := parsedBumps
+	parsedBumps = mustParseBumpsData(data)
+	t.Cleanup(func() { parsedBumps = old })
+}
+
 // GetNextYStream returns the next Y-stream version for a given major.minor.
 // If v matches a bump's From field, the next version is the bump's To
 // (e.g., {4,11} -> {5,0}). Otherwise, it is simply {v.X, v.Y+1}.

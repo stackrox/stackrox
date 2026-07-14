@@ -7,11 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testBumpsYAML = `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
+`
+
+func overrideTestBumps(t *testing.T) {
+	productstreams.OverrideBumpsForTesting(t, []byte(testBumpsYAML))
+}
 func xy(x, y int) productstreams.XYVersion {
 	return productstreams.XYVersion{X: x, Y: y}
 }
 
 func TestCompatibleVersionRange(t *testing.T) {
+	overrideTestBumps(t)
 	tests := map[string]struct {
 		self productstreams.XYVersion
 		n    int
@@ -114,6 +125,7 @@ func TestCompatibleVersionRange(t *testing.T) {
 }
 
 func TestCompatibleVersions(t *testing.T) {
+	overrideTestBumps(t)
 	got := CompatibleVersions(xy(4, 11))
 	want := []productstreams.XYVersion{
 		xy(4, 8), xy(4, 9), xy(4, 10),
@@ -124,6 +136,7 @@ func TestCompatibleVersions(t *testing.T) {
 }
 
 func TestClassify(t *testing.T) {
+	overrideTestBumps(t)
 	tests := map[string]struct {
 		self   productstreams.XYVersion
 		remote productstreams.XYVersion
@@ -217,6 +230,7 @@ func TestClassify(t *testing.T) {
 }
 
 func TestClassifyVersion(t *testing.T) {
+	overrideTestBumps(t)
 	assert.Equal(t, Matched, ClassifyVersion(xy(4, 11), xy(4, 11)))
 	assert.Equal(t, CompatibleBehind, ClassifyVersion(xy(4, 11), xy(4, 9)))
 	assert.Equal(t, CompatibleAhead, ClassifyVersion(xy(4, 11), xy(5, 2)))
