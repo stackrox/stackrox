@@ -1662,7 +1662,7 @@ func Test_toProtoV4VulnerabilitiesMapWithExploit(t *testing.T) {
 	}
 }
 
-func Test_cveKEVExploits(t *testing.T) {
+func Test_cveKEV(t *testing.T) {
 	entryJSON := func(vulnToEntries map[string][]kev.Entry) json.RawMessage {
 		data, err := json.Marshal(vulnToEntries)
 		require.NoError(t, err)
