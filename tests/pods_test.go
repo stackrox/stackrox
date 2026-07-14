@@ -138,10 +138,13 @@ func TestPod(testT *testing.T) {
 	// after any previous tests that may have restarted Sensor.
 	waitForSensorHealthy(testT)
 
-	_, deploymentID, pod, cleanup := setupMultiContainerPodTest(testT)
+	_, deploymentID, _, cleanup := setupMultiContainerPodTest(testT)
 	defer cleanup()
 
 	testutils.Retry(testT, 30, 5*time.Second, func(retryEventsT testutils.T) {
+		pods := getPods(retryEventsT, deploymentID)
+		require.NotEmpty(retryEventsT, pods, "no pods found for deployment %s", deploymentID)
+		pod := pods[0]
 		events := getEvents(retryEventsT, pod)
 		retryEventsT.Logf("Found %d events: %+v", len(events), events)
 
