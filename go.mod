@@ -118,7 +118,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.6.0
 	github.com/segmentio/analytics-go/v3 v3.3.0
 	github.com/sergi/go-diff v1.4.0
-	github.com/sigstore/cosign/v3 v3.0.4
+	github.com/sigstore/cosign/v3 v3.1.1
 	github.com/sigstore/rekor v1.5.3
 	github.com/sigstore/sigstore v1.10.8
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
@@ -237,7 +237,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.30 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.30 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.31 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.38.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.38.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.13 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.9.23 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.30 // indirect
@@ -245,7 +245,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/signin v1.4.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.32.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.37.1 // indirect
-	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.11.0 // indirect
+	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.12.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beevik/etree v1.6.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -340,8 +340,8 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/cel-go v0.26.1 // indirect
-	github.com/google/go-github/v73 v73.0.0 // indirect
+	github.com/google/cel-go v0.27.0 // indirect
+	github.com/google/go-github/v88 v88.0.0 // indirect
 	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20260402051712-545e8a4df936 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
@@ -390,7 +390,7 @@ require (
 	github.com/mdlayher/socket v0.6.0 // indirect
 	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.23 // indirect
-	github.com/miekg/pkcs11 v1.1.1 // indirect
+	github.com/miekg/pkcs11 v1.1.2 // indirect
 	github.com/minio/minlz v1.0.1-0.20250507153514-87eb42fe8882 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
@@ -438,7 +438,7 @@ require (
 	github.com/segmentio/backo-go v1.0.1 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/sigstore/fulcio v1.8.6 // indirect
+	github.com/sigstore/fulcio v1.8.7 // indirect
 	github.com/sigstore/protobuf-specs v0.5.1 // indirect
 	github.com/sigstore/rekor-tiles/v2 v2.2.2-0.20260601073857-5d098a2b6443 // indirect
 	github.com/sigstore/sigstore-go v1.2.0 // indirect
@@ -449,11 +449,10 @@ require (
 	github.com/spdx/tools-golang v0.5.7 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spiffe/go-spiffe/v2 v2.6.0 // indirect
+	github.com/spiffe/go-spiffe/v2 v2.7.0 // indirect
 	github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd // indirect
 	github.com/stackrox/istio-cves v0.0.0-20221007013142-0bde9b541ec8 // indirect
 	github.com/stackrox/k8s-cves v0.0.0-20220818200547-7d0d1420c58d // indirect
-	github.com/stoewer/go-strcase v1.3.1 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
@@ -477,7 +476,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	github.com/zmap/zcrypto v0.0.0-20250129210703-03c45d0bae98 // indirect
 	github.com/zmap/zlint/v3 v3.6.6 // indirect
-	gitlab.com/gitlab-org/api/client-go v1.11.0 // indirect
+	gitlab.com/gitlab-org/api/client-go v1.46.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/detectors/gcp v1.43.0 // indirect
