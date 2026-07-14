@@ -29,7 +29,9 @@ const aclTypeLabels: Map<AclType, string> = new Map([
     ['ACL_TYPE_DEFAULT', 'Default'],
 ]);
 
-const NO_ID = 0xffffffff;
+// The proto field is uint32 with 0xFFFFFFFF meaning "not applicable", but the
+// GraphQL layer exposes it as int32, which wraps the sentinel to -1.
+const NO_ID = -1;
 
 // Map each octal digit (0-7) to its rwx permission string.
 // Shared between formatFileMode (full 9-char mode) and ACL entry formatting.

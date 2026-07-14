@@ -40,7 +40,7 @@ export type AclType = 'ACL_TYPE_UNSPECIFIED' | 'ACL_TYPE_ACCESS' | 'ACL_TYPE_DEF
 export type AclEntry = {
     tag: AclTag;
     perm: number; // Permission bits (e.g. 7 = rwx, 6 = rw-, 4 = r--)
-    id: number; // uid or gid for USER/GROUP entries, 0xFFFFFFFF when not applicable
+    id: number; // uid or gid for USER/GROUP entries, -1 when not applicable (uint32 0xFFFFFFFF wraps to int32 -1 via GraphQL)
 };
 
 export type FileOperation =
