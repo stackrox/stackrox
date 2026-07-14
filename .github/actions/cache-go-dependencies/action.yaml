@@ -107,7 +107,7 @@ runs:
         # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
         # (walks commit DAG, O(commits×diff)) — faster and immune to clock skew.
         # Perl utime() is a direct syscall; no subprocess per file.
-        git ls-files -s | perl -MPOSIX -lne '
+        git ls-files -s -- '*.go' | perl -MPOSIX -lne '
             /^100\S+ (\S+) \S+\t(.+)$/ or next;
             my $val = hex(substr($1, 0, 8));
             my $ts = mktime(0,
