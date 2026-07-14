@@ -144,3 +144,24 @@ func TestParsePodIDRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, original, parsed)
 }
+
+func BenchmarkParsePodID_Simple(b *testing.B) {
+	input := "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
+	for b.Loop() {
+		ParsePodID(input)
+	}
+}
+
+func BenchmarkParsePodID_DotsInName(b *testing.B) {
+	input := "my-po.d.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
+	for b.Loop() {
+		ParsePodID(input)
+	}
+}
+
+func BenchmarkParsePodID_Invalid(b *testing.B) {
+	input := "mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
+	for b.Loop() {
+		ParsePodID(input)
+	}
+}
