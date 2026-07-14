@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/maputil"
