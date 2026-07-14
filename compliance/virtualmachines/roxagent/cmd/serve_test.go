@@ -9,6 +9,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// validServeConfig returns a serveConfig that passes validate(), so each
+// test case in TestRunServe_ValidatesFlags only needs to override the one
+// field it's exercising.
+func validServeConfig() serveConfig {
+	return serveConfig{
+		rescanInterval: minRescanInterval,
+		caFetchTimeout: time.Second,
+	}
+}
+
 // TestRunServe_ValidatesFlags exercises runServe's argument validation,
 // which - unlike the rest of runServe - never touches the filesystem,
 // network, or VSOCK, so it is cheap to cover without a real host/agent
@@ -16,35 +26,36 @@ import (
 // since validation returns before any of them are used.
 func TestRunServe_ValidatesFlags(t *testing.T) {
 	tests := map[string]struct {
-		rescanEvery    time.Duration
-		caFetchTimeout time.Duration
-		errContains    string
+		mutate      func(*serveConfig)
+		errContains string
 	}{
 		"should error when rescan interval is zero": {
-			rescanEvery:    0,
-			caFetchTimeout: time.Second,
-			errContains:    "rescan-interval",
+			mutate:      func(c *serveConfig) { c.rescanInterval = 0 },
+			errContains: "rescan-interval",
 		},
 		"should error when rescan interval is negative": {
-			rescanEvery:    -time.Second,
-			caFetchTimeout: time.Second,
-			errContains:    "rescan-interval",
+			mutate:      func(c *serveConfig) { c.rescanInterval = -time.Second },
+			errContains: "rescan-interval",
+		},
+		"should error when rescan interval is below the minimum": {
+			mutate:      func(c *serveConfig) { c.rescanInterval = minRescanInterval - time.Second },
+			errContains: "rescan-interval",
 		},
 		"should error when ca fetch timeout is zero": {
-			rescanEvery:    time.Second,
-			caFetchTimeout: 0,
-			errContains:    "ca-fetch-timeout",
+			mutate:      func(c *serveConfig) { c.caFetchTimeout = 0 },
+			errContains: "ca-fetch-timeout",
 		},
 		"should error when ca fetch timeout is negative": {
-			rescanEvery:    time.Second,
-			caFetchTimeout: -time.Second,
-			errContains:    "ca-fetch-timeout",
+			mutate:      func(c *serveConfig) { c.caFetchTimeout = -time.Second },
+			errContains: "ca-fetch-timeout",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := runServe(t.Context(), 0, "", "", tt.rescanEvery, tt.caFetchTimeout)
+			cfg := validServeConfig()
+			tt.mutate(&cfg)
+			err := runServe(t.Context(), cfg)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.errContains)
 		})

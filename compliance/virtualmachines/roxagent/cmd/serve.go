@@ -27,46 +27,62 @@ var agentVersion = "development" //XDef:STABLE_MAIN_VERSION
 
 const mappingClientTimeout = 30 * time.Second
 
+// minRescanInterval guards against a misconfigured, too-frequent rescan
+// cadence hammering the VM's disk; it has no effect on ACS itself, only on
+// load imposed on the scanned VM.
+const minRescanInterval = 5 * time.Minute
+
 // ServeCmd returns the "serve" cobra subcommand for pull-mode operation.
 func ServeCmd(ctx context.Context) *cobra.Command {
-	var (
-		port           uint32
-		hostPath       string
-		repoCPEURL     string
-		rescanInterval time.Duration
-		caFetchTimeout time.Duration
-	)
+	var cfg serveConfig
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Scan and serve report over VSOCK (pull mode).",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return runServe(ctx, port, hostPath, repoCPEURL, rescanInterval, caFetchTimeout)
+			return runServe(ctx, cfg)
 		},
 	}
-	cmd.Flags().Uint32Var(&port, "port", 818, "VSOCK port to listen on")
-	cmd.Flags().StringVar(&hostPath, "host-path", "/", "Root filesystem path for indexing")
-	cmd.Flags().StringVar(&repoCPEURL, "repo-cpe-url", repoToCPEMappingURL, "Repository to CPE mapping URL")
-	cmd.Flags().DurationVar(&rescanInterval, "rescan-interval", 4*time.Hour, "Interval between rescans")
-	cmd.Flags().DurationVar(&caFetchTimeout, "ca-fetch-timeout", 10*time.Second,
+	cmd.Flags().Uint32Var(&cfg.port, "port", 818, "VSOCK port to listen on")
+	cmd.Flags().StringVar(&cfg.hostPath, "host-path", "/", "Root filesystem path for indexing")
+	cmd.Flags().StringVar(&cfg.repoCPEURL, "repo-cpe-url", repoToCPEMappingURL, "Repository to CPE mapping URL")
+	cmd.Flags().DurationVar(&cfg.rescanInterval, "rescan-interval", 4*time.Hour,
+		fmt.Sprintf("Interval between rescans (minimum %v)", minRescanInterval))
+	cmd.Flags().DurationVar(&cfg.caFetchTimeout, "ca-fetch-timeout", 10*time.Second,
 		"Timeout for each KubeVirt CA fetch attempt over VSOCK")
 	return cmd
 }
 
-func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, rescanEvery, caFetchTimeout time.Duration) error {
-	if rescanEvery <= 0 {
-		return errors.New("rescan-interval must be greater than 0")
+// serveConfig holds runServe's inputs, validated together by validate.
+type serveConfig struct {
+	port           uint32
+	hostPath       string
+	repoCPEURL     string
+	rescanInterval time.Duration
+	caFetchTimeout time.Duration
+}
+
+func (c serveConfig) validate() error {
+	if c.rescanInterval < minRescanInterval {
+		return fmt.Errorf("rescan-interval must be at least %v (got %v)", minRescanInterval, c.rescanInterval)
 	}
-	if caFetchTimeout <= 0 {
+	if c.caFetchTimeout <= 0 {
 		return errors.New("ca-fetch-timeout must be greater than 0")
+	}
+	return nil
+}
+
+func runServe(ctx context.Context, cfg serveConfig) error {
+	if err := cfg.validate(); err != nil {
+		return err
 	}
 
 	cache := &vsockserver.ReportCache{}
 
-	report, err := scan(ctx, hostPath, repoCPEURL)
+	report, err := scan(ctx, cfg.hostPath, cfg.repoCPEURL)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
-	cache.SetReport(report, discoverFacts(hostPath))
+	cache.SetReport(report, discoverFacts(cfg.hostPath))
 	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
 
 	handler := vsockserver.NewHandler(cache, agentVersion)
@@ -82,7 +98,7 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 	// failure must never block startup: it's purely a latency optimization
 	// for KubeVirt's "global" VSOCK mode, where the service is permanently
 	// available.
-	refresher := vsockserver.NewCARefresher(vsockserver.WithFetchTimeout(caFetchTimeout))
+	refresher := vsockserver.NewCARefresher(vsockserver.WithFetchTimeout(cfg.caFetchTimeout))
 	go refresher.Start(ctx)
 	serverCert, err := selfSignedCert()
 	if err != nil {
@@ -94,11 +110,11 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 
 	srv := vsockserver.NewServer(handler, tlsCfg)
 
-	ln, err := vsock.Listen(port, nil)
+	ln, err := vsock.Listen(cfg.port, nil)
 	if err != nil {
-		return fmt.Errorf("listening on VSOCK port %d: %w", port, err)
+		return fmt.Errorf("listening on VSOCK port %d: %w", cfg.port, err)
 	}
-	log.Infof("Listening on VSOCK port %d (pull mode)", port)
+	log.Infof("Listening on VSOCK port %d (pull mode)", cfg.port)
 
 	serveDone := make(chan struct{})
 	go func() {
@@ -106,7 +122,7 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 		srv.Serve(ctx, ln)
 	}()
 
-	ticker := time.NewTicker(rescanEvery)
+	ticker := time.NewTicker(cfg.rescanInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -117,12 +133,12 @@ func runServe(ctx context.Context, port uint32, hostPath, repoCPEURL string, res
 			return nil
 		case <-ticker.C:
 			log.Info("Starting periodic rescan")
-			r, err := scan(ctx, hostPath, repoCPEURL)
+			r, err := scan(ctx, cfg.hostPath, cfg.repoCPEURL)
 			if err != nil {
 				log.Errorf("Rescan failed: %v", err)
 				continue
 			}
-			cache.SetReport(r, discoverFacts(hostPath))
+			cache.SetReport(r, discoverFacts(cfg.hostPath))
 			log.Infof("Rescan complete, report updated. Num packages: %d", len(r.GetContents().GetPackages()))
 		}
 	}
