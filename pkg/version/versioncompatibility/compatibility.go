@@ -100,17 +100,26 @@ func Classify(self, remote productstreams.XYVersion, n int) Compatibility {
 	}
 
 	versions := CompatibleVersionRange(self, n)
-	oldest := versions[0]
-	newest := versions[len(versions)-1]
+	if slices.Contains(versions, remote) {
+		if cmp > 0 {
+			return CompatibleBehind
+		}
+		return CompatibleAhead
+	}
 
-	if remote.Compare(oldest) < 0 {
+	// Remote is not in the known compatible set. Fall back to naive
+	// distance (uses bumps only to cross majors, linear Y within)
+	// to handle phantom versions past a bump point that was delayed
+	// or cancelled.
+	if dist := self.NaiveDistance(remote); dist >= 0 && dist <= n {
+		if cmp > 0 {
+			return CompatibleBehind
+		}
+		return CompatibleAhead
+	}
+
+	if cmp > 0 {
 		return IncompatibleBehind
 	}
-	if remote.Compare(newest) > 0 {
-		return IncompatibleAhead
-	}
-	if cmp > 0 {
-		return CompatibleBehind
-	}
-	return CompatibleAhead
+	return IncompatibleAhead
 }

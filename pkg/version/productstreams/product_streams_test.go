@@ -291,6 +291,49 @@ func TestDistance(t *testing.T) {
 	}
 }
 
+func TestNaiveDistance(t *testing.T) {
+	tests := map[string]struct {
+		a    XYVersion
+		b    XYVersion
+		want int
+	}{
+		"same version": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 5}, want: 0,
+		},
+		"same major": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 4, Y: 8}, want: 3,
+		},
+		"same major reversed": {
+			a: XYVersion{X: 4, Y: 8}, b: XYVersion{X: 4, Y: 5}, want: 3,
+		},
+		"cross major via bump": {
+			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 1}, want: 3,
+		},
+		"phantom version past bump in target major": {
+			a: XYVersion{X: 4, Y: 11}, b: XYVersion{X: 5, Y: 2}, want: 3,
+		},
+		"phantom version far past bump": {
+			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 40}, want: 42,
+		},
+		"same major ignores bump": {
+			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 4, Y: 40}, want: 30,
+		},
+		"missing bump data": {
+			a: XYVersion{X: 4, Y: 5}, b: XYVersion{X: 6, Y: 0}, want: -1,
+		},
+		"phantom past bump point cross major": {
+			a: XYVersion{X: 4, Y: 12}, b: XYVersion{X: 5, Y: 0}, want: -1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := tt.a.NaiveDistance(tt.b)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestGetPreviousYStream(t *testing.T) {
 	tests := map[string]struct {
 		input   XYVersion

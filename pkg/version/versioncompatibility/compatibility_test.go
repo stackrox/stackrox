@@ -188,11 +188,15 @@ func TestClassify(t *testing.T) {
 		},
 		"phantom version far past bump point same major": {
 			self: xy(4, 10), remote: xy(4, 40), n: 3,
-			want: CompatibleAhead,
+			want: IncompatibleAhead,
 		},
 		"phantom version cross major self ahead": {
 			self: xy(5, 0), remote: xy(4, 40), n: 3,
-			want: CompatibleBehind,
+			want: IncompatibleBehind,
+		},
+		"phantom version in target major within skew": {
+			self: xy(4, 11), remote: xy(5, 2), n: 3,
+			want: CompatibleAhead,
 		},
 		"custom n=1 compatible": {
 			self: xy(4, 5), remote: xy(4, 6), n: 1,
