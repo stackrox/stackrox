@@ -97,20 +97,21 @@ runs:
         # Go's module index caches parsed imports by (filename, mtime, size).
         #
         # FIX: derive each file's mtime from its git blob hash instead of a
-        # fixed constant. This means:
-        #   - same content across runs  → same blob hash → same mtime → cache hit  ✓
-        #   - changed content           → different blob hash → different mtime
-        #                               → module index miss → re-parse            ✓
-        #
-        # Previously all files got the same constant (200101010000), which caused
-        # the module index to serve stale import data when content changed but
-        # file size didn't (e.g. "jwt/v4" → "jwt/v5", identical string length).
-        # All derived mtimes stay in 2001–2019 so GOCACHE trim's year-2000
-        # cutoff still correctly evicts unused compiled artifacts.
-        #
-        # Note: $'...' bash ANSI-C quoting expands \n to real newlines so the
-        # entire Python program fits on one YAML-valid line (col 0 would end the block).
-        git ls-files -s | python3 -c $'import sys, os, calendar\nfor line in sys.stdin:\n    parts = line.rstrip().split(None, 3)\n    if len(parts) < 4 or not parts[0].startswith("100"):\n        continue\n    blob, path = parts[1], parts[3]\n    val = int(blob[:8], 16)\n    y = 2001 + val % 19\n    mo = 1 + val // 19 % 12\n    d = 1 + val // 228 % 28\n    h = val // 6384 % 24\n    mi = val // 153216 % 60\n    ts = calendar.timegm((y, mo, d, h, mi, 0, 0, 0, 0))\n    try:\n        os.utime(path, (ts, ts))\n    except OSError:\n        pass'
+        # fixed constant. Same content → same blob hash → same mtime → cache hit.
+        # Changed content → different blob hash → different mtime → index miss → re-parse.
+        # Previously all files got 200101010000; a size-neutral import change
+        # (e.g. "jwt/v4"→"jwt/v5", same string length) was invisible to the index,
+        # which returned stale import data and caused go vet to build a wrong context.
+        # All derived mtimes stay in 2001–2019, below GOCACHE trim's year-2000 cutoff.
+        while IFS=$'\t' read -r info path; do
+            [[ $info == 100* ]] || continue  # skip submodules (mode 160000)
+            blob=${info#* }; blob=${blob%% *}
+            printf -v val '%d' "0x${blob:0:8}"
+            printf -v ts '%04d%02d%02d%02d%02d' \
+                $((2001 + val%19)) $((1 + val/19%12)) \
+                $((1 + val/228%28)) $((val/6384%24)) $((val/153216%60))
+            touch -t "$ts" "$path"
+        done < <(git ls-files -s)
         # Directories have no blob hash; keep them at a fixed constant.
         # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
