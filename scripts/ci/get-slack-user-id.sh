@@ -39,6 +39,7 @@ case "$github_login" in
 'erthalion')        slack_user='U02SV8VE3K3' ;;
 'gaurav-nelson')    slack_user='U01P6PMFGKF' ;;
 'guzalv')           slack_user='U08NQKQJH4N' ;;
+'iamkirkbater')     slack_user='USPJDCA5T'   ;;
 'janisz')           slack_user='U0218FUVDMJ' ;;
 'johannes94')       slack_user='U03E2SD2ZPB' ;;
 'jschnath')         slack_user='U03AA9E6B09' ;;

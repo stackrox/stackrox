@@ -23,7 +23,7 @@ var (
 
 	// ListeningEndpointsSchema is the go schema for table `listening_endpoints`.
 	ListeningEndpointsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.ProcessListeningOnPortStorage)(nil)), "listening_endpoints")
+		schema := walker.Walk(reflect.TypeFor[*storage.ProcessListeningOnPortStorage](), "listening_endpoints")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_PROCESS_LISTENING_ON_PORT, "processlisteningonportstorage", (*storage.ProcessListeningOnPortStorage)(nil)))
 		schema.ScopingResource = resources.DeploymentExtension
 		return schema

@@ -30,6 +30,9 @@ type managerImpl struct {
 func (f *managerImpl) Initialize(entitiesByCluster map[string][]*storage.NetworkEntityInfo) error {
 	defer f.initializedSig.Signal()
 
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	for cluster, entities := range entitiesByCluster {
 		if _, err := f.createNoLock(cluster, entities...); err != nil {
 			return err

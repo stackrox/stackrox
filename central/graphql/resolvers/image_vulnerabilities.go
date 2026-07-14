@@ -26,7 +26,7 @@ import (
 
 func init() {
 	schema := getBuilder()
-	generator.RegisterProtoEnum(schema, reflect.TypeOf(storage.CvssScoreVersion(0)))
+	generator.RegisterProtoEnum(schema, reflect.TypeFor[storage.CvssScoreVersion]())
 
 	utils.Must(schema.AddType("ImageCVEV2", []string{
 		"componentId: String!",
@@ -89,6 +89,8 @@ type ImageVulnerabilityResolver interface {
 	Nvdcvss(ctx context.Context) float64
 	NvdScoreVersion(ctx context.Context) string
 }
+
+var _ ImageVulnerabilityResolver = (*imageCVEV2Resolver)(nil)
 
 // ImageVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {

@@ -82,7 +82,7 @@ func mockResolver(t *testing.T) mocks {
 		SecretsDataStore:      secret,
 		NetworkPoliciesStore:  nps,
 	}
-	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Deployment{}), func() interface{} {
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Deployment](), func() interface{} {
 		return loaders.NewDeploymentLoader(deployment, deploymentView)
 	})
 

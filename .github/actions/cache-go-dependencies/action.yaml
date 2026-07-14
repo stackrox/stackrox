@@ -31,7 +31,7 @@ runs:
       # REPRO BRANCH: also save on PRs from this branch so we can verify
       # run 2 restores the blob-hash-built cache rather than the stale one.
       if: "inputs.save == 'true' && ((github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || github.ref_name == 'reproduce/jwt-roxvet-stale-cache-index' || github.head_ref == 'reproduce/jwt-roxvet-stale-cache-index')"
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -44,7 +44,7 @@ runs:
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && ((github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || github.ref_name == 'reproduce/jwt-roxvet-stale-cache-index' || github.head_ref == 'reproduce/jwt-roxvet-stale-cache-index')) }}
-      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}

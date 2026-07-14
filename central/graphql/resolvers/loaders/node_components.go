@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var nodeComponentLoaderType = reflect.TypeOf(storage.NodeComponent{})
+var nodeComponentLoaderType = reflect.TypeFor[storage.NodeComponent]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.NodeComponent{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.NodeComponent](), func() interface{} {
 		return NewNodeComponentLoader(datastore.Singleton())
 	})
 }
