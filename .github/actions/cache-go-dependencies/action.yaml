@@ -28,29 +28,28 @@ runs:
       shell: bash
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      # REPRO BRANCH: also save on PRs from this branch so we can verify
+      # run 2 restores the blob-hash-built cache rather than the stale one.
+      if: "inputs.save == 'true' && ((github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || github.head_ref == 'reproduce/jwt-roxvet-stale-cache-index')"
       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
-        # REPRO BRANCH: hard-coded to the specific stale master cache (jwt/v4 as direct dep)
-        # that was restored during the original failure on PR #21258.
-        # The original key go-build-v2-style-check-amd64-99c24583e6710b52-efd15a5cc3a51dc5d3040c71d45d94be8ef2b5c1
-        # expired; using the current master equivalent (same go.mod state: jwt/v4 direct).
+        # REPRO BRANCH: GOMOD_HASH fallback first so run 2 picks up the cache
+        # saved by run 1 (blob-hash mtimes). Stale master cache second as
+        # the seed for run 1.
         restore-keys: |
+          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-style-check-amd64-be1e0f6e78eb7815-e423ef7381722c55ec96c27903375f4564957f36
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ !(inputs.save == 'true' && ((github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || github.head_ref == 'reproduce/jwt-roxvet-stale-cache-index')) }}
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # ratchet:actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
-        # REPRO BRANCH: hard-coded to the specific stale master cache (jwt/v4 as direct dep)
-        # that was restored during the original failure on PR #21258.
-        # The original key go-build-v2-style-check-amd64-99c24583e6710b52-efd15a5cc3a51dc5d3040c71d45d94be8ef2b5c1
-        # expired; using the current master equivalent (same go.mod state: jwt/v4 direct).
         restore-keys: |
+          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
           go-build-v2-style-check-amd64-be1e0f6e78eb7815-e423ef7381722c55ec96c27903375f4564957f36
 
     - name: Mark GOCACHE entries for stale detection
@@ -97,21 +96,42 @@ runs:
         echo "Cleared test cache for fresh run"
       shell: bash
 
-    - name: Stabilize file mtimes for Go test cache
+    - name: Stabilize file mtimes for Go test cache and module index
       run: |
         # Go's test cache validates inputs by (path, size, mtime) — NOT content.
-        # git checkout sets all mtimes to "now", which differs between CI runs,
-        # causing every test to miss the cache. Setting a fixed mtime makes the
-        # test cache hit across runs when file content hasn't changed.
+        # Go's module index caches parsed imports by (filename, mtime, size).
         #
-        # Go's module index also caches parsed imports by (filename, mtime, size).
-        # A fixed mtime can cause stale cached imports when a file changes content
-        # but keeps the same size. This is mitigated by including go.mod hash in
-        # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
-
-        git ls-files | xargs touch -t 200101010000
-        # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too.
+        # FIX: derive each file's mtime from its git blob hash instead of a
+        # fixed constant. This means:
+        #   - same content across runs  → same blob hash → same mtime → cache hit  ✓
+        #   - changed content           → different blob hash → different mtime
+        #                               → module index miss → re-parse            ✓
+        #
+        # Previously all files got the same constant (200101010000), which caused
+        # the module index to serve stale import data when content changed but
+        # file size didn't (e.g. "jwt/v4" → "jwt/v5", identical string length).
+        # All derived mtimes stay in 2001–2019 so GOCACHE trim's year-2000
+        # cutoff still correctly evicts unused compiled artifacts.
+        git ls-files -s | python3 -c "
+import sys, os, calendar
+for line in sys.stdin:
+    parts = line.rstrip('\n').split(None, 3)
+    if len(parts) < 4 or not parts[0].startswith('100'):
+        continue  # skip submodules (160000) and other non-regular entries
+    blob, path = parts[1], parts[3]
+    val = int(blob[:8], 16)
+    y  = 2001 + val % 19        # 2001-2019
+    mo = 1 + val // 19 % 12    # 01-12
+    d  = 1 + val // 228 % 28   # 01-28
+    h  = val // 6384 % 24      # 00-23
+    mi = val // 153216 % 60    # 00-59
+    ts = calendar.timegm((y, mo, d, h, mi, 0, 0, 0, 0))
+    try:
+        os.utime(path, (ts, ts))
+    except OSError:
+        pass
+"
+        # Directories have no blob hash; keep them at a fixed constant.
+        # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
