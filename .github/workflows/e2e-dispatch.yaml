@@ -7,12 +7,7 @@ on:
     branches:
     - master
     - release-*
-  pull_request:
-    types:
-    - opened
-    - reopened
-    - synchronize
-    - ready_for_review
+  # pull_request trigger removed: pr.yaml now handles PR CI orchestration.
 
 permissions:
   contents: read
