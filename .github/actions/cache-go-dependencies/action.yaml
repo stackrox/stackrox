@@ -112,26 +112,11 @@ runs:
         # file size didn't (e.g. "jwt/v4" → "jwt/v5", identical string length).
         # All derived mtimes stay in 2001–2019 so GOCACHE trim's year-2000
         # cutoff still correctly evicts unused compiled artifacts.
-        git ls-files -s | python3 -c "
-import sys, os, calendar
-for line in sys.stdin:
-    parts = line.rstrip('\n').split(None, 3)
-    if len(parts) < 4 or not parts[0].startswith('100'):
-        continue  # skip submodules (160000) and other non-regular entries
-    blob, path = parts[1], parts[3]
-    val = int(blob[:8], 16)
-    y  = 2001 + val % 19        # 2001-2019
-    mo = 1 + val // 19 % 12    # 01-12
-    d  = 1 + val // 228 % 28   # 01-28
-    h  = val // 6384 % 24      # 00-23
-    mi = val // 153216 % 60    # 00-59
-    ts = calendar.timegm((y, mo, d, h, mi, 0, 0, 0, 0))
-    try:
-        os.utime(path, (ts, ts))
-    except OSError:
-        pass
-"
-        # Directories have no blob hash; keep them at a fixed constant (run 1).
+        #
+        # Note: $'...' bash ANSI-C quoting expands \n to real newlines so the
+        # entire Python program fits on one YAML-valid line (col 0 would end the block).
+        git ls-files -s | python3 -c $'import sys, os, calendar\nfor line in sys.stdin:\n    parts = line.rstrip().split(None, 3)\n    if len(parts) < 4 or not parts[0].startswith("100"):\n        continue\n    blob, path = parts[1], parts[3]\n    val = int(blob[:8], 16)\n    y = 2001 + val % 19\n    mo = 1 + val // 19 % 12\n    d = 1 + val // 228 % 28\n    h = val // 6384 % 24\n    mi = val // 153216 % 60\n    ts = calendar.timegm((y, mo, d, h, mi, 0, 0, 0, 0))\n    try:\n        os.utime(path, (ts, ts))\n    except OSError:\n        pass'
+        # Directories have no blob hash; keep them at a fixed constant.
         # Directory mtimes matter for tests using os.ReadDir / filepath.Walk.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
