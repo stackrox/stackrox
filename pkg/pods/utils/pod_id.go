@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -30,23 +29,25 @@ func (p PodID) IsEmpty() bool {
 	return p.Name == "" && p.Namespace == "" && p.UID == ""
 }
 
-var errInvalidPodID = errors.New("invalid Pod ID")
+var errInvalidPodID = func(str string) error {
+	return fmt.Errorf("string %q is not a valid Pod ID", str)
+}
 
 // ParsePodID takes a string and returns the parsed pod ID, or an error.
 func ParsePodID(str string) (PodID, error) {
 	atIdx := strings.IndexByte(str, '@')
 	if atIdx < 0 || atIdx == len(str)-1 {
-		return PodID{}, errInvalidPodID
+		return PodID{}, errInvalidPodID(str)
 	}
 	uid := str[atIdx+1:]
 	dotIdx := strings.LastIndexByte(str[:atIdx], '.')
 	if dotIdx < 0 {
-		return PodID{}, errInvalidPodID
+		return PodID{}, errInvalidPodID(str)
 	}
 	name := str[:dotIdx]
 	namespace := str[dotIdx+1 : atIdx]
 	if !isValidDNSSubdomain(name) || !isValidDNSLabel(namespace) || !isValidUID(uid) {
-		return PodID{}, errInvalidPodID
+		return PodID{}, errInvalidPodID(str)
 	}
 	return PodID{
 		Name:      name,
