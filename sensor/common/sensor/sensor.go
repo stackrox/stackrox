@@ -440,12 +440,39 @@ func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) {
 	}
 }
 
-// notifyAllComponents sends each notification one-by-one to all components
+// notifyAllComponents sends each notification one-by-one to all components.
+// While the Notify migration (ROX-35642) is in progress, it also dual-publishes
+// the corresponding lifecycle event to PubSub. The legacy Notify path and the
+// PubSub path are independent producers off of Sensor core; PubSub must never
+// be wired to trigger Notify or vice versa.
 func (s *Sensor) notifyAllComponents(notifications ...common.SensorComponentEvent) {
 	for _, notification := range notifications {
+		if features.SensorInternalPubSub.Enabled() {
+			s.publishLifecycleEvent(notification)
+		}
 		for _, component := range s.notifyList {
 			component.Notify(notification)
 		}
+	}
+}
+
+// publishLifecycleEvent dual-publishes `notification` to PubSub, if a topic exists for it.
+// SensorComponentEventCentralReachableHTTP has no PubSub topic: it is internal to Sensor
+// core and never had non-empty Notify subscribers.
+func (s *Sensor) publishLifecycleEvent(notification common.SensorComponentEvent) {
+	var event pubsub.Event
+	switch notification {
+	case common.SensorComponentEventCentralReachable:
+		event = &events.SensorOnlineEvent{}
+	case common.SensorComponentEventOfflineMode:
+		event = &events.SensorOfflineEvent{}
+	case common.SensorComponentEventSyncFinished:
+		event = &events.SyncFinishedEvent{}
+	default:
+		return
+	}
+	if err := s.pubSubDispatcher.Publish(event); err != nil {
+		log.Warnf("Failed to publish %s to PubSub: %v", notification, err)
 	}
 }
 
