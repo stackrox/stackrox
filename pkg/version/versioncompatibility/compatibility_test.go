@@ -229,6 +229,141 @@ func TestClassify(t *testing.T) {
 	}
 }
 
+func TestClassifyCancelledBump(t *testing.T) {
+	// Bump 5.6→6.0 is scheduled but gets cancelled. Versions 5.7, 5.8, etc.
+	// are released instead.
+	majorversions.OverrideBumpsForTesting(t, []byte(`bumps:
+  - from: "4.11"
+    to: "5.0"
+  - from: "5.6"
+    to: "6.0"
+`))
+
+	tests := map[string]struct {
+		self   majorversions.XYVersion
+		remote majorversions.XYVersion
+		n      int
+		want   Compatibility
+	}{
+		"cancelled bump remote within skew": {
+			self: xy(5, 5), remote: xy(5, 8), n: 3,
+			want: CompatibleAhead,
+		},
+		"cancelled bump remote at skew boundary": {
+			self: xy(5, 5), remote: xy(5, 7), n: 3,
+			want: CompatibleAhead,
+		},
+		"cancelled bump remote beyond skew": {
+			self: xy(5, 5), remote: xy(5, 9), n: 3,
+			want: IncompatibleAhead,
+		},
+		"cancelled bump remote behind within skew": {
+			self: xy(5, 8), remote: xy(5, 5), n: 3,
+			want: CompatibleBehind,
+		},
+		"cancelled bump remote behind beyond skew": {
+			self: xy(5, 9), remote: xy(5, 5), n: 3,
+			want: IncompatibleBehind,
+		},
+		"cancelled bump range still includes bump versions": {
+			self: xy(5, 5), remote: xy(6, 0), n: 3,
+			want: CompatibleAhead,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := Classify(tt.self, tt.remote, tt.n)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestClassifyThreeConsecutiveBumps(t *testing.T) {
+	majorversions.OverrideBumpsForTesting(t, []byte(`bumps:
+  - from: "1.3"
+    to: "2.0"
+  - from: "2.5"
+    to: "3.0"
+  - from: "3.2"
+    to: "4.0"
+`))
+
+	tests := map[string]struct {
+		self   majorversions.XYVersion
+		remote majorversions.XYVersion
+		n      int
+		want   Compatibility
+	}{
+		"chain across two bumps compatible": {
+			self: xy(2, 4), remote: xy(3, 1), n: 3,
+			want: CompatibleAhead,
+		},
+		"chain across two bumps incompatible": {
+			self: xy(2, 3), remote: xy(3, 1), n: 3,
+			want: IncompatibleAhead,
+		},
+		"chain across three bumps always incompatible": {
+			self: xy(1, 3), remote: xy(4, 0), n: 3,
+			want: IncompatibleAhead,
+		},
+		"at bump boundary matched": {
+			self: xy(2, 5), remote: xy(2, 5), n: 3,
+			want: Matched,
+		},
+		"short range near bump": {
+			self: xy(3, 2), remote: xy(4, 0), n: 1,
+			want: CompatibleAhead,
+		},
+		"short range near bump incompatible": {
+			self: xy(3, 2), remote: xy(4, 1), n: 1,
+			want: IncompatibleAhead,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := Classify(tt.self, tt.remote, tt.n)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestClassifyNoBumps(t *testing.T) {
+	majorversions.OverrideBumpsForTesting(t, []byte(`bumps: []`))
+
+	tests := map[string]struct {
+		self   majorversions.XYVersion
+		remote majorversions.XYVersion
+		n      int
+		want   Compatibility
+	}{
+		"same major compatible": {
+			self: xy(4, 5), remote: xy(4, 8), n: 3,
+			want: CompatibleAhead,
+		},
+		"same major incompatible": {
+			self: xy(4, 5), remote: xy(4, 9), n: 3,
+			want: IncompatibleAhead,
+		},
+		"different major always incompatible": {
+			self: xy(4, 5), remote: xy(5, 0), n: 3,
+			want: IncompatibleAhead,
+		},
+		"matched": {
+			self: xy(4, 5), remote: xy(4, 5), n: 3,
+			want: Matched,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := Classify(tt.self, tt.remote, tt.n)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestClassifyVersion(t *testing.T) {
 	overrideTestBumps(t)
 	assert.Equal(t, Matched, ClassifyVersion(xy(4, 11), xy(4, 11)))
