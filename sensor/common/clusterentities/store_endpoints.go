@@ -124,6 +124,7 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 	touchedPublic := false
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
+			// Must check before purge: purgeNoLock deletes reverseEndpointMap[deploymentID].
 			if !touchedPublic {
 				touchedPublic = containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
 			}
@@ -136,11 +137,11 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 			}
 			continue
 		}
+		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
 		if !touchedPublic {
 			touchedPublic = containsPublicEndpoint(data.endpoints) ||
-				containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
+				containsPublicEndpointInSet(currentEndpoints)
 		}
-		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
 		if !deploymentKnown {
 			e.applySingleNoLock(deploymentID, *data)
 			continue

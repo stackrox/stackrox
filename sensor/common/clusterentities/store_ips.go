@@ -98,6 +98,7 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 	touchedPublic := false
 	if !incremental {
 		for deploymentID := range updates {
+			// Must check before purge: purgeDeploymentNoLock deletes reverseIPMap[deploymentID].
 			if !touchedPublic {
 				touchedPublic = containsPublicIPInFrozenSet(e.reverseIPMap[deploymentID])
 			}

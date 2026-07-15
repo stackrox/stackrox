@@ -261,6 +261,19 @@ func (s *ClusterEntitiesStoreTestSuite) TestPublicIPListenerConditionalUpdate() 
 			},
 			expected: nil,
 		},
+		"incremental delete-only should not trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("", "", 0),
+				}, true)
+			},
+			expected: nil,
+		},
 		"public IP incremental add should trigger listener": {
 			action: func(store *Store) {
 				store.Apply(map[string]*EntityData{
