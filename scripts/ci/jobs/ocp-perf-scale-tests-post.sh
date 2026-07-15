@@ -70,7 +70,6 @@ info "Central API is responsive, getting diagnostics"
 # IPI manages the cluster lifecycle, but end.sh expects these variables
 # to generate correct JUnit records (see PR #21101).
 set_ci_shared_export CREATE_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
-set_ci_shared_export DESTROY_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
 set_ci_shared_export CLUSTER_FLAVOR_VARIANT "openshift-4"
 
 # Get central diagnostics bundle
