@@ -104,10 +104,40 @@ runs:
         # modified it, so the mtime reflects actual modification history:
         # same content across runs → same commit → same mtime → cache hit.
         # Changed content → new commit → different mtime → index miss → re-parse.
-        git log --format='%ct' --name-only --diff-filter=ACM -- '*.go' | perl -lne '
+        #
+        # A shallow checkout (the GHA default) has no local parent for its
+        # boundary commit, so git treats it as a root commit and reports every
+        # tracked file as newly "Added" there — collapsing every file to one
+        # shared timestamp. Unshallow first (blobless, so it's cheap: commit
+        # and tree objects only, no file contents) so history walks correctly.
+        if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+          git fetch --quiet --unshallow --filter=blob:none
+        fi
+        # -m makes git log also diff merge commits against each parent, so a
+        # file whose content in a merge differs from both parents (a genuine
+        # conflict-resolution edit, not merely inherited from one side) gets
+        # attributed to the merge commit's own timestamp — otherwise merge
+        # commits are skipped entirely and such files silently keep a stale,
+        # pre-merge timestamp despite have different current content.
+        #
+        # --diff-filter=ACMR adds R (renames) to the default ACM: a renamed
+        # file is reported as R, not A, so without R a renamed path never
+        # gets a stabilized mtime and permanently falls back to checkout
+        # wall-clock time (unstable across runners).
+        git log -m --format='%ct' --name-only --diff-filter=ACMR -- '*.go' | perl -lne '
             /^\d+$/ ? ($ts = $_) : ($ts && !$seen{$_}++ && -f $_ && utime $ts, $ts, $_)
         '
         # Directories have no per-commit timestamp of their own; a fixed
         # constant is fine since GOCACHE only inspects file mtimes.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
+      shell: bash
+
+    # VERIFY BRANCH ONLY: diagnostic visibility for testing the shallow-checkout
+    # fix. Strip before porting this action.yaml back to the real fix PR.
+    - name: "[diagnostic] count distinct .go mtimes"
+      run: |
+        distinct=$(git ls-files -- '*.go' | xargs stat -c '%Y' | sort -u | wc -l)
+        total=$(git ls-files -- '*.go' | wc -l)
+        echo "Distinct mtimes among .go files: $distinct (of $total total files)"
+        echo "is-shallow-repository: $(git rev-parse --is-shallow-repository)"
       shell: bash
