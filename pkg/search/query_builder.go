@@ -508,7 +508,7 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	cq := ConjunctionQuery(queries...)
-	if qSelects != nil {
+	if len(qSelects) > 0 {
 		cq.Selects = qSelects
 	}
 
