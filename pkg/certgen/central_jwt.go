@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	// JWTKeyPEMFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
+	// JWTKeyPEMFileName is the canonical file name (filename) of the file storing the key for signing JWTs,
 	// encoded in PEM format (default).
 	JWTKeyPEMFileName = "jwt-key.pem"
 	// JWTKeyDERFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
