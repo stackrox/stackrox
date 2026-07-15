@@ -110,6 +110,7 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
+			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
 		e.applySingleNoLock(deploymentID, *data)
@@ -124,13 +125,26 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
+			// A call to Apply()->replaceNoLock() with empty payload of the updates map (no values) is meant to be a delete operation.
 			if !touchedPublic {
 				touchedPublic = containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
 			}
 			e.purgeNoLock(deploymentID)
 			continue
 		}
+		// Fast path: if all endpoints are identical, skip the diff entirely.
+		// endpointsUnchangedNoLock handles all edge cases cheaply:
+		// - deployment not in store + empty new → true in O(1)
+		// - deployment not in store + non-empty new → false in O(1)
+		// - deployment in store with nil set + empty new → true (length match)
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
+			// the first time a deployment arrives with zero endpoints (e.g. a pod
+			// exists but no Service selects it yet). That marker later prevents
+			// the endpoint-takeover path from incorrectly moving other deployments
+			// to history when this deployment finally acquires real endpoints.
+			// Because endpointsUnchangedNoLock short-circuits "not-in-store +
+			// empty" as unchanged, we must replicate the marker here.
 			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
 				e.reverseEndpointMap[deploymentID] = nil
 			}
@@ -142,6 +156,7 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 				containsPublicEndpointInSet(currentEndpoints)
 		}
 		if !deploymentKnown {
+			// Brand-new deployment: use the full insert path which handles endpoint takeover.
 			e.applySingleNoLock(deploymentID, *data)
 			continue
 		}
