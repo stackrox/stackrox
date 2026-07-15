@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,6 +29,7 @@ func Test_Load(t *testing.T) {
 			want: func() *Config {
 				cfg := defaultConfiguration
 				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				cfg.Matcher.CentralEndpoint = env.CentralEndpoint.Setting()
 				return &cfg
 			}(),
 		},
@@ -49,6 +51,7 @@ stackrox_services: true
 				cfg.Indexer.StackRoxServices = true
 				cfg.Matcher.StackRoxServices = true
 				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				cfg.Matcher.CentralEndpoint = env.CentralEndpoint.Setting()
 				return &cfg
 			}(),
 		},
@@ -65,6 +68,7 @@ stackrox_services: true
 				cfg := defaultConfiguration
 				cfg.Indexer.GetLayerTimeout = 69 * time.Minute
 				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				cfg.Matcher.CentralEndpoint = env.CentralEndpoint.Setting()
 				return &cfg
 			}(),
 		},
@@ -81,6 +85,7 @@ stackrox_services: true
 				cfg.Matcher.StackRoxServices = true
 				cfg.Indexer.GetLayerTimeout = 69 * time.Minute
 				cfg.Matcher.VulnerabilitiesURLs = []string{cfg.Matcher.VulnerabilitiesURL}
+				cfg.Matcher.CentralEndpoint = env.CentralEndpoint.Setting()
 				return &cfg
 			}(),
 		},
@@ -104,6 +109,7 @@ matcher:
 					fmt.Sprintf("https://definitions.stackrox.io/v4/vulnerability-bundles/%s-rc/vulnerabilities.zip", v),
 					fmt.Sprintf("https://definitions.stackrox.io/v4/vulnerability-bundles/%s/vulnerabilities.zip", v),
 				}
+				cfg.Matcher.CentralEndpoint = env.CentralEndpoint.Setting()
 				return &cfg
 			}(),
 		},

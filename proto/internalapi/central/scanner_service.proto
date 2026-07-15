@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package central;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./internalapi/central;central";
+
+service ScannerService {
+  // NotifyScannerReady is called by Scanner V4 when it finishes
+  // its initial vulnerability data load.
+  rpc NotifyScannerReady(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
