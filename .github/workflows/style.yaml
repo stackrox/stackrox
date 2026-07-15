@@ -103,7 +103,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
-          fetch-depth: 0
+          # VERIFY BRANCH ONLY: forced to 1 (the GHA default, matching the
+          # 10/15 real consumer jobs that don't set fetch-depth) to test the
+          # shallow-checkout auto-unshallow fix live. Revert before porting.
+          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
