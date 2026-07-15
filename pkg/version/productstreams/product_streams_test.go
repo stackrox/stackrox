@@ -1,4 +1,4 @@
-package versionbumps
+package productstreams
 
 import (
 	"fmt"
