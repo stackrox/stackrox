@@ -37,7 +37,7 @@ type TestStorageWithExplicitChildTable struct {
 // One can specify a custom SQL type for the structure field
 func TestClusterGetter(t *testing.T) {
 	IDField := Field{SQLType: ""}
-	schema := Walk(reflect.TypeOf(&TestStorageType{}), "test_table")
+	schema := Walk(reflect.TypeFor[*TestStorageType](), "test_table")
 
 	for _, f := range schema.Fields {
 		if f.Name == "ID" {
@@ -99,7 +99,7 @@ func TestFieldIncludeNoSerialized(t *testing.T) {
 }
 
 func TestWalkWithNoSerialized(t *testing.T) {
-	mt := reflect.TypeOf(&TestStorageType{})
+	mt := reflect.TypeFor[*TestStorageType]()
 	require.NotNil(t, mt)
 
 	t.Run("default walk includes serialized", func(t *testing.T) {
@@ -125,7 +125,7 @@ func TestWalkWithNoSerialized(t *testing.T) {
 }
 
 func TestRepeatedFieldStrategy(t *testing.T) {
-	mt := reflect.TypeOf(&TestStorageWithRepeatedStrategy{})
+	mt := reflect.TypeFor[*TestStorageWithRepeatedStrategy]()
 	schema := Walk(mt, "test_strategy")
 
 	t.Run("strategy(bytea) inlines as MessageBytes column", func(t *testing.T) {
@@ -154,14 +154,14 @@ func TestRepeatedFieldStrategy(t *testing.T) {
 }
 
 func TestNoSerializedRejectsSqlIgnored(t *testing.T) {
-	mt := reflect.TypeOf(&TestStorageWithIgnoredField{})
+	mt := reflect.TypeFor[*TestStorageWithIgnoredField]()
 	assert.Panics(t, func() {
 		Walk(mt, "test_table", WithNoSerialized())
 	}, "Walk with NoSerialized should fatal on sql:\"-\" fields")
 }
 
 func TestExplicitChildTableStrategy(t *testing.T) {
-	mt := reflect.TypeOf(&TestStorageWithExplicitChildTable{})
+	mt := reflect.TypeFor[*TestStorageWithExplicitChildTable]()
 	schema := Walk(mt, "test_explicit_child")
 
 	require.Len(t, schema.Children, 1)

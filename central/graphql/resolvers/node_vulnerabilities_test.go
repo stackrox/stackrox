@@ -20,8 +20,8 @@ func TestNodeVulnerabilityResolverType(t *testing.T) {
 	//
 	// TODO(ROX-35654): Unskip this tests.
 	t.Skip("Interface and implementation types do not have aligned method indices.")
-	resolverInterface := reflect.TypeOf((*NodeVulnerabilityResolver)(nil)).Elem()
-	resolverImplType := reflect.TypeOf((*nodeCVEResolver)(nil))
+	resolverInterface := reflect.TypeFor[NodeVulnerabilityResolver]()
+	resolverImplType := reflect.TypeFor[*nodeCVEResolver]()
 
 	validateAlignedMethodIndex(t, resolverInterface, resolverImplType)
 }

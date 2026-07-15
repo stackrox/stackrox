@@ -35,6 +35,7 @@ import {
     policiesBasePath,
     policyManagementBasePath,
     riskBasePath,
+    riskSecretsBasePath,
     riskWorkloadsBasePath,
     searchPath,
     systemConfigPath,
@@ -208,6 +209,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'policy-management': {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
         path: policyManagementBasePath,
+    },
+    'risk/secrets': {
+        component: asyncComponent(() => import('Containers/Risk/Secrets/SecretsPage')),
+        path: riskSecretsBasePath,
     },
     'risk/workloads': {
         component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),

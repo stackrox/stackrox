@@ -24,7 +24,7 @@ var (
 
 	// PoliciesSchema is the go schema for table `policies`.
 	PoliciesSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.Policy)(nil)), "policies")
+		schema := walker.Walk(reflect.TypeFor[*storage.Policy](), "policies")
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICIES, "policy", (*storage.Policy)(nil)))
 		return schema
 	}()

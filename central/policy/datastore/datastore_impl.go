@@ -554,8 +554,7 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
-	var policyError *PolicyStoreErrorList
-	if errors.As(err, &policyError) {
+	if policyError, converted := errors.AsType[*PolicyStoreErrorList](err); converted {
 		return handlePolicyStoreErrorList(policyError)
 	}
 
@@ -570,8 +569,7 @@ func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
 func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportPolicyError {
 	var errList []*v1.ImportPolicyError
 	for _, err := range policyError.Errors {
-		var nameErr *NameConflictError
-		if errors.As(err, &nameErr) {
+		if nameErr, converted := errors.AsType[*NameConflictError](err); converted {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: nameErr.ErrString,
 				Type:    policiesPkg.ErrImportDuplicateName,
@@ -582,8 +580,7 @@ func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportP
 			continue
 		}
 
-		var idError *IDConflictError
-		if errors.As(err, &idError) {
+		if idError, converted := errors.AsType[*IDConflictError](err); converted {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: idError.ErrString,
 				Type:    policiesPkg.ErrImportDuplicateID,

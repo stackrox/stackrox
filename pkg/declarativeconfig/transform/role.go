@@ -14,7 +14,7 @@ import (
 var (
 	_ Transformer = (*roleTransform)(nil)
 
-	roleType = reflect.TypeOf((*storage.Role)(nil))
+	roleType = reflect.TypeFor[*storage.Role]()
 )
 
 type roleTransform struct{}
