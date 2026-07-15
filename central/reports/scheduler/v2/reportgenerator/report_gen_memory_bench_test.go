@@ -85,7 +85,7 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 	nsDatastore, err := namespaceDS.GetTestPostgresDataStore(b, testDB.DB)
 	require.NoError(b, err)
 
-	blobStore := blobDS.NewBenchDatastore(testDB.DB)
+	blobStore := blobDS.NewTestDatastore(b, testDB.DB)
 	reportSnapshotStore := reportSnapshotDS.GetTestPostgresDataStore(b, testDB.DB)
 
 	rg := newReportGeneratorImpl(testDB, reportSnapshotStore, resolver.DeploymentDataStore,
@@ -106,7 +106,7 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 	require.NoError(b, err)
 	b.Cleanup(func() { multiConnPool.Close() })
 	rg.db = multiConnPool
-	rg.blobStore = blobDS.NewBenchDatastore(multiConnPool)
+	rg.blobStore = blobDS.NewTestDatastore(b, multiConnPool)
 
 	clusters := []*storage.Cluster{
 		{Id: uuid.NewV4().String(), Name: "c1"},
