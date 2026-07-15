@@ -228,17 +228,17 @@ message ClusterCertExpiryStatus {
 // patch versions are ignored.
 enum SensorVersionCompatibility {
   // Sensor version is not available.
-  SENSOR_VERSION_COMPATIBILITY_UNKNOWN               = 0;
+  SENSOR_VERSION_COMPATIBILITY_UNKNOWN = 0;
   // Sensor major.minor matches central.
-  SENSOR_VERSION_COMPATIBILITY_MATCHED               = 1;
+  SENSOR_VERSION_COMPATIBILITY_MATCHED = 1;
   // Sensor is older than central but within the compatible range.
-  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND      = 2;
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND = 2;
   // Sensor is newer than central but within the compatible range.
-  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD       = 3;
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD = 3;
   // Sensor is older than central and outside the compatible range.
-  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND    = 4;
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND = 4;
   // Sensor is newer than central and outside the compatible range.
-  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD     = 5;
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD = 5;
 }
 
 message ClusterStatus {
