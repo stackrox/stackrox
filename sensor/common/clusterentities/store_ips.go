@@ -87,7 +87,9 @@ func (e *podIPsStore) RecordTick() bool {
 	return removedPublic
 }
 
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
+// Apply processes pod IP updates and reports whether any public IP was involved,
+// so the caller can decide whether to refresh the public IP listener.
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) (touchedPublic bool) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	return e.applyNoLock(updates, incremental)

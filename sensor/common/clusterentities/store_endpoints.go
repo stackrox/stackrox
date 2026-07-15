@@ -96,10 +96,13 @@ func (e *endpointsStore) RecordTick() bool {
 	return removedPublic
 }
 
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
+// Apply processes endpoint updates and reports whether any public IP was involved,
+// so the caller can decide whether to refresh the public IP listener.
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) (touchedPublic bool) {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
-	return e.applyNoLock(updates, incremental)
+	touchedPublic = e.applyNoLock(updates, incremental)
+	return touchedPublic
 }
 
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
@@ -132,6 +135,10 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 			continue
 		}
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
+			// Nil marker prevents the endpoint-takeover path from incorrectly
+			// moving other deployments to history when this deployment finally
+			// acquires real endpoints. Replicated here because
+			// endpointsUnchangedNoLock short-circuits "not-in-store + empty".
 			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
 				e.reverseEndpointMap[deploymentID] = nil
 			}
