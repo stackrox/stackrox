@@ -109,6 +109,7 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
+			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
 		if !touchedPublic {
