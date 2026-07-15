@@ -27,7 +27,9 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalCount, err := h.cveView.Count(ctx, query)
+	countQuery := query.CloneVT()
+	countQuery.Pagination = nil
+	totalCount, err := h.cveView.Count(ctx, countQuery)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
