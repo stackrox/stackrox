@@ -51,6 +51,18 @@ func TestParseBumpsData(t *testing.T) {
     to: "4.5"`,
 			wantErr: "'to' value \"4.5\" must have minor version 0",
 		},
+		"rejects x.y.z from": {
+			input: `bumps:
+  - from: "3.74.0"
+    to: "4.0"`,
+			wantErr: "invalid 'from' value",
+		},
+		"rejects x.y.z-suffix from": {
+			input: `bumps:
+  - from: "3.74.x-nightly-20230224"
+    to: "4.0"`,
+			wantErr: "invalid 'from' value",
+		},
 		"invalid from": {
 			input: `bumps:
   - from: "bad"

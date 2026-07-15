@@ -30,7 +30,7 @@ func (v XYVersion) semverString() string {
 }
 
 func parseXYVersion(s string) (XYVersion, error) {
-	parts := strings.SplitN(s, ".", 2)
+	parts := strings.SplitN(s, ".", 3)
 	if len(parts) != 2 {
 		return XYVersion{}, fmt.Errorf("expected major.minor format, got %q", s)
 	}
