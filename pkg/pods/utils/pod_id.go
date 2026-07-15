@@ -35,25 +35,23 @@ var errInvalidPodID = func(str string) error {
 
 // ParsePodID takes a string and returns the parsed pod ID, or an error.
 func ParsePodID(str string) (PodID, error) {
-	atIdx := strings.IndexByte(str, '@')
-	if atIdx < 0 || atIdx == len(str)-1 {
+	name, namespace, uid, ok := splitPodIDString(str)
+	if !ok || !isValidDNSSubdomain(name) || !isValidDNSLabel(namespace) || !isValidUID(uid) {
 		return PodID{}, errInvalidPodID(str)
 	}
-	uid := str[atIdx+1:]
-	dotIdx := strings.LastIndexByte(str[:atIdx], '.')
+	return PodID{Name: name, Namespace: namespace, UID: types.UID(uid)}, nil
+}
+
+func splitPodIDString(s string) (name, namespace, uid string, ok bool) {
+	atIdx := strings.IndexByte(s, '@')
+	if atIdx < 0 || atIdx == len(s)-1 {
+		return "", "", "", false
+	}
+	dotIdx := strings.LastIndexByte(s[:atIdx], '.')
 	if dotIdx < 0 {
-		return PodID{}, errInvalidPodID(str)
+		return "", "", "", false
 	}
-	name := str[:dotIdx]
-	namespace := str[dotIdx+1 : atIdx]
-	if !isValidDNSSubdomain(name) || !isValidDNSLabel(namespace) || !isValidUID(uid) {
-		return PodID{}, errInvalidPodID(str)
-	}
-	return PodID{
-		Name:      name,
-		Namespace: namespace,
-		UID:       types.UID(uid),
-	}, nil
+	return s[:dotIdx], s[dotIdx+1 : atIdx], s[atIdx+1:], true
 }
 
 // GetPodIDFromV1Pod returns a pod ID for the given pod object.
