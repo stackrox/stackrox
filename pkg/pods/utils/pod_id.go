@@ -76,6 +76,8 @@ func isLowerAlphaNum(c byte) bool {
 	return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
 }
 
+// isValidDNSSubdomain matches `[a-z0-9](?:[-.a-z0-9]*[a-z0-9])?` per
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
 func isValidDNSSubdomain(s string) bool {
 	if len(s) == 0 || !isLowerAlphaNum(s[0]) || !isLowerAlphaNum(s[len(s)-1]) {
 		return false
@@ -89,6 +91,8 @@ func isValidDNSSubdomain(s string) bool {
 	return true
 }
 
+// isValidDNSLabel matches `[a-z0-9](?:[-a-z0-9]*[a-z0-9])?` per
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 func isValidDNSLabel(s string) bool {
 	if len(s) == 0 || !isLowerAlphaNum(s[0]) || !isLowerAlphaNum(s[len(s)-1]) {
 		return false
@@ -102,6 +106,8 @@ func isValidDNSLabel(s string) bool {
 	return true
 }
 
+// isValidUID matches `[[:xdigit:]-]+` per
+// https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
 func isValidUID(s string) bool {
 	if len(s) == 0 {
 		return false
