@@ -19,6 +19,8 @@ const (
 	OutputQueueConsumer
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
+	AlertHandlerSensorOnlineConsumer
+	AlertHandlerSensorOfflineConsumer
 )
 
 var (
@@ -39,6 +41,8 @@ var (
 		OutputQueueConsumer:                    "OutputQueue",
 		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
 		SensorSoftRestartConsumer:              "SensorSoftRestart",
+		AlertHandlerSensorOnlineConsumer:       "AlertHandlerSensorOnline",
+		AlertHandlerSensorOfflineConsumer:      "AlertHandlerSensorOffline",
 	}
 )
 
