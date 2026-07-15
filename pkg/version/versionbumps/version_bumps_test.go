@@ -1,4 +1,4 @@
-package majorversions
+package versionbumps
 
 import (
 	"fmt"
