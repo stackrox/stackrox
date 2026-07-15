@@ -129,7 +129,7 @@ func TestParsePodID(t *testing.T) {
 	for name, input := range invalidCases {
 		t.Run(name, func(t *testing.T) {
 			_, err := ParsePodID(input)
-			assert.Error(t, err, "input: %q", input)
+			assert.Errorf(t, err, "input: %q", input)
 		})
 	}
 }
@@ -154,7 +154,7 @@ func BenchmarkParsePodID(b *testing.B) {
 	for name, input := range cases {
 		b.Run(name, func(b *testing.B) {
 			for range b.N {
-				ParsePodID(input)
+				_, _ = ParsePodID(input)
 			}
 		})
 	}
