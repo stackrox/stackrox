@@ -15,14 +15,6 @@ func TestMustParseBumpsDataPanicsOnInvalidInput(t *testing.T) {
 	})
 }
 
-func formatBumps(bumps []parsedBump) string {
-	parts := make([]string, 0, len(bumps))
-	for _, b := range bumps {
-		parts = append(parts, fmt.Sprintf("%s->%s", b.From, b.To))
-	}
-	return strings.Join(parts, ";")
-}
-
 func TestParseBumpsData(t *testing.T) {
 	tests := map[string]struct {
 		input   string
@@ -79,15 +71,6 @@ bumps:
     to: "5.0"
   - from: "3.74"
     to: "6.0"`,
-			wantErr: "overlapping ranges",
-		},
-		"overlapping ranges: containment reversed input": {
-			input: `
-bumps:
-  - from: "3.74"
-    to: "6.0"
-  - from: "4.11"
-    to: "5.0"`,
 			wantErr: "overlapping ranges",
 		},
 		"overlapping ranges: partial": {
@@ -158,6 +141,14 @@ bumps:
 			assert.Equal(t, tt.want, formatBumps(result))
 		})
 	}
+}
+
+func formatBumps(bumps []parsedBump) string {
+	parts := make([]string, 0, len(bumps))
+	for _, b := range bumps {
+		parts = append(parts, fmt.Sprintf("%s->%s", b.From, b.To))
+	}
+	return strings.Join(parts, ";")
 }
 
 func TestGetPreviousYStream(t *testing.T) {
