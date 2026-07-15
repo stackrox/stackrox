@@ -7,15 +7,8 @@ import (
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 )
 
-// NewTestDatastore creates the data store for testing.
-func NewTestDatastore(_ *testing.T, db pgPkg.DB) Datastore {
-	return &datastoreImpl{
-		store: store.New(db),
-	}
-}
-
-// NewBenchDatastore creates the data store for benchmarks.
-func NewBenchDatastore(db pgPkg.DB) Datastore {
+// NewTestDatastore creates the data store for testing and benchmarks.
+func NewTestDatastore(_ testing.TB, db pgPkg.DB) Datastore {
 	return &datastoreImpl{
 		store: store.New(db),
 	}

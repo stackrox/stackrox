@@ -371,6 +371,9 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 	}
 
 	pr, pw := io.Pipe()
+	// Always close the reader so the writer goroutine is unblocked if blobStore.Upsert
+	// returns early (e.g. on a DB error) before draining the pipe.
+	defer pr.Close()
 	refLinksCache := make(map[string]string)
 	var writerErr error
 	rowCount := 0
