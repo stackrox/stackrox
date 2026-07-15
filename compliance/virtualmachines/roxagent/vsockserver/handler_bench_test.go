@@ -98,7 +98,7 @@ func marshalGetReportRequest(b *testing.B, ifNewerThan uint32) []byte {
 	b.Helper()
 	req := &pb.VMServiceRequest{
 		Meta:   &pb.RequestMeta{RequestId: "bench"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{IfNewerThanGeneration: ifNewerThan}},
+		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: ifNewerThan}},
 	}
 	data, err := proto.Marshal(req)
 	require.NoError(b, err)
