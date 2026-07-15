@@ -96,55 +96,52 @@ func (e *endpointsStore) RecordTick() bool {
 	return removedPublic
 }
 
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
-	e.applyNoLock(updates, incremental)
+	return e.applyNoLock(updates, incremental)
 }
 
-func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
+func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
 	if !incremental {
-		e.replaceNoLock(updates)
-		return
+		return e.replaceNoLock(updates)
 	}
+	touchedPublic := false
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
-			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
 		e.applySingleNoLock(deploymentID, *data)
+		if !touchedPublic {
+			touchedPublic = containsPublicEndpoint(data.endpoints)
+		}
 	}
+	return touchedPublic
 }
 
-func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
+	touchedPublic := false
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
-			// A call to Apply()->replaceNoLock() with empty payload of the updates map (no values) is meant to be a delete operation.
+			if !touchedPublic {
+				touchedPublic = containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
+			}
 			e.purgeNoLock(deploymentID)
 			continue
 		}
-		// Fast path: if all endpoints are identical, skip the diff entirely.
-		// endpointsUnchangedNoLock handles all edge cases cheaply:
-		// - deployment not in store + empty new → true in O(1)
-		// - deployment not in store + non-empty new → false in O(1)
-		// - deployment in store with nil set + empty new → true (length match)
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
-			// applySingleNoLock records a nil "seen" marker in reverseEndpointMap
-			// the first time a deployment arrives with zero endpoints (e.g. a pod
-			// exists but no Service selects it yet). That marker later prevents
-			// the endpoint-takeover path from incorrectly moving other deployments
-			// to history when this deployment finally acquires real endpoints.
-			// Because endpointsUnchangedNoLock short-circuits "not-in-store +
-			// empty" as unchanged, we must replicate the marker here.
 			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
 				e.reverseEndpointMap[deploymentID] = nil
 			}
 			continue
 		}
+		if !touchedPublic {
+			touchedPublic = containsPublicEndpoint(data.endpoints) ||
+				containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
+		}
 		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
 		if !deploymentKnown {
-			// Brand-new deployment: use the full insert path which handles endpoint takeover.
 			e.applySingleNoLock(deploymentID, *data)
 			continue
 		}
@@ -155,6 +152,7 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) {
 			}
 		}
 	}
+	return touchedPublic
 }
 
 // diffReplaceNoLock applies an endpoint update by computing a per-endpoint diff
@@ -517,6 +515,24 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
 	}
 	e.reverseHistoricalEndpoints[deploymentID][ep] = newHistoricalEntity(e.memorySize)
+}
+
+func containsPublicEndpoint(endpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	for ep := range endpoints {
+		if ep.IPAndPort.Address.IsPublic() {
+			return true
+		}
+	}
+	return false
+}
+
+func containsPublicEndpointInSet(eps set.Set[net.NumericEndpoint]) bool {
+	for ep := range eps {
+		if ep.IPAndPort.Address.IsPublic() {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *endpointsStore) String() string {

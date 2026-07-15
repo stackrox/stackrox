@@ -87,26 +87,33 @@ func (e *podIPsStore) RecordTick() bool {
 	return removedPublic
 }
 
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) {
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	e.applyNoLock(updates, incremental)
+	return e.applyNoLock(updates, incremental)
 }
 
-func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) {
+func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
+	touchedPublic := false
 	if !incremental {
 		for deploymentID := range updates {
+			if !touchedPublic {
+				touchedPublic = containsPublicIPInFrozenSet(e.reverseIPMap[deploymentID])
+			}
 			e.purgeDeploymentNoLock(deploymentID)
 		}
 	}
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
-			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
+		}
+		if !touchedPublic {
+			touchedPublic = containsPublicIP(data.ips)
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
+	return touchedPublic
 }
 
 func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) {
@@ -214,6 +221,24 @@ func (e *podIPsStore) deleteFromHistory(deploymentID string, ip net.IPAddress) b
 func (e *podIPsStore) removeFromHistoryIfExpired(deploymentID string, ip net.IPAddress) bool {
 	if status, ok := e.historicalIPs[ip][deploymentID]; ok && status.IsExpired() {
 		return e.deleteFromHistory(deploymentID, ip)
+	}
+	return false
+}
+
+func containsPublicIP(ips map[net.IPAddress]struct{}) bool {
+	for ip := range ips {
+		if ip.IsPublic() {
+			return true
+		}
+	}
+	return false
+}
+
+func containsPublicIPInFrozenSet(ips set.FrozenSet[net.IPAddress]) bool {
+	for _, ip := range ips.AsSlice() {
+		if ip.IsPublic() {
+			return true
+		}
 	}
 	return false
 }
