@@ -94,66 +94,9 @@ func testServerCert(t *testing.T) tls.Certificate {
 	}
 }
 
-func TestCARefresher_InitialFetch(t *testing.T) {
-	caPEM, _, _ := testCA(t)
-
-	r := NewCARefresher(
-		WithFetchFunc(func(context.Context) ([]byte, error) { return caPEM, nil }),
-		WithRefreshInterval(time.Hour),
-	)
-
-	ctx := t.Context()
-	go r.Start(ctx)
-
-	require.Eventually(t, func() bool {
-		_, ok := r.freshCachedPool()
-		return ok
-	}, time.Second, 10*time.Millisecond, "Start should complete the initial fetch")
-
-	cfg := r.TLSConfig(testServerCert(t))
-	require.NotNil(t, cfg)
-	assert.Equal(t, tls.RequireAndVerifyClientCert, cfg.ClientAuth)
-	assert.Equal(t, uint16(tls.VersionTLS12), cfg.MinVersion)
-
-	// GetConfigForClient should return a config with the CA pool.
-	inner, err := cfg.GetConfigForClient(&tls.ClientHelloInfo{})
-	require.NoError(t, err)
-	require.NotNil(t, inner)
-	assert.NotNil(t, inner.ClientCAs)
-}
-
-// TestCARefresher_TryInitialFetch_FailureIsNonFatal documents that a
-// permanently failing initial fetch - the expected state at boot in
-// namespace-isolated VSOCK mode, where the CA service doesn't exist until a
-// real connection arrives - is reported for logging but never fatal. Start
-// (used by cmd/serve.go) has no error return at all for exactly this reason.
-func TestCARefresher_TryInitialFetch_FailureIsNonFatal(t *testing.T) {
-	r := NewCARefresher(
-		WithFetchFunc(func(context.Context) ([]byte, error) {
-			return nil, assert.AnError
-		}),
-		WithFetchTimeout(time.Second),
-	)
-
-	err := r.TryInitialFetch(context.Background())
-	require.Error(t, err)
-	assert.ErrorIs(t, err, assert.AnError)
-
-	// Start must not panic/block forever despite the fetch function always
-	// failing. Cancel right away and wait for it to actually exit, rather
-	// than leaving it running unawaited: an unawaited Start would keep
-	// retrying in the background and bleed its "fetch attempt failed" log
-	// lines into whichever test happens to run next.
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		r.Start(ctx)
-	}()
-	cancel()
-	<-done
-}
-
+// TestCARefresher_InvalidPEM documents that ensureFreshPool - and therefore
+// any handshake relying on it - fails when the fetched bundle contains no
+// valid certificates, rather than caching an unusable empty pool.
 func TestCARefresher_InvalidPEM(t *testing.T) {
 	r := NewCARefresher(
 		WithFetchFunc(func(context.Context) ([]byte, error) {
@@ -162,7 +105,7 @@ func TestCARefresher_InvalidPEM(t *testing.T) {
 		WithFetchTimeout(time.Second),
 	)
 
-	err := r.TryInitialFetch(context.Background())
+	_, err := r.ensureFreshPool(context.Background())
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no valid certificates")
 }
@@ -176,11 +119,10 @@ func TestCARefresher_HandshakeFetchesOnColdCache(t *testing.T) {
 		return caPEM, nil
 	}))
 
-	// Deliberately never call Start/TryInitialFetch/RunRefreshLoop: the
-	// cache starts out completely cold, mirroring roxagent immediately
+	// The cache starts out completely cold, mirroring roxagent immediately
 	// after boot in KubeVirt's namespace-isolated VSOCK mode, where the CA
-	// service does not exist until a real connection arrives. The fix under
-	// test is that the handshake itself - not any independent schedule -
+	// service does not exist until a real connection arrives. What's under
+	// test is that the handshake itself - not any independent warm-up -
 	// is what populates the cache.
 	serverCert := testServerCert(t)
 	clientCert := testLeafCert(t, caCert, caKey)
@@ -277,6 +219,10 @@ func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
 	assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
 }
 
+// TestCARefresher_Refresh proves that a stale cache is picked up and fully
+// rotated by the handshake path itself - there is no background loop left
+// to drive a second fetch, so ensureFreshPool being called from
+// GetConfigForClient during a real handshake is the only thing that can.
 func TestCARefresher_Refresh(t *testing.T) {
 	ca1PEM, ca1Cert, ca1Key := testCA(t)
 	ca2PEM, ca2Cert, ca2Key := testCA(t)
@@ -290,20 +236,26 @@ func TestCARefresher_Refresh(t *testing.T) {
 			}
 			return ca2PEM, nil
 		}),
-		WithRefreshInterval(20*time.Millisecond),
 	)
+	// Shorten the staleness threshold from its production default (1h) so
+	// the test doesn't have to wait that long to observe a refetch. Same
+	// package, so setting the field directly is fine; there's no exported
+	// option for this since nothing in production needs to configure it.
+	r.interval = 20 * time.Millisecond
 
-	ctx := t.Context()
-	go r.Start(ctx)
+	// Warm the cache with CA1 via a direct call.
+	_, err := r.ensureFreshPool(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, int32(1), callCount.Load())
 
-	require.Eventually(t, func() bool {
-		return callCount.Load() >= 2
-	}, time.Second, 10*time.Millisecond, "should have refreshed at least once")
+	// Let the cache go stale.
+	time.Sleep(30 * time.Millisecond)
 
-	// The second CA is now active.
+	// The second CA is now active, fetched by the handshake below.
 	serverCert := testServerCert(t)
 	clientCert := testLeafCert(t, ca2Cert, ca2Key)
 	doTLSHandshake(t, r, serverCert, clientCert)
+	assert.Equal(t, int32(2), callCount.Load(), "the stale handshake should have triggered exactly one refetch")
 
 	// The first CA was fully rotated out (not merely appended to): a
 	// refresher bug that unioned pools instead of replacing them would pass
@@ -312,6 +264,9 @@ func TestCARefresher_Refresh(t *testing.T) {
 	doTLSHandshakeFails(t, r, serverCert, oldClientCert)
 }
 
+// TestCARefresher_RefreshFailure_KeepsOldCA proves that a failed refetch,
+// triggered by a stale-cache handshake, falls back to the last known-good
+// CA rather than failing the handshake outright.
 func TestCARefresher_RefreshFailure_KeepsOldCA(t *testing.T) {
 	caPEM, caCert, caKey := testCA(t)
 
@@ -324,28 +279,30 @@ func TestCARefresher_RefreshFailure_KeepsOldCA(t *testing.T) {
 			}
 			return nil, assert.AnError
 		}),
-		WithRefreshInterval(20*time.Millisecond),
 	)
+	r.interval = 20 * time.Millisecond
 
-	ctx := t.Context()
-	go r.Start(ctx)
+	// Warm the cache with the original CA via a direct call.
+	_, err := r.ensureFreshPool(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, int32(1), callCount.Load())
 
-	require.Eventually(t, func() bool {
-		return callCount.Load() >= 2
-	}, time.Second, 10*time.Millisecond, "should have attempted a refresh past the initial fetch")
+	// Let the cache go stale so the next handshake attempts (and fails) a
+	// refetch.
+	time.Sleep(30 * time.Millisecond)
 
 	// Original CA should still work.
 	serverCert := testServerCert(t)
 	clientCert := testLeafCert(t, caCert, caKey)
 	doTLSHandshake(t, r, serverCert, clientCert)
+	assert.Equal(t, int32(2), callCount.Load(), "the stale handshake should have attempted a refetch")
 }
 
-// TestCARefresher_StaleCacheTriggersRefetchDuringHandshake covers rotation
-// picked up by the handshake path itself, as opposed to TestCARefresher_Refresh
-// (which covers the background loop). RunRefreshLoop/Start are deliberately
-// never invoked here, so the only thing that can possibly notice the cache
-// has gone stale and fetch a replacement is ensureFreshPool being called from
-// GetConfigForClient during a real handshake.
+// TestCARefresher_StaleCacheTriggersRefetchDuringHandshake proves the
+// minimal case: a stale cache is refetched by ensureFreshPool being called
+// from GetConfigForClient during a real handshake. TestCARefresher_Refresh
+// covers the same mechanism plus full CA rotation (old CA fully replaced,
+// not unioned with the new one).
 func TestCARefresher_StaleCacheTriggersRefetchDuringHandshake(t *testing.T) {
 	ca1PEM, _, _ := testCA(t)
 	ca2PEM, ca2Cert, ca2Key := testCA(t)
@@ -358,11 +315,10 @@ func TestCARefresher_StaleCacheTriggersRefetchDuringHandshake(t *testing.T) {
 			}
 			return ca2PEM, nil
 		}),
-		WithRefreshInterval(20*time.Millisecond),
 	)
+	r.interval = 20 * time.Millisecond
 
-	// Warm the cache with CA1 via a direct call, not Start, to keep the
-	// background loop out of the picture entirely.
+	// Warm the cache with CA1 via a direct call.
 	_, err := r.ensureFreshPool(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, int32(1), fetchCount.Load())

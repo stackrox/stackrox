@@ -26,16 +26,10 @@ const (
 	kubevirtCACID  = 2
 	kubevirtCAPort = 1
 
-	// defaultRefreshInterval is both the cadence of the best-effort
-	// background refresh and the staleness threshold that forces a
+	// defaultRefreshInterval is the staleness threshold that forces a
 	// handshake-triggered refetch (see CARefresher doc comment).
 	defaultRefreshInterval = 1 * time.Hour
 	defaultFetchTimeout    = 10 * time.Second
-
-	// Retry parameters for the initial CA fetch, to ride out transient
-	// failures such as virt-handler not yet being ready when the agent starts.
-	initialFetchMaxAttempts = 3
-	initialFetchBaseBackoff = 200 * time.Millisecond
 
 	// gRPC method for the KubeVirt System.CABundle RPC.
 	// Proto: kubevirt.io/kubevirt/pkg/vsock/system/v1/system.proto
@@ -168,13 +162,13 @@ func extractBundleRaw(data []byte) ([]byte, error) {
 //
 // KubeVirt's System.CABundle service is not always permanently available.
 // In VSOCK "global" mode it is: a single instance runs on CID 2/port 1 for
-// the lifetime of the node, and fetching on any schedule works fine. In
-// namespace-isolated ("local") mode - introduced by KubeVirt VEP 222, see
+// the lifetime of the node. In namespace-isolated ("local") mode -
+// introduced by KubeVirt VEP 222, see
 // https://github.com/kubevirt/enhancements/blob/main/veps/sig-compute/222-vsock-netns-vep/vsock-netns-vep.md#change-4-on-demand-vsock-ca-service
 // and merged in https://github.com/kubevirt/kubevirt/pull/18067 - the
 // service exists only for the duration of a single virt-handler
 // dial+handshake (see pkg/virt-handler/vsock/{dial,servers,refcount}.go in
-// kubevirt/kubevirt) and is torn down immediately after. A fetch on an
+// kubevirt/kubevirt) and is torn down immediately after. A fetch on any
 // independent schedule (a timer, or "once at startup") has no relationship
 // to that window and will, in practice, almost always miss it. The VEP
 // itself describes the intended fix: "This happens as part of the TLS
@@ -182,21 +176,17 @@ func extractBundleRaw(data []byte) ([]byte, error) {
 // guest is needed", i.e. the fetch belongs inside the handshake, not
 // alongside it.
 //
-// CARefresher's cache is therefore populated two ways:
-//   - Reactively (required for correctness in "local" mode): TLSConfig's
-//     GetConfigForClient callback calls ensureFreshPool, which fetches
-//     inline, synchronously, as part of the handshake itself - guaranteeing
-//     the fetch happens exactly when a window (if one is needed at all) is
-//     open, because the incoming connection *is* what opens it.
-//   - Proactively (a latency optimization, never required): RunRefreshLoop
-//     fetches on a fixed interval so that, in "global" mode, most handshakes
-//     can reuse an already-warm cache instead of paying a fetch on every
-//     single connection. Its failure is expected and harmless in "local"
-//     mode, where it can never succeed on its own schedule.
+// CARefresher's cache is therefore populated reactively, and only
+// reactively: TLSConfig's GetConfigForClient callback calls
+// ensureFreshPool, which fetches inline, synchronously, as part of the
+// handshake itself - guaranteeing the fetch happens exactly when a window
+// (if one is needed at all) is open, because the incoming connection *is*
+// what opens it. This works unchanged in "global" mode too, since the
+// service is always reachable there.
 //
-// Concurrent callers (handshake path and background loop, or multiple
-// simultaneous handshakes) are coalesced into a single underlying fetch via
-// coalescer, so a stampede never results in redundant dials to virt-handler.
+// Concurrent callers (e.g. multiple simultaneous handshakes) are coalesced
+// into a single underlying fetch via coalescer, so a stampede never results
+// in redundant dials to virt-handler.
 type CARefresher struct {
 	mu        sync.RWMutex
 	pool      *x509.CertPool
@@ -208,11 +198,12 @@ type CARefresher struct {
 	coalesce     *coalescer.Coalescer[*x509.CertPool]
 }
 
-// NewCARefresher creates a refresher with an empty cache. Call Start (or
-// TryInitialFetch/RunRefreshLoop directly) to begin warming it; the cache
-// also warms itself lazily on the first call to TLSConfig's
-// GetConfigForClient, so calling Start is an optimization, not a
-// requirement for correctness.
+// NewCARefresher creates a refresher with an empty cache. There is no
+// separate warm-up step: the cache warms itself lazily on the first call
+// to TLSConfig's GetConfigForClient. An independent fetch attempt ahead of
+// a real handshake would have no relationship to KubeVirt's on-demand CA
+// window in namespace-isolated VSOCK mode anyway, so it would just be
+// wasted effort - see the CARefresher doc comment.
 func NewCARefresher(opts ...CARefresherOption) *CARefresher {
 	r := &CARefresher{
 		interval:     defaultRefreshInterval,
@@ -229,14 +220,8 @@ func NewCARefresher(opts ...CARefresherOption) *CARefresher {
 // CARefresherOption configures the CARefresher.
 type CARefresherOption func(*CARefresher)
 
-// WithRefreshInterval sets the background refresh cadence and the
-// staleness threshold for handshake-triggered refetches.
-func WithRefreshInterval(d time.Duration) CARefresherOption {
-	return func(r *CARefresher) { r.interval = d }
-}
-
-// WithFetchTimeout bounds how long any single fetch attempt (background or
-// handshake-triggered) may take before giving up.
+// WithFetchTimeout bounds how long any single fetch attempt may take
+// before giving up.
 func WithFetchTimeout(d time.Duration) CARefresherOption {
 	return func(r *CARefresher) { r.fetchTimeout = d }
 }
@@ -244,71 +229,6 @@ func WithFetchTimeout(d time.Duration) CARefresherOption {
 // WithFetchFunc overrides the CA fetch function (for testing).
 func WithFetchFunc(f func(ctx context.Context) ([]byte, error)) CARefresherOption {
 	return func(r *CARefresher) { r.fetchCA = f }
-}
-
-// TryInitialFetch attempts to warm the cache once at startup, retrying a
-// bounded number of times with exponential backoff to ride out transient
-// failures (e.g. virt-handler not yet ready). This is a best-effort
-// warm-up, not a prerequisite: if every attempt fails - the expected
-// outcome in namespace-isolated VSOCK mode, where the CA service does not
-// exist until a real connection arrives - TLSConfig's GetConfigForClient
-// will populate the cache reactively on the first incoming handshake
-// instead. Callers should log the returned error, not treat it as fatal.
-func (r *CARefresher) TryInitialFetch(ctx context.Context) error {
-	var lastErr error
-	backoff := initialFetchBaseBackoff
-	for attempt := 1; attempt <= initialFetchMaxAttempts; attempt++ {
-		if _, err := r.ensureFreshPool(ctx); err != nil {
-			lastErr = err
-			if attempt < initialFetchMaxAttempts {
-				log.Warnf("Initial KubeVirt CA fetch attempt %d/%d failed: %v; retrying in %v",
-					attempt, initialFetchMaxAttempts, err, backoff)
-				select {
-				case <-ctx.Done():
-					return fmt.Errorf("initial CA fetch canceled after attempt %d/%d: %w",
-						attempt, initialFetchMaxAttempts, ctx.Err())
-				case <-time.After(backoff):
-				}
-				backoff *= 2
-			}
-			continue
-		}
-		return nil
-	}
-	return fmt.Errorf("initial CA fetch failed after %d attempts: %w", initialFetchMaxAttempts, lastErr)
-}
-
-// RunRefreshLoop periodically re-warms the cache in the background. Purely
-// a latency optimization (see CARefresher doc comment) - failures are
-// logged, not propagated, and are expected whenever the CA service isn't
-// independently reachable. Blocks until ctx is cancelled.
-func (r *CARefresher) RunRefreshLoop(ctx context.Context) {
-	ticker := time.NewTicker(r.interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if _, err := r.ensureFreshPool(ctx); err != nil {
-				log.Warnf("Best-effort periodic KubeVirt CA refresh failed (harmless: the next "+
-					"incoming connection will fetch on demand instead): %v", err)
-			}
-		}
-	}
-}
-
-// Start warms the cache (best-effort, see TryInitialFetch) and then runs
-// the periodic background refresh until ctx is cancelled. Safe to call even
-// if the initial warm-up fails entirely. Intended to be run in its own
-// goroutine by callers that don't want to block on it.
-func (r *CARefresher) Start(ctx context.Context) {
-	if err := r.TryInitialFetch(ctx); err != nil {
-		log.Warnf("Initial KubeVirt CA warm-up did not succeed; will fetch on demand "+
-			"during the first incoming TLS handshake instead: %v", err)
-	}
-	r.RunRefreshLoop(ctx)
 }
 
 // ensureFreshPool returns the cached CA pool if it is populated and not

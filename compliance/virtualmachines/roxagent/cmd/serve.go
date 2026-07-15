@@ -129,16 +129,11 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// TLS is mandatory: sensor always dials with TLS, so a plaintext agent is
 	// unreachable. The KubeVirt CA (served by virt-handler on CID 2, port 1)
 	// is fetched on demand, during each incoming handshake, whenever it
-	// isn't already cached — see CARefresher.TLSConfig. This is required,
-	// not just an optimization: in KubeVirt's namespace-isolated VSOCK mode
-	// the CA service exists only for the duration of an in-flight handshake,
-	// so it cannot be warmed up independently ahead of time. Start's
-	// best-effort warm-up below therefore has no error return and its
-	// failure must never block startup: it's purely a latency optimization
-	// for KubeVirt's "global" VSOCK mode, where the service is permanently
-	// available.
+	// isn't already cached — see CARefresher.TLSConfig.
+	// In KubeVirt's namespace-isolated VSOCK mode the CA service exists
+	// only for the duration of an in-flight handshake, so it cannot be
+	// warmed up independently ahead of time.
 	refresher := vsockserver.NewCARefresher(vsockserver.WithFetchTimeout(cfg.caFetchTimeout))
-	go refresher.Start(ctx)
 	serverCert, err := selfSignedCert()
 	if err != nil {
 		return fmt.Errorf("generating server certificate: %w", err)
