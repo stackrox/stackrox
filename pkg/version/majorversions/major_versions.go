@@ -1,6 +1,7 @@
 package majorversions
 
 import (
+	"cmp"
 	_ "embed"
 	"fmt"
 	"strconv"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,10 +23,6 @@ type XYVersion struct {
 
 func (v XYVersion) String() string {
 	return fmt.Sprintf("%d.%d", v.X, v.Y)
-}
-
-func (v XYVersion) semverString() string {
-	return fmt.Sprintf("v%d.%d.0", v.X, v.Y)
 }
 
 func parseXYVersion(s string) (XYVersion, error) {
@@ -59,8 +55,12 @@ type parsedBump struct {
 	To   XYVersion
 }
 
+// Compare returns -1 if v < other, 0 if equal, 1 if v > other.
 func (v XYVersion) Compare(other XYVersion) int {
-	return semver.Compare(v.semverString(), other.semverString())
+	if c := cmp.Compare(v.X, other.X); c != 0 {
+		return c
+	}
+	return cmp.Compare(v.Y, other.Y)
 }
 
 var parsedBumps []parsedBump
