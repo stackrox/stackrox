@@ -1,0 +1,17 @@
+# Placeholder. This file exists on the default branch so that when the real
+# pull_request-triggered content lands (see PR #21721), GHA can evaluate it as
+# a modification to an existing workflow file rather than a brand-new one —
+# GHA does not run pull_request-triggered workflows defined in files that
+# don't yet exist on the base branch. Do not add a pull_request trigger here;
+# leave that to the PR that replaces this placeholder.
+name: PR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-slim
+    steps:
+    - name: No-op
+      run: echo "Placeholder for the pr.yaml orchestrating workflow. See PR #21721."
