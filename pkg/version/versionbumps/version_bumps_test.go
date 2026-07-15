@@ -53,7 +53,7 @@ bumps:
     to: "4.0"
   - from: "3.99"
     to: "4.0"`,
-			wantErr: "duplicate 'to' major 4",
+			wantErr: "overlapping ranges",
 		},
 		"duplicate from major": {
 			input: `
@@ -62,7 +62,7 @@ bumps:
     to: "4.0"
   - from: "3.99"
     to: "5.0"`,
-			wantErr: "duplicate 'from' major 3",
+			wantErr: "overlapping ranges",
 		},
 		"overlapping ranges: containment": {
 			input: `

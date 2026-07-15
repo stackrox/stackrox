@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -81,8 +80,6 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	if err := yaml.Unmarshal(data, &f); err != nil {
 		return nil, err
 	}
-	var seenTo set.IntSet
-	var seenFrom set.IntSet
 	var result []parsedBump
 	for _, b := range f.Bumps {
 		from, err := parseXYVersion(b.From)
@@ -98,12 +95,6 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 		}
 		if from.Compare(to) >= 0 {
 			return nil, fmt.Errorf("'from' %s must be less than 'to' %s", from, to)
-		}
-		if !seenTo.Add(to.X) {
-			return nil, fmt.Errorf("duplicate 'to' major %d in major_version_bumps.yaml", to.X)
-		}
-		if !seenFrom.Add(from.X) {
-			return nil, fmt.Errorf("duplicate 'from' major %d in major_version_bumps.yaml", from.X)
 		}
 		result = append(result, parsedBump{From: from, To: to})
 	}
