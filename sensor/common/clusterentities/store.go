@@ -316,18 +316,14 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	epPublicIPs := e.endpointsStore.Apply(updates, incremental)
 	ipPublicIPs := e.podIPsStore.Apply(updates, incremental)
 
-	if len(epPublicIPs) > 0 || len(ipPublicIPs) > 0 {
-		allPublicIPs := epPublicIPs
-		if len(ipPublicIPs) > 0 {
-			if allPublicIPs == nil {
-				allPublicIPs = ipPublicIPs
-			} else {
-				for ip := range ipPublicIPs {
-					allPublicIPs.Add(ip)
-				}
-			}
+	if epPublicIPs != nil || ipPublicIPs != nil {
+		if epPublicIPs == nil {
+			epPublicIPs = e.endpointsStore.PublicIPs()
 		}
-		e.updatePublicIPRefs(allPublicIPs)
+		if ipPublicIPs == nil {
+			ipPublicIPs = e.podIPsStore.PublicIPs()
+		}
+		e.updatePublicIPRefs(epPublicIPs.Union(ipPublicIPs))
 	}
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
@@ -338,32 +334,7 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 
 // currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
 func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
-	s := set.NewSet[net.IPAddress]()
-	concurrency.WithRLock(&e.endpointsStore.mutex, func() {
-		for endpoint := range e.endpointsStore.endpointMap {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-		for endpoint := range e.endpointsStore.historicalEndpoints {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-	})
-	concurrency.WithRLock(&e.podIPsStore.mutex, func() {
-		for address := range e.podIPsStore.ipMap {
-			if address.IsPublic() {
-				s.Add(address)
-			}
-		}
-		for address := range e.podIPsStore.historicalIPs {
-			if address.IsPublic() {
-				s.Add(address)
-			}
-		}
-	})
-	return s
+	return e.endpointsStore.PublicIPs().Union(e.podIPsStore.PublicIPs())
 }
 
 var slowRecordTickLogThreshold = env.ClusterEntitiesSlowRecordTickLogThreshold.DurationSetting()

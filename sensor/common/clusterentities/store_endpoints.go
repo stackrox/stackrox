@@ -109,7 +109,7 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 	if !incremental {
 		return e.replaceNoLock(updates)
 	}
-	touchedPublic := false
+	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
 			continue
@@ -126,7 +126,7 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 }
 
 func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) set.Set[net.IPAddress] {
-	touchedPublic := false
+	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
 			// Must check before purge: purgeNoLock deletes reverseEndpointMap[deploymentID].
@@ -166,6 +166,12 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) set.Set[n
 		return e.collectPublicIPsNoLock()
 	}
 	return nil
+}
+
+func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.collectPublicIPsNoLock()
 }
 
 func (e *endpointsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
