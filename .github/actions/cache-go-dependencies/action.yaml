@@ -100,40 +100,28 @@ runs:
         # stabilisation, git checkout sets all mtimes to wall-clock time, which
         # varies between runners and causes every module index lookup to miss.
         #
-        # Set each .go file's mtime to the timestamp of the commit that last
-        # modified it, so the mtime reflects actual modification history:
-        # same content across runs → same commit → same mtime → cache hit.
-        # Changed content → new commit → different mtime → index miss → re-parse.
-        #
-        # A shallow checkout (the GHA default) has no local parent for its
-        # boundary commit, so git treats it as a root commit and reports every
-        # tracked file as newly "Added" there — collapsing every file to one
-        # shared timestamp. Unshallow first (blobless, so it's cheap: commit
-        # and tree objects only, no file contents) so history walks correctly.
-        if [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
-          git fetch --quiet --unshallow --filter=blob:none
-        fi
-        # -m makes git log also diff merge commits against each parent, so a
-        # file whose content in a merge differs from both parents (a genuine
-        # conflict-resolution edit, not merely inherited from one side) gets
-        # attributed to the merge commit's own timestamp — otherwise merge
-        # commits are skipped entirely and such files silently keep a stale,
-        # pre-merge timestamp despite have different current content.
-        #
-        # --diff-filter=ACMR adds R (renames) to the default ACM: a renamed
-        # file is reported as R, not A, so without R a renamed path never
-        # gets a stabilized mtime and permanently falls back to checkout
-        # wall-clock time (unstable across runners).
-        git log -m --format='%ct' --name-only --diff-filter=ACMR -- '*.go' | perl -lne '
-            /^\d+$/ ? ($ts = $_) : ($ts && !$seen{$_}++ && -f $_ && utime $ts, $ts, $_)
-        '
-        # Directories have no per-commit timestamp of their own; a fixed
-        # constant is fine since GOCACHE only inspects file mtimes.
+        # Set every .go file's mtime to the CHECKED-OUT commit's own timestamp
+        # (one value for the whole tree, not per-file history): same commit
+        # across runs → same mtime → cache hit. Any new commit → new mtime →
+        # full re-parse. Re-parsing is cheap (import-list syntax only, not
+        # type-checking/compilation — that's cached separately by content hash
+        # in the build cache and unaffected by mtime), so invalidating the
+        # whole tree on any commit is an acceptable trade for a script that:
+        #   - needs no history walk, so shallow checkouts (the GHA default for
+        #     most jobs) work with zero extra cost — no unshallow required
+        #   - never diffs per-commit, so merge commits (which git log skips by
+        #     default) and renames (excluded from the default diff filter)
+        #     need no special-casing — there is nothing to skip
+        ts=$(git log -1 --format='%ct')
+        git ls-files -- '*.go' | xargs -r touch -d "@$ts"
+        # Directories have no content of their own; the same fixed constant
+        # is fine since GOCACHE only inspects file mtimes.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
 
-    # VERIFY BRANCH ONLY: diagnostic visibility for testing the shallow-checkout
-    # fix. Strip before porting this action.yaml back to the real fix PR.
+    # VERIFY BRANCH ONLY: diagnostic visibility. Strip before porting this
+    # action.yaml back to the real fix PR. Expect exactly 1 distinct mtime
+    # now (whole-tree stamping), regardless of shallow vs full checkout.
     - name: "[diagnostic] count distinct .go mtimes"
       run: |
         distinct=$(git ls-files -- '*.go' | xargs stat -c '%Y' | sort -u | wc -l)
