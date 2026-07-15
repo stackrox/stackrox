@@ -10,10 +10,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -30,6 +33,8 @@ type commandHandlerImpl struct {
 
 	stopper          concurrency.Stopper
 	centralReachable atomic.Bool
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -40,7 +45,29 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return c.updates
 }
 
+func (c *commandHandlerImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil
+}
+
 func (c *commandHandlerImpl) Start() error {
+	if c.pubSubEnabled() {
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceCommandHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			c.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance command handler sensor online consumer")
+		}
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceCommandHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			c.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance command handler sensor offline consumer")
+		}
+	}
 	go c.run()
 	return nil
 }
@@ -53,8 +80,29 @@ func (c *commandHandlerImpl) Stop() {
 	c.stopper.Client().Stop()
 }
 
+func (c *commandHandlerImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.centralReachable.Store(true)
+	return nil
+}
+
+func (c *commandHandlerImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.centralReachable.Store(false)
+	return nil
+}
+
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if c.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReachable.Store(true)

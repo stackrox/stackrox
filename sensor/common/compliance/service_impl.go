@@ -22,8 +22,10 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
@@ -56,8 +58,33 @@ func (s *serviceImpl) Name() string {
 	return "compliance.serviceImpl"
 }
 
+func (s *serviceImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil
+}
+
+func (s *serviceImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	s.offlineMode.Store(false)
+	return nil
+}
+
+func (s *serviceImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	s.offlineMode.Store(true)
+	return nil
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if s.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.offlineMode.Store(false)
@@ -67,6 +94,24 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (s *serviceImpl) Start() error {
+	if s.pubSubEnabled() {
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceServiceSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			s.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance service sensor online consumer")
+		}
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceServiceSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			s.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance service sensor offline consumer")
+		}
+	}
 	return nil
 }
 

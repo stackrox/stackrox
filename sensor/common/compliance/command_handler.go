@@ -18,7 +18,7 @@ type CommandHandler interface {
 }
 
 // NewCommandHandler returns a new instance of a CommandHandler using the input image and Orchestrator.
-func NewCommandHandler(complianceService Service) CommandHandler {
+func NewCommandHandler(complianceService Service, pubSubDispatcher common.PubSubDispatcher) CommandHandler {
 	return &commandHandlerImpl{
 		service: complianceService,
 
@@ -29,5 +29,6 @@ func NewCommandHandler(complianceService Service) CommandHandler {
 
 		stopper:          concurrency.NewStopper(),
 		centralReachable: atomic.Bool{},
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }
