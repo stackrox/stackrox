@@ -51,7 +51,7 @@ jobs:
       id: gke
       uses: ./.github/actions/create-gke-cluster
       with:
-        cluster-name: e2e-opbr-${{ github.run_attempt }}
+        cluster-name: e2e-opbr-${{ github.run_id }}-${{ github.run_attempt }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Build roxctl
