@@ -1949,6 +1949,34 @@
             ]
           },
           {
+            "name": "SensorVersionCompatibility",
+            "enum_fields": [
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN"
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_MATCHED",
+                "integer": 1
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND",
+                "integer": 2
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD",
+                "integer": 3
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND",
+                "integer": 4
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD",
+                "integer": 5
+              }
+            ]
+          },
+          {
             "name": "ClusterUpgradeStatus.Upgradability",
             "enum_fields": [
               {
@@ -2625,6 +2653,11 @@
                 "id": 6,
                 "name": "cert_expiry_status",
                 "type": "ClusterCertExpiryStatus"
+              },
+              {
+                "id": 7,
+                "name": "sensor_version_compatibility",
+                "type": "SensorVersionCompatibility"
               }
             ]
           },
