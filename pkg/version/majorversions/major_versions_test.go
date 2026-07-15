@@ -1,6 +1,8 @@
 package majorversions
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,18 +15,48 @@ func TestMustParseBumpsDataPanicsOnInvalidInput(t *testing.T) {
 	})
 }
 
+func formatBumps(bumps []parsedBump) string {
+	parts := make([]string, 0, len(bumps))
+	for _, b := range bumps {
+		parts = append(parts, fmt.Sprintf("%s->%s", b.From, b.To))
+	}
+	return strings.Join(parts, ";")
+}
+
 func TestParseBumpsData(t *testing.T) {
 	tests := map[string]struct {
 		input   string
+		want    string
 		wantErr string
 	}{
-		"valid": {
-			input: `bumps:
+		"valid single": {
+			input: `
+bumps:
   - from: "3.74"
     to: "4.0"`,
+			want: "3.74->4.0",
+		},
+		"valid multiple sorted": {
+			input: `
+bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"`,
+			want: "3.74->4.0;4.11->5.0",
+		},
+		"valid multiple unsorted": {
+			input: `
+bumps:
+  - from: "4.11"
+    to: "5.0"
+  - from: "3.74"
+    to: "4.0"`,
+			want: "3.74->4.0;4.11->5.0",
 		},
 		"duplicate to major": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "4.0"
   - from: "3.99"
@@ -32,7 +64,8 @@ func TestParseBumpsData(t *testing.T) {
 			wantErr: "duplicate 'to' major 4",
 		},
 		"duplicate from major": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "4.0"
   - from: "3.99"
@@ -40,7 +73,8 @@ func TestParseBumpsData(t *testing.T) {
 			wantErr: "duplicate 'from' major 3",
 		},
 		"overlapping ranges: containment": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "4.11"
     to: "5.0"
   - from: "3.74"
@@ -48,7 +82,8 @@ func TestParseBumpsData(t *testing.T) {
 			wantErr: "overlapping ranges",
 		},
 		"overlapping ranges: containment reversed input": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "6.0"
   - from: "4.11"
@@ -56,7 +91,8 @@ func TestParseBumpsData(t *testing.T) {
 			wantErr: "overlapping ranges",
 		},
 		"overlapping ranges: partial": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "5.0"
   - from: "4.11"
@@ -64,37 +100,43 @@ func TestParseBumpsData(t *testing.T) {
 			wantErr: "overlapping ranges",
 		},
 		"from must be less than to": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "5.0"
     to: "4.0"`,
 			wantErr: "'from' 5.0 must be less than 'to' 4.0",
 		},
 		"to minor must be zero": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "4.5"`,
 			wantErr: "'to' value \"4.5\" must have minor version 0",
 		},
 		"rejects x.y.z from": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74.0"
     to: "4.0"`,
 			wantErr: "invalid 'from' value",
 		},
 		"rejects x.y.z-suffix from": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74.x-nightly-20230224"
     to: "4.0"`,
 			wantErr: "invalid 'from' value",
 		},
 		"invalid from": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "bad"
     to: "4.0"`,
 			wantErr: "invalid 'from' value",
 		},
 		"invalid to": {
-			input: `bumps:
+			input: `
+bumps:
   - from: "3.74"
     to: "nope"`,
 			wantErr: "invalid 'to' value",
@@ -107,12 +149,13 @@ func TestParseBumpsData(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			_, err := parseBumpsData([]byte(tt.input))
+			result, err := parseBumpsData([]byte(tt.input))
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
 				return
 			}
 			require.NoError(t, err)
+			assert.Equal(t, tt.want, formatBumps(result))
 		})
 	}
 }
