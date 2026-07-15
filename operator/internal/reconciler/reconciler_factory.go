@@ -94,6 +94,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 				return confighash.NewPodTemplateAnnotationPostRenderer(kubeClient, obj, renderCache)
 			},
 		),
+		client.WithFailureRollbacks(false),
 	}
 
 	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)
