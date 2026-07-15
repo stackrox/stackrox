@@ -246,3 +246,128 @@ func TestEntityData_GetPodIPs(t *testing.T) {
 		})
 	}
 }
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPListenerConditionalUpdate() {
+	tests := map[string]struct {
+		setup    func(store *Store)
+		action   func(store *Store)
+		expected []string
+	}{
+		"private-only incremental add should not trigger listener": {
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont1", 80),
+				}, true)
+			},
+			expected: nil,
+		},
+		"public IP incremental add should trigger listener": {
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("34.118.224.226", "cont1", 80),
+				}, true)
+			},
+			expected: []string{"34.118.224.226"},
+		},
+		"public IP non-incremental replace should trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("1.1.1.1", "cont2", 80),
+				}, false)
+			},
+			// 8.8.8.8 moved to history, 1.1.1.1 added to current
+			expected: []string{"1.1.1.1", "8.8.8.8"},
+		},
+		"public IP removal via delete should trigger listener": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("", "", 0),
+				}, false)
+			},
+			// 8.8.8.8 moved to history (memorySize=1), still present
+			expected: []string{"8.8.8.8"},
+		},
+		"mixed private and public should report only public": {
+			action: func(store *Store) {
+				ed := &EntityData{}
+				ep1 := buildEndpoint("10.0.0.1", 80)
+				ed.AddEndpoint(ep1, EndpointTargetInfo{ContainerPort: 80})
+				ed.AddIP(ep1.IPAndPort.Address)
+				ep2 := buildEndpoint("8.8.8.8", 443)
+				ed.AddEndpoint(ep2, EndpointTargetInfo{ContainerPort: 443})
+				ed.AddIP(ep2.IPAndPort.Address)
+				store.Apply(map[string]*EntityData{"depl1": ed}, true)
+			},
+			expected: []string{"8.8.8.8"},
+		},
+		"replacing public with private should still show history": {
+			setup: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+				}, true)
+			},
+			action: func(store *Store) {
+				store.Apply(map[string]*EntityData{
+					"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+				}, false)
+			},
+			// 8.8.8.8 moved to history (memorySize=1), still present
+			expected: []string{"8.8.8.8"},
+		},
+	}
+
+	for name, tc := range tests {
+		s.Run(name, func() {
+			store := NewStore(1, nil, false)
+			listener := newTestPublicIPsListener(s.T())
+			store.RegisterPublicIPsListener(listener)
+			defer store.UnregisterPublicIPsListener(listener)
+
+			if tc.setup != nil {
+				tc.setup(store)
+			}
+			tc.action(store)
+
+			if tc.expected == nil {
+				s.Empty(listener.data, "expected no public IPs")
+			} else {
+				s.Equal(len(tc.expected), listener.data.Cardinality(), "wrong number of public IPs")
+				for _, ip := range tc.expected {
+					s.True(listener.data.Contains(net.ParseIP(ip)), "missing expected IP %s", ip)
+				}
+			}
+		})
+	}
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPHistoryExpiry() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	// Replace with private — public IP moves to history
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "should still be in history")
+
+	// Tick expires history (memorySize=1 means 1 tick to expire)
+	store.RecordTick()
+	s.Empty(listener.data, "history should have expired after tick")
+}
