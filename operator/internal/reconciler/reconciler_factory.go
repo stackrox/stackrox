@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/postrender"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -94,6 +95,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 				return confighash.NewPodTemplateAnnotationPostRenderer(kubeClient, obj, renderCache)
 			},
 		),
+		client.AppendUpgradeFailureRollbackOptions(DisableForceOnRollback),
 	}
 
 	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)
@@ -124,6 +126,31 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 	if err := r.SetupWithManager(mgr); err != nil {
 		return errors.Wrapf(err, "unable to setup %s reconciler", gvk)
 	}
+	return nil
+}
+
+// DisableForceOnRollback overrides the helm-operator's hardcoded rollback.Force=true
+// which causes Helm to replace resources (PUT) instead of patching them.
+//
+// The default Force=true setting breaks rollback for immutable resources like PVCs,
+// leading to an infinite reconcile loop of the form
+//
+//	   trigger reconciliation
+//	-> failure
+//	-> trigger rollback
+//	-> failure
+//	-> back to square one.
+//
+// on reconciliation failures.
+//
+// With Force=false, no PUT is used to rollback resources, instead a diff between
+// the resource versions is computed and, if non-empty, patched during rollback.
+//
+// For (mostly) immutable resources, such das PVCs, the Force=false setting restores
+// rollback functionality -- as long as there is no subtantial diff between the
+// resources versions.
+func DisableForceOnRollback(rollback *action.Rollback) error {
+	rollback.Force = false
 	return nil
 }
 
