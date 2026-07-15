@@ -8,12 +8,15 @@ import (
 	"sync/atomic"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/events"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"google.golang.org/grpc/codes"
 )
 
@@ -29,22 +32,70 @@ var (
 type Handler struct {
 	centralClient    *http.Client
 	centralReachable atomic.Bool
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 // NewDefinitionsHandler creates a new scanner definitions handler.
-func NewDefinitionsHandler(centralEndpoint string, centralCertificates []*x509.Certificate) (*Handler, error) {
+func NewDefinitionsHandler(centralEndpoint string, centralCertificates []*x509.Certificate, pubSubDispatcher common.PubSubDispatcher) (*Handler, error) {
 	client, err := centralclient.AuthenticatedCentralHTTPClient(centralEndpoint, centralCertificates)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
-	return &Handler{
-		centralClient: client,
-	}, nil
+	h := &Handler{
+		centralClient:    client,
+		pubSubDispatcher: pubSubDispatcher,
+	}
+	if h.pubSubEnabled() {
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ScannerDefinitionsHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			h.handleSensorOnlineEvent,
+		); err != nil {
+			return nil, errors.Wrap(err, "failed to register scanner definitions handler sensor online consumer")
+		}
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ScannerDefinitionsHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			h.handleSensorOfflineEvent,
+		); err != nil {
+			return nil, errors.Wrap(err, "failed to register scanner definitions handler sensor offline consumer")
+		}
+	}
+	return h, nil
+}
+
+func (h *Handler) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && h.pubSubDispatcher != nil
+}
+
+func (h *Handler) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(true)
+	return nil
+}
+
+func (h *Handler) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(false)
+	return nil
 }
 
 // Notify reacts to sensor going into online/offline mode.
 func (h *Handler) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "Scanner definitions handler"))
+	if h.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in
+		// NewDefinitionsHandler().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)

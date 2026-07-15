@@ -244,7 +244,7 @@ func (s *Sensor) Start() {
 		}
 		customRoutes = append(customRoutes, *route)
 
-		s.AddNotifiable(scannerclient.ResetNotifiable())
+		s.AddNotifiable(scannerclient.ResetNotifiable(s.pubSubDispatcher))
 	}
 
 	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
@@ -320,7 +320,7 @@ func (s *Sensor) Start() {
 // newScannerDefinitionsRoute returns a custom route that serves scanner
 // definitions retrieved from Central.
 func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCertificates []*x509.Certificate) (*routes.CustomRoute, error) {
-	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates)
+	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates, s.pubSubDispatcher)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating scanner definitions handler")
 	}
