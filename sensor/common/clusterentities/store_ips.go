@@ -87,15 +87,15 @@ func (e *podIPsStore) RecordTick() bool {
 	return removedPublic
 }
 
-// Apply processes pod IP updates and reports whether any public IP was involved,
-// so the caller can decide whether to refresh the public IP listener.
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) (touchedPublic bool) {
+// Apply processes pod IP updates and returns all currently stored public IPs
+// if the update touched any public IP, or nil otherwise.
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	return e.applyNoLock(updates, incremental)
 }
 
-func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
+func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
 	defer e.updateMetricsNoLock()
 	touchedPublic := false
 	if !incremental {
@@ -116,7 +116,25 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
-	return touchedPublic
+	if touchedPublic {
+		return e.collectPublicIPsNoLock()
+	}
+	return nil
+}
+
+func (e *podIPsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
+	s := set.NewSet[net.IPAddress]()
+	for address := range e.ipMap {
+		if address.IsPublic() {
+			s.Add(address)
+		}
+	}
+	for address := range e.historicalIPs {
+		if address.IsPublic() {
+			s.Add(address)
+		}
+	}
+	return s
 }
 
 func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) {

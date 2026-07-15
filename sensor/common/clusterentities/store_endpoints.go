@@ -96,16 +96,15 @@ func (e *endpointsStore) RecordTick() bool {
 	return removedPublic
 }
 
-// Apply processes endpoint updates and reports whether any public IP was involved,
-// so the caller can decide whether to refresh the public IP listener.
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) (touchedPublic bool) {
+// Apply processes endpoint updates and returns all currently stored public IPs
+// if the update touched any public IP, or nil otherwise.
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
-	touchedPublic = e.applyNoLock(updates, incremental)
-	return touchedPublic
+	return e.applyNoLock(updates, incremental)
 }
 
-func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
+func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
 	defer e.updateMetricsNoLock()
 	if !incremental {
 		return e.replaceNoLock(updates)
@@ -120,10 +119,13 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 			touchedPublic = containsPublicEndpoint(data.endpoints)
 		}
 	}
-	return touchedPublic
+	if touchedPublic {
+		return e.collectPublicIPsNoLock()
+	}
+	return nil
 }
 
-func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) set.Set[net.IPAddress] {
 	touchedPublic := false
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
@@ -160,7 +162,25 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 			}
 		}
 	}
-	return touchedPublic
+	if touchedPublic {
+		return e.collectPublicIPsNoLock()
+	}
+	return nil
+}
+
+func (e *endpointsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
+	s := set.NewSet[net.IPAddress]()
+	for endpoint := range e.endpointMap {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
+		}
+	}
+	for endpoint := range e.historicalEndpoints {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
+		}
+	}
+	return s
 }
 
 // diffReplaceNoLock applies an endpoint update by computing a per-endpoint diff
