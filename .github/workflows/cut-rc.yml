@@ -331,7 +331,7 @@ jobs:
     name: Setup demo clusters
     secrets: inherit
     needs: [variables, cut-rc, trim-cluster-names]
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@4efb76aa74694b9ee55e95c4ead57fdf50d79ddf # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||
