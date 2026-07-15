@@ -291,7 +291,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 }
 
 func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl {
-	updaterComponent := NewUpdater(s.client, interval)
+	updaterComponent := NewUpdater(s.client, interval, nil)
 	updater, ok := updaterComponent.(*updaterImpl)
 	s.Require().True(ok, "NewUpdater should return a struct of type *updaterImpl")
 	return updater
@@ -310,7 +310,7 @@ func (s *UpdaterTestSuite) assertOfflineMode(updater *updaterImpl, ticker chan<-
 
 func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo {
 	timer := time.NewTimer(updateTimeout)
-	updater := NewUpdater(s.client, updateInterval)
+	updater := NewUpdater(s.client, updateInterval, nil)
 
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	err := updater.Start()

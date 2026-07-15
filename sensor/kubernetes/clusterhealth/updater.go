@@ -19,7 +19,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -56,13 +58,37 @@ type updaterImpl struct {
 	ctxMutex       sync.Mutex
 	pipelineCtx    context.Context
 	cancelCtx      context.CancelFunc
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (u *updaterImpl) Name() string {
 	return "clusterhealth.updaterImpl"
 }
 
+func (u *updaterImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && u.pubSubDispatcher != nil
+}
+
 func (u *updaterImpl) Start() error {
+	if u.pubSubEnabled() {
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterHealthUpdaterSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			u.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster health updater sensor online consumer")
+		}
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterHealthUpdaterSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			u.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster health updater sensor offline consumer")
+		}
+	}
 	go u.run(u.updateTicker.C)
 	return nil
 }
@@ -72,8 +98,30 @@ func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
 }
 
+func (u *updaterImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	u.resetContext()
+	u.updateTicker.Reset(u.updateInterval)
+	return nil
+}
+
+func (u *updaterImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	u.updateTicker.Stop()
+	return nil
+}
+
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if u.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		u.resetContext()
@@ -263,7 +311,7 @@ func (u *updaterImpl) ctx() context.Context {
 
 // NewUpdater returns a new ready-to-use updater.
 // updateInterval is optional argument, default 30 seconds interval is used.
-func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) common.SensorComponent {
+func NewUpdater(client kubernetes.Interface, updateInterval time.Duration, pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
 	interval := updateInterval
 	if interval == 0 {
 		interval = defaultInterval
@@ -271,11 +319,12 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 	updateTicker := time.NewTicker(interval)
 	updateTicker.Stop()
 	return &updaterImpl{
-		client:         client,
-		updates:        make(chan *message.ExpiringMessage),
-		stopSig:        concurrency.NewSignal(),
-		updateInterval: interval,
-		namespace:      pods.GetPodNamespace(),
-		updateTicker:   updateTicker,
+		client:           client,
+		updates:          make(chan *message.ExpiringMessage),
+		stopSig:          concurrency.NewSignal(),
+		updateInterval:   interval,
+		namespace:        pods.GetPodNamespace(),
+		updateTicker:     updateTicker,
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }

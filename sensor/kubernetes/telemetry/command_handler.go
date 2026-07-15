@@ -16,13 +16,16 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
@@ -50,10 +53,16 @@ type commandHandler struct {
 
 	pendingContextCancels      map[string]context.CancelFunc
 	pendingContextCancelsMutex sync.Mutex
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (h *commandHandler) Name() string {
 	return "telemetry.commandHandler"
+}
+
+func (h *commandHandler) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && h.pubSubDispatcher != nil
 }
 
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
@@ -67,16 +76,17 @@ func RegisterDiagnosticConfigurationFunc(fn DiagnosticConfigurationFunc) {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler(client kubernetes.Interface, provider store.Provider) common.SensorComponent {
-	return newCommandHandler(client, provider)
+func NewCommandHandler(client kubernetes.Interface, provider store.Provider, pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
+	return newCommandHandler(client, provider, pubSubDispatcher)
 }
 
-func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider) *commandHandler {
+func newCommandHandler(k8sClient kubernetes.Interface, provider store.Provider, pubSubDispatcher common.PubSubDispatcher) *commandHandler {
 	return &commandHandler{
 		responsesC:            make(chan *message.ExpiringMessage),
 		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, provider.Deployments()),
 		stopSig:               concurrency.NewErrorSignal(),
 		pendingContextCancels: make(map[string]context.CancelFunc),
+		pubSubDispatcher:      pubSubDispatcher,
 	}
 }
 
@@ -91,6 +101,24 @@ func makeChunk(chunk []byte) *central.TelemetryResponsePayload {
 }
 
 func (h *commandHandler) Start() error {
+	if h.pubSubEnabled() {
+		if err := h.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.TelemetryCommandHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			h.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register telemetry command handler sensor online consumer")
+		}
+		if err := h.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.TelemetryCommandHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			h.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register telemetry command handler sensor offline consumer")
+		}
+	}
 	return nil
 }
 
@@ -98,8 +126,30 @@ func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
 
+func (h *commandHandler) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(true)
+	return nil
+}
+
+func (h *commandHandler) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(false)
+	h.cancelPendingRequests()
+	return nil
+}
+
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if h.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)

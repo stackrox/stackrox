@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deploymentenvs"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
@@ -22,7 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,14 +57,38 @@ type updaterImpl struct {
 	// This function is needed to be able to mock in test
 	getProviders                     func(context.Context) *storage.ProviderMetadata
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (u *updaterImpl) Name() string {
 	return "clusterstatus.updaterImpl"
 }
 
+func (u *updaterImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && u.pubSubDispatcher != nil
+}
+
 func (u *updaterImpl) Start() error {
-	// We don't do anything on Start, run will be called when Central is reachable.
+	if u.pubSubEnabled() {
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterStatusUpdaterSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			u.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster status updater sensor online consumer")
+		}
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterStatusUpdaterSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			u.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster status updater sensor offline consumer")
+		}
+	}
+	// We don't do anything else on Start, run will be called when Central is reachable.
 	return nil
 }
 
@@ -69,8 +96,34 @@ func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
 }
 
+func (u *updaterImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if u.offlineMode.CompareAndSwap(true, false) {
+		u.createContext()
+		go u.run()
+	}
+	return nil
+}
+
+func (u *updaterImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if u.offlineMode.CompareAndSwap(false, true) {
+		u.cancelCurrentContext()
+	}
+	return nil
+}
+
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if u.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		if u.offlineMode.CompareAndSwap(true, false) {
@@ -321,7 +374,7 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 }
 
 // NewUpdater returns a new ready-to-use updater.
-func NewUpdater(client client.Interface) common.SensorComponent {
+func NewUpdater(client client.Interface, pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &updaterImpl{
@@ -332,5 +385,6 @@ func NewUpdater(client client.Interface) common.SensorComponent {
 		offlineMode:                      offlineMode,
 		getProviders:                     providers.GetMetadata,
 		getProviderMetadataFromOpenShift: getProviderMetadataFromOpenShiftConfig,
+		pubSubDispatcher:                 pubSubDispatcher,
 	}
 }
