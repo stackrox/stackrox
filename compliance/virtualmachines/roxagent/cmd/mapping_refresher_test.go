@@ -84,12 +84,7 @@ func TestMappingRefresher_FetchOnce(t *testing.T) {
 
 			err := m.fetchOnce(ctx)
 			require.ErrorIs(t, err, context.Canceled)
-			// retry.WithRetry always makes one more fetchFn call right
-			// after a BetweenAttempts-observed cancellation (see
-			// fetchOnce's doc comment) before its own next-iteration
-			// check catches ctx being done, so 2 calls - not 1 - is
-			// exactly the expected, harmless outcome here.
-			assert.Equal(t, 2, calls, "should not attempt a second retry beyond the one already in flight when ctx is cancelled")
+			assert.Equal(t, 1, calls, "should not attempt a retry once ctx is observed cancelled during backoff")
 		})
 	})
 }

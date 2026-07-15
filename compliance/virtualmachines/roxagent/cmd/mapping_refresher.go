@@ -74,11 +74,9 @@ func newMappingRefresher(url, cachePath string) *mappingRefresher {
 // The backoff wait is done in BetweenAttempts, via a ctx-aware select,
 // rather than via retry.WithExponentialBackoff's plain time.Sleep, so a
 // cancellation during the wait is honored immediately instead of only
-// after the full backoff elapses. One consequence: if ctx is cancelled
-// during that wait, retry.WithRetry still makes one more (fast, guaranteed
-// to fail) fetchFn call before its own next-iteration check catches the
-// cancellation - retry.WithRetry has no hook to skip a retry already in
-// flight when cancellation is observed between attempts.
+// after the full backoff elapses: retry.WithRetry re-checks ctx right
+// after BetweenAttempts returns, so a cancellation observed there stops
+// the loop without a further fetchFn call.
 func (m *mappingRefresher) fetchOnce(ctx context.Context) error {
 	attempt := 0
 	backoff := mappingFetchBaseBackoff
