@@ -39,7 +39,40 @@ func loadAllConfigs() ([]EndpointConfig, error) {
 
 	allEndpointCfgs = append(allEndpointCfgs, cfg.Endpoints...)
 
-	return allEndpointCfgs, nil
+	return enrichOpenShiftMonitoringEndpointConfig(allEndpointCfgs), nil
+}
+
+func enrichOpenShiftMonitoringEndpointConfig(cfgs []EndpointConfig) []EndpointConfig {
+	if !tlsconfig.APIMonitoringConfigured() {
+		return cfgs
+	}
+
+	for i := range cfgs {
+		if cfgs[i].Listen != publicAPIEndpoint {
+			continue
+		}
+		tlsCfg := cfgs[i].TLS
+		if tlsCfg == nil || tlsCfg.Disable {
+			continue
+		}
+
+		tlsCfg.ServerCerts = append(tlsCfg.ServerCerts, "monitoring")
+
+		clientAuth := tlsCfg.ClientAuth
+		if clientAuth == nil {
+			clientAuth = &ClientAuthConfig{}
+			tlsCfg.ClientAuth = clientAuth
+		}
+
+		clientCAs := append([]string{}, defaultClientCertAuthorities...)
+		if clientAuth.CertAuthorities != nil {
+			clientCAs = append([]string{}, *clientAuth.CertAuthorities...)
+		}
+		clientCAs = append(clientCAs, "monitoring")
+		clientAuth.CertAuthorities = &clientCAs
+	}
+
+	return cfgs
 }
 
 // InstantiateAll loads and instantiates all endpoint configurations. It considers the endpoint config from the config

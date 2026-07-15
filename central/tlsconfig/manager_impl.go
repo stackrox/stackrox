@@ -31,8 +31,11 @@ type managerImpl struct {
 	internalTrustRoots []*x509.Certificate
 	userTrustRoots     []*x509.Certificate
 
-	defaultCerts  []tls.Certificate
-	internalCerts []tls.Certificate
+	defaultCerts    []tls.Certificate
+	internalCerts   []tls.Certificate
+	monitoringCerts []tls.Certificate
+
+	monitoringClientCAs []*x509.Certificate
 
 	providerIDToProviderData  map[string]providerData
 	certFingerprintToProvider map[string]providerData
@@ -66,6 +69,7 @@ func newManager(namespace string) (*managerImpl, error) {
 
 	certwatch.WatchCertDir("default TLS", DefaultCertPath, MaybeGetDefaultTLSCertificateFromDirectory, mgr.UpdateDefaultTLSCertificate)
 	certwatch.WatchCertDir("internal service", mtls.CertsPrefix, LoadInternalCertificateFromDirectory, mgr.UpdateInternalCertificate, certwatch.WithVerify(false))
+	mgr.initAPIMonitoringTLS()
 
 	return mgr, nil
 }
@@ -183,6 +187,8 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 			configurer.AddServerCertSource(&m.defaultCerts)
 		case ServiceCertSource:
 			configurer.AddServerCertSource(&m.internalCerts)
+		case MonitoringTLSCertSource:
+			configurer.AddServerCertSource(&m.monitoringCerts)
 		default:
 			return nil, errors.Errorf("invalid server cert source %v", serverCert)
 		}
@@ -194,6 +200,8 @@ func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error
 			configurer.AddClientCertSource(&m.userTrustRoots)
 		case ServiceCASource:
 			configurer.AddClientCertSource(&m.internalTrustRoots)
+		case MonitoringClientCASource:
+			configurer.AddClientCertSource(&m.monitoringClientCAs)
 		default:
 			return nil, errors.Errorf("invalid client CA source %v", clientCA)
 		}

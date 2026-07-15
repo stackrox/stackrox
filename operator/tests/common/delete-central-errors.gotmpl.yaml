@@ -111,6 +111,11 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  name: central-api-monitoring-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: central-monitoring-tls
 ---
 apiVersion: v1

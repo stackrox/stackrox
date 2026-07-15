@@ -18,6 +18,8 @@ const (
 	DefaultTLSCertSource ServerCertSource = iota
 	// ServiceCertSource is the source for the StackRox internal service TLS certificate.
 	ServiceCertSource
+	// MonitoringTLSCertSource is the OpenShift service-serving certificate for the central-monitoring Service.
+	MonitoringTLSCertSource
 )
 
 // ClientCASource is an enum type that determines the source for obtaining TLS client certificate authorities.
@@ -28,6 +30,8 @@ const (
 	UserCAsSource ClientCASource = iota
 	// ServiceCASource is the source for the StackRox internal service CA.
 	ServiceCASource
+	// MonitoringClientCASource is the CA for OpenShift monitoring client certificates.
+	MonitoringClientCASource
 )
 
 // Options specifies details for a TLS configuration.

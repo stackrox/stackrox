@@ -212,6 +212,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/grpc/authz/prometheus"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/errors"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
@@ -762,6 +763,13 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	log.Debug("All dynamic integrations registered, exiting")
 }
 
+func customMetricsRouteAuthorizer() authz.Authorizer {
+	return or.Or(
+		user.With(permissions.View(resources.Administration)),
+		prometheus.OpenShiftMonitoringClient(),
+	)
+}
+
 func uiRoute() routes.CustomRoute {
 	return routes.CustomRoute{
 		Route:         "/",
@@ -941,7 +949,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			// values may include sensitive data, such as deployment names and
 			// CVEs.
 			Route:         "GET /metrics",
-			Authorizer:    user.With(permissions.View(resources.Administration)),
+			Authorizer:    customMetricsRouteAuthorizer(),
 			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
 		},
