@@ -238,7 +238,7 @@ func containsPublicIP(ips map[net.IPAddress]struct{}) bool {
 }
 
 func containsPublicIPInFrozenSet(ips set.FrozenSet[net.IPAddress]) bool {
-	for _, ip := range ips.AsSlice() {
+	for ip := range ips.All() {
 		if ip.IsPublic() {
 			return true
 		}
