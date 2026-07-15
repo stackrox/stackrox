@@ -105,15 +105,14 @@ func (e *endpointsStore) RecordTick() bool {
 	return e.publicIPsChanged
 }
 
-// Apply processes endpoint updates and returns all currently stored public IPs
-// if the update touched any public IP, or nil otherwise.
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
+// Apply processes endpoint updates and returns true if any public IP was added or removed.
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
 	return e.applyNoLock(updates, incremental)
 }
 
-func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
+func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
 	e.publicIPsChanged = false
 	if !incremental {
@@ -125,13 +124,10 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
-	if e.publicIPsChanged {
-		return e.collectPublicIPsNoLock()
-	}
-	return nil
+	return e.publicIPsChanged
 }
 
-func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) set.Set[net.IPAddress] {
+func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
 			e.purgeNoLock(deploymentID)
@@ -156,10 +152,7 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) set.Set[n
 			}
 		}
 	}
-	if e.publicIPsChanged {
-		return e.collectPublicIPsNoLock()
-	}
-	return nil
+	return e.publicIPsChanged
 }
 
 func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {

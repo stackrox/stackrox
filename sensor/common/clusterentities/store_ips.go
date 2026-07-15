@@ -93,15 +93,14 @@ func (e *podIPsStore) RecordTick() bool {
 	return e.publicIPsChanged
 }
 
-// Apply processes pod IP updates and returns all currently stored public IPs
-// if the update touched any public IP, or nil otherwise.
-func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
+// Apply processes pod IP updates and returns true if any public IP was added or removed.
+func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	return e.applyNoLock(updates, incremental)
 }
 
-func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) set.Set[net.IPAddress] {
+func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
 	e.publicIPsChanged = false
 	if !incremental {
@@ -115,10 +114,7 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 		}
 		e.applySingleNoLock(deploymentID, *data)
 	}
-	if e.publicIPsChanged {
-		return e.collectPublicIPsNoLock()
-	}
-	return nil
+	return e.publicIPsChanged
 }
 
 func (e *podIPsStore) PublicIPs() set.Set[net.IPAddress] {

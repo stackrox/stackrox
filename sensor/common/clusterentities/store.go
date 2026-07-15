@@ -313,17 +313,11 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 
 	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
 	// whether a given IP is used by other endpoints.
-	epPublicIPs := e.endpointsStore.Apply(updates, incremental)
-	ipPublicIPs := e.podIPsStore.Apply(updates, incremental)
+	epChanged := e.endpointsStore.Apply(updates, incremental)
+	ipChanged := e.podIPsStore.Apply(updates, incremental)
 
-	if epPublicIPs != nil || ipPublicIPs != nil {
-		if epPublicIPs == nil {
-			epPublicIPs = e.endpointsStore.PublicIPs()
-		}
-		if ipPublicIPs == nil {
-			ipPublicIPs = e.podIPsStore.PublicIPs()
-		}
-		e.updatePublicIPRefs(epPublicIPs.Union(ipPublicIPs))
+	if epChanged || ipChanged {
+		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 	}
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
