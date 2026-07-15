@@ -183,15 +183,24 @@ func (ManagerType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{2}
 }
 
+// SensorVersionCompatibility describes whether a sensor version is within
+// the compatible range of central. Derived from major.minor comparison;
+// patch versions are ignored.
 type SensorVersionCompatibility int32
 
 const (
-	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN             SensorVersionCompatibility = 0
-	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED             SensorVersionCompatibility = 1
-	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND   SensorVersionCompatibility = 2
-	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD    SensorVersionCompatibility = 3
+	// Sensor version is not available.
+	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN SensorVersionCompatibility = 0
+	// Sensor major.minor matches central.
+	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED SensorVersionCompatibility = 1
+	// Sensor is older than central but within the compatible range.
+	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND SensorVersionCompatibility = 2
+	// Sensor is newer than central but within the compatible range.
+	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD SensorVersionCompatibility = 3
+	// Sensor is older than central and outside the compatible range.
 	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND SensorVersionCompatibility = 4
-	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD  SensorVersionCompatibility = 5
+	// Sensor is newer than central and outside the compatible range.
+	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD SensorVersionCompatibility = 5
 )
 
 // Enum value maps for SensorVersionCompatibility.
@@ -1811,11 +1820,12 @@ type ClusterStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SensorVersion string                 `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
 	// This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
-	DEPRECATEDLastContact      *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
-	ProviderMetadata           *ProviderMetadata          `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata,proto3" json:"provider_metadata,omitempty"`
-	OrchestratorMetadata       *OrchestratorMetadata      `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
-	UpgradeStatus              *ClusterUpgradeStatus      `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
-	CertExpiryStatus           *ClusterCertExpiryStatus   `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus,proto3" json:"cert_expiry_status,omitempty"`
+	DEPRECATEDLastContact *timestamppb.Timestamp   `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
+	ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata,proto3" json:"provider_metadata,omitempty"`
+	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
+	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
+	CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus,proto3" json:"cert_expiry_status,omitempty"`
+	// Computed at runtime, not persisted.
 	SensorVersionCompatibility SensorVersionCompatibility `protobuf:"varint,7,opt,name=sensor_version_compatibility,json=sensorVersionCompatibility,proto3,enum=storage.SensorVersionCompatibility" json:"sensor_version_compatibility,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache

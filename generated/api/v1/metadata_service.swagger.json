@@ -307,7 +307,7 @@
           "items": {
             "type": "string"
           },
-          "description": "X.Y versions of sensors that are compatible with this central."
+          "description": "Sorted list of X.Y sensor versions that are compatible with this central,\naccording to the version skew policy known to central."
         }
       }
     },

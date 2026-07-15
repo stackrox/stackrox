@@ -725,7 +725,8 @@
           "$ref": "#/definitions/storageClusterCertExpiryStatus"
         },
         "sensorVersionCompatibility": {
-          "$ref": "#/definitions/storageSensorVersionCompatibility"
+          "$ref": "#/definitions/storageSensorVersionCompatibility",
+          "description": "Computed at runtime, not persisted."
         }
       }
     },
@@ -968,7 +969,8 @@
         "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND",
         "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD"
       ],
-      "default": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN"
+      "default": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN",
+      "description": "SensorVersionCompatibility describes whether a sensor version is within\nthe compatible range of central. Derived from major.minor comparison;\npatch versions are ignored.\n\n - SENSOR_VERSION_COMPATIBILITY_UNKNOWN: Sensor version is not available.\n - SENSOR_VERSION_COMPATIBILITY_MATCHED: Sensor major.minor matches central.\n - SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND: Sensor is older than central but within the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD: Sensor is newer than central but within the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND: Sensor is older than central and outside the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD: Sensor is newer than central and outside the compatible range."
     },
     "storageStaticClusterConfig": {
       "type": "object",

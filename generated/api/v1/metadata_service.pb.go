@@ -192,7 +192,8 @@ type Metadata struct {
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
 	LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,proto3,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
-	// X.Y versions of sensors that are compatible with this central.
+	// Sorted list of X.Y sensor versions that are compatible with this central,
+	// according to the version skew policy known to central.
 	CompatibleSensorVersions []string `protobuf:"bytes,5,rep,name=compatible_sensor_versions,json=compatibleSensorVersions,proto3" json:"compatible_sensor_versions,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
