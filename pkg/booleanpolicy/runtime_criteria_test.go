@@ -884,15 +884,19 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccess() {
 			},
 		},
 		{
-			description: "Deployment file policy with ACL_CHANGE operation",
+			description: "Deployment file policy with PERMISSION_CHANGE matches both chmod and ACL events",
 			policy: newFileAccessPolicy(storage.EventSource_DEPLOYMENT_EVENT,
-				[]storage.FileAccess_Operation{storage.FileAccess_ACL_CHANGE}, false,
+				[]storage.FileAccess_Operation{storage.FileAccess_PERMISSION_CHANGE}, false,
 				"/etc/passwd",
 			),
 			events: []eventWrapper{
 				{
-					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_PERMISSION_CHANGE),
 					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
+					expectAlert: true, // ACL_CHANGE is collapsed into PERMISSION_CHANGE
 				},
 				{
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
