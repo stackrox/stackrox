@@ -4,6 +4,7 @@ import (
 	"cmp"
 	_ "embed"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -105,6 +106,15 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 			return nil, fmt.Errorf("duplicate 'from' major %d in major_version_bumps.yaml", from.X)
 		}
 		result = append(result, parsedBump{From: from, To: to})
+	}
+	slices.SortFunc(result, func(a, b parsedBump) int {
+		return a.From.Compare(b.From)
+	})
+	for i := 1; i < len(result); i++ {
+		if result[i].From.Compare(result[i-1].To) < 0 {
+			return nil, fmt.Errorf("overlapping ranges: %s->%s and %s->%s",
+				result[i-1].From, result[i-1].To, result[i].From, result[i].To)
+		}
 	}
 	return result, nil
 }

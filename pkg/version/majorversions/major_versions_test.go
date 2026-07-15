@@ -39,6 +39,30 @@ func TestParseBumpsData(t *testing.T) {
     to: "5.0"`,
 			wantErr: "duplicate 'from' major 3",
 		},
+		"overlapping ranges: containment": {
+			input: `bumps:
+  - from: "4.11"
+    to: "5.0"
+  - from: "3.74"
+    to: "6.0"`,
+			wantErr: "overlapping ranges",
+		},
+		"overlapping ranges: containment reversed input": {
+			input: `bumps:
+  - from: "3.74"
+    to: "6.0"
+  - from: "4.11"
+    to: "5.0"`,
+			wantErr: "overlapping ranges",
+		},
+		"overlapping ranges: partial": {
+			input: `bumps:
+  - from: "3.74"
+    to: "5.0"
+  - from: "4.11"
+    to: "6.0"`,
+			wantErr: "overlapping ranges",
+		},
 		"from must be less than to": {
 			input: `bumps:
   - from: "5.0"
