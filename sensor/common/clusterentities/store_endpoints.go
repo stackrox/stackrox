@@ -27,12 +27,6 @@ type endpointsStore struct {
 	historicalEndpoints map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus
 	// reverseHistoricalEndpoints is mimicking reverseEndpointMap: deploymentID -> endpointInfo -> historyStatus
 	reverseHistoricalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
-
-	// publicIPs is maintained incrementally via reference counting.
-	// Multiple endpoint keys (same IP, different ports) share one ref count.
-	publicIPs             set.Set[net.IPAddress]
-	publicIPEndpointCount map[net.IPAddress]int
-	publicIPsChanged      bool
 }
 
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
@@ -49,10 +43,6 @@ func (e *endpointsStore) initMapsNoLock() {
 
 	e.reverseHistoricalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
 	e.historicalEndpoints = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus)
-
-	e.publicIPs = set.NewSet[net.IPAddress]()
-	e.publicIPEndpointCount = make(map[net.IPAddress]int)
-	e.publicIPsChanged = false
 }
 
 func (e *endpointsStore) resetMaps() {
@@ -74,7 +64,6 @@ func (e *endpointsStore) resetMaps() {
 
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo])
 	e.reverseEndpointMap = make(map[string]set.Set[net.NumericEndpoint])
-	e.rebuildPublicIPsNoLock()
 	e.updateMetricsNoLock()
 }
 
@@ -91,21 +80,22 @@ func (e *endpointsStore) updateMetricsNoLock() {
 func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "record_tick")
-	e.publicIPsChanged = false
+	removedPublic := false
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
 			for _, status := range m2 {
 				status.recordTick()
 			}
 			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
-			e.removeFromHistoryIfExpired(deploymentID, endpoint)
+			// Remove all historical entries that expired in this tick.
+			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
+			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
 		}
 	}
 	e.updateMetricsNoLock()
-	return e.publicIPsChanged
+	return removedPublic
 }
 
-// Apply processes endpoint updates and returns true if any public IP was added or removed.
 func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) bool {
 	e.mutex.Lock()
 	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
@@ -114,26 +104,32 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
-	e.publicIPsChanged = false
 	if !incremental {
 		return e.replaceNoLock(updates)
 	}
+	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
 			continue
 		}
 		e.applySingleNoLock(deploymentID, *data)
+		if !touchedPublic {
+			touchedPublic = containsPublicEndpoint(data.endpoints)
+		}
 	}
-	return e.publicIPsChanged
+	return touchedPublic
 }
 
 func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
+	var touchedPublic bool
 	for deploymentID, data := range updates {
 		if data.isDeleteOnly() {
+			if !touchedPublic {
+				touchedPublic = containsPublicEndpointInSet(e.reverseEndpointMap[deploymentID])
+			}
 			e.purgeNoLock(deploymentID)
 			continue
 		}
-		// Fast path: if all endpoints are identical, skip the diff entirely.
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
 			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
 				e.reverseEndpointMap[deploymentID] = nil
@@ -141,6 +137,10 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 			continue
 		}
 		currentEndpoints, deploymentKnown := e.reverseEndpointMap[deploymentID]
+		if !touchedPublic {
+			touchedPublic = containsPublicEndpoint(data.endpoints) ||
+				containsPublicEndpointInSet(currentEndpoints)
+		}
 		if !deploymentKnown {
 			e.applySingleNoLock(deploymentID, *data)
 			continue
@@ -152,7 +152,7 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 			}
 		}
 	}
-	return e.publicIPsChanged
+	return touchedPublic
 }
 
 func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {
@@ -162,49 +162,18 @@ func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {
 }
 
 func (e *endpointsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
-	return e.publicIPs.Clone()
-}
-
-func (e *endpointsStore) trackEndpointKeyAddedNoLock(ep net.NumericEndpoint) {
-	ip := ep.IPAndPort.Address
-	if ip.IsPublic() {
-		e.publicIPEndpointCount[ip]++
-		if e.publicIPs.Add(ip) {
-			e.publicIPsChanged = true
+	s := set.NewSet[net.IPAddress]()
+	for endpoint := range e.endpointMap {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
 		}
 	}
-}
-
-func (e *endpointsStore) trackEndpointKeyRemovedNoLock(ep net.NumericEndpoint) {
-	ip := ep.IPAndPort.Address
-	if ip.IsPublic() {
-		e.publicIPEndpointCount[ip]--
-		if e.publicIPEndpointCount[ip] <= 0 {
-			delete(e.publicIPEndpointCount, ip)
-			if e.publicIPs.Remove(ip) {
-				e.publicIPsChanged = true
-			}
+	for endpoint := range e.historicalEndpoints {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
 		}
 	}
-}
-
-func (e *endpointsStore) rebuildPublicIPsNoLock() {
-	e.publicIPs = set.NewSet[net.IPAddress]()
-	e.publicIPEndpointCount = make(map[net.IPAddress]int)
-	for ep := range e.endpointMap {
-		ip := ep.IPAndPort.Address
-		if ip.IsPublic() {
-			e.publicIPEndpointCount[ip]++
-			e.publicIPs.Add(ip)
-		}
-	}
-	for ep := range e.historicalEndpoints {
-		ip := ep.IPAndPort.Address
-		if ip.IsPublic() {
-			e.publicIPEndpointCount[ip]++
-			e.publicIPs.Add(ip)
-		}
-	}
+	return s
 }
 
 // diffReplaceNoLock applies an endpoint update by computing a per-endpoint diff
@@ -275,7 +244,6 @@ func (e *endpointsStore) insertSingleEndpointNoLock(deploymentID string, ep net.
 	}
 	if _, ok := e.endpointMap[ep]; !ok {
 		e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{deploymentID: etiSet}
-		e.trackEndpointKeyAddedNoLock(ep)
 	} else {
 		e.endpointMap[ep][deploymentID] = etiSet
 	}
@@ -424,7 +392,6 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 			e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
 				deploymentID: make(set.Set[EndpointTargetInfo], len(targetInfos)),
 			}
-			e.trackEndpointKeyAddedNoLock(ep)
 		} else if !deploymentFound {
 			// New deployment, but the endpoint exists - the new deployment takes over the already existing endpoint
 			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
@@ -519,9 +486,8 @@ func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEn
 		delete(e.reverseHistoricalEndpoints, deploymentID)
 	}
 	delete(e.historicalEndpoints[ep], deploymentID)
-	if m, ok := e.historicalEndpoints[ep]; ok && len(m) == 0 {
+	if len(e.historicalEndpoints[ep]) == 0 {
 		delete(e.historicalEndpoints, ep)
-		e.trackEndpointKeyRemovedNoLock(ep)
 	}
 	return foundDepl || foundEp
 }
@@ -531,7 +497,6 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 	delete(e.endpointMap[ep], deploymentID)
 	if len(e.endpointMap[ep]) == 0 {
 		delete(e.endpointMap, ep)
-		e.trackEndpointKeyRemovedNoLock(ep)
 	}
 
 	dSet, found := e.reverseEndpointMap[deploymentID]
@@ -559,7 +524,6 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 	// Prepare maps if empty
 	if _, ok := e.historicalEndpoints[ep]; !ok {
 		e.historicalEndpoints[ep] = make(map[string]map[EndpointTargetInfo]*entityStatus)
-		e.trackEndpointKeyAddedNoLock(ep)
 	}
 	if _, ok := e.historicalEndpoints[ep][deploymentID]; !ok {
 		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus)
@@ -572,6 +536,24 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
 	}
 	e.reverseHistoricalEndpoints[deploymentID][ep] = newHistoricalEntity(e.memorySize)
+}
+
+func containsPublicEndpoint(endpoints map[net.NumericEndpoint][]EndpointTargetInfo) bool {
+	for ep := range endpoints {
+		if ep.IPAndPort.Address.IsPublic() {
+			return true
+		}
+	}
+	return false
+}
+
+func containsPublicEndpointInSet(eps set.Set[net.NumericEndpoint]) bool {
+	for ep := range eps {
+		if ep.IPAndPort.Address.IsPublic() {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *endpointsStore) String() string {
