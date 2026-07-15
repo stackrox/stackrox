@@ -224,8 +224,8 @@ message ClusterCertExpiryStatus {
 }
 
 // SensorVersionCompatibility describes whether a sensor version is within
-// the compatible range of central. Derived from major.minor comparison;
-// patch versions are ignored.
+// the compatible range of central. Derived from major.minor comparison.
+// Patch versions are ignored.
 enum SensorVersionCompatibility {
   // Sensor version is not available.
   SENSOR_VERSION_COMPATIBILITY_UNKNOWN = 0;
