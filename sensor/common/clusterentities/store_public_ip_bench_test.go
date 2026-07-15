@@ -25,7 +25,6 @@ func BenchmarkStoreApplyPrivateIPsOnly(b *testing.B) {
 				"new-depl": entityUpdate("192.168.1.1", "new-cont", 9090),
 			}
 			b.ReportAllocs()
-			b.ResetTimer()
 			for b.Loop() {
 				store.Apply(update, true)
 			}
@@ -43,7 +42,6 @@ func BenchmarkStoreApplyWithPublicIP(b *testing.B) {
 				"new-depl": entityUpdate("8.8.8.8", "new-cont", 9090),
 			}
 			b.ReportAllocs()
-			b.ResetTimer()
 			for b.Loop() {
 				store.Apply(update, true)
 			}
