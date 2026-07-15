@@ -9,13 +9,16 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
@@ -47,13 +50,14 @@ type clusterIDPeeker interface {
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(clusterID clusterIDPeeker, imageCache cache.Image, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
+func NewService(clusterID clusterIDPeeker, imageCache cache.Image, registryStore registryStore, mirrorStore registrymirror.Store, pubSubDispatcher common.PubSubDispatcher) ServiceComponent {
 	return &serviceImpl{
-		imageCache:    imageCache,
-		registryStore: registryStore,
-		localScan:     scan.NewLocalScan(registryStore, mirrorStore),
-		centralReady:  concurrency.NewSignal(),
-		clusterID:     clusterID,
+		imageCache:       imageCache,
+		registryStore:    registryStore,
+		localScan:        scan.NewLocalScan(registryStore, mirrorStore),
+		centralReady:     concurrency.NewSignal(),
+		clusterID:        clusterID,
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }
 
@@ -69,10 +73,16 @@ type serviceImpl struct {
 	centralReady  concurrency.Signal
 
 	clusterID clusterIDPeeker
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (s *serviceImpl) Name() string {
 	return "image.serviceImpl"
+}
+
+func (s *serviceImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -153,8 +163,29 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, errors.Wrapf(err, "image authorization for %q", fullMethodName)
 }
 
+func (s *serviceImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	s.centralReady.Signal()
+	return nil
+}
+
+func (s *serviceImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	s.centralReady.Reset()
+	return nil
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if s.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()
@@ -164,6 +195,24 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (s *serviceImpl) Start() error {
+	if s.pubSubEnabled() {
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ImageServiceSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			s.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register image service sensor online consumer")
+		}
+		if err := s.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ImageServiceSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			s.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register image service sensor offline consumer")
+		}
+	}
 	return nil
 }
 

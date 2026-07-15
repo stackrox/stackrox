@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/queue"
@@ -18,7 +19,9 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +56,7 @@ func NewSecuredClusterTLSIssuer(
 	k8sClient kubernetes.Interface,
 	sensorNamespace string,
 	sensorPodName string,
+	pubSubDispatcher common.PubSubDispatcher,
 ) common.SensorComponent {
 	return &tlsIssuerImpl{
 		componentName:                securedClusterComponentName,
@@ -71,6 +75,7 @@ func NewSecuredClusterTLSIssuer(
 			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
 			return &centralCap
 		}(),
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }
 
@@ -123,10 +128,16 @@ type tlsIssuerImpl struct {
 	online                       atomic.Bool
 	cancelRefresher              context.CancelFunc
 	activateLock                 sync.Mutex
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (i *tlsIssuerImpl) Name() string {
 	return "certrefresh.tlsIssuerImpl"
+}
+
+func (i *tlsIssuerImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && i.pubSubDispatcher != nil
 }
 
 // Start starts the Sensor component and launches a certificate refresher that:
@@ -135,6 +146,24 @@ func (i *tlsIssuerImpl) Name() string {
 // When Sensor is offline this component is not active.
 func (i *tlsIssuerImpl) Start() error {
 	log.Debugf("Starting %s TLS issuer.", i.componentName)
+	if i.pubSubEnabled() {
+		if err := i.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.CertRefreshSecuredClusterTLSIssuerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			i.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register secured cluster TLS issuer sensor online consumer")
+		}
+		if err := i.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.CertRefreshSecuredClusterTLSIssuerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			i.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register secured cluster TLS issuer sensor offline consumer")
+		}
+	}
 	i.started.Store(true)
 	return i.activate()
 }
@@ -200,9 +229,38 @@ func (i *tlsIssuerImpl) deactivate() {
 	log.Debugf("%s TLS issuer is not active.", i.componentName)
 }
 
+func (i *tlsIssuerImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	// At this point we can be sure that Central capabilities have been received
+	if i.requiredCentralCapability != nil && !centralcaps.Has(*i.requiredCentralCapability) {
+		log.Infof("Central does not have the %s capability", i.requiredCentralCapability.String())
+		return nil
+	}
+	i.online.Store(true)
+	if err := i.activate(); err != nil {
+		log.Warnf("Failed to activate %s TLS issuer: %v", i.componentName, err)
+	}
+	return nil
+}
+
+func (i *tlsIssuerImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	i.online.Store(false)
+	i.deactivate()
+	return nil
+}
+
 func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
-
+	if i.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		// At this point we can be sure that Central capabilities have been received

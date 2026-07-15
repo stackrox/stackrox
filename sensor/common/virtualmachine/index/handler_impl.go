@@ -14,11 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
@@ -40,6 +43,12 @@ type handlerImpl struct {
 	toCompliance chan common.MessageToComplianceWithAddress
 	indexReports chan *v1.IndexReport
 	store        VirtualMachineStore
+
+	pubSubDispatcher common.PubSubDispatcher
+}
+
+func (h *handlerImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && h.pubSubDispatcher != nil
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -111,8 +120,31 @@ func (h *handlerImpl) Name() string {
 	return "virtualmachine.index.handlerImpl"
 }
 
+func (h *handlerImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReady.Signal()
+	return nil
+}
+
+func (h *handlerImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	// As clients are expected to retry virtual machine upserts when Sensor is in
+	// offline mode, there is no need to do anything here other than reset the signal.
+	h.centralReady.Reset()
+	return nil
+}
+
 func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if h.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReady.Signal()
@@ -166,6 +198,24 @@ func (h *handlerImpl) Start() error {
 	defer h.lock.Unlock()
 	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
 		return errStartMoreThanOnce
+	}
+	if h.pubSubEnabled() {
+		if err := h.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.VirtualMachineIndexHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			h.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register virtual machine index handler sensor online consumer")
+		}
+		if err := h.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.VirtualMachineIndexHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			h.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register virtual machine index handler sensor offline consumer")
+		}
 	}
 	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
 	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
