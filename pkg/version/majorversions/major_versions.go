@@ -111,7 +111,7 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.
 // If minor > 0, the previous Y-stream is simply major.(minor-1).
-// If minor == 0, it looks up the major version bump history to find what came before.
+// If minor == 0, it looks up the major version bump history from major_version_bumps.yaml.
 // By definition, major version bumps always target X.0 (never X.N with N>0).
 func GetPreviousYStream(v XYVersion) (XYVersion, error) {
 	if v.Y > 0 {
