@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -17,7 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/utils"
@@ -86,7 +89,7 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 }
 
 // NewInfoUpdater return a sensor component that periodically collect information about the compliance operator.
-func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal) InfoUpdater {
+func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, readySignal *concurrency.Signal, pubSubDispatcher common.PubSubDispatcher) InfoUpdater {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
@@ -102,6 +105,7 @@ func NewInfoUpdater(client kubernetes.Interface, updateInterval time.Duration, r
 		updateTicker:         updateTicker,
 		complianceOperatorNS: "openshift-compliance",
 		isReady:              readySignal,
+		pubSubDispatcher:     pubSubDispatcher,
 	}
 }
 
@@ -114,13 +118,28 @@ type updaterImpl struct {
 	stopSig              concurrency.Signal
 	complianceOperatorNS string
 	isReady              *concurrency.Signal
+	pubSubDispatcher     common.PubSubDispatcher
 }
 
 func (u *updaterImpl) Name() string {
 	return "complianceoperator.updaterImpl"
 }
 
+func (u *updaterImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && u.pubSubDispatcher != nil
+}
+
 func (u *updaterImpl) Start() error {
+	if u.pubSubEnabled() {
+		if err := u.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceOperatorUpdaterSyncFinishedConsumer,
+			pubsub.SyncFinishedTopic,
+			pubsub.SyncFinishedLane,
+			u.handleSyncFinishedEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance operator updater sync finished consumer")
+		}
+	}
 	go u.run(u.updateTicker.C)
 	return nil
 }
@@ -130,10 +149,27 @@ func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
 }
 
+func (u *updaterImpl) handleSyncFinishedEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SyncFinishedEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		u.updateTicker.Reset(u.updateInterval)
+		return nil
+	}
+	u.updateTicker.Stop()
+	return nil
+}
+
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventSyncFinished:
+		if u.pubSubEnabled() {
+			// Handled by handleSyncFinishedEvent via the SyncFinished PubSub
+			// subscription registered in Start().
+			return
+		}
 		if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 			u.updateTicker.Reset(u.updateInterval)
 			return
