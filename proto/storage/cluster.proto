@@ -229,7 +229,7 @@ message ClusterCertExpiryStatus {
 enum SensorVersionCompatibility {
   // Sensor version is not available.
   SENSOR_VERSION_COMPATIBILITY_UNKNOWN = 0;
-  // Sensor major.minor matches central.
+  // Sensor's major.minor matches Central's major.minor.
   SENSOR_VERSION_COMPATIBILITY_MATCHED = 1;
   // Sensor is older than central but within the compatible range.
   SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND = 2;
