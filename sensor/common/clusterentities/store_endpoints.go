@@ -102,6 +102,12 @@ func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool)
 	return e.applyNoLock(updates, incremental)
 }
 
+func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.collectPublicIPsNoLock()
+}
+
 func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
 	if !incremental {
@@ -168,12 +174,6 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 		}
 	}
 	return touchedPublic
-}
-
-func (e *endpointsStore) PublicIPs() set.Set[net.IPAddress] {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-	return e.collectPublicIPsNoLock()
 }
 
 func (e *endpointsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {

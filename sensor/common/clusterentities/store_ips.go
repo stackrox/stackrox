@@ -93,6 +93,12 @@ func (e *podIPsStore) Apply(updates map[string]*EntityData, incremental bool) bo
 	return e.applyNoLock(updates, incremental)
 }
 
+func (e *podIPsStore) PublicIPs() set.Set[net.IPAddress] {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+	return e.collectPublicIPsNoLock()
+}
+
 func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bool) bool {
 	defer e.updateMetricsNoLock()
 	var touchedPublic bool
@@ -115,12 +121,6 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 		e.applySingleNoLock(deploymentID, *data)
 	}
 	return touchedPublic
-}
-
-func (e *podIPsStore) PublicIPs() set.Set[net.IPAddress] {
-	e.mutex.RLock()
-	defer e.mutex.RUnlock()
-	return e.collectPublicIPsNoLock()
 }
 
 func (e *podIPsStore) collectPublicIPsNoLock() set.Set[net.IPAddress] {
