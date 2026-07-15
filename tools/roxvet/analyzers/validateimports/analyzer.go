@@ -347,6 +347,9 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
 			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/common/clusterid",
 			"sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
+			// vmscraper-loadtest (PoC stress harness) drives a real VMScraper against
+			// an in-process synthetic farm; it is not production code.
+			"sensor/common/virtualmachine/vmscraper", "sensor/common/virtualmachine/vsockclient",
 			"compliance", "compliance/utils", "compliance/node")
 	}
 
@@ -368,11 +371,11 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "sensor/common" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
-		if isTestFile {
-			// vsockclient's integration test drives a real roxagent vsockserver
-			// handler over net.Pipe() to validate the wire protocol contract.
-			// roxagent ships as a separate binary from Sensor, so this exception
-			// is scoped to test files only.
+		// vsockserver ships as a separate binary from Sensor. Two Sensor-side
+		// packages drive a real Handler over net.Pipe and need this exception:
+		// vsockclient's wire-protocol integration test, and the loadtest farm
+		// (PoC stress harness) that wraps Handler+ReportCache as synthetic VMs.
+		if isTestFile || strings.HasPrefix(packageName, roxPrefix+"sensor/common/virtualmachine/vmscraper/loadtest") {
 			allowedPackages = appendPackageWithoutChildren(allowedPackages, "compliance/virtualmachines/roxagent/vsockserver")
 		}
 	}
