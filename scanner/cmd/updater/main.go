@@ -5,15 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/quay/zlog"
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
 
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
+
+var sourcesRaw = os.Getenv("STACKROX_SCANNER_V4_UPDATER_SOURCES")
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
 	const timeout = 3 * time.Hour
@@ -27,6 +32,11 @@ func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOption
 }
 
 func main() {
+	sources := config.NormalizeStringList(strings.Split(sourcesRaw, ","))
+	if len(sourcesRaw) > 0 && len(sources) == 0 {
+		log.Fatalf("unable to parse sources: %q", sourcesRaw)
+	}
+
 	var ctx = context.Background()
 
 	var rootCmd = &cobra.Command{
@@ -53,7 +63,7 @@ func main() {
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
+				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL, Sources: sources})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).

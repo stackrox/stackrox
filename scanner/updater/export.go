@@ -34,6 +34,8 @@ const (
 
 type ExportOptions struct {
 	ManualVulnURL string
+	// Sources restricts which updaters run. When nil or empty, all updaters run.
+	Sources []string
 }
 
 // Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
@@ -74,6 +76,15 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 			managerOpts = rhelVexOpts()
 		}
 		bundles[uSet] = managerOpts
+	}
+
+	if len(opts.Sources) > 0 {
+		filtered, err := filterSources(bundles, opts.Sources)
+		if err != nil {
+			return fmt.Errorf("filtering sources: %w", err)
+		}
+		log.Printf("source filter active: running %d/%d sources: %v", len(filtered), len(bundles), opts.Sources)
+		bundles = filtered
 	}
 
 	// Rate limit to ~16 requests/second by default.
@@ -221,6 +232,18 @@ func redhatCSAFOpts() []updates.ManagerOption {
 			"stackrox.rhel-csaf": csaf.NewFactory(),
 		}),
 	}
+}
+
+func filterSources(bundles map[string][]updates.ManagerOption, selected []string) (map[string][]updates.ManagerOption, error) {
+	filtered := make(map[string][]updates.ManagerOption, len(selected))
+	for _, s := range selected {
+		if o, ok := bundles[s]; ok {
+			filtered[s] = o
+		} else {
+			return nil, fmt.Errorf("unknown source: %q", s)
+		}
+	}
+	return filtered, nil
 }
 
 func zstdWriter(filename string) (io.WriteCloser, error) {
