@@ -184,14 +184,14 @@ func (ManagerType) EnumDescriptor() ([]byte, []int) {
 }
 
 // SensorVersionCompatibility describes whether a sensor version is within
-// the compatible range of central. Derived from major.minor comparison;
-// patch versions are ignored.
+// the compatible range of central. Derived from major.minor comparison.
+// Patch versions are ignored.
 type SensorVersionCompatibility int32
 
 const (
 	// Sensor version is not available.
 	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN SensorVersionCompatibility = 0
-	// Sensor major.minor matches central.
+	// Sensor's major.minor matches Central's major.minor.
 	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED SensorVersionCompatibility = 1
 	// Sensor is older than central but within the compatible range.
 	SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND SensorVersionCompatibility = 2
