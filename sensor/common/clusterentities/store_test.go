@@ -337,6 +337,21 @@ func (s *ClusterEntitiesStoreTestSuite) TestPublicIPListenerConditionalUpdate() 
 			// 8.8.8.8 moved to history (memorySize=1), still present
 			expected: []string{"8.8.8.8"},
 		},
+		"cross-store: updating one sub-store must not drop IPs from the other": {
+			setup: func(store *Store) {
+				// depl1 has a public endpoint but no pod IP
+				ed := &EntityData{}
+				ed.AddEndpoint(buildEndpoint("8.8.8.8", 80), EndpointTargetInfo{ContainerPort: 80})
+				store.Apply(map[string]*EntityData{"depl1": ed}, true)
+			},
+			action: func(store *Store) {
+				// depl2 has a public pod IP but no endpoint
+				ed := &EntityData{}
+				ed.AddIP(net.ParseIP("1.1.1.1"))
+				store.Apply(map[string]*EntityData{"depl2": ed}, true)
+			},
+			expected: []string{"8.8.8.8", "1.1.1.1"},
+		},
 	}
 
 	for name, tc := range tests {
