@@ -185,9 +185,19 @@ func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
 	assert.NoError(t, dial(), "handshake should succeed once the CA service becomes available")
 }
 
-func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
+// TestCARefresher_ConcurrentHandshakesEachGetValidPool calls
+// ensureFreshPool directly from several goroutines at once, bypassing
+// server.go's semaphore (which limits the agent to one in-flight
+// connection in the supported single-Sensor-caller topology - see the
+// CARefresher doc comment) to exercise the defensive path that would only
+// matter if that stopped being true. It proves the behavior accepted in
+// place of coalescing: callers may each trigger their own fetch (no
+// fetchCount == 1 assertion), but the cache is never left corrupted or
+// partially written, and every caller gets back a valid, non-nil pool that
+// verifies the client cert it was given.
+func TestCARefresher_ConcurrentHandshakesEachGetValidPool(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		caPEM, _, _ := testCA(t)
+		caPEM, caCert, caKey := testCA(t)
 
 		var fetchCount atomic.Int32
 		release := make(chan struct{})
@@ -198,30 +208,47 @@ func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
 		}))
 
 		const callers = 5
-		results := make(chan error, callers)
+		type result struct {
+			pool *x509.CertPool
+			err  error
+		}
+		results := make(chan result, callers)
 		for range callers {
 			go func() {
-				_, err := r.ensureFreshPool(context.Background())
-				results <- err
+				pool, err := r.ensureFreshPool(context.Background())
+				results <- result{pool: pool, err: err}
 			}()
 		}
 
 		// synctest.Wait blocks until every goroutine in the bubble is
-		// durably blocked: the one leader inside fetchFunc on <-release,
-		// and every follower inside Coalesce's select on the shared
-		// singleflight result channel. Unlike a WaitGroup fired at
-		// goroutine entry (started.Done, before ensureFreshPool even
-		// runs), this can't observe "started" before a caller has
-		// actually reached the coalesced section - so closing release
-		// right after can never race a late arrival into a second,
-		// uncoalesced fetch.
+		// durably blocked on <-release inside fetchFunc, i.e. every
+		// caller has actually reached its own fetch - not merely been
+		// scheduled - so closing release can't race a late arrival.
 		synctest.Wait()
 		close(release)
 
+		// A leaf cert signed by the fetched CA must verify against every
+		// pool handed back: if a caller's pool were corrupted or
+		// partially written, this would fail for that caller specifically.
+		leaf := testLeafCert(t, caCert, caKey)
+		leafCert, err := x509.ParseCertificate(leaf.Certificate[0])
+		require.NoError(t, err)
+
 		for range callers {
-			require.NoError(t, <-results)
+			res := <-results
+			require.NoError(t, res.err)
+			require.NotNil(t, res.pool, "every caller must get back a valid pool")
+			_, verifyErr := leafCert.Verify(x509.VerifyOptions{
+				Roots:     res.pool,
+				KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			})
+			require.NoError(t, verifyErr, "pool returned to caller must be able to verify a cert signed by the fetched CA")
 		}
-		assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
+		assert.GreaterOrEqual(t, fetchCount.Load(), int32(1), "at least one caller must have triggered a fetch")
+
+		finalPool, _, ok := r.cachedPool()
+		require.True(t, ok, "cache must be populated after concurrent fetches complete")
+		require.NotNil(t, finalPool)
 	})
 }
 

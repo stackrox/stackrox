@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/mdlayher/vsock"
-	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,10 +33,6 @@ const (
 	// gRPC method for the KubeVirt System.CABundle RPC.
 	// Proto: kubevirt.io/kubevirt/pkg/vsock/system/v1/system.proto
 	caBundleMethod = "/kubevirt.vsock.system.v1.System/CABundle"
-
-	// coalesceKey is the single key coalesced fetches are keyed on: there is
-	// only one CA bundle to fetch per CARefresher instance.
-	coalesceKey = "kubevirt-ca"
 )
 
 // fetchKubeVirtCA calls the KubeVirt System.CABundle gRPC service on
@@ -184,9 +179,17 @@ func extractBundleRaw(data []byte) ([]byte, error) {
 // what opens it. This works unchanged in "global" mode too, since the
 // service is always reachable there.
 //
-// Concurrent callers (e.g. multiple simultaneous handshakes) are coalesced
-// into a single underlying fetch via coalescer, so a stampede never results
-// in redundant dials to virt-handler.
+// By default there is exactly one caller: server.go's semaphore limits the
+// agent to a single in-flight connection, because the agent serves a
+// single Sensor poller (see maxConcurrentConns) - so ensureFreshPool is
+// never actually called concurrently in the supported topology. A second,
+// concurrent caller could only arise from a second, concurrent Sensor
+// instance ("color") dialing the same agent, which is not something this
+// agent currently supports or plans for. Even if it happened anyway,
+// r.mu's write lock keeps every individual cache read/swap consistent, so
+// no caller would observe a corrupted or partially-written pool - each
+// concurrent fetch would just cost an extra, redundant dial to
+// virt-handler instead of being deduplicated into one.
 type CARefresher struct {
 	mu        sync.RWMutex
 	pool      *x509.CertPool
@@ -195,7 +198,6 @@ type CARefresher struct {
 	interval     time.Duration
 	fetchTimeout time.Duration
 	fetchCA      func(ctx context.Context) ([]byte, error)
-	coalesce     *coalescer.Coalescer[*x509.CertPool]
 }
 
 // NewCARefresher creates a refresher with an empty cache. There is no
@@ -209,7 +211,6 @@ func NewCARefresher(opts ...CARefresherOption) *CARefresher {
 		interval:     defaultRefreshInterval,
 		fetchTimeout: defaultFetchTimeout,
 		fetchCA:      fetchKubeVirtCA,
-		coalesce:     coalescer.New[*x509.CertPool](),
 	}
 	for _, o := range opts {
 		o(r)
@@ -232,8 +233,9 @@ func WithFetchFunc(f func(ctx context.Context) ([]byte, error)) CARefresherOptio
 }
 
 // ensureFreshPool returns the cached CA pool if it is populated and not
-// older than r.interval, fetching a new one otherwise. Concurrent callers
-// are coalesced into a single underlying fetch.
+// older than r.interval, fetching a new one otherwise. There is normally
+// only ever one caller at a time; see the CARefresher doc comment for why,
+// and for what happens on the unsupported path where that stops being true.
 //
 // A failed (re)fetch is not fatal as long as some pool - however stale - is
 // already cached: certificates signed by an old CA remain valid until they
@@ -247,38 +249,7 @@ func (r *CARefresher) ensureFreshPool(ctx context.Context) (*x509.CertPool, erro
 		return pool, nil
 	}
 
-	pool, err := r.coalesce.Coalesce(ctx, coalesceKey, func() (*x509.CertPool, error) {
-		// Re-check: another caller may have refreshed the cache while we
-		// were waiting to enter the coalesced section.
-		if pool, ok := r.freshCachedPool(); ok {
-			return pool, nil
-		}
-
-		// ctx here belongs to whichever single caller happened to trigger
-		// this fetch, but the result is shared with every other concurrent
-		// caller waiting on it too. Don't let that one caller's own
-		// cancellation (e.g. its handshake being torn down) abort the fetch
-		// for everyone else: detach from ctx's cancellation/deadline with
-		// WithoutCancel, and bound the fetch by r.fetchTimeout alone.
-		fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), r.fetchTimeout)
-		defer cancel()
-
-		ca, fetchErr := r.fetchCA(fetchCtx)
-		if fetchErr != nil {
-			return nil, fetchErr
-		}
-		newPool := x509.NewCertPool()
-		if !newPool.AppendCertsFromPEM(ca) {
-			return nil, errors.New("no valid certificates found in CA bundle")
-		}
-
-		concurrency.WithLock(&r.mu, func() {
-			r.pool = newPool
-			r.fetchedAt = time.Now()
-		})
-		log.Info("KubeVirt CA refreshed successfully")
-		return newPool, nil
-	})
+	pool, err := r.fetchAndCachePool(ctx)
 	if err == nil {
 		return pool, nil
 	}
@@ -288,6 +259,39 @@ func (r *CARefresher) ensureFreshPool(ctx context.Context) (*x509.CertPool, erro
 		return stale, nil
 	}
 	return nil, err
+}
+
+// fetchAndCachePool fetches a fresh CA bundle from KubeVirt, parses it, and
+// swaps it into the cache under r.mu's write lock. It returns the pool it
+// just fetched, which is what makes it safe to call from more than one
+// caller at once on the unsupported multi-caller path (see the CARefresher
+// doc comment): each caller gets back its own valid, non-nil pool
+// regardless of which write to r.pool happens to land last.
+func (r *CARefresher) fetchAndCachePool(ctx context.Context) (*x509.CertPool, error) {
+	// ctx belongs to the caller whose handshake triggered this fetch. If
+	// that handshake is torn down mid-fetch, ctx is cancelled - but the
+	// fetch already in flight can still finish and warm the cache for
+	// whichever handshake asks next. Don't let this caller's own
+	// cancellation abort that: detach from ctx's cancellation/deadline
+	// with WithoutCancel, and bound the fetch by r.fetchTimeout alone.
+	fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), r.fetchTimeout)
+	defer cancel()
+
+	ca, err := r.fetchCA(fetchCtx)
+	if err != nil {
+		return nil, err
+	}
+	newPool := x509.NewCertPool()
+	if !newPool.AppendCertsFromPEM(ca) {
+		return nil, errors.New("no valid certificates found in CA bundle")
+	}
+
+	concurrency.WithLock(&r.mu, func() {
+		r.pool = newPool
+		r.fetchedAt = time.Now()
+	})
+	log.Info("KubeVirt CA refreshed successfully")
+	return newPool, nil
 }
 
 // freshCachedPool returns the cached pool and true if it is populated and
