@@ -16,7 +16,9 @@ import (
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
 var getAWSCerts = sync.OnceValue(func() []*x509.Certificate {
-	certs, err := helpers.ParseCertificatesPEM([]byte(`
+	var awsCerts []*x509.Certificate
+	var err error
+	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
 -----BEGIN CERTIFICATE-----
 MIIEEjCCAvqgAwIBAgIJALFpzEAVWaQZMA0GCSqGSIb3DQEBCwUAMFwxCzAJBgNV
 BAYTAlVTMRkwFwYDVQQIExBXYXNoaW5ndG9uIFN0YXRlMRAwDgYDVQQHEwdTZWF0
@@ -607,5 +609,5 @@ SD11SximGIYCjfZpRqI3q50mbxCd7ckULz+UUPwLrfOds4VrVVSj+x0ZdY19Plv2
 -----END CERTIFICATE-----
 `))
 	utils.CrashOnError(err)
-	return certs
+	return awsCerts
 })
