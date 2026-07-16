@@ -668,7 +668,7 @@ func (m *AclEntry) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Tag |= AclTag(b&0x7F) << shift
+				m.Tag |= AclEntry_AclTag(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1398,7 +1398,7 @@ func (m *AclEntry) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Tag |= AclTag(b&0x7F) << shift
+				m.Tag |= AclEntry_AclTag(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

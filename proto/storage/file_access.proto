@@ -8,19 +8,19 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// AclTag identifies the type of entity an ACL entry applies to.
-enum AclTag {
-  ACL_TAG_UNSPECIFIED = 0;
-  ACL_TAG_USER_OBJ = 1; // Owner user permissions
-  ACL_TAG_USER = 2; // Specific user permissions
-  ACL_TAG_GROUP_OBJ = 3; // Owning group permissions
-  ACL_TAG_GROUP = 4; // Specific group permissions
-  ACL_TAG_MASK = 5; // Maximum effective permissions mask
-  ACL_TAG_OTHER = 6; // Everyone else
-}
-
 // AclEntry represents a single POSIX ACL entry.
 message AclEntry {
+  // AclTag identifies the type of entity an ACL entry applies to.
+  enum AclTag {
+    ACL_TAG_UNSPECIFIED = 0;
+    ACL_TAG_USER_OBJ = 1; // Owner user permissions
+    ACL_TAG_USER = 2; // Specific user permissions
+    ACL_TAG_GROUP_OBJ = 3; // Owning group permissions
+    ACL_TAG_GROUP = 4; // Specific group permissions
+    ACL_TAG_MASK = 5; // Maximum effective permissions mask
+    ACL_TAG_OTHER = 6; // Everyone else
+  }
+
   AclTag tag = 1;
   // Permission bits (e.g. 7 = rwx, 6 = rw-, 4 = r--)
   uint32 perm = 2;

@@ -33,9 +33,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AclEntry", []string{
 		"id: Int!",
 		"perm: Int!",
-		"tag: AclTag!",
+		"tag: AclEntry_AclTag!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclTag(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclEntry_AclTag(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclType(0)))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -1823,20 +1823,20 @@ func (resolver *aclEntryResolver) Tag(ctx context.Context) string {
 	return value.String()
 }
 
-func toAclTag(value *string) storage.AclTag {
+func toAclEntry_AclTag(value *string) storage.AclEntry_AclTag {
 	if value != nil {
-		return storage.AclTag(storage.AclTag_value[*value])
+		return storage.AclEntry_AclTag(storage.AclEntry_AclTag_value[*value])
 	}
-	return storage.AclTag(0)
+	return storage.AclEntry_AclTag(0)
 }
 
-func toAclTags(values *[]string) []storage.AclTag {
+func toAclEntry_AclTags(values *[]string) []storage.AclEntry_AclTag {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.AclTag, len(*values))
+	output := make([]storage.AclEntry_AclTag, len(*values))
 	for i, v := range *values {
-		output[i] = toAclTag(&v)
+		output[i] = toAclEntry_AclTag(&v)
 	}
 	return output
 }

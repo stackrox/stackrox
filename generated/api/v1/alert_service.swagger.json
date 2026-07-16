@@ -592,6 +592,20 @@
     }
   },
   "definitions": {
+    "AclEntryAclTag": {
+      "type": "string",
+      "enum": [
+        "ACL_TAG_UNSPECIFIED",
+        "ACL_TAG_USER_OBJ",
+        "ACL_TAG_USER",
+        "ACL_TAG_GROUP_OBJ",
+        "ACL_TAG_GROUP",
+        "ACL_TAG_MASK",
+        "ACL_TAG_OTHER"
+      ],
+      "default": "ACL_TAG_UNSPECIFIED",
+      "description": "AclTag identifies the type of entity an ACL entry applies to.\n\n - ACL_TAG_USER_OBJ: Owner user permissions\n - ACL_TAG_USER: Specific user permissions\n - ACL_TAG_GROUP_OBJ: Owning group permissions\n - ACL_TAG_GROUP: Specific group permissions\n - ACL_TAG_MASK: Maximum effective permissions mask\n - ACL_TAG_OTHER: Everyone else"
+    },
     "AlertEnforcement": {
       "type": "object",
       "properties": {
@@ -1005,7 +1019,7 @@
       "type": "object",
       "properties": {
         "tag": {
-          "$ref": "#/definitions/storageAclTag"
+          "$ref": "#/definitions/AclEntryAclTag"
         },
         "perm": {
           "type": "integer",
@@ -1019,20 +1033,6 @@
         }
       },
       "description": "AclEntry represents a single POSIX ACL entry."
-    },
-    "storageAclTag": {
-      "type": "string",
-      "enum": [
-        "ACL_TAG_UNSPECIFIED",
-        "ACL_TAG_USER_OBJ",
-        "ACL_TAG_USER",
-        "ACL_TAG_GROUP_OBJ",
-        "ACL_TAG_GROUP",
-        "ACL_TAG_MASK",
-        "ACL_TAG_OTHER"
-      ],
-      "default": "ACL_TAG_UNSPECIFIED",
-      "description": "AclTag identifies the type of entity an ACL entry applies to.\n\n - ACL_TAG_USER_OBJ: Owner user permissions\n - ACL_TAG_USER: Specific user permissions\n - ACL_TAG_GROUP_OBJ: Owning group permissions\n - ACL_TAG_GROUP: Specific group permissions\n - ACL_TAG_MASK: Maximum effective permissions mask\n - ACL_TAG_OTHER: Everyone else"
     },
     "storageAclType": {
       "type": "string",

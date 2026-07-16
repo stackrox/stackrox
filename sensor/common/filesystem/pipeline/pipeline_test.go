@@ -263,6 +263,7 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 		wantOperation storage.FileAccess_Operation
 		wantPath      string
 		wantHostPath  string
+		wantNilAccess bool
 		// Additional assertions for operation-specific metadata.
 		check func(t *testing.T, access *storage.FileAccess)
 	}{
@@ -374,10 +375,30 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 				require.NotNil(t, meta)
 				assert.Equal(t, storage.AclType_ACL_TYPE_ACCESS, meta.GetAclType())
 				require.Len(t, meta.GetAclEntries(), 3)
-				assert.Equal(t, storage.AclTag_ACL_TAG_USER_OBJ, meta.GetAclEntries()[0].GetTag())
+				assert.Equal(t, storage.AclEntry_ACL_TAG_USER_OBJ, meta.GetAclEntries()[0].GetTag())
 				assert.Equal(t, uint32(6), meta.GetAclEntries()[0].GetPerm())
-				assert.Equal(t, storage.AclTag_ACL_TAG_USER, meta.GetAclEntries()[1].GetTag())
+				assert.Equal(t, storage.AclEntry_ACL_TAG_USER, meta.GetAclEntries()[1].GetTag())
 				assert.Equal(t, uint32(1000), meta.GetAclEntries()[1].GetId())
+			},
+		},
+		"ACL remove (empty entries)": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Acl{Acl: &sensorAPI.FileAclChange{
+					Activity: base("/etc/passwd"),
+					AclType:  sensorAPI.AclType_ACL_TYPE_ACCESS,
+					Entries:  []*sensorAPI.AclEntry{},
+				}},
+			},
+			wantOperation: storage.FileAccess_ACL_CHANGE,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				meta := access.GetFile().GetMeta()
+				require.NotNil(t, meta)
+				assert.Equal(t, storage.AclType_ACL_TYPE_ACCESS, meta.GetAclType())
+				assert.Empty(t, meta.GetAclEntries())
 			},
 		},
 		"unhandled type returns nil": {
@@ -386,7 +407,7 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
 				File:     &sensorAPI.FileActivity_Write{Write: &sensorAPI.FileWrite{Activity: base("/tmp/data")}},
 			},
-			// wantOperation is irrelevant — we expect nil access.
+			wantNilAccess: true,
 		},
 	}
 
@@ -395,7 +416,7 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				tp := newTestPipeline(t)
 
-				if tc.wantOperation == 0 && name == "unhandled type returns nil" {
+				if tc.wantNilAccess {
 					// Unhandled types should be silently dropped.
 					tp.activityChan <- tc.activity
 					synctest.Wait()
