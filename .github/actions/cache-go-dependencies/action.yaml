@@ -93,39 +93,18 @@ runs:
         echo "Cleared test cache for fresh run"
       shell: bash
 
-    - name: Stabilize file mtimes for Go test cache and module index
+    - name: Stabilize file mtimes for Go test cache
       run: |
-        # Go's module index (stored in $GOCACHE) caches each .go file's parsed
-        # imports under the key (filename, mtime, size). Without mtime
-        # stabilisation, git checkout sets all mtimes to wall-clock time, which
-        # varies between runners and causes every module index lookup to miss.
-        #
-        # Set every .go file's mtime to the CHECKED-OUT commit's own timestamp
-        # (one value for the whole tree, not per-file history): same commit
-        # across runs → same mtime → cache hit. Any new commit → new mtime →
-        # full re-parse. Re-parsing is cheap (import-list syntax only, not
-        # type-checking/compilation — that's cached separately by content hash
-        # in the build cache and unaffected by mtime), so invalidating the
-        # whole tree on any commit is an acceptable trade for a script that:
-        #   - needs no history walk, so shallow checkouts (the GHA default for
-        #     most jobs) work with zero extra cost — no unshallow required
-        #   - never diffs per-commit, so merge commits (which git log skips by
-        #     default) and renames (excluded from the default diff filter)
-        #     need no special-casing — there is nothing to skip
-        ts=$(git log -1 --format='%ct')
-        git ls-files -- '*.go' | xargs -r touch -d "@$ts"
-        # Directories have no content of their own; the same fixed constant
-        # is fine since GOCACHE only inspects file mtimes.
-        git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
+        # VERIFY BRANCH: OLD buggy fixed-constant scheme, deliberately restored
+        # to test whether GODEBUG=goindex=0 alone (see next step) prevents the
+        # module-index staleness bug WITHOUT any mtime engineering at all.
+        git ls-files | xargs touch -t 200101010000
       shell: bash
 
-    # VERIFY BRANCH ONLY: diagnostic visibility. Strip before porting this
-    # action.yaml back to the real fix PR. Expect exactly 1 distinct mtime
-    # now (whole-tree stamping), regardless of shallow vs full checkout.
-    - name: "[diagnostic] count distinct .go mtimes"
-      run: |
-        distinct=$(git ls-files -- '*.go' | xargs stat -c '%Y' | sort -u | wc -l)
-        total=$(git ls-files -- '*.go' | wc -l)
-        echo "Distinct mtimes among .go files: $distinct (of $total total files)"
-        echo "is-shallow-repository: $(git rev-parse --is-shallow-repository)"
+    # VERIFY BRANCH: disable Go's module index entirely. Confirmed locally
+    # (real jwt v4->v5 diff, not a stdlib stand-in) that this alone prevents
+    # "could not import ... (open : no such file or directory)" even with the
+    # old fixed-constant mtime scheme reapplied unconditionally on every run.
+    - name: "[test] disable Go module index (GODEBUG=goindex=0)"
+      run: echo "GODEBUG=goindex=0" >> "$GITHUB_ENV"
       shell: bash
