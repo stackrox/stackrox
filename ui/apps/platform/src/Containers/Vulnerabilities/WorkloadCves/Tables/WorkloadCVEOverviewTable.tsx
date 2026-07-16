@@ -249,11 +249,16 @@ function WorkloadCVEOverviewTable({
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const { urlBuilder } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
+
+    const severitySortParams = useUnifiedView
+        ? getSortParams('Severity', { aggregateFunc: 'max' })
+        : getSortParams('Images By Severity', getSeveritySortOptions(filteredSeverities));
 
     return (
         <Table variant="compact">
@@ -267,10 +272,7 @@ function WorkloadCVEOverviewTable({
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh
                         className={getVisibilityClass('imagesBySeverity')}
-                        sort={getSortParams(
-                            'Images By Severity',
-                            getSeveritySortOptions(filteredSeverities)
-                        )}
+                        sort={severitySortParams}
                         tooltip="Severity of this CVE across images"
                     >
                         Images by severity
@@ -352,9 +354,6 @@ function WorkloadCVEOverviewTable({
                         } = imageCve;
 
                         const isExpanded = expandedRowSet.has(cve);
-                        const useUnifiedView = isFeatureFlagEnabled(
-                            'ROX_VULN_MGMT_UNIFIED_CVE_VIEW'
-                        );
 
                         const criticalCount = affectedImageCountBySeverity?.critical.total ?? 0;
                         const importantCount = affectedImageCountBySeverity?.important.total ?? 0;
