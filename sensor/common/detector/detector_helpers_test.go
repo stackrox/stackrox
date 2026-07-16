@@ -22,15 +22,16 @@ import (
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
+	"github.com/stackrox/rox/sensor/common/updater"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
 
-func createTestDetector(tb testing.TB, pubSubEnabled bool) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore) {
+func createTestDetector(tb testing.TB, pubSubEnabled bool) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore, *mockStore.MockNodeStore) {
 	return createTestDetectorWithBufferSize(tb, pubSubEnabled, 100)
 }
 
-func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferSize int) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore) {
+func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferSize int) (*detectorImpl, *mockStore.MockDeploymentStore, *mockStore.MockNetworkPolicyStore, *mockStore.MockNodeStore) {
 	tb.Helper()
 
 	ctrl := gomock.NewController(tb)
@@ -40,11 +41,14 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 	networkPolicyStore := mockStore.NewMockNetworkPolicyStore(ctrl)
 	serviceAccountStore := mockStore.NewMockServiceAccountStore(ctrl)
 	serviceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	nodeStore := mockStore.NewMockNodeStore(ctrl)
 
 	detectorStopper := concurrency.NewStopper()
 
 	var piQueue *queue.Queue[*detectorEvents.IndicatorEvent]
 	var netFlowQueue *queue.Queue[*detectorEvents.NetworkFlowEvent]
+	var fileAccessQueue *queue.Queue[*detectorEvents.FileAccessEvent]
+	var deploymentQueue queue.SimpleQueue[*detectorEvents.DeploymentEvent]
 	if !pubSubEnabled {
 		piQueue = queue.NewQueue[*detectorEvents.IndicatorEvent](
 			detectorStopper, "PIsQueue", bufferSize, nil, nil,
@@ -52,26 +56,28 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		netFlowQueue = queue.NewQueue[*detectorEvents.NetworkFlowEvent](
 			detectorStopper, "FlowsQueue", bufferSize, nil, nil,
 		)
+		fileAccessQueue = queue.NewQueue[*detectorEvents.FileAccessEvent](
+			detectorStopper, "FileAccessQueue", bufferSize, nil, nil,
+		)
+		deploymentQueue = queue.NewSimpleQueue[*detectorEvents.DeploymentEvent](
+			"DeploymentQueue", bufferSize, nil, nil,
+		)
 	}
-	fileAccessQueue := queue.NewQueue[*queue.FileAccessQueueItem](
-		detectorStopper, "FileAccessQueue", bufferSize, nil, nil,
-	)
-	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
-		"DeploymentQueue", 0, nil, nil,
-	)
 
 	d := &detectorImpl{
 		unifiedDetector:           &fakeUnifiedDetector{},
 		output:                    make(chan *message.ExpiringMessage, 1000),
 		auditEventsChan:           make(chan *sensor.AuditEvents),
-		deploymentAlertOutputChan: make(chan outputResult),
+		deploymentAlertOutputChan: make(chan *detectorEvents.DeployAlertOutputEvent),
 		deploymentProcessingMap:   make(map[string]int64),
-		enricher:                  newEnricher(&fakeClusterIDPeekWaiter{}, nil, serviceAccountStore, nil, nil),
+		enricher:                  newEnricher(&fakeClusterIDPeekWaiter{}, nil, serviceAccountStore, nil, nil, nil),
 		deploymentStore:           deploymentStore,
+		nodeStore:                 nodeStore,
 		networkPolicyStore:        networkPolicyStore,
 		baselineEval:              baseline.NewBaselineEvaluator(),
 		networkbaselineEval:       networkBaselineEval.NewNetworkBaselineEvaluator(),
 		enforcer:                  &fakeEnforcer{},
+		auditLogUpdater:           &fakeAuditLogUpdater{},
 		deduper:                   newDeduper(),
 		detectorStopper:           detectorStopper,
 		auditStopper:              concurrency.NewStopper(),
@@ -101,14 +107,32 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 						),
 					),
 				),
+				lane.NewConcurrentLane(pubsub.DetectorFileAccessLane,
+					lane.WithConcurrentLaneConsumer(
+						consumer.NewBufferedConsumer(
+							consumer.WithBufferedConsumerSize(bufferSize),
+						),
+					),
+				),
+				lane.NewBlockingLane(pubsub.DetectorAuditLogLane),
+				lane.NewConcurrentLane(pubsub.DetectorDeploymentLane,
+					lane.WithConcurrentLaneConsumer(
+						consumer.NewBufferedConsumer(
+							consumer.WithBufferedConsumerSize(bufferSize),
+						),
+					),
+				),
+				lane.NewBlockingLane(pubsub.DetectorScanResultLane),
+				lane.NewBlockingLane(pubsub.DetectorDeployAlertOutputLane),
 			},
 		))
 		require.NoError(tb, err)
 		tb.Cleanup(dispatcher.Stop)
 		d.pubSubDispatcher = dispatcher
+		d.enricher.pubSubDispatcher = dispatcher
 	}
 
-	return d, deploymentStore, networkPolicyStore
+	return d, deploymentStore, networkPolicyStore, nodeStore
 }
 
 const benchBufferSize = 20000
@@ -116,7 +140,7 @@ const benchBufferSize = 20000
 func createBenchDetector(b *testing.B, pubSubEnabled bool) *detectorImpl {
 	b.Helper()
 
-	d, ds, nps := createTestDetectorWithBufferSize(b, pubSubEnabled, benchBufferSize)
+	d, ds, nps, _ := createTestDetectorWithBufferSize(b, pubSubEnabled, benchBufferSize)
 
 	ds.EXPECT().GetSnapshot(gomock.Any()).DoAndReturn(func(id string) *storage.Deployment {
 		return &storage.Deployment{Id: id, Name: "bench-" + id, Namespace: "default"}
@@ -181,3 +205,19 @@ func (f *fakeEnforcer) ProcessMessage(_ context.Context, _ *central.MsgToSensor)
 }
 func (f *fakeEnforcer) ProcessAlertResults(_ central.ResourceAction, _ storage.LifecycleStage, _ *central.AlertResults) {
 }
+
+type fakeAuditLogUpdater struct{}
+
+func (f *fakeAuditLogUpdater) Start() error                                   { return nil }
+func (f *fakeAuditLogUpdater) Stop()                                          {}
+func (f *fakeAuditLogUpdater) Notify(_ common.SensorComponentEvent)           {}
+func (f *fakeAuditLogUpdater) Capabilities() []centralsensor.SensorCapability { return nil }
+func (f *fakeAuditLogUpdater) Name() string                                   { return "fake-updater" }
+func (f *fakeAuditLogUpdater) ResponsesC() <-chan *message.ExpiringMessage    { return nil }
+func (f *fakeAuditLogUpdater) Accepts(_ *central.MsgToSensor) bool            { return false }
+func (f *fakeAuditLogUpdater) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+	return nil
+}
+func (f *fakeAuditLogUpdater) ForceUpdate() {}
+
+var _ updater.Component = (*fakeAuditLogUpdater)(nil)

@@ -79,8 +79,11 @@ func ErrorToGrpcCodeStreamInterceptor(srv interface{}, ss grpc.ServerStream, _ *
 // unwrapGRPCStatus unwraps the `err` chain to find an error
 // implementing `GRPCStatus()`.
 func unwrapGRPCStatus(err error) *status.Status {
-	var se interface{ GRPCStatus() *status.Status }
-	if errors.As(err, &se) {
+	type errorWithStatus interface {
+		Error() string
+		GRPCStatus() *status.Status
+	}
+	if se, converted := errors.AsType[errorWithStatus](err); converted {
 		return se.GRPCStatus()
 	}
 	return nil
@@ -116,8 +119,7 @@ func sanitizeErrorMessage(err error) string {
 	}
 
 	// Check if this is a PostgreSQL error - if so, don't expose internal details
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
+	if _, converted := errors.AsType[*pgconn.PgError](err); converted {
 		return "Database operation failed"
 	}
 

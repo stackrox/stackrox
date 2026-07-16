@@ -53,7 +53,7 @@ func (s *enricherSuite) SetupTest() {
 		&fakeClusterIDPeekWaiter{},
 		s.mockCache,
 		s.mockServiceAccountStore,
-		s.mockRegistryStore, nil)
+		s.mockRegistryStore, nil, nil)
 }
 
 func (s *enricherSuite) TearDownTest() {

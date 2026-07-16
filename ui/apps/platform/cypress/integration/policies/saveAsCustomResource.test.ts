@@ -1,5 +1,6 @@
-import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import { interceptAndWatchRequests } from '../../helpers/request';
+import pf6 from '../../selectors/pf6';
 import {
     deletePolicyIfExists,
     doPolicyPageAction,
@@ -7,9 +8,8 @@ import {
     importPolicyFromFixture,
     visitPolicies,
     visitPolicy,
-} from '../../helpers/policies';
-import { interceptAndWatchRequests } from '../../helpers/request';
-import pf6 from '../../selectors/pf6';
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 
 const saveAsUrl = '/api/policy/custom-resource/save-as-zip';
 

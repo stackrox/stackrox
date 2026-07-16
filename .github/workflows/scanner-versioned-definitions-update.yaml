@@ -112,7 +112,6 @@ jobs:
       if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
-        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
         NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
@@ -129,21 +128,15 @@ jobs:
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
         dir=${branch////-}
         url="https://storage.googleapis.com/scanner-v4-test/nvd/$dir/$nvd_file"
-
-        code=$(curl \
-            -o nvd.zip \
-            -w "%{http_code}" \
-            -H "If-Modified-Since: $since_time" \
-            "$url")
-
-        echo "code: $code"
-        echo "$code" | grep -q 200
+        curl --fail --silent --show-error \
+          --retry 3 --retry-all-errors --retry-delay 5 \
+          --connect-timeout 10 --max-time 300 \
+          -o nvd.zip "$url"
 
     - name: Download NVD
       if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
-        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
         NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
@@ -157,15 +150,10 @@ jobs:
                 exit 1
         esac
         url="https://definitions.stackrox.io/v4/nvd/$nvd_file"
-
-        code=$(curl \
-            -o nvd.zip \
-            -w "%{http_code}" \
-            -H "If-Modified-Since: $since_time" \
-            "$url")
-
-        echo "code: $code"
-        echo "$code" | grep -q 200
+        curl --fail --silent --show-error \
+          --retry 3 --retry-all-errors --retry-delay 5 \
+          --connect-timeout 10 --max-time 300 \
+          -o nvd.zip "$url"
 
     - name: Set MANUAL_URL
       id: set-manual-url

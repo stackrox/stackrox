@@ -3,6 +3,7 @@ package docker
 import (
 	"encoding/json"
 	"io"
+	"maps"
 	"strings"
 	"time"
 
@@ -76,9 +77,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 		}
 		layers = append(layers, layer)
 		// Last label takes precedence and there seems to be a separate image object per layer
-		for labelKey, labelValue := range v1Image.Config.Labels {
-			labels[labelKey] = labelValue
-		}
+		maps.Copy(labels, v1Image.Config.Labels)
 	}
 	// Orient the layers to be oldest to newest
 	fsLayers := make([]string, 0, len(manifest.FSLayers))

@@ -1378,6 +1378,7 @@ func (s *PolicyValidatorTestSuite) TestValidateScope() {
 func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 	tests := map[string]struct {
 		lifecycleStages    []storage.LifecycleStage
+		eventSource        storage.EventSource
 		skipContainerTypes []storage.ContainerType
 		expectError        bool
 	}{
@@ -1404,12 +1405,30 @@ func (s *PolicyValidatorTestSuite) TestValidateEvaluationFilter() {
 		"no lifecycle stages with skip init is allowed": {
 			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
 		},
+		"audit log event with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_AUDIT_LOG_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
+		"node event with skip init is rejected": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_NODE_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+			expectError:        true,
+		},
+		"deployment event with skip init is allowed": {
+			lifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			eventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+			skipContainerTypes: []storage.ContainerType{storage.ContainerType_INIT},
+		},
 	}
 
 	for name, tc := range tests {
 		s.Run(name, func() {
 			policy := &storage.Policy{
 				LifecycleStages: tc.lifecycleStages,
+				EventSource:     tc.eventSource,
 			}
 			if tc.skipContainerTypes != nil {
 				policy.EvaluationFilter = &storage.EvaluationFilter{

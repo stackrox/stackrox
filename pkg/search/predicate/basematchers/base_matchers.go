@@ -6,7 +6,6 @@ import (
 	"time"
 
 	globstar "github.com/bmatcuk/doublestar/v4"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/protocompat"

@@ -11,6 +11,12 @@ const (
 	FileActivityEnrichedProcessConsumer
 	DetectorProcessIndicatorConsumer
 	DetectorNetworkFlowConsumer
+	DetectorFileAccessConsumer
+	DetectorAuditLogConsumer
+	DetectorDeploymentConsumer
+	DetectorScanResultConsumer
+	DetectorDeployAlertOutputConsumer
+	OutputQueueConsumer
 )
 
 var (
@@ -23,6 +29,12 @@ var (
 		UnenrichedProcessConsumer:           "UnenrichedProcess",
 		DetectorProcessIndicatorConsumer:    "DetectorProcessIndicator",
 		DetectorNetworkFlowConsumer:         "DetectorNetworkFlow",
+		DetectorFileAccessConsumer:          "DetectorFileAccess",
+		DetectorAuditLogConsumer:            "DetectorAuditLog",
+		DetectorDeploymentConsumer:          "DetectorDeployment",
+		DetectorScanResultConsumer:          "DetectorScanResult",
+		DetectorDeployAlertOutputConsumer:   "DetectorDeployAlertOutput",
+		OutputQueueConsumer:                 "OutputQueue",
 	}
 )
 

@@ -216,7 +216,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportData() {
 		s.T().Run(tc.name, func(t *testing.T) {
 			reportSnap := testReportSnapshot(tc.collection.GetId(), tc.fixability, tc.severities, tc.imageTypes, tc.scopeRules)
 			// Test get data using SQF
-			reportData, err := s.reportGenerator.getReportDataSQF(reportSnap, tc.collection, time.Time{})
+			reportData, err := s.reportGenerator.getReportDataSQF(s.ctx, reportSnap, tc.collection, time.Time{})
 			s.NoError(err)
 			collected := collectVulnReportDataSQFNewDataModel(reportData.CVEResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
@@ -228,6 +228,22 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportData() {
 		})
 	}
 
+}
+
+func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportDataWithCancelledContext() {
+	collection := testCollection("col-cancel", "", "", "")
+	reportSnap := testReportSnapshot(collection.GetId(),
+		storage.VulnerabilityReportFilters_BOTH, allSeverities(),
+		[]storage.VulnerabilityReportFilters_ImageType{storage.VulnerabilityReportFilters_DEPLOYED},
+		nil)
+
+	// Cancel the context before calling getReportDataSQF to prove cancellation propagates to the DB query
+	ctx, cancel := context.WithCancel(s.ctx)
+	cancel()
+
+	_, err := s.reportGenerator.getReportDataSQF(ctx, reportSnap, collection, time.Time{})
+	s.Error(err, "Expected error when context is cancelled before DB query")
+	s.ErrorIs(err, context.Canceled)
 }
 
 func collectVulnReportDataSQFNewDataModel(cveResponses []*ImageCVEQueryResponse) *vulnReportDataNewDataModel {
@@ -607,7 +623,7 @@ func (s *NewDataModelEnhancedReportingTestSuite) TestGetReportDataWithEntityScop
 	for name, tc := range testCases {
 		s.T().Run(name, func(t *testing.T) {
 			reportSnap := testEntityScopeReportSnapshot(tc.entityScope, tc.query, tc.imageTypes, tc.scopeRules)
-			reportData, err := s.reportGenerator.getReportDataSQF(reportSnap, nil, time.Time{})
+			reportData, err := s.reportGenerator.getReportDataSQF(s.ctx, reportSnap, nil, time.Time{})
 			s.NoError(err)
 			collected := collectVulnReportDataSQFNewDataModel(reportData.CVEResponses)
 			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)

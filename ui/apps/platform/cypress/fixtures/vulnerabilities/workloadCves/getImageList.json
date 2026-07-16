@@ -8,22 +8,46 @@
                     "registry": "docker.io",
                     "remote": "cypress-test/image",
                     "tag": "v0.0.1",
-                    "fullName": "docker.io/cypress-test/image:v0.0.1"
+                    "fullName": "docker.io/cypress-test/image:v0.0.1",
+                    "__typename": "ImageName"
                 },
                 "imageCVECountBySeverity": {
-                    "critical": { "total": 2 },
-                    "important": { "total": 0 },
-                    "moderate": { "total": 0 },
-                    "low": { "total": 0 },
-                    "unknown": { "total": 0 }
+                    "critical": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 2,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "unknown": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
                 },
-                "operatingSystem": "debian:11",
+                "operatingSystem": "debian:8",
                 "deploymentCount": 1,
                 "watchStatus": "NOT_WATCHED",
-                "metadata": { "v1": { "created": "2024-01-15T10:30:00Z" } },
-                "scanTime": "2024-06-01T12:00:00Z",
+                "metadata": {
+                    "v1": {
+                        "created": "2020-09-15T22:35:00.560827473Z",
+                        "__typename": "V1Metadata"
+                    },
+                    "__typename": "ImageMetadata"
+                },
+                "scanTime": "2024-12-02T13:51:19.876935617Z",
                 "scanNotes": [],
-                "notes": []
+                "notes": [],
+                "__typename": "Image"
             }
         ]
     }

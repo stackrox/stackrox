@@ -13,10 +13,10 @@ const defaultTimeStringFormat = time.RFC3339Nano
 
 var (
 	// TimestampPtrType is a variable containing a nil pointer of Timestamp type
-	TimestampPtrType = reflect.TypeOf((*timestamppb.Timestamp)(nil))
+	TimestampPtrType = reflect.TypeFor[*timestamppb.Timestamp]()
 
 	// TimestampType is the type representing a proto timestamp.
-	TimestampType = reflect.TypeOf(timestamppb.Timestamp{})
+	TimestampType = reflect.TypeFor[timestamppb.Timestamp]()
 )
 
 // Timestamp represents a point in time independent of any time zone or local calendar, encoded

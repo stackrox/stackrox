@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+
+	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
 // XyzVersion represents a semantic version with major.minor.patch components
@@ -85,26 +87,13 @@ func (v XyzVersion) IsEqualOrBefore(other XyzVersion) bool {
 
 // GetPreviousYStream returns the previous Y-Stream version.
 // Y-Stream versions have patch number = 0 (e.g., 3.73.0, 3.74.0, 4.0.0)
-// This implements the logic from scripts/get-previous-y-stream.sh
 func GetPreviousYStream(v XyzVersion) (*XyzVersion, error) {
-	if v.Y > 0 {
-		// If minor version > 0, previous Y-Stream is one minor less
-		result := XyzVersion{X: v.X, Y: v.Y - 1, Z: 0}
-		return &result, nil
+	prev, err := productstreams.GetPreviousYStream(productstreams.XYVersion{X: v.X, Y: v.Y})
+	if err != nil {
+		return nil, err
 	}
-
-	// For major version bumps, maintain hardcoded mapping
-	switch v.X {
-	case 4:
-		result := XyzVersion{X: 3, Y: 74, Z: 0}
-		return &result, nil
-	case 1:
-		// 0.0.0 was never released, but used for trunk builds
-		result := XyzVersion{X: 0, Y: 0, Z: 0}
-		return &result, nil
-	default:
-		return nil, fmt.Errorf("don't know the previous Y-Stream for %d.%d", v.X, v.Y)
-	}
+	result := XyzVersion{X: prev.X, Y: prev.Y, Z: 0}
+	return &result, nil
 }
 
 // initialReplaceFor calculates the initial replacement version based on current and previous Y-stream versions

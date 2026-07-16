@@ -52,12 +52,12 @@ clean-generated-srcs:
 .PHONY: test
 test: compile
 	@echo "+ $@"
-	$(GRADLE) testBegin testParallel testRest $(GRADLE_TEST_ARGS)
+	$(GRADLE) testParallel testRest $(GRADLE_TEST_ARGS)
 
 .PHONY: bat-test
 bat-test: compile
 	@echo "+ $@"
-	$(GRADLE) testBegin testParallelBAT testBAT $(GRADLE_TEST_ARGS)
+	$(GRADLE) testParallelBAT testBAT $(GRADLE_TEST_ARGS)
 
 .PHONY: smoke-test
 smoke-test: compile

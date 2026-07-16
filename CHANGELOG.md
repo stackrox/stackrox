@@ -13,15 +13,21 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
+- ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
+
+- ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
 
 ### Removed Features
 
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
+- ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
 
 ### Technical Changes
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
+
+- ROX-34804: The machine access configuration for `config-controller` now validates the audience (`aud` claim) of the service account token. The expected audience is `central.stackrox.io`. When users have added their own role bindings to this machine access configuration, the audience check is not enforced by default to keep backwards compatibility. It is recommended to set the expected audience to `central.stackrox.io` after ensuring that all exchange tokens are being created with this audience claim.
 
 ## [4.11.0]
 

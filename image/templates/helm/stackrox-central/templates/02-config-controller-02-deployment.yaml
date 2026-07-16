@@ -98,6 +98,9 @@ spec:
           mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
+        - name: m2m
+          mountPath: /var/run/secrets/stackrox.io/m2m
+          readOnly: true
       terminationGracePeriodSeconds: 10
       volumes:
       - name: central-certs-volume
@@ -115,4 +118,11 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
+      - name: m2m
+        projected:
+          sources:
+          - serviceAccountToken:
+              audience: central.stackrox.io
+              expirationSeconds: 3600
+              path: token
 {{- end }}

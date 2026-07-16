@@ -4,6 +4,7 @@ import (
 	"context"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -11,7 +12,7 @@ import (
 
 func New(ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"policy_violation",
+		metrics.Violations,
 		"policy violations",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {

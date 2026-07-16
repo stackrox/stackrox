@@ -32,7 +32,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -146,9 +146,7 @@ var (
 		for severity := range validLevels {
 			severities = append(severities, severity)
 		}
-		sort.Slice(severities, func(i, j int) bool {
-			return severities[i] < severities[j]
-		})
+		slices.Sort(severities)
 		return severities
 	}()
 
@@ -228,10 +226,8 @@ func init() {
 }
 
 func addOutput(config *zap.Config, path string) {
-	for _, p := range config.OutputPaths {
-		if p == path {
-			return
-		}
+	if slices.Contains(config.OutputPaths, path) {
+		return
 	}
 	if logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666); err == nil {
 		defer func() {

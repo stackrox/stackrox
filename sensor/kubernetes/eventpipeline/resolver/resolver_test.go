@@ -78,6 +78,11 @@ func (s *resolverSuite) newResolver(pubsubEnabled bool) component.Resolver {
 	return resolver
 }
 
+func (s *resolverSuite) startResolver(resolver component.Resolver) {
+	s.Require().NoError(resolver.Start())
+	s.T().Cleanup(resolver.Stop)
+}
+
 func (s *resolverSuite) dispatchEvent(event *component.ResourceEvent, resolver component.Resolver, pubSubEnabled bool) {
 	if pubSubEnabled {
 		err := resolver.ProcessResourceEvent(event)
@@ -92,15 +97,12 @@ func (s *resolverSuite) Test_MessageSentToOutput() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
 
-			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, gomock.Any(), 1, &messageReceived)
 			event := &component.ResourceEvent{
 				ForwardMessages: []*central.SensorEvent{
 					{
@@ -122,8 +124,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 	for _, pubSubEnabled := range []bool{true, false} {
 		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 		resolver := s.newResolver(pubSubEnabled)
-		err := resolver.Start()
-		s.NoError(err)
+		s.startResolver(resolver)
 
 		testCases := map[string]struct {
 			deploymentID    string
@@ -157,9 +158,7 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 					acceptableNumberOfMismatches: 1,
 				}
 
-				s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
-					defer messageReceived.Done()
-				})
+				s.expectOutputSend(pubSubEnabled, &expectedDeployment, 2, &messageReceived)
 
 				event := &component.ResourceEvent{
 					DeploymentReferences: []component.DeploymentReference{
@@ -182,8 +181,7 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(2)
@@ -205,9 +203,7 @@ func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
 				acceptableNumberOfMismatches: 1,
 			}
 
-			s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, &expectedDeployment, 2, &messageReceived)
 
 			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
@@ -230,8 +226,7 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(4)
@@ -240,9 +235,7 @@ func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
 			s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
 			s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}).Times(4).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, &messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}, 4, &messageReceived)
 
 			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
@@ -269,8 +262,7 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
 				s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
@@ -278,16 +270,10 @@ func (s *resolverSuite) Test_Send_ResourceAction() {
 					messageReceived.Add(2)
 
 					s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
-					s.mockOutput.EXPECT()
-
-					s.mockOutput.EXPECT().Send(
-						&resourceActionMatcher{
-							resourceAction:               action,
-							acceptableNumberOfMismatches: 1,
-						},
-					).Times(2).Do(func(arg0 interface{}) {
-						defer messageReceived.Done()
-					})
+					s.expectOutputSend(pubSubEnabled, &resourceActionMatcher{
+						resourceAction:               action,
+						acceptableNumberOfMismatches: 1,
+					}, 2, &messageReceived)
 
 					event := &component.ResourceEvent{
 						DeploymentReferences: []component.DeploymentReference{
@@ -311,17 +297,14 @@ func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			waitForEvents := sync.WaitGroup{}
 			waitForEvents.Add(2)
 
 			s.givenBuildDependenciesError("1234", &waitForEvents)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
-				defer waitForEvents.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, &messageCounterMatcher{numEvents: []int{0}}, 1, &waitForEvents)
 
 			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
@@ -343,8 +326,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			waitForEvents := sync.WaitGroup{}
 			waitForEvents.Add(2)
@@ -355,9 +337,7 @@ func (s *resolverSuite) Test_Send_DeploymentNotFound() {
 			s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
 			s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
 
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
-				defer waitForEvents.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, &messageCounterMatcher{numEvents: []int{0}}, 1, &waitForEvents)
 
 			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
@@ -380,8 +360,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 			resolver := s.newResolver(pubSubEnabled)
-			err := resolver.Start()
-			s.NoError(err)
+			s.startResolver(resolver)
 
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(1)
@@ -393,9 +372,7 @@ func (s *resolverSuite) Test_Send_DetectorReference() {
 				},
 			}
 
-			s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
-			})
+			s.expectOutputSend(pubSubEnabled, &detectionObjectMatcher{expected: detectionObject}, 1, &messageReceived)
 
 			event := &component.ResourceEvent{
 				DetectorMessages: detectionObject,
@@ -411,8 +388,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 	for _, pubSubEnabled := range []bool{true, false} {
 		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 		resolver := s.newResolver(pubSubEnabled)
-		err := resolver.Start()
-		s.NoError(err)
+		s.startResolver(resolver)
 
 		// There are two types of resource events that will be written to the output queue.
 		// 1) Resource events that were processed at the handlers level. E.g.: Pod events,
@@ -467,9 +443,7 @@ func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
 
 				s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
 
-				s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(len(testCase.expectedEvents)).Do(func(arg0 interface{}) {
-					defer messageReceived.Done()
-				})
+				s.expectOutputSend(pubSubEnabled, &messageCounterMatcher{numEvents: testCase.expectedEvents}, len(testCase.expectedEvents), &messageReceived)
 
 				event := &component.ResourceEvent{
 					ForwardMessages: testCase.forwardedMessages,
@@ -508,21 +482,18 @@ func (s *resolverSuite) Test_Send_SkipDedupingBehavior() {
 			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
 				s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
 				resolver := s.newResolver(pubSubEnabled)
-				err := resolver.Start()
-				s.NoError(err)
+				s.startResolver(resolver)
 
 				messageReceived := sync.WaitGroup{}
 				messageReceived.Add(tc.expectedSends)
 
 				s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
 
-				s.mockOutput.EXPECT().Send(&deploymentMatcher{
+				s.expectOutputSend(pubSubEnabled, &deploymentMatcher{
 					id:                           "1234",
 					permissionLevel:              storage.PermissionLevel_NONE,
 					acceptableNumberOfMismatches: tc.expectedSends - 1,
-				}).Times(tc.expectedSends).Do(func(arg0 interface{}) {
-					defer messageReceived.Done()
-				})
+				}, tc.expectedSends, &messageReceived)
 
 				event := &component.ResourceEvent{
 					DeploymentReferences: []component.DeploymentReference{
@@ -576,6 +547,19 @@ func (s *resolverSuite) Test_ToEvent_InitContainerFiltering() {
 				s.Assert().Equal(name, dep.GetContainers()[i].GetName())
 			}
 		})
+	}
+}
+
+// expectOutputSend sets up mock expectations for the resolver's output path.
+// In pubsub mode the resolver publishes to the dispatcher; in legacy mode it calls Send.
+// wg.Done() is called once per expected invocation.
+func (s *resolverSuite) expectOutputSend(pubSubEnabled bool, matcher gomock.Matcher, times int, wg *sync.WaitGroup) {
+	if pubSubEnabled {
+		s.mockPubSubDispatcher.EXPECT().Publish(matcher).Times(times).Return(nil).
+			Do(func(_ interface{}) { wg.Done() })
+	} else {
+		s.mockOutput.EXPECT().Send(matcher).Times(times).
+			Do(func(_ interface{}) { wg.Done() })
 	}
 }
 

@@ -65,8 +65,9 @@ type ResourceEvent struct {
 	// Context contains a context that determines if the message is still valid.
 	Context context.Context
 
-	topic *pubsub.Topic
-	lane  *pubsub.LaneID
+	topic           pubsub.Topic
+	lane            pubsub.LaneID
+	topicAndLaneSet bool
 }
 
 // NewEvent creates a resource event with preset sensor event messages.
@@ -80,23 +81,31 @@ func NewEventWithTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID, msg ...*ce
 	return &ResourceEvent{
 		ForwardMessages: msg,
 		Context:         context.Background(),
-		topic:           &topic,
-		lane:            &lane,
+		topic:           topic,
+		lane:            lane,
+		topicAndLaneSet: true,
 	}
+}
+
+// SetTopicAndLane sets the topic and lane on an existing event, avoiding a new allocation.
+func (e *ResourceEvent) SetTopicAndLane(topic pubsub.Topic, lane pubsub.LaneID) {
+	e.topic = topic
+	e.lane = lane
+	e.topicAndLaneSet = true
 }
 
 func (e *ResourceEvent) Topic() pubsub.Topic {
-	if e.topic == nil {
+	if !e.topicAndLaneSet {
 		return pubsub.KubernetesDispatcherEventTopic
 	}
-	return *e.topic
+	return e.topic
 }
 
 func (e *ResourceEvent) Lane() pubsub.LaneID {
-	if e.lane == nil {
+	if !e.topicAndLaneSet {
 		return pubsub.KubernetesDispatcherEventLane
 	}
-	return *e.lane
+	return e.lane
 }
 
 // AddSensorEvent appends central sensor events to be bundled with this resource event.

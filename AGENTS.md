@@ -88,11 +88,13 @@ When creating pull requests, you must follow these requirements:
 ### Adding Database Columns
 When the user needs to add a new column to an existing database table:
 
-**IMPORTANT: Schema-only changes do NOT require a migration.** Adding columns, indexes, or tables
-is handled automatically by GORM AutoMigrate on every Central startup. Simply update the proto
-definition (add field, add search/sql tags) and regenerate the schema code. A migration is ONLY
-needed when existing data must be backfilled or transformed. If the new column can tolerate its
-zero value until normal operation populates it, no migration is needed.
+**IMPORTANT: Schema-only changes do NOT require a migration.** Adding columns or tables
+is handled automatically by GORM AutoMigrate on every Central startup. Indexes are managed
+by the code generator and applied outside of GORM (see `migrator/MIGRATIONS_GUIDE.md`).
+Simply update the proto definition (add field, add search/sql tags) and regenerate the
+schema code. A migration is ONLY needed when existing data must be backfilled or transformed.
+If the new column can tolerate its zero value until normal operation populates it, no
+migration is needed.
 
 When a migration IS needed:
 - Read `migrator/README.md` for the authoritative migration workflow and examples
@@ -105,7 +107,11 @@ When a migration IS needed:
 The migrator README contains detailed examples of frozen schemas, GORM usage patterns, and migration best practices.
 
 ### Local Development Commands
-- `./deploy/deploy-local.sh` - Deploy StackRox locally (requires existing k8s cluster)
+
+- `roxie deploy` - Deploy StackRox with roxie, also works for local clusters, see deploy/AGENTS.md for more
+  information on roxie.
+- `./deploy/deploy-local.sh` - Deploy StackRox locally (requires existing k8s cluster), still supported,
+  but deprecated way.
 - `make install-dev-tools` - Install development tools (linters, generators)
 
 ### Single Test Examples
@@ -207,5 +213,3 @@ When making code changes, keep this in-code documentation up-to-date.
 - Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:15` for test setup
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
-
-

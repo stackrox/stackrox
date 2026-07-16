@@ -40,12 +40,14 @@ func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
 	}
 
 	return &ClientSet{
-		k8s: client,
+		restConfig: restConfig,
+		k8s:        client,
 	}
 }
 
 // ClientSet is a test version of kubernetes.ClientSet
 type ClientSet struct {
+	restConfig        *rest.Config
 	dynamic           dynamic.Interface
 	k8s               kubernetes.Interface
 	openshiftApps     appVersioned.Interface
@@ -68,6 +70,7 @@ func MakeOutOfClusterClient() (*ClientSet, error) {
 	}
 
 	return &ClientSet{
+		restConfig:        config,
 		k8s:               k8sClient,
 		dynamic:           mustCreateDynamicClient(config),
 		openshiftApps:     mustCreateOpenshiftAppsClient(config),
@@ -127,6 +130,11 @@ func mustCreateDynamicClient(config *rest.Config) dynamic.Interface {
 		log.Panicf("Creating dynamic client: %v", err)
 	}
 	return client
+}
+
+// RESTConfig returns the REST config used to create this client
+func (c *ClientSet) RESTConfig() *rest.Config {
+	return c.restConfig
 }
 
 // Kubernetes returns the kubernetes interface

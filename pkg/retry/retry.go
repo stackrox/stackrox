@@ -82,6 +82,12 @@ func (t *retryOptions) do() (err error) {
 					// third retry after 400 milliseconds. Backoff time doubles after each attempt.
 					time.Sleep(time.Duration(100*math.Pow(2, float64(i))) * time.Millisecond)
 				}
+				// The between/backoff step above may block for a while, during which the
+				// context can be cancelled. Re-check here so we don't make one more call to
+				// t.function() after the caller already asked us to stop.
+				if t.ctx != nil && t.ctx.Err() != nil {
+					return t.ctx.Err()
+				}
 			} else {
 				// If we can't retry then return.
 				return err

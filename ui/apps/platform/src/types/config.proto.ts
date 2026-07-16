@@ -70,6 +70,7 @@ export type PrometheusMetrics = {
     imageVulnerabilities?: PrometheusMetricsGroup | null;
     policyViolations?: PrometheusMetricsGroup | null;
     nodeVulnerabilities?: PrometheusMetricsGroup | null;
+    administrativeEvents?: PrometheusMetricsGroup | null;
 };
 
 export type PrivateConfig = {

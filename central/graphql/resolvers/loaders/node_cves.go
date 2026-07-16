@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var nodeCveLoaderType = reflect.TypeOf(storage.NodeCVE{})
+var nodeCveLoaderType = reflect.TypeFor[storage.NodeCVE]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeOf(storage.NodeCVE{}), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.NodeCVE](), func() interface{} {
 		return NewNodeCVELoader(nodeCVEDataStore.Singleton())
 	})
 }

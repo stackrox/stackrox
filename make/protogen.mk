@@ -41,7 +41,7 @@ ALL_SCANNER_PROTOS = $(shell find $(SCANNER_PROTO_BASE_PATH) -name '*.proto')
 ALL_SCANNER_PROTOS_REL = $(ALL_SCANNER_PROTOS:$(SCANNER_PROTO_BASE_PATH)/%=%)
 endif
 
-$(call go-tool, PROTOC_GEN_GO_BIN, google.golang.org/protobuf/cmd/protoc-gen-go)
+$(call go-tool, PROTOC_GEN_GO_BIN, google.golang.org/protobuf/cmd/protoc-gen-go, tools/proto)
 $(call go-tool, PROTOC_GEN_GO_GRPC_BIN, google.golang.org/grpc/cmd/protoc-gen-go-grpc, tools/proto)
 $(call go-tool, PROTOC_GEN_GO_VTPROTO_BIN, github.com/planetscale/vtprotobuf/cmd/protoc-gen-go-vtproto)
 $(call go-tool, PROTOC_GEN_OPENAPIV2, github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
