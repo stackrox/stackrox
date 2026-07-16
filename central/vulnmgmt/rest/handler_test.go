@@ -180,6 +180,39 @@ func (s *HandlerTestSuite) TestFlagDisabled() {
 	s.Equal(http.StatusNotFound, rec.Code)
 }
 
+func (s *HandlerTestSuite) TestListCVEsWithSortBySeverity() {
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/v2/vulnmgmt/cves?pagination.limit=5&pagination.sortOption.field=Severity&pagination.sortOption.reversed=true",
+		nil).WithContext(s.ctx)
+	rec := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusOK, rec.Code)
+
+	var resp CVEListResponse
+	s.NoError(json.NewDecoder(rec.Body).Decode(&resp))
+	s.NotEmpty(resp.Items)
+	s.Equal(2, resp.TotalCount)
+	s.Equal("CRITICAL_VULNERABILITY_SEVERITY", resp.Items[0].TopSeverity)
+}
+
+func (s *HandlerTestSuite) TestListCVEsWithSortByCVSS() {
+	req := httptest.NewRequest(http.MethodGet,
+		"/api/v2/vulnmgmt/cves?pagination.limit=5&pagination.sortOption.field=CVSS&pagination.sortOption.reversed=true",
+		nil).WithContext(s.ctx)
+	rec := httptest.NewRecorder()
+
+	s.handler.ServeHTTP(rec, req)
+
+	s.Equal(http.StatusOK, rec.Code)
+
+	var resp CVEListResponse
+	s.NoError(json.NewDecoder(rec.Body).Decode(&resp))
+	s.NotEmpty(resp.Items)
+	s.InDelta(9.8, resp.Items[0].TopCVSS, 0.1)
+}
+
 func (s *HandlerTestSuite) TestMethodNotAllowed() {
 	req := httptest.NewRequest(http.MethodPost, "/api/v2/vulnmgmt/cves", nil).WithContext(s.ctx)
 	rec := httptest.NewRecorder()
