@@ -29,15 +29,11 @@ func (p PodID) IsEmpty() bool {
 	return p.Name == "" && p.Namespace == "" && p.UID == ""
 }
 
-var errInvalidPodID = func(str string) error {
-	return fmt.Errorf("string %q is not a valid Pod ID", str)
-}
-
 // ParsePodID takes a string and returns the parsed pod ID, or an error.
 func ParsePodID(str string) (PodID, error) {
 	name, namespace, uid, ok := splitPodIDString(str)
 	if !ok || !isValidDNSSubdomain(name) || !isValidDNSLabel(namespace) || !isValidUID(uid) {
-		return PodID{}, errInvalidPodID(str)
+		return PodID{}, fmt.Errorf("string %q is not a valid Pod ID", str)
 	}
 	return PodID{Name: name, Namespace: namespace, UID: types.UID(uid)}, nil
 }
