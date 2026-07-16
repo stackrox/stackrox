@@ -15,7 +15,7 @@ import (
 // Note: THIS CAN BE BRITTLE. THERE IS NO GUARANTEE THESE CERTS WILL LAST FOREVER.
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
-var getAWSCerts = sync.OnceValue(func() []*x509.Certificate {
+var awsCerts = sync.OnceValue(func() []*x509.Certificate {
 	var awsCerts []*x509.Certificate
 	var err error
 	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
