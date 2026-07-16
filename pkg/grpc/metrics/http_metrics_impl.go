@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"maps"
 	"net/http"
 	"sync/atomic"
 
@@ -88,9 +89,7 @@ func (h *httpMetricsImpl) GetMetrics() (map[string]map[int]int64, map[string]map
 		// Prevent the response code map from being updated while we copy it
 		concurrency.WithLock(&ppm.normalInvocationStatsMutex, func() {
 			externalCodeMap := make(map[int]int64, len(ppm.normalInvocationStats))
-			for responseCode, count := range ppm.normalInvocationStats {
-				externalCodeMap[responseCode] = count
-			}
+			maps.Copy(externalCodeMap, ppm.normalInvocationStats)
 			if len(externalCodeMap) > 0 {
 				externalMetrics[path] = externalCodeMap
 			}

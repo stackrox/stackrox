@@ -36,7 +36,7 @@ type Service interface {
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
-func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress) Service {
+func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *sensor.AuditEvents, auditLogCollectionManager AuditLogCollectionManager, complianceC <-chan common.MessageToComplianceWithAddress, pubSubDispatcher common.PubSubDispatcher) Service {
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
 	return &serviceImpl{
@@ -47,6 +47,7 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 		orchestrator:              orchestrator,
 		auditEvents:               auditEventsInput,
 		auditLogCollectionManager: auditLogCollectionManager,
+		pubSubDispatcher:          pubSubDispatcher,
 		connectionManager:         newConnectionManager(),
 		offlineMode:               offlineMode,
 		stopper:                   set.NewSet[concurrency.Stopper](),

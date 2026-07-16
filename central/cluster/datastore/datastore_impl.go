@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -595,9 +596,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	if cluster.GetAuditLogState() == nil {
 		cluster.AuditLogState = make(map[string]*storage.AuditLogFileState)
 	}
-	for node, state := range states {
-		cluster.AuditLogState[node] = state
-	}
+	maps.Copy(cluster.GetAuditLogState(), states)
 
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }

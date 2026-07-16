@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"maps"
 	"slices"
 	"testing"
 	"time"
@@ -329,9 +330,7 @@ func (s *testSuite) TestSendDeduperStateIfSensorReconciliation() {
 				}
 				deduperStateSent := make(map[string]uint64)
 				for _, state := range deduperStates {
-					for k, v := range state.GetResourceHashes() {
-						deduperStateSent[k] = v
-					}
+					maps.Copy(deduperStateSent, state.GetResourceHashes())
 					s.Equal(tc.expectNumberOfDeduperStates, int(state.GetTotal()))
 					s.True(currentSet.Contains(int(state.GetCurrent())))
 					currentSet.Remove(int(state.GetCurrent()))

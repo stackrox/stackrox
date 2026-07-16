@@ -34,10 +34,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var (
-	withoutV1ConfigsQuery = search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery()
-)
-
 type upsertTestCase struct {
 	desc                       string
 	setMocksAndGenReportConfig func() *apiV2.ReportConfiguration
@@ -243,9 +239,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+				query := search.EmptyQuery()
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -254,9 +248,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-					withoutV1ConfigsQuery)
+				query := search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -268,9 +260,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 				Pagination: &apiV2.Pagination{Limit: 25},
 			},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+				query := search.EmptyQuery()
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
@@ -362,18 +352,14 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 		expectedQ *v1.Query
 	}{
 		{
-			desc:  "Empty query",
-			query: &apiV2.RawQuery{Query: ""},
-			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().ProtoQuery(),
-				withoutV1ConfigsQuery),
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
 		},
 		{
-			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-				withoutV1ConfigsQuery),
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Report Name:name"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
 		},
 	}
 

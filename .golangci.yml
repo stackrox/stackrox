@@ -172,13 +172,11 @@ linters:
     modernize:
       disable:
         - any
-        - mapsloop
         - minmax
         - newexpr
         - rangeint
         - reflecttypefor
         - slicescontains
-        - slicessort
   exclusions:
     generated: lax
     rules:

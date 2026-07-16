@@ -137,12 +137,6 @@ tasks.withType<Test>().configureEach {
     })
 }
 
-tasks.register<Test>("testBegin") {
-    useJUnitPlatform {
-        includeTags("Begin")
-    }
-}
-
 tasks.register<Test>("testParallel") {
     systemProperty("spock.configuration", rootProject.file("src/test/resources/ParallelSpockConfig.groovy"))
     useJUnitPlatform {
@@ -152,7 +146,7 @@ tasks.register<Test>("testParallel") {
 
 tasks.register<Test>("testRest") {
     useJUnitPlatform {
-        excludeTags("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
+        excludeTags("Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
     }
 }
 

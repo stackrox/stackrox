@@ -15526,12 +15526,24 @@
               {
                 "id": 6,
                 "name": "scope_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 7,
                 "name": "email_config",
                 "type": "EmailNotifierConfiguration",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ],
                 "oneof_parent": "notifier_config"
               },
               {
@@ -15542,12 +15554,24 @@
               {
                 "id": 9,
                 "name": "last_run_status",
-                "type": "ReportLastRunStatus"
+                "type": "ReportLastRunStatus",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 10,
                 "name": "last_successful_run_time",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 11,
@@ -15603,7 +15627,13 @@
               {
                 "id": 2,
                 "name": "since_last_report",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 3,
