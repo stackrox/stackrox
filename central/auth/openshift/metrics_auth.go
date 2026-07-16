@@ -4,7 +4,6 @@ import (
 	"context"
 
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	rolePkg "github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,6 +25,7 @@ import (
 const (
 	authProviderID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
 	permissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
+	accessScopeID   = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
@@ -34,6 +34,9 @@ const (
 	authProviderName  = "OpenShift Platform Client Certificates"
 	roleName          = "OpenShift Prometheus Metrics Reader"
 	permissionSetName = "OpenShift Prometheus Metrics Reader"
+	accessScopeName   = "OpenShift Central Cluster"
+
+	centralServicesLabelKey = "stackrox.io/central-services"
 )
 
 var log = logging.LoggerForModule()
@@ -60,6 +63,7 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 	}
 
 	onCA := func(caPEM string) {
+		ensureAccessScope(ctx, roleDS)
 		ensurePermissionSet(ctx, roleDS)
 		ensureRole(ctx, roleDS)
 		ensureAuthProvider(ctx, registry, caPEM)
@@ -132,6 +136,36 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 }
 
+func ensureAccessScope(ctx context.Context, roleDS roleDataStore.DataStore) {
+	if _, exists, err := roleDS.GetAccessScope(ctx, accessScopeID); err != nil {
+		log.Warnf("Failed to check OpenShift metrics access scope: %v", err)
+		return
+	} else if exists {
+		return
+	}
+
+	scope := &storage.SimpleAccessScope{
+		Id:          accessScopeID,
+		Name:        accessScopeName,
+		Description: "Scoped to clusters labeled stackrox.io/central-services (set automatically by the operator)",
+		Rules: &storage.SimpleAccessScope_Rules{
+			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+				{
+					Requirements: []*storage.SetBasedLabelSelector_Requirement{
+						{
+							Key: centralServicesLabelKey,
+							Op:  storage.SetBasedLabelSelector_EXISTS,
+						},
+					},
+				},
+			},
+		},
+	}
+	if err := roleDS.AddAccessScope(ctx, scope); err != nil {
+		log.Warnf("Failed to create OpenShift metrics access scope: %v", err)
+	}
+}
+
 func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
 	if _, exists, err := roleDS.GetPermissionSet(ctx, permissionSetID); err != nil {
 		log.Warnf("Failed to check OpenShift metrics permission set: %v", err)
@@ -165,7 +199,7 @@ func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
 		Name:            roleName,
 		Description:     "Maps OpenShift Prometheus service account to /metrics read access",
 		PermissionSetId: permissionSetID,
-		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
+		AccessScopeId:   accessScopeID,
 	}
 	if err := roleDS.AddRole(ctx, role); err != nil {
 		log.Warnf("Failed to create OpenShift metrics role: %v", err)
