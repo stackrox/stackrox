@@ -5,8 +5,11 @@ import (
 	"sync"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+var log = logging.LoggerForModule()
 
 // awsCerts lists all known AWS certificates as of time of writing.
 // See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-rsa2048.html
@@ -16,6 +19,7 @@ import (
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
 var awsCerts = sync.OnceValue(func() []*x509.Certificate {
+	log.Info("Parsing AWS identity document certificates")
 	var awsCerts []*x509.Certificate
 	var err error
 	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
