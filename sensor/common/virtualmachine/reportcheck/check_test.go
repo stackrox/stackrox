@@ -16,6 +16,10 @@ func packageMap(n int) map[string]*v4.Package {
 	return pkgs
 }
 
+// testWarnMaxBytes stands in for the caller-supplied threshold that, in
+// production, is derived from env.VirtualMachinesPullMaxResponseSizeKB.
+const testWarnMaxBytes = 2 << 20 // 2 MiB
+
 func TestIsViable(t *testing.T) {
 	cases := map[string]struct {
 		report      *v4.IndexReport
@@ -35,18 +39,10 @@ func TestIsViable(t *testing.T) {
 			wantViable:  true,
 			wantWarning: "zero packages",
 		},
-		"should warn but accept a report with fewer packages than the minimum": {
-			report: &v4.IndexReport{
-				State:    "IndexFinished",
-				Contents: &v4.Contents{Packages: packageMap(warnMinPackages - 1)},
-			},
-			wantViable:  true,
-			wantWarning: "unexpectedly low",
-		},
 		"should accept a normal report with no warning": {
 			report: &v4.IndexReport{
 				State:    "IndexFinished",
-				Contents: &v4.Contents{Packages: packageMap(warnMinPackages + 5)},
+				Contents: &v4.Contents{Packages: packageMap(5)},
 			},
 			wantViable:  true,
 			wantWarning: "",
@@ -58,22 +54,22 @@ func TestIsViable(t *testing.T) {
 					Packages: map[string]*v4.Package{
 						// A handful of normal packages plus one with an
 						// oversized field pushes the encoded report past
-						// warnMaxBytes without needing thousands of entries.
+						// testWarnMaxBytes without needing thousands of entries.
 						"a": {Name: "a", Version: "1.0.0"},
 						"b": {Name: "b", Version: "1.0.0"},
 						"c": {Name: "c", Version: "1.0.0"},
 						"d": {Name: "d", Version: "1.0.0"},
-						"e": {Name: "e", Version: strings.Repeat("x", warnMaxBytes+1024)},
+						"e": {Name: "e", Version: strings.Repeat("x", testWarnMaxBytes+1024)},
 					},
 				},
 			},
 			wantViable:  true,
-			wantWarning: "unusually large",
+			wantWarning: "report is",
 		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			viable, warning := IsViable(tc.report)
+			viable, warning := IsViable(tc.report, testWarnMaxBytes)
 			assert.Equal(t, tc.wantViable, viable)
 			if tc.wantWarning == "" {
 				assert.Empty(t, warning)
