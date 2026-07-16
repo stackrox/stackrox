@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"maps"
 	"strconv"
 
 	// Required for the usage of go:embed below.
@@ -48,6 +49,8 @@ const (
 	// same cluster without cluster-scoped resource name clashes. It defaults to off, so
 	// production keeps stable, static names. Deliberately kept out of the CRD schema.
 	namespacePrefixGlobalResourcesAnnotation = "platform.stackrox.io/namespace-prefix-global-resources"
+
+	centralServicesLabelKey = "stackrox.io/central-services"
 )
 
 var (
@@ -113,7 +116,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if sc.Spec.ClusterName != nil {
 		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
 	}
-	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
+	v.SetStringMap("clusterLabels", t.clusterLabels(ctx, sc))
 
 	if annotationValue, ok := sc.GetAnnotations()[namespacePrefixGlobalResourcesAnnotation]; ok {
 		namespacePrefix, err := strconv.ParseBool(annotationValue)
@@ -632,4 +635,22 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 		cv.AddChild("scraper", &sv)
 	}
 	return &cv
+}
+
+// clusterLabels returns the user-specified cluster labels merged with
+// auto-detected labels. When a Central CR exists in the same namespace, the
+// label stackrox.io/central-services=true is added so that access scopes can
+// dynamically match the cluster where Central runs.
+func (t Translator) clusterLabels(ctx context.Context, sc platform.SecuredCluster) map[string]string {
+	centralList := &platform.CentralList{}
+	if err := t.client.List(ctx, centralList, ctrlClient.InNamespace(sc.GetNamespace())); err != nil {
+		return sc.Spec.ClusterLabels
+	}
+	if len(centralList.Items) > 0 {
+		labels := make(map[string]string, len(sc.Spec.ClusterLabels)+1)
+		maps.Copy(labels, sc.Spec.ClusterLabels)
+		labels[centralServicesLabelKey] = "true"
+		return labels
+	}
+	return sc.Spec.ClusterLabels
 }
