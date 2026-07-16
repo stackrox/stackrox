@@ -199,12 +199,22 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	totalStart := s.now()
 	port := getVsockPort()
 
+	// The mandatory refresh is a deterministic, time-based decision Sensor
+	// can make before dialing at all, so request the full report on this
+	// first (and only) round trip instead of asking "anything newer?" and
+	// re-dialing once told no.
+	ifNewerThan, knownEpoch := state.lastGeneration, state.lastEpoch
+	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > mandatoryRefreshAfter
+	if mandatoryRefreshDue {
+		ifNewerThan, knownEpoch = 0, 0
+	}
+
 	log.Debugf("VMScraper: dialing roxagent on %q with TLS", key)
 	// knownEpoch lets a current roxagent make the complete "changed or not"
 	// decision server-side and serve the full report in this same round trip
 	// on a restart-coincidence false match, instead of relying solely on the
 	// client-side fallback below.
-	result, ok := s.dialAndGetReport(vmCtx, vm, key, port, state.lastGeneration, state.lastEpoch)
+	result, ok := s.dialAndGetReport(vmCtx, vm, key, port, ifNewerThan, knownEpoch)
 	if !ok {
 		return false
 	}
@@ -218,18 +228,21 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		// generation-only comparison can produce a false "unchanged" right
 		// after a restart (report_generation resets to 1 and coincidentally
 		// re-matches Sensor's cached value).
+		//
+		// mandatoryRefreshDue is deliberately not re-checked here: when
+		// true, the call above already requested ifNewerThan=0, so a
+		// current roxagent can only report Unchanged for a reason other
+		// than the mandatory refresh — i.e. an epoch mismatch below.
 		epoch := result.Meta.GetEpoch()
 		epochMismatch := epoch != 0 && epoch != state.lastEpoch
-		if !epochMismatch && s.now().Sub(state.lastForwardedAt) <= mandatoryRefreshAfter {
+		if !epochMismatch {
 			s.registerScrapedVM(scrapedVMs, vm)
 			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
 		}
-		if epochMismatch {
-			log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
-				key, state.lastEpoch, epoch, state.lastGeneration)
-		}
+		log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
+			key, state.lastEpoch, epoch, state.lastGeneration)
 		result, ok = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
 		if !ok {
 			return false
@@ -270,10 +283,10 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 
 // dialAndGetReport dials the VM and issues a single GetReport request,
 // recording dial/read latency metrics and classifying dial failures
-// (timeout vs. other) consistently. scrapeVM calls this twice on the
-// mandatory-refresh/epoch-mismatch path (see the Unchanged branch above),
-// and previously duplicated this logic inline for each call — which had
-// let the second call's dial silently skip the latency metrics.
+// (timeout vs. other) consistently regardless of which call site invokes
+// it. scrapeVM calls this twice on the epoch-mismatch fallback path (see
+// the Unchanged branch above), so keeping the timing and error-handling
+// logic in one place ensures both calls are measured the same way.
 func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Info, key string, port, ifNewerThan, knownEpoch uint32) (*vsockclient.GetReportResult, bool) {
 	dialStart := s.now()
 	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
