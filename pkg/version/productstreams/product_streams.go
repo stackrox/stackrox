@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
@@ -71,7 +72,7 @@ func init() {
 
 func mustParseBumpsData(data []byte) []parsedBump {
 	bumps, err := parseBumpsData(data)
-	utils.CrashOnError(err)
+	utils.CrashOnError(errors.Wrap(err, "invalid embedded major_version_bumps.yaml, please fix the file and rebuild"))
 	return bumps
 }
 
