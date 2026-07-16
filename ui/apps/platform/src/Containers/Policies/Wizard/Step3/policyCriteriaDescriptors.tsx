@@ -200,7 +200,6 @@ const fileOperationOptions: DescriptorOption[] = [
     ['UNLINK', 'Delete (Unlink)'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
-    ['XATTR_CHANGE', 'Xattr change'],
 ].map(([value, label]) => ({ value, label }));
 
 const processActivityDescriptors: Descriptor[] = [
