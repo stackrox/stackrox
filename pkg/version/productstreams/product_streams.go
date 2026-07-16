@@ -72,7 +72,7 @@ func init() {
 
 func mustParseBumpsData(data []byte) []parsedBump {
 	bumps, err := parseBumpsData(data)
-	utils.CrashOnError(errors.Wrap(err, "invalid embedded major_version_bumps.yaml, please fix the file and rebuild"))
+	utils.CrashOnError(errors.Wrap(err, "invalid content of major_version_bumps.yaml, please fix the file and rebuild"))
 	return bumps
 }
 
