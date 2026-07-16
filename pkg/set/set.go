@@ -365,13 +365,7 @@ func (k FrozenSet[KeyType]) IsEmpty() bool {
 
 // All returns an iterator over the elements of the set.
 func (k FrozenSet[KeyType]) All() iter.Seq[KeyType] {
-	return func(yield func(KeyType) bool) {
-		for elem := range k.underlying {
-			if !yield(elem) {
-				return
-			}
-		}
-	}
+	return maps.Values(k)
 }
 
 // AsSlice returns the elements of the set. The order is unspecified.
