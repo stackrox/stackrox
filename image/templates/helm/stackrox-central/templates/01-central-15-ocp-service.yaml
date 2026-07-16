@@ -1,6 +1,12 @@
 {{- include "srox.init" . -}}
 
 {{- if ._rox.monitoring.openshift.enabled -}}
+{{- /*
+Separate Service so OpenShift can issue a distinct service-serving certificate
+(SNI: central-ocp.<ns>.svc). The main "central" Service keeps the StackRox
+service cert for central.<ns>.svc used by Sensors and other clients; both certs
+are presented from the same :8443 listener based on SNI.
+*/}}
 
 apiVersion: v1
 kind: Service

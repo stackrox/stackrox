@@ -762,10 +762,6 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	log.Debug("All dynamic integrations registered, exiting")
 }
 
-func customMetricsRouteAuthorizer() authz.Authorizer {
-	return user.With(permissions.View(resources.Administration))
-}
-
 func uiRoute() routes.CustomRoute {
 	return routes.CustomRoute{
 		Route:         "/",
@@ -945,7 +941,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			// values may include sensitive data, such as deployment names and
 			// CVEs.
 			Route:         "GET /metrics",
-			Authorizer:    customMetricsRouteAuthorizer(),
+			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
 		},

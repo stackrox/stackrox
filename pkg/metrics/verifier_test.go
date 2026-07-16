@@ -13,7 +13,7 @@ import (
 )
 
 func TestClientCertVerifier(t *testing.T) {
-	prometheusCertCN := env.OpenShiftClientCertCN.Setting()
+	prometheusCertCN := env.SecureMetricsClientCertCN.Setting()
 	cases := map[string]struct {
 		certFilePath string
 		subjectCN    string

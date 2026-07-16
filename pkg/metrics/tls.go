@@ -77,7 +77,7 @@ func newTLSConfigurer(certDir string, k8sClient kubernetes.Interface, clientCANa
 	cfgr.tlsConfigHolder.AddServerCertSource(&cfgr.serverCerts)
 	cfgr.tlsConfigHolder.AddClientCertSource(&cfgr.clientCAs)
 	tlsVerifier := &clientCertVerifier{
-		subjectCN: env.OpenShiftClientCertCN.Setting(),
+		subjectCN: env.SecureMetricsClientCertCN.Setting(),
 	}
 	cfgr.tlsConfigHolder.SetCustomCertVerifier(tlsVerifier)
 	cfgr.k8sWatcher = k8scfgwatch.NewConfigMapWatcher(k8sClient, cfgr.updateClientCA)
@@ -102,8 +102,8 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 		return &nilTLSConfigurer{}
 	}
 	certDir := env.SecureMetricsCertDir.Setting()
-	clientCANamespace := env.OpenShiftClientCANamespace.Setting()
-	clientCAConfigMap := env.OpenShiftClientCAConfigMap.Setting()
+	clientCANamespace := env.SecureMetricsClientCANamespace.Setting()
+	clientCAConfigMap := env.SecureMetricsClientCAConfigMap.Setting()
 	cfgr := newTLSConfigurer(certDir, clientset, clientCANamespace, clientCAConfigMap)
 	return cfgr
 }
@@ -172,7 +172,7 @@ func (t *tlsConfigurerImpl) updateClientCA(cm *v1.ConfigMap) {
 	if cm == nil {
 		return
 	}
-	if caFile, ok := cm.Data[env.OpenShiftClientCAKey.Setting()]; ok {
+	if caFile, ok := cm.Data[env.SecureMetricsClientCAKey.Setting()]; ok {
 		log.Debugf("Updating secure metrics client CAs based on %s/%s", t.clientCANamespace, t.clientCAConfigMap)
 		signerCAs, err := helpers.ParseCertificatesPEM([]byte(caFile))
 		if err != nil {

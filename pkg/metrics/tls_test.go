@@ -47,7 +47,7 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, cfgrTLSConfig.ClientCAs)
 
-	clientCAKey := env.OpenShiftClientCAKey.Setting()
+	clientCAKey := env.SecureMetricsClientCAKey.Setting()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: string(caFileRaw)},
@@ -72,7 +72,7 @@ func TestTLSConfigurerNoClientCAs(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, cfgrTLSConfig.ClientCAs)
 
-	clientCAKey := env.OpenShiftClientCAKey.Setting()
+	clientCAKey := env.SecureMetricsClientCAKey.Setting()
 	watcher.Modify(&v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: clientCAName, Namespace: clientCANamespace},
 		Data:       map[string]string{clientCAKey: "invalid-PEM"},
