@@ -150,18 +150,6 @@ func goOnline(tb testing.TB, d *detectorImpl) {
 	d.Notify(common.SensorComponentEventCentralReachable)
 }
 
-// goOffline transitions d to "offline" mode using whichever mechanism is
-// active: a real SensorOfflineEvent publish when pubSubEnabled, legacy Notify
-// otherwise.
-func goOffline(tb testing.TB, d *detectorImpl) {
-	tb.Helper()
-	if d.pubSubEnabled() {
-		require.NoError(tb, d.pubSubDispatcher.Publish(&sensorEvents.SensorOfflineEvent{}))
-		return
-	}
-	d.Notify(common.SensorComponentEventOfflineMode)
-}
-
 const benchBufferSize = 20000
 
 func createBenchDetector(b *testing.B, pubSubEnabled bool) *detectorImpl {
