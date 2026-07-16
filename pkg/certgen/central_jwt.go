@@ -6,12 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 )
 
 const (
-	// JWTKeyPEMFileName is the canonical file name (filename) of the file storing the key for signing JWTs,
+	// JWTKeyPEMFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
 	// encoded in PEM format (default).
 	JWTKeyPEMFileName = "jwt-key.pem"
 	// JWTKeyDERFileName is the canonical file name (basename) of the file storing the key for signing JWTs,
