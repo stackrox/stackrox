@@ -13,9 +13,9 @@ import (
 	"net"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -186,37 +186,43 @@ func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
 }
 
 func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
-	caPEM, _, _ := testCA(t)
+	synctest.Test(t, func(t *testing.T) {
+		caPEM, _, _ := testCA(t)
 
-	var fetchCount atomic.Int32
-	release := make(chan struct{})
-	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
-		fetchCount.Add(1)
-		<-release // block until the test says every caller has arrived
-		return caPEM, nil
-	}))
+		var fetchCount atomic.Int32
+		release := make(chan struct{})
+		r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+			fetchCount.Add(1)
+			<-release // block until the test says every caller has arrived
+			return caPEM, nil
+		}))
 
-	const callers = 5
-	var started sync.WaitGroup
-	started.Add(callers)
-	results := make(chan error, callers)
-	for range callers {
-		go func() {
-			started.Done()
-			_, err := r.ensureFreshPool(context.Background())
-			results <- err
-		}()
-	}
+		const callers = 5
+		results := make(chan error, callers)
+		for range callers {
+			go func() {
+				_, err := r.ensureFreshPool(context.Background())
+				results <- err
+			}()
+		}
 
-	// Wait for every goroutine to have actually started before letting the
-	// coalesced fetch complete, instead of guessing at a sleep duration.
-	started.Wait()
-	close(release)
+		// synctest.Wait blocks until every goroutine in the bubble is
+		// durably blocked: the one leader inside fetchFunc on <-release,
+		// and every follower inside Coalesce's select on the shared
+		// singleflight result channel. Unlike a WaitGroup fired at
+		// goroutine entry (started.Done, before ensureFreshPool even
+		// runs), this can't observe "started" before a caller has
+		// actually reached the coalesced section - so closing release
+		// right after can never race a late arrival into a second,
+		// uncoalesced fetch.
+		synctest.Wait()
+		close(release)
 
-	for range callers {
-		require.NoError(t, <-results)
-	}
-	assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
+		for range callers {
+			require.NoError(t, <-results)
+		}
+		assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
+	})
 }
 
 // TestCARefresher_Refresh proves that a stale cache is picked up and fully
