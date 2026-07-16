@@ -66,6 +66,7 @@ type VMScraper struct {
 	interval     time.Duration
 	perVMTimeout time.Duration
 	concurrency  int
+	warnMaxBytes int
 	stopper      concurrency.Stopper
 	now          func() time.Time
 
@@ -92,6 +93,10 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		interval:     env.VirtualMachinesScraperPollInterval.DurationSetting(),
 		perVMTimeout: env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
 		concurrency:  env.VirtualMachinesScraperConcurrency.IntegerSetting(),
+		// Warn once a report is halfway to the hard response-size ceiling,
+		// so operators get advance notice before reports start actually
+		// being rejected at that limit.
+		warnMaxBytes: env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
 		vmState:      make(map[string]*vmState),
 		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
@@ -249,7 +254,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		}
 	}
 
-	viable, warning := reportcheck.IsViable(result.IndexReport)
+	viable, warning := reportcheck.IsViable(result.IndexReport, s.warnMaxBytes)
 	if warning != "" {
 		log.Warnf("VM report from %q: %s", key, warning)
 	}
