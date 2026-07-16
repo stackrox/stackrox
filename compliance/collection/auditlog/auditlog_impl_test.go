@@ -36,7 +36,7 @@ type ComplianceAuditLogReaderTestSuite struct {
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestCompareK8sResourceLists() {
-	for _, r := range resourceTypesAllowList.AsSlice() {
+	for r := range resourceTypesAllowList.All() {
 		if _, ok := auditResourceToKubeResource[fmt.Sprintf("%v", r)]; !ok {
 			s.T().Errorf("Missing entry in auditResourceToKubeResource map for resource %v", r)
 		}
