@@ -220,14 +220,15 @@ func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
 	// Simulate 4h+1s elapsed
 	s.now = func() time.Time { return time.Now().Add(mandatoryRefreshAfter + time.Second) }
 
-	// First call returns unchanged, second call (forced refresh gen=0) returns full report
+	// The mandatory refresh is known before dialing, so a single call
+	// requesting the full report (ifNewerThan=0) is enough.
 	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult(), makeReport(1)}
+	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
 	s.pollOnce(context.Background())
 
-	require.Len(t, client.calls, 2)
-	assert.Equal(t, uint32(1), client.calls[0].ifNewerThan, "first call uses last generation")
-	assert.Equal(t, uint32(0), client.calls[1].ifNewerThan, "second call forces full report")
+	require.Len(t, client.calls, 1, "mandatory refresh should resolve in a single round trip")
+	assert.Equal(t, uint32(0), client.calls[0].ifNewerThan, "mandatory refresh forces the full report on the only call")
+	assert.Equal(t, uint32(0), client.calls[0].knownEpoch, "mandatory refresh forces the full report on the only call")
 	assert.Len(t, sender.sent, 2, "should forward after 4h even if unchanged")
 }
 
