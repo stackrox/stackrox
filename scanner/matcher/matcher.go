@@ -122,7 +122,7 @@ func init() {
 	matcherNames = append(matcherNames, m.Name())
 }
 
-// GetMatcherNames returns a copy of the ClairCore matcher names to use.
+// GetMatcherNames returns a copy of the Claircore matcher names to use.
 func GetMatcherNames() []string {
 	return slices.Clone(matcherNames)
 }

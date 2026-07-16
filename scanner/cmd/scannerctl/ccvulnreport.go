@@ -32,8 +32,8 @@ const dbPasswordEnvVar = "ROX_SCANNERCTL_DB_PASSWORD" //nolint:gosec // Not a cr
 func ccVulnReportCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "ccvulnreport http(s)://<image-reference>",
-		Short: "Output the raw ClairCore vulnerability report for an already-indexed image.",
-		Long: "Output the raw ClairCore vulnerability report for an already-indexed image.\n" +
+		Short: "Output the raw Claircore vulnerability report for an already-indexed image.",
+		Long: "Output the raw Claircore vulnerability report for an already-indexed image.\n" +
 			"The image reference must include a digest (e.g. https://registry/image:tag@sha256:...).\n" +
 			"Use 'scannerctl scan' or 'roxctl image scan' to index an image and retrieve its digest.",
 		Args: cobra.ExactArgs(1),
