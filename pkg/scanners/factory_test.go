@@ -48,9 +48,7 @@ func TestNewFactory_ClairifyRegistration(t *testing.T) {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), `scanner with type "clairify" does not exist`)
 			} else {
-				if err != nil {
-					assert.NotContains(t, err.Error(), "does not exist")
-				}
+				require.NoError(t, err)
 			}
 		})
 	}
