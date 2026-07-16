@@ -111,7 +111,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: central-api-monitoring-tls
+  name: central-ocp-tls
 ---
 apiVersion: v1
 kind: Secret
@@ -187,6 +187,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: central
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-ocp
 ---
 apiVersion: v1
 kind: Service

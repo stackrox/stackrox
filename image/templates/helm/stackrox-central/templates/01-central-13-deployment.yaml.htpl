@@ -205,8 +205,8 @@ spec:
         - name: monitoring-tls
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
-        - name: api-monitoring-tls
-          mountPath: /run/secrets/stackrox.io/api-monitoring-tls
+        - name: ocp-tls
+          mountPath: /run/secrets/stackrox.io/ocp-tls
           readOnly: true
         {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
@@ -297,9 +297,9 @@ spec:
       - name: monitoring-tls
         secret:
           secretName: central-monitoring-tls
-      - name: api-monitoring-tls
+      - name: ocp-tls
         secret:
-          secretName: central-api-monitoring-tls
+          secretName: central-ocp-tls
       {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}

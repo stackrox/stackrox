@@ -42,8 +42,8 @@ func (c *TLSConfig) Instantiate(tlsMgr TLSConfigurerProvider) (verifier.TLSConfi
 			opts.ServerCerts = append(opts.ServerCerts, tlsconfig.DefaultTLSCertSource)
 		case "service":
 			opts.ServerCerts = append(opts.ServerCerts, tlsconfig.ServiceCertSource)
-		case "monitoring":
-			opts.ServerCerts = append(opts.ServerCerts, tlsconfig.MonitoringTLSCertSource)
+		case "openshift":
+			opts.ServerCerts = append(opts.ServerCerts, tlsconfig.OpenShiftTLSCertSource)
 		default:
 			return nil, errors.Errorf("unknown server certificate setting %q", src)
 		}
@@ -74,8 +74,6 @@ func (c *TLSConfig) Instantiate(tlsMgr TLSConfigurerProvider) (verifier.TLSConfi
 			opts.ClientCAs = append(opts.ClientCAs, tlsconfig.UserCAsSource)
 		case "service":
 			opts.ClientCAs = append(opts.ClientCAs, tlsconfig.ServiceCASource)
-		case "monitoring":
-			opts.ClientCAs = append(opts.ClientCAs, tlsconfig.MonitoringClientCASource)
 		default:
 			return nil, errors.Errorf("unknown client CA source %q", src)
 		}

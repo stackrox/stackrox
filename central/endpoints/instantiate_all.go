@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"slices"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/pkg/env"
@@ -31,7 +33,16 @@ func loadAllConfigs() ([]EndpointConfig, error) {
 	var allEndpointCfgs []EndpointConfig
 
 	if !cfg.DisableDefault {
-		allEndpointCfgs = append(allEndpointCfgs, defaultEndpoint)
+		ep := defaultEndpoint
+		if tlsconfig.OpenShiftTLSConfigured() {
+			// Clone TLS config so we do not mutate package-level defaultTLSConfig shared
+			// with ROX_SECURE_ENDPOINTS. Add the OpenShift service-serving cert source used
+			// by the central-ocp Service (SNI: central-ocp.<ns>.svc).
+			tlsCfg := *ep.TLS
+			tlsCfg.ServerCerts = append(slices.Clone(ep.TLS.ServerCerts), "openshift")
+			ep.TLS = &tlsCfg
+		}
+		allEndpointCfgs = append(allEndpointCfgs, ep)
 	}
 
 	allEndpointCfgs = append(allEndpointCfgs, ParseLegacySpec(env.PlaintextEndpoints.Setting(), &plaintextTLSConfig)...)
@@ -39,40 +50,7 @@ func loadAllConfigs() ([]EndpointConfig, error) {
 
 	allEndpointCfgs = append(allEndpointCfgs, cfg.Endpoints...)
 
-	return enrichOpenShiftMonitoringEndpointConfig(allEndpointCfgs), nil
-}
-
-func enrichOpenShiftMonitoringEndpointConfig(cfgs []EndpointConfig) []EndpointConfig {
-	if !tlsconfig.APIMonitoringConfigured() {
-		return cfgs
-	}
-
-	for i := range cfgs {
-		if cfgs[i].Listen != publicAPIEndpoint {
-			continue
-		}
-		tlsCfg := cfgs[i].TLS
-		if tlsCfg == nil || tlsCfg.Disable {
-			continue
-		}
-
-		tlsCfg.ServerCerts = append(tlsCfg.ServerCerts, "monitoring")
-
-		clientAuth := tlsCfg.ClientAuth
-		if clientAuth == nil {
-			clientAuth = &ClientAuthConfig{}
-			tlsCfg.ClientAuth = clientAuth
-		}
-
-		clientCAs := append([]string{}, defaultClientCertAuthorities...)
-		if clientAuth.CertAuthorities != nil {
-			clientCAs = append([]string{}, *clientAuth.CertAuthorities...)
-		}
-		clientCAs = append(clientCAs, "monitoring")
-		clientAuth.CertAuthorities = &clientCAs
-	}
-
-	return cfgs
+	return allEndpointCfgs, nil
 }
 
 // InstantiateAll loads and instantiates all endpoint configurations. It considers the endpoint config from the config
