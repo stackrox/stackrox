@@ -2,7 +2,6 @@ package lane
 
 import (
 	"github.com/pkg/errors"
-
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/safe"
@@ -69,11 +68,14 @@ type blockingLane struct {
 }
 
 func (l *blockingLane) Publish(event pubsub.Event) error {
+	// Capture topic before writing to the channel: once the event is on
+	// the channel a consumer goroutine may mutate it via SetTopicAndLane.
+	topic := event.Topic()
 	if err := l.ch.Write(event); err != nil {
-		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
+		metrics.RecordPublishOperation(l.id, topic, metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	}
-	metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
+	metrics.RecordPublishOperation(l.id, topic, metrics.Published)
 	metrics.SetQueueSize(l.id, l.ch.Len())
 	return nil
 }

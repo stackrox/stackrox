@@ -23,6 +23,10 @@ export SFA_AGENT="${SFA_AGENT:-false}"
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
+# Scanner V4 default vuln bundle allow list, various sources are omitted to speed up CI (ie: suse).
+# Can be overridden by individual jobs. Setting to "" will load data from all sources.
+export SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST="${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-alpine,debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu}"
+
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
 # `envsubst`` before passing it to `env`.
@@ -364,7 +368,6 @@ export_test_environment() {
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
-    ci_export ROX_POLICY_CRITERIA_MODAL "${ROX_POLICY_CRITERIA_MODAL:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
@@ -389,6 +392,7 @@ export_test_environment() {
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
     ci_export ROX_INIT_CONTAINER_SUPPORT "${ROX_INIT_CONTAINER_SUPPORT:-true}"
+    ci_export ROX_UI_SECRETS_PAGE_MIGRATION "${ROX_UI_SECRETS_PAGE_MIGRATION:-true}"
     ci_export SCANNER_V4_VULN_READINESS "${SCANNER_V4_VULN_READINESS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -550,7 +554,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_DEPRECATED_COMPLIANCE_DASHBOARD'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
-    customize_envVars+=$'\n        value: "'"${SFA_AGENT}"'"'
+    customize_envVars+=$'\n        value: "'"${ROX_SENSITIVE_FILE_ACTIVITY}"'"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
@@ -558,11 +562,13 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_NODE_VULNERABILITY_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "'"${ROX_BASE_IMAGE_DETECTION}"'"'
     customize_envVars+=$'\n      - name: ROX_LABEL_BASED_POLICY_SCOPING'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_INIT_CONTAINER_SUPPORT'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_UI_SECRETS_PAGE_MIGRATION'
+    customize_envVars+=$'\n        value: "'"${ROX_UI_SECRETS_PAGE_MIGRATION}"'"'
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n      - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n        value: "true"'
@@ -574,9 +580,15 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
-    if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "$scannerV4ScannerComponent" != "Disabled" ]]; then
-        customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
-        customize_envVars+=$'\n        value: "vulnerability"'
+    if [[ "$scannerV4ScannerComponent" != "Disabled" ]]; then
+        if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_READINESS'
+            customize_envVars+=$'\n        value: "vulnerability"'
+        fi
+        if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+            customize_envVars+=$'\n      - name: SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST'
+            customize_envVars+=$'\n        value: "'"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"'"'
+        fi
     fi
 
     local scannerV4DbPersistenceYaml
@@ -1341,6 +1353,43 @@ summarize_check_output() {
 
     echo "${output}"
 }
+
+# start_continuous_log_streaming starts a background process that continuously
+# streams logs from StackRox pods to files. This preserves logs across pod
+# replacements (deployment rollouts) and container restarts, where kubectl's
+# single-previous-container limitation would otherwise lose intermediate logs.
+# See ROX-35267.
+start_continuous_log_streaming() {
+    if [[ "$#" -lt 1 ]]; then
+        die "missing args. usage: start_continuous_log_streaming <output-dir> [namespace]"
+    fi
+
+    local dir="$1"
+    local ns="${2:-stackrox}"
+    mkdir -p "$dir"
+
+    info "Starting continuous log streaming for namespace $ns to $dir"
+
+    local labels=("app=central" "app=sensor" "app=scanner-v4-indexer" "app=scanner-v4-matcher")
+
+    for label in "${labels[@]}"; do
+        local app_name="${label#app=}"
+        local log_file="$dir/${app_name}-continuous.log"
+        (
+            while true; do
+                pod=$(kubectl -n "$ns" get pod -l "$label" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || { sleep 2; continue; }
+                [[ -n "$pod" ]] || { sleep 2; continue; }
+                echo "--- streaming from $pod ($(date -Iseconds)) ---" >> "$log_file"
+                kubectl -n "$ns" logs -f --timestamps "$pod" >> "$log_file" 2>/dev/null || true
+                echo "--- stream from $pod ended ($(date -Iseconds)) ---" >> "$log_file"
+                sleep 1
+            done
+        ) &
+    done
+
+    info "Continuous log streaming started for: ${labels[*]}"
+}
+
 
 collect_and_check_stackrox_logs() {
     if [[ "$#" -ne 2 ]]; then

@@ -60,10 +60,7 @@ func (ds *datastoreImpl) UpsertImages(
 
 	// Process in chunks. This reduces pressure on storage and avoids parameter/time limits.
 	for start := 0; start < len(batch); start += upsertChunkSize {
-		end := start + upsertChunkSize
-		if end > len(batch) {
-			end = len(batch)
-		}
+		end := min(start+upsertChunkSize, len(batch))
 
 		if err := ds.storage.UpsertMany(ctx, batch[start:end]); err != nil {
 			return fmt.Errorf("upsert images chunk [%d:%d]: %w", start, end, err)

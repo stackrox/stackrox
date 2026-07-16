@@ -325,8 +325,6 @@ export const searchFieldLabels = [
     'Component Layer Type',
     //
     'Policy Last Updated',
-    'Skip Container Type',
-    'Skip Image Layers',
     //
     // Following are helper fields used for sorting
     // For example, "SORTPolicyName" field should be used to sort policies when the query sort field is "PolicyName"

@@ -1,15 +1,15 @@
-import { selectors } from '../../constants/PoliciesPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
+import { closeModalByButton } from '../../helpers/modal';
 import {
     cloneFirstPolicyFromTable,
     doPolicyRowAction,
     editFirstPolicyFromTable,
     goToStep3,
     visitPolicies,
-} from '../../helpers/policies';
-import { closeModalByButton } from '../../helpers/modal';
-import { hasFeatureFlag } from '../../helpers/features';
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 
 const TREE_VIEW_SEARCH_INPUT = '.pf-v6-c-tree-view__search input[name="search-input"]';
 const TREE_VIEW_FIRST_LEVEL_CHILD = '.pf-v6-c-tree-view__list-item .pf-v6-c-tree-view__list-item';

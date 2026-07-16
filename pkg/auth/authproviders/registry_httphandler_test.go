@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -761,12 +762,8 @@ func (*tstAuthProviderBackendFactory) RedactConfig(config map[string]string) map
 
 func (*tstAuthProviderBackendFactory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
 	mergedCfg := make(map[string]string, len(newCfg))
-	for k, v := range oldCfg {
-		mergedCfg[k] = v
-	}
-	for k, v := range newCfg {
-		mergedCfg[k] = v
-	}
+	maps.Copy(mergedCfg, oldCfg)
+	maps.Copy(mergedCfg, newCfg)
 	return mergedCfg
 }
 

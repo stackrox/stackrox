@@ -226,10 +226,7 @@ func TestListTagsPagination(t *testing.T) {
 			}
 
 			// Return up to pageSize tags
-			endIdx := startIdx + pageSize
-			if endIdx > len(allTags) {
-				endIdx = len(allTags)
-			}
+			endIdx := min(startIdx+pageSize, len(allTags))
 			pageTags := allTags[startIdx:endIdx]
 
 			// Build JSON response
@@ -344,10 +341,7 @@ func TestListTagsCallerTimeout(t *testing.T) {
 				}
 			}
 
-			endIdx := startIdx + pageSize
-			if endIdx > len(allTags) {
-				endIdx = len(allTags)
-			}
+			endIdx := min(startIdx+pageSize, len(allTags))
 			pageTags := allTags[startIdx:endIdx]
 
 			var response strings.Builder
@@ -438,10 +432,7 @@ func TestListTagsTimeoutManyPages(t *testing.T) {
 				}
 			}
 
-			endIdx := startIdx + pageSize
-			if endIdx > len(allTags) {
-				endIdx = len(allTags)
-			}
+			endIdx := min(startIdx+pageSize, len(allTags))
 			pageTags := allTags[startIdx:endIdx]
 
 			var response strings.Builder

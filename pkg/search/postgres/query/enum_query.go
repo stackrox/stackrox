@@ -3,6 +3,7 @@ package pgsearch
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -28,12 +29,7 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 		Values: values,
 		equivalentGoFunc: func(foundValue interface{}) bool {
 			asInt := int32(foundValue.(int))
-			for _, enumValue := range enumValues {
-				if enumValue == asInt {
-					return true
-				}
-			}
-			return false
+			return slices.Contains(enumValues, asInt)
 		},
 	}, nil
 }

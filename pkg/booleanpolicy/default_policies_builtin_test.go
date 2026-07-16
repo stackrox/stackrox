@@ -600,7 +600,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	registryAccessRedhatComUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.access.redhat.com/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
+				VerifierId: signatures.DefaultRedHatIntegrationID,
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -608,7 +608,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	registryRedHatIoUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.redhat.io/redhat/ubi8:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
+				VerifierId: signatures.DefaultRedHatIntegrationID,
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -617,7 +617,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	quayOCPReleaseUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-release:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
+				VerifierId: signatures.DefaultRedHatIntegrationID,
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},
@@ -625,7 +625,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	quayOCPArtDevUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-v4.0-art-dev:latest",
 		[]*storage.ImageSignatureVerificationResult{
 			{
-				VerifierId: signatures.DefaultRedHatSignatureIntegration.GetId(),
+				VerifierId: signatures.DefaultRedHatIntegrationID,
 				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 			},
 		},

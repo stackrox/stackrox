@@ -47,7 +47,7 @@ func KeyBundleWatcher() Stoppable {
 func seedRedHatDefaultSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
-	id := signatures.DefaultRedHatSignatureIntegration.GetId()
+	id := signatures.DefaultRedHatIntegrationID
 	_, exists, err := siStore.Get(ctx, id)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "checking for default Red Hat signature integration"))
@@ -99,6 +99,8 @@ func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
 		seedRedHatDefaultSignatureIntegration(storage) // must run before watcher; bundle file takes precedence on first tick
+		ensureKeyBundleDirectory()
+		writeExampleBundle()
 		instance = New(storage, policyDataStore.Singleton())
 		startKeyBundleWatcher(storage)
 		startKeyBundleUpdater()

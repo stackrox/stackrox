@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -568,7 +569,7 @@ func setIndexerVersion(options callOptions, responseMetadata metadata.MD) {
 	}
 
 	options.version.Indexer = scannerv4.DefaultVersion
-	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
+	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 && strings.TrimSpace(versions[0]) != "" {
 		options.version.Indexer = versions[0]
 	}
 }
@@ -582,7 +583,7 @@ func setMatcherVersion(options callOptions, responseMetadata metadata.MD) {
 	}
 
 	options.version.Matcher = scannerv4.DefaultVersion
-	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 {
+	if versions := responseMetadata.Get(scannerv4.ServiceVersionHeader); len(versions) > 0 && strings.TrimSpace(versions[0]) != "" {
 		options.version.Matcher = versions[0]
 	}
 }

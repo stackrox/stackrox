@@ -9,6 +9,7 @@ import (
 	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestGetVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
 	storedTestVM := &storage.VirtualMachine{
-		Id:        "test-vm-id",
+		Id:        fixtureconsts.VirtualMachine1,
 		Name:      "test-vm",
 		Namespace: "test-namespace",
 	}
@@ -41,11 +42,11 @@ func TestGetVirtualMachine(t *testing.T) {
 		{
 			name: "successful get",
 			request: &v2.GetVirtualMachineRequest{
-				Id: "test-vm-id",
+				Id: fixtureconsts.VirtualMachine1,
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetVirtualMachine(ctx, "test-vm-id").
+					GetVirtualMachine(ctx, fixtureconsts.VirtualMachine1).
 					Return(storedTestVM, true, nil)
 			},
 			expectedResult: testVM,
@@ -61,13 +62,22 @@ func TestGetVirtualMachine(t *testing.T) {
 			expectedError:  "id must be specified",
 		},
 		{
+			name: "invalid UUID",
+			request: &v2.GetVirtualMachineRequest{
+				Id: "not-a-uuid",
+			},
+			setupMock:      func(mockDS *datastoreMocks.MockDataStore) {},
+			expectedResult: nil,
+			expectedError:  "id must be a valid UUID",
+		},
+		{
 			name: "virtual machine not found",
 			request: &v2.GetVirtualMachineRequest{
-				Id: "non-existent-vm",
+				Id: fixtureconsts.VirtualMachineFake,
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetVirtualMachine(ctx, "non-existent-vm").
+					GetVirtualMachine(ctx, fixtureconsts.VirtualMachineFake).
 					Return(nil, false, nil)
 			},
 			expectedResult: nil,
@@ -76,11 +86,11 @@ func TestGetVirtualMachine(t *testing.T) {
 		{
 			name: "datastore error",
 			request: &v2.GetVirtualMachineRequest{
-				Id: "test-vm-id",
+				Id: fixtureconsts.VirtualMachine1,
 			},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetVirtualMachine(ctx, "test-vm-id").
+					GetVirtualMachine(ctx, fixtureconsts.VirtualMachine1).
 					Return(nil, false, errors.New("datastore error"))
 			},
 			expectedResult: nil,
