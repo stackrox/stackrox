@@ -37,8 +37,10 @@ func newFakeTicker() *fakeTicker {
 	return &fakeTicker{tick: make(chan time.Time, 1)}
 }
 
+func (f *fakeTicker) close() { close(f.tick) }
+
 // newTick has the same signature as time.After, so it's directly assignable
-// to a rescanner's or mappingRefresher's newTick field.
+// to a rescanner's newTick field.
 func (f *fakeTicker) newTick(d time.Duration) <-chan time.Time {
 	concurrency.WithLock(&f.mu, func() { f.resets = append(f.resets, d) })
 	return f.tick
@@ -60,6 +62,7 @@ func TestRescanner_Run(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner()
 			ticker := newFakeTicker()
+			defer ticker.close()
 			r.newTick = ticker.newTick
 			var mu sync.Mutex
 			var calls int
@@ -71,8 +74,13 @@ func TestRescanner_Run(t *testing.T) {
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); r.Run(ctx) }()
+			stopped := r.runAsync(ctx)
+			// Stop Run before close(tick): a closed tick chan would make
+			// select fire continuously with zero values.
+			defer func() {
+				cancel()
+				<-stopped
+			}()
 			synctest.Wait() // Run is blocked waiting for the first tick
 
 			ticker.fire()
@@ -82,9 +90,6 @@ func TestRescanner_Run(t *testing.T) {
 			ticker.fire()
 			synctest.Wait()
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "should rescan again on the next tick")
-
-			cancel()
-			<-done
 		})
 	})
 
@@ -92,6 +97,7 @@ func TestRescanner_Run(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner()
 			ticker := newFakeTicker()
+			defer ticker.close()
 			r.newTick = ticker.newTick
 			var mu sync.Mutex
 			var calls int
@@ -106,8 +112,11 @@ func TestRescanner_Run(t *testing.T) {
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); r.Run(ctx) }()
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
 			synctest.Wait() // Run is blocked waiting for the first tick
 
 			ticker.fire()
@@ -122,9 +131,6 @@ func TestRescanner_Run(t *testing.T) {
 
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "the failed rescan was never retried")
 			assert.Equal(t, r.interval, ticker.lastReset(), "a successful rescan should reschedule after the full interval, resetting backoff")
-
-			cancel()
-			<-done
 		})
 	})
 
@@ -133,15 +139,14 @@ func TestRescanner_Run(t *testing.T) {
 			r := testRescanner()
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); r.Run(ctx) }()
+			stopped := r.runAsync(ctx)
 
 			// Run must return promptly once ctx is cancelled: if it
-			// doesn't, the bubble deadlocks on the blocked <-done below
+			// doesn't, the bubble deadlocks on the blocked <-stopped below
 			// (nothing left to advance the fake clock), and synctest.Test
 			// fails the test on deadlock automatically.
 			cancel()
-			<-done
+			<-stopped
 		})
 	})
 }

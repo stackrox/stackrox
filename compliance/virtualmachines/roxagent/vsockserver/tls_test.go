@@ -200,7 +200,7 @@ func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
 	var started sync.WaitGroup
 	started.Add(callers)
 	results := make(chan error, callers)
-	for i := 0; i < callers; i++ {
+	for range callers {
 		go func() {
 			started.Done()
 			_, err := r.ensureFreshPool(context.Background())
@@ -213,7 +213,7 @@ func TestCARefresher_ConcurrentHandshakesCoalesceFetch(t *testing.T) {
 	started.Wait()
 	close(release)
 
-	for i := 0; i < callers; i++ {
+	for range callers {
 		require.NoError(t, <-results)
 	}
 	assert.Equal(t, int32(1), fetchCount.Load(), "concurrent callers should coalesce into a single fetch")
@@ -237,19 +237,13 @@ func TestCARefresher_Refresh(t *testing.T) {
 			return ca2PEM, nil
 		}),
 	)
-	// Shorten the staleness threshold from its production default (1h) so
-	// the test doesn't have to wait that long to observe a refetch. Same
-	// package, so setting the field directly is fine; there's no exported
-	// option for this since nothing in production needs to configure it.
-	r.interval = 20 * time.Millisecond
-
 	// Warm the cache with CA1 via a direct call.
 	_, err := r.ensureFreshPool(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, int32(1), callCount.Load())
 
-	// Let the cache go stale.
-	time.Sleep(30 * time.Millisecond)
+	// Force cache stale.
+	r.fetchedAt = time.Time{}
 
 	// The second CA is now active, fetched by the handshake below.
 	serverCert := testServerCert(t)
@@ -280,16 +274,13 @@ func TestCARefresher_RefreshFailure_KeepsOldCA(t *testing.T) {
 			return nil, assert.AnError
 		}),
 	)
-	r.interval = 20 * time.Millisecond
-
 	// Warm the cache with the original CA via a direct call.
 	_, err := r.ensureFreshPool(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, int32(1), callCount.Load())
 
-	// Let the cache go stale so the next handshake attempts (and fails) a
-	// refetch.
-	time.Sleep(30 * time.Millisecond)
+	// Force cache stale.
+	r.fetchedAt = time.Time{}
 
 	// Original CA should still work.
 	serverCert := testServerCert(t)
@@ -316,15 +307,13 @@ func TestCARefresher_StaleCacheTriggersRefetchDuringHandshake(t *testing.T) {
 			return ca2PEM, nil
 		}),
 	)
-	r.interval = 20 * time.Millisecond
-
 	// Warm the cache with CA1 via a direct call.
 	_, err := r.ensureFreshPool(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, int32(1), fetchCount.Load())
 
-	// Let the cache go stale.
-	time.Sleep(30 * time.Millisecond)
+	// Force cache stale.
+	r.fetchedAt = time.Time{}
 
 	// The next handshake presents a CA2-signed client cert. It can only
 	// succeed if the handshake path itself noticed the staleness and

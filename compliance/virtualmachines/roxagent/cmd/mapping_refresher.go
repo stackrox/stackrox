@@ -39,7 +39,7 @@ const (
 // over HTTP and atomically publishes it to a local cache file, decoupling
 // that network call from every individual scan: scan() only ever reads the
 // local cache file (via Repo2CPEMappingFile), so a slow or flaky mapping
-// endpoint can never block or fail a scan directly - only fetchOnce's
+// endpoint can never block or fail a scan directly - only fetchWithRetry's
 // mandatory, synchronous initial call (which gates the first scan, see
 // runServe) can.
 type mappingRefresher struct {
@@ -48,11 +48,12 @@ type mappingRefresher struct {
 	client    *http.Client
 
 	// fetchFn defaults to m.fetch; tests override it to inject failures
-	// without a real HTTP server. newTick defaults to time.After; tests
-	// substitute a function returning a manually driven channel for
-	// precise control over Run's loop.
+	// without a real HTTP server. ticks, when non-nil, drives Run instead
+	// of an internal time.Ticker so tests can inject a manually fired
+	// channel (constant interval; unlike rescanner there is no
+	// success-vs-failure reschedule).
 	fetchFn func(ctx context.Context) error
-	newTick func(d time.Duration) <-chan time.Time
+	ticks   <-chan time.Time
 }
 
 func newMappingRefresher(url, cachePath string) *mappingRefresher {
@@ -60,13 +61,12 @@ func newMappingRefresher(url, cachePath string) *mappingRefresher {
 		url:       url,
 		cachePath: cachePath,
 		client:    &http.Client{Transport: proxy.RoundTripper()},
-		newTick:   time.After,
 	}
 	m.fetchFn = m.fetch
 	return m
 }
 
-// fetchOnce downloads the mapping file and atomically replaces cachePath's
+// fetchWithRetry downloads the mapping file and atomically replaces cachePath's
 // contents, retrying a bounded number of times with backoff to ride out
 // transient errors. Called synchronously once at startup - where its
 // result gates the initial scan - and then periodically by Run.
@@ -77,7 +77,7 @@ func newMappingRefresher(url, cachePath string) *mappingRefresher {
 // after the full backoff elapses: retry.WithRetry re-checks ctx right
 // after BetweenAttempts returns, so a cancellation observed there stops
 // the loop without a further fetchFn call.
-func (m *mappingRefresher) fetchOnce(ctx context.Context) error {
+func (m *mappingRefresher) fetchWithRetry(ctx context.Context) error {
 	attempt := 0
 	backoff := mappingFetchBaseBackoff
 	err := retry.WithRetry(func() error { return m.fetchFn(ctx) },
@@ -150,17 +150,27 @@ func (m *mappingRefresher) fetch(ctx context.Context) error {
 // the mapping data goes one interval longer without an update, never that
 // scanning stops working. Blocks until ctx is cancelled.
 func (m *mappingRefresher) Run(ctx context.Context) {
-	tick := m.newTick(mappingRefreshInterval)
+	ticks := m.ticks
+	if ticks == nil {
+		ticker := time.NewTicker(mappingRefreshInterval)
+		defer ticker.Stop()
+		ticks = ticker.C
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-tick:
-			if err := m.fetchOnce(ctx); err != nil {
-				log.Warnf("Periodic mapping file refresh failed (harmless: scans keep using the "+
-					"last successfully fetched file): %v", err)
+		case <-ticks:
+			if err := m.fetchWithRetry(ctx); err != nil {
+				log.Infof("Mapping file refresh failed (scans keep using the last successfully fetched file): %v", err)
 			}
-			tick = m.newTick(mappingRefreshInterval)
 		}
 	}
+}
+
+// runAsync starts Run in a goroutine and returns a channel that is closed
+// when Run returns. Callers that cancel ctx should wait on stopped before
+// tearing down anything Run still observes (e.g. an injected tick channel).
+func (m *mappingRefresher) runAsync(ctx context.Context) (stopped <-chan struct{}) {
+	return startRun(ctx, m.Run)
 }

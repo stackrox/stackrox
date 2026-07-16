@@ -42,6 +42,10 @@ func TestRunServe_ValidatesFlags(t *testing.T) {
 			mutate:      func(c *serveConfig) { c.rescanInterval = minRescanInterval - time.Second },
 			errContains: "rescan-interval",
 		},
+		"should error when rescan interval is above the maximum": {
+			mutate:      func(c *serveConfig) { c.rescanInterval = maxRescanInterval + time.Hour },
+			errContains: "rescan-interval",
+		},
 		"should error when ca fetch timeout is zero": {
 			mutate:      func(c *serveConfig) { c.caFetchTimeout = 0 },
 			errContains: "ca-fetch-timeout",
@@ -65,8 +69,7 @@ func TestRunServe_ValidatesFlags(t *testing.T) {
 			cfg := validServeConfig()
 			tt.mutate(&cfg)
 			err := runServe(t.Context(), cfg)
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), tt.errContains)
+			assert.ErrorContains(t, err, tt.errContains)
 		})
 	}
 }

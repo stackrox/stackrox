@@ -78,3 +78,21 @@ func (r *rescanner) Run(ctx context.Context) {
 		}
 	}
 }
+
+// runAsync starts Run in a goroutine and returns a channel that is closed
+// when Run returns. Callers that cancel ctx should wait on stopped before
+// tearing down anything Run still observes (e.g. an injected tick channel).
+func (r *rescanner) runAsync(ctx context.Context) (stopped <-chan struct{}) {
+	return startRun(ctx, r.Run)
+}
+
+// startRun starts run in a goroutine and returns a channel that is closed
+// when run returns.
+func startRun(ctx context.Context, run func(context.Context)) (stopped <-chan struct{}) {
+	ch := make(chan struct{})
+	go func() {
+		defer close(ch)
+		run(ctx)
+	}()
+	return ch
+}

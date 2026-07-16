@@ -41,6 +41,10 @@ const (
 	// rescan cadence hammering the VM's disk; it has no effect on ACS
 	// itself, only on load imposed on the scanned VM.
 	minRescanInterval = 5 * time.Minute
+	// maxRescanInterval caps how stale a cached report can get from a
+	// misconfigured interval (e.g. years). Zero is rejected, not treated
+	// as "disable periodic rescans" (can be changed in the future).
+	maxRescanInterval = 7 * 24 * time.Hour
 
 	// connDeadline bounds one connection's TLS handshake plus
 	// request/response. Its range balances tolerating slow-but-legitimate
@@ -65,7 +69,7 @@ func ServeCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&cfg.hostPath, "host-path", "/", "Root filesystem path for indexing")
 	cmd.Flags().StringVar(&cfg.repoCPEURL, "repo-cpe-url", repoToCPEMappingURL, "Repository to CPE mapping URL")
 	cmd.Flags().DurationVar(&cfg.rescanInterval, "rescan-interval", 4*time.Hour,
-		fmt.Sprintf("Interval between rescans (minimum %v)", minRescanInterval))
+		fmt.Sprintf("Interval between rescans (range %v-%v)", minRescanInterval, maxRescanInterval))
 	cmd.Flags().DurationVar(&cfg.caFetchTimeout, "ca-fetch-timeout", 10*time.Second,
 		"Timeout for each KubeVirt CA fetch attempt over VSOCK")
 	cmd.Flags().DurationVar(&cfg.connDeadline, "conn-deadline", vsockserver.DefaultConnDeadline,
@@ -88,8 +92,8 @@ type serveConfig struct {
 }
 
 func (c serveConfig) validate() error {
-	if c.rescanInterval < minRescanInterval {
-		return fmt.Errorf("rescan-interval must be at least %v (got %v)", minRescanInterval, c.rescanInterval)
+	if c.rescanInterval < minRescanInterval || c.rescanInterval > maxRescanInterval {
+		return fmt.Errorf("rescan-interval must be between %v and %v (got %v)", minRescanInterval, maxRescanInterval, c.rescanInterval)
 	}
 	if c.caFetchTimeout <= 0 {
 		return errors.New("ca-fetch-timeout must be greater than 0")
@@ -110,7 +114,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// this initial fetch is mandatory, not best-effort - if it fails after
 	// retries, startup fails rather than running a scan against no data.
 	mr := newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
-	if err := mr.fetchOnce(ctx); err != nil {
+	if err := mr.fetchWithRetry(ctx); err != nil {
 		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
 	}
 
@@ -133,12 +137,12 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// In KubeVirt's namespace-isolated VSOCK mode the CA service exists
 	// only for the duration of an in-flight handshake, so it cannot be
 	// warmed up independently ahead of time.
-	refresher := vsockserver.NewCARefresher(vsockserver.WithFetchTimeout(cfg.caFetchTimeout))
+	caRefresher := vsockserver.NewCARefresher(vsockserver.WithFetchTimeout(cfg.caFetchTimeout))
 	serverCert, err := selfSignedCert()
 	if err != nil {
 		return fmt.Errorf("generating server certificate: %w", err)
 	}
-	tlsCfg := refresher.TLSConfig(serverCert)
+	tlsCfg := caRefresher.TLSConfig(serverCert)
 	log.Info("TLS enabled with KubeVirt CA (fetched on demand if not yet cached)")
 
 	srv := vsockserver.NewServer(handler, tlsCfg, vsockserver.WithConnDeadline(cfg.connDeadline))
@@ -150,10 +154,9 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	log.Infof("Listening on VSOCK port %d (pull mode)", cfg.port)
 
 	var wg sync.WaitGroup
-	wg.Add(3)
-	go func() { defer wg.Done(); srv.Serve(ctx, ln) }()
-	go func() { defer wg.Done(); vmRescanner.Run(ctx) }()
-	go func() { defer wg.Done(); mr.Run(ctx) }()
+	wg.Go(func() { srv.Serve(ctx, ln) })
+	wg.Go(func() { vmRescanner.Run(ctx) })
+	wg.Go(func() { mr.Run(ctx) })
 
 	<-ctx.Done()
 	// Wait for Serve's graceful drain (in-flight connections), the rescan

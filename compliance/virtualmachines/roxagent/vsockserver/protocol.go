@@ -194,12 +194,10 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 }
 
 func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceResponse {
-	facts := map[string]string{}
+	var facts map[string]string
 	var gen uint32
 	if snap != nil {
-		if snap.facts != nil {
-			facts = cloneFacts(snap.facts)
-		}
+		facts = cloneFacts(snap.facts)
 		gen = snap.generation
 	}
 	meta := &pb.ResponseMeta{
@@ -241,6 +239,6 @@ func (h *Handler) writeError(conn net.Conn, code pb.ErrorCode, msg string) {
 }
 
 func isTLSRecordError(err error) bool {
-	var recordErr tls.RecordHeaderError
-	return errors.As(err, &recordErr)
+	_, ok := errors.AsType[tls.RecordHeaderError](err)
+	return ok
 }

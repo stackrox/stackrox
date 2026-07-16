@@ -102,13 +102,11 @@ type NodeIndexerConfig struct {
 	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
 	// Consulting the mapping file is preferred over the Container API.
 	Repo2CPEMappingURL string
-	// Repo2CPEMappingFile, if set, is consulted instead of
-	// Repo2CPEMappingURL, and no network request is made: leave
-	// Repo2CPEMappingURL empty when setting this, since claircore's
-	// repository scanner still fetches from a non-empty URL on top of an
-	// already-seeded file, on every call, because it does not treat a
-	// freshly-constructed rate limiter's initial state as "already
-	// fetched".
+	// Repo2CPEMappingFile is a local path to the repo-to-CPE mapping file.
+	// When set, leave Repo2CPEMappingURL empty: claircore still fetches a
+	// non-empty URL on every call (its freshly-constructed rate limiter is
+	// not treated as "already fetched"), so a non-empty URL would make a
+	// network request on top of the seeded file.
 	Repo2CPEMappingFile string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration

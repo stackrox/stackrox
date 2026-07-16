@@ -33,14 +33,14 @@ func countingFetchFn(calls *int, failures int) func(context.Context) error {
 	}
 }
 
-func TestMappingRefresher_FetchOnce(t *testing.T) {
+func TestMappingRefresher_FetchWithRetry(t *testing.T) {
 	t.Run("should succeed without retrying when the first attempt succeeds", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			m := testMappingRefresher()
 			var calls int
 			m.fetchFn = countingFetchFn(&calls, 0)
 
-			err := m.fetchOnce(t.Context())
+			err := m.fetchWithRetry(t.Context())
 			require.NoError(t, err)
 			assert.Equal(t, 1, calls)
 		})
@@ -52,7 +52,7 @@ func TestMappingRefresher_FetchOnce(t *testing.T) {
 			var calls int
 			m.fetchFn = countingFetchFn(&calls, mappingFetchMaxAttempts-1)
 
-			err := m.fetchOnce(t.Context())
+			err := m.fetchWithRetry(t.Context())
 			require.NoError(t, err)
 			assert.Equal(t, mappingFetchMaxAttempts, calls)
 		})
@@ -64,7 +64,7 @@ func TestMappingRefresher_FetchOnce(t *testing.T) {
 			var calls int
 			m.fetchFn = countingFetchFn(&calls, mappingFetchMaxAttempts+10)
 
-			err := m.fetchOnce(t.Context())
+			err := m.fetchWithRetry(t.Context())
 			require.Error(t, err)
 			assert.Equal(t, mappingFetchMaxAttempts, calls, "should not retry past mappingFetchMaxAttempts")
 		})
@@ -82,21 +82,21 @@ func TestMappingRefresher_FetchOnce(t *testing.T) {
 				cancel()
 			}()
 
-			err := m.fetchOnce(ctx)
+			err := m.fetchWithRetry(ctx)
 			require.ErrorIs(t, err, context.Canceled)
 			assert.Equal(t, 1, calls, "should not attempt a retry once ctx is observed cancelled during backoff")
 		})
 	})
 }
 
-// totalMappingFetchBackoff mirrors fetchOnce's own backoff arithmetic to
-// compute exactly how much (fake) time a fully-failing fetchOnce call
+// totalMappingFetchBackoff mirrors fetchWithRetry's own backoff arithmetic to
+// compute exactly how much (fake) time a fully-failing fetchWithRetry call
 // spends waiting between attempts. synctest.Wait alone can't skip over
 // this: it returns as soon as Run is durably blocked on any timer,
-// including the ones fetchOnce blocks on mid-cascade, not only once the
+// including the ones fetchWithRetry blocks on mid-cascade, not only once the
 // whole cascade has settled. Tests sleep this exact amount - derived from
 // the real constants, not a guessed margin - to get past it before
-// asserting on Run's rescheduling.
+// asserting on Run's next tick.
 func totalMappingFetchBackoff() time.Duration {
 	var total time.Duration
 	backoff := mappingFetchBaseBackoff
@@ -111,8 +111,9 @@ func TestMappingRefresher_Run(t *testing.T) {
 	t.Run("should refresh on each tick", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			m := testMappingRefresher()
-			ticker := newFakeTicker()
-			m.newTick = ticker.newTick
+			ticks := make(chan time.Time)
+			defer close(ticks)
+			m.ticks = ticks
 			var mu sync.Mutex
 			var calls int
 			m.fetchFn = func(context.Context) error {
@@ -120,44 +121,58 @@ func TestMappingRefresher_Run(t *testing.T) {
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); m.Run(ctx) }()
+			stopped := m.runAsync(ctx)
+			// Stop Run before close(ticks): a closed ticks chan would make
+			// select fire continuously with zero values.
+			defer func() {
+				cancel()
+				<-stopped
+			}()
 			synctest.Wait() // Run is blocked waiting for the first tick
 
-			ticker.fire()
+			ticks <- time.Time{}
 			synctest.Wait()
 			assert.Equal(t, 1, concurrency.WithLock1(&mu, func() int { return calls }))
 
-			ticker.fire()
+			ticks <- time.Time{}
 			synctest.Wait()
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "should refresh again on the next tick")
-
-			cancel()
-			<-done
 		})
 	})
 
-	t.Run("should keep rescheduling on the same interval after a failed refresh", func(t *testing.T) {
+	t.Run("should keep ticking after a failed refresh", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			m := testMappingRefresher()
-			ticker := newFakeTicker()
-			m.newTick = ticker.newTick
-			m.fetchFn = func(context.Context) error { return errors.New("persistent fetch error") }
+			ticks := make(chan time.Time)
+			defer close(ticks)
+			m.ticks = ticks
+			var mu sync.Mutex
+			var calls int
+			m.fetchFn = func(context.Context) error {
+				return concurrency.WithLock1(&mu, func() error {
+					calls++
+					return errors.New("persistent fetch error")
+				})
+			}
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); m.Run(ctx) }()
+			stopped := m.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
 			synctest.Wait()
 
-			ticker.fire()
-			time.Sleep(totalMappingFetchBackoff()) // let fetchOnce exhaust its own retries
-			synctest.Wait()                        // let Run finish rescheduling
+			ticks <- time.Time{}
+			time.Sleep(totalMappingFetchBackoff()) // let fetchWithRetry exhaust its own retries
+			synctest.Wait()
 
-			assert.Equal(t, mappingRefreshInterval, ticker.lastReset(),
-				"a failed refresh is not fatal: scans keep using the last successfully fetched file")
+			ticks <- time.Time{}
+			time.Sleep(totalMappingFetchBackoff())
+			synctest.Wait()
 
-			cancel()
-			<-done
+			assert.Equal(t, 2*mappingFetchMaxAttempts, concurrency.WithLock1(&mu, func() int { return calls }),
+				"a failed refresh is not fatal: Run keeps accepting ticks and scans keep using the last file")
 		})
 	})
 
@@ -166,17 +181,16 @@ func TestMappingRefresher_Run(t *testing.T) {
 			m := testMappingRefresher()
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan struct{})
-			go func() { defer close(done); m.Run(ctx) }()
+			stopped := m.runAsync(ctx)
 
 			cancel()
-			<-done
+			<-stopped
 		})
 	})
 }
 
 // TestMappingRefresher_Fetch exercises the real fetch method end to end
-// (HTTP GET plus atomic file publish), unlike the fetchOnce/Run tests
+// (HTTP GET plus atomic file publish), unlike the fetchWithRetry/Run tests
 // above, which inject fetchFn to isolate retry/scheduling behavior from
 // actual network and filesystem I/O.
 func TestMappingRefresher_Fetch(t *testing.T) {
