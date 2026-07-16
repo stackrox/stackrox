@@ -20,6 +20,11 @@ tests:
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
+        .servicemonitors["central-ocp-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "https"),
+            assertThat(.spec.endpoints[].path == "/metrics")
+          ]
         .services["central-ocp"] | assertThat(. != null)
 
     - name: "secure metrics endpoint is enabled"
@@ -149,6 +154,11 @@ tests:
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
+        .servicemonitors["central-ocp-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "https"),
+            assertThat(.spec.endpoints[].path == "/metrics")
+          ]
         .services["central-ocp"] | assertThat(. != null)
         .rolebindings["rhacs-scanner-v4-auth-reader-stackrox"] | assertThat(. != null)
         .servicemonitors["scanner-v4-monitor-stackrox"] | [
@@ -225,6 +235,7 @@ tests:
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
         .services["central-ocp"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
