@@ -16,8 +16,14 @@ import (
 
 // testRescanner returns a rescanner with a long default interval so tests
 // that don't care about the periodic loop never trigger it by accident.
+// factsFn is stubbed out so Run never exercises the real discoverFacts,
+// which - unlike scanFn - has no test-friendly no-op input; hostPath=""
+// resolves to real absolute host paths (e.g. "/etc/pki/entitlement"), not
+// a safe default.
 func testRescanner() *rescanner {
-	return newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
+	r := newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
+	r.factsFn = func(string) map[string]string { return nil }
+	return r
 }
 
 // fakeTicker is a newTick func driven manually by a test: fire triggers a

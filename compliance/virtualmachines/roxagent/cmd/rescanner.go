@@ -31,10 +31,15 @@ type rescanner struct {
 	interval        time.Duration
 
 	// scanFn defaults to the package scan function; tests override it to
-	// inject failures. newTick defaults to time.After; tests substitute a
+	// inject failures. factsFn defaults to the package discoverFacts
+	// function; tests override it to avoid exercising the real
+	// filesystem, since discoverFacts otherwise reads real host paths
+	// (e.g. hostPath="" resolves to "/etc/pki/entitlement" et al., not a
+	// no-op). newTick defaults to time.After; tests substitute a
 	// function returning a manually driven channel for precise control
 	// over Run's loop.
 	scanFn  func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
+	factsFn func(hostPath string) map[string]string
 	newTick func(d time.Duration) <-chan time.Time
 }
 
@@ -45,6 +50,7 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 		mappingFilePath: mappingFilePath,
 		interval:        interval,
 		scanFn:          scan,
+		factsFn:         discoverFacts,
 		newTick:         time.After,
 	}
 }
@@ -71,7 +77,7 @@ func (r *rescanner) Run(ctx context.Context) {
 				tick = r.newTick(retryIn)
 				continue
 			}
-			r.cache.SetReport(report, discoverFacts(r.hostPath))
+			r.cache.SetReport(report, r.factsFn(r.hostPath))
 			log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
 			backoff = rescanRetryBaseBackoff
 			tick = r.newTick(r.interval)
