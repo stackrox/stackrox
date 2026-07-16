@@ -31,6 +31,7 @@ linters:
     - ineffassign
     - modernize
     - nolintlint
+    - prealloc
     - protogetter
     - revive # replaces golint
     - rowserrcheck
