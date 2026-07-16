@@ -73,6 +73,7 @@ func (e *endpointsStore) resetMaps() {
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo])
 	e.reverseEndpointMap = make(map[string]set.Set[net.NumericEndpoint])
 	e.rebuildPublicIPsNoLock()
+	e.publicIPsChanged = false
 	e.updateMetricsNoLock()
 }
 
@@ -140,7 +141,8 @@ func (e *endpointsStore) replaceNoLock(updates map[string]*EntityData) bool {
 		}
 		// Fast path: if all endpoints are identical, skip the diff entirely.
 		if e.endpointsUnchangedNoLock(deploymentID, data.endpoints) {
-			// Replicate the nil "seen" marker that applySingleNoLock would record.
+			// Without this marker, a subsequent Apply would treat this deployment as new and
+			// run the endpoint-takeover path, incorrectly moving other deployments to history.
 			if _, exists := e.reverseEndpointMap[deploymentID]; !exists && len(data.endpoints) == 0 {
 				e.reverseEndpointMap[deploymentID] = nil
 			}

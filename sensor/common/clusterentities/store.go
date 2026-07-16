@@ -311,8 +311,6 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 		}
 	}
 
-	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
-	// whether a given IP is used by other endpoints.
 	epChanged := e.endpointsStore.Apply(updates, incremental)
 	ipChanged := e.podIPsStore.Apply(updates, incremental)
 
