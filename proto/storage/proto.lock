@@ -8579,7 +8579,7 @@
       "def": {
         "enums": [
           {
-            "name": "AclTag",
+            "name": "AclEntry.AclTag",
             "enum_fields": [
               {
                 "name": "ACL_TAG_UNSPECIFIED"
