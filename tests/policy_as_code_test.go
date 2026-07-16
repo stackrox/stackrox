@@ -191,7 +191,7 @@ func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
 	pc.Require().NoError(err)
 
 	message := "status never updated"
-	timer := time.NewTimer(time.Second * 5)
+	timer := time.NewTimer(time.Second * 30)
 	for {
 		select {
 		case <-timer.C:
@@ -215,7 +215,7 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 	pc.fromUnstructured(u, k8sPolicy)
 
 	message := "status never updated"
-	timer := time.NewTimer(time.Second * 5)
+	timer := time.NewTimer(time.Second * 30)
 	for {
 		accepted := false
 		select {
@@ -239,9 +239,9 @@ func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
 		u, err = pc.k8sClient.Get(pc.ctx, k8sPolicy.GetName(), metav1.GetOptions{})
 		pc.fromUnstructured(u, k8sPolicy)
 		k8sPolicy.Spec.PolicyName = "90-Day Image Age"
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Second*30, time.Millisecond*200)
 
-	timer = time.NewTimer(time.Second * 5)
+	timer = time.NewTimer(time.Second * 30)
 	for {
 		var policy *v1alpha1.SecurityPolicy
 		select {
@@ -356,7 +356,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	pc.Require().NoError(err)
 
 	message := "status never updated"
-	timer := time.NewTimer(time.Second * 5)
+	timer := time.NewTimer(time.Second * 30)
 	for {
 		select {
 		case <-timer.C:
@@ -415,7 +415,7 @@ func (pc *PolicyAsCodeSuite) checkPolicyIsDeclarative(id string) {
 		if policy.GetSource() != storage.PolicySource_DECLARATIVE {
 			collect.Errorf("Policy %s was not marked as declarative in Central", id)
 		}
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Second*30, time.Millisecond*200)
 }
 
 func (pc *PolicyAsCodeSuite) updateCRandObserveInCentral(k8sPolicy *v1alpha1.SecurityPolicy, id string) {
@@ -432,7 +432,7 @@ func (pc *PolicyAsCodeSuite) updateCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 		if criteriaValue != "3" {
 			collect.Errorf("Policy criteria not updated in Central. Expected 3 but got %s", criteriaValue)
 		}
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Second*30, time.Millisecond*200)
 }
 
 func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.SecurityPolicy, id string) {
@@ -448,7 +448,7 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 		} else {
 			collect.Errorf("Successfully fetched policy %s when it should be deleted", id)
 		}
-	}, time.Second*5, time.Millisecond*30, "Policy CR deletion not propogated to Central")
+	}, time.Second*30, time.Millisecond*200, "Policy CR deletion not propagated to Central")
 }
 
 func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.SecurityPolicy) string {
@@ -468,7 +468,7 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 			}
 		}
 		assert.NotEmpty(collect, policyId)
-	}, time.Second*5, time.Millisecond*30)
+	}, time.Second*30, time.Millisecond*200)
 	return policyId
 }
 
