@@ -92,7 +92,7 @@ func (e *podIPsStore) debug() interface{} {
 		for deplID, addrSet := range e.reverseIPMap {
 			// addrSet.AsSlice() does not print well
 			arr := make([]string, 0, addrSet.Cardinality())
-			for _, addr := range addrSet.AsSlice() {
+			for addr := range addrSet.All() {
 				arr = append(arr, addr.String())
 			}
 			dbg["reverseIPMap"][deplID] = arr

@@ -132,7 +132,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	if funcMap == nil {
 		return "", errors.New("Function map passed to FormatAlert cannot be nil")
 	}
-	for _, k := range requiredFunctions.AsSlice() {
+	for k := range requiredFunctions.All() {
 		if _, ok := funcMap[k]; !ok {
 			return "", fmt.Errorf("FuncMap key '%v' must be defined", k)
 		}
