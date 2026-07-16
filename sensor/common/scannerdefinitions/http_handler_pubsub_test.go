@@ -95,3 +95,18 @@ func TestDefinitionsHandler_RegistersSensorOnlineOfflineConsumers(t *testing.T) 
 		assert.False(t, h.centralReachable.Load())
 	})
 }
+
+// TestNotify_NoOpWhenPubSubEnabled verifies that Notify() is a no-op once
+// PubSub is enabled, since the SensorOnlineEvent/SensorOfflineEvent
+// subscriptions registered in NewDefinitionsHandler() are responsible for
+// flipping centralReachable instead. If this early return regressed, both
+// paths would fire on every transition.
+func TestNotify_NoOpWhenPubSubEnabled(t *testing.T) {
+	h := &Handler{pubSubDispatcher: newTestOnlineOfflineDispatcher(t)}
+	require.True(t, h.pubSubEnabled())
+	h.centralReachable.Store(true)
+
+	h.Notify(common.SensorComponentEventOfflineMode)
+
+	assert.True(t, h.centralReachable.Load())
+}

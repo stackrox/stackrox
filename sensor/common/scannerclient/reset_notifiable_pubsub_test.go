@@ -40,6 +40,18 @@ func newTestOnlineDispatcher(tb testing.TB) common.PubSubDispatcher {
 	return dispatcher
 }
 
+// newTestDispatcherMissingOnlineLane returns a dispatcher that never
+// registered the SensorOnlineLane, so registering a consumer onto it fails.
+func newTestDispatcherMissingOnlineLane(tb testing.TB) common.PubSubDispatcher {
+	tb.Helper()
+	dispatcher, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+		lane.NewBlockingLane(pubsub.SensorOfflineLane),
+	}))
+	require.NoError(tb, err)
+	tb.Cleanup(dispatcher.Stop)
+	return dispatcher
+}
+
 // resetSingleton clears the package-level ResetNotifiable singleton so tests
 // don't leak state (and don't skip registration) across each other.
 func resetSingleton(tb testing.TB) {
@@ -92,4 +104,36 @@ func TestResetNotifiable_RegistersSensorOnlineConsumer(t *testing.T) {
 		assert.True(t, fake.closed)
 		assert.Nil(t, scannerClient)
 	})
+}
+
+// TestResetNotifiable_RegistrationFailure_ReturnsUsableNotifiable verifies
+// that a lane registration failure (e.g. the SensorOnlineLane isn't wired up
+// on the dispatcher) is logged rather than causing ResetNotifiable() to
+// panic or return a broken notifiable -- sensor startup must survive it.
+func TestResetNotifiable_RegistrationFailure_ReturnsUsableNotifiable(t *testing.T) {
+	resetSingleton(t)
+	defer resetSingleton(t)
+
+	n := ResetNotifiable(newTestDispatcherMissingOnlineLane(t))
+
+	require.NotNil(t, n)
+	assert.Same(t, notifiable, n)
+}
+
+// TestNotify_NoOpWhenPubSubEnabled verifies that Notify() is a no-op once
+// PubSub is enabled, since the SensorOnlineEvent subscription registered in
+// ResetNotifiable() is responsible for resetting the client instead. If this
+// early return regressed, both paths would fire on every transition.
+func TestNotify_NoOpWhenPubSubEnabled(t *testing.T) {
+	fake := &fakeScannerClient{}
+	scannerClient = fake
+	defer func() { scannerClient = nil }()
+
+	r := &resetNotifiable{pubSubDispatcher: newTestOnlineDispatcher(t)}
+	require.True(t, r.pubSubEnabled())
+
+	r.Notify(common.SensorComponentEventCentralReachable)
+
+	assert.False(t, fake.closed)
+	assert.Same(t, fake, scannerClient)
 }
