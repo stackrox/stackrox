@@ -366,6 +366,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'vulnerabilities/platform-cves': {
+        featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerabilities/reports': {

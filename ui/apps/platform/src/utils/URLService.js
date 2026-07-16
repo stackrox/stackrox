@@ -9,7 +9,9 @@ import configMgmtEntityRelationship from 'Containers/ConfigManagement/entityTabR
 import Raven from 'raven-js';
 
 import {
+    configManagementPath,
     policiesPath,
+    policyManagementBasePath,
     riskWorkloadPath,
     riskWorkloadsBasePath,
     secretsPath,
@@ -97,13 +99,13 @@ function getPath(urlParams) {
         },
         [useCases.SECRET]: {
             [pageTypes.ENTITY]: secretsPath,
-            [pageTypes.LIST]: '/main/configmanagement/secrets',
-            [pageTypes.DASHBOARD]: '/main/configmanagement/secrets',
+            [pageTypes.LIST]: `${configManagementPath}/secrets`,
+            [pageTypes.DASHBOARD]: `${configManagementPath}/secrets`,
         },
         [useCases.POLICY]: {
             [pageTypes.ENTITY]: policiesPath,
-            [pageTypes.LIST]: '/main/policies',
-            [pageTypes.DASHBOARD]: '/main/policies',
+            [pageTypes.LIST]: policyManagementBasePath,
+            [pageTypes.DASHBOARD]: policyManagementBasePath,
         },
     };
 

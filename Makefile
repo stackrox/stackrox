@@ -501,6 +501,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps:
 	$(GOBUILD) \
 		central \
+		central/worker \
 		compliance/cmd/compliance \
 		config-controller \
 		migrator \
@@ -681,6 +682,7 @@ docker-build-roxctl-image:
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
+	cp bin/linux_$(GOARCH)/worker image/rhel/bin/central-worker
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
