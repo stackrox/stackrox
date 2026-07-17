@@ -211,7 +211,7 @@ func (t *teams) getViolationSection(alert *storage.Alert) (section, error) {
 }
 
 func (t *teams) getSectionFacts(policySections []*storage.PolicySection) []fact {
-	var facts []fact
+	facts := make([]fact, 0, len(policySections))
 	for _, section := range policySections {
 		sectionName := "Section "
 		if section.GetSectionName() != "" {
@@ -229,7 +229,7 @@ func (t *teams) getSectionFacts(policySections []*storage.PolicySection) []fact 
 }
 
 func groupsToString(groups []*storage.PolicyGroup) string {
-	var groupStrings []string
+	groupStrings := make([]string, 0, len(groups))
 	for _, group := range groups {
 		var op string
 		if group.GetBooleanOperator() == storage.BooleanOperator_OR {
@@ -247,7 +247,7 @@ func groupsToString(groups []*storage.PolicyGroup) string {
 }
 
 func valueListToString(values []*storage.PolicyValue, opString string) string {
-	var valueList []string
+	valueList := make([]string, 0, len(values))
 	for _, value := range values {
 		valueList = append(valueList, value.GetValue())
 	}

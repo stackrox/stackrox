@@ -37,7 +37,7 @@ func (bu *PostgresBackup) WriteTo(_ context.Context, out io.Writer) error {
 	}
 
 	// Set the options for pg_dump from the connection config
-	options := []string{
+	options := []string{ //nolint:prealloc
 		"-d",
 		pgconfig.GetActiveDB(),
 		"-Fc", // Custom format, compressed hopefully supports stdin to restore

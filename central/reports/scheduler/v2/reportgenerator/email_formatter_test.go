@@ -38,6 +38,7 @@ func (s *EmailFormatterTestSuite) TestFormatReportConfigDetails() {
 }
 
 func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCase {
+	//nolint:prealloc
 	cases := []configDetailsTestCase{
 		{
 			desc: "All severities, image types, fixabilities; Cves since last scheduled report",

@@ -99,7 +99,7 @@ func stateToString(s storage.ComplianceState) string {
 
 func (c *csvResults) addRow(row complianceRow) {
 	// standard, cluster, type, namespace, object, control, state, evidence
-	value := []string{
+	value := []string{ //nolint:prealloc
 		row.standardID,
 		row.clusterName,
 		row.objectNamespace,

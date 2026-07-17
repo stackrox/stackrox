@@ -154,7 +154,7 @@ func getFileAccess(accessTime time.Time) *storage.FileAccess {
 }
 
 func getFakeFileAccessAlert(accesses ...*storage.FileAccess) *storage.Alert {
-	var violations []*storage.Alert_Violation
+	violations := make([]*storage.Alert_Violation, 0, len(accesses))
 	for _, access := range accesses {
 		violations = append(violations, printer.GenerateFileAccessViolation(access))
 	}

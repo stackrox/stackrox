@@ -404,7 +404,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) addBaseIntegrations(testIntegrations []*storage.ComplianceIntegration) []string {
-	var ids []string
+	ids := make([]string, 0, len(testIntegrations))
 	for _, integration := range testIntegrations {
 		id, err := s.dataStore.AddComplianceIntegration(s.hasWriteCtx, integration)
 		s.NoError(err)

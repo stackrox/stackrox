@@ -319,6 +319,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 
 func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints() {
 
+	//nolint:prealloc
 	verifyCollectionTests := []struct {
 		name          string
 		collectionObj *storage.ResourceCollection
@@ -543,7 +544,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints()
 
 func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 
-	var supportedLabelRules []*storage.SelectorRule
+	supportedLabelRules := make([]*storage.SelectorRule, 0, len(GetSupportedFieldLabels()))
 
 	for _, label := range GetSupportedFieldLabels() {
 		supportedLabelRules = append(supportedLabelRules, &storage.SelectorRule{

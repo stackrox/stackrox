@@ -848,7 +848,7 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByClusters() {
 			for _, clusterID := range tc.newClusterIDs {
 				suite.ssbDS.EXPECT().GetScanSettingBindingsByCluster(gomock.Any(), clusterID).Return(nil, nil).Times(1)
 			}
-			testProfiles := make([]*storage.ComplianceOperatorProfileV2, 0)
+			testProfiles := make([]*storage.ComplianceOperatorProfileV2, 0, len(tc.profileNames))
 			for _, profileName := range tc.profileNames {
 				testProfiles = append(testProfiles, getTestProfile(profileName, "1.0.0", "platform", "ocp4", tc.newClusterIDs[0], 1))
 			}
@@ -916,7 +916,7 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByProfiles() {
 				}
 			}
 
-			newTestProfiles := make([]*storage.ComplianceOperatorProfileV2, 0)
+			newTestProfiles := make([]*storage.ComplianceOperatorProfileV2, 0, len(tc.newProfileNames))
 			for _, profileName := range tc.newProfileNames {
 				testProfile := getTestProfile(profileName, "1.0.0", "platform", "ocp4", tc.clusterIDs[0], 1)
 				newTestProfiles = append(newTestProfiles, testProfile)

@@ -567,7 +567,7 @@ func (m safeRawMessage) MarshalJSON() ([]byte, error) {
 func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 	authProviders := s.authProviderRegistry.GetProviders(nil, nil)
 
-	var storageAuthProviders []*storage.AuthProvider
+	storageAuthProviders := make([]*storage.AuthProvider, 0, len(authProviders))
 	for _, authProvider := range authProviders {
 		storageAuthProviders = append(storageAuthProviders, authProvider.StorageView())
 	}

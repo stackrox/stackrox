@@ -49,7 +49,7 @@ func LoadRestoreStream(fileReader io.Reader) error {
 
 func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *postgres.Config, restoreDB string) error {
 	// Set the options for pg_dump from the connection config
-	options := []string{
+	options := []string{ //nolint:prealloc
 		"-d",
 		restoreDB,
 		"--no-owner",

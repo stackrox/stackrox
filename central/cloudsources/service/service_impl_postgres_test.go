@@ -477,7 +477,7 @@ func (s *servicePostgresTestSuite) TestCloudSourceTest() {
 
 func (s *servicePostgresTestSuite) addCloudSources(num int) []*v1.CloudSource {
 	cloudSources := fixtures.GetManyStorageCloudSources(num)
-	result := []*v1.CloudSource{}
+	result := make([]*v1.CloudSource, 0, len(cloudSources))
 	for _, cs := range cloudSources {
 		s.Require().NoError(s.datastore.UpsertCloudSource(s.writeCtx, cs))
 		result = append(result, storagetov1.CloudSource(cs))

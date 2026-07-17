@@ -294,11 +294,11 @@ func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan 
 // GetScansFromScanConfiguration returns the scans associated with a given ScanConfiguration
 func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore) (set.StringSet, error) {
 	ret := set.NewStringSet()
-	var profileNames []string
+	profileNames := make([]string, 0, len(scanConfig.GetProfiles()))
 	for _, p := range scanConfig.GetProfiles() {
 		profileNames = append(profileNames, p.GetProfileName())
 	}
-	var clusters []string
+	clusters := make([]string, 0, len(scanConfig.GetClusters()))
 	for _, c := range scanConfig.GetClusters() {
 		clusters = append(clusters, c.GetClusterId())
 	}

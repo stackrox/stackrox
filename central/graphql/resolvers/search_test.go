@@ -589,7 +589,7 @@ func TestSubjectGlobalSearch(t *testing.T) {
 }
 
 func getResultIDs(results []*searchResultResolver) []string {
-	var ids []string
+	ids := make([]string, 0, len(results))
 	for _, r := range results {
 		ids = append(ids, r.data.GetId())
 	}

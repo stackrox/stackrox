@@ -148,7 +148,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
 	deployment := fixtures.LightweightDeployment()
 	s.NoError(s.deploymentDataStore.UpsertDeployment(allAllowedCtx, deployment))
 
-	var entities []*storage.NetworkEntity
+	entities := make([]*storage.NetworkEntity, 0, len(externalIps))
 
 	for _, ip := range externalIps {
 		cidr := fmt.Sprintf("%s/32", ip)
@@ -168,7 +168,7 @@ func (s *networkBaselineServiceSuite) setupTablesExternalFlows() {
 	_, err := s.entityDataStore.CreateExtNetworkEntitiesForCluster(allAllowedCtx, fixtureconsts.Cluster1, entities...)
 	s.NoError(err)
 
-	var flows []*storage.NetworkFlow
+	flows := make([]*storage.NetworkFlow, 0, 2*len(entities))
 
 	ts := time.Now().Add(-10 * time.Minute)
 

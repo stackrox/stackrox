@@ -35,10 +35,10 @@ func TestAllPackagesAreImported(t *testing.T) {
 		existingNotifiers.Add(baseName)
 	}
 
-	var allImports []*ast.ImportSpec
 	f, err := parser.ParseFile(token.NewFileSet(), "all.go", nil, parser.ImportsOnly)
 	require.NoError(t, err, "failed to parse all.go")
 
+	allImports := make([]*ast.ImportSpec, 0, len(f.Imports))
 	allImports = append(allImports, f.Imports...)
 
 	importedNotifiers := set.NewStringSet()
