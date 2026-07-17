@@ -210,6 +210,53 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	}
 }
 
+func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	vmID := virtualmachine.VMID("test-vm")
+	cases := map[string]struct {
+		vsockCID string
+	}{
+		"should forward when only vm_id is set": {
+			vsockCID: "",
+		},
+		"should prefer vm_id over vsock_cid": {
+			vsockCID: "42",
+		},
+	}
+	s.store.EXPECT().Get(gomock.Eq(vmID)).Times(len(cases)).Return(&virtualmachine.Info{ID: vmID})
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			go func() {
+				err := s.handler.Send(context.Background(), &v1.IndexReport{
+					VmId:     string(vmID),
+					VsockCid: tc.vsockCID,
+				})
+				s.Require().NoError(err)
+			}()
+
+			select {
+			case msg := <-s.handler.ResponsesC():
+				s.Require().NotNil(msg)
+				sensorEvent := msg.GetEvent()
+				s.Require().NotNil(sensorEvent)
+				s.Assert().Equal(string(vmID), sensorEvent.GetId())
+				indexEvent := sensorEvent.GetVirtualMachineIndexReport()
+				s.Require().NotNil(indexEvent)
+				s.Assert().Equal(string(vmID), indexEvent.GetId())
+				s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
+				s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
+			case <-time.After(time.Second):
+				s.Fail("Expected message to be sent to central")
+			}
+		})
+	}
+}
+
 func (s *virtualMachineHandlerSuite) TestStop() {
 	err := s.handler.Start()
 	s.Require().NoError(err)

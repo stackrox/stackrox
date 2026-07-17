@@ -70,6 +70,7 @@ func (m *IndexReport) CloneVT() *IndexReport {
 	}
 	r := new(IndexReport)
 	r.VsockCid = m.VsockCid
+	r.VmId = m.VmId
 	if rhs := m.IndexV4; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
 			r.IndexV4 = vtpb.CloneVT()
@@ -179,6 +180,9 @@ func (this *IndexReport) EqualVT(that *IndexReport) bool {
 			return false
 		}
 	} else if !proto.Equal(this.IndexV4, that.IndexV4) {
+		return false
+	}
+	if this.VmId != that.VmId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -372,6 +376,13 @@ func (m *IndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.VmId) > 0 {
+		i -= len(m.VmId)
+		copy(dAtA[i:], m.VmId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.VmId)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if m.IndexV4 != nil {
 		if vtmsg, ok := interface{}(m.IndexV4).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
@@ -520,6 +531,10 @@ func (m *IndexReport) SizeVT() (n int) {
 		} else {
 			l = proto.Size(m.IndexV4)
 		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.VmId)
+	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -980,6 +995,38 @@ func (m *IndexReport) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VmId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.VmId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1566,6 +1613,42 @@ func (m *IndexReport) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VmId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.VmId = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

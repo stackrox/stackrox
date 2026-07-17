@@ -336,17 +336,24 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 // vmScraperSenderAdapter adapts vmIndex.Handler to vmscraper.IndexReportSender.
 // It constructs the v1.IndexReport envelope that the handler expects.
+// Pull mode sets vm_id from the Kubernetes UID so the handler can forward
+// without requiring vsock_cid. vsock_cid is still included when known for
+// ACK correlation and push-suppression.
 type vmScraperSenderAdapter struct {
 	handler vmIndex.Handler
 }
 
 func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+	if vm == nil {
+		return errors.New("virtual machine info is nil")
+	}
 	var cidStr string
 	if vm.VSOCKCID != nil {
 		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
 	}
 	if err := a.handler.Send(ctx, &v1.IndexReport{
 		VsockCid: cidStr,
+		VmId:     string(vm.ID),
 		IndexV4:  report,
 	}); err != nil {
 		return errors.Wrap(err, "sending index report")
