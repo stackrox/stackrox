@@ -563,6 +563,8 @@ func (e *endpointsStore) trackEndpointRemoved(ep net.NumericEndpoint) {
 	}
 }
 
+// rebuildPublicIPsNoLock must only be called when endpointMap is empty (i.e. after resetMaps clears it),
+// because it skips historical entries already present in endpointMap to avoid double-counting.
 func (e *endpointsStore) rebuildPublicIPsNoLock() {
 	e.publicIPs = nil
 	e.publicIPRefCount = nil

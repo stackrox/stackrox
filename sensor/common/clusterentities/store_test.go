@@ -376,6 +376,63 @@ func (s *ClusterEntitiesStoreTestSuite) TestPublicIPListenerConditionalUpdate() 
 	}
 }
 
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPReaddAfterRemoval() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	// Add a public IP, then remove it via replacement, then expire history.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("10.0.0.1", "cont2", 80),
+	}, false)
+	store.RecordTick()
+	s.Empty(listener.data, "public IP should be gone after history expiry")
+
+	// Re-add the same public IP — ref count must resurrect from zero.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont3", 80),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should reappear after re-add")
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestPublicIPSharedBetweenDeployments() {
+	store := NewStore(1, nil, false)
+	listener := newTestPublicIPsListener(s.T())
+	store.RegisterPublicIPsListener(listener)
+	defer store.UnregisterPublicIPsListener(listener)
+
+	// Two deployments share the same public IP (different ports).
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("8.8.8.8", "cont1", 80),
+	}, true)
+	store.Apply(map[string]*EntityData{
+		"depl2": entityUpdate("8.8.8.8", "cont2", 443),
+	}, true)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")))
+
+	// Remove one deployment — the IP should survive via the other's ref count.
+	store.Apply(map[string]*EntityData{
+		"depl1": entityUpdate("", "", 0),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should persist while second deployment still uses it")
+
+	// Remove the second deployment — IP moves to history.
+	store.Apply(map[string]*EntityData{
+		"depl2": entityUpdate("", "", 0),
+	}, false)
+	s.True(listener.data.Contains(net.ParseIP("8.8.8.8")), "public IP should be in history")
+
+	// Expire history.
+	store.RecordTick()
+	s.Empty(listener.data, "public IP should be gone after history expiry")
+}
+
 func (s *ClusterEntitiesStoreTestSuite) TestPublicIPHistoryExpiry() {
 	store := NewStore(1, nil, false)
 	listener := newTestPublicIPsListener(s.T())
