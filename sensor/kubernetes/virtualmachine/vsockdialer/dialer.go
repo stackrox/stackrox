@@ -179,8 +179,7 @@ func (s *wsStream) Close() error {
 }
 
 func isWSClose(err error) bool {
-	var ce *websocket.CloseError
-	if errors.As(err, &ce) {
+	if _, ok := errors.AsType[*websocket.CloseError](err); ok {
 		return true
 	}
 	return errors.Is(err, io.EOF)
