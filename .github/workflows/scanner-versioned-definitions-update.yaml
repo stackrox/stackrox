@@ -265,9 +265,8 @@ jobs:
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Validate bundle
-      id: validate-bundle
-      # ROX-33993: only "no bundle files at all" is critical; per-source issues
-      # are reported as warnings and handed off to the next step to notify.
+      # ROX-33993: fails on any per-source issue; "Upload definitions artifacts"
+      # still runs via if: always() so healthy sources still reach users.
       shell: bash
       run: |
         set -euo pipefail
@@ -279,65 +278,51 @@ jobs:
             exit 1
         fi
 
-        warnings=0
-        broken_sources=()
-        warn() {
-            echo "::warning::$*"
-            warnings=$((warnings + 1))
+        # Accumulate failures so all sources are checked before exiting.
+        failures=0
+        fail() {
+            echo "::error::$*"
+            failures=$((failures + 1))
         }
 
         for f in "${files[@]}"; do
             name=$(basename "$f" .json.zst)
 
             if [ ! -s "$f" ]; then
-                warn "source '$name': file $f is empty (0 bytes)"
-                broken_sources+=("$name")
+                fail "source '$name': file $f is empty (0 bytes)"
                 continue
             fi
 
             if ! zstd -t "$f" >/dev/null 2>&1; then
-                warn "source '$name': file $f is not a valid zstd archive (corrupted/truncated?)"
-                broken_sources+=("$name")
+                fail "source '$name': file $f is not a valid zstd archive (corrupted/truncated?)"
                 continue
             fi
 
             if ! record_count=$(zstd -dc "$f" | jq -n 'reduce (inputs | select(type == "object")) as $i (0; . + 1)' 2>/dev/null); then
-                warn "source '$name': file $f decompressed but content is not valid vulnerability record JSON"
-                broken_sources+=("$name")
+                fail "source '$name': file $f decompressed but content is not valid vulnerability record JSON"
                 continue
             fi
 
             if [ "$record_count" -eq 0 ]; then
-                warn "source '$name': file $f decompresses fine but contains 0 records (expected >0)"
-                broken_sources+=("$name")
+                fail "source '$name': file $f decompresses fine but contains 0 records (expected >0)"
                 continue
             fi
 
             echo "source '$name': OK ($record_count records)"
         done
 
-        echo "warnings=$warnings" >> "$GITHUB_OUTPUT"
-        if [ "$warnings" -eq 0 ]; then
-            echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
-        else
-            echo "vulnerability bundle validation: $warnings of ${#files[@]} source(s) have issues (non-critical)"
-            echo "summary=$warnings of ${#files[@]} source(s) broken: ${broken_sources[*]}" >> "$GITHUB_OUTPUT"
+        if [ "$failures" -gt 0 ]; then
+            echo "::error::vulnerability bundle validation failed: $failures of ${#files[@]} source(s) broken"
+            exit 1
         fi
 
-    - name: Send Slack notification for non-critical bundle warnings
-      if: steps.validate-bundle.outputs.warnings != '0' && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false')
-      env:
-        SUMMARY: ${{ steps.validate-bundle.outputs.summary }}
-        SERVER_URL: ${{ github.server_url }}
-        REPOSITORY: ${{ github.repository }}
-        RUN_ID: ${{ github.run_id }}
-      shell: bash
-      run: |
-        payload=$(jq -n --arg text "Scanner vulnerability bundle validation <$SERVER_URL/$REPOSITORY/actions/runs/$RUN_ID|found non-critical issues> in bundle '$SCANNER_BUNDLE_VERSION': $SUMMARY" '{text: $text}')
-        curl -X POST -H 'Content-type: application/json' --data "$payload" "${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}"
+        echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
 
     # Uploads the definitions as a temporary GitHub Actions artifact. The actual publishing to GCS happens on: upload-definitions
+    # if: always() ensures this still runs (and publishes the other, healthy
+    # sources) even if "Validate bundle" above fails -- see ROX-33993.
     - name: Upload definitions artifacts
+      if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
