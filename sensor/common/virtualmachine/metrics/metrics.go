@@ -205,7 +205,11 @@ var PullReportBytes = prometheus.NewHistogram(
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "vsock_pull_report_bytes",
 		Help:      "Response payload size in bytes from VM agent",
-		Buckets:   prometheus.ExponentialBuckets(1024, 2, 14), // 1KB to ~8MB
+		// 1KB to ~32MB brackets the 16MB default response-size ceiling
+		// (env.VirtualMachinesPullMaxResponseSizeKB) with a bucket to spare,
+		// giving the >8MB range that reportcheck.IsViable flags as
+		// "unusually large" its own resolution up to that ceiling.
+		Buckets: prometheus.ExponentialBuckets(1024, 2, 16),
 	},
 )
 
