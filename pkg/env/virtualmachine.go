@@ -1,6 +1,15 @@
 package env
 
-import "time"
+import (
+	"math"
+	"time"
+)
+
+// maxPullResponseSizeKB is the largest KB value that doesn't overflow
+// uint32 once converted to bytes. VirtualMachinesPullMaxResponseSizeKB
+// feeds vsockclient.NewClient, which narrows the byte count to uint32 for
+// the wire protocol's frame-length field.
+const maxPullResponseSizeKB = math.MaxUint32 / 1024
 
 var (
 	// VirtualMachinesMaxConcurrentVsockConnections defines the maximum number of vsock connections handled in parallel.
@@ -80,9 +89,11 @@ var (
 
 	// VirtualMachinesPullMaxResponseSizeKB defines the maximum response size (in KB) that the
 	// pull-mode scraper accepts from a VM agent. Default 16384 KB (16 MiB) matches the push-mode
-	// limit (ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB).
+	// limit (ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB). Capped at maxPullResponseSizeKB so an
+	// operator-configured value can never overflow the uint32 byte count vsockclient.NewClient
+	// expects; a value above the cap falls back to the default instead.
 	VirtualMachinesPullMaxResponseSizeKB = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB", 16384).
-						WithMinimum(1)
+						WithMinimum(1).WithMaximum(maxPullResponseSizeKB)
 
 	// VirtualMachinesScraperPollInterval defines how often the pull-mode scraper
 	// polls VMs for new reports.

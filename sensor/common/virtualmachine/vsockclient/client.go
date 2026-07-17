@@ -32,6 +32,13 @@ type GetReportResult struct {
 	Meta        *pb.ResponseMeta
 }
 
+// defaultMaxResponseSize is the fallback used by NewClient for an
+// out-of-range maxResponseSize. It matches the documented default of
+// env.VirtualMachinesPullMaxResponseSizeKB (16 MiB): a misconfigured limit
+// should fail toward a safe, bounded default, not toward "unlimited" —
+// the data source is a VM agent, not a fully trusted peer.
+const defaultMaxResponseSize = 16 << 20
+
 // Client sends VMServiceRequests and reads VMServiceResponses over a framed stream.
 type Client struct {
 	capabilities    []string
@@ -39,13 +46,13 @@ type Client struct {
 }
 
 // NewClient creates a protocol client with the given Sensor capabilities
-// and maximum response size in bytes. maxResponseSize is clamped to
-// [1, math.MaxUint32] since it's narrowed to uint32 when passed to
-// vsockframing.ReadFrame; an out-of-range value (e.g. from a misconfigured
-// size setting) would otherwise wrap into a bogus, silently-wrong limit.
+// and maximum response size in bytes. maxResponseSize must fit in
+// [1, math.MaxUint32], since it's narrowed to uint32 when passed to
+// vsockframing.ReadFrame; out-of-range values (e.g. from a misconfigured
+// size setting) fall back to defaultMaxResponseSize.
 func NewClient(capabilities []string, maxResponseSize int) *Client {
 	if maxResponseSize <= 0 || int64(maxResponseSize) > math.MaxUint32 {
-		maxResponseSize = math.MaxUint32
+		maxResponseSize = defaultMaxResponseSize
 	}
 	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
 }
