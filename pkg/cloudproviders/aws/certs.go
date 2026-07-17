@@ -14,7 +14,14 @@ import (
 // for the current list of RSA-2048 certificates.
 //
 // Note: THIS CAN BE BRITTLE. THERE IS NO GUARANTEE THESE CERTS WILL LAST FOREVER.
-// See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/regions-certs.html.
+// We can't rely on aws-sdk-go to provide these: a PR proposing exactly this
+// (https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445) was
+// rejected because the certs rotate, differ per AWS partition, and are only
+// published via a documentation page rather than a verifiable API -- so every
+// caller that wants this has to bundle and maintain its own copy, same as we
+// do here.
+// See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/regions-certs.html
+// for the current list.
 // It is probably in everyone's best interest to check on this periodically.
 // Last verified against the above list on 2026-07-16.
 var awsCertsPEM = []byte(`
