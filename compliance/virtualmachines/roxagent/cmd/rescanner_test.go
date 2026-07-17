@@ -26,9 +26,9 @@ func testRescanner() *rescanner {
 	return r
 }
 
-// fakeTicker is a newTick func driven manually by a test: fire triggers a
-// tick, and lastReset reports the duration most recently requested via
-// newTick, letting tests assert on scheduling decisions directly instead of
+// fakeTicker is a newDelay func driven manually by a test: fire triggers a
+// delay expiry, and lastReset reports the duration most recently requested via
+// newDelay, letting tests assert on scheduling decisions directly instead of
 // on elapsed time. Pair with synctest.Wait after fire to block until the
 // loop under test has processed the tick and settled back into waiting for
 // the next one.
@@ -45,9 +45,9 @@ func newFakeTicker() *fakeTicker {
 
 func (f *fakeTicker) close() { close(f.tick) }
 
-// newTick has the same signature as time.After, so it's directly assignable
-// to a rescanner's newTick field.
-func (f *fakeTicker) newTick(d time.Duration) <-chan time.Time {
+// newDelay has the same signature as time.After, so it's directly assignable
+// to a rescanner's newDelay field.
+func (f *fakeTicker) newDelay(d time.Duration) <-chan time.Time {
 	concurrency.WithLock(&f.mu, func() { f.resets = append(f.resets, d) })
 	return f.tick
 }
@@ -69,7 +69,7 @@ func TestRescanner_Run(t *testing.T) {
 			r := testRescanner()
 			ticker := newFakeTicker()
 			defer ticker.close()
-			r.newTick = ticker.newTick
+			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
 			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
@@ -104,7 +104,7 @@ func TestRescanner_Run(t *testing.T) {
 			r := testRescanner()
 			ticker := newFakeTicker()
 			defer ticker.close()
-			r.newTick = ticker.newTick
+			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
 			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {

@@ -35,12 +35,12 @@ type rescanner struct {
 	// function; tests override it to avoid exercising the real
 	// filesystem, since discoverFacts otherwise reads real host paths
 	// (e.g. hostPath="" resolves to "/etc/pki/entitlement" et al., not a
-	// no-op). newTick defaults to time.After; tests substitute a
-	// function returning a manually driven channel for precise control
-	// over Run's loop.
-	scanFn  func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
-	factsFn func(hostPath string) map[string]string
-	newTick func(d time.Duration) <-chan time.Time
+	// no-op). newDelay defaults to time.After (a one-shot timer); tests
+	// substitute a function returning a manually driven channel for
+	// precise control over Run's loop.
+	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
+	factsFn  func(hostPath string) map[string]string
+	newDelay func(d time.Duration) <-chan time.Time
 }
 
 func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath string, interval time.Duration) *rescanner {
@@ -51,7 +51,7 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 		interval:        interval,
 		scanFn:          scan,
 		factsFn:         discoverFacts,
-		newTick:         time.After,
+		newDelay:        time.After,
 	}
 }
 
@@ -62,25 +62,25 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 // the next scheduled rescan would be. Blocks until ctx is cancelled.
 func (r *rescanner) Run(ctx context.Context) {
 	backoff := rescanRetryBaseBackoff
-	tick := r.newTick(r.interval)
+	delay := r.newDelay(r.interval)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-tick:
+		case <-delay:
 			log.Info("Starting rescan")
 			report, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
 			if err != nil {
 				retryIn := min(backoff, r.interval)
 				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
 				backoff = min(backoff*2, rescanRetryMaxBackoff)
-				tick = r.newTick(retryIn)
+				delay = r.newDelay(retryIn)
 				continue
 			}
 			r.cache.SetReport(report, r.factsFn(r.hostPath))
 			log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
 			backoff = rescanRetryBaseBackoff
-			tick = r.newTick(r.interval)
+			delay = r.newDelay(r.interval)
 		}
 	}
 }

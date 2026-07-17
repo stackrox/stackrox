@@ -43,13 +43,13 @@ type ReportCache struct {
 // mutate the published, supposedly-immutable snapshot out from under
 // concurrent readers.
 func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string) {
-	var prev reportSnapshot
+	var counter uint32
 	if old := c.snap.Load(); old != nil {
-		prev = *old
+		counter = old.generation
 	}
 	c.snap.Store(&reportSnapshot{
 		report:      cloneIndexReport(r),
-		generation:  prev.generation + 1,
+		generation:  counter + 1,
 		generatedAt: time.Now(),
 		facts:       cloneFacts(facts),
 	})

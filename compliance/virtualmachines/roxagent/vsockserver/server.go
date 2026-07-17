@@ -156,8 +156,8 @@ func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
 	if !completeHandshake(ctx, conn) {
 		return
 	}
+	defer func() { _ = conn.Close() }()
 	s.handler.writeError(conn, pb.ErrorCode_ERROR_CODE_BUSY, "agent is already serving another request; retry after a backoff")
-	_ = conn.Close()
 }
 
 // completeHandshake finishes the TLS handshake on conn, if it is a TLS
@@ -178,8 +178,8 @@ func completeHandshake(ctx context.Context, conn net.Conn) bool {
 		return true
 	}
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
+		defer func() { _ = conn.Close() }()
 		log.Errorf("TLS handshake with %s failed: %v", conn.RemoteAddr(), err)
-		_ = conn.Close()
 		return false
 	}
 	log.Infof("Accepted TLS connection from %s (version=0x%04x, cipher=0x%04x)",

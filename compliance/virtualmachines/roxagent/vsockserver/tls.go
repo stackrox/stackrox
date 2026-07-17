@@ -40,7 +40,7 @@ const (
 	coalesceKey = "kubevirt-ca"
 )
 
-// FetchKubeVirtCA calls the KubeVirt System.CABundle gRPC service on
+// fetchKubeVirtCA calls the KubeVirt System.CABundle gRPC service on
 // VSOCK CID 2 (host), port 1 and returns the CA bundle PEM bytes.
 //
 // virt-handler serves a gRPC System service on this port (not raw PEM).
@@ -50,7 +50,7 @@ const (
 // ctx bounds the whole call (dial + RPC); callers are responsible for
 // attaching a deadline, since this service is not always reachable - see
 // CARefresher for why a blocked call here must not block forever.
-func FetchKubeVirtCA(ctx context.Context) ([]byte, error) {
+func fetchKubeVirtCA(ctx context.Context) ([]byte, error) {
 	conn, err := grpc.NewClient(
 		"passthrough:///vsock",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -208,7 +208,7 @@ func NewCARefresher(opts ...CARefresherOption) *CARefresher {
 	r := &CARefresher{
 		interval:     defaultRefreshInterval,
 		fetchTimeout: defaultFetchTimeout,
-		fetchCA:      FetchKubeVirtCA,
+		fetchCA:      fetchKubeVirtCA,
 		coalesce:     coalescer.New[*x509.CertPool](),
 	}
 	for _, o := range opts {

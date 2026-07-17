@@ -107,7 +107,7 @@ func TestCARefresher_InvalidPEM(t *testing.T) {
 
 	_, err := r.ensureFreshPool(context.Background())
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no valid certificates")
+	assert.ErrorContains(t, err, "no valid certificates")
 }
 
 func TestCARefresher_HandshakeFetchesOnColdCache(t *testing.T) {
@@ -529,7 +529,7 @@ func TestExtractBundleRaw(t *testing.T) {
 			raw, err := extractBundleRaw(tc.input)
 			if tc.wantErrMsg != "" {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.wantErrMsg)
+				assert.ErrorContains(t, err, tc.wantErrMsg)
 				return
 			}
 			require.NoError(t, err)
