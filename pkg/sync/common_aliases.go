@@ -16,3 +16,8 @@ type Map = sync.Map
 
 // Pool is an alias for `sync.Pool`.
 type Pool = sync.Pool
+
+// OnceValue wraps `sync.OnceValue`.
+func OnceValue[T any](f func() T) func() T {
+	return sync.OnceValue(f)
+}
