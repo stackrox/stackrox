@@ -250,7 +250,11 @@ jobs:
         VULN_BUNDLES: ${{ github.event.inputs.vuln_bundles }}
       run: |
         if [ -n "$VULN_BUNDLES" ]; then
-            export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
+            if grep -q "STACKROX_SCANNER_V4_UPDATER_SOURCES" scanner/cmd/updater/main.go 2>/dev/null; then
+                export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
+            else
+                echo "::warning::vuln_bundles input ignored: checked-out ref ($ROX_GIT_REF) does not support source filtering"
+            fi
         fi
         tag=$(make -s --no-print-directory tag)
         # In pre-4.9, the exporter requires --split to generate multi-bundles.
@@ -279,12 +283,14 @@ jobs:
         fi
 
         # Accumulate failures so all sources are checked before exiting.
-        failures=0
+        failures=()
         fail() {
             echo "::error::$*"
-            failures=$((failures + 1))
+            failures+=("$*")
         }
 
+        # Counts JSON objects in an NDJSON stream, failing on any non-object value.
+        jq_filter='reduce inputs as $i (0; if ($i | type) == "object" then . + 1 else error("malformed JSON value: \($i | type)") end)'
         for f in "${files[@]}"; do
             name=$(basename "$f" .json.zst)
 
@@ -298,29 +304,28 @@ jobs:
                 continue
             fi
 
-            if ! record_count=$(zstd -dc "$f" | jq -n 'reduce (inputs | select(type == "object")) as $i (0; . + 1)' 2>/dev/null); then
-                fail "source '$name': file $f decompressed but content is not valid vulnerability record JSON"
+            if ! record_count=$(zstd -dc "$f" | jq -n "$jq_filter" 2>/dev/null); then
+                fail "source '$name': file $f decompressed successfully, but a malformed JSON value was found"
                 continue
             fi
 
             if [ "$record_count" -eq 0 ]; then
-                fail "source '$name': file $f decompresses fine but contains 0 records (expected >0)"
+                fail "source '$name': file $f decompresses fine but contains 0 JSON objects (expected >0)"
                 continue
             fi
 
             echo "source '$name': OK ($record_count records)"
         done
 
-        if [ "$failures" -gt 0 ]; then
-            echo "::error::vulnerability bundle validation failed: $failures of ${#files[@]} source(s) broken"
+        if [ "${#failures[@]}" -gt 0 ]; then
+            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken"
+            printf '  - %s\n' "${failures[@]}"
             exit 1
         fi
 
         echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
 
     # Uploads the definitions as a temporary GitHub Actions artifact. The actual publishing to GCS happens on: upload-definitions
-    # if: always() ensures this still runs (and publishes the other, healthy
-    # sources) even if "Validate bundle" above fails -- see ROX-33993.
     - name: Upload definitions artifacts
       if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
