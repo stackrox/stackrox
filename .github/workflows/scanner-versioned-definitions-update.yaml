@@ -287,6 +287,7 @@ jobs:
         }
 
         # Counts JSON objects in an NDJSON stream, failing on any non-object value.
+        # shellcheck disable=SC2016 # $i is jq syntax, not a shell variable.
         jq_filter='reduce inputs as $i (0; if ($i | type) == "object" then . + 1 else error("malformed JSON value: \($i | type)") end)'
         for f in "${files[@]}"; do
             name=$(basename "$f" .json.zst)
