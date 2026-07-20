@@ -858,11 +858,11 @@ func TestExploit(t *testing.T) {
 	}{
 		"full exploit data": {
 			input: &v4.VulnerabilityReport_Vulnerability_CISAExploit{
-				CatalogVersion: "2025.07.10",
-				DateAdded:      "2023-01-10",
-				ShortDescription: "Apache Log4j2 Remote Code Execution Vulnerability",
-				RequiredAction:   "Apply updates per vendor instructions.",
-				DueDate:          "2023-02-01",
+				CatalogVersion:             "2025.07.10",
+				DateAdded:                  "2023-01-10",
+				ShortDescription:           "Apache Log4j2 Remote Code Execution Vulnerability",
+				RequiredAction:             "Apply updates per vendor instructions.",
+				DueDate:                    "2023-02-01",
 				KnownRansomwareCampaignUse: "Known",
 			},
 			expected: &storage.Exploit{
@@ -875,11 +875,11 @@ func TestExploit(t *testing.T) {
 		},
 		"known ransomware": {
 			input: &v4.VulnerabilityReport_Vulnerability_CISAExploit{
-				CatalogVersion: "2025.07.09",
-				DateAdded:      "2024-05-15",
-				ShortDescription: "Microsoft Exchange Server Privilege Escalation",
-				RequiredAction:   "Apply mitigations per vendor advisory.",
-				DueDate:          "2024-06-05",
+				CatalogVersion:             "2025.07.09",
+				DateAdded:                  "2024-05-15",
+				ShortDescription:           "Microsoft Exchange Server Privilege Escalation",
+				RequiredAction:             "Apply mitigations per vendor advisory.",
+				DueDate:                    "2024-06-05",
 				KnownRansomwareCampaignUse: "Unknown",
 			},
 			expected: &storage.Exploit{
