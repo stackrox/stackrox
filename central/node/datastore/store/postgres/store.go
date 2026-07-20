@@ -161,7 +161,7 @@ func (s *storeImpl) insertIntoNodes(
 	if err := copyFromNodeComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
-	return insertIntoNodeCves(ctx, tx, cloned.GetId(), iTime, parts.vulns...)
+	return insertIntoNodeCves(ctx, tx, iTime, parts.vulns...)
 }
 
 func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
@@ -351,7 +351,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 	return nil
 }
 
-func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, nodeID string, iTime time.Time, objs ...*storage.NodeCVE) error {
+func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.NodeCVE) error {
 	ids := set.NewStringSet()
 	for _, obj := range objs {
 		ids.Add(obj.GetId())
@@ -380,17 +380,10 @@ func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, nodeID string, iTi
 	}
 
 	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
-		if err := removeOrphanedNodeCVEs(ctx, tx); err != nil {
-			return err
-		}
-		return updateNodeCounts(ctx, tx, nodeID)
+		return removeOrphanedNodeCVEs(ctx, tx)
 	}
 
-	if err := markOrphanedNodeCVEs(ctx, tx); err != nil {
-		return err
-	}
-
-	return updateNodeCounts(ctx, tx, nodeID)
+	return markOrphanedNodeCVEs(ctx, tx)
 }
 
 func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
@@ -565,56 +558,6 @@ func markOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 	}
 
 	return copyFromNodeCves(ctx, tx, orphanedNodeCVEs...)
-}
-
-// updateNodeCounts recalculates and updates the denormalized CVE counts in the nodes table
-// for a specific node, counting only non-orphaned CVEs.
-func updateNodeCounts(ctx context.Context, tx *postgres.Tx, nodeID string) error {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "NodeCounts")
-
-	// Count total non-orphaned CVEs for this node
-	cveCountQuery := `
-		SELECT COUNT(DISTINCT nc.id)
-		FROM ` + nodeComponentEdgesTable + ` nce
-		JOIN ` + componentCVEEdgesTable + ` ncce ON nce.nodecomponentid = ncce.nodecomponentid
-		JOIN ` + nodeCVEsTable + ` nc ON ncce.nodecveid = nc.id
-		WHERE nce.nodeid = $1 AND nc.orphaned = false
-	`
-
-	var cveCount int32
-	err := tx.QueryRow(ctx, cveCountQuery, pgutils.NilOrUUID(nodeID)).Scan(&cveCount)
-	if err != nil {
-		return errors.Wrap(err, "counting non-orphaned CVEs")
-	}
-
-	// Count fixable non-orphaned CVEs for this node
-	fixableCountQuery := `
-		SELECT COUNT(DISTINCT nc.id)
-		FROM ` + nodeComponentEdgesTable + ` nce
-		JOIN ` + componentCVEEdgesTable + ` ncce ON nce.nodecomponentid = ncce.nodecomponentid
-		JOIN ` + nodeCVEsTable + ` nc ON ncce.nodecveid = nc.id
-		WHERE nce.nodeid = $1 AND nc.orphaned = false AND ncce.isfixable = true
-	`
-
-	var fixableCount int32
-	err = tx.QueryRow(ctx, fixableCountQuery, pgutils.NilOrUUID(nodeID)).Scan(&fixableCount)
-	if err != nil {
-		return errors.Wrap(err, "counting fixable non-orphaned CVEs")
-	}
-
-	// Update the denormalized counts in the nodes table
-	updateQuery := `
-		UPDATE ` + nodesTable + `
-		SET Cves = $1, FixableCves = $2
-		WHERE Id = $3
-	`
-
-	_, err = tx.Exec(ctx, updateQuery, cveCount, fixableCount, pgutils.NilOrUUID(nodeID))
-	if err != nil {
-		return errors.Wrap(err, "updating node CVE counts")
-	}
-
-	return nil
 }
 
 func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, error) {

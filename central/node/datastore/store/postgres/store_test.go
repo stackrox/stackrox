@@ -61,6 +61,7 @@ func (s *NodesStoreSuite) TestStore() {
 	s.False(exists)
 	s.Nil(foundNode)
 
+	enricher.FillScanStats(node)
 	s.NoError(store.Upsert(s.ctx, node))
 	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
@@ -217,6 +218,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	newNode.GetScan().GetComponents()[0].Vulnerabilities = prevVulns
 	iTime = time.Now()
 	newNode.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+	enricher.FillScanStats(newNode)
 	s.NoError(store.Upsert(s.ctx, newNode))
 
 	// Vulns are added back to the node
@@ -711,4 +713,52 @@ func (s *NodesStoreSuite) TestStore_SharedComponentsNotDeletedWhenStillReference
 	err = s.pool.QueryRow(s.ctx, "SELECT COUNT(*) FROM node_components_cves_edges").Scan(&componentCVEEdgeCount)
 	s.NoError(err)
 	s.Equal(0, componentCVEEdgeCount, "Component-CVE edge should be CASCADE deleted when component is deleted")
+}
+
+// TestStore_SerializedBlobCVECountsMatchColumns verifies that the serialized blob's CVE counts
+// stay in sync with the denormalized Cves/FixableCves columns after CVEs are orphaned.
+func (s *NodesStoreSuite) TestStore_SerializedBlobCVECountsMatchColumns() {
+	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
+		s.T().SkipNow()
+	}
+	defer s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
+
+	store := New(s.pool, false, concurrency.NewKeyFence())
+
+	node := &storage.Node{}
+	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.Require().NotEmpty(node.GetScan().GetComponents())
+	s.Require().NotEmpty(node.GetScan().GetComponents()[0].GetVulnerabilities())
+
+	enricher.FillScanStats(node)
+	s.NoError(store.Upsert(s.ctx, node))
+
+	// Remove all components so CVEs become orphaned, changing counts
+	updatedNode, _, _ := store.Get(s.ctx, node.GetId())
+	newScanTime := time.Now()
+	updatedNode.Scan = &storage.NodeScan{
+		ScanTime:   protocompat.ConvertTimeToTimestampOrNil(&newScanTime),
+		Components: []*storage.EmbeddedNodeScanComponent{},
+	}
+	enricher.FillScanStats(updatedNode)
+	s.NoError(store.Upsert(s.ctx, updatedNode))
+
+	// Read the serialized blob and the individual columns directly
+	var serializedData []byte
+	var columnCves, columnFixableCves int32
+	err := s.pool.QueryRow(s.ctx,
+		"SELECT serialized, Cves, FixableCves FROM nodes WHERE Id = $1",
+		node.GetId(),
+	).Scan(&serializedData, &columnCves, &columnFixableCves)
+	s.NoError(err)
+
+	var deserialized storage.Node
+	s.NoError(deserialized.UnmarshalVTUnsafe(serializedData))
+
+	s.Equal(columnCves, deserialized.GetCves(),
+		"Serialized blob CVE count must match the Cves column")
+	s.Equal(columnFixableCves, deserialized.GetFixableCves(),
+		"Serialized blob fixable CVE count must match the FixableCves column")
 }
