@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 import {
     PageSection,
     Pagination,
@@ -6,6 +6,7 @@ import {
     ToolbarContent,
     ToolbarGroup,
 } from '@patternfly/react-core';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
@@ -15,22 +16,27 @@ import type {
 } from 'Components/CompoundSearchFilter/types';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
-import type { UseURLPaginationResult } from 'hooks/useURLPagination';
-import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
-import type { UseURLSortResult } from 'hooks/useURLSort';
-import type { VirtualMachine } from 'services/VirtualMachineService';
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import useURLSort from 'hooks/useURLSort';
+import { listVMComponents } from 'services/VirtualMachineService';
+import type { VMComponentScanStatus } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import {
-    applyVirtualMachineComponentsTableFilters,
-    applyVirtualMachineComponentsTableSort,
-    getVirtualMachineComponentsTableData,
-} from '../aggregateUtils';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
 import { scanStatuses } from '../../types';
-import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
+import { COMPONENT_SORT_FIELD } from '../../utils/sortFields';
 
-export const attributeForScanStatus: SelectSearchFilterAttribute = {
+const sortFields = [COMPONENT_SORT_FIELD];
+
+const defaultSortOption = { field: COMPONENT_SORT_FIELD, direction: 'asc' } as const;
+
+const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
+
+const attributeForScanStatus: SelectSearchFilterAttribute = {
     displayName: 'Scan status',
     filterChipLabel: 'Scan status',
     searchTerm: 'Scan Status',
@@ -40,67 +46,37 @@ export const attributeForScanStatus: SelectSearchFilterAttribute = {
     },
 };
 
-export type VirtualMachinePageComponentsProps = {
-    virtualMachine: VirtualMachine | undefined;
-    isLoadingVirtualMachine: boolean;
-    errorVirtualMachine: Error | undefined;
-    urlSearch: UseUrlSearchReturn;
-    urlSorting: UseURLSortResult;
-    urlPagination: UseURLPaginationResult;
+const scanStatusDisplayMap: Record<VMComponentScanStatus, string> = {
+    SCANNED: 'Scanned',
+    NOT_SCANNED: 'Not scanned',
+    SCAN_PENDING: 'Scan pending',
+    CPE_MISSING: 'CPE missing',
+    REPO_UNKNOWN: 'Repo unknown',
 };
 
-const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
+export type VirtualMachinePageComponentsProps = {
+    virtualMachineId: string;
+};
 
-function VirtualMachinePageComponents({
-    virtualMachine,
-    isLoadingVirtualMachine,
-    errorVirtualMachine,
-    urlSearch,
-    urlSorting,
-    urlPagination,
-}: VirtualMachinePageComponentsProps) {
-    const { searchFilter, setSearchFilter } = urlSearch;
-    const { page, perPage, setPage, setPerPage } = urlPagination;
-    const { sortOption, getSortParams } = urlSorting;
+function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageComponentsProps) {
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { sortOption, getSortParams } = useURLSort({
+        sortFields,
+        defaultSortOption,
+        onSort: () => setPage(1),
+    });
 
-    const virtualMachineComponentsTableData = useMemo(
-        () => getVirtualMachineComponentsTableData(virtualMachine),
-        [virtualMachine]
+    const fetchComponents = useCallback(
+        () => listVMComponents(virtualMachineId, { searchFilter, page, perPage, sortOption }),
+        [virtualMachineId, searchFilter, page, perPage, sortOption]
     );
-
-    const filteredVirtualMachineComponentsTableData = useMemo(
-        () =>
-            applyVirtualMachineComponentsTableFilters(
-                virtualMachineComponentsTableData,
-                searchFilter
-            ),
-        [virtualMachineComponentsTableData, searchFilter]
-    );
-
-    const sortedVirtualMachineComponentsTableData = useMemo(
-        () =>
-            applyVirtualMachineComponentsTableSort(
-                filteredVirtualMachineComponentsTableData,
-                Array.isArray(sortOption) ? sortOption[0].field : sortOption.field,
-                Array.isArray(sortOption) ? sortOption[0].reversed : sortOption.reversed
-            ),
-        [filteredVirtualMachineComponentsTableData, sortOption]
-    );
-
-    const paginatedVirtualMachineComponentsTableData = useMemo(() => {
-        const totalRows = sortedVirtualMachineComponentsTableData.length;
-        const maxPage = Math.max(1, Math.ceil(totalRows / perPage) || 1);
-        const safePage = Math.min(page, maxPage);
-
-        const start = (safePage - 1) * perPage;
-        const end = start + perPage;
-        return sortedVirtualMachineComponentsTableData.slice(start, end);
-    }, [sortedVirtualMachineComponentsTableData, page, perPage]);
+    const { data, isLoading, error } = useRestQuery(fetchComponents);
 
     const tableState = getTableUIState({
-        isLoading: isLoadingVirtualMachine,
-        data: paginatedVirtualMachineComponentsTableData,
-        error: errorVirtualMachine,
+        isLoading,
+        data: data?.components ?? [],
+        error,
         searchFilter,
     });
 
@@ -118,6 +94,8 @@ function VirtualMachinePageComponents({
         setSearchFilter(updateSearchFilter(searchFilter, payload));
         setPage(1);
     };
+
+    const colSpan = 4;
 
     return (
         <PageSection isFilled>
@@ -145,7 +123,7 @@ function VirtualMachinePageComponents({
                 </ToolbarContent>
             </Toolbar>
             <Pagination
-                itemCount={filteredVirtualMachineComponentsTableData.length}
+                itemCount={data?.totalCount ?? 0}
                 perPage={perPage}
                 page={page}
                 onSetPage={(_, newPage) => setPage(newPage)}
@@ -153,11 +131,47 @@ function VirtualMachinePageComponents({
                     setPerPage(newPerPage);
                 }}
             />
-            <VirtualMachineComponentsPageTable
-                tableState={tableState}
-                getSortParams={getSortParams}
-                onClearFilters={onClearFilters}
-            />
+            <Table
+                borders={tableState.type === 'COMPLETE'}
+                variant="compact"
+                aria-live="polite"
+                aria-busy={false}
+            >
+                <Thead>
+                    <Tr>
+                        <Th sort={getSortParams(COMPONENT_SORT_FIELD)}>Name</Th>
+                        <Th>Version</Th>
+                        <Th>Status</Th>
+                        <Th>Source</Th>
+                    </Tr>
+                </Thead>
+                <TbodyUnified
+                    tableState={tableState}
+                    colSpan={colSpan}
+                    errorProps={{
+                        title: 'There was an error loading results',
+                    }}
+                    emptyProps={{
+                        message: 'No components were detected for this virtual machine',
+                    }}
+                    filteredEmptyProps={{ onClearFilters }}
+                    renderer={({ data }) => (
+                        <Tbody>
+                            {data.map((componentRow) => (
+                                <Tr key={componentRow.id}>
+                                    <Td dataLabel="Name">{componentRow.name}</Td>
+                                    <Td dataLabel="Version">{componentRow.version}</Td>
+                                    <Td dataLabel="Status">
+                                        {scanStatusDisplayMap[componentRow.scanStatus] ??
+                                            componentRow.scanStatus}
+                                    </Td>
+                                    <Td dataLabel="Source">{componentRow.source}</Td>
+                                </Tr>
+                            ))}
+                        </Tbody>
+                    )}
+                />
+            </Table>
         </PageSection>
     );
 }

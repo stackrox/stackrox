@@ -1,0 +1,165 @@
+import { useMemo } from 'react';
+import {
+    PageSection,
+    Pagination,
+    Toolbar,
+    ToolbarContent,
+    ToolbarGroup,
+} from '@patternfly/react-core';
+
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type {
+    OnSearchCallback,
+    SelectSearchFilterAttribute,
+} from 'Components/CompoundSearchFilter/types';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
+import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
+import type { UseURLSortResult } from 'hooks/useURLSort';
+import type { VirtualMachine } from 'services/VirtualMachineService';
+import { getTableUIState } from 'utils/getTableUIState';
+
+import {
+    applyVirtualMachineComponentsTableFilters,
+    applyVirtualMachineComponentsTableSort,
+    getVirtualMachineComponentsTableData,
+} from '../aggregateUtils';
+import { virtualMachineComponentLegacySearchFilterConfig } from '../../searchFilterConfig';
+import { scanStatuses } from '../../types';
+import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
+
+export const attributeForScanStatus: SelectSearchFilterAttribute = {
+    displayName: 'Scan status',
+    filterChipLabel: 'Scan status',
+    searchTerm: 'Scan Status',
+    inputType: 'select',
+    inputProps: {
+        options: scanStatuses.map((label) => ({ label, value: label })),
+    },
+};
+
+export type VirtualMachinePageComponentsLegacyProps = {
+    virtualMachine: VirtualMachine | undefined;
+    isLoadingVirtualMachine: boolean;
+    errorVirtualMachine: Error | undefined;
+    urlSearch: UseUrlSearchReturn;
+    urlSorting: UseURLSortResult;
+    urlPagination: UseURLPaginationResult;
+};
+
+const searchFilterConfig = [virtualMachineComponentLegacySearchFilterConfig];
+
+function VirtualMachinePageComponentsLegacy({
+    virtualMachine,
+    isLoadingVirtualMachine,
+    errorVirtualMachine,
+    urlSearch,
+    urlSorting,
+    urlPagination,
+}: VirtualMachinePageComponentsLegacyProps) {
+    const { searchFilter, setSearchFilter } = urlSearch;
+    const { page, perPage, setPage, setPerPage } = urlPagination;
+    const { sortOption, getSortParams } = urlSorting;
+
+    const virtualMachineComponentsTableData = useMemo(
+        () => getVirtualMachineComponentsTableData(virtualMachine),
+        [virtualMachine]
+    );
+
+    const filteredVirtualMachineComponentsTableData = useMemo(
+        () =>
+            applyVirtualMachineComponentsTableFilters(
+                virtualMachineComponentsTableData,
+                searchFilter
+            ),
+        [virtualMachineComponentsTableData, searchFilter]
+    );
+
+    const sortedVirtualMachineComponentsTableData = useMemo(
+        () =>
+            applyVirtualMachineComponentsTableSort(
+                filteredVirtualMachineComponentsTableData,
+                Array.isArray(sortOption) ? sortOption[0].field : sortOption.field,
+                Array.isArray(sortOption) ? sortOption[0].reversed : sortOption.reversed
+            ),
+        [filteredVirtualMachineComponentsTableData, sortOption]
+    );
+
+    const paginatedVirtualMachineComponentsTableData = useMemo(() => {
+        const totalRows = sortedVirtualMachineComponentsTableData.length;
+        const maxPage = Math.max(1, Math.ceil(totalRows / perPage) || 1);
+        const safePage = Math.min(page, maxPage);
+
+        const start = (safePage - 1) * perPage;
+        const end = start + perPage;
+        return sortedVirtualMachineComponentsTableData.slice(start, end);
+    }, [sortedVirtualMachineComponentsTableData, page, perPage]);
+
+    const tableState = getTableUIState({
+        isLoading: isLoadingVirtualMachine,
+        data: paginatedVirtualMachineComponentsTableData,
+        error: errorVirtualMachine,
+        searchFilter,
+    });
+
+    function onClearFilters() {
+        setSearchFilter({});
+        setPage(1);
+    }
+
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
+        setPage(1);
+    };
+
+    const onSearchScanStatus: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
+        setPage(1);
+    };
+
+    return (
+        <PageSection isFilled>
+            <Toolbar>
+                <ToolbarContent>
+                    <CompoundSearchFilter
+                        config={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onSearch={onSearch}
+                    />
+                    <SearchFilterSelectInclusive
+                        attribute={attributeForScanStatus}
+                        isSeparate
+                        onSearch={onSearchScanStatus}
+                        searchFilter={searchFilter}
+                    />
+                    <ToolbarGroup className="pf-v6-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForScanStatus]}
+                            config={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
+                        />
+                    </ToolbarGroup>
+                </ToolbarContent>
+            </Toolbar>
+            <Pagination
+                itemCount={filteredVirtualMachineComponentsTableData.length}
+                perPage={perPage}
+                page={page}
+                onSetPage={(_, newPage) => setPage(newPage)}
+                onPerPageSelect={(_, newPerPage) => {
+                    setPerPage(newPerPage);
+                }}
+            />
+            <VirtualMachineComponentsPageTable
+                tableState={tableState}
+                getSortParams={getSortParams}
+                onClearFilters={onClearFilters}
+            />
+        </PageSection>
+    );
+}
+
+export default VirtualMachinePageComponentsLegacy;
