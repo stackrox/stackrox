@@ -222,10 +222,16 @@ jobs:
         with:
           roxctl-release: latest
 
-      - name: Install roxie
+      - name: Install roxie (from source) # TODO(mc): temporary, revert to release install
+        env:
+          ROXIE_BRANCH: mc/tls-crs-debug
         run: |
-          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.3/roxie-linux-amd64
-          chmod +x /usr/local/bin/roxie
+          git clone --branch "$ROXIE_BRANCH" --depth 1 https://github.com/stackrox/roxie.git /tmp/roxie
+          cd /tmp/roxie
+          make build
+          cp roxie /usr/local/bin
+          cd /
+          rm -rf /tmp/roxie
 
       - name: Install oc
         if: inputs.infra-flavor == 'openshift-4'

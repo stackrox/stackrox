@@ -96,8 +96,6 @@ jobs:
                     'e2e-gke-upgrade-tests',
                     'e2e-nongroovy-tests',
                     'qa-e2e-tests-gke',
-                    'qa-e2e-tests-gke-konflux',
-                    'qa-e2e-tests-ocp-4-22',
                 ]}
 
             write('jobs', json.dumps(jobs))
