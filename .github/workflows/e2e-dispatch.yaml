@@ -211,13 +211,13 @@ jobs:
       cancel-in-progress: true
 
   dispatch-qa-e2e-tests-gke:
-    needs: [ wait-for-images, should-dispatch ]
+    needs: [ should-dispatch ]
     if: >-
       github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests-gha')
     uses: ./.github/workflows/qa-e2e-tests-gke.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
+      tag: "4.12.x-602-ga8c13a0bb1"
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-gke }}
     secrets: inherit
     concurrency:
