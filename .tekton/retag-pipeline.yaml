@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e16d605694e041ed7c052d3ea6ece4c50ff5064cbedce08cbec3197e9b7f549f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9c7dde877f7ea8909c8c9ad37bf96177f85b80e65a409082824837182a6365ad
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e16d605694e041ed7c052d3ea6ece4c50ff5064cbedce08cbec3197e9b7f549f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9c7dde877f7ea8909c8c9ad37bf96177f85b80e65a409082824837182a6365ad
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e16d605694e041ed7c052d3ea6ece4c50ff5064cbedce08cbec3197e9b7f549f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9c7dde877f7ea8909c8c9ad37bf96177f85b80e65a409082824837182a6365ad
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e16d605694e041ed7c052d3ea6ece4c50ff5064cbedce08cbec3197e9b7f549f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9c7dde877f7ea8909c8c9ad37bf96177f85b80e65a409082824837182a6365ad
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:e16d605694e041ed7c052d3ea6ece4c50ff5064cbedce08cbec3197e9b7f549f
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:9c7dde877f7ea8909c8c9ad37bf96177f85b80e65a409082824837182a6365ad
       - name: kind
         value: task
       resolver: bundles
