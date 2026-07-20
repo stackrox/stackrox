@@ -26,10 +26,11 @@ import (
 )
 
 // mappingCachePath is where the repository-to-CPE mapping file (see
-// mappingRefresher) is cached; scans always read from this file, never the
-// network, so a slow or unavailable mapping endpoint never blocks or fails
-// a scan directly. Hardcoded for now; make it a --mapping-cache-path flag
-// later if reviewers ask for it to be configurable.
+// newMappingDownloader's doc comment) is cached; scans always read from
+// this file, never the network, so a slow or unavailable mapping endpoint
+// never blocks or fails a scan directly. Hardcoded for now; make it a
+// --mapping-cache-path flag later if reviewers ask for it to be
+// configurable.
 var mappingCachePath = filepath.Join(os.TempDir(), "roxagent-repo2cpe.json")
 
 // Set via -ldflags at build time.
@@ -110,11 +111,12 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	}
 
 	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself (see mappingRefresher doc comment), so
-	// this initial fetch is mandatory, not best-effort - if it fails after
-	// retries, startup fails rather than running a scan against no data.
-	mr := newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
-	if err := mr.fetchWithRetry(ctx); err != nil {
+	// scan() never fetches it itself (see newMappingDownloader's doc
+	// comment), so this initial fetch is mandatory, not best-effort - if it
+	// fails after retries, startup fails rather than running a scan against
+	// no data.
+	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath)
+	if err := mappingDownloader.DownloadOnce(ctx); err != nil {
 		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
 	}
 
@@ -156,7 +158,7 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
 	wg.Go(func() { vmRescanner.Run(ctx) })
-	wg.Go(func() { mr.Run(ctx) })
+	wg.Go(func() { _ = mappingDownloader.Run(ctx) })
 
 	<-ctx.Done()
 	// Wait for Serve's graceful drain (in-flight connections), the rescan
@@ -168,9 +170,10 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 
 // scan indexes the VM filesystem at hostPath, consulting the
 // repository-to-CPE mapping data cached at mappingFilePath. It never makes
-// a network call itself: mappingRefresher is solely responsible for
-// keeping mappingFilePath fresh (see its doc comment for why the fetch is
-// decoupled from every individual scan).
+// a network call itself: the downloader built by newMappingDownloader is
+// solely responsible for keeping mappingFilePath fresh, on its own schedule
+// (see newMappingDownloader's doc comment for why the fetch is decoupled
+// from every individual scan).
 func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
 	cfg := index.NodeIndexerConfig{
 		HostPath:            hostPath,
