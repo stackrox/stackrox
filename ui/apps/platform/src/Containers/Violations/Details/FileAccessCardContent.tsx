@@ -29,9 +29,12 @@ const aclTypeLabels: Map<AclType, string> = new Map([
     ['ACL_TYPE_DEFAULT', 'Default'],
 ]);
 
-// The proto field is uint32 with 0xFFFFFFFF meaning "not applicable", but the
-// GraphQL layer exposes it as int32, which wraps the sentinel to -1.
-const NO_ID = -1;
+// The proto field is uint32 with 0xFFFFFFFF meaning "not applicable".
+// The API returns the raw unsigned value (4294967295). Guard against
+// both representations in case serialization ever wraps it to -1.
+function isNoId(id: number): boolean {
+    return id === 0xffffffff || id === -1;
+}
 
 // Map each octal digit (0-7) to its rwx permission string.
 // Shared between formatFileMode (full 9-char mode) and ACL entry formatting.
@@ -53,7 +56,7 @@ function formatOctalDigit(digit: number): string {
 function formatAclEntry(entry: AclEntry): string {
     const tagLabel = aclTagLabels.get(entry.tag) || entry.tag;
     const permStr = formatOctalDigit(entry.perm);
-    if ((entry.tag === 'ACL_TAG_USER' || entry.tag === 'ACL_TAG_GROUP') && entry.id !== NO_ID) {
+    if ((entry.tag === 'ACL_TAG_USER' || entry.tag === 'ACL_TAG_GROUP') && !isNoId(entry.id)) {
         return `${tagLabel}(${entry.id}): ${permStr}`;
     }
     return `${tagLabel}: ${permStr}`;
