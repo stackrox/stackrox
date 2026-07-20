@@ -5,6 +5,11 @@
 # Always overwrites (binary has no version info; binary is small).
 #
 # Requires: Go toolchain, STACKROX_REPO (defaults to repo root).
+#
+# Optional env:
+#   ENABLE_LOADTEST_FAKE_REPORTS=true
+#     Install /etc/systemd/system/roxagent-serve.service.d/loadtest.conf with
+#     ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true (load-test only).
 
 set -euo pipefail
 
@@ -15,6 +20,7 @@ ROXAGENT_SRC="${STACKROX_REPO}/compliance/virtualmachines/roxagent"
 NAMESPACE="${NAMESPACE:-openshift-cnv}"
 SSH_USER="${SSH_USER:-cloud-user}"
 AUTOMATION_SSH_PRIVKEY="${AUTOMATION_SSH_PRIVKEY:-}"
+ENABLE_LOADTEST_FAKE_REPORTS="${ENABLE_LOADTEST_FAKE_REPORTS:-false}"
 NATIVE_AGENT_READY_VMS=()
 NATIVE_AGENT_FAILED_VMS=()
 
@@ -62,63 +68,71 @@ build_agent() {
     echo "$output"
 }
 
-# Prints a systemd unit (to stdout) for the main roxagent service.
-# Args: host paths that exist on the VM (from NATIVE_MOUNT_CANDIDATES).
-# Each path is bind-mounted read-only into the /tmp/roxroot sandbox so
-# roxagent can inspect host OS metadata without full root access.
-create_native_service_file() {
+# Prints a systemd unit (to stdout) for the roxagent serve (pull) mode.
+create_native_serve_file() {
     local mount_path
 
     cat <<'EOF'
 [Unit]
-Description=StackRox VM Agent (native)
+Description=StackRox VM Agent - VSOCK pull server
 After=network.target roxagent-prep.service
 Requires=roxagent-prep.service
 
 [Service]
-Type=oneshot
+Type=simple
 User=root
+Restart=on-failure
+RestartSec=5s
 BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
 EOF
 
-    for mount_path in "$@"; do
-        printf 'BindReadOnlyPaths=%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
+    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
+        printf 'BindReadOnlyPaths=-%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
     done
 
     cat <<'EOF'
-ExecStart=/usr/local/bin/roxagent --host-path /tmp/roxroot
+ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot
 StandardOutput=journal
 StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+# Prints the load-test systemd drop-in that enables canned FakeReportProvider
+# responses (ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS). No-op content is never written
+# unless ENABLE_LOADTEST_FAKE_REPORTS=true; callers gate the install.
+create_loadtest_dropin_file() {
+    cat <<'EOF'
+[Service]
+Environment=ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true
 EOF
 }
 
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
-# Checks whether roxagent is healthy on $1 (vm_name) by SSHing in and
-# querying systemd. Returns 0 only if the last service run succeeded,
-# the timer is enabled, and the timer is active.
+# Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
+# querying systemd. Returns 0 only if the serve service is enabled and active.
 native_agent_service_verified() {
     local vm_name="$1"
     build_ssh_opts
 
     local status_output
     status_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command "service_result=\"\$(systemctl show roxagent.service -p Result --value 2>/dev/null || true)\";
-timer_enabled=\"\$(systemctl is-enabled roxagent.timer 2>/dev/null || true)\";
-timer_active=\"\$(systemctl is-active roxagent.timer 2>/dev/null || true)\";
-printf \"%s\\n%s\\n%s\\n\" \"\$service_result\" \"\$timer_enabled\" \"\$timer_active\"" \
+        --command "serve_enabled=\"\$(systemctl is-enabled roxagent-serve.service 2>/dev/null || true)\";
+serve_active=\"\$(systemctl is-active roxagent-serve.service 2>/dev/null || true)\";
+printf \"%s\\n%s\\n\" \"\$serve_enabled\" \"\$serve_active\"" \
         "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true)"
 
     mapfile -t status_lines <<< "$status_output"
 
-    [[ "${status_lines[0]:-}" == "success" &&
-        "${status_lines[1]:-}" == "enabled" &&
-        "${status_lines[2]:-}" == "active" ]]
+    [[ "${status_lines[0]:-}" == "enabled" &&
+        "${status_lines[1]:-}" == "active" ]]
 }
 
 # Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
-# Steps: probe which host paths exist -> scp binary + systemd units ->
-# install and enable via SSH -> run once and verify health.
+# Steps: scp binary + systemd units -> install and enable via SSH -> verify.
 # Appends the VM name to NATIVE_AGENT_READY_VMS or NATIVE_AGENT_FAILED_VMS.
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
@@ -127,73 +141,93 @@ install_on_vm() {
 
     build_ssh_opts
 
-    echo "  Probing host inputs for curated roxroot mount set..."
-    local probe_cmd mount_path
-    probe_cmd="for path in"
-    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
-        probe_cmd+=" ${mount_path}"
-    done
-    probe_cmd+="; do [ -e \"\$path\" ] && printf \"%s\\n\" \"\$path\"; done"
-
-    local -a available_mounts=()
-    while IFS= read -r mount_path; do
-        [[ -n "$mount_path" ]] && available_mounts+=("$mount_path")
-    done < <(
-        virtctl ssh "${_ssh_opts[@]}" \
-            --command "$probe_cmd" \
-            "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true
-    )
-
     echo "  Copying binary..."
     virtctl scp "${_ssh_opts[@]}" \
         "$binary_path" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
 
     echo "  Installing systemd units..."
-    local service_file prep_service_file timer_file
-    service_file="$(mktemp)"
-    create_native_service_file "${available_mounts[@]}" > "$service_file"
+    local serve_service_file prep_service_file
+    serve_service_file="$(mktemp)"
+    create_native_serve_file > "$serve_service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
-    timer_file="$SYSTEMD_DIR/roxagent.timer"
 
     virtctl scp "${_ssh_opts[@]}" \
         "$prep_service_file" \
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"
     virtctl scp "${_ssh_opts[@]}" \
-        "$service_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.service"
-    virtctl scp "${_ssh_opts[@]}" \
-        "$timer_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.timer"
-    rm -f "$service_file"
+        "$serve_service_file" \
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"
+    rm -f "$serve_service_file"
 
-    virtctl ssh "${_ssh_opts[@]}" \
-        --command 'set -e
+    local loadtest_dropin_file=""
+    if [[ "$ENABLE_LOADTEST_FAKE_REPORTS" == "true" ]]; then
+        echo "  Preparing load-test fake-reports systemd drop-in..."
+        loadtest_dropin_file="$(mktemp)"
+        create_loadtest_dropin_file > "$loadtest_dropin_file"
+        virtctl scp "${_ssh_opts[@]}" \
+            "$loadtest_dropin_file" \
+            "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve-loadtest.conf"
+        rm -f "$loadtest_dropin_file"
+    fi
+
+    # Install units; optionally wire the load-test drop-in. The remote script
+    # is assembled so the drop-in block is only present when requested — keeps
+    # the production install path free of load-test files.
+    local remote_install
+    remote_install='set -e
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
 rm -f /tmp/roxagent
+# Remove stale push-mode units from previous installs
+sudo systemctl disable --now roxagent.timer 2>/dev/null || true
+sudo systemctl disable --now roxagent.service 2>/dev/null || true
+sudo rm -f /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent.service
 sudo cp /tmp/roxagent-prep.service /etc/systemd/system/roxagent-prep.service
-sudo cp /tmp/roxagent.service /etc/systemd/system/roxagent.service
-sudo cp /tmp/roxagent.timer /etc/systemd/system/roxagent.timer
-sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent.service /etc/systemd/system/roxagent.timer 2>/dev/null || true
+sudo cp /tmp/roxagent-serve.service /etc/systemd/system/roxagent-serve.service
+sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent-serve.service 2>/dev/null || true'
+    if [[ "$ENABLE_LOADTEST_FAKE_REPORTS" == "true" ]]; then
+        remote_install+='
+sudo mkdir -p /etc/systemd/system/roxagent-serve.service.d
+sudo cp /tmp/roxagent-serve-loadtest.conf /etc/systemd/system/roxagent-serve.service.d/loadtest.conf
+sudo restorecon -Rv /etc/systemd/system/roxagent-serve.service.d 2>/dev/null || true
+rm -f /tmp/roxagent-serve-loadtest.conf'
+    else
+        # A prior load-test install on this VM must not silently keep canned
+        # reports when this run did not request them.
+        remote_install+='
+sudo rm -f /etc/systemd/system/roxagent-serve.service.d/loadtest.conf
+rm -f /tmp/roxagent-serve-loadtest.conf'
+    fi
+    remote_install+='
 sudo systemctl daemon-reload
-sudo systemctl enable --now roxagent.timer
-echo "NATIVE_INSTALL_OK"' \
+sudo systemctl enable --now roxagent-serve.service
+sudo systemctl restart roxagent-serve.service
+echo "NATIVE_INSTALL_OK"'
+
+    virtctl ssh "${_ssh_opts[@]}" \
+        --command "$remote_install" \
         "${SSH_USER}@vmi/${vm_name}"
 
     echo "  Installed on $vm_name."
     echo "  Verifying agent status on $vm_name..."
     local verify_output
     verify_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command 'sudo systemctl start roxagent.service; echo "---"; sudo systemctl status roxagent.timer --no-pager; echo "---"; sudo journalctl -u roxagent.service --no-pager -n 20' \
+        --command 'echo "---"; sudo systemctl status roxagent-serve.service --no-pager; echo "---"; sudo journalctl -u roxagent-serve.service --no-pager -n 20' \
         "${SSH_USER}@vmi/${vm_name}" 2>&1 || true)"
     printf '%s\n' "$verify_output"
 
-    if native_agent_service_verified "$vm_name"; then
-        NATIVE_AGENT_READY_VMS+=("$vm_name")
-    else
-        NATIVE_AGENT_FAILED_VMS+=("$vm_name")
-    fi
+    local retries=12
+    local delay_secs=5
+    while ! native_agent_service_verified "$vm_name"; do
+        ((retries--))
+        if ((retries == 0)); then
+            NATIVE_AGENT_FAILED_VMS+=("$vm_name")
+            return
+        fi
+        sleep "$delay_secs"
+    done
+    NATIVE_AGENT_READY_VMS+=("$vm_name")
 }
 
 # Top-level entry point: builds the agent once, installs on each VM.

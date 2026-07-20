@@ -17,6 +17,10 @@ inputs:
     description: "Optional SSH public key to add for human access to all target VMs"
     required: false
     default: ""
+  enable-loadtest-fake-reports:
+    description: "Install load-test systemd drop-in (ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true) on each VM"
+    required: false
+    default: "false"
   infra-token:
     description: "Infra API token"
     required: true
@@ -144,6 +148,10 @@ runs:
 
         if [[ -n "${USER_SSH_KEY_PATH:-}" ]]; then
             ARGS+=(--ssh-key "$USER_SSH_KEY_PATH")
+        fi
+
+        if [[ "${{ inputs.enable-loadtest-fake-reports }}" == "true" ]]; then
+            ARGS+=(--enable-loadtest-fake-reports)
         fi
 
         "${{ github.workspace }}/scripts/ci/add-vms/add-vms.sh" "${ARGS[@]}"
