@@ -861,7 +861,7 @@ func TestVMScraper_HammerModePollsBackToBack(t *testing.T) {
 	dialer := &mockDialer{}
 	client := &safeProtocolClient{gen: 1}
 
-	s := newVMScraper(store, sender, dialer, client, true)
+	s := newVMScraper(store, sender, dialer, client, true, false)
 	s.interval = time.Hour
 	s.concurrency = 1
 
@@ -882,7 +882,7 @@ func TestVMScraper_NonHammerModeRespectsInterval(t *testing.T) {
 	dialer := &mockDialer{}
 	client := &safeProtocolClient{gen: 1}
 
-	s := newVMScraper(store, sender, dialer, client, false)
+	s := newVMScraper(store, sender, dialer, client, false, false)
 	s.interval = time.Hour
 	s.concurrency = 1
 
@@ -891,4 +891,47 @@ func TestVMScraper_NonHammerModeRespectsInterval(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 	assert.Equal(t, 1, client.callCount(), "non-hammer mode should only poll once (the immediate start-up poll) while waiting out a 1h interval")
+}
+
+// --- Skip Central forward (LOAD-TEST ONLY, see New) ---
+
+func TestNew_DefaultsToForwardingToCentral(t *testing.T) {
+	s := New(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	assert.False(t, s.skipCentralForward)
+}
+
+func TestNew_SkipCentralForwardEnabled(t *testing.T) {
+	t.Setenv("ROX_VM_VSOCK_LOADTEST_SKIP_CENTRAL_FORWARD", "true")
+	s := New(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	assert.True(t, s.skipCentralForward)
+}
+
+func TestVMScraper_SkipCentralForward_RecordsSuccessWithoutSending(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(3, 9)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.skipCentralForward = true
+
+	s.pollOnce(t.Context())
+
+	assert.Empty(t, sender.sent, "skip-forward must not call IndexReportSender.Send")
+	require.Contains(t, s.vmState, "ns1/vm-a")
+	assert.Equal(t, uint32(3), s.vmState["ns1/vm-a"].lastGeneration)
+	assert.Equal(t, uint32(9), s.vmState["ns1/vm-a"].lastEpoch)
+	assert.False(t, s.vmState["ns1/vm-a"].lastForwardedAt.IsZero())
+	assert.True(t, s.IsActivelyScraped("ns1/vm-a"))
+
+	// Local state advanced as on a successful send, so the next unchanged
+	// response is treated as a no-op rather than another forward candidate.
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithEpoch(3, 9)}
+	s.pollOnce(t.Context())
+	assert.Empty(t, sender.sent)
 }

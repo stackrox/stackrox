@@ -91,8 +91,9 @@ type VMScraper struct {
 	vmState   map[string]*vmState
 	activeVMs set.StringSet
 
-	// hammerMode is LOAD-TEST ONLY: see New.
-	hammerMode bool
+	// hammerMode and skipCentralForward are LOAD-TEST ONLY: see New.
+	hammerMode         bool
+	skipCentralForward bool
 }
 
 type vmState struct {
@@ -105,22 +106,29 @@ var _ common.SensorComponent = (*VMScraper)(nil)
 
 // New creates a VMScraper with production defaults.
 //
-// LOAD-TEST ONLY: if ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true (never in a
-// release build), the scraper polls back-to-back with no wait between
-// cycles instead of respecting ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL.
-// pollOnce itself, and everything else about VMScraper (concurrency, dedup
-// logic, roxagent's maxConcurrentConns=1 limit on the other end), stays
-// completely unchanged -- this produces real, sustained contention rather
-// than simulating it.
+// LOAD-TEST ONLY flags (never active in a release build):
+//
+//   - ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true polls back-to-back with no wait
+//     between cycles instead of ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL.
+//     pollOnce itself, concurrency, and dedup stay unchanged so contention
+//     is real rather than simulated.
+//   - ROX_VM_VSOCK_LOADTEST_SKIP_CENTRAL_FORWARD=true still dials, validates,
+//     and records pull success / local vmState as a successful forward would,
+//     but does not call IndexReportSender.Send. Use it to isolate Sensor↔VM
+//     dial metrics from Central/Matcher backpressure. Orthogonal to hammer.
 func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	hammerMode := !buildinfo.ReleaseBuild && os.Getenv("ROX_VM_VSOCK_LOADTEST_HAMMER_MODE") == "true"
 	if hammerMode {
 		log.Warn("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true — polling VMs back-to-back with no interval wait")
 	}
-	return newVMScraper(store, sender, dialer, client, hammerMode)
+	skipCentralForward := !buildinfo.ReleaseBuild && os.Getenv("ROX_VM_VSOCK_LOADTEST_SKIP_CENTRAL_FORWARD") == "true"
+	if skipCentralForward {
+		log.Warn("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_SKIP_CENTRAL_FORWARD=true — recording pull success without sending reports to Central")
+	}
+	return newVMScraper(store, sender, dialer, client, hammerMode, skipCentralForward)
 }
 
-func newVMScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, hammerMode bool) *VMScraper {
+func newVMScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient, hammerMode, skipCentralForward bool) *VMScraper {
 	return &VMScraper{
 		store:                 store,
 		sender:                sender,
@@ -133,11 +141,12 @@ func newVMScraper(store RunningVMStore, sender IndexReportSender, dialer VMDiale
 		// Warn once a report is halfway to the hard response-size ceiling,
 		// so operators get advance notice before reports start actually
 		// being rejected at that limit.
-		warnMaxBytes: env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
-		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
-		now:          time.Now,
-		hammerMode:   hammerMode,
+		warnMaxBytes:       env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
+		vmState:            make(map[string]*vmState),
+		activeVMs:          set.NewStringSet(),
+		now:                time.Now,
+		hammerMode:         hammerMode,
+		skipCentralForward: skipCentralForward,
 	}
 }
 
@@ -375,10 +384,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 
-	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
-		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
-		return false
+	// LOAD-TEST ONLY: skipCentralForward isolates dial-path metrics from
+	// Central/Matcher. Local success accounting still matches a successful
+	// Send so R_dial / cycle success stay comparable across modes.
+	if !s.skipCentralForward {
+		if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
+			log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
+			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
+			return false
+		}
 	}
 
 	newGen := result.Meta.GetReportGeneration()
