@@ -662,6 +662,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
 						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
 						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),
+						NodeRoles:              scanConfig.GetNodeRoles(),
 					},
 					Cron: cron,
 				},
