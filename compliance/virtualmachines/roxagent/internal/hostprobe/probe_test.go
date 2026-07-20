@@ -85,6 +85,34 @@ func TestHasAnyRepoFile(t *testing.T) {
 	})
 }
 
+func TestHasAnyRepoFileAt(t *testing.T) {
+	t.Run("finds repo file under hostPath prefix", func(t *testing.T) {
+		hostPath := t.TempDir()
+		reposDir := HostPathFor(hostPath, YumReposDirPath)
+		require.NoError(t, os.MkdirAll(reposDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(reposDir, "baseos.repo"), []byte("[baseos]"), 0o644))
+
+		found, err := HasAnyRepoFileAt(hostPath, []string{YumReposDirPath})
+		require.NoError(t, err)
+		require.True(t, found)
+	})
+
+	t.Run("returns false with error when dir is missing under hostPath prefix", func(t *testing.T) {
+		hostPath := t.TempDir()
+		found, err := HasAnyRepoFileAt(hostPath, []string{YumReposDirPath})
+		require.Error(t, err)
+		require.False(t, found)
+	})
+
+	t.Run("empty hostPath behaves the same as hostPath=/", func(t *testing.T) {
+		dirs := []string{"/definitely-not-a-real-repos-dir-xyz"}
+		foundEmpty, errEmpty := HasAnyRepoFileAt("", dirs)
+		foundRoot, errRoot := HasAnyRepoFileAt("/", dirs)
+		require.Equal(t, foundRoot, foundEmpty)
+		require.Equal(t, errRoot == nil, errEmpty == nil)
+	})
+}
+
 // unreadableDirFS wraps an fs.FS to return a fixed error for ReadDir on a specific path
 type unreadableDirFS struct {
 	fs.FS
