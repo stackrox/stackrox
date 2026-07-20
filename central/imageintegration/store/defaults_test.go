@@ -34,7 +34,7 @@ func TestGetDelayedIntegrations(t *testing.T) {
 				assert.Empty(t, integrations)
 			} else {
 				require.Len(t, integrations, tc.expectCount)
-				assert.Equal(t, "Stackrox Scanner", integrations[0].Integration.GetName())
+				assert.Equal(t, defaultScanner.GetName(), integrations[0].Integration.GetName())
 			}
 		})
 	}

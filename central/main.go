@@ -395,7 +395,12 @@ func startServices() {
 		platformReprocessor.Singleton().Start()
 	}
 
-	go registerDelayedIntegrations(iiStore.GetDelayedIntegrations())
+	// If we have no delayed integrations, we can skip spawning the goroutine
+	delayedIntegrations := iiStore.GetDelayedIntegrations()
+	log.Debug("Registering delayed integrations", "numIntegrations", len(delayedIntegrations))
+	if len(delayedIntegrations) > 0 {
+		go registerDelayedIntegrations(delayedIntegrations)
+	}
 
 	if env.DeclarativeConfiguration.BooleanSetting() {
 		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
@@ -710,6 +715,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
 	numIntegrations := len(integrationsInput)
 	if numIntegrations == 0 {
+		// we shouldn't get here, but in case we do let's just bail out here
 		log.Debug("No delayed integrations to register")
 		return
 	}

@@ -1,6 +1,7 @@
 package scanners
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -45,8 +46,7 @@ func TestNewFactory_ClairifyRegistration(t *testing.T) {
 			_, err := factory.CreateScanner(clairifyIntegration)
 
 			if tc.expectDoesNotExist {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), `scanner with type "clairify" does not exist`)
+				assert.ErrorContains(t, err, fmt.Sprintf("scanner with type %q does not exist", scannerTypes.Clairify))
 			} else {
 				require.NoError(t, err)
 			}
