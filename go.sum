@@ -1176,8 +1176,8 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/procfs v0.0.8/go.mod h1:7Qr8sr6344vo1JqZ6HhLceV9o3AJ1Ff+GxbHq6oeK9A=
 github.com/prometheus/procfs v0.21.0 h1:Qh/e6TlBjZf+XLLqNCqFGmCU6Kj/2Bu7kj3oAc0UnXc=
 github.com/prometheus/procfs v0.21.0/go.mod h1:aB55Cww9pdSJVHk0hUf0inxWyyjPogFIjmHKYgMKmtY=
-github.com/quay/claircore v1.5.53-0.20260707004258-056d5d6861dc h1:0cVVzSL5jAAzx1BWJGaNzpmPbv3ZajyDA9DM5iY3z4c=
-github.com/quay/claircore v1.5.53-0.20260707004258-056d5d6861dc/go.mod h1:gdGZL96h2k8nWXAesV+1z6xKswlSTcbALNsglVkBhTA=
+github.com/quay/claircore v1.5.54 h1:NC7+QfwV8yo/KJ/B8mz1GD8BIG16aIJ3FuHcBTnsjL4=
+github.com/quay/claircore v1.5.54/go.mod h1:hOp0JqY8vOZPdBakFRt3JwG8q4K+gnRkG9RGzt1DoB4=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/toolkit v1.6.1 h1:a3X1v28n5bo05T94cBlaoPU8xYCErRGPM3l6AlmYWj4=
 github.com/quay/claircore/toolkit v1.6.1/go.mod h1:dTzlp1pgNchc+CN73HJiG9+e0ygU54QPt397eXnGGo4=
