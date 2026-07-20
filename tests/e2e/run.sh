@@ -97,8 +97,8 @@ test_e2e() {
     restore_4_6_postgres_backup
 
     wait_for_api
-    setup_workload_identities
     trap cleanup_workload_identities EXIT
+    setup_workload_identities
     info "E2E external backup tests"
     make -C tests external-backup-tests || touch FAIL
     cleanup_workload_identities

@@ -124,6 +124,7 @@ jobs:
         sudo ln -s /usr/local/lib/node_modules/bats-assert /usr/lib/node_modules/bats-assert
 
     - name: Run e2e tests
+      # SETUP_WORKLOAD_IDENTITIES is intentionally omitted; WIF tests run in the Prow pipeline.
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}

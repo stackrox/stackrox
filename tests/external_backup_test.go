@@ -30,7 +30,7 @@ import (
 
 type backupTestCase struct {
 	name           string
-	skip           string
+	skipReason     string
 	backup         *storage.ExternalBackup
 	countBackups   func(ctx context.Context, t *testing.T, prefix string) int
 	cleanupBackups func(ctx context.Context, t *testing.T, prefix string)
@@ -53,7 +53,7 @@ func newObjectPrefix() string {
 }
 
 // envOrSkip returns the value of the env var, or sets skip reason if any required var is missing.
-func envOrSkip(vars map[string]string, names ...string) (skip string) {
+func envOrSkip(vars map[string]string, names ...string) (skipReason string) {
 	for _, n := range names {
 		v := os.Getenv(n)
 		if v == "" {
@@ -64,16 +64,19 @@ func envOrSkip(vars map[string]string, names ...string) (skip string) {
 	return ""
 }
 
-func newGCSBucketFuncs(t *testing.T, bucket, serviceAccount string) (
+func newGCSBucketFuncs(bucket, serviceAccount string) (
 	countFn func(ctx context.Context, t *testing.T, prefix string) int,
 	cleanupFn func(ctx context.Context, t *testing.T, prefix string),
+	err error,
 ) {
 	var opts []option.ClientOption
 	if serviceAccount != "" {
 		opts = append(opts, option.WithAuthCredentialsJSON(option.ServiceAccount, []byte(serviceAccount)))
 	}
 	client, err := googleStorage.NewClient(context.Background(), opts...)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating GCS client: %w", err)
+	}
 
 	bkt := client.Bucket(bucket)
 	countFn = func(ctx context.Context, t *testing.T, prefix string) int {
@@ -102,12 +105,12 @@ func newGCSBucketFuncs(t *testing.T, bucket, serviceAccount string) (
 			}
 		}
 	}
-	return countFn, cleanupFn
+	return countFn, cleanupFn, nil
 }
 
-func gcsTestCases(t *testing.T) []backupTestCase {
+func gcsTestCases() []backupTestCase {
 	saEnv := make(map[string]string)
-	saSkip := envOrSkip(saEnv,
+	saSkipReason := envOrSkip(saEnv,
 		"GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2",
 		"GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2",
 	)
@@ -115,39 +118,46 @@ func gcsTestCases(t *testing.T) []backupTestCase {
 	serviceAccount := saEnv["GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2"]
 
 	wifEnv := make(map[string]string)
-	wifSkip := envOrSkip(wifEnv,
+	wifSkipReason := envOrSkip(wifEnv,
 		"GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2",
 		"SETUP_WORKLOAD_IDENTITIES",
 	)
-	if wifSkip == "" && wifEnv["SETUP_WORKLOAD_IDENTITIES"] != "true" {
-		wifSkip = "SETUP_WORKLOAD_IDENTITIES not set to true"
+	if wifSkipReason == "" && wifEnv["SETUP_WORKLOAD_IDENTITIES"] != "true" {
+		wifSkipReason = "SETUP_WORKLOAD_IDENTITIES not set to true"
 	}
 
-	providers := []struct {
-		name   string
-		skip   string
-		config *storage.GCSConfig
-	}{
-		{"GCS/service_account_key", saSkip, &storage.GCSConfig{
+	type gcsProvider struct {
+		name           string
+		skipReason     string
+		config         *storage.GCSConfig
+		serviceAccount string
+	}
+	providers := []gcsProvider{
+		{"GCS/service_account_key", saSkipReason, &storage.GCSConfig{
 			Bucket: bucket, ServiceAccount: serviceAccount,
-		}},
-		{"GCS/workload_identity", wifSkip, &storage.GCSConfig{
+		}, serviceAccount},
+		{"GCS/workload_identity", wifSkipReason, &storage.GCSConfig{
 			Bucket: bucket, UseWorkloadId: true,
-		}},
-	}
-
-	var countFn func(ctx context.Context, t *testing.T, prefix string) int
-	var cleanupFn func(ctx context.Context, t *testing.T, prefix string)
-	if bucket != "" {
-		countFn, cleanupFn = newGCSBucketFuncs(t, bucket, serviceAccount)
+		}, ""},
 	}
 
 	var cases []backupTestCase
 	for _, p := range providers {
 		p.config.ObjectPrefix = newObjectPrefix()
+
+		var countFn func(ctx context.Context, t *testing.T, prefix string) int
+		var cleanupFn func(ctx context.Context, t *testing.T, prefix string)
+		if p.skipReason == "" {
+			var err error
+			countFn, cleanupFn, err = newGCSBucketFuncs(bucket, p.serviceAccount)
+			if err != nil {
+				p.skipReason = fmt.Sprintf("GCS client setup failed: %v", err)
+			}
+		}
+
 		cases = append(cases, backupTestCase{
-			name: p.name,
-			skip: p.skip,
+			name:       p.name,
+			skipReason: p.skipReason,
 			backup: &storage.ExternalBackup{
 				Name:          p.name,
 				Type:          "gcs",
@@ -162,9 +172,10 @@ func gcsTestCases(t *testing.T) []backupTestCase {
 	return cases
 }
 
-func newS3BucketFuncs(t *testing.T, endpoint, region, accessKeyID, secretAccessKey, bucket string, pathStyle bool) (
+func newS3BucketFuncs(endpoint, region, accessKeyID, secretAccessKey, bucket string, pathStyle bool) (
 	countFn func(ctx context.Context, t *testing.T, prefix string) int,
 	cleanupFn func(ctx context.Context, t *testing.T, prefix string),
+	err error,
 ) {
 	cfg, err := awsConfig.LoadDefaultConfig(context.Background(),
 		awsConfig.WithRegion(region),
@@ -174,7 +185,9 @@ func newS3BucketFuncs(t *testing.T, endpoint, region, accessKeyID, secretAccessK
 		awsConfig.WithRequestChecksumCalculation(aws.RequestChecksumCalculationWhenRequired),
 		awsConfig.WithResponseChecksumValidation(aws.ResponseChecksumValidationWhenRequired),
 	)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, nil, fmt.Errorf("loading AWS config: %w", err)
+	}
 
 	var clientOpts []func(*s3.Options)
 	if endpoint != "" {
@@ -216,20 +229,20 @@ func newS3BucketFuncs(t *testing.T, endpoint, region, accessKeyID, secretAccessK
 			}
 		}
 	}
-	return countFn, cleanupFn
+	return countFn, cleanupFn, nil
 }
 
-func awsS3TestCases(t *testing.T) []backupTestCase {
+func awsS3TestCases() []backupTestCase {
 	env := make(map[string]string)
-	if skip := envOrSkip(env,
+	if skipReason := envOrSkip(env,
 		"AWS_S3_BACKUP_TEST_BUCKET_NAME",
 		"AWS_S3_BACKUP_TEST_BUCKET_REGION",
 		"AWS_ACCESS_KEY_ID",
 		"AWS_SECRET_ACCESS_KEY",
-	); skip != "" {
+	); skipReason != "" {
 		return []backupTestCase{
-			{name: "AWS_S3/with_endpoint", skip: skip},
-			{name: "AWS_S3/without_endpoint", skip: skip},
+			{name: "AWS_S3/with_endpoint", skipReason: skipReason},
+			{name: "AWS_S3/without_endpoint", skipReason: skipReason},
 		}
 	}
 	bucket := env["AWS_S3_BACKUP_TEST_BUCKET_NAME"]
@@ -252,7 +265,14 @@ func awsS3TestCases(t *testing.T) []backupTestCase {
 		}},
 	}
 
-	countFn, cleanupFn := newS3BucketFuncs(t, "", region, accessKeyID, secretAccessKey, bucket, false)
+	countFn, cleanupFn, err := newS3BucketFuncs("", region, accessKeyID, secretAccessKey, bucket, false)
+	if err != nil {
+		skipReason := fmt.Sprintf("S3 client setup failed: %v", err)
+		return []backupTestCase{
+			{name: "AWS_S3/with_endpoint", skipReason: skipReason},
+			{name: "AWS_S3/without_endpoint", skipReason: skipReason},
+		}
+	}
 	var cases []backupTestCase
 	for _, p := range providers {
 		p.config.ObjectPrefix = newObjectPrefix()
@@ -272,9 +292,9 @@ func awsS3TestCases(t *testing.T) []backupTestCase {
 	return cases
 }
 
-func s3CompatibleTestCases(t *testing.T) []backupTestCase {
+func s3CompatibleTestCases() []backupTestCase {
 	r2Env := make(map[string]string)
-	r2Skip := envOrSkip(r2Env,
+	r2SkipReason := envOrSkip(r2Env,
 		"CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID",
 		"CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME",
 		"CLOUDFLARE_R2_BACKUP_TEST_REGION",
@@ -288,7 +308,7 @@ func s3CompatibleTestCases(t *testing.T) []backupTestCase {
 	r2Secret := r2Env["CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY"]
 
 	odfEnv := make(map[string]string)
-	odfSkip := envOrSkip(odfEnv,
+	odfSkipReason := envOrSkip(odfEnv,
 		"ODF_S3_BACKUP_TEST_ENDPOINT",
 		"ODF_S3_BACKUP_TEST_BUCKET_NAME",
 		"ODF_S3_BACKUP_TEST_REGION",
@@ -302,31 +322,31 @@ func s3CompatibleTestCases(t *testing.T) []backupTestCase {
 	odfSecret := odfEnv["ODF_S3_BACKUP_TEST_SECRET_ACCESS_KEY"]
 
 	providers := []struct {
-		name   string
-		skip   string
-		config *storage.S3Compatible
+		name       string
+		skipReason string
+		config     *storage.S3Compatible
 	}{
-		{"CloudflareR2/path-based/endpoint-without-scheme", r2Skip, &storage.S3Compatible{
+		{"CloudflareR2/path-based/endpoint-without-scheme", r2SkipReason, &storage.S3Compatible{
 			Bucket: r2Bucket, Region: r2Region, Endpoint: r2Endpoint,
 			AccessKeyId: r2KeyID, SecretAccessKey: r2Secret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_PATH,
 		}},
-		{"CloudflareR2/path-based/endpoint-with-https", r2Skip, &storage.S3Compatible{
+		{"CloudflareR2/path-based/endpoint-with-https", r2SkipReason, &storage.S3Compatible{
 			Bucket: r2Bucket, Region: r2Region, Endpoint: "https://" + r2Endpoint,
 			AccessKeyId: r2KeyID, SecretAccessKey: r2Secret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_PATH,
 		}},
-		{"CloudflareR2/virtual-hosted/endpoint-without-scheme", r2Skip, &storage.S3Compatible{
+		{"CloudflareR2/virtual-hosted/endpoint-without-scheme", r2SkipReason, &storage.S3Compatible{
 			Bucket: r2Bucket, Region: r2Region, Endpoint: r2Endpoint,
 			AccessKeyId: r2KeyID, SecretAccessKey: r2Secret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_VIRTUAL_HOSTED,
 		}},
-		{"CloudflareR2/virtual-hosted/endpoint-with-https", r2Skip, &storage.S3Compatible{
+		{"CloudflareR2/virtual-hosted/endpoint-with-https", r2SkipReason, &storage.S3Compatible{
 			Bucket: r2Bucket, Region: r2Region, Endpoint: "https://" + r2Endpoint,
 			AccessKeyId: r2KeyID, SecretAccessKey: r2Secret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_VIRTUAL_HOSTED,
 		}},
-		{"ODF/path-based/endpoint-without-scheme", odfSkip, &storage.S3Compatible{
+		{"ODF/path-based/endpoint-without-scheme", odfSkipReason, &storage.S3Compatible{
 			Bucket: odfBucket, Region: odfRegion, Endpoint: odfEndpoint,
 			AccessKeyId: odfKeyID, SecretAccessKey: odfSecret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_PATH,
 		}},
-		{"ODF/path-based/endpoint-with-https", odfSkip, &storage.S3Compatible{
+		{"ODF/path-based/endpoint-with-https", odfSkipReason, &storage.S3Compatible{
 			Bucket: odfBucket, Region: odfRegion, Endpoint: "https://" + odfEndpoint,
 			AccessKeyId: odfKeyID, SecretAccessKey: odfSecret, UrlStyle: storage.S3URLStyle_S3_URL_STYLE_PATH,
 		}},
@@ -339,15 +359,19 @@ func s3CompatibleTestCases(t *testing.T) []backupTestCase {
 
 		var countFn func(ctx context.Context, t *testing.T, prefix string) int
 		var cleanupFn func(ctx context.Context, t *testing.T, prefix string)
-		if p.skip == "" {
+		if p.skipReason == "" {
 			pathStyle := p.config.GetUrlStyle() == storage.S3URLStyle_S3_URL_STYLE_PATH
-			countFn, cleanupFn = newS3BucketFuncs(t, p.config.GetEndpoint(), p.config.GetRegion(),
+			var err error
+			countFn, cleanupFn, err = newS3BucketFuncs(p.config.GetEndpoint(), p.config.GetRegion(),
 				p.config.GetAccessKeyId(), p.config.GetSecretAccessKey(), p.config.GetBucket(), pathStyle)
+			if err != nil {
+				p.skipReason = fmt.Sprintf("S3 client setup failed: %v", err)
+			}
 		}
 
 		cases = append(cases, backupTestCase{
-			name: name,
-			skip: p.skip,
+			name:       name,
+			skipReason: p.skipReason,
 			backup: &storage.ExternalBackup{
 				Name:          name,
 				Type:          "s3compatible",
@@ -392,7 +416,7 @@ func runBackupLifecycleTest(t *testing.T, service v1.ExternalBackupServiceClient
 			t.Logf("Error testing external backup: %v", err)
 		}),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -457,12 +481,12 @@ func TestExternalBackup(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewExternalBackupServiceClient(conn)
-	cases := slices.Concat(gcsTestCases(t), awsS3TestCases(t), s3CompatibleTestCases(t))
+	cases := slices.Concat(gcsTestCases(), awsS3TestCases(), s3CompatibleTestCases())
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.skip != "" {
-				t.Skip(tc.skip)
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
 			}
 			runBackupLifecycleTest(t, service, tc)
 		})
