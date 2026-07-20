@@ -220,6 +220,17 @@ func TestAtomicWriteFile(t *testing.T) {
 	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
 }
 
+func TestAtomicWriteFile_CreatesParentDirectory(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "nested", "output.json")
+
+	require.NoError(t, atomicWriteFile(path, []byte("hello")))
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "hello", string(data))
+}
+
 // roundTripperFunc adapts a function to http.RoundTripper, letting tests
 // simulate HTTP responses (including transient failures) with no real
 // network I/O, which keeps retry/backoff tests fast and safe to run inside

@@ -296,6 +296,9 @@ func (d *Downloader) doDownload(ctx context.Context) error {
 
 func atomicWriteFile(path string, data []byte) error {
 	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("creating directory %q: %w", dir, err)
+	}
 	tmp, err := os.CreateTemp(dir, ".download-*.tmp")
 	if err != nil {
 		return fmt.Errorf("creating temp file: %w", err)
