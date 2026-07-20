@@ -2003,7 +2003,11 @@ type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
 	// profile_refs carries profile names together with their compliance operator kind.
 	// Populated by Central alongside the legacy profiles field.
 	// Sensor should prefer this field when non-empty, and fall back to profiles otherwise.
-	ProfileRefs   []*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference `protobuf:"bytes,8,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty"`
+	ProfileRefs []*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference `protobuf:"bytes,8,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty"`
+	// node_roles specifies which node roles the compliance scan should target.
+	// When empty, Sensor defaults to ["master", "worker"] for backward compatibility
+	// (handles messages from old Central versions that don't populate this field).
+	NodeRoles     []string `protobuf:"bytes,9,rep,name=node_roles,json=nodeRoles,proto3" json:"node_roles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2090,6 +2094,13 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoUpdateRemedia
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetProfileRefs() []*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference {
 	if x != nil {
 		return x.ProfileRefs
+	}
+	return nil
+}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetNodeRoles() []string {
+	if x != nil {
+		return x.NodeRoles
 	}
 	return nil
 }
@@ -2841,7 +2852,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x18DisableComplianceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"o\n" +
 	"\x1fSyncComplianceScanConfigRequest\x12L\n" +
-	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\xed\f\n" +
+	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\x8c\r\n" +
 	" ApplyComplianceScanConfigRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12`\n" +
 	"\x0escheduled_scan\x18\x03 \x01(\v27.central.ApplyComplianceScanConfigRequest.ScheduledScanH\x00R\rscheduledScan\x12]\n" +
@@ -2851,7 +2862,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\vresume_scan\x18\x06 \x01(\v2=.central.ApplyComplianceScanConfigRequest.ResumeScheduledScanH\x00R\n" +
 	"resumeScan\x12`\n" +
 	"\vupdate_scan\x18\a \x01(\v2=.central.ApplyComplianceScanConfigRequest.UpdateScheduledScanH\x00R\n" +
-	"updateScan\x1a\x98\x04\n" +
+	"updateScan\x1a\xb7\x04\n" +
 	"\x10BaseScanSettings\x12 \n" +
 	"\fdb_record_id\x18\x01 \x01(\tR\n" +
 	"dbRecordId\x12\x1b\n" +
@@ -2861,7 +2872,9 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x10strict_node_scan\x18\x05 \x01(\bR\x0estrictNodeScan\x126\n" +
 	"\x17auto_apply_remediations\x18\x06 \x01(\bR\x15autoApplyRemediations\x128\n" +
 	"\x18auto_update_remediations\x18\a \x01(\bR\x16autoUpdateRemediations\x12n\n" +
-	"\fprofile_refs\x18\b \x03(\v2K.central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReferenceR\vprofileRefs\x1am\n" +
+	"\fprofile_refs\x18\b \x03(\v2K.central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReferenceR\vprofileRefs\x12\x1d\n" +
+	"\n" +
+	"node_roles\x18\t \x03(\tR\tnodeRoles\x1am\n" +
 	"\x10ProfileReference\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12E\n" +
 	"\x04kind\x18\x02 \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\x04kind\x1an\n" +
