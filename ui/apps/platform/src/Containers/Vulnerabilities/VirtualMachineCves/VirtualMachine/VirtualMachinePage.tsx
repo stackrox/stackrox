@@ -20,7 +20,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { getVirtualMachine } from 'services/VirtualMachineService';
+import { getVM, getVirtualMachine } from 'services/VirtualMachineService';
 
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { detailsTabValues } from '../../types';
@@ -33,9 +33,11 @@ import {
     CVSS_SORT_FIELD,
 } from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
+import VirtualMachinePageHeaderLegacy from './VirtualMachinePageHeaderLegacy';
 import VirtualMachinePageComponents from './VirtualMachinePageComponents';
 import VirtualMachinePageComponentsLegacy from './VirtualMachinePageComponentsLegacy';
 import VirtualMachinePageDetails from './VirtualMachinePageDetails';
+import VirtualMachinePageDetailsLegacy from './VirtualMachinePageDetailsLegacy';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
 import VirtualMachinePageVulnerabilitiesLegacy from './VirtualMachinePageVulnerabilitiesLegacy';
 
@@ -76,12 +78,25 @@ function VirtualMachinePage() {
         onSort: () => urlPagination.setPage(1, 'replace'),
     });
 
-    const fetchVirtualMachine = useCallback(
+    const fetchVirtualMachineLegacy = useCallback(
         () => getVirtualMachine(virtualMachineId),
         [virtualMachineId]
     );
+    const {
+        data: virtualMachineLegacy,
+        isLoading: isLoadingLegacy,
+        error: errorLegacy,
+    } = useRestQuery(fetchVirtualMachineLegacy);
 
-    const { data: virtualMachine, isLoading, error } = useRestQuery(fetchVirtualMachine);
+    const fetchVirtualMachine = useCallback(() => getVM(virtualMachineId), [virtualMachineId]);
+    const {
+        data: virtualMachineDetail,
+        isLoading: isLoadingEnhanced,
+        error: errorEnhanced,
+    } = useRestQuery(fetchVirtualMachine);
+
+    const isLoading = isEnhancedDataModelEnabled ? isLoadingEnhanced : isLoadingLegacy;
+    const error = isEnhancedDataModelEnabled ? errorEnhanced : errorLegacy;
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
@@ -89,7 +104,9 @@ function VirtualMachinePage() {
     const componentsTabKey = detailsTabValues[4];
     const detailsTabKey = detailsTabValues[1];
 
-    const virtualMachineName = virtualMachine?.name;
+    const virtualMachineName = isEnhancedDataModelEnabled
+        ? virtualMachineDetail?.name
+        : virtualMachineLegacy?.name;
 
     function onTabChange(value: string | number) {
         if (value === componentsTabKey) {
@@ -122,11 +139,19 @@ function VirtualMachinePage() {
             </PageSection>
             <Divider component="div" />
             <PageSection>
-                <VirtualMachinePageHeader
-                    virtualMachine={virtualMachine}
-                    isLoading={isLoading}
-                    error={error}
-                />
+                {isEnhancedDataModelEnabled ? (
+                    <VirtualMachinePageHeader
+                        virtualMachineDetail={virtualMachineDetail}
+                        isLoading={isLoading}
+                        error={error}
+                    />
+                ) : (
+                    <VirtualMachinePageHeaderLegacy
+                        virtualMachine={virtualMachineLegacy}
+                        isLoading={isLoading}
+                        error={error}
+                    />
+                )}
             </PageSection>
             <PageSection padding={{ default: 'noPadding' }}>
                 <Tabs
@@ -180,9 +205,9 @@ function VirtualMachinePage() {
                             />
                         ) : (
                             <VirtualMachinePageVulnerabilitiesLegacy
-                                virtualMachine={virtualMachine}
-                                isLoadingVirtualMachine={isLoading}
-                                errorVirtualMachine={error}
+                                virtualMachine={virtualMachineLegacy}
+                                isLoadingVirtualMachine={isLoadingLegacy}
+                                errorVirtualMachine={errorLegacy}
                                 urlSearch={urlSearch}
                                 urlSorting={urlSorting}
                                 urlPagination={urlPagination}
@@ -196,9 +221,9 @@ function VirtualMachinePage() {
                             <VirtualMachinePageComponents virtualMachineId={virtualMachineId} />
                         ) : (
                             <VirtualMachinePageComponentsLegacy
-                                virtualMachine={virtualMachine}
-                                isLoadingVirtualMachine={isLoading}
-                                errorVirtualMachine={error}
+                                virtualMachine={virtualMachineLegacy}
+                                isLoadingVirtualMachine={isLoadingLegacy}
+                                errorVirtualMachine={errorLegacy}
                                 urlSearch={urlSearch}
                                 urlSorting={urlSorting}
                                 urlPagination={urlPagination}
@@ -208,7 +233,17 @@ function VirtualMachinePage() {
                 )}
                 {activeTabKey === detailsTabKey && (
                     <TabContent id={DETAILS_TAB_ID}>
-                        <VirtualMachinePageDetails virtualMachine={virtualMachine} />
+                        {isEnhancedDataModelEnabled ? (
+                            virtualMachineDetail && (
+                                <VirtualMachinePageDetails
+                                    virtualMachineDetail={virtualMachineDetail}
+                                />
+                            )
+                        ) : (
+                            <VirtualMachinePageDetailsLegacy
+                                virtualMachine={virtualMachineLegacy}
+                            />
+                        )}
                     </TabContent>
                 )}
             </PageSection>
