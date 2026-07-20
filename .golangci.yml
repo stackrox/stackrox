@@ -1,7 +1,7 @@
 version: "2"
 run:
   timeout: 240m
-  go: "1.25"
+  go: "1.26"
   build-tags:
     - integration
     - scanner_db_integration
@@ -175,6 +175,7 @@ linters:
         - fmtappendf
         - mapsloop
         - minmax
+        - newexpr
         - rangeint
         - reflecttypefor
         - slicescontains
