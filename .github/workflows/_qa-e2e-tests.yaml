@@ -82,7 +82,18 @@ defaults:
     shell: bash
 
 jobs:
+  validate-inputs:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Validate cluster-provisioning-method
+        run: |
+          case "${{ inputs.cluster-provisioning-method }}" in
+            direct-gke|infra) ;;
+            *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
+          esac
+
   cluster-pre-test:
+    needs: [validate-inputs]
     if: inputs.cluster-provisioning-method == 'infra'
     runs-on: ubuntu-slim
     outputs:
@@ -133,7 +144,7 @@ jobs:
     # dependency is neither a failure nor a cancellation, so the condition
     # below lets this job proceed when cluster-pre-test was skipped (direct-gke)
     # or succeeded (infra), but blocks it on failure or cancellation.
-    needs: [cluster-pre-test]
+    needs: [validate-inputs, cluster-pre-test]
     if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     env:
