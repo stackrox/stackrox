@@ -214,14 +214,18 @@ func FillScanStats(n *storage.Node) {
 		}
 	}
 
+	var fixedByProvided bool
 	var numFixableVulns int32
 	for _, fixable := range vulns {
 		if fixable {
+			fixedByProvided = true
 			numFixableVulns++
 		}
 	}
-	n.SetFixable = &storage.Node_FixableCves{
-		FixableCves: numFixableVulns,
+	if fixedByProvided || n.GetSetFixable() != nil {
+		n.SetFixable = &storage.Node_FixableCves{
+			FixableCves: numFixableVulns,
+		}
 	}
 }
 

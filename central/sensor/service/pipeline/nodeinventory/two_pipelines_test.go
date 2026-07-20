@@ -61,7 +61,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		Scan:          nodeScanFixtureWithKernel("v1"),
 		SetComponents: &storage.Node_Components{Components: 1},
 		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetFixable:    &storage.Node_FixableCves{FixableCves: 0},
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
 	}
 
@@ -76,7 +75,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		Scan:          nodeScanFixtureWithKernel("v2"),
 		SetComponents: &storage.Node_Components{Components: 1},
 		SetCves:       &storage.Node_Cves{Cves: 1},
-		SetFixable:    &storage.Node_FixableCves{FixableCves: 0},
 		SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
 	}
 
