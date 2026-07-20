@@ -15,6 +15,22 @@ on:
         description: "Short job name (ideally at most 20 characters long), used as prefix in length limited cluster names"
         required: false
         type: string
+      cluster-provisioning-method:
+        description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
+        type: string
+        default: "direct-gke"
+      gke-machine-type:
+        description: "Specify machine type for direct GKE provisioning"
+        type: string
+        default: "e2-standard-8"
+      gke-num-nodes:
+        description: "Specify number of nodes for direct GKE provisioning"
+        type: number
+        default: 3
+      gke-spot:
+        description: "Specify whether spot instances shall be used"
+        type: boolean
+        default: true
       extra-env-vars:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
