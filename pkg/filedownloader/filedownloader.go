@@ -51,13 +51,12 @@ func WithOnComplete(fn func(err error, duration time.Duration)) Option {
 }
 
 // WithRetryPolicy configures DownloadOnce to retry up to maxAttempts total
-// (including the first), with exponential backoff starting at baseBackoff.
-// The backoff wait is ctx-aware and aborts immediately on cancellation.
+// (including the first attempt), with ctx-aware exponential backoff
+// starting at baseBackoff. Defaults to 1 (no retry beyond whatever
+// http.Client already does).
 //
-// Defaults to 1 (no retry beyond whatever http.Client is configured).
-// Combining a retrying http.Client with maxAttempts > 1 nests two retry
-// layers; pass a non-retrying WithHTTPClient to avoid that.
-//
+// Pass a non-retrying WithHTTPClient alongside this option: nesting a
+// retrying http.Client with maxAttempts > 1 multiplies worst-case latency.
 // Panics if maxAttempts < 1 or baseBackoff < 0.
 func WithRetryPolicy(maxAttempts int, baseBackoff time.Duration) Option {
 	if maxAttempts < 1 {
