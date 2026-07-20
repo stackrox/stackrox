@@ -329,6 +329,37 @@
         ]
       }
     },
+    "/v1/deploymentswithrisk/{id}/lightspeed-summary": {
+      "get": {
+        "summary": "GetDeploymentRiskSummary sends deployment risk data to OpenShift Lightspeed\nand returns an AI-generated summary.",
+        "operationId": "DeploymentService_GetDeploymentRiskSummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1DeploymentRiskSummaryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googleRpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "DeploymentService"
+        ]
+      }
+    },
     "/v1/export/deployments": {
       "get": {
         "operationId": "DeploymentService_ExportDeployments",
@@ -1247,6 +1278,14 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "v1DeploymentRiskSummaryResponse": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
         }
       }
     },
