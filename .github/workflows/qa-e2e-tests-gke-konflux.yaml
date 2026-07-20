@@ -1,4 +1,4 @@
-name: qa-e2e-tests-ocp-4-22-konflux
+name: qa-e2e-tests-gke-konflux
 
 on:
   workflow_call:
@@ -28,23 +28,14 @@ jobs:
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       tag: ${{ inputs.tag }}
-      ci-job-name: qa-e2e-tests-ocp-4-22-konflux
-      ci-job-short-name: qa-e2e-ocp422-knflx
-      cluster-wait-timeout-minutes: 50
-      infra-flavor: openshift-4
-      infra-args: |
-        openshift-version=ocp/stable-4.22
-        master-node-type=e2-standard-4
-        master-node-count=3
-        worker-node-type=e2-standard-8
-        worker-node-count=3
-        ssd-storage-class=true
-      infra-lifespan: 5h
+      ci-job-name: qa-e2e-tests-gke-konflux
+      ci-job-short-name: qa-e2e-gke-konflux
+      cluster-provisioning-method: direct-gke
       # To address later:
       #   SETUP_WORKLOAD_IDENTITIES=true
       extra-env-vars: |
-        ORCHESTRATOR_FLAVOR=openshift
-        KUBERNETES_PROVIDER=ocp
+        ORCHESTRATOR_FLAVOR=k8s
+        KUBERNETES_PROVIDER=gke
         SFA_AGENT=true
         USE_KONFLUX_IMAGES=true
     secrets: inherit
