@@ -50,22 +50,15 @@ func WithOnComplete(fn func(err error, duration time.Duration)) Option {
 	return func(d *Downloader) { d.onComplete = fn }
 }
 
-// WithRetryPolicy configures DownloadOnce to retry a failed attempt up to
-// maxAttempts total attempts (including the first), waiting baseBackoff
-// before the first retry and doubling the wait after each subsequent
-// failure. The wait is ctx-aware: cancellation during it aborts immediately
-// rather than completing the full backoff.
+// WithRetryPolicy configures DownloadOnce to retry up to maxAttempts total
+// (including the first), with exponential backoff starting at baseBackoff.
+// The backoff wait is ctx-aware and aborts immediately on cancellation.
 //
-// Defaults to maxAttempts=1, i.e. no added retry layer beyond whatever
-// http.Client is configured (WithHTTPClient). Combining a retrying
-// http.Client (the default) with maxAttempts > 1 nests two retry policies
-// and can multiply worst-case latency; callers that want WithRetryPolicy to
-// be the only retry layer should also pass a non-retrying WithHTTPClient.
+// Defaults to 1 (no retry beyond whatever http.Client is configured).
+// Combining a retrying http.Client with maxAttempts > 1 nests two retry
+// layers; pass a non-retrying WithHTTPClient to avoid that.
 //
-// Panics if maxAttempts < 1 or baseBackoff < 0. Every call site in this
-// codebase passes compile-time literals, so an invalid value is a
-// programmer error that should fail loudly at startup, not a runtime
-// condition to clamp or degrade gracefully from.
+// Panics if maxAttempts < 1 or baseBackoff < 0.
 func WithRetryPolicy(maxAttempts int, baseBackoff time.Duration) Option {
 	if maxAttempts < 1 {
 		panic(fmt.Sprintf("filedownloader: WithRetryPolicy: maxAttempts must be >= 1, got %d", maxAttempts))
@@ -140,11 +133,7 @@ func (d *Downloader) run() {
 	ctx, cancel := concurrency.DependentContext(context.Background(), &d.stopSig)
 	defer cancel()
 
-	// Checked upfront, in addition to atomicWriteFile's own MkdirAll: a
-	// persistent directory problem then aborts the whole loop immediately
-	// via onComplete, before ever attempting a network request, instead of
-	// only surfacing once the first tick's write fails after an already
-	// completed (and wasted) HTTP round trip.
+	// Fail-fast on a persistent directory problem before wasting a network round trip.
 	if err := os.MkdirAll(filepath.Dir(d.filePath), 0700); err != nil {
 		mkdirErr := fmt.Errorf("creating directory for %q: %w", d.filePath, err)
 		log.Errorf("Downloader will not run: %v", mkdirErr)
@@ -158,28 +147,15 @@ func (d *Downloader) run() {
 	d.tickLoop(ctx)
 }
 
-// Run blocks, downloading roughly every interval, until ctx is done, then
-// returns ctx.Err(). Each wait is measured from the end of the previous
-// download attempt, not a fixed wall-clock cadence, so a slow or retried
-// download pushes the next attempt later by its own duration instead of
-// overlapping with it. Unlike Start, Run performs no download on entry:
-// pair Run with an explicit DownloadOnce call for a mandatory, blocking
-// first fetch (e.g. to gate a caller's own startup on it) before starting
-// the periodic loop.
-//
-// Run is an alternative to Start/Stop for callers whose lifecycle is
-// already expressed as a single ctx (e.g. one goroutine among several
-// tracked by an errgroup); don't mix Run with Start/Stop on the same
-// Downloader.
+// Run downloads every interval until ctx is done, then returns ctx.Err().
+// Unlike Start, it performs no download on entry — call DownloadOnce first
+// if a mandatory initial fetch is needed. Don't mix with Start/Stop.
 func (d *Downloader) Run(ctx context.Context) error {
 	d.tickLoop(ctx)
 	return ctx.Err()
 }
 
-// tickLoop downloads once per interval until ctx is done, timing each wait
-// from the end of the previous download rather than a fixed schedule (see
-// Run's doc comment). It is the shared periodic-download loop behind both
-// Start (via run) and Run.
+// tickLoop is the shared periodic loop behind both Start and Run.
 func (d *Downloader) tickLoop(ctx context.Context) {
 	t := time.NewTimer(d.interval)
 	defer t.Stop()
@@ -194,16 +170,10 @@ func (d *Downloader) tickLoop(ctx context.Context) {
 	}
 }
 
-// DownloadOnce performs a single logical download: it fetches url and
-// atomically publishes the result to filePath, retrying according to the
-// configured WithRetryPolicy (a single attempt by default), and returns the
-// outcome. WithOnComplete's callback, if configured, is invoked once for
-// the whole operation (not once per retry attempt) with the cumulative
-// duration; otherwise a failure is logged.
-//
-// Callers needing a mandatory, error-returning first fetch - e.g. to gate
-// their own startup on it - call DownloadOnce directly before starting the
-// periodic loop via Start or Run.
+// DownloadOnce performs one fetch-and-atomic-write cycle, retrying per
+// WithRetryPolicy (single attempt by default). Invokes the OnComplete
+// callback once with the cumulative duration; logs on failure if no
+// callback is set.
 func (d *Downloader) DownloadOnce(ctx context.Context) error {
 	start := time.Now()
 	err := d.downloadWithRetry(ctx)
@@ -216,13 +186,9 @@ func (d *Downloader) DownloadOnce(ctx context.Context) error {
 	return err
 }
 
-// downloadWithRetry runs downloadAttempt under the configured retry policy:
-// a single attempt by default, or up to retryMaxAttempts attempts with
-// exponential backoff starting at retryBaseBackoff between failures. With
-// no retries configured (the default), downloadAttempt's error is returned
-// unwrapped. With retries configured, an error means every attempt failed,
-// so it's wrapped with the attempt count - letting callers and logs tell
-// "retries exhausted" apart from "the one and only attempt failed".
+// downloadWithRetry runs downloadAttempt up to retryMaxAttempts times with
+// exponential backoff. Wraps the final error with the attempt count when
+// retries are configured (so "retries exhausted" is distinguishable in logs).
 func (d *Downloader) downloadWithRetry(ctx context.Context) error {
 	if d.retryMaxAttempts <= 1 {
 		return d.downloadAttempt(ctx)

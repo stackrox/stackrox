@@ -8,41 +8,20 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
-// Retry policy for a single repository-to-CPE mapping file fetch: absorbs
-// transient network errors on the mapping HTTP call without waiting a full
-// refresh interval - or, for the mandatory initial fetch, failing agent
-// startup - over a single blip.
 const (
 	mappingFetchMaxAttempts = 3
 	mappingFetchBaseBackoff = 2 * time.Second
-
-	// mappingClientTimeout bounds a single mapping fetch attempt (the
-	// mandatory initial fetch at startup, and each periodic refresh); it
-	// does not affect scans, which always read the local cached file.
-	// Hardcoded for now; make it a --mapping-client-timeout flag later if
-	// reviewers ask for it to be tunable.
-	mappingClientTimeout = 30 * time.Second
-
-	// mappingRefreshInterval is how often the mapping file is refreshed,
-	// independent of rescan-interval. Hardcoded for now; make it a
-	// --mapping-refresh-interval flag later if reviewers ask for it to be
-	// tunable.
-	mappingRefreshInterval = time.Hour
+	mappingClientTimeout    = 30 * time.Second
+	mappingRefreshInterval  = time.Hour
 )
 
-// newMappingDownloader builds the filedownloader.Downloader responsible for
-// keeping the repository-to-CPE mapping file at cachePath fresh, decoupling
-// that network call from every individual scan: scan() only ever reads the
-// local cache file (via Repo2CPEMappingFile), so a slow or flaky mapping
-// endpoint can never block or fail a scan directly - only a mandatory,
-// synchronous DownloadOnce call (which gates the first scan, see runServe)
-// can.
+// newMappingDownloader builds the filedownloader.Downloader that keeps the
+// repository-to-CPE mapping file at cachePath fresh. scan() only reads the
+// local file, so a flaky mapping endpoint never blocks a scan directly.
 //
-// The HTTP client has no retries of its own (WithHTTPClient overrides
-// filedownloader's default retryablehttp client), so WithRetryPolicy's
-// attempts/backoff remain the only retry layer: nesting both would multiply
-// worst-case latency for the mandatory initial fetch well beyond what
-// "fail fast on a persistently broken mapping endpoint" requires.
+// WithHTTPClient overrides filedownloader's default retryablehttp client so
+// WithRetryPolicy is the only retry layer (nesting both would multiply
+// worst-case latency on the mandatory initial fetch).
 func newMappingDownloader(url, cachePath string) *filedownloader.Downloader {
 	return filedownloader.New(url, cachePath, mappingRefreshInterval,
 		filedownloader.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
