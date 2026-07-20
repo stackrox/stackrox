@@ -26,7 +26,8 @@ on:
         required: false
       vuln_bundles:
         description: >
-          Sets a specific updater to run. If unset, all updaters are built
+          Sets a specific updater to run. If unset, all updaters are built.
+          Not supported by older git references, please double-check
         required: false
       job:
         type: choice
@@ -250,11 +251,7 @@ jobs:
         VULN_BUNDLES: ${{ github.event.inputs.vuln_bundles }}
       run: |
         if [ -n "$VULN_BUNDLES" ]; then
-            if grep -q "STACKROX_SCANNER_V4_UPDATER_SOURCES" scanner/cmd/updater/main.go 2>/dev/null; then
-                export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
-            else
-                echo "::warning::vuln_bundles input ignored: checked-out ref ($ROX_GIT_REF) does not support source filtering"
-            fi
+            export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
         fi
         tag=$(make -s --no-print-directory tag)
         # In pre-4.9, the exporter requires --split to generate multi-bundles.
