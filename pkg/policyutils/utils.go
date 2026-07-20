@@ -15,7 +15,7 @@ func FillSortHelperFields(policies ...*storage.Policy) {
 		sort.Slice(policy.GetLifecycleStages(), func(i, j int) bool {
 			return policy.GetLifecycleStages()[i].String() < policy.GetLifecycleStages()[j].String()
 		})
-		var stages []string
+		stages := make([]string, 0, len(policy.GetLifecycleStages()))
 		for _, lifecycleStage := range policy.GetLifecycleStages() {
 			stages = append(stages, lifecycleStage.String())
 		}

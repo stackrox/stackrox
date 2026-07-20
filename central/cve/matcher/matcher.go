@@ -139,7 +139,7 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 		return false, nil
 	}
 	for _, node := range cve.Configurations.Nodes {
-		for _, version := range versions.AsSlice() {
+		for version := range versions {
 			matched, err := m.MatchVersions(node, version, utils.Istio)
 			// If we could determine CVE impact from one of cpe string, we skip logging error
 			if matched {
