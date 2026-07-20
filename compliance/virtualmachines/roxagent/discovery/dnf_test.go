@@ -12,86 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDiscoverDnfRepoFilePresence(t *testing.T) {
-	tests := map[string]struct {
-		setup            func(t *testing.T) (string, []string)
-		expectedHasDir   bool
-		expectedHasRepo  bool
-		expectedErrParts []string
-	}{
-		"should return true when repo file exists in reposdir": {
-			setup: func(t *testing.T) (string, []string) {
-				hostPath := t.TempDir()
-				reposDirPath := "/etc/yum.repos.d"
-				reposPath := hostprobe.HostPathFor(hostPath, reposDirPath)
-				require.NoError(t, os.MkdirAll(reposPath, 0750))
-				repoFilePath := filepath.Join(reposPath, "test.repo")
-				require.NoError(t, os.WriteFile(repoFilePath, []byte("content"), 0600))
-				return hostPath, []string{reposDirPath}
-			},
-			expectedHasDir:  true,
-			expectedHasRepo: true,
-		},
-		"should return error when all reposdirs are unreadable": {
-			setup: func(t *testing.T) (string, []string) {
-				hostPath := t.TempDir()
-				return hostPath, []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
-			},
-			expectedHasDir:   false,
-			expectedHasRepo:  false,
-			expectedErrParts: []string{"reading", "no such file or directory"},
-		},
-		"should return error when reposdirs are readable but no repo files exist": {
-			setup: func(t *testing.T) (string, []string) {
-				hostPath := t.TempDir()
-				reposDirPaths := []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
-				for _, reposDirPath := range reposDirPaths {
-					reposPath := hostprobe.HostPathFor(hostPath, reposDirPath)
-					require.NoError(t, os.MkdirAll(reposPath, 0750))
-					require.NoError(t, os.WriteFile(filepath.Join(reposPath, "not-a-repo.txt"), []byte("content"), 0600))
-				}
-				return hostPath, reposDirPaths
-			},
-			expectedHasDir:   true,
-			expectedHasRepo:  false,
-			expectedErrParts: []string{"no .repo files found"},
-		},
-		"should return true when repo file exists even if other reposdir is missing": {
-			setup: func(t *testing.T) (string, []string) {
-				hostPath := t.TempDir()
-				reposDirPaths := []string{"/etc/yum.repos.d", "/etc/yum/repos.d"}
-				reposPath := hostprobe.HostPathFor(hostPath, reposDirPaths[0])
-				require.NoError(t, os.MkdirAll(reposPath, 0750))
-				require.NoError(t, os.WriteFile(filepath.Join(reposPath, "example.repo"), []byte("content"), 0600))
-				return hostPath, reposDirPaths
-			},
-			expectedHasDir:  true,
-			expectedHasRepo: true,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			hostPath, reposDirPaths := tt.setup(t)
-			hasDir, hasRepo, err := discoverDnfRepoFilePresence(hostPath, reposDirPaths)
-			assert.Equal(t, tt.expectedHasDir, hasDir)
-			assert.Equal(t, tt.expectedHasRepo, hasRepo)
-			if len(tt.expectedErrParts) == 0 {
-				assert.NoError(t, err)
-				return
-			}
-			require.Error(t, err)
-			for _, part := range tt.expectedErrParts {
-				assert.Contains(t, err.Error(), part)
-			}
-		})
-	}
-}
-
-func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
+func TestDiscoverDnf4CachePresent(t *testing.T) {
 	tests := map[string]struct {
 		setup            func(t *testing.T) (hostPath string, cacheDirPath string)
-		expectedHasDir   bool
 		expectedFound    bool
 		expectedErrParts []string
 	}{
@@ -103,8 +26,7 @@ func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
 				require.NoError(t, os.MkdirAll(filepath.Join(cachePath, "rhel-9-for-x86_64-appstream-rpms-123"), 0750))
 				return hostPath, cacheDirPath
 			},
-			expectedHasDir: true,
-			expectedFound:  true,
+			expectedFound: true,
 		},
 		"false when cache dir has no repo directories": {
 			setup: func(t *testing.T) (string, string) {
@@ -114,8 +36,7 @@ func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
 				require.NoError(t, os.MkdirAll(cachePath, 0750))
 				return hostPath, cacheDirPath
 			},
-			expectedHasDir: true,
-			expectedFound:  false,
+			expectedFound: false,
 		},
 		"false when cache has subdirs but none match -rpms- pattern": {
 			setup: func(t *testing.T) (string, string) {
@@ -125,15 +46,19 @@ func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
 				require.NoError(t, os.MkdirAll(filepath.Join(cachePath, "fedora"), 0750))
 				return hostPath, cacheDirPath
 			},
-			expectedHasDir: true,
-			expectedFound:  false,
+			expectedFound: false,
+		},
+		"false with no error when cacheDirPath is empty": {
+			setup: func(t *testing.T) (string, string) {
+				return t.TempDir(), ""
+			},
+			expectedFound: false,
 		},
 		"error when cache dir is missing": {
 			setup: func(t *testing.T) (string, string) {
 				hostPath := t.TempDir()
 				return hostPath, "/var/cache/dnf"
 			},
-			expectedHasDir:   false,
 			expectedFound:    false,
 			expectedErrParts: []string{"reading"},
 		},
@@ -142,8 +67,7 @@ func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			hostPath, cacheDirPath := tt.setup(t)
-			hasDir, found, err := discoverDnf4CacheRepoDirPresence(hostPath, cacheDirPath)
-			assert.Equal(t, tt.expectedHasDir, hasDir)
+			found, err := discoverDnf4CachePresent(hostPath, cacheDirPath)
 			assert.Equal(t, tt.expectedFound, found)
 			if len(tt.expectedErrParts) == 0 {
 				assert.NoError(t, err)
@@ -157,10 +81,9 @@ func TestDiscoverDnf4CacheRepoDirPresence(t *testing.T) {
 	}
 }
 
-func TestDiscoverDnf5CacheRepoDirPresence(t *testing.T) {
+func TestDiscoverDnf5CachePresent(t *testing.T) {
 	tests := map[string]struct {
 		setup            func(t *testing.T) (hostPath string, cacheDirPath string)
-		expectedHasDir   bool
 		expectedFound    bool
 		expectedErrParts []string
 	}{
@@ -172,8 +95,7 @@ func TestDiscoverDnf5CacheRepoDirPresence(t *testing.T) {
 				require.NoError(t, os.MkdirAll(filepath.Join(cachePath, "fedora"), 0750))
 				return hostPath, cacheDirPath
 			},
-			expectedHasDir: true,
-			expectedFound:  true,
+			expectedFound: true,
 		},
 		"false when cache root exists but has no subdirectories": {
 			setup: func(t *testing.T) (string, string) {
@@ -183,15 +105,19 @@ func TestDiscoverDnf5CacheRepoDirPresence(t *testing.T) {
 				require.NoError(t, os.MkdirAll(cachePath, 0750))
 				return hostPath, cacheDirPath
 			},
-			expectedHasDir: true,
-			expectedFound:  false,
+			expectedFound: false,
+		},
+		"false with no error when cacheDirPath is empty": {
+			setup: func(t *testing.T) (string, string) {
+				return t.TempDir(), ""
+			},
+			expectedFound: false,
 		},
 		"error when cache dir is missing": {
 			setup: func(t *testing.T) (string, string) {
 				hostPath := t.TempDir()
 				return hostPath, "/var/cache/libdnf5"
 			},
-			expectedHasDir:   false,
 			expectedFound:    false,
 			expectedErrParts: []string{"reading"},
 		},
@@ -200,8 +126,7 @@ func TestDiscoverDnf5CacheRepoDirPresence(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			hostPath, cacheDirPath := tt.setup(t)
-			hasDir, found, err := discoverDnf5CacheRepoDirPresence(hostPath, cacheDirPath)
-			assert.Equal(t, tt.expectedHasDir, hasDir)
+			found, err := discoverDnf5CachePresent(hostPath, cacheDirPath)
 			assert.Equal(t, tt.expectedFound, found)
 			if len(tt.expectedErrParts) == 0 {
 				assert.NoError(t, err)
@@ -285,6 +210,9 @@ func TestDiscoverDnfStatusFlags(t *testing.T) {
 			},
 		},
 		"no repo files, cache exists": {
+			// A readable-but-empty reposdir is not itself an error condition
+			// (see hostprobe.HasAnyRepoFile): absence of the flag already
+			// conveys "no repo config found".
 			setup: func(t *testing.T) ([]string, []string, string, string) {
 				tmp := t.TempDir()
 				repoDir := filepath.Join(tmp, "yum.repos.d")
@@ -294,7 +222,6 @@ func TestDiscoverDnfStatusFlags(t *testing.T) {
 				return []string{repoDir}, nil, cacheDir, ""
 			},
 			expectedFlags: []v1.DnfStatusFlag{v1.DnfStatusFlag_DNF_V4_CACHE_FOUND},
-			errorContains: "no .repo files found",
 		},
 		"reposdir does not exist, cache exists": {
 			setup: func(t *testing.T) ([]string, []string, string, string) {
@@ -304,7 +231,7 @@ func TestDiscoverDnfStatusFlags(t *testing.T) {
 				return []string{filepath.Join(tmp, "nonexistent-repos")}, nil, cacheDir, ""
 			},
 			expectedFlags: nil,
-			errorContains: "reading",
+			errorContains: "no such file or directory",
 		},
 		"repos exist, cache dir does not exist": {
 			setup: func(t *testing.T) ([]string, []string, string, string) {

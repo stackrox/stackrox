@@ -150,3 +150,14 @@ func HasAnyRepoFile(fsys fs.FS, dirs []string) (bool, error) {
 	}
 	return false, errors.Join(errs...)
 }
+
+// HasAnyRepoFileAt is a hostPath-based convenience wrapper around
+// [HasAnyRepoFile] for callers that don't already hold an fs.FS. hostPath=""
+// is treated the same as "/", consistent with [HostPathFor].
+func HasAnyRepoFileAt(hostPath string, dirs []string) (bool, error) {
+	root := hostPath
+	if root == "" {
+		root = string(os.PathSeparator)
+	}
+	return HasAnyRepoFile(os.DirFS(root), dirs)
+}
