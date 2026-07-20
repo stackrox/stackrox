@@ -26,11 +26,7 @@ jobs:
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests
       ci-job-short-name: qa-e2e-gke
-      infra-flavor: gke-default
-      infra-args: |
-        nodes=3
-        machine-type=e2-standard-8
-      infra-lifespan: 5h
+      cluster-provisioning-method: direct-gke
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
