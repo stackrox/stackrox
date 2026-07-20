@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/internal/hostprobe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,32 +74,44 @@ func TestLogRepoError(t *testing.T) {
 }
 
 // TestLogFilesystemDiagnostics exercises logFilesystemDiagnostics against
-// synthetic hostPath layouts covering DNF4/DNF5 detection, entitlement
-// presence/absence, and repo-file presence/absence. As with the other
-// diagnostics tests, only "does not panic" is asserted.
+// every DnfStatusFlag/ActivationStatus combination it branches on (fed in
+// directly via DiscoveredData, the way scanWithDiagnostics's already-probed
+// data flows in) crossed with repo-file presence/absence/error on disk,
+// which is the one fact this function still probes itself. As with the
+// other diagnostics tests, only "does not panic" is asserted.
 func TestLogFilesystemDiagnostics(t *testing.T) {
-	t.Run("dnf4 host with entitlement and repo files", func(t *testing.T) {
-		hostPath := t.TempDir()
-		writeFile(t, hostprobe.HostPathFor(hostPath, hostprobe.DNF4HistoryDBPath), "db")
-		writeFile(t, filepath.Join(hostprobe.HostPathFor(hostPath, hostprobe.EntitlementDirPath), "1-key.pem"), "k")
-		writeFile(t, filepath.Join(hostprobe.HostPathFor(hostPath, hostprobe.EntitlementDirPath), "1.pem"), "c")
-		writeFile(t, filepath.Join(hostprobe.HostPathFor(hostPath, hostprobe.YumReposDirPath), "redhat.repo"), "[baseos]")
+	tests := map[string]*v1.DiscoveredData{
+		"dnf4 detected, activated": {
+			DnfStatus:        []v1.DnfStatusFlag{v1.DnfStatusFlag_DNF_V4_HISTORY_DB_FOUND},
+			ActivationStatus: v1.ActivationStatus_ACTIVE,
+		},
+		"dnf5 detected, inactive": {
+			DnfStatus:        []v1.DnfStatusFlag{v1.DnfStatusFlag_DNF_V5_HISTORY_DB_FOUND},
+			ActivationStatus: v1.ActivationStatus_INACTIVE,
+		},
+		"neither dnf version detected, activation unspecified": {},
+	}
 
-		assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath) })
-	})
+	for name, d := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Run("repo files present", func(t *testing.T) {
+				hostPath := t.TempDir()
+				writeFile(t, filepath.Join(hostprobe.HostPathFor(hostPath, hostprobe.YumReposDirPath), "redhat.repo"), "[baseos]")
+				assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath, d) })
+			})
 
-	t.Run("dnf5 host with no entitlement and no repo files", func(t *testing.T) {
-		hostPath := t.TempDir()
-		writeFile(t, hostprobe.HostPathFor(hostPath, hostprobe.DNF5HistoryDBPath), "db")
-		require.NoError(t, os.MkdirAll(hostprobe.HostPathFor(hostPath, hostprobe.YumReposDirPath), 0o755))
+			t.Run("repo dir present but empty", func(t *testing.T) {
+				hostPath := t.TempDir()
+				require.NoError(t, os.MkdirAll(hostprobe.HostPathFor(hostPath, hostprobe.YumReposDirPath), 0o755))
+				assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath, d) })
+			})
 
-		assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath) })
-	})
-
-	t.Run("bare host with nothing present", func(t *testing.T) {
-		hostPath := t.TempDir()
-		assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath) })
-	})
+			t.Run("repo dir missing", func(t *testing.T) {
+				hostPath := t.TempDir()
+				assert.NotPanics(t, func() { logFilesystemDiagnostics(hostPath, d) })
+			})
+		})
+	}
 }
 
 func writeFile(t *testing.T, path, content string) {

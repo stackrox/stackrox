@@ -16,14 +16,12 @@ import (
 
 // testRescanner returns a rescanner with a long default interval so tests
 // that don't care about the periodic loop never trigger it by accident.
-// factsFn is stubbed out so Run never exercises the real discoverFacts,
-// which - unlike scanFn - has no test-friendly no-op input; hostPath=""
-// resolves to real absolute host paths (e.g. "/etc/pki/entitlement"), not
-// a safe default.
+// Every test overrides scanFn directly, so Run never exercises the real
+// scanWithDiagnostics, which - unlike the stub - has no test-friendly no-op
+// input; hostPath="" resolves to real absolute host paths (e.g.
+// "/etc/pki/entitlement"), not a safe default.
 func testRescanner() *rescanner {
-	r := newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
-	r.factsFn = func(string) map[string]string { return nil }
-	return r
+	return newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
 }
 
 // fakeTicker is a newDelay func driven manually by a test: fire triggers a
@@ -72,11 +70,12 @@ func TestRescanner_Run(t *testing.T) {
 			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
-			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
-				return concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
+			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, map[string]string, error) {
+				report, err := concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
 					calls++
 					return &v4.IndexReport{HashId: "ok"}, nil
 				})
+				return report, nil, err
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
@@ -107,14 +106,15 @@ func TestRescanner_Run(t *testing.T) {
 			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
-			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
-				return concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
+			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, map[string]string, error) {
+				report, err := concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
 					calls++
 					if calls == 1 {
 						return nil, errors.New("transient scan error")
 					}
 					return &v4.IndexReport{HashId: "ok"}, nil
 				})
+				return report, nil, err
 			}
 
 			ctx, cancel := context.WithCancel(t.Context())
