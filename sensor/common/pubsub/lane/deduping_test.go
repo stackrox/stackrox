@@ -553,9 +553,10 @@ func TestDedupingLaneConcurrency(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			// Dedup significantly reduces 100 total publishes (10 publishers * 10 keys).
-			// The inFlightKeys map reduces (but doesn't eliminate) the race where a duplicate
-			// is published while the original is being consumed, since consumers run concurrently
-			// and in-flight status is only cleared after consumption completes.
+			// Events published while a key is in-flight are re-queued (not merged), so both
+			// events are eventually consumed (separated in time). The race window between
+			// dequeue and consumer completion determines how many duplicates slip through
+			// as re-queued events vs being merged in the dedup queue.
 			return receivedCount >= expectedUniqueKeys && receivedCount < 100
 		}, 2*time.Second, 10*time.Millisecond)
 

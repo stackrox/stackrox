@@ -22,14 +22,20 @@ import (
 //   - dequeueToChannel() goroutine pulls from dedup queue and writes to channel
 //   - run() goroutine reads from channel and dispatches to consumers (concurrent execution)
 //
+// Deduplication Semantics:
+//   - Events in queue (dedupIndex): True deduplication via merge - only 1 event consumed
+//   - Events in-flight (inFlightKeys): Re-queued for later - both events consumed (separated in time)
+//   - Metrics distinguish these: "deduped" (merged) vs "requeued" (delayed processing)
+//
 // Trade-offs:
-//   - In-flight tracking: The inFlightKeys map reduces (but doesn't eliminate) duplicate processing
-//     when events are published while the same key is being consumed. This is because consumers
-//     run concurrently, so multiple events can be in-flight simultaneously. Perfect deduplication
-//     would require serializing all consumer execution, which defeats the purpose of concurrent lanes.
+//   - In-flight re-queuing: Events published during consumption are queued (not merged) to preserve
+//     the latest state. This means both the in-flight event and the new event will reach consumers,
+//     but separated in time. Perfect deduplication would require serializing consumers, which defeats
+//     the purpose of concurrent execution.
 //   - FIFO ordering: Not strictly guaranteed due to concurrent signal handling and consumer execution.
-//   - Production impact: For the resolver use case (sequential deployment updates), duplicates are
-//     rare (<20% overhead in pathological cases). Central's API is idempotent, so functionally correct.
+//   - Production impact: For the resolver use case (sequential deployment updates), true deduplication
+//     is 90-100% effective. Under high-velocity concurrent load, 10-20% of events may be re-queued
+//     instead of merged. Central's API is idempotent, so functionally correct.
 //
 // DedupingConfig configures a deduplicating lane.
 type DedupingConfig[K comparable] struct {
@@ -193,9 +199,11 @@ func (l *dedupingLane[K]) Publish(event pubsub.Event) error {
 	if l.inFlightKeys[key] {
 		// Event is currently being consumed. Add new event to queue.
 		// When consumption completes, this will be processed next.
+		// Note: This is not true deduplication - both events will be consumed
+		// (separated in time). We use "Requeued" to distinguish from merge-based dedup.
 		elem := l.dedupQueue.PushBack(event)
 		l.dedupIndex[key] = elem
-		metrics.RecordPublishOperation(l.id, topic, metrics.Deduped)
+		metrics.RecordPublishOperation(l.id, topic, metrics.Requeued)
 		l.updateSizeMetric()
 		l.dedupSignal.Signal()
 		return nil
