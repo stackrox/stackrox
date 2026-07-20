@@ -53,6 +53,7 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     scanName={scanConfig.scanName}
                     description={scanConfig.scanConfig.description}
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
+                    nodeRoles={scanConfig.scanConfig.nodeRoles}
                 >
                     <DescriptionListGroup>
                         <DescriptionListTerm>Last scanned</DescriptionListTerm>
