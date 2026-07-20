@@ -4,37 +4,45 @@ import (
 	"errors"
 	"io/fs"
 	"maps"
-	"os"
 	"slices"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/internal/hostprobe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 )
 
 // logFilesystemDiagnostics logs a compact summary of host filesystem facts
 // (DNF version, entitlement certificates, repo files) that are useful for
 // debugging scan issues, regardless of whether the report ends up empty.
-func logFilesystemDiagnostics(hostPath string) {
-	switch hostprobe.DetectDNFVersion(hostPath) {
-	case hostprobe.DNFVersion5:
+//
+// DNF version and entitlement status are read from d, the DiscoveredData
+// scanWithDiagnostics already computed for this same hostPath - reprobing
+// them here would just repeat, on every scan and rescan, filesystem checks
+// discovery.DiscoverVMData already did. Repo-file presence is the one fact
+// still probed directly: DiscoveredData only carries a found/not-found
+// flag, not the reason (missing dir vs. unreadable vs. empty) that
+// logRepoError distinguishes for debugging "0 repositories" issues.
+func logFilesystemDiagnostics(hostPath string, d *v1.DiscoveredData) {
+	switch {
+	case slices.Contains(d.GetDnfStatus(), v1.DnfStatusFlag_DNF_V5_HISTORY_DB_FOUND):
 		log.Info("DNF history DB (v5) found")
-	case hostprobe.DNFVersion4:
+	case slices.Contains(d.GetDnfStatus(), v1.DnfStatusFlag_DNF_V4_HISTORY_DB_FOUND):
 		log.Info("DNF history DB (v4) found")
 	default:
 		log.Warn("DNF history DB not found!")
 	}
 
-	hasEntitlement, err := hostprobe.HasEntitlementCertKeyPair(hostPath)
-	if err != nil {
-		log.Warnf("Entitlement certificates not found: %v", err)
-	} else if !hasEntitlement {
-		log.Warn("Entitlement certificates not found")
-	} else {
+	switch d.GetActivationStatus() {
+	case v1.ActivationStatus_ACTIVE:
 		log.Info("Entitlement certificates found")
+	case v1.ActivationStatus_INACTIVE:
+		log.Warn("Entitlement certificates not found")
+	default:
+		log.Warn("Entitlement certificate status could not be determined")
 	}
 
 	allReposDirs := append(slices.Clone(hostprobe.DNF4ReposDirs), hostprobe.DNF5ReposDirPath)
-	hasRepo, err := hostprobe.HasAnyRepoFile(os.DirFS(hostPath), allReposDirs)
+	hasRepo, err := hostprobe.HasAnyRepoFileAt(hostPath, allReposDirs)
 	if err != nil {
 		logRepoError(err)
 		return

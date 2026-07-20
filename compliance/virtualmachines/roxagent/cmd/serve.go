@@ -124,11 +124,11 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	cache := &vsockserver.ReportCache{}
 	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
 
-	report, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
+	report, facts, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
+	cache.SetReport(report, facts)
 	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
 
 	handler := vsockserver.NewHandler(cache, agentVersion)
@@ -174,17 +174,23 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 // in push mode, so scan issues (e.g. "0 packages" or "0 repositories") can be
 // triaged from agent logs regardless of transport mode. Used for both the
 // initial scan and every periodic rescan (see newRescanner's scanFn).
-func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
+//
+// DiscoveredData is computed once here and returned as facts alongside the
+// report, rather than left for the caller to recompute via discoverFacts:
+// that would probe the same filesystem facts (DNF version, entitlement)
+// this function already probed for logFilesystemDiagnostics.
+func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, map[string]string, error) {
 	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
-	logFilesystemDiagnostics(hostPath)
+	d := discovery.DiscoverVMData(hostPath)
+	logFilesystemDiagnostics(hostPath, d)
 
 	report, err := scan(ctx, hostPath, mappingFilePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	logIndexReportDiagnostics(report)
-	return report, nil
+	return report, discoveredDataFacts(d), nil
 }
 
 // scan indexes the VM filesystem at hostPath, consulting the
@@ -202,8 +208,16 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 	return index.NewNodeIndexer(cfg).IndexNode(ctx)
 }
 
+// discoverFacts probes hostPath for DiscoveredData and converts it to the
+// flat string map cache.SetReport expects. scanWithDiagnostics does not call
+// this: it already has DiscoveredData in hand from its own diagnostics
+// logging and converts it directly via discoveredDataFacts, so as not to
+// probe the filesystem a second time for the same facts.
 func discoverFacts(hostPath string) map[string]string {
-	d := discovery.DiscoverVMData(hostPath)
+	return discoveredDataFacts(discovery.DiscoverVMData(hostPath))
+}
+
+func discoveredDataFacts(d *v1.DiscoveredData) map[string]string {
 	return map[string]string{
 		"detected_os":         d.GetDetectedOs().String(),
 		"os_version":          d.GetOsVersion(),
