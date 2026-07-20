@@ -16,6 +16,10 @@ on:
         required: false
         type: string
       cluster-provisioning-method:
+        # direct-gke: cluster is created synchronously inside the qa-e2e-tests job.
+        # infra: cluster creation is triggered asynchronously in a separate job
+        #   (cluster-pre-test) so it overlaps with the early setup steps of qa-e2e-tests,
+        #   which then waits for the cluster to be ready before running tests.
         description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
         type: string
         default: "direct-gke"
@@ -78,7 +82,8 @@ defaults:
     shell: bash
 
 jobs:
-  create-cluster:
+  cluster-pre-test:
+    if: inputs.cluster-provisioning-method == 'infra'
     runs-on: ubuntu-slim
     outputs:
       cluster-name: ${{ steps.cluster-name.outputs.name }}
@@ -113,7 +118,7 @@ jobs:
           args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
           echo "args=$args" >> "$GITHUB_OUTPUT"
 
-      - name: Trigger cluster creation
+      - name: Trigger cluster creation via infra
         uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -124,10 +129,14 @@ jobs:
           wait: false
 
   qa-e2e-tests:
-    needs: [create-cluster]
+    # cluster-pre-test is skipped for direct-gke provisioning. A skipped
+    # dependency is neither a failure nor a cancellation, so the condition
+    # below lets this job proceed when cluster-pre-test was skipped (direct-gke)
+    # or succeeded (infra), but blocks it on failure or cancellation.
+    needs: [cluster-pre-test]
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-latest
     env:
-      CLUSTER_NAME: ${{ needs.create-cluster.outputs.cluster-name }}
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ inputs.ci-job-name }}
@@ -152,6 +161,33 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      # CLUSTER_NAME is set by one of two paths depending on provisioning method:
+      # - infra: from cluster-pre-test output (here)
+      # - direct-gke: from gke.sh's ci_export inside provision_gke_cluster (below)
+      - name: Set cluster name (infra)
+        if: inputs.cluster-provisioning-method == 'infra'
+        run: echo "CLUSTER_NAME=${{ needs.cluster-pre-test.outputs.cluster-name }}" >> "$GITHUB_ENV"
+
+      - name: Set up Cloud SDK
+        if: |
+          inputs.cluster-provisioning-method == 'direct-gke' ||
+          startsWith(inputs.infra-flavor, 'gke')
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
+      - name: Create cluster via direct-gke
+        if: inputs.cluster-provisioning-method == 'direct-gke'
+        timeout-minutes: 20
+        env:
+          MACHINE_TYPE: "${{ inputs.gke-machine-type }}"
+          NUM_NODES: "${{ inputs.gke-num-nodes }}"
+          GKE_SPOT: "${{ inputs.gke-spot }}"
+        run: |
+          source scripts/ci/gke.sh
+          provision_gke_cluster "${{ inputs.ci-job-short-name || inputs.ci-job-name }}"
+          echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+
       - name: Docker login to Quay.io
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -167,12 +203,6 @@ jobs:
               echo "$line" >> "$GITHUB_ENV"
             fi
           done <<< "$EXTRA_ENV_VARS"
-
-      - name: Set up Cloud SDK
-        if: startsWith(inputs.infra-flavor, 'gke')
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-        with:
-          install_components: "gke-gcloud-auth-plugin"
 
       - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
 
@@ -193,7 +223,8 @@ jobs:
             | tar xz -C /usr/local/bin oc
           oc version --client
 
-      - name: Wait for cluster and get kubeconfig
+      - name: Wait for infra cluster and get kubeconfig
+        if: inputs.cluster-provisioning-method == 'infra'
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
@@ -201,6 +232,15 @@ jobs:
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
           echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      # gcloud container clusters create is synchronous, so the cluster is
+      # already RUNNING at this point. wait_for_cluster provides additional
+      # guarantees by polling until all kube-system pods are ready.
+      - name: Wait for direct-gke cluster to stabilize
+        if: inputs.cluster-provisioning-method == 'direct-gke'
+        run: |
+          source scripts/ci/gke.sh
+          wait_for_cluster
 
       - name: Verify kubectl access
         run: |
@@ -355,21 +395,32 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
           directory: ${{ env.ARTIFACT_DIR }}
 
-  delete-cluster:
-    if: ${{ always() }}
-    needs: [create-cluster, qa-e2e-tests]
-    runs-on: ubuntu-slim
-    env:
-      CLUSTER_NAME: ${{ needs.create-cluster.outputs.cluster-name }}
-    steps:
-      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+      # CLUSTER_NAME is set before cluster creation, so it may be non-empty
+      # even when creation ultimately failed. We intentionally attempt teardown
+      # here anyway, just in case a cluster has been provisioned even though
+      # a failure during cluster creation has been surfaced.
+      - name: Delete cluster via direct-gke
+        if: always() && inputs.cluster-provisioning-method == 'direct-gke'
+        continue-on-error: true
+        run: |
+          if [[ -z "${CLUSTER_NAME:-}" ]]; then
+            echo "No cluster to teardown"
+            exit 0
+          fi
+          source scripts/ci/gke.sh
+          if ! teardown_gke_cluster false; then
+            echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+            exit 6
+          fi
 
-      - name: Delete cluster
+      - name: Delete cluster via infra
+        if: always() && inputs.cluster-provisioning-method == 'infra'
+        continue-on-error: true
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
-          if [[ "${{ needs.create-cluster.result }}" == "success" ]]; then
+          if [[ "${{ needs.cluster-pre-test.result }}" == "success" ]]; then
             infractl delete "${CLUSTER_NAME}"
           else
-            echo "create-cluster job did not succeed; nothing to delete"
+            echo "cluster-pre-test job did not succeed; nothing to delete"
           fi
