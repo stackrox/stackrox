@@ -1,6 +1,8 @@
 package filedownloader
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -8,6 +10,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -145,7 +148,7 @@ func TestOnCompleteCallback(t *testing.T) {
 		}),
 	)
 
-	d.download(t.Context())
+	require.NoError(t, d.DownloadOnce(t.Context()))
 	assert.NoError(t, gotErr)
 	assert.Greater(t, gotDuration, time.Duration(0))
 }
@@ -167,7 +170,7 @@ func TestOnCompleteCallbackOnError(t *testing.T) {
 		}),
 	)
 
-	d.download(t.Context())
+	assert.Error(t, d.DownloadOnce(t.Context()))
 	assert.Error(t, gotErr)
 	assert.Contains(t, gotErr.Error(), "503")
 }
@@ -215,4 +218,111 @@ func TestAtomicWriteFile(t *testing.T) {
 	info, err := os.Stat(path)
 	require.NoError(t, err)
 	assert.Equal(t, os.FileMode(0600), info.Mode().Perm())
+}
+
+// roundTripperFunc adapts a function to http.RoundTripper, letting tests
+// simulate HTTP responses (including transient failures) with no real
+// network I/O, which keeps retry/backoff tests fast and safe to run inside
+// a synctest bubble.
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestWithRetryPolicy_DefaultsToSingleAttempt(t *testing.T) {
+	d := New("http://example.com", "/tmp/test", time.Hour)
+	assert.Equal(t, 1, d.retryMaxAttempts)
+}
+
+func TestWithRetryPolicy_OverridesAttemptsAndBackoff(t *testing.T) {
+	d := New("http://example.com", "/tmp/test", time.Hour, WithRetryPolicy(3, 2*time.Second))
+	assert.Equal(t, 3, d.retryMaxAttempts)
+	assert.Equal(t, 2*time.Second, d.retryBaseBackoff)
+}
+
+func TestWithRetryPolicy_PanicsOnMaxAttemptsBelowOne(t *testing.T) {
+	assert.Panics(t, func() { WithRetryPolicy(0, time.Second) })
+	assert.Panics(t, func() { WithRetryPolicy(-1, time.Second) })
+}
+
+func TestWithRetryPolicy_PanicsOnNegativeBaseBackoff(t *testing.T) {
+	assert.Panics(t, func() { WithRetryPolicy(3, -time.Second) })
+}
+
+func TestWithRetryPolicy_AllowsZeroBaseBackoff(t *testing.T) {
+	d := New("http://example.com", "/tmp/test", time.Hour, WithRetryPolicy(3, 0))
+	assert.Equal(t, time.Duration(0), d.retryBaseBackoff)
+}
+
+func TestDownloadOnce_RetriesOnTransientFailureThenSucceeds(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var calls atomic.Int32
+		client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			if calls.Add(1) <= 2 {
+				return &http.Response{StatusCode: http.StatusInternalServerError, Body: http.NoBody}, nil
+			}
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
+		})}
+
+		filePath := filepath.Join(t.TempDir(), "data.json")
+		d := New("http://example.invalid/mapping.json", filePath, time.Hour,
+			WithHTTPClient(client),
+			WithRetryPolicy(3, 2*time.Second),
+		)
+
+		require.NoError(t, d.DownloadOnce(t.Context()))
+		assert.Equal(t, int32(3), calls.Load())
+
+		data, err := os.ReadFile(filePath)
+		require.NoError(t, err)
+		assert.Equal(t, "ok", string(data))
+	})
+}
+
+func TestDownloadOnce_ExhaustsRetriesAndReturnsError(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var calls atomic.Int32
+		client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			calls.Add(1)
+			return &http.Response{StatusCode: http.StatusInternalServerError, Body: http.NoBody}, nil
+		})}
+
+		filePath := filepath.Join(t.TempDir(), "data.json")
+		d := New("http://example.invalid/mapping.json", filePath, time.Hour,
+			WithHTTPClient(client),
+			WithRetryPolicy(3, time.Millisecond),
+		)
+
+		err := d.DownloadOnce(t.Context())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "after 3 attempts", "should say how many attempts were made, not just the last error")
+		assert.Equal(t, int32(3), calls.Load(), "should stop after retryMaxAttempts")
+	})
+}
+
+func TestDownloadOnce_StopsRetryingPromptlyWhenContextCancelledDuringBackoff(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		var calls atomic.Int32
+		client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			calls.Add(1)
+			return &http.Response{StatusCode: http.StatusInternalServerError, Body: http.NoBody}, nil
+		})}
+
+		filePath := filepath.Join(t.TempDir(), "data.json")
+		d := New("http://example.invalid/mapping.json", filePath, time.Hour,
+			WithHTTPClient(client),
+			WithRetryPolicy(3, 2*time.Second),
+		)
+
+		ctx, cancel := context.WithCancel(t.Context())
+		go func() {
+			time.Sleep(10 * time.Millisecond) // fires well before the 2s backoff elapses
+			cancel()
+		}()
+
+		err := d.DownloadOnce(ctx)
+		assert.ErrorIs(t, err, context.Canceled)
+		assert.Equal(t, int32(1), calls.Load(), "should not attempt a retry once ctx is observed cancelled during backoff")
+	})
 }

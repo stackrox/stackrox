@@ -13,13 +13,15 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	pkgRetryableHTTP "github.com/stackrox/rox/pkg/retryablehttp"
 )
 
 const (
-	defaultMaxSize        = 5 * 1024 * 1024 // 5 MB
-	defaultRequestTimeout = 60 * time.Second
-	minInterval           = 5 * time.Minute
+	defaultMaxSize          = 5 * 1024 * 1024 // 5 MB
+	defaultRequestTimeout   = 60 * time.Second
+	minInterval             = 5 * time.Minute
+	defaultRetryMaxAttempts = 1
 )
 
 var log = logging.LoggerForModule()
@@ -42,22 +44,54 @@ func WithRequestTimeout(t time.Duration) Option {
 	return func(d *Downloader) { d.requestTimeout = t }
 }
 
-// WithOnComplete sets a callback invoked after each download attempt.
+// WithOnComplete sets a callback invoked once per DownloadOnce call (not once
+// per retry attempt), with the cumulative duration of that call.
 func WithOnComplete(fn func(err error, duration time.Duration)) Option {
 	return func(d *Downloader) { d.onComplete = fn }
 }
 
+// WithRetryPolicy configures DownloadOnce to retry a failed attempt up to
+// maxAttempts total attempts (including the first), waiting baseBackoff
+// before the first retry and doubling the wait after each subsequent
+// failure. The wait is ctx-aware: cancellation during it aborts immediately
+// rather than completing the full backoff.
+//
+// Defaults to maxAttempts=1, i.e. no added retry layer beyond whatever
+// http.Client is configured (WithHTTPClient). Combining a retrying
+// http.Client (the default) with maxAttempts > 1 nests two retry policies
+// and can multiply worst-case latency; callers that want WithRetryPolicy to
+// be the only retry layer should also pass a non-retrying WithHTTPClient.
+//
+// Panics if maxAttempts < 1 or baseBackoff < 0. Every call site in this
+// codebase passes compile-time literals, so an invalid value is a
+// programmer error that should fail loudly at startup, not a runtime
+// condition to clamp or degrade gracefully from.
+func WithRetryPolicy(maxAttempts int, baseBackoff time.Duration) Option {
+	if maxAttempts < 1 {
+		panic(fmt.Sprintf("filedownloader: WithRetryPolicy: maxAttempts must be >= 1, got %d", maxAttempts))
+	}
+	if baseBackoff < 0 {
+		panic(fmt.Sprintf("filedownloader: WithRetryPolicy: baseBackoff must be >= 0, got %v", baseBackoff))
+	}
+	return func(d *Downloader) {
+		d.retryMaxAttempts = maxAttempts
+		d.retryBaseBackoff = baseBackoff
+	}
+}
+
 // Downloader periodically downloads a URL to a local file using atomic writes.
 type Downloader struct {
-	url            string
-	filePath       string
-	interval       time.Duration
-	client         *http.Client
-	maxSize        int64
-	requestTimeout time.Duration
-	onComplete     func(err error, duration time.Duration)
-	stopSig        concurrency.Signal
-	doneSig        concurrency.Signal
+	url              string
+	filePath         string
+	interval         time.Duration
+	client           *http.Client
+	maxSize          int64
+	requestTimeout   time.Duration
+	onComplete       func(err error, duration time.Duration)
+	retryMaxAttempts int
+	retryBaseBackoff time.Duration
+	stopSig          concurrency.Signal
+	doneSig          concurrency.Signal
 }
 
 // New creates a Downloader that periodically fetches url and writes the response to filePath.
@@ -72,14 +106,15 @@ func New(url, filePath string, interval time.Duration, opts ...Option) *Download
 	retryClient.HTTPClient.Transport = proxy.RoundTripper()
 
 	d := &Downloader{
-		url:            url,
-		filePath:       filePath,
-		interval:       interval,
-		client:         retryClient.StandardClient(),
-		maxSize:        defaultMaxSize,
-		requestTimeout: defaultRequestTimeout,
-		stopSig:        concurrency.NewSignal(),
-		doneSig:        concurrency.NewSignal(),
+		url:              url,
+		filePath:         filePath,
+		interval:         interval,
+		client:           retryClient.StandardClient(),
+		maxSize:          defaultMaxSize,
+		requestTimeout:   defaultRequestTimeout,
+		retryMaxAttempts: defaultRetryMaxAttempts,
+		stopSig:          concurrency.NewSignal(),
+		doneSig:          concurrency.NewSignal(),
 	}
 	for _, o := range opts {
 		o(d)
@@ -105,6 +140,11 @@ func (d *Downloader) run() {
 	ctx, cancel := concurrency.DependentContext(context.Background(), &d.stopSig)
 	defer cancel()
 
+	// Checked upfront, in addition to atomicWriteFile's own MkdirAll: a
+	// persistent directory problem then aborts the whole loop immediately
+	// via onComplete, before ever attempting a network request, instead of
+	// only surfacing once the first tick's write fails after an already
+	// completed (and wasted) HTTP round trip.
 	if err := os.MkdirAll(filepath.Dir(d.filePath), 0700); err != nil {
 		mkdirErr := fmt.Errorf("creating directory for %q: %w", d.filePath, err)
 		log.Errorf("Downloader will not run: %v", mkdirErr)
@@ -114,33 +154,109 @@ func (d *Downloader) run() {
 		return
 	}
 
-	d.download(ctx)
+	_ = d.DownloadOnce(ctx)
+	d.tickLoop(ctx)
+}
 
+// Run blocks, downloading roughly every interval, until ctx is done, then
+// returns ctx.Err(). Each wait is measured from the end of the previous
+// download attempt, not a fixed wall-clock cadence, so a slow or retried
+// download pushes the next attempt later by its own duration instead of
+// overlapping with it. Unlike Start, Run performs no download on entry:
+// pair Run with an explicit DownloadOnce call for a mandatory, blocking
+// first fetch (e.g. to gate a caller's own startup on it) before starting
+// the periodic loop.
+//
+// Run is an alternative to Start/Stop for callers whose lifecycle is
+// already expressed as a single ctx (e.g. one goroutine among several
+// tracked by an errgroup); don't mix Run with Start/Stop on the same
+// Downloader.
+func (d *Downloader) Run(ctx context.Context) error {
+	d.tickLoop(ctx)
+	return ctx.Err()
+}
+
+// tickLoop downloads once per interval until ctx is done, timing each wait
+// from the end of the previous download rather than a fixed schedule (see
+// Run's doc comment). It is the shared periodic-download loop behind both
+// Start (via run) and Run.
+func (d *Downloader) tickLoop(ctx context.Context) {
 	t := time.NewTimer(d.interval)
 	defer t.Stop()
 	for {
 		select {
 		case <-t.C:
-			d.download(ctx)
+			_ = d.DownloadOnce(ctx)
 			t.Reset(d.interval)
-		case <-d.stopSig.Done():
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (d *Downloader) download(ctx context.Context) {
-	ctx, cancel := context.WithTimeout(ctx, d.requestTimeout)
-	defer cancel()
-
+// DownloadOnce performs a single logical download: it fetches url and
+// atomically publishes the result to filePath, retrying according to the
+// configured WithRetryPolicy (a single attempt by default), and returns the
+// outcome. WithOnComplete's callback, if configured, is invoked once for
+// the whole operation (not once per retry attempt) with the cumulative
+// duration; otherwise a failure is logged.
+//
+// Callers needing a mandatory, error-returning first fetch - e.g. to gate
+// their own startup on it - call DownloadOnce directly before starting the
+// periodic loop via Start or Run.
+func (d *Downloader) DownloadOnce(ctx context.Context) error {
 	start := time.Now()
-	err := d.doDownload(ctx)
+	err := d.downloadWithRetry(ctx)
 	duration := time.Since(start)
 	if d.onComplete != nil {
 		d.onComplete(err, duration)
 	} else if err != nil {
 		log.Warnf("Download of %q failed: %v", d.url, err)
 	}
+	return err
+}
+
+// downloadWithRetry runs downloadAttempt under the configured retry policy:
+// a single attempt by default, or up to retryMaxAttempts attempts with
+// exponential backoff starting at retryBaseBackoff between failures. With
+// no retries configured (the default), downloadAttempt's error is returned
+// unwrapped. With retries configured, an error means every attempt failed,
+// so it's wrapped with the attempt count - letting callers and logs tell
+// "retries exhausted" apart from "the one and only attempt failed".
+func (d *Downloader) downloadWithRetry(ctx context.Context) error {
+	if d.retryMaxAttempts <= 1 {
+		return d.downloadAttempt(ctx)
+	}
+
+	attempt := 0
+	backoff := d.retryBaseBackoff
+	err := retry.WithRetry(func() error { return d.downloadAttempt(ctx) },
+		retry.Tries(d.retryMaxAttempts),
+		retry.WithContext(ctx),
+		retry.OnFailedAttempts(func(err error) {
+			attempt++
+			log.Warnf("Download of %q failed (attempt %d/%d): %v; retrying in %v",
+				d.url, attempt, d.retryMaxAttempts, err, backoff)
+		}),
+		retry.BetweenAttempts(func(int) {
+			select {
+			case <-ctx.Done():
+			case <-time.After(backoff):
+			}
+			backoff *= 2
+		}),
+	)
+	if err != nil {
+		return fmt.Errorf("after %d attempts: %w", d.retryMaxAttempts, err)
+	}
+	return nil
+}
+
+// downloadAttempt bounds a single doDownload call by d.requestTimeout.
+func (d *Downloader) downloadAttempt(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, d.requestTimeout)
+	defer cancel()
+	return d.doDownload(ctx)
 }
 
 // doDownload performs a single download attempt with atomic file write.
