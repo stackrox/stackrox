@@ -337,3 +337,74 @@ func TestDownloadOnce_StopsRetryingPromptlyWhenContextCancelledDuringBackoff(t *
 		assert.Equal(t, int32(1), calls.Load(), "should not attempt a retry once ctx is observed cancelled during backoff")
 	})
 }
+
+func TestRun(t *testing.T) {
+	t.Run("should not download immediately, unlike Start", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			var calls atomic.Int32
+			client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+				calls.Add(1)
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
+			})}
+			d := New("http://example.invalid/mapping.json", filepath.Join(t.TempDir(), "data.json"), minInterval,
+				WithHTTPClient(client),
+			)
+
+			ctx, cancel := context.WithCancel(t.Context())
+			done := make(chan error, 1)
+			go func() { done <- d.Run(ctx) }()
+			defer func() {
+				cancel()
+				<-done
+			}()
+			synctest.Wait() // Run is blocked waiting for the first tick
+
+			assert.Equal(t, int32(0), calls.Load())
+		})
+	})
+
+	t.Run("should download on each tick", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			var calls atomic.Int32
+			client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+				calls.Add(1)
+				return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
+			})}
+			d := New("http://example.invalid/mapping.json", filepath.Join(t.TempDir(), "data.json"), minInterval,
+				WithHTTPClient(client),
+			)
+
+			ctx, cancel := context.WithCancel(t.Context())
+			done := make(chan error, 1)
+			go func() { done <- d.Run(ctx) }()
+			defer func() {
+				cancel()
+				<-done
+			}()
+			synctest.Wait()
+
+			time.Sleep(minInterval)
+			synctest.Wait()
+			assert.Equal(t, int32(1), calls.Load())
+
+			time.Sleep(minInterval)
+			synctest.Wait()
+			assert.Equal(t, int32(2), calls.Load(), "should download again on the next tick")
+		})
+	})
+
+	t.Run("should stop promptly when the context is cancelled and return ctx.Err()", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			d := New("http://example.invalid/mapping.json", filepath.Join(t.TempDir(), "data.json"), minInterval)
+
+			ctx, cancel := context.WithCancel(t.Context())
+			done := make(chan error, 1)
+			go func() { done <- d.Run(ctx) }()
+			synctest.Wait()
+
+			cancel()
+			err := <-done
+			assert.ErrorIs(t, err, context.Canceled)
+		})
+	})
+}
