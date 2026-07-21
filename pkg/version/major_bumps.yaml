@@ -1,0 +1,9 @@
+# Major version transitions in the product's release history.
+# Maintained on master; embedded in Central, Sensor, and roxctl at build time.
+# Each entry records the last minor release before a major version bump
+# and the first release of the new major version.
+bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"

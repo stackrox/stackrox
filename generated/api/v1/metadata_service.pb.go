@@ -79,7 +79,7 @@ func (x Metadata_LicenseStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Metadata_LicenseStatus.Descriptor instead.
 func (Metadata_LicenseStatus) EnumDescriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{0, 0}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{1, 0}
 }
 
 type DatabaseStatus_DatabaseType int32
@@ -128,7 +128,7 @@ func (x DatabaseStatus_DatabaseType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DatabaseStatus_DatabaseType.Descriptor instead.
 func (DatabaseStatus_DatabaseType) EnumDescriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{4, 0}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{5, 0}
 }
 
 type CentralServicesCapabilities_CapabilityStatus int32
@@ -180,7 +180,61 @@ func (x CentralServicesCapabilities_CapabilityStatus) Number() protoreflect.Enum
 
 // Deprecated: Use CentralServicesCapabilities_CapabilityStatus.Descriptor instead.
 func (CentralServicesCapabilities_CapabilityStatus) EnumDescriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6, 0}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{7, 0}
+}
+
+type MajorVersionBump struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Last minor release before the bump (e.g., "3.74").
+	FromVersion string `protobuf:"bytes,1,opt,name=from_version,json=fromVersion,proto3" json:"from_version,omitempty"`
+	// First release of the new major version (e.g., "4.0").
+	ToVersion     string `protobuf:"bytes,2,opt,name=to_version,json=toVersion,proto3" json:"to_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MajorVersionBump) Reset() {
+	*x = MajorVersionBump{}
+	mi := &file_api_v1_metadata_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MajorVersionBump) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MajorVersionBump) ProtoMessage() {}
+
+func (x *MajorVersionBump) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_metadata_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MajorVersionBump.ProtoReflect.Descriptor instead.
+func (*MajorVersionBump) Descriptor() ([]byte, []int) {
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *MajorVersionBump) GetFromVersion() string {
+	if x != nil {
+		return x.FromVersion
+	}
+	return ""
+}
+
+func (x *MajorVersionBump) GetToVersion() string {
+	if x != nil {
+		return x.ToVersion
+	}
+	return ""
 }
 
 type Metadata struct {
@@ -192,13 +246,17 @@ type Metadata struct {
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
 	LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,proto3,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Known major version bumps in the product's release history.
+	// Clients (roxctl, Sensor) embed their own copy of this data;
+	// the union of both sets gives the most accurate version-range computation.
+	KnownMajorBumps []*MajorVersionBump `protobuf:"bytes,5,rep,name=known_major_bumps,json=knownMajorBumps,proto3" json:"known_major_bumps,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
 	*x = Metadata{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[0]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +268,7 @@ func (x *Metadata) String() string {
 func (*Metadata) ProtoMessage() {}
 
 func (x *Metadata) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[0]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +281,7 @@ func (x *Metadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Metadata.ProtoReflect.Descriptor instead.
 func (*Metadata) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{0}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *Metadata) GetVersion() string {
@@ -255,6 +313,13 @@ func (x *Metadata) GetLicenseStatus() Metadata_LicenseStatus {
 	return Metadata_NONE
 }
 
+func (x *Metadata) GetKnownMajorBumps() []*MajorVersionBump {
+	if x != nil {
+		return x.KnownMajorBumps
+	}
+	return nil
+}
+
 type TrustInfo struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// holds the certificate chain held by Central
@@ -273,7 +338,7 @@ type TrustInfo struct {
 
 func (x *TrustInfo) Reset() {
 	*x = TrustInfo{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[1]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -285,7 +350,7 @@ func (x *TrustInfo) String() string {
 func (*TrustInfo) ProtoMessage() {}
 
 func (x *TrustInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[1]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -298,7 +363,7 @@ func (x *TrustInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TrustInfo.ProtoReflect.Descriptor instead.
 func (*TrustInfo) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{1}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TrustInfo) GetCertChain() [][]byte {
@@ -350,7 +415,7 @@ type TLSChallengeResponse struct {
 
 func (x *TLSChallengeResponse) Reset() {
 	*x = TLSChallengeResponse{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[2]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +427,7 @@ func (x *TLSChallengeResponse) String() string {
 func (*TLSChallengeResponse) ProtoMessage() {}
 
 func (x *TLSChallengeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[2]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,7 +440,7 @@ func (x *TLSChallengeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TLSChallengeResponse.ProtoReflect.Descriptor instead.
 func (*TLSChallengeResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{2}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *TLSChallengeResponse) GetTrustInfoSerialized() []byte {
@@ -409,7 +474,7 @@ type TLSChallengeRequest struct {
 
 func (x *TLSChallengeRequest) Reset() {
 	*x = TLSChallengeRequest{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[3]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -421,7 +486,7 @@ func (x *TLSChallengeRequest) String() string {
 func (*TLSChallengeRequest) ProtoMessage() {}
 
 func (x *TLSChallengeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[3]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -434,7 +499,7 @@ func (x *TLSChallengeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TLSChallengeRequest.ProtoReflect.Descriptor instead.
 func (*TLSChallengeRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{3}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TLSChallengeRequest) GetChallengeToken() string {
@@ -459,7 +524,7 @@ type DatabaseStatus struct {
 
 func (x *DatabaseStatus) Reset() {
 	*x = DatabaseStatus{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[4]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -471,7 +536,7 @@ func (x *DatabaseStatus) String() string {
 func (*DatabaseStatus) ProtoMessage() {}
 
 func (x *DatabaseStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[4]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -484,7 +549,7 @@ func (x *DatabaseStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DatabaseStatus.ProtoReflect.Descriptor instead.
 func (*DatabaseStatus) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{4}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DatabaseStatus) GetDatabaseAvailable() bool {
@@ -524,7 +589,7 @@ type DatabaseBackupStatus struct {
 
 func (x *DatabaseBackupStatus) Reset() {
 	*x = DatabaseBackupStatus{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[5]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +601,7 @@ func (x *DatabaseBackupStatus) String() string {
 func (*DatabaseBackupStatus) ProtoMessage() {}
 
 func (x *DatabaseBackupStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[5]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +614,7 @@ func (x *DatabaseBackupStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DatabaseBackupStatus.ProtoReflect.Descriptor instead.
 func (*DatabaseBackupStatus) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{5}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DatabaseBackupStatus) GetBackupInfo() *storage.BackupInfo {
@@ -585,7 +650,7 @@ type CentralServicesCapabilities struct {
 
 func (x *CentralServicesCapabilities) Reset() {
 	*x = CentralServicesCapabilities{}
-	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -597,7 +662,7 @@ func (x *CentralServicesCapabilities) String() string {
 func (*CentralServicesCapabilities) ProtoMessage() {}
 
 func (x *CentralServicesCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_metadata_service_proto_msgTypes[6]
+	mi := &file_api_v1_metadata_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -610,7 +675,7 @@ func (x *CentralServicesCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CentralServicesCapabilities.ProtoReflect.Descriptor instead.
 func (*CentralServicesCapabilities) Descriptor() ([]byte, []int) {
-	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{6}
+	return file_api_v1_metadata_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CentralServicesCapabilities) GetCentralScanningCanUseContainerIamRoleForEcr() CentralServicesCapabilities_CapabilityStatus {
@@ -652,12 +717,17 @@ var File_api_v1_metadata_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"\x93\x02\n" +
+	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"T\n" +
+	"\x10MajorVersionBump\x12!\n" +
+	"\ffrom_version\x18\x01 \x01(\tR\vfromVersion\x12\x1d\n" +
+	"\n" +
+	"to_version\x18\x02 \x01(\tR\ttoVersion\"\xd5\x02\n" +
 	"\bMetadata\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12!\n" +
 	"\fbuild_flavor\x18\x02 \x01(\tR\vbuildFlavor\x12#\n" +
 	"\rrelease_build\x18\x03 \x01(\bR\freleaseBuild\x12E\n" +
-	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\"^\n" +
+	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\x12@\n" +
+	"\x11known_major_bumps\x18\x05 \x03(\v2\x14.v1.MajorVersionBumpR\x0fknownMajorBumps\"^\n" +
 	"\rLicenseStatus\x12\f\n" +
 	"\x04NONE\x10\x00\x1a\x02\b\x01\x12\x0f\n" +
 	"\aINVALID\x10\x01\x1a\x02\b\x01\x12\x0f\n" +
@@ -722,45 +792,47 @@ func file_api_v1_metadata_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_metadata_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_api_v1_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_api_v1_metadata_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_api_v1_metadata_service_proto_goTypes = []any{
 	(Metadata_LicenseStatus)(0),                       // 0: v1.Metadata.LicenseStatus
 	(DatabaseStatus_DatabaseType)(0),                  // 1: v1.DatabaseStatus.DatabaseType
 	(CentralServicesCapabilities_CapabilityStatus)(0), // 2: v1.CentralServicesCapabilities.CapabilityStatus
-	(*Metadata)(nil),                                  // 3: v1.Metadata
-	(*TrustInfo)(nil),                                 // 4: v1.TrustInfo
-	(*TLSChallengeResponse)(nil),                      // 5: v1.TLSChallengeResponse
-	(*TLSChallengeRequest)(nil),                       // 6: v1.TLSChallengeRequest
-	(*DatabaseStatus)(nil),                            // 7: v1.DatabaseStatus
-	(*DatabaseBackupStatus)(nil),                      // 8: v1.DatabaseBackupStatus
-	(*CentralServicesCapabilities)(nil),               // 9: v1.CentralServicesCapabilities
-	(*storage.BackupInfo)(nil),                        // 10: storage.BackupInfo
-	(*Empty)(nil),                                     // 11: v1.Empty
+	(*MajorVersionBump)(nil),                          // 3: v1.MajorVersionBump
+	(*Metadata)(nil),                                  // 4: v1.Metadata
+	(*TrustInfo)(nil),                                 // 5: v1.TrustInfo
+	(*TLSChallengeResponse)(nil),                      // 6: v1.TLSChallengeResponse
+	(*TLSChallengeRequest)(nil),                       // 7: v1.TLSChallengeRequest
+	(*DatabaseStatus)(nil),                            // 8: v1.DatabaseStatus
+	(*DatabaseBackupStatus)(nil),                      // 9: v1.DatabaseBackupStatus
+	(*CentralServicesCapabilities)(nil),               // 10: v1.CentralServicesCapabilities
+	(*storage.BackupInfo)(nil),                        // 11: storage.BackupInfo
+	(*Empty)(nil),                                     // 12: v1.Empty
 }
 var file_api_v1_metadata_service_proto_depIdxs = []int32{
 	0,  // 0: v1.Metadata.license_status:type_name -> v1.Metadata.LicenseStatus
-	1,  // 1: v1.DatabaseStatus.database_type:type_name -> v1.DatabaseStatus.DatabaseType
-	10, // 2: v1.DatabaseBackupStatus.backup_info:type_name -> storage.BackupInfo
-	2,  // 3: v1.CentralServicesCapabilities.central_scanning_can_use_container_iam_role_for_ecr:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	2,  // 4: v1.CentralServicesCapabilities.central_can_use_cloud_backup_integrations:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	2,  // 5: v1.CentralServicesCapabilities.central_can_display_declarative_config_health:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	2,  // 6: v1.CentralServicesCapabilities.central_can_update_cert:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	2,  // 7: v1.CentralServicesCapabilities.central_can_use_acscs_email_integration:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
-	11, // 8: v1.MetadataService.GetMetadata:input_type -> v1.Empty
-	6,  // 9: v1.MetadataService.TLSChallenge:input_type -> v1.TLSChallengeRequest
-	11, // 10: v1.MetadataService.GetDatabaseStatus:input_type -> v1.Empty
-	11, // 11: v1.MetadataService.GetDatabaseBackupStatus:input_type -> v1.Empty
-	11, // 12: v1.MetadataService.GetCentralCapabilities:input_type -> v1.Empty
-	3,  // 13: v1.MetadataService.GetMetadata:output_type -> v1.Metadata
-	5,  // 14: v1.MetadataService.TLSChallenge:output_type -> v1.TLSChallengeResponse
-	7,  // 15: v1.MetadataService.GetDatabaseStatus:output_type -> v1.DatabaseStatus
-	8,  // 16: v1.MetadataService.GetDatabaseBackupStatus:output_type -> v1.DatabaseBackupStatus
-	9,  // 17: v1.MetadataService.GetCentralCapabilities:output_type -> v1.CentralServicesCapabilities
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	3,  // 1: v1.Metadata.known_major_bumps:type_name -> v1.MajorVersionBump
+	1,  // 2: v1.DatabaseStatus.database_type:type_name -> v1.DatabaseStatus.DatabaseType
+	11, // 3: v1.DatabaseBackupStatus.backup_info:type_name -> storage.BackupInfo
+	2,  // 4: v1.CentralServicesCapabilities.central_scanning_can_use_container_iam_role_for_ecr:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
+	2,  // 5: v1.CentralServicesCapabilities.central_can_use_cloud_backup_integrations:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
+	2,  // 6: v1.CentralServicesCapabilities.central_can_display_declarative_config_health:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
+	2,  // 7: v1.CentralServicesCapabilities.central_can_update_cert:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
+	2,  // 8: v1.CentralServicesCapabilities.central_can_use_acscs_email_integration:type_name -> v1.CentralServicesCapabilities.CapabilityStatus
+	12, // 9: v1.MetadataService.GetMetadata:input_type -> v1.Empty
+	7,  // 10: v1.MetadataService.TLSChallenge:input_type -> v1.TLSChallengeRequest
+	12, // 11: v1.MetadataService.GetDatabaseStatus:input_type -> v1.Empty
+	12, // 12: v1.MetadataService.GetDatabaseBackupStatus:input_type -> v1.Empty
+	12, // 13: v1.MetadataService.GetCentralCapabilities:input_type -> v1.Empty
+	4,  // 14: v1.MetadataService.GetMetadata:output_type -> v1.Metadata
+	6,  // 15: v1.MetadataService.TLSChallenge:output_type -> v1.TLSChallengeResponse
+	8,  // 16: v1.MetadataService.GetDatabaseStatus:output_type -> v1.DatabaseStatus
+	9,  // 17: v1.MetadataService.GetDatabaseBackupStatus:output_type -> v1.DatabaseBackupStatus
+	10, // 18: v1.MetadataService.GetCentralCapabilities:output_type -> v1.CentralServicesCapabilities
+	14, // [14:19] is the sub-list for method output_type
+	9,  // [9:14] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_metadata_service_proto_init() }
@@ -775,7 +847,7 @@ func file_api_v1_metadata_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_metadata_service_proto_rawDesc), len(file_api_v1_metadata_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
