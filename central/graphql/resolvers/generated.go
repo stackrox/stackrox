@@ -344,6 +344,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
+		"sensorVersionCompatibility: SensorVersionCompatibility!",
 		"upgradeStatus: ClusterUpgradeStatus",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
@@ -891,6 +892,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"compatibleSensorVersions: [String!]!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
 		"version: String!",
@@ -1373,6 +1375,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"k8SNodeName: String!",
 		"systemNamespaceId: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SensorVersionCompatibility(0)))
 	utils.Must(builder.AddType("ServiceAccount", []string{
 		"annotations: [Label!]!",
 		"automountToken: Boolean!",
@@ -4715,6 +4718,11 @@ func (resolver *clusterStatusResolver) ProviderMetadata(ctx context.Context) (*p
 func (resolver *clusterStatusResolver) SensorVersion(ctx context.Context) string {
 	value := resolver.data.GetSensorVersion()
 	return value
+}
+
+func (resolver *clusterStatusResolver) SensorVersionCompatibility(ctx context.Context) string {
+	value := resolver.data.GetSensorVersionCompatibility()
+	return value.String()
 }
 
 func (resolver *clusterStatusResolver) UpgradeStatus(ctx context.Context) (*clusterUpgradeStatusResolver, error) {
@@ -10342,6 +10350,11 @@ func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	return value
 }
 
+func (resolver *metadataResolver) CompatibleSensorVersions(ctx context.Context) []string {
+	value := resolver.data.GetCompatibleSensorVersions()
+	return value
+}
+
 func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	value := resolver.data.GetLicenseStatus()
 	return value.String()
@@ -14861,6 +14874,24 @@ func (resolver *sensorDeploymentIdentificationResolver) K8SNodeName(ctx context.
 func (resolver *sensorDeploymentIdentificationResolver) SystemNamespaceId(ctx context.Context) string {
 	value := resolver.data.GetSystemNamespaceId()
 	return value
+}
+
+func toSensorVersionCompatibility(value *string) storage.SensorVersionCompatibility {
+	if value != nil {
+		return storage.SensorVersionCompatibility(storage.SensorVersionCompatibility_value[*value])
+	}
+	return storage.SensorVersionCompatibility(0)
+}
+
+func toSensorVersionCompatibilities(values *[]string) []storage.SensorVersionCompatibility {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SensorVersionCompatibility, len(*values))
+	for i, v := range *values {
+		output[i] = toSensorVersionCompatibility(&v)
+	}
+	return output
 }
 
 type serviceAccountResolver struct {

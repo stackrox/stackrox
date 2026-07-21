@@ -192,8 +192,11 @@ type Metadata struct {
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
 	LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,proto3,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Sorted list of X.Y sensor versions that are compatible with this central,
+	// according to the version skew policy known to central.
+	CompatibleSensorVersions []string `protobuf:"bytes,5,rep,name=compatible_sensor_versions,json=compatibleSensorVersions,proto3" json:"compatible_sensor_versions,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -253,6 +256,13 @@ func (x *Metadata) GetLicenseStatus() Metadata_LicenseStatus {
 		return x.LicenseStatus
 	}
 	return Metadata_NONE
+}
+
+func (x *Metadata) GetCompatibleSensorVersions() []string {
+	if x != nil {
+		return x.CompatibleSensorVersions
+	}
+	return nil
 }
 
 type TrustInfo struct {
@@ -652,12 +662,13 @@ var File_api_v1_metadata_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"\x93\x02\n" +
+	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"\xd1\x02\n" +
 	"\bMetadata\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12!\n" +
 	"\fbuild_flavor\x18\x02 \x01(\tR\vbuildFlavor\x12#\n" +
 	"\rrelease_build\x18\x03 \x01(\bR\freleaseBuild\x12E\n" +
-	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\"^\n" +
+	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\x12<\n" +
+	"\x1acompatible_sensor_versions\x18\x05 \x03(\tR\x18compatibleSensorVersions\"^\n" +
 	"\rLicenseStatus\x12\f\n" +
 	"\x04NONE\x10\x00\x1a\x02\b\x01\x12\x0f\n" +
 	"\aINVALID\x10\x01\x1a\x02\b\x01\x12\x0f\n" +
