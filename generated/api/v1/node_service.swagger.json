@@ -304,6 +304,9 @@
         },
         "exploit": {
           "$ref": "#/definitions/storageExploit"
+        },
+        "cisaKev": {
+          "type": "boolean"
         }
       }
     },

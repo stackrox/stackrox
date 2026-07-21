@@ -184,6 +184,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"types: [CVE_CVEType!]!",
 	}))
 	utils.Must(builder.AddType("CVEInfo", []string{
+		"cisaKev: Boolean!",
 		"createdAt: Time",
 		"cve: String!",
 		"cvssMetrics: [CVSSScore]!",
@@ -3283,6 +3284,11 @@ func (resolver *Resolver) wrapCVEInfosWithContext(ctx context.Context, values []
 		output[i] = &cVEInfoResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *cVEInfoResolver) CisaKev(ctx context.Context) bool {
+	value := resolver.data.GetCisaKev()
+	return value
 }
 
 func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
