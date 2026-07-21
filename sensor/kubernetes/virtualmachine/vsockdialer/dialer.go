@@ -137,13 +137,13 @@ func (s *wsStream) Read(p []byte) (int, error) {
 		if s.reader == nil {
 			msgType, rd, err := s.conn.NextReader()
 			if err != nil {
-				if isWSClose(err) {
-					return 0, io.EOF
+				if closeErr := transportClosedErr(err); closeErr != nil {
+					return 0, closeErr
 				}
 				return 0, err //nolint:wrapcheck // implements io.Reader
 			}
 			if msgType == websocket.CloseMessage {
-				return 0, io.EOF
+				return 0, &closedError{}
 			}
 			s.reader = rd
 		}
@@ -174,9 +174,40 @@ func (s *wsStream) Close() error {
 	return nil
 }
 
-func isWSClose(err error) bool {
-	if _, ok := errors.AsType[*websocket.CloseError](err); ok {
-		return true
+// transportClosedErr returns a *closedError if err represents a closed
+// connection, or nil if it's some other read failure.
+func transportClosedErr(err error) *closedError {
+	if ce, ok := errors.AsType[*websocket.CloseError](err); ok {
+		return &closedError{code: ce.Code, reason: ce.Text}
 	}
-	return errors.Is(err, io.EOF)
+	if errors.Is(err, io.EOF) {
+		return &closedError{}
+	}
+	return nil
+}
+
+// closedError indicates the websocket connection closed before a complete
+// VMServiceResponse could be read. Kept unexported and dependency-free so
+// callers recover it structurally (via errors.As against their own
+// CloseCode() interface) rather than importing this package.
+type closedError struct {
+	code   int
+	reason string
+}
+
+func (e *closedError) Error() string {
+	if e.code == 0 {
+		return "websocket connection closed"
+	}
+	return fmt.Sprintf("websocket connection closed (code %d): %s", e.code, e.reason)
+}
+
+// Is makes closedError satisfy errors.Is(err, io.EOF).
+func (e *closedError) Is(target error) bool {
+	return target == io.EOF
+}
+
+// CloseCode returns the close code and reason; code is 0 if unstructured.
+func (e *closedError) CloseCode() (code int, reason string) {
+	return e.code, e.reason
 }

@@ -156,15 +156,24 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 
 // Pull-mode request status label values for PullRequestsTotal.
 const (
-	PullStatusSuccess       = "success"
-	PullStatusUnchanged     = "unchanged"
-	PullStatusDialError     = "dial_error"
-	PullStatusReadError     = "read_error"
-	PullStatusInvalidReport = "invalid_report"
-	PullStatusSendError     = "send_error"
-	PullStatusNotReady      = "not_ready"
-	PullStatusUnknownMethod = "unknown_method"
-	PullStatusTimeout       = "timeout"
+	PullStatusSuccess          = "success"
+	PullStatusUnchanged        = "unchanged"
+	PullStatusDialError        = "dial_error"
+	PullStatusReadError        = "read_error"
+	PullStatusInvalidReport    = "invalid_report"
+	PullStatusSendError        = "send_error"
+	PullStatusNotReady         = "not_ready"
+	PullStatusUnknownMethod    = "unknown_method"
+	PullStatusTimeout          = "timeout"
+	PullStatusBusy             = "busy"
+	PullStatusInternalError    = "internal_error"
+	PullStatusMalformedRequest = "malformed_request"
+	PullStatusRequestTooLarge  = "request_too_large"
+	// PullStatusUnknownAgentError marks a well-formed ErrorResponse whose code
+	// this Sensor version doesn't recognize (e.g. a future ErrorCode value).
+	// Kept distinct from PullStatusReadError, which is a transport failure
+	// with no parseable response at all.
+	PullStatusUnknownAgentError = "unknown_agent_error"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.

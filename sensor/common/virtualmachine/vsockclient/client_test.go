@@ -121,6 +121,29 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			wantErr:   ErrInternal,
 			wantInMsg: "scan crashed",
 		},
+		"should wrap ErrMalformedRequest for MALFORMED_REQUEST": {
+			code:      pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST,
+			message:   "empty request_id",
+			wantErr:   ErrMalformedRequest,
+			wantInMsg: "empty request_id",
+		},
+		"should wrap ErrRequestTooLarge for REQUEST_TOO_LARGE": {
+			code:      pb.ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE,
+			message:   "payload exceeds 10MB limit",
+			wantErr:   ErrRequestTooLarge,
+			wantInMsg: "10MB",
+		},
+		"should wrap ErrBusy for BUSY": {
+			code:      pb.ErrorCode_ERROR_CODE_BUSY,
+			message:   "another request is in flight",
+			wantErr:   ErrBusy,
+			wantInMsg: "in flight",
+		},
+		"should wrap ErrUnknownAgentError for UNSPECIFIED": {
+			code:    pb.ErrorCode_ERROR_CODE_UNSPECIFIED,
+			message: "",
+			wantErr: ErrUnknownAgentError,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {

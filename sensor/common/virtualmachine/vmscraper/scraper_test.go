@@ -62,6 +62,15 @@ func (nopCloser) Read([]byte) (int, error)  { return 0, io.EOF }
 func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
 
+// fakeCloseCoder is a minimal closeCoder for testing without a real dialer.
+type fakeCloseCoder struct {
+	code   int
+	reason string
+}
+
+func (e *fakeCloseCoder) Error() string            { return "connection closed" }
+func (e *fakeCloseCoder) CloseCode() (int, string) { return e.code, e.reason }
+
 type mockProtocolClient struct {
 	resultQueue []*vsockclient.GetReportResult
 	errQueue    []error
@@ -477,6 +486,70 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
 	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
 	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
+}
+
+// TestHandleGetReportError_ClassifiesEveryErrorCode locks in the mapping
+// from each error to its metrics.PullStatus* label.
+func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
+	cases := map[string]struct {
+		err       error
+		wantLabel string
+	}{
+		"NOT_READY maps to not_ready": {
+			err:       fmt.Errorf("%w: still scanning", vsockclient.ErrNotReady),
+			wantLabel: metrics.PullStatusNotReady,
+		},
+		"UNKNOWN_METHOD maps to unknown_method": {
+			err:       fmt.Errorf("%w: no get_report", vsockclient.ErrUnknownMethod),
+			wantLabel: metrics.PullStatusUnknownMethod,
+		},
+		"BUSY maps to busy": {
+			err:       fmt.Errorf("%w: another request in flight", vsockclient.ErrBusy),
+			wantLabel: metrics.PullStatusBusy,
+		},
+		"INTERNAL maps to internal_error": {
+			err:       fmt.Errorf("%w: panic recovered", vsockclient.ErrInternal),
+			wantLabel: metrics.PullStatusInternalError,
+		},
+		"MALFORMED_REQUEST maps to malformed_request": {
+			err:       fmt.Errorf("%w: empty request_id", vsockclient.ErrMalformedRequest),
+			wantLabel: metrics.PullStatusMalformedRequest,
+		},
+		"REQUEST_TOO_LARGE maps to request_too_large": {
+			err:       fmt.Errorf("%w: payload too big", vsockclient.ErrRequestTooLarge),
+			wantLabel: metrics.PullStatusRequestTooLarge,
+		},
+		"unrecognized agent error code maps to unknown_agent_error": {
+			err:       fmt.Errorf("%w: agent error (99): ?", vsockclient.ErrUnknownAgentError),
+			wantLabel: metrics.PullStatusUnknownAgentError,
+		},
+		"abnormal websocket close maps to read_error": {
+			err:       fmt.Errorf("reading response: %w", &fakeCloseCoder{code: 1006, reason: "abnormal closure"}),
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"plain io.EOF maps to read_error": {
+			err:       io.EOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"io.ErrUnexpectedEOF maps to read_error": {
+			err:       io.ErrUnexpectedEOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"unrecognized transport/framing error falls back to read_error": {
+			err:       errors.New("unmarshaling response: unexpected EOF in the middle of a varint"),
+			wantLabel: metrics.PullStatusReadError,
+		},
+	}
+
+	s := &VMScraper{}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			before := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel))
+			s.handleGetReportError(t.Context(), "ns/vm", tc.err)
+			assert.Equal(t, before+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel)),
+				"expected %v to increment the %q status label exactly once", tc.err, tc.wantLabel)
+		})
+	}
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {

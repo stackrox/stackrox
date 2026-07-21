@@ -27,6 +27,16 @@ var (
 	ErrUnknownMethod = errors.New("agent does not support the requested method")
 	// ErrInternal indicates the agent encountered an internal error.
 	ErrInternal = errors.New("agent internal error")
+	// ErrMalformedRequest indicates the agent rejected the request as invalid.
+	ErrMalformedRequest = errors.New("agent rejected request as malformed")
+	// ErrRequestTooLarge indicates the request exceeded the agent's size limit.
+	ErrRequestTooLarge = errors.New("agent rejected request as too large")
+	// ErrBusy indicates the agent is already serving another connection;
+	// callers should retry after a backoff.
+	ErrBusy = errors.New("agent is busy serving another connection")
+	// ErrUnknownAgentError indicates a well-formed ErrorResponse whose code
+	// this client doesn't recognize (e.g. a future ErrorCode value).
+	ErrUnknownAgentError = errors.New("unrecognized agent error code")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -142,7 +152,13 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrUnknownMethod, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_INTERNAL:
 		return fmt.Errorf("%w: %s", ErrInternal, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST:
+		return fmt.Errorf("%w: %s", ErrMalformedRequest, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE:
+		return fmt.Errorf("%w: %s", ErrRequestTooLarge, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_BUSY:
+		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
 	default:
-		return fmt.Errorf("agent error (%s): %s", e.GetCode(), e.GetMessage())
+		return fmt.Errorf("%w: agent error (%s): %s", ErrUnknownAgentError, e.GetCode(), e.GetMessage())
 	}
 }
