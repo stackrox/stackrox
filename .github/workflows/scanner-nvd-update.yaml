@@ -210,11 +210,22 @@ jobs:
 
   send-notification:
     needs:
+      - fetch-nvd-feeds
+      - fetch-nvd-api
       - upload-nvd-feeds
       - upload-nvd-api
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' }}
+    permissions:
+      contents: read
+      actions: read
+      checks: read
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
     - name: Send Slack notification on workflow failure
-      run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update NVD CVEs"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+      uses: ./.github/actions/scanner-slack-notify
+      with:
+        webhook-url: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        description: Scanner V4 NVD data update failed
