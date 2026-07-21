@@ -12,12 +12,17 @@
 #   --namespace NS       Target namespace (default: openshift-cnv)
 #   --vm-prefix PREFIX   VM name prefix (default: same as OS)
 #   --artifacts-dir DIR  Path to infractl artifacts directory
+#   --enable-loadtest-fake-reports
+#                        Install systemd drop-in setting
+#                        ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true on each VM
+#                        (load-test only; requires a non-release roxagent build)
 #
 # Environment:
 #   KUBECONFIG                   If set and --cluster not given, uses this directly
 #   STACKROX_REPO                Required for native agent build (default: repo root)
 #   QUAY_RHACS_ENG_RO_USERNAME   Required; used to create VM image pull secret
 #   QUAY_RHACS_ENG_RO_PASSWORD   Required; used to create VM image pull secret
+#   ENABLE_LOADTEST_FAKE_REPORTS If "true", same as --enable-loadtest-fake-reports
 
 set -euo pipefail
 
@@ -31,6 +36,7 @@ USER_SSH_KEY_PATH=""
 NAMESPACE="openshift-cnv"
 VM_PREFIX=""
 ARTIFACTS_DIR=""
+ENABLE_LOADTEST_FAKE_REPORTS="${ENABLE_LOADTEST_FAKE_REPORTS:-false}"
 NATIVE_AGENT_READY_VMS=()
 NATIVE_AGENT_FAILED_VMS=()
 
@@ -52,6 +58,7 @@ parse_args() {
             --namespace)    NAMESPACE="$2"; shift 2 ;;
             --vm-prefix)    VM_PREFIX="$2"; shift 2 ;;
             --artifacts-dir) ARTIFACTS_DIR="$2"; shift 2 ;;
+            --enable-loadtest-fake-reports) ENABLE_LOADTEST_FAKE_REPORTS=true; shift ;;
             --help|-h)      usage ;;
             *)              die "Unknown option: $1" ;;
         esac
@@ -106,6 +113,7 @@ print_summary() {
     echo "VM prefix:    $VM_PREFIX"
     echo "Agent type:   native"
     echo "Num VMs:      $NUM_VMS"
+    echo "Loadtest fake reports drop-in: $ENABLE_LOADTEST_FAKE_REPORTS"
     echo ""
 
     if [[ ${#MANAGED_VMS[@]} -gt 0 ]]; then
@@ -179,6 +187,7 @@ write_github_summary() {
         echo "- VM prefix: \`$VM_PREFIX\`"
         echo "- Agent type: \`native\`"
         echo "- Requested VMs: \`$NUM_VMS\`"
+        echo "- Loadtest fake reports drop-in: \`$ENABLE_LOADTEST_FAKE_REPORTS\`"
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
 
@@ -241,10 +250,11 @@ main() {
     echo "  VM prefix:   $VM_PREFIX"
     echo "  Num VMs:     $NUM_VMS"
     echo "  Agent type:  native"
+    echo "  Loadtest fake reports drop-in: $ENABLE_LOADTEST_FAKE_REPORTS"
     echo ""
 
     # Export variables for sourced scripts
-    export NAMESPACE VM_OS VM_PREFIX NUM_VMS ARTIFACTS_DIR
+    export NAMESPACE VM_OS VM_PREFIX NUM_VMS ARTIFACTS_DIR ENABLE_LOADTEST_FAKE_REPORTS
     export CONTAINER_IMAGE="quay.io/rhacs-eng/vm-images:${VM_OS}-dnf-primed-latest"
 
     # Step 1: Install virt operator (skippable when action handles this separately)

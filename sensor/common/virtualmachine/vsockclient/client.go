@@ -1,17 +1,23 @@
 package vsockclient
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"os"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 )
+
+var log = logging.LoggerForModule()
 
 // CapabilityReportV1 is the protocol capability for the v1 report exchange.
 const CapabilityReportV1 = "report_v1"
@@ -43,6 +49,10 @@ const defaultMaxResponseSize = 16 << 20
 type Client struct {
 	capabilities    []string
 	maxResponseSize int
+	// facts is populated into every request's RequestMeta.facts. Empty for
+	// real Sensor traffic; only set by NewClient when hammer-mode load
+	// testing is enabled (see below).
+	facts map[string]string
 }
 
 // NewClient creates a protocol client with the given Sensor capabilities
@@ -50,11 +60,23 @@ type Client struct {
 // [1, math.MaxUint32], since it's narrowed to uint32 when passed to
 // vsockframing.ReadFrame; out-of-range values (e.g. from a misconfigured
 // size setting) fall back to defaultMaxResponseSize.
+//
+// LOAD-TEST ONLY: if ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true (never in a
+// release build), every request's facts is also populated with report_size
+// (from ROX_VM_VSOCK_LOADTEST_REPORT_SIZE, default "medium") so a fake
+// roxagent can pick a canned report by size -- a no-op for real Sensor
+// traffic.
 func NewClient(capabilities []string, maxResponseSize int) *Client {
 	if maxResponseSize <= 0 || int64(maxResponseSize) > math.MaxUint32 {
 		maxResponseSize = defaultMaxResponseSize
 	}
-	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
+	c := &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
+	if !buildinfo.ReleaseBuild && os.Getenv("ROX_VM_VSOCK_LOADTEST_HAMMER_MODE") == "true" {
+		reportSize := cmp.Or(os.Getenv("ROX_VM_VSOCK_LOADTEST_REPORT_SIZE"), "medium")
+		log.Warnf("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_HAMMER_MODE=true — requesting report_size=%q on every request", reportSize)
+		c.facts = map[string]string{"report_size": reportSize}
+	}
+	return c
 }
 
 // GetReport sends a GetReportRequest and returns the response. knownEpoch is
@@ -68,6 +90,7 @@ func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownE
 		Meta: &pb.RequestMeta{
 			RequestId:    uuid.NewV4().String(),
 			Capabilities: c.capabilities,
+			Facts:        c.facts,
 		},
 		Method: &pb.VMServiceRequest_GetReport{
 			GetReport: &pb.GetReportRequest{

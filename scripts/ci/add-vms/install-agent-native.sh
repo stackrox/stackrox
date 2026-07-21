@@ -5,6 +5,11 @@
 # Always overwrites (binary has no version info; binary is small).
 #
 # Requires: Go toolchain, STACKROX_REPO (defaults to repo root).
+#
+# Optional env:
+#   ENABLE_LOADTEST_FAKE_REPORTS=true
+#     Install /etc/systemd/system/roxagent-serve.service.d/loadtest.conf with
+#     ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true (load-test only).
 
 set -euo pipefail
 
@@ -15,6 +20,7 @@ ROXAGENT_SRC="${STACKROX_REPO}/compliance/virtualmachines/roxagent"
 NAMESPACE="${NAMESPACE:-openshift-cnv}"
 SSH_USER="${SSH_USER:-cloud-user}"
 AUTOMATION_SSH_PRIVKEY="${AUTOMATION_SSH_PRIVKEY:-}"
+ENABLE_LOADTEST_FAKE_REPORTS="${ENABLE_LOADTEST_FAKE_REPORTS:-false}"
 NATIVE_AGENT_READY_VMS=()
 NATIVE_AGENT_FAILED_VMS=()
 
@@ -94,6 +100,16 @@ WantedBy=multi-user.target
 EOF
 }
 
+# Prints the load-test systemd drop-in that enables canned FakeReportProvider
+# responses (ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS). No-op content is never written
+# unless ENABLE_LOADTEST_FAKE_REPORTS=true; callers gate the install.
+create_loadtest_dropin_file() {
+    cat <<'EOF'
+[Service]
+Environment=ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true
+EOF
+}
+
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
 # Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
@@ -144,8 +160,22 @@ install_on_vm() {
         "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"
     rm -f "$serve_service_file"
 
-    virtctl ssh "${_ssh_opts[@]}" \
-        --command 'set -e
+    local loadtest_dropin_file=""
+    if [[ "$ENABLE_LOADTEST_FAKE_REPORTS" == "true" ]]; then
+        echo "  Preparing load-test fake-reports systemd drop-in..."
+        loadtest_dropin_file="$(mktemp)"
+        create_loadtest_dropin_file > "$loadtest_dropin_file"
+        virtctl scp "${_ssh_opts[@]}" \
+            "$loadtest_dropin_file" \
+            "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve-loadtest.conf"
+        rm -f "$loadtest_dropin_file"
+    fi
+
+    # Install units; optionally wire the load-test drop-in. The remote script
+    # is assembled so the drop-in block is only present when requested — keeps
+    # the production install path free of load-test files.
+    local remote_install
+    remote_install='set -e
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
 rm -f /tmp/roxagent
@@ -155,10 +185,28 @@ sudo systemctl disable --now roxagent.service 2>/dev/null || true
 sudo rm -f /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent.service
 sudo cp /tmp/roxagent-prep.service /etc/systemd/system/roxagent-prep.service
 sudo cp /tmp/roxagent-serve.service /etc/systemd/system/roxagent-serve.service
-sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent-serve.service 2>/dev/null || true
+sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent-serve.service 2>/dev/null || true'
+    if [[ "$ENABLE_LOADTEST_FAKE_REPORTS" == "true" ]]; then
+        remote_install+='
+sudo mkdir -p /etc/systemd/system/roxagent-serve.service.d
+sudo cp /tmp/roxagent-serve-loadtest.conf /etc/systemd/system/roxagent-serve.service.d/loadtest.conf
+sudo restorecon -Rv /etc/systemd/system/roxagent-serve.service.d 2>/dev/null || true
+rm -f /tmp/roxagent-serve-loadtest.conf'
+    else
+        # A prior load-test install on this VM must not silently keep canned
+        # reports when this run did not request them.
+        remote_install+='
+sudo rm -f /etc/systemd/system/roxagent-serve.service.d/loadtest.conf
+rm -f /tmp/roxagent-serve-loadtest.conf'
+    fi
+    remote_install+='
 sudo systemctl daemon-reload
 sudo systemctl enable --now roxagent-serve.service
-echo "NATIVE_INSTALL_OK"' \
+sudo systemctl restart roxagent-serve.service
+echo "NATIVE_INSTALL_OK"'
+
+    virtctl ssh "${_ssh_opts[@]}" \
+        --command "$remote_install" \
         "${SSH_USER}@vmi/${vm_name}"
 
     echo "  Installed on $vm_name."

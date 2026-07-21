@@ -112,26 +112,36 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		return err
 	}
 
-	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself (see mappingRefresher doc comment), so
-	// this initial fetch is mandatory, not best-effort - if it fails after
-	// retries, startup fails rather than running a scan against no data.
-	mr := newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
-	if err := mr.fetchWithRetry(ctx); err != nil {
-		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+	var (
+		handler     *vsockserver.Handler
+		mr          *mappingRefresher
+		vmRescanner *rescanner
+	)
+	if fakeReportProviderEnabled {
+		log.Warn("LOAD TEST ONLY: ROX_VM_VSOCK_LOADTEST_FAKE_REPORTS=true — serving canned reports instead of real host scan results, no periodic rescans")
+		handler = vsockserver.NewHandler(vsockserver.NewFakeReportProvider(), agentVersion)
+	} else {
+		// The mapping file must exist locally before the first scan can run:
+		// scan() never fetches it itself (see mappingRefresher doc comment), so
+		// this initial fetch is mandatory, not best-effort - if it fails after
+		// retries, startup fails rather than running a scan against no data.
+		mr = newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
+		if err := mr.fetchWithRetry(ctx); err != nil {
+			return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+		}
+
+		cache := &vsockserver.ReportCache{}
+		vmRescanner = newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
+
+		report, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
+		if err != nil {
+			return fmt.Errorf("initial scan: %w", err)
+		}
+		cache.SetReport(report, discoverFacts(cfg.hostPath))
+		log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
+
+		handler = vsockserver.NewHandler(vsockserver.NewCacheReportProvider(cache), agentVersion)
 	}
-
-	cache := &vsockserver.ReportCache{}
-	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
-
-	report, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
-	if err != nil {
-		return fmt.Errorf("initial scan: %w", err)
-	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
-	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
-
-	handler := vsockserver.NewHandler(cache, agentVersion)
 
 	// TLS is mandatory: sensor always dials with TLS, so a plaintext agent is
 	// unreachable. The KubeVirt CA (served by virt-handler on CID 2, port 1)
@@ -158,13 +168,18 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
-	wg.Go(func() { vmRescanner.Run(ctx) })
-	wg.Go(func() { mr.Run(ctx) })
+	if !fakeReportProviderEnabled {
+		// The fake report provider's canned reports never change (only their
+		// per-response epoch does), so there's nothing for a rescan loop or a
+		// mapping refresh loop to do in load-test mode.
+		wg.Go(func() { vmRescanner.Run(ctx) })
+		wg.Go(func() { mr.Run(ctx) })
+	}
 
 	<-ctx.Done()
-	// Wait for Serve's graceful drain (in-flight connections), the rescan
-	// loop, and the mapping refresh loop to finish before returning, so the
-	// process doesn't exit mid-drain, mid-scan, or mid-fetch.
+	// Wait for Serve's graceful drain (in-flight connections) and, unless in
+	// load-test mode, the rescan and mapping refresh loops to finish before
+	// returning, so the process doesn't exit mid-drain, mid-scan, or mid-fetch.
 	wg.Wait()
 	return nil
 }
