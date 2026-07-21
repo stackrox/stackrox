@@ -48,4 +48,5 @@ if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
     AWS_SECRET_ACCESS_KEY="$(cat /tmp/vault/stackrox-stackrox-e2e-tests/AWS_SECRET_ACCESS_KEY)"
     aws sts get-caller-identity | jq -r '.Arn'
     set_ci_shared_export USER_ARNS "$(aws sts get-caller-identity | jq -r '.Arn')"
+    set_ci_shared_export INSTANCE_TYPE m5.2xlarge
 fi
