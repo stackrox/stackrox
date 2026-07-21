@@ -1,0 +1,31 @@
+{
+  "total_count": 3,
+  "jobs": [
+    {
+      "id": 100,
+      "name": "fetch-nvd-feeds",
+      "conclusion": "success",
+      "html_url": "https://github.com/stackrox/stackrox/actions/runs/1234567890/job/100",
+      "steps": [
+        {"name": "Fetch NVD Feeds", "conclusion": "success"}
+      ]
+    },
+    {
+      "id": 101,
+      "name": "build-and-run (v2, refs/tags/4.9.0)",
+      "conclusion": "failure",
+      "html_url": "https://github.com/stackrox/stackrox/actions/runs/1234567890/job/101",
+      "steps": [
+        {"name": "Checkout repository", "conclusion": "success"},
+        {"name": "Validate bundle", "conclusion": "failure"}
+      ]
+    },
+    {
+      "id": 102,
+      "name": "upload-definitions",
+      "conclusion": "failure",
+      "html_url": "https://github.com/stackrox/stackrox/actions/runs/1234567890/job/102",
+      "steps": []
+    }
+  ]
+}

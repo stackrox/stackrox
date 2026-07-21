@@ -1,0 +1,5 @@
+[
+  {"annotation_level": "failure", "message": "source 'osv': file bundles/osv.json.zst contains 0 JSON objects (expected >0)"},
+  {"annotation_level": "failure", "message": "Process completed with exit code 1."},
+  {"annotation_level": "warning", "message": "a warning that must not appear"}
+]
