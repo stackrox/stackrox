@@ -115,11 +115,12 @@ jobs:
           echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
           echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
 
-      - name: "[debug] is the test binary itself a build-cache hit?"
+      - name: "[debug] same-job repeat invocation (control)"
         run: |
-          count=$(go build -C tools/cicachetest -x ./testcache/... 2>&1 | grep -c '/compile \|/link ' || true)
-          echo "compile+link invocations for testcache package: $count"
-          go test -C tools/cicachetest -x ./testcache/... 2>&1 | grep -E '/compile |/link |^cd |WORK=' | tail -20
+          echo "--- run A ---"
+          go test -C tools/cicachetest ./testcache/...
+          echo "--- run B (immediately after, same job, same path, no restore involved) ---"
+          go test -C tools/cicachetest ./testcache/...
 
       - name: "[debug] test binary content hash"
         run: |
