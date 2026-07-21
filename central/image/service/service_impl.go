@@ -306,20 +306,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		return s.scanImageV2Internal(ctx, request)
 	}
 
-	if err := s.acquireScanSemaphore(ctx); err != nil {
-		log.Debugw("Failed to acquire scan semaphore",
-			logging.FromContext(ctx),
-			logging.ImageName(request.GetImage().GetName().GetFullName()),
-			logging.ImageID(request.GetImage().GetId()),
-			logging.Err(err),
-		)
-		return nil, err
-	}
-	defer func() {
-		s.internalScanSemaphore.Release(1)
-		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
-	}()
-
 	var (
 		img       *storage.Image
 		fetchOpt  enricher.FetchOption
@@ -327,7 +313,9 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	)
 
 	imgID := request.GetImage().GetId()
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	// Check the datastore before acquiring the scan semaphore. Pure lookups don't need
+	// rate-limiting, and blocking on the semaphore causes admission controller timeouts
+	// under concurrent scan load (the AC has a 10s budget for the entire webhook).
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
@@ -335,17 +323,12 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 
 		if exists {
-			// If the image is flagged as cluster local and scan has expired, clear the flag and attempt a scan.
-			// This is necessary to resume reprocessing for images after delegated scanning has been toggled on then off.
 			var clusterLocalScanExpired bool
 			if existingImg.GetIsClusterLocal() && scanExpired(existingImg.GetScan()) {
 				clusterLocalScanExpired = true
 				existingImg.IsClusterLocal = false
 			}
 
-			// If the image exists and the image name from the request matches at least one stored image name(/reference),
-			// then we return the stored image if it was not modified above.
-			// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
 			nameFound := protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames())
 			if nameFound && !clusterLocalScanExpired {
 				return internalScanRespFromImage(existingImg), nil
@@ -362,8 +345,6 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 			if !nameFound {
 				existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
-				// We only want to force re-fetching of signatures and verification data, the additional image name has no
-				// impact on image scan data.
 				fetchOpt = enricher.ForceRefetchSignaturesOnly
 			}
 
@@ -380,19 +361,30 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		fetchOpt = enricher.UseCachesIfPossible
 		if request.GetCachedOnly() {
 			fetchOpt = enricher.NoExternalMetadata
-		} else if imgID == "" { // If no ID, then don't use caches as they could return stale data.
+		} else if imgID == "" {
 			fetchOpt = enricher.ForceRefetch
 		}
 		img = types.ToImage(request.GetImage())
 	}
 
+	// Acquire the semaphore only when enrichment is needed.
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
+			logging.FromContext(ctx),
+			logging.ImageName(request.GetImage().GetName().GetFullName()),
+			logging.ImageID(request.GetImage().GetId()),
+			logging.Err(err),
+		)
+		return nil, err
+	}
+	defer func() {
+		s.internalScanSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
+	}()
+
 	if err := s.enrichImage(ctx, img, fetchOpt, request); err != nil && imgExists {
-		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
-		// central, since it could lead to us overriding an enriched image with a non-enriched image.
 		return internalScanRespFromImage(img), nil
 	}
-	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
-	// contained a digest.
 	if imgID != "" {
 		_ = s.saveImage(img)
 	}
@@ -405,26 +397,15 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 	if imgID == "" {
 		imgID = utils.NewImageV2ID(request.GetImage().GetName(), request.GetImage().GetId())
 	}
-	if err := s.acquireScanSemaphore(ctx); err != nil {
-		log.Debugw("Failed to acquire scan semaphore",
-			logging.FromContext(ctx),
-			logging.ImageName(request.GetImage().GetName().GetFullName()),
-			logging.ImageID(imgID),
-			logging.Err(err),
-		)
-		return nil, err
-	}
-	defer func() {
-		s.internalScanSemaphore.Release(1)
-		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
-	}()
 
 	var (
 		imgV2     *storage.ImageV2
 		fetchOpt  enricher.FetchOption
 		imgExists bool
 	)
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	// Check the datastore before acquiring the scan semaphore. Pure lookups don't need
+	// rate-limiting, and blocking on the semaphore causes admission controller timeouts
+	// under concurrent scan load (the AC has a 10s budget for the entire webhook).
 	if imgID != "" {
 		existingImgV2, exists, err := s.datastoreV2.GetImage(ctx, imgID)
 		if err != nil {
@@ -432,8 +413,6 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		}
 
 		if exists {
-			// If the image is flagged as cluster local and scan has expired, clear the flag and attempt a scan.
-			// This is necessary to resume reprocessing for images after delegated scanning has been toggled on then off.
 			var clusterLocalScanExpired bool
 			if existingImgV2.GetIsClusterLocal() && scanExpired(existingImgV2.GetScan()) {
 				clusterLocalScanExpired = true
@@ -465,7 +444,7 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		fetchOpt = enricher.UseCachesIfPossible
 		if request.GetCachedOnly() {
 			fetchOpt = enricher.NoExternalMetadata
-		} else if imgID == "" { // If no ID, then don't use caches as they could return stale data.
+		} else if imgID == "" {
 			fetchOpt = enricher.ForceRefetch
 		}
 		imgV2 = types.ToImageV2(request.GetImage())
@@ -474,13 +453,24 @@ func (s *serviceImpl) scanImageV2Internal(ctx context.Context, request *v1.ScanI
 		}
 	}
 
+	// Acquire the semaphore only when enrichment is needed.
+	if err := s.acquireScanSemaphore(ctx); err != nil {
+		log.Debugw("Failed to acquire scan semaphore",
+			logging.FromContext(ctx),
+			logging.ImageName(request.GetImage().GetName().GetFullName()),
+			logging.ImageID(imgID),
+			logging.Err(err),
+		)
+		return nil, err
+	}
+	defer func() {
+		s.internalScanSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.With(imageScanMetricsLabel).Dec()
+	}()
+
 	if err := s.enrichImageV2(ctx, imgV2, fetchOpt, request); err != nil && imgExists {
-		// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
-		// central, since it could lead to us overriding an enriched image with a non-enriched image.
 		return s.internalScanRespFromImageV2(ctx, imgV2), nil
 	}
-	// Due to discrepancies in digests retrieved from metadata pulls and k8s, only upsert if the request
-	// contained a digest.
 	if imgID != "" {
 		_ = s.saveImageV2(imgV2)
 	}
