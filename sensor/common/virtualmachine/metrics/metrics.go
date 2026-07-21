@@ -168,6 +168,17 @@ const (
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
+// Bucket boundaries for PullDialDurationSeconds/PullReadDurationSeconds/
+// PullTotalDurationSeconds intentionally start no lower than 10-100ms: a
+// synthetic in-process load test (tools/vmscraper-loadtest) observed
+// sub-millisecond durations for these stages with no real VSOCK/network
+// involved, which is not a scenario worth resolving here. What matters for
+// this production metric is catching durations *worse* than expected (slow
+// dials, slow reads -- signs of a struggling VM, KubeVirt, or Sensor), not
+// distinguishing between different flavors of "fast". Don't add finer
+// low-end buckets based on synthetic-test observations; if anything, prefer
+// more resolution at the high end where a real problem would show up. See
+// docs/superpowers/reports/2026-07-03-vsock-pull-loadtest-day1-report.md.
 var PullDialDurationSeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
