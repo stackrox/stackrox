@@ -1658,7 +1658,7 @@ var File_internalapi_central_sensor_iservice_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_iservice_proto_rawDesc = "" +
 	"\n" +
-	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a$internalapi/central/lightspeed.proto\x1a\x1finternalapi/central/image.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a(internalapi/central/sensor_upgrade.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\x83\r\n" +
+	")internalapi/central/sensor_iservice.proto\x12\acentral\x1a'internalapi/central/baseline_sync.proto\x1a(internalapi/central/cluster_config.proto\x1a)internalapi/central/cluster_metrics.proto\x1a(internalapi/central/cluster_status.proto\x1a-internalapi/central/compliance_operator.proto\x1a3internalapi/central/delegated_registry_config.proto\x1a0internalapi/central/deployment_enhancement.proto\x1a\x1finternalapi/central/hello.proto\x1a\x1finternalapi/central/image.proto\x1a$internalapi/central/lightspeed.proto\x1a'internalapi/central/local_scanner.proto\x1a/internalapi/central/network_baseline_sync.proto\x1a&internalapi/central/network_flow.proto\x1a%internalapi/central/policy_sync.proto\x1a;internalapi/central/process_listening_on_ports_update.proto\x1a6internalapi/central/secured_cluster_cert_refresh.proto\x1a'internalapi/central/sensor_events.proto\x1a(internalapi/central/sensor_upgrade.proto\x1a#internalapi/central/telemetry.proto\x1a\x15storage/cluster.proto\x1a\x13storage/image.proto\"\x83\r\n" +
 	"\rMsgFromSensor\x12\x19\n" +
 	"\bhash_key\x18\a \x01(\tR\ahashKey\x12\x1d\n" +
 	"\n" +
@@ -1939,8 +1939,8 @@ func file_internalapi_central_sensor_iservice_proto_init() {
 	file_internalapi_central_delegated_registry_config_proto_init()
 	file_internalapi_central_deployment_enhancement_proto_init()
 	file_internalapi_central_hello_proto_init()
-	file_internalapi_central_lightspeed_proto_init()
 	file_internalapi_central_image_proto_init()
+	file_internalapi_central_lightspeed_proto_init()
 	file_internalapi_central_local_scanner_proto_init()
 	file_internalapi_central_network_baseline_sync_proto_init()
 	file_internalapi_central_network_flow_proto_init()
