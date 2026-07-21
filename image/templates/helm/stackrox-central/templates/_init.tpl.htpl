@@ -294,6 +294,8 @@
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
 
+{{ $_ := set $._rox "_scannerEnabled" (not $scannerCfg.disable) }}
+
 {{/*
    ScannerV4 setup.
   */}}
