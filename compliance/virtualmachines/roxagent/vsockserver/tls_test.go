@@ -16,6 +16,7 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -188,22 +189,16 @@ func TestCARefresher_HandshakeFailsWhenCAServiceUnavailable(t *testing.T) {
 // TestCARefresher_ConcurrentHandshakesEachGetValidPool calls
 // ensureFreshPool directly from several goroutines at once, bypassing
 // server.go's semaphore (which limits the agent to one in-flight
-// connection in the supported single-Sensor-caller topology - see the
-// CARefresher doc comment) to exercise the defensive path that would only
-// matter if that stopped being true. It proves the behavior accepted in
-// place of coalescing: callers may each trigger their own fetch (no
-// fetchCount == 1 assertion), but the cache is never left corrupted or
-// partially written, and every caller gets back a valid, non-nil pool that
-// verifies the client cert it was given.
+// connection) to exercise the defensive path when multiple connections are established in parallel.
 func TestCARefresher_ConcurrentHandshakesEachGetValidPool(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		caPEM, caCert, caKey := testCA(t)
 
 		var fetchCount atomic.Int32
-		release := make(chan struct{})
+		fetchesMayProceed := concurrency.NewSignal()
 		r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
 			fetchCount.Add(1)
-			<-release // block until the test says every caller has arrived
+			fetchesMayProceed.Wait() // block until the test says all callers have arrived
 			return caPEM, nil
 		}))
 
@@ -220,16 +215,11 @@ func TestCARefresher_ConcurrentHandshakesEachGetValidPool(t *testing.T) {
 			}()
 		}
 
-		// synctest.Wait blocks until every goroutine in the bubble is
-		// durably blocked on <-release inside fetchFunc, i.e. every
-		// caller has actually reached its own fetch - not merely been
-		// scheduled - so closing release can't race a late arrival.
-		synctest.Wait()
-		close(release)
+		synctest.Wait() // Wait until all callers are blocked on fetchesMayProceed.Wait
+		fetchesMayProceed.Signal()
 
 		// A leaf cert signed by the fetched CA must verify against every
-		// pool handed back: if a caller's pool were corrupted or
-		// partially written, this would fail for that caller specifically.
+		// pool handed back. Corrupted pool would fail this assertion.
 		leaf := testLeafCert(t, caCert, caKey)
 		leafCert, err := x509.ParseCertificate(leaf.Certificate[0])
 		require.NoError(t, err)

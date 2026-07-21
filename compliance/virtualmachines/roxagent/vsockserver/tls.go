@@ -179,17 +179,10 @@ func extractBundleRaw(data []byte) ([]byte, error) {
 // what opens it. This works unchanged in "global" mode too, since the
 // service is always reachable there.
 //
-// By default there is exactly one caller: server.go's semaphore limits the
-// agent to a single in-flight connection, because the agent serves a
-// single Sensor poller (see maxConcurrentConns) - so ensureFreshPool is
-// never actually called concurrently in the supported topology. A second,
-// concurrent caller could only arise from a second, concurrent Sensor
-// instance ("color") dialing the same agent, which is not something this
-// agent currently supports or plans for. Even if it happened anyway,
-// r.mu's write lock keeps every individual cache read/swap consistent, so
-// no caller would observe a corrupted or partially-written pool - each
-// concurrent fetch would just cost an extra, redundant dial to
-// virt-handler instead of being deduplicated into one.
+// server.go's semaphore keeps ensureFreshPool single-caller in the
+// supported topology (one Sensor poller; see maxConcurrentConns). r.mu
+// still serializes every cache read/swap, so concurrent callers would
+// only pay for redundant fetches - never observe a corrupted pool.
 type CARefresher struct {
 	mu        sync.RWMutex
 	pool      *x509.CertPool
@@ -233,9 +226,9 @@ func WithFetchFunc(f func(ctx context.Context) ([]byte, error)) CARefresherOptio
 }
 
 // ensureFreshPool returns the cached CA pool if it is populated and not
-// older than r.interval, fetching a new one otherwise. There is normally
-// only ever one caller at a time; see the CARefresher doc comment for why,
-// and for what happens on the unsupported path where that stops being true.
+// older than r.interval, fetching a new one otherwise. See the CARefresher
+// doc comment for the single-caller assumption and how r.mu protects the
+// cache.
 //
 // A failed (re)fetch is not fatal as long as some pool - however stale - is
 // already cached: certificates signed by an old CA remain valid until they
@@ -263,10 +256,7 @@ func (r *CARefresher) ensureFreshPool(ctx context.Context) (*x509.CertPool, erro
 
 // fetchAndCachePool fetches a fresh CA bundle from KubeVirt, parses it, and
 // swaps it into the cache under r.mu's write lock. It returns the pool it
-// just fetched, which is what makes it safe to call from more than one
-// caller at once on the unsupported multi-caller path (see the CARefresher
-// doc comment): each caller gets back its own valid, non-nil pool
-// regardless of which write to r.pool happens to land last.
+// just wrote so the caller does not need a second locked read of r.pool.
 func (r *CARefresher) fetchAndCachePool(ctx context.Context) (*x509.CertPool, error) {
 	// ctx belongs to the caller whose handshake triggered this fetch. If
 	// that handshake is torn down mid-fetch, ctx is cancelled - but the
