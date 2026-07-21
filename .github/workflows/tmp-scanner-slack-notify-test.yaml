@@ -1,0 +1,63 @@
+name: TMP scanner slack notify test
+on:
+  push:
+    branches:
+    - blugo/improve-scanner-slack-msgs
+
+jobs:
+  fail-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [v1, v2]
+    steps:
+    - name: Fail with annotation
+      run: |
+        echo "::error::source 'osv' (${{ matrix.version }}): file contains 0 JSON objects (expected >0)"
+        exit 1
+
+  fail-plain:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Fail without annotation
+      run: exit 1
+
+  notify:
+    needs:
+    - fail-matrix
+    - fail-plain
+    runs-on: ubuntu-latest
+    if: failure()
+    permissions:
+      contents: read
+      actions: read
+      checks: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+    - name: Send enriched notification
+      uses: ./.github/actions/scanner-slack-notify
+      with:
+        webhook-url: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+        description: "TEST enriched: scanner-slack-notify e2e"
+
+  notify-fallback:
+    needs:
+    - fail-matrix
+    - fail-plain
+    runs-on: ubuntu-latest
+    if: failure()
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+
+    - name: Send fallback notification (bad token forces enrich failure)
+      uses: ./.github/actions/scanner-slack-notify
+      with:
+        webhook-url: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+        description: "TEST fallback: scanner-slack-notify e2e"
+        github-token: invalid-token-forces-fallback
