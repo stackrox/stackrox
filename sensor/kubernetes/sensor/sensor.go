@@ -215,7 +215,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
 
-	lightspeedUpdater := lightspeed.NewUpdater(0)
+	lightspeedUpdater := lightspeed.NewUpdater(cfg.k8sClient.Kubernetes(), cfg.k8sClient.Dynamic(), 0)
 	lightspeedQuerier := lightspeed.NewQuerier(lightspeedUpdater)
 	components = append(components, lightspeedUpdater, lightspeedQuerier)
 

@@ -75,6 +75,7 @@ type LightspeedInfo struct {
 	IsReady        bool                   `protobuf:"varint,2,opt,name=is_ready,json=isReady,proto3" json:"is_ready,omitempty"`
 	HasQueryAccess bool                   `protobuf:"varint,3,opt,name=has_query_access,json=hasQueryAccess,proto3" json:"has_query_access,omitempty"`
 	StatusError    string                 `protobuf:"bytes,4,opt,name=status_error,json=statusError,proto3" json:"status_error,omitempty"`
+	IsAutoDetected bool                   `protobuf:"varint,5,opt,name=is_auto_detected,json=isAutoDetected,proto3" json:"is_auto_detected,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -135,6 +136,13 @@ func (x *LightspeedInfo) GetStatusError() string {
 		return x.StatusError
 	}
 	return ""
+}
+
+func (x *LightspeedInfo) GetIsAutoDetected() bool {
+	if x != nil {
+		return x.IsAutoDetected
+	}
+	return false
 }
 
 // LightspeedQueryRequest is sent from Central to Sensor to query Lightspeed.
@@ -265,12 +273,13 @@ const file_internalapi_central_lightspeed_proto_rawDesc = "" +
 	"\n" +
 	"$internalapi/central/lightspeed.proto\x12\acentral\"&\n" +
 	"\x10LightspeedConfig\x12\x12\n" +
-	"\x04host\x18\x01 \x01(\tR\x04host\"\x8c\x01\n" +
+	"\x04host\x18\x01 \x01(\tR\x04host\"\xb6\x01\n" +
 	"\x0eLightspeedInfo\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x19\n" +
 	"\bis_ready\x18\x02 \x01(\bR\aisReady\x12(\n" +
 	"\x10has_query_access\x18\x03 \x01(\bR\x0ehasQueryAccess\x12!\n" +
-	"\fstatus_error\x18\x04 \x01(\tR\vstatusError\"a\n" +
+	"\fstatus_error\x18\x04 \x01(\tR\vstatusError\x12(\n" +
+	"\x10is_auto_detected\x18\x05 \x01(\bR\x0eisAutoDetected\"a\n" +
 	"\x16LightspeedQueryRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\x12!\n" +

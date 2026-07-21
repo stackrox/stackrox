@@ -93,6 +93,7 @@ func (s *serviceImpl) GetLightspeedConfig(_ context.Context, req *v1.ResourceByI
 		resp.IsReady = info.GetIsReady()
 		resp.HasQueryAccess = info.GetHasQueryAccess()
 		resp.StatusError = info.GetStatusError()
+		resp.IsAutoDetected = info.GetIsAutoDetected()
 	}
 	return resp, nil
 }

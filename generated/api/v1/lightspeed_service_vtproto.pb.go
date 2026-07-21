@@ -47,6 +47,7 @@ func (m *GetLightspeedConfigResponse) CloneVT() *GetLightspeedConfigResponse {
 	r.IsReady = m.IsReady
 	r.HasQueryAccess = m.HasQueryAccess
 	r.StatusError = m.StatusError
+	r.IsAutoDetected = m.IsAutoDetected
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -96,6 +97,9 @@ func (this *GetLightspeedConfigResponse) EqualVT(that *GetLightspeedConfigRespon
 		return false
 	}
 	if this.StatusError != that.StatusError {
+		return false
+	}
+	if this.IsAutoDetected != that.IsAutoDetected {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -185,6 +189,16 @@ func (m *GetLightspeedConfigResponse) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.IsAutoDetected {
+		i--
+		if m.IsAutoDetected {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.StatusError) > 0 {
 		i -= len(m.StatusError)
 		copy(dAtA[i:], m.StatusError)
@@ -259,6 +273,9 @@ func (m *GetLightspeedConfigResponse) SizeVT() (n int) {
 	l = len(m.StatusError)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.IsAutoDetected {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -512,6 +529,26 @@ func (m *GetLightspeedConfigResponse) UnmarshalVT(dAtA []byte) error {
 			}
 			m.StatusError = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsAutoDetected", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsAutoDetected = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -798,6 +835,26 @@ func (m *GetLightspeedConfigResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.StatusError = stringValue
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsAutoDetected", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsAutoDetected = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

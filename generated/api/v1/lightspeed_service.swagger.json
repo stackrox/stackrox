@@ -141,6 +141,9 @@
         },
         "statusError": {
           "type": "string"
+        },
+        "isAutoDetected": {
+          "type": "boolean"
         }
       }
     }
