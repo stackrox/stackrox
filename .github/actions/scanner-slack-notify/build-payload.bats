@@ -91,3 +91,74 @@ teardown() {
     [[ "$ctx" == *'schedule'* ]]
     [[ "$ctx" == *'master'* ]]
 }
+
+@test "escapes slack mrkdwn special characters in annotations" {
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    all=$(jq -r '[.blocks[].text.text // empty] | join("\n")' "$OUT")
+    [[ "$all" == *'expected &gt;0'* ]]
+    [[ "$all" == *'&lt;bundle&gt; &amp; more'* ]]
+    [[ "$all" != *'<bundle>'* ]]
+}
+
+@test "truncates long annotations to 500 characters" {
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    ! grep -q 'ENDMARK' "$OUT"
+}
+
+@test "renders workflow_dispatch inputs when provided" {
+    export GITHUB_EVENT_NAME="workflow_dispatch"
+    export INPUTS_JSON='{"stream":"v2","dry_run":"false"}'
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    ctx=$(jq -r '[.blocks[] | select(.type == "context") | .elements[].text] | join("\n")' "$OUT")
+    [[ "$ctx" == *'stream=v2'* ]]
+    [[ "$ctx" == *'dry_run=false'* ]]
+}
+
+@test "accepts literal null inputs json (schedule runs)" {
+    export INPUTS_JSON="null"
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    ctx=$(jq -r '[.blocks[] | select(.type == "context") | .elements[].text] | join("\n")' "$OUT")
+    [[ "$ctx" != *'Inputs:'* ]]
+}
+
+@test "notes when no failed jobs are resolved" {
+    export GH_STUB_JOBS="$FIXTURES/jobs-none-failed.json"
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    all=$(jq -r '[.blocks[].text.text // empty] | join("\n")' "$OUT")
+    [[ "$all" == *'No failed jobs resolved via the API'* ]]
+}
+
+@test "caps annotations at 5 per job" {
+    mkdir -p "$TEST_TMP/annotations"
+    jq -n '[range(0; 7) | {annotation_level: "failure", message: "error number \(.)"}]' \
+        > "$TEST_TMP/annotations/101.json"
+    cp "$FIXTURES/annotations/102.json" "$TEST_TMP/annotations/"
+    export GH_STUB_ANNOTATIONS_DIR="$TEST_TMP/annotations"
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    all=$(jq -r '[.blocks[].text.text // empty] | join("\n")' "$OUT")
+    [[ "$all" == *'error number 4'* ]]
+    [[ "$all" != *'error number 5'* ]]
+}
+
+@test "caps listed jobs at 10 and notes the remainder" {
+    jq -n '{total_count: 12, jobs: [range(0; 12) | {
+        id: (200 + .),
+        name: "build-and-run (v\(.), refs/tags/4.9.0)",
+        conclusion: "failure",
+        html_url: "https://github.com/stackrox/stackrox/actions/runs/1234567890/job/\(200 + .)",
+        steps: []
+    }]}' > "$TEST_TMP/jobs-many.json"
+    export GH_STUB_JOBS="$TEST_TMP/jobs-many.json"
+    run "$ACTION_DIR/build-payload.sh" "$OUT"
+    [ "$status" -eq 0 ]
+    count=$(jq '[.blocks[] | select((.text.text // "") | startswith(":x:"))] | length' "$OUT")
+    [ "$count" -eq 10 ]
+    all=$(jq -r '[.blocks[] | select(.type == "context") | .elements[].text] | join("\n")' "$OUT")
+    [[ "$all" == *'2 more failed job(s)'* ]]
+}

@@ -1,0 +1,14 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 100,
+      "name": "fetch-nvd-feeds",
+      "conclusion": "success",
+      "html_url": "https://github.com/stackrox/stackrox/actions/runs/1234567890/job/100",
+      "steps": [
+        {"name": "Fetch NVD Feeds", "conclusion": "success"}
+      ]
+    }
+  ]
+}
