@@ -51,7 +51,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/go-jose/go-jose/v4 v4.1.4
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/go-logr/zapr v1.3.0
 	github.com/gobwas/glob v0.2.3
 	github.com/godbus/dbus/v5 v5.2.2
