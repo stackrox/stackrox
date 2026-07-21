@@ -69,8 +69,10 @@ function NodeCvesOverviewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const scannerV4NodeScanResultsPossible =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
+    const showScannerV4NodeScannerInfoAlert =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED') &&
+        isFeatureFlagEnabled('ROX_LEGACY_SCANNER');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -184,7 +186,7 @@ function NodeCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            {scannerV4NodeScanResultsPossible && (
+            {showScannerV4NodeScannerInfoAlert && (
                 <PageSection>
                     <Alert
                         isInline

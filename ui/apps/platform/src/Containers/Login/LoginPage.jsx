@@ -17,6 +17,7 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import Labeled from 'Components/Labeled';
 import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import BrandLogo from 'Components/PatternFly/BrandLogo';
+import { dashboardPath } from 'routePaths';
 import { loginWithBasicAuth } from 'services/AuthService';
 import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
 
@@ -246,7 +247,7 @@ class LoginPage extends Component {
                 <div className="p-8 w-full text-center">
                     <Link
                         className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 text-center no-underline"
-                        to="/main/dashboard"
+                        to={dashboardPath}
                     >
                         Go to Dashboard
                     </Link>

@@ -94,7 +94,7 @@ func constructRemainingContextQueries(stage storage.LifecycleStage, section *sto
 	for _, group := range section.GetPolicyGroups() {
 		if metadata := FieldMetadataSingleton().findField(group.GetFieldName()); metadata != nil {
 			if contextFieldsToAdd, ok := metadata.contextFields[stage]; ok {
-				for _, contextField := range contextFieldsToAdd.AsSlice() {
+				for contextField := range contextFieldsToAdd.All() {
 					contextFieldSet.Add(contextField)
 				}
 			}

@@ -1,16 +1,31 @@
 import { useCallback } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
-import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    Divider,
+    Flex,
+    PageSection,
+    Pagination,
+    Split,
+    SplitItem,
+    Title,
+} from '@patternfly/react-core';
+import pluralize from 'pluralize';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useRestQuery from 'hooks/useRestQuery';
-import { getVMCVEDetail } from 'services/VirtualMachineService';
+import useURLPagination from 'hooks/useURLPagination';
+import { getVMCVEDetail, listVMCVEAffectedVMs } from 'services/VirtualMachineService';
+import { getTableUIState } from 'utils/getTableUIState';
 
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
+import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import AffectedVirtualMachinesSummaryCard from './AffectedVirtualMachinesSummaryCard';
+import AffectedVirtualMachinesTable from './AffectedVirtualMachinesTable';
 import VirtualMachineCvePageHeader from './VirtualMachineCvePageHeader';
 
 const virtualMachineCveOverviewCvePath = getOverviewPagePath('VirtualMachine', {
@@ -22,6 +37,27 @@ function VirtualMachineCvePage() {
 
     const fetchCveDetail = useCallback(() => getVMCVEDetail(cveId ?? ''), [cveId]);
     const { data: cveDetail, isLoading, error } = useRestQuery(fetchCveDetail);
+
+    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+
+    const fetchAffectedVMs = useCallback(
+        () => listVMCVEAffectedVMs(cveId ?? '', { page, perPage }),
+        [cveId, page, perPage]
+    );
+    const {
+        data: affectedVMsData,
+        isLoading: isLoadingAffectedVMs,
+        error: affectedVMsError,
+    } = useRestQuery(fetchAffectedVMs);
+
+    const tableState = getTableUIState({
+        isLoading: isLoadingAffectedVMs,
+        data: affectedVMsData?.vms ?? [],
+        error: affectedVMsError,
+        searchFilter: {},
+    });
+
+    const affectedVMCount = affectedVMsData?.totalCount ?? 0;
 
     return (
         <>
@@ -39,7 +75,7 @@ function VirtualMachineCvePage() {
                 <VirtualMachineCvePageHeader cveDetail={cveDetail} />
             </PageSection>
             <Divider component="div" />
-            <PageSection>
+            <PageSection hasBodyWrapper={false}>
                 <SummaryCardLayout error={error} isLoading={isLoading}>
                     <SummaryCard
                         data={cveDetail}
@@ -64,6 +100,33 @@ function VirtualMachineCvePage() {
                         )}
                     />
                 </SummaryCardLayout>
+                <Divider component="div" />
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {`${affectedVMCount} ${pluralize('virtual machine', affectedVMCount)} affected`}
+                            </Title>
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={affectedVMCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <AffectedVirtualMachinesTable
+                    tableState={tableState}
+                    onClearFilters={() => {
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );
