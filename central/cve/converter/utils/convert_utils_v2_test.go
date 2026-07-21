@@ -231,6 +231,7 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 				DueDate:                    "2023-12-12",
 				KnownRansomwareCampaignUse: "Unknown",
 			},
+			CisaKev: true,
 		},
 		Cvss:                 0,
 		Severity:             0,

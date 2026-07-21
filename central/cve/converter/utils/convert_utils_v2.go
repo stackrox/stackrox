@@ -97,6 +97,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 			CvssMetrics:  from.GetCvssMetrics(),
 			Epss:         from.GetEpss(),
 			Exploit:      from.GetExploit(),
+			CisaKev:      from.GetExploit() != nil,
 			ScoreVersion: scoreVersion,
 		},
 		Cvss:                  from.GetCvss(),

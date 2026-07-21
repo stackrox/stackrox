@@ -302,6 +302,7 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 			CvssV3:       from.GetCvssV3(),
 			Epss:         from.GetEpss(),
 			Exploit:      from.GetExploit(),
+			CisaKev:      from.GetExploit() != nil,
 		},
 		Cvss:            from.GetCvss(),
 		Nvdcvss:         nvdCvss,
