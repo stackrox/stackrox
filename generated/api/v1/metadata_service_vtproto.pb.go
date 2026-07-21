@@ -30,6 +30,8 @@ func (m *Metadata) CloneVT() *Metadata {
 	r.BuildFlavor = m.BuildFlavor
 	r.ReleaseBuild = m.ReleaseBuild
 	r.LicenseStatus = m.LicenseStatus
+	r.MinCompatibleSensorVersion = m.MinCompatibleSensorVersion
+	r.MaxCompatibleSensorVersion = m.MaxCompatibleSensorVersion
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -214,6 +216,12 @@ func (this *Metadata) EqualVT(that *Metadata) bool {
 		return false
 	}
 	if this.LicenseStatus != that.LicenseStatus {
+		return false
+	}
+	if this.MinCompatibleSensorVersion != that.MinCompatibleSensorVersion {
+		return false
+	}
+	if this.MaxCompatibleSensorVersion != that.MaxCompatibleSensorVersion {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -432,6 +440,20 @@ func (m *Metadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.MaxCompatibleSensorVersion) > 0 {
+		i -= len(m.MaxCompatibleSensorVersion)
+		copy(dAtA[i:], m.MaxCompatibleSensorVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MaxCompatibleSensorVersion)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.MinCompatibleSensorVersion) > 0 {
+		i -= len(m.MinCompatibleSensorVersion)
+		copy(dAtA[i:], m.MinCompatibleSensorVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.MinCompatibleSensorVersion)))
+		i--
+		dAtA[i] = 0x2a
 	}
 	if m.LicenseStatus != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LicenseStatus))
@@ -831,6 +853,14 @@ func (m *Metadata) SizeVT() (n int) {
 	if m.LicenseStatus != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.LicenseStatus))
 	}
+	l = len(m.MinCompatibleSensorVersion)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.MaxCompatibleSensorVersion)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1107,6 +1137,70 @@ func (m *Metadata) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinCompatibleSensorVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MinCompatibleSensorVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxCompatibleSensorVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MaxCompatibleSensorVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2099,6 +2193,78 @@ func (m *Metadata) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinCompatibleSensorVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.MinCompatibleSensorVersion = stringValue
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxCompatibleSensorVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.MaxCompatibleSensorVersion = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

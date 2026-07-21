@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -231,6 +232,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
 			log.Warnf("Failed to update cluster expiry status for cluster %s: %v.", cluster.GetId(), err)
 		}
+	}
+
+	versionSkew := version.ComputeVersionSkew(version.GetMainVersion(), sensorHello.GetSensorVersion())
+	if err := s.clusters.UpdateClusterVersionSkew(clusterDSSAC, cluster.GetId(), versionSkew); err != nil {
+		log.Warnf("Failed to update version skew for cluster %s: %v.", cluster.GetId(), err)
 	}
 
 	log.Infof("Cluster %s (%s) has successfully connected to Central.", cluster.GetName(), cluster.GetId())

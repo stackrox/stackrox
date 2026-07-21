@@ -191,9 +191,11 @@ type Metadata struct {
 	// Do not use this field. It will always contain "VALID"
 	//
 	// Deprecated: Marked as deprecated in api/v1/metadata_service.proto.
-	LicenseStatus Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,proto3,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LicenseStatus              Metadata_LicenseStatus `protobuf:"varint,4,opt,name=license_status,json=licenseStatus,proto3,enum=v1.Metadata_LicenseStatus" json:"license_status,omitempty"`
+	MinCompatibleSensorVersion string                 `protobuf:"bytes,5,opt,name=min_compatible_sensor_version,json=minCompatibleSensorVersion,proto3" json:"min_compatible_sensor_version,omitempty"`
+	MaxCompatibleSensorVersion string                 `protobuf:"bytes,6,opt,name=max_compatible_sensor_version,json=maxCompatibleSensorVersion,proto3" json:"max_compatible_sensor_version,omitempty"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *Metadata) Reset() {
@@ -253,6 +255,20 @@ func (x *Metadata) GetLicenseStatus() Metadata_LicenseStatus {
 		return x.LicenseStatus
 	}
 	return Metadata_NONE
+}
+
+func (x *Metadata) GetMinCompatibleSensorVersion() string {
+	if x != nil {
+		return x.MinCompatibleSensorVersion
+	}
+	return ""
+}
+
+func (x *Metadata) GetMaxCompatibleSensorVersion() string {
+	if x != nil {
+		return x.MaxCompatibleSensorVersion
+	}
+	return ""
 }
 
 type TrustInfo struct {
@@ -652,12 +668,14 @@ var File_api_v1_metadata_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_metadata_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"\x93\x02\n" +
+	"\x1dapi/v1/metadata_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x19storage/system_info.proto\"\x99\x03\n" +
 	"\bMetadata\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12!\n" +
 	"\fbuild_flavor\x18\x02 \x01(\tR\vbuildFlavor\x12#\n" +
 	"\rrelease_build\x18\x03 \x01(\bR\freleaseBuild\x12E\n" +
-	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\"^\n" +
+	"\x0elicense_status\x18\x04 \x01(\x0e2\x1a.v1.Metadata.LicenseStatusB\x02\x18\x01R\rlicenseStatus\x12A\n" +
+	"\x1dmin_compatible_sensor_version\x18\x05 \x01(\tR\x1aminCompatibleSensorVersion\x12A\n" +
+	"\x1dmax_compatible_sensor_version\x18\x06 \x01(\tR\x1amaxCompatibleSensorVersion\"^\n" +
 	"\rLicenseStatus\x12\f\n" +
 	"\x04NONE\x10\x00\x1a\x02\b\x01\x12\x0f\n" +
 	"\aINVALID\x10\x01\x1a\x02\b\x01\x12\x0f\n" +

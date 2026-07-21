@@ -356,6 +356,20 @@ func (mr *MockDataStoreMockRecorder) UpdateClusterUpgradeStatus(ctx, id, cluster
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterUpgradeStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterUpgradeStatus), ctx, id, clusterUpgradeStatus)
 }
 
+// UpdateClusterVersionSkew mocks base method.
+func (m *MockDataStore) UpdateClusterVersionSkew(ctx context.Context, id string, versionSkew *storage.VersionSkew) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateClusterVersionSkew", ctx, id, versionSkew)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterVersionSkew indicates an expected call of UpdateClusterVersionSkew.
+func (mr *MockDataStoreMockRecorder) UpdateClusterVersionSkew(ctx, id, versionSkew any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterVersionSkew", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterVersionSkew), ctx, id, versionSkew)
+}
+
 // UpdateSensorDeploymentIdentification mocks base method.
 func (m *MockDataStore) UpdateSensorDeploymentIdentification(ctx context.Context, id string, identification *storage.SensorDeploymentIdentification) error {
 	m.ctrl.T.Helper()
