@@ -562,19 +562,19 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
-        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
-        assert deploymentUid != null
+        Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
+        assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+        String deploymentUid = nginxDeployment.deploymentUid
+        assert deploymentUid != null : "Deployment UID is not set for ${NGINXCONNECTIONTARGET}."
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
-            assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
             assert nginxDeployment.loadBalancerIP != null :
                     "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
                     " Check waitForLoadBalancer() logs for timeout details."
             targetUrl = "http://${nginxDeployment.loadBalancerIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            String routeHost = deployments[NGINXCONNECTIONTARGET]?.routeHost
-            assert routeHost != null
+            String routeHost = nginxDeployment.routeHost
+            assert routeHost != null : "Route host is not set for ${NGINXCONNECTIONTARGET}."
             targetUrl = "http://${routeHost}"
         } else {
             throw new RuntimeException("Unexpected OrchestratorType")
