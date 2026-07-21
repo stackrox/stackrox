@@ -101,6 +101,36 @@ roleRef:
 - Config lost on Central restart (Sensor re-sends status every 30s, but host
   config must be re-set)
 
+## Security follow-ups
+
+These are incremental hardening tasks that don't require architectural changes:
+
+1. **Host validation**: `ConfigureLightspeed` should reject non-HTTPS URLs and
+   restrict accepted hosts to in-cluster service patterns (`.svc` /
+   `.svc.cluster.local` suffix). This prevents pointing Sensor at an
+   attacker-controlled endpoint that could capture the SA token.
+
+2. **TLS certificate verification**: Remove `InsecureSkipVerify` from the Sensor
+   HTTP client. Load the cluster CA from
+   `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` into
+   `tls.Config.RootCAs` to verify Lightspeed's certificate.
+
+3. **Stale status race**: `Store.UpdateInfo` should ignore status updates where
+   `info.Host` doesn't match the currently configured host for that cluster.
+   After a host reconfiguration from A to B, an in-flight status report from A
+   should not overwrite the entry for B.
+
+4. **Payload minimization**: `GetDeploymentRiskSummary` serializes the full
+   deployment and risk proto as context. Redact sensitive fields (env vars,
+   service accounts, image pull secrets) before sending to Lightspeed.
+
+5. **Context cancellation in broker**: `SendAndWaitForSummary` should watch
+   `ctx.Done()` in the select, not just `sig.arrived` and `time.After`. A
+   canceled gRPC request currently blocks for up to 60s.
+
+6. **Nil status check**: `GetDeploymentRiskSummary` should treat `info == nil`
+   the same as not-ready, failing fast instead of proceeding to the broker.
+
 ## API Endpoints
 
 ### Configure Lightspeed
