@@ -45,6 +45,14 @@ jobs:
           # non-PR-runs-always-clear-testcache behavior must be bypassed.
           skip-test-cache-clear: 'true'
 
+      - name: "[debug] environment fingerprint"
+        run: |
+          echo "pwd: $(pwd -P)"
+          echo "go env: $(go env GOROOT GOCACHE GOPATH GOVERSION)"
+          echo "hostname: $(hostname)"
+          echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
+          echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
+
       - name: Build and test fixture (variantfoo state)
         run: |
           go build -C tools/cicachetest ./...
@@ -93,6 +101,14 @@ jobs:
             exit 1
           fi
           echo "Assertion 2 passed: build cache hit (zero recompiles)"
+
+      - name: "[debug] environment fingerprint"
+        run: |
+          echo "pwd: $(pwd -P)"
+          echo "go env: $(go env GOROOT GOCACHE GOPATH GOVERSION)"
+          echo "hostname: $(hostname)"
+          echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
+          echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
 
       - name: 'Assertion 3: test cache must be genuinely hit'
         run: |
