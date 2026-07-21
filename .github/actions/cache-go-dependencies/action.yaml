@@ -126,10 +126,10 @@ runs:
         git ls-files | xargs touch -t 200101010000
       shell: bash
 
-    # NEGATIVE CONTROL 1/3: temporarily removed to prove
-    # cache-go-dependencies-regression.yaml's Assertion 1 actually catches
-    # the module-index staleness bug when the fix is absent. Will be
-    # restored in the next commit once confirmed failing in CI.
-    # - name: "[test] disable Go module index (GODEBUG=goindex=0)"
-    #   run: echo "GODEBUG=goindex=0" >> "$GITHUB_ENV"
-    #   shell: bash
+    # VERIFY BRANCH: disable Go's module index entirely. Confirmed locally
+    # (real jwt v4->v5 diff, not a stdlib stand-in) that this alone prevents
+    # "could not import ... (open : no such file or directory)" even with the
+    # old fixed-constant mtime scheme reapplied unconditionally on every run.
+    - name: "[test] disable Go module index (GODEBUG=goindex=0)"
+      run: echo "GODEBUG=goindex=0" >> "$GITHUB_ENV"
+      shell: bash
