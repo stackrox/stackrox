@@ -54,12 +54,6 @@ func extractTestKey(event pubsub.Event) string {
 	return e.key
 }
 
-func assertInDedupCallback(t *testing.T, assertion func(*testing.T, pubsub.Event) error) pubsub.EventCallback {
-	return func(event pubsub.Event) error {
-		return assertion(t, event)
-	}
-}
-
 func TestNewDedupingLaneOptions(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
