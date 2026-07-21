@@ -71,7 +71,10 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
-          cache-scope: 'cicachetest'
+          # NEGATIVE CONTROL 2/3: deliberately mismatched vs prime-cache's
+          # scope, so restore misses entirely. Proves Assertion 2 catches a
+          # broken/no-op cache restore. Will be reverted once confirmed.
+          cache-scope: 'cicachetest-broken'
           skip-test-cache-clear: 'true'
 
       - name: 'Assertion 1: module-index staleness must not recur'
