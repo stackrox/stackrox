@@ -134,7 +134,9 @@ func TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{Validity: ctx}))
+	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{
+		LifecycleEvent: events.LifecycleEvent{Validity: ctx},
+	}))
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for an expired event")
 }
 
@@ -148,7 +150,9 @@ func TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType(t *testing.T) {
 
 	require.NotNil(t, capturing.callback)
 
-	err := capturing.callback(&events.SoftRestartEvent{Text: "wrong type"})
+	err := capturing.callback(&events.SoftRestartEvent{
+		LifecycleEvent: events.LifecycleEvent{Text: "wrong type"},
+	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected event type")
 	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for wrong event type")

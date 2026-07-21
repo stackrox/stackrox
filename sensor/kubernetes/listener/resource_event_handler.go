@@ -83,7 +83,9 @@ func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubS
 		}
 		log.Info(status.String())
 		if features.SensorInternalPubSub.Enabled() {
-			if err := pubSubDispatcher.Publish(&events.SoftRestartEvent{Text: text, Validity: ctx}); err != nil {
+			if err := pubSubDispatcher.Publish(&events.SoftRestartEvent{
+				LifecycleEvent: events.LifecycleEvent{Text: text, Validity: ctx},
+			}); err != nil {
 				log.Errorf("Unable to publish SoftRestartEvent: %v", err)
 			}
 			return
@@ -524,7 +526,10 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	if features.SensorInternalPubSub.Enabled() {
 		utils.Should(k.pubSubDispatcher.Publish(&events.ResourceSyncFinishedEvent{
-			Text: "Finished the k8s resource sync", Validity: k.context,
+			LifecycleEvent: events.LifecycleEvent{
+				Text:     "Finished the k8s resource sync",
+				Validity: k.context,
+			},
 		}))
 	} else {
 		utils.Should(k.pubSub.Publish(&internalmessage.SensorInternalMessage{

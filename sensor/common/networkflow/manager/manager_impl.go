@@ -192,25 +192,7 @@ func NewManager(
 			pubsub.NetworkFlowManagerResourceSyncConsumer,
 			pubsub.ResourceSyncFinishedTopic,
 			pubsub.ResourceSyncFinishedLane,
-			func(e pubsub.Event) error {
-				evt, ok := e.(*events.ResourceSyncFinishedEvent)
-				if !ok {
-					return errors.Errorf("unexpected event type: %T", e)
-				}
-				if evt.IsExpired() {
-					return nil
-				}
-				select {
-				case <-mgr.stopper.Flow().StopRequested():
-					return nil
-				default:
-				}
-				mgr.handleResourceSyncFinished()
-				if mgr.purger != nil {
-					mgr.purger.Notify(common.SensorComponentEventResourceSyncFinished)
-				}
-				return nil
-			},
+			mgr.handleResourceSyncEvent,
 		); err != nil {
 			log.Panicf("unable to register consumer for ResourceSyncFinished: %v", err)
 		}
@@ -324,6 +306,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowManager"))
+	// Ensure that the sub-components are notified after this manager processes the notification.
 	defer func() {
 		if m.purger != nil {
 			m.purger.Notify(e)
@@ -333,6 +316,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventResourceSyncFinished:
 		m.handleResourceSyncFinished()
 	case common.SensorComponentEventOfflineMode:
+		// In offline mode with event buffering enabled, we continue operation
 		return
 	}
 }
@@ -341,6 +325,28 @@ func (m *networkFlowManager) handleResourceSyncFinished() {
 	if m.initialSync.CompareAndSwap(false, true) {
 		m.enricherTicker.Reset(enricherCycle)
 	}
+}
+
+func (m *networkFlowManager) handleResourceSyncEvent(e pubsub.Event) error {
+	evt, ok := e.(*events.ResourceSyncFinishedEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", e)
+	}
+	if evt.IsExpired() {
+		return nil
+	}
+	select {
+	case <-m.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+	m.handleResourceSyncFinished()
+	if m.purger != nil {
+		// Note: The purger could ideally subscribe to ResourceSyncFinished directly
+		// instead of being notified here (if order is not important).
+		m.purger.Notify(common.SensorComponentEventResourceSyncFinished)
+	}
+	return nil
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {

@@ -1,14 +1,6 @@
 package listener
 
 // Benchmarks for the crdWatcherCallbackWrapper publish path.
-//
-// To compare old vs new, run with each flag state and feed the results to benchstat:
-//
-//   ROX_SENSOR_PUBSUB=false go test -bench=Benchmark -benchmem -count=10 -run='^$' \
-//     ./sensor/kubernetes/listener/ > bench_legacy.txt
-//   ROX_SENSOR_PUBSUB=true go test -bench=Benchmark -benchmem -count=10 -run='^$' \
-//     ./sensor/kubernetes/listener/ > bench_pubsub.txt
-//   benchstat bench_legacy.txt bench_pubsub.txt
 
 import (
 	"context"
@@ -16,7 +8,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
@@ -25,7 +16,15 @@ import (
 )
 
 func BenchmarkCrdCallbackPublish(b *testing.B) {
-	pubsubEnabled := features.SensorInternalPubSub.Enabled()
+	b.Run("legacy", func(b *testing.B) {
+		benchmarkCrdCallbackPublish(b, false)
+	})
+	b.Run("pubsub", func(b *testing.B) {
+		benchmarkCrdCallbackPublish(b, true)
+	})
+}
+
+func benchmarkCrdCallbackPublish(b *testing.B, pubsubEnabled bool) {
 	msgSub := internalmessage.NewMessageSubscriber()
 
 	var callbackFired atomic.Bool
@@ -72,7 +71,6 @@ func BenchmarkCrdCallbackPublish(b *testing.B) {
 	status := &watcher.Status{Available: true}
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
 	for b.Loop() {
 		cb(status)

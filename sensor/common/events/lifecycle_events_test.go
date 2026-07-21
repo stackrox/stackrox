@@ -20,41 +20,55 @@ func TestResourceSyncFinishedEvent_TopicAndLane(t *testing.T) {
 	assert.Equal(t, pubsub.ResourceSyncFinishedLane, e.Lane())
 }
 
-func TestSoftRestartEvent_IsExpired(t *testing.T) {
-	t.Run("nil validity is not expired", func(t *testing.T) {
-		e := &SoftRestartEvent{}
-		assert.False(t, e.IsExpired())
-	})
-	t.Run("active context is not expired", func(t *testing.T) {
-		e := &SoftRestartEvent{Validity: context.Background()}
-		assert.False(t, e.IsExpired())
-	})
-	t.Run("cancelled context is expired", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		e := &SoftRestartEvent{Validity: ctx}
-		assert.True(t, e.IsExpired())
-	})
-}
+// TestLifecycleEvent_IsExpired verifies the shared IsExpired behavior for both
+// SoftRestartEvent and ResourceSyncFinishedEvent.
+func TestLifecycleEvent_IsExpired(t *testing.T) {
+	tests := map[string]struct {
+		event    interface{ IsExpired() bool }
+		expected bool
+	}{
+		"SoftRestart with nil validity": {
+			event:    &SoftRestartEvent{},
+			expected: false,
+		},
+		"SoftRestart with active context": {
+			event:    &SoftRestartEvent{LifecycleEvent{Validity: context.Background()}},
+			expected: false,
+		},
+		"SoftRestart with cancelled context": {
+			event: func() *SoftRestartEvent {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return &SoftRestartEvent{LifecycleEvent{Validity: ctx}}
+			}(),
+			expected: true,
+		},
+		"ResourceSyncFinished with nil validity": {
+			event:    &ResourceSyncFinishedEvent{},
+			expected: false,
+		},
+		"ResourceSyncFinished with active context": {
+			event:    &ResourceSyncFinishedEvent{LifecycleEvent{Validity: context.Background()}},
+			expected: false,
+		},
+		"ResourceSyncFinished with cancelled context": {
+			event: func() *ResourceSyncFinishedEvent {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return &ResourceSyncFinishedEvent{LifecycleEvent{Validity: ctx}}
+			}(),
+			expected: true,
+		},
+	}
 
-func TestResourceSyncFinishedEvent_IsExpired(t *testing.T) {
-	t.Run("nil validity is not expired", func(t *testing.T) {
-		e := &ResourceSyncFinishedEvent{}
-		assert.False(t, e.IsExpired())
-	})
-	t.Run("active context is not expired", func(t *testing.T) {
-		e := &ResourceSyncFinishedEvent{Validity: context.Background()}
-		assert.False(t, e.IsExpired())
-	})
-	t.Run("cancelled context is expired", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		cancel()
-		e := &ResourceSyncFinishedEvent{Validity: ctx}
-		assert.True(t, e.IsExpired())
-	})
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.event.IsExpired())
+		})
+	}
 }
 
 func TestSoftRestartEvent_String(t *testing.T) {
-	e := &SoftRestartEvent{Text: "CRD resources changed"}
+	e := &SoftRestartEvent{LifecycleEvent{Text: "CRD resources changed"}}
 	assert.Equal(t, "CRD resources changed", e.String())
 }

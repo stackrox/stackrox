@@ -2,21 +2,12 @@ package manager
 
 // Benchmarks for ResourceSyncFinished delivery through both the pubsub and legacy
 // internalmessage paths.
-//
-// To compare old vs new, run with each flag state and feed the results to benchstat:
-//
-//   ROX_SENSOR_PUBSUB=false go test -bench=Benchmark -benchmem -count=10 -run='^$' \
-//     ./sensor/common/networkflow/manager/ > bench_legacy.txt
-//   ROX_SENSOR_PUBSUB=true go test -bench=Benchmark -benchmem -count=10 -run='^$' \
-//     ./sensor/common/networkflow/manager/ > bench_pubsub.txt
-//   benchstat bench_legacy.txt bench_pubsub.txt
 
 import (
 	"context"
 	"runtime"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/events"
@@ -31,12 +22,20 @@ import (
 )
 
 func BenchmarkResourceSyncDelivery(b *testing.B) {
+	b.Run("legacy", func(b *testing.B) {
+		benchmarkResourceSyncDelivery(b, false)
+	})
+	b.Run("pubsub", func(b *testing.B) {
+		benchmarkResourceSyncDelivery(b, true)
+	})
+}
+
+func benchmarkResourceSyncDelivery(b *testing.B, pubsubEnabled bool) {
 	mockCtrl := gomock.NewController(b)
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
 
-	pubsubEnabled := features.SensorInternalPubSub.Enabled()
 	msgSub := internalmessage.NewMessageSubscriber()
 
 	var disp common.PubSubDispatcher
@@ -62,7 +61,9 @@ func BenchmarkResourceSyncDelivery(b *testing.B) {
 		updatecomputer.New(),
 	).(*networkFlowManager)
 
-	event := &events.ResourceSyncFinishedEvent{Validity: context.Background()}
+	event := &events.ResourceSyncFinishedEvent{
+		LifecycleEvent: events.LifecycleEvent{Validity: context.Background()},
+	}
 	legacyMsg := &internalmessage.SensorInternalMessage{
 		Kind:     internalmessage.SensorMessageResourceSyncFinished,
 		Text:     "bench sync",
@@ -70,7 +71,6 @@ func BenchmarkResourceSyncDelivery(b *testing.B) {
 	}
 
 	b.ReportAllocs()
-	b.ResetTimer()
 
 	for b.Loop() {
 		if pubsubEnabled {

@@ -339,37 +339,39 @@ func (s *Sensor) registerSoftRestartHandler() {
 			pubsub.SensorSoftRestartConsumer,
 			pubsub.SoftRestartTopic,
 			pubsub.SoftRestartLane,
-			s.makeSoftRestartCallback(),
+			s.onSoftRestart,
 		); err != nil {
 			log.Panicf("Failed to register consumer for SoftRestart: %v", err)
 		}
 	} else {
-		err := s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.makeSoftRestartLegacyHandler())
+		err := s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.onSoftRestartLegacy)
 		if err != nil {
 			log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 		}
 	}
 }
 
-func (s *Sensor) makeSoftRestartCallback() pubsub.EventCallback {
-	return func(e pubsub.Event) error {
-		evt, ok := e.(*events.SoftRestartEvent)
-		if !ok {
-			return errors.Errorf("unexpected event type: %T", e)
-		}
-		s.handleSoftRestart(evt.Text, evt.IsExpired())
+func (s *Sensor) onSoftRestart(e pubsub.Event) error {
+	evt, ok := e.(*events.SoftRestartEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", e)
+	}
+	if evt.IsExpired() {
 		return nil
 	}
-}
-
-func (s *Sensor) makeSoftRestartLegacyHandler() func(*internalmessage.SensorInternalMessage) {
-	return func(msg *internalmessage.SensorInternalMessage) {
-		s.handleSoftRestart(msg.Text, msg.IsExpired())
+	s.centralCommunicationLock.Lock()
+	defer s.centralCommunicationLock.Unlock()
+	if s.centralCommunication == nil {
+		log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
+		return nil
 	}
+	log.Infof("Connection restart requested: %s", evt.Text)
+	s.centralCommunication.Stop()
+	return nil
 }
 
-func (s *Sensor) handleSoftRestart(text string, expired bool) {
-	if expired {
+func (s *Sensor) onSoftRestartLegacy(msg *internalmessage.SensorInternalMessage) {
+	if msg.IsExpired() {
 		return
 	}
 	s.centralCommunicationLock.Lock()
@@ -378,7 +380,7 @@ func (s *Sensor) handleSoftRestart(text string, expired bool) {
 		log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 		return
 	}
-	log.Infof("Connection restart requested: %s", text)
+	log.Infof("Connection restart requested: %s", msg.Text)
 	s.centralCommunication.Stop()
 }
 
