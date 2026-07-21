@@ -4,7 +4,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: central-worker
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace | quote }}
   labels:
     app: central-worker
     {{- include "srox.labels" (list . "deployment" "central-worker") | nindent 4 }}
@@ -20,9 +20,10 @@ spec:
     type: Recreate
   template:
     metadata:
-      namespace: {{ .Release.Namespace }}
+      namespace: {{ ._rox._namespace | quote }}
       labels:
         app: central-worker
+        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central-worker") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-worker") | nindent 8 }}
@@ -37,15 +38,19 @@ spec:
       {{- end }}
       affinity:
         {{- toYaml ._rox.centralWorker.affinity | nindent 8 }}
+      {{- if ._rox.centralWorker.hostAliases }}
+      hostAliases: {{ toYaml ._rox.centralWorker.hostAliases | nindent 8 }}
+      {{- end }}
       {{- if ._rox.centralWorker.priorityClassName }}
       priorityClassName: {{ quote ._rox.centralWorker.priorityClassName }}
       {{- end }}
       serviceAccountName: central-worker
-      {{- if not (eq ._rox.env.openshift 4)}}
       securityContext:
-        fsGroup: 4000
+        runAsNonRoot: true
+        {{- if not ._rox.env.openshift }}
         runAsUser: 4000
-      {{end}}
+        fsGroup: 4000
+        {{- end }}
       containers:
       - name: central-worker
         image: {{ ._rox.central.image.fullRef | quote }}

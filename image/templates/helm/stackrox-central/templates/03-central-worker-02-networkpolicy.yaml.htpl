@@ -4,7 +4,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: central-worker
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ ._rox._namespace | quote }}
   labels:
     {{- include "srox.labels" (list . "networkpolicy" "central-worker") | nindent 4 }}
   annotations:

@@ -426,17 +426,13 @@ func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translatio
 }
 
 func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
-	if c == nil && !defaults.IsSet() {
-		return nil
-	}
 	if c == nil {
 		c = &platform.CentralWorkerSpec{}
 	}
 
 	cv := translation.NewValuesBuilder()
-	if c.Enabled != nil {
-		cv.SetBoolValue("enabled", *c.Enabled)
-	}
+	enabled := c.Enabled != nil && *c.Enabled
+	cv.SetBoolValue("enabled", enabled)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
 	if len(c.HostAliases) > 0 {

@@ -641,7 +641,7 @@ const (
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
 
-// CentralWorkerSpec defines settings for the central-worker Deployment.
+// CentralWorkerSpec defines the central-worker configuration.
 type CentralWorkerSpec struct {
 	// If set to true, pruning and reporting jobs run in a separate Deployment.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Enabled"
