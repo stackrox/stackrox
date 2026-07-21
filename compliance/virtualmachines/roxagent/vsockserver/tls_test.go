@@ -278,7 +278,9 @@ func TestCARefresher_Refresh(t *testing.T) {
 	// refresher bug that unioned pools instead of replacing them would pass
 	// unnoticed without this assertion.
 	oldClientCert := testLeafCert(t, ca1Cert, ca1Key)
-	doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+	err = doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "verifying client certificate after KubeVirt CA refresh")
 }
 
 // TestCARefresher_RefreshFailure_KeepsOldCA proves that a failed refetch,
@@ -407,7 +409,9 @@ func TestCARefresher_HardCutover_ForcesRefetchWhileCacheFresh(t *testing.T) {
 
 	// Forced fetch replaces the pool; old leaves must no longer verify.
 	oldClientCert := testLeafCert(t, ca1Cert, ca1Key)
-	doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+	err = doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "must re-fetch KubeVirt CA, but was rate-limited")
 }
 
 // TestCARefresher_HardCutover_ForceRefetchFailureKeepsRejecting proves the
@@ -435,7 +439,8 @@ func TestCARefresher_HardCutover_ForceRefetchFailureKeepsRejecting(t *testing.T)
 
 	serverCert := testServerCert(t)
 	newClientCert := testLeafCert(t, ca2Cert, ca2Key)
-	doTLSHandshakeFails(t, r, serverCert, newClientCert)
+	err = doTLSHandshakeFails(t, r, serverCert, newClientCert)
+	require.Error(t, err)
 	assert.Equal(t, int32(2), fetchCount.Load(), "verify failure must still attempt a forced refetch")
 }
 
@@ -497,9 +502,42 @@ func TestCARefresher_TLSHandshake_WrongCA(t *testing.T) {
 
 	serverCert := testServerCert(t)
 	wrongClientCert := testLeafCert(t, wrongCACert, wrongCAKey)
-	doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+	err := doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "verifying client certificate after KubeVirt CA refresh")
 	// Cold ensureFreshPool + one forced refetch after verify failure.
 	assert.Equal(t, int32(2), fetchCount.Load())
+}
+
+// TestCARefresher_ForceFetchCooldown_SkipsRepeatedRefetch proves the forced
+// refetch in verifyPeerCertificate is rate-limited: a second verify failure
+// arriving right after the first must not trigger another fetch, and must
+// still fail (with the original verify error, not a new fetch attempt).
+func TestCARefresher_ForceFetchCooldown_SkipsRepeatedRefetch(t *testing.T) {
+	caPEM, _, _ := testCA(t)
+	_, wrongCACert, wrongCAKey := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			fetchCount.Add(1)
+			return caPEM, nil
+		}),
+	)
+
+	serverCert := testServerCert(t)
+	wrongClientCert := testLeafCert(t, wrongCACert, wrongCAKey)
+
+	err := doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "verifying client certificate after KubeVirt CA refresh")
+	require.Equal(t, int32(2), fetchCount.Load(), "cold ensureFreshPool + one forced refetch")
+
+	err = doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "must re-fetch KubeVirt CA, but was rate-limited")
+	assert.Equal(t, int32(2), fetchCount.Load(),
+		"a verify failure inside the forced-refetch cooldown must not trigger another fetch")
 }
 
 // doTLSHandshake performs a full TLS handshake between a server using the
@@ -537,11 +575,8 @@ func doTLSHandshake(t *testing.T, r *CARefresher, serverCert, clientCert tls.Cer
 	require.NoError(t, <-serverErr, "server handshake should succeed")
 }
 
-// doTLSHandshakeFails performs a TLS handshake between a server using the
-// refresher's TLS config and a client presenting the given cert, and asserts
-// that the server-side handshake is rejected (e.g. because clientCert isn't
-// signed by any CA in the refresher's currently active pool).
-func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tls.Certificate) {
+// doTLSHandshakeFails is doTLSHandshake for the rejection path.
+func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tls.Certificate) error {
 	t.Helper()
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -571,7 +606,9 @@ func doTLSHandshakeFails(t *testing.T, r *CARefresher, serverCert, clientCert tl
 		_ = clientConn.Close()
 	}
 
-	assert.Error(t, <-serverErr, "server handshake should fail")
+	handshakeErr := <-serverErr
+	assert.Error(t, handshakeErr, "server handshake should fail")
+	return handshakeErr
 }
 
 func TestExtractBundleRaw(t *testing.T) {

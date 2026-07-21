@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protowire"
@@ -29,6 +30,13 @@ const (
 	// handshake-triggered refetch (see CARefresher doc comment).
 	defaultRefreshInterval = 1 * time.Hour
 	defaultFetchTimeout    = 10 * time.Second
+
+	// defaultForceFetchCooldown throttles the forced refetch in
+	// verifyPeerCertificate, which a peer can trigger on demand by
+	// repeatedly presenting an invalid client cert. Deliberately generous:
+	// legitimate dials happen at most every 1-5 minutes, so even this
+	// leaves a wide margin.
+	defaultForceFetchCooldown = 2 * time.Second
 
 	// gRPC method for the KubeVirt System.CABundle RPC.
 	// Proto: kubevirt.io/kubevirt/pkg/vsock/system/v1/system.proto
@@ -191,6 +199,10 @@ type CARefresher struct {
 	interval     time.Duration
 	fetchTimeout time.Duration
 	fetchCA      func(ctx context.Context) ([]byte, error)
+
+	// forceFetchLimiter throttles verifyPeerCertificate's forced-refetch
+	// path only; the age-gated path via ensureFreshPool is untouched.
+	forceFetchLimiter *rate.Limiter
 }
 
 // NewCARefresher creates a refresher with an empty cache. There is no
@@ -201,9 +213,10 @@ type CARefresher struct {
 // wasted effort - see the CARefresher doc comment.
 func NewCARefresher(opts ...CARefresherOption) *CARefresher {
 	r := &CARefresher{
-		interval:     defaultRefreshInterval,
-		fetchTimeout: defaultFetchTimeout,
-		fetchCA:      fetchKubeVirtCA,
+		interval:          defaultRefreshInterval,
+		fetchTimeout:      defaultFetchTimeout,
+		fetchCA:           fetchKubeVirtCA,
+		forceFetchLimiter: rate.NewLimiter(rate.Every(defaultForceFetchCooldown), 1),
 	}
 	for _, o := range opts {
 		o(r)
@@ -359,6 +372,12 @@ func verifyClientCertChain(pool *x509.CertPool, certs []*x509.Certificate) error
 // instead of waiting out the age gate. A failed forced fetch never falls
 // back to the stale pool, since that pool already failed verification;
 // unlike ensureFreshPool, which can.
+//
+// The forced fetch itself is rate-limited (forceFetchLimiter): a peer that
+// keeps presenting an invalid cert can trigger this path on demand, so
+// without a cooldown it could repeatedly hammer virt-handler's CABundle
+// service. While the cooldown is active, this skips the fetch and returns
+// the original verify error, noting that the retry was skipped.
 func (r *CARefresher) verifyPeerCertificate(ctx context.Context, rawCerts [][]byte) error {
 	certs, err := parseClientCerts(rawCerts)
 	if err != nil {
@@ -371,9 +390,13 @@ func (r *CARefresher) verifyPeerCertificate(ctx context.Context, rawCerts [][]by
 		return nil
 	}
 
+	if !r.forceFetchLimiter.Allow() {
+		return fmt.Errorf("verifying client certificate: %w; must re-fetch KubeVirt CA, but was rate-limited", verifyErr)
+	}
+
 	newPool, fetchErr := r.fetchAndCachePool(ctx)
 	if fetchErr != nil {
-		return fmt.Errorf("verifying client certificate: %w (KubeVirt CA re-fetch failed: %v)", verifyErr, fetchErr)
+		return fmt.Errorf("verifying client certificate: %w; must re-fetch KubeVirt CA, but re-fetch also failed: %w", verifyErr, fetchErr)
 	}
 	if err := verifyClientCertChain(newPool, certs); err != nil {
 		return fmt.Errorf("verifying client certificate after KubeVirt CA refresh: %w", err)
