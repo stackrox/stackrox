@@ -45,23 +45,14 @@ jobs:
           # non-PR-runs-always-clear-testcache behavior must be bypassed.
           skip-test-cache-clear: 'true'
 
-      - name: "[debug] environment fingerprint"
-        run: |
-          echo "pwd: $(pwd -P)"
-          echo "go env: $(go env GOROOT GOCACHE GOPATH GOVERSION)"
-          echo "hostname: $(hostname)"
-          echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
-          echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
-
       - name: Build and test fixture (variantfoo state)
         run: |
           go build -C tools/cicachetest ./...
-          go test -C tools/cicachetest ./testcache/...
-
-      - name: "[debug] test binary content hash"
-        run: |
-          go test -C tools/cicachetest -c -o /tmp/testbin ./testcache/...
-          sha256sum /tmp/testbin
+          # -v must match Assertion 3's invocation exactly — Go's test
+          # result cache treats verbose mode as part of the cache key, so a
+          # flag mismatch here would look like a cache miss for the wrong
+          # reason (confirmed the hard way while building this test).
+          go test -C tools/cicachetest ./testcache/... -v
 
   verify-restore:
     needs: prime-cache
@@ -107,30 +98,12 @@ jobs:
           fi
           echo "Assertion 2 passed: build cache hit (zero recompiles)"
 
-      - name: "[debug] environment fingerprint"
-        run: |
-          echo "pwd: $(pwd -P)"
-          echo "go env: $(go env GOROOT GOCACHE GOPATH GOVERSION)"
-          echo "hostname: $(hostname)"
-          echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
-          echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
-
-      - name: "[debug] same-job repeat invocation (control)"
-        run: |
-          echo "--- run A ---"
-          go test -C tools/cicachetest ./testcache/...
-          echo "--- run B (immediately after, same job, same path, no restore involved) ---"
-          go test -C tools/cicachetest ./testcache/...
-
-      - name: "[debug] test binary content hash"
-        run: |
-          go test -C tools/cicachetest -c -o /tmp/testbin ./testcache/...
-          sha256sum /tmp/testbin
-
       - name: 'Assertion 3: test cache must be genuinely hit'
         run: |
           # testcache_test.go and its testdata are byte-identical to what
-          # prime-cache ran. This is the exact scenario the discarded
+          # prime-cache ran, with matching flags (-v both sides — Go's test
+          # result cache treats verbose mode as part of the cache key).
+          # This is the exact scenario the discarded
           # whole-tree-single-commit-timestamp mtime approach broke earlier.
           go test -C tools/cicachetest ./testcache/... -v > test.log 2>&1
           cat test.log
