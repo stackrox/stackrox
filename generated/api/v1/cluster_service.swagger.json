@@ -624,6 +624,16 @@
         "sensorCertNotBefore": {
           "type": "string",
           "format": "date-time"
+        },
+        "lastRefreshTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last successful cert issuance by Central for this cluster."
+        },
+        "lastRefreshedCertExpiry": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Expiry of the certs issued in the last refresh."
         }
       }
     },

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package central;
 
+import "google/protobuf/duration.proto";
 import "storage/service_identity.proto";
 
 option go_package = "./internalapi/central;central";
@@ -14,6 +15,8 @@ message IssueSecuredClusterCertsRequest {
   string request_id = 1;
   // Optional: hex-encoded SHA-512_256 fingerprint of the Sensor's currently trusted CA
   string ca_fingerprint = 2;
+  // Optional: requested validity duration for issued certificates. When unset, Central uses the default 1-year profile.
+  google.protobuf.Duration requested_validity = 3;
 }
 
 message IssueSecuredClusterCertsResponse {

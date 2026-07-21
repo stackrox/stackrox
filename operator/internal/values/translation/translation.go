@@ -103,17 +103,28 @@ func GetImagePullSecrets(imagePullSecrets []platform.LocalSecretReference) *Valu
 	return &res
 }
 
-// GetTLSConfigValues converts platform.TLSConfig to a *ValuesBuilder with an "additionalCAs" field.
+// GetTLSConfigValues converts platform.TLSConfig to a *ValuesBuilder.
 func GetTLSConfigValues(tls *platform.TLSConfig) *ValuesBuilder {
-	if tls == nil || len(tls.AdditionalCAs) == 0 {
+	if tls == nil {
 		return nil
 	}
-	cas := NewValuesBuilder()
-	for _, ca := range tls.AdditionalCAs {
-		cas.SetStringValue(ca.Name, ca.Content)
-	}
 	res := NewValuesBuilder()
-	res.AddChild("additionalCAs", &cas)
+	hasValues := false
+	if len(tls.AdditionalCAs) > 0 {
+		hasValues = true
+		cas := NewValuesBuilder()
+		for _, ca := range tls.AdditionalCAs {
+			cas.SetStringValue(ca.Name, ca.Content)
+		}
+		res.AddChild("additionalCAs", &cas)
+	}
+	if tls.ServiceCertValidity != nil && *tls.ServiceCertValidity != "" {
+		hasValues = true
+		res.SetStringValue("serviceCertValidity", *tls.ServiceCertValidity)
+	}
+	if !hasValues {
+		return nil
+	}
 	return &res
 }
 

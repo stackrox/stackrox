@@ -7,9 +7,11 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	durationpb1 "github.com/planetscale/vtprotobuf/types/known/durationpb"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	io "io"
 	unsafe "unsafe"
 )
@@ -59,6 +61,7 @@ func (m *SensorHello) CloneVT() *SensorHello {
 	r.PolicyVersion = m.PolicyVersion
 	r.SensorState = m.SensorState
 	r.RequestDeduperState = m.RequestDeduperState
+	r.RequestedCertValidity = (*durationpb.Duration)((*durationpb1.Duration)(m.RequestedCertValidity).CloneVT())
 	if rhs := m.Capabilities; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -192,6 +195,9 @@ func (this *SensorHello) EqualVT(that *SensorHello) bool {
 		return false
 	}
 	if this.RequestDeduperState != that.RequestDeduperState {
+		return false
+	}
+	if !(*durationpb1.Duration)(this.RequestedCertValidity).EqualVT((*durationpb1.Duration)(that.RequestedCertValidity)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -365,6 +371,16 @@ func (m *SensorHello) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RequestedCertValidity != nil {
+		size, err := (*durationpb1.Duration)(m.RequestedCertValidity).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x42
 	}
 	if m.RequestDeduperState {
 		i--
@@ -613,6 +629,10 @@ func (m *SensorHello) SizeVT() (n int) {
 	}
 	if m.RequestDeduperState {
 		n += 2
+	}
+	if m.RequestedCertValidity != nil {
+		l = (*durationpb1.Duration)(m.RequestedCertValidity).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1084,6 +1104,42 @@ func (m *SensorHello) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.RequestDeduperState = bool(v != 0)
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestedCertValidity", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RequestedCertValidity == nil {
+				m.RequestedCertValidity = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.RequestedCertValidity).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -1894,6 +1950,42 @@ func (m *SensorHello) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.RequestDeduperState = bool(v != 0)
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestedCertValidity", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RequestedCertValidity == nil {
+				m.RequestedCertValidity = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.RequestedCertValidity).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

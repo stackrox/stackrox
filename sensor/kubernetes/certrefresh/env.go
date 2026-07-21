@@ -1,6 +1,8 @@
 package certrefresh
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/installmethod"
 )
@@ -14,6 +16,11 @@ var sensorCARotationOperatorEnabled = env.RegisterBooleanSetting("ROX_SENSOR_CA_
 // When enabled, Helm-managed Sensors will advertise the SensorCARotationSupported capability to Central,
 // causing Central to issue Secured Cluster certificates signed by the newer CA during CA rotation.
 var sensorCARotationHelmEnabled = env.RegisterBooleanSetting("ROX_SENSOR_CA_ROTATION_HELM_ENABLED", false)
+
+// SensorServiceCertValidity returns the configured service certificate validity duration.
+func SensorServiceCertValidity() time.Duration {
+	return env.SensorServiceCertValidity.DurationSetting()
+}
 
 // SensorCARotationEnabled returns whether CA rotation capabilities should be enabled for this Sensor,
 // based on the installation method and corresponding environment variable settings.

@@ -416,6 +416,8 @@ func (m *ClusterCertExpiryStatus) CloneVT() *ClusterCertExpiryStatus {
 	r := new(ClusterCertExpiryStatus)
 	r.SensorCertExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SensorCertExpiry).CloneVT())
 	r.SensorCertNotBefore = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SensorCertNotBefore).CloneVT())
+	r.LastRefreshTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastRefreshTime).CloneVT())
+	r.LastRefreshedCertExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastRefreshedCertExpiry).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1383,6 +1385,12 @@ func (this *ClusterCertExpiryStatus) EqualVT(that *ClusterCertExpiryStatus) bool
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.SensorCertNotBefore).EqualVT((*timestamppb1.Timestamp)(that.SensorCertNotBefore)) {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.LastRefreshTime).EqualVT((*timestamppb1.Timestamp)(that.LastRefreshTime)) {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.LastRefreshedCertExpiry).EqualVT((*timestamppb1.Timestamp)(that.LastRefreshedCertExpiry)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3245,6 +3253,26 @@ func (m *ClusterCertExpiryStatus) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LastRefreshedCertExpiry != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastRefreshedCertExpiry).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.LastRefreshTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastRefreshTime).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if m.SensorCertNotBefore != nil {
 		size, err := (*timestamppb1.Timestamp)(m.SensorCertNotBefore).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -4556,6 +4584,14 @@ func (m *ClusterCertExpiryStatus) SizeVT() (n int) {
 	}
 	if m.SensorCertNotBefore != nil {
 		l = (*timestamppb1.Timestamp)(m.SensorCertNotBefore).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.LastRefreshTime != nil {
+		l = (*timestamppb1.Timestamp)(m.LastRefreshTime).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.LastRefreshedCertExpiry != nil {
+		l = (*timestamppb1.Timestamp)(m.LastRefreshedCertExpiry).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -8305,6 +8341,78 @@ func (m *ClusterCertExpiryStatus) UnmarshalVT(dAtA []byte) error {
 				m.SensorCertNotBefore = &timestamppb.Timestamp{}
 			}
 			if err := (*timestamppb1.Timestamp)(m.SensorCertNotBefore).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRefreshTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastRefreshTime == nil {
+				m.LastRefreshTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastRefreshTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRefreshedCertExpiry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastRefreshedCertExpiry == nil {
+				m.LastRefreshedCertExpiry = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastRefreshedCertExpiry).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -13594,6 +13702,78 @@ func (m *ClusterCertExpiryStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.SensorCertNotBefore = &timestamppb.Timestamp{}
 			}
 			if err := (*timestamppb1.Timestamp)(m.SensorCertNotBefore).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRefreshTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastRefreshTime == nil {
+				m.LastRefreshTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastRefreshTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastRefreshedCertExpiry", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastRefreshedCertExpiry == nil {
+				m.LastRefreshedCertExpiry = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastRefreshedCertExpiry).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

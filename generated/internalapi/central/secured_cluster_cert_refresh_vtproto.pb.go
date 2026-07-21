@@ -7,9 +7,11 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	durationpb1 "github.com/planetscale/vtprotobuf/types/known/durationpb"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	io "io"
 	unsafe "unsafe"
 )
@@ -45,6 +47,7 @@ func (m *IssueSecuredClusterCertsRequest) CloneVT() *IssueSecuredClusterCertsReq
 	r := new(IssueSecuredClusterCertsRequest)
 	r.RequestId = m.RequestId
 	r.CaFingerprint = m.CaFingerprint
+	r.RequestedValidity = (*durationpb.Duration)((*durationpb1.Duration)(m.RequestedValidity).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -133,6 +136,9 @@ func (this *IssueSecuredClusterCertsRequest) EqualVT(that *IssueSecuredClusterCe
 		return false
 	}
 	if this.CaFingerprint != that.CaFingerprint {
+		return false
+	}
+	if !(*durationpb1.Duration)(this.RequestedValidity).EqualVT((*durationpb1.Duration)(that.RequestedValidity)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -302,6 +308,16 @@ func (m *IssueSecuredClusterCertsRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.RequestedValidity != nil {
+		size, err := (*durationpb1.Duration)(m.RequestedValidity).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.CaFingerprint) > 0 {
 		i -= len(m.CaFingerprint)
 		copy(dAtA[i:], m.CaFingerprint)
@@ -452,6 +468,10 @@ func (m *IssueSecuredClusterCertsRequest) SizeVT() (n int) {
 	}
 	l = len(m.CaFingerprint)
 	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.RequestedValidity != nil {
+		l = (*durationpb1.Duration)(m.RequestedValidity).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -684,6 +704,42 @@ func (m *IssueSecuredClusterCertsRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.CaFingerprint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestedValidity", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RequestedValidity == nil {
+				m.RequestedValidity = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.RequestedValidity).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1075,6 +1131,42 @@ func (m *IssueSecuredClusterCertsRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.CaFingerprint = stringValue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RequestedValidity", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.RequestedValidity == nil {
+				m.RequestedValidity = &durationpb.Duration{}
+			}
+			if err := (*durationpb1.Duration)(m.RequestedValidity).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

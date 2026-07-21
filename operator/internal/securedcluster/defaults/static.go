@@ -77,6 +77,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 		Persistence:        platform.ProcessIndicatorConfigEnabled.Pointer(),
 		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
 	},
+	TLS: &platform.TLSConfig{
+		ServiceCertValidity: ptr.To(platform.DefaultServiceCertValidity),
+	},
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{

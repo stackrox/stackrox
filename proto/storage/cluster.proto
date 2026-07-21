@@ -221,6 +221,10 @@ enum ManagerType {
 message ClusterCertExpiryStatus {
   google.protobuf.Timestamp sensor_cert_expiry = 1;
   google.protobuf.Timestamp sensor_cert_not_before = 2;
+  // Timestamp of the last successful cert issuance by Central for this cluster.
+  google.protobuf.Timestamp last_refresh_time = 3;
+  // Expiry of the certs issued in the last refresh.
+  google.protobuf.Timestamp last_refreshed_cert_expiry = 4;
 }
 
 message ClusterStatus {

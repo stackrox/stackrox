@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
@@ -304,10 +305,14 @@ func prepareSensorHelloMessage(ctx context.Context, k8sClient kubernetes.Interfa
 		return nil, errors.Wrap(err, "assembling Helm configuration")
 	}
 
-	return &central.SensorHello{
+	hello := &central.SensorHello{
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: deploymentIdentification,
 		HelmManagedConfigInit:    helmManagedConfigInit,
-	}, nil
+	}
+	if requestedValidity := env.SensorServiceCertValidity.DurationSetting(); requestedValidity > 0 {
+		hello.RequestedCertValidity = durationpb.New(requestedValidity)
+	}
+	return hello, nil
 }
