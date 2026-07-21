@@ -120,10 +120,14 @@ runs:
 
     - name: Stabilize file mtimes for Go test cache
       run: |
-        # VERIFY BRANCH: OLD buggy fixed-constant scheme, deliberately restored
-        # to test whether GODEBUG=goindex=0 alone (see next step) prevents the
-        # module-index staleness bug WITHOUT any mtime engineering at all.
-        git ls-files | xargs touch -t 200101010000
+        # NEGATIVE CONTROL 3/3: uses the current wall-clock time instead of
+        # a fixed constant, so prime-cache and verify-restore stamp
+        # different mtimes on byte-identical files. Reintroduces the
+        # test-result-cache mtime bug this session discarded (Go's test
+        # cache keys runtime-read files like testdata/ by (size, mode,
+        # mtime), not content). Proves Assertion 3 catches it. Will be
+        # reverted once confirmed.
+        git ls-files | xargs touch -d "@$(date +%s)"
       shell: bash
 
     # VERIFY BRANCH: disable Go's module index entirely. Confirmed locally
