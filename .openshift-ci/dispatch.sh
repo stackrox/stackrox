@@ -43,13 +43,7 @@ create_exit_trap
 # dropped. Individual job scripts can opt out via os.environ["ROX_SCANNER_V4"].
 #
 # TODO(ROX-35345): remove this
-# EKS clusters (2x m5.xlarge) lack resources for scanner-v4 components
-# (db + indexer + matcher). Skip until node size is increased.
-if [[ "$ci_job" == "eks-qa-e2e-tests" ]]; then
-    export ROX_SCANNER_V4=false
-else
-    export ROX_SCANNER_V4=true
-fi
+export ROX_SCANNER_V4=true
 
 ci_export CI_JOB_NAME "$ci_job"
 
