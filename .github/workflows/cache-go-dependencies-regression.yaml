@@ -58,6 +58,11 @@ jobs:
           go build -C tools/cicachetest ./...
           go test -C tools/cicachetest ./testcache/...
 
+      - name: "[debug] test binary content hash"
+        run: |
+          go test -C tools/cicachetest -c -o /tmp/testbin ./testcache/...
+          sha256sum /tmp/testbin
+
   verify-restore:
     needs: prime-cache
     runs-on: ubuntu-latest
@@ -109,6 +114,17 @@ jobs:
           echo "hostname: $(hostname)"
           echo "testdata stat: $(stat -c '%Y %s %n' tools/cicachetest/testcache/testdata/fixture.txt)"
           echo "TMPDIR=$TMPDIR RUNNER_TEMP=$RUNNER_TEMP"
+
+      - name: "[debug] is the test binary itself a build-cache hit?"
+        run: |
+          count=$(go build -C tools/cicachetest -x ./testcache/... 2>&1 | grep -c '/compile \|/link ' || true)
+          echo "compile+link invocations for testcache package: $count"
+          go test -C tools/cicachetest -x ./testcache/... 2>&1 | grep -E '/compile |/link |^cd |WORK=' | tail -20
+
+      - name: "[debug] test binary content hash"
+        run: |
+          go test -C tools/cicachetest -c -o /tmp/testbin ./testcache/...
+          sha256sum /tmp/testbin
 
       - name: 'Assertion 3: test cache must be genuinely hit'
         run: |
