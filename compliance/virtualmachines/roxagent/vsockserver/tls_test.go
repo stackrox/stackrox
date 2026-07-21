@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protowire"
 )
 
@@ -394,6 +395,8 @@ func TestCARefresher_HardCutover_ForcesRefetchWhileCacheFresh(t *testing.T) {
 		}
 		return ca2PEM, nil
 	}))
+	// Long cooldown so the second handshake stays rate-limited without wall-clock races.
+	r.forceFetchLimiter = rate.NewLimiter(rate.Every(time.Hour), 1)
 
 	_, err := r.ensureFreshPool(context.Background())
 	require.NoError(t, err)
@@ -441,6 +444,7 @@ func TestCARefresher_HardCutover_ForceRefetchFailureKeepsRejecting(t *testing.T)
 	newClientCert := testLeafCert(t, ca2Cert, ca2Key)
 	err = doTLSHandshakeFails(t, r, serverCert, newClientCert)
 	require.Error(t, err)
+	assert.ErrorContains(t, err, "must re-fetch KubeVirt CA, but re-fetch also failed")
 	assert.Equal(t, int32(2), fetchCount.Load(), "verify failure must still attempt a forced refetch")
 }
 
@@ -524,6 +528,8 @@ func TestCARefresher_ForceFetchCooldown_SkipsRepeatedRefetch(t *testing.T) {
 			return caPEM, nil
 		}),
 	)
+	// Long cooldown so the second handshake stays rate-limited without wall-clock races.
+	r.forceFetchLimiter = rate.NewLimiter(rate.Every(time.Hour), 1)
 
 	serverCert := testServerCert(t)
 	wrongClientCert := testLeafCert(t, wrongCACert, wrongCAKey)
