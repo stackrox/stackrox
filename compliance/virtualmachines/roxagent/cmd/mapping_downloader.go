@@ -7,10 +7,13 @@ import (
 )
 
 const (
-	mappingFetchRetryMax     = 3 // 1 initial attempt + 3 retries = 4 total attempts against a flaky endpoint.
+	mappingFetchRetryMax     = 3 // RetryMax: 1 initial + 3 retries = 4 attempts.
 	mappingFetchRetryWaitMin = 5 * time.Second
-	mappingClientTimeout     = 40 * time.Second
-	mappingRefreshInterval   = time.Hour
+	// Must cover retryablehttp backoff plus request time. With WaitMin=5s and
+	// retryablehttp's default WaitMax=30s, waits are 5+10+20=35s; leave
+	// headroom for four HTTP attempts on a multi-MB mapping file.
+	mappingClientTimeout   = 2 * time.Minute
+	mappingRefreshInterval = time.Hour
 )
 
 // newMappingDownloader builds the filedownloader.Downloader that keeps the
