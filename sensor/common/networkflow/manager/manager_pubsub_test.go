@@ -202,7 +202,6 @@ func TestNewManager_PubSubEnabled_ConcurrentCallbacks(t *testing.T) {
 	capturing := &capturingDispatcher{}
 	_, mgr := newManagerForPubSubTest(t, capturing)
 	require.NotNil(t, capturing.callback)
-	_ = mgr
 
 	const goroutines = 50
 	var wg sync.WaitGroup
