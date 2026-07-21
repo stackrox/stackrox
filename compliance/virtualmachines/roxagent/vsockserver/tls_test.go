@@ -373,6 +373,98 @@ func TestCARefresher_OverlapBundleTrustsBothOldAndNewCA(t *testing.T) {
 	doTLSHandshake(t, r, serverCert, newClientCert)
 }
 
+// TestCARefresher_HardCutover_ForcesRefetchWhileCacheFresh covers KubeVirt
+// hard CA cutover: the cache is still within the age gate (so ensureFreshPool
+// would not refetch), but the peer presents a leaf signed by the new CA.
+// The handshake must force a CABundle fetch and succeed on the first attempt.
+//
+// Acceptance criterion (ROX-35848): simulated rotation with a fresh cache —
+// the first handshake after rotation force-fetches and succeeds.
+func TestCARefresher_HardCutover_ForcesRefetchWhileCacheFresh(t *testing.T) {
+	ca1PEM, ca1Cert, ca1Key := testCA(t)
+	ca2PEM, ca2Cert, ca2Key := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		n := fetchCount.Add(1)
+		if n == 1 {
+			return ca1PEM, nil
+		}
+		return ca2PEM, nil
+	}))
+
+	_, err := r.ensureFreshPool(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, int32(1), fetchCount.Load())
+	// Deliberately do NOT zero r.fetchedAt — cache must still be "fresh".
+
+	serverCert := testServerCert(t)
+	newClientCert := testLeafCert(t, ca2Cert, ca2Key)
+	doTLSHandshake(t, r, serverCert, newClientCert)
+
+	assert.Equal(t, int32(2), fetchCount.Load(),
+		"verify failure against the cached CA must force exactly one refetch")
+
+	// Forced fetch replaces the pool; old leaves must no longer verify.
+	oldClientCert := testLeafCert(t, ca1Cert, ca1Key)
+	doTLSHandshakeFails(t, r, serverCert, oldClientCert)
+}
+
+// TestCARefresher_HardCutover_ForceRefetchFailureKeepsRejecting proves the
+// force path does not fall back to the stale pool: that pool already
+// failed to verify the peer once, so reusing it would just accept the same
+// unverifiable peer.
+//
+// Acceptance criterion (ROX-35848): a forced fetch failure does not accept
+// the peer.
+func TestCARefresher_HardCutover_ForceRefetchFailureKeepsRejecting(t *testing.T) {
+	ca1PEM, _, _ := testCA(t)
+	_, ca2Cert, ca2Key := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		n := fetchCount.Add(1)
+		if n == 1 {
+			return ca1PEM, nil
+		}
+		return nil, assert.AnError
+	}))
+
+	_, err := r.ensureFreshPool(context.Background())
+	require.NoError(t, err)
+
+	serverCert := testServerCert(t)
+	newClientCert := testLeafCert(t, ca2Cert, ca2Key)
+	doTLSHandshakeFails(t, r, serverCert, newClientCert)
+	assert.Equal(t, int32(2), fetchCount.Load(), "verify failure must still attempt a forced refetch")
+}
+
+// TestCARefresher_FreshCache_SecondHandshakeDoesNotRefetch locks case 1:
+// after a successful warm, a still-fresh cache must not hit CABundle again
+// on the next successful handshake.
+//
+// Acceptance criterion (ROX-35848): the happy path still uses the cache —
+// no fetch on every handshake.
+func TestCARefresher_FreshCache_SecondHandshakeDoesNotRefetch(t *testing.T) {
+	caPEM, caCert, caKey := testCA(t)
+
+	var fetchCount atomic.Int32
+	r := NewCARefresher(WithFetchFunc(func(context.Context) ([]byte, error) {
+		fetchCount.Add(1)
+		return caPEM, nil
+	}))
+
+	serverCert := testServerCert(t)
+	clientCert := testLeafCert(t, caCert, caKey)
+
+	doTLSHandshake(t, r, serverCert, clientCert)
+	require.Equal(t, int32(1), fetchCount.Load())
+
+	doTLSHandshake(t, r, serverCert, clientCert)
+	assert.Equal(t, int32(1), fetchCount.Load(),
+		"successful verify against a fresh cache must not refetch")
+}
+
 func TestCARefresher_TLSHandshake(t *testing.T) {
 	caPEM, caCert, caKey := testCA(t)
 
@@ -385,17 +477,29 @@ func TestCARefresher_TLSHandshake(t *testing.T) {
 	doTLSHandshake(t, r, serverCert, clientCert)
 }
 
+// TestCARefresher_TLSHandshake_WrongCA proves a peer that verifies against
+// neither the old nor a freshly-refetched CA still fails, after exactly one
+// forced retry.
+//
+// Acceptance criterion (ROX-35848): a peer that verifies against neither the
+// old nor the new CA still fails, with only a single forced retry.
 func TestCARefresher_TLSHandshake_WrongCA(t *testing.T) {
 	caPEM, _, _ := testCA(t)
 	_, wrongCACert, wrongCAKey := testCA(t)
 
+	var fetchCount atomic.Int32
 	r := NewCARefresher(
-		WithFetchFunc(func(context.Context) ([]byte, error) { return caPEM, nil }),
+		WithFetchFunc(func(context.Context) ([]byte, error) {
+			fetchCount.Add(1)
+			return caPEM, nil
+		}),
 	)
 
 	serverCert := testServerCert(t)
 	wrongClientCert := testLeafCert(t, wrongCACert, wrongCAKey)
 	doTLSHandshakeFails(t, r, serverCert, wrongClientCert)
+	// Cold ensureFreshPool + one forced refetch after verify failure.
+	assert.Equal(t, int32(2), fetchCount.Load())
 }
 
 // doTLSHandshake performs a full TLS handshake between a server using the

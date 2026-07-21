@@ -257,6 +257,11 @@ func (r *CARefresher) ensureFreshPool(ctx context.Context) (*x509.CertPool, erro
 // fetchAndCachePool fetches a fresh CA bundle from KubeVirt, parses it, and
 // swaps it into the cache under r.mu's write lock. It returns the pool it
 // just wrote so the caller does not need a second locked read of r.pool.
+//
+// Shared by ensureFreshPool (age-gated refresh, falls back to a stale pool
+// on fetch failure) and verifyPeerCertificate (forced refresh on a
+// client-cert verify failure, no stale fallback) - see their doc comments
+// for what each does when the fetch itself fails.
 func (r *CARefresher) fetchAndCachePool(ctx context.Context) (*x509.CertPool, error) {
 	// ctx belongs to the caller whose handshake triggered this fetch. If
 	// that handshake is torn down mid-fetch, ctx is cancelled - but the
@@ -313,6 +318,69 @@ func (r *CARefresher) cachedPool() (*x509.CertPool, time.Time, bool) {
 	return res.pool, res.fetchedAt, res.ok
 }
 
+// parseClientCerts parses the raw ASN.1 certificates presented by a TLS
+// peer, as passed to tls.Config.VerifyPeerCertificate.
+func parseClientCerts(rawCerts [][]byte) ([]*x509.Certificate, error) {
+	if len(rawCerts) == 0 {
+		return nil, errors.New("tls: client certificate required")
+	}
+	certs := make([]*x509.Certificate, len(rawCerts))
+	for i, asn1Data := range rawCerts {
+		cert, err := x509.ParseCertificate(asn1Data)
+		if err != nil {
+			return nil, fmt.Errorf("tls: failed to parse client certificate: %w", err)
+		}
+		certs[i] = cert
+	}
+	return certs, nil
+}
+
+// verifyClientCertChain verifies certs[0] (the leaf) against pool, treating
+// any remaining certs as intermediates.
+func verifyClientCertChain(pool *x509.CertPool, certs []*x509.Certificate) error {
+	if pool == nil {
+		return errors.New("tls: no KubeVirt CA pool available")
+	}
+	intermediates := x509.NewCertPool()
+	for _, cert := range certs[1:] {
+		intermediates.AddCert(cert)
+	}
+	_, err := certs[0].Verify(x509.VerifyOptions{
+		Roots:         pool,
+		Intermediates: intermediates,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	})
+	return err
+}
+
+// verifyPeerCertificate verifies the client cert against the cached CA
+// pool, force-fetching CABundle (bypassing the age gate) and retrying once
+// on failure - so a hard CA cutover self-heals within one handshake
+// instead of waiting out the age gate. A failed forced fetch never falls
+// back to the stale pool, since that pool already failed verification;
+// unlike ensureFreshPool, which can.
+func (r *CARefresher) verifyPeerCertificate(ctx context.Context, rawCerts [][]byte) error {
+	certs, err := parseClientCerts(rawCerts)
+	if err != nil {
+		return err
+	}
+
+	pool, _, _ := r.cachedPool()
+	verifyErr := verifyClientCertChain(pool, certs)
+	if verifyErr == nil {
+		return nil
+	}
+
+	newPool, fetchErr := r.fetchAndCachePool(ctx)
+	if fetchErr != nil {
+		return fmt.Errorf("verifying client certificate: %w (KubeVirt CA re-fetch failed: %v)", verifyErr, fetchErr)
+	}
+	if err := verifyClientCertChain(newPool, certs); err != nil {
+		return fmt.Errorf("verifying client certificate after KubeVirt CA refresh: %w", err)
+	}
+	return nil
+}
+
 // TLSConfig returns a *tls.Config that presents serverCert and validates
 // KubeVirt client certs. The returned config fetches a fresh CA pool on
 // each handshake via GetConfigForClient whenever the cache is empty or
@@ -323,22 +391,44 @@ func (r *CARefresher) cachedPool() (*x509.CertPool, time.Time, bool) {
 // serverCert is baked in at construction time rather than left for the
 // caller to set on the returned config afterward, so there is no window in
 // which a config with no certificate could be handed to a listener.
+//
+// This function's own return value (the "outer" config) is deliberately
+// unusable on its own: RequireAndVerifyClientCert with no ClientCAs can
+// never accept a client cert. That's a safety net for one documented edge
+// case in crypto/tls.Config: if GetConfigForClient ever returned (nil,
+// nil), Go would use this config directly instead. That never happens
+// today, so the fallback is unreachable in practice - but if it ever were
+// reached, rejecting every client is the safe failure mode.
+//
+// Every real handshake instead uses the config GetConfigForClient returns
+// below: a clone of the outer config with ClientAuth switched to
+// RequireAnyClientCert and VerifyPeerCertificate set. That switch is
+// required: with RequireAndVerifyClientCert, Go checks the client cert against
+// ClientCAs *before* calling VerifyPeerCertificate, so a stale pool would fail
+// the handshake before the force-refresh retry in verifyPeerCertificate ever got a chance to run.
+//
+// SessionTicketsDisabled forces a full handshake on every connection, so a
+// resumed session can never skip re-checking the client cert.
 func (r *CARefresher) TLSConfig(serverCert tls.Certificate) *tls.Config {
-	return &tls.Config{
-		Certificates: []tls.Certificate{serverCert},
-		ClientAuth:   tls.RequireAndVerifyClientCert,
-		MinVersion:   tls.VersionTLS12,
-		GetConfigForClient: func(info *tls.ClientHelloInfo) (*tls.Config, error) {
-			pool, err := r.ensureFreshPool(info.Context())
-			if err != nil {
-				return nil, fmt.Errorf("fetching KubeVirt CA for TLS handshake: %w", err)
-			}
-			return &tls.Config{
-				Certificates: []tls.Certificate{serverCert},
-				ClientAuth:   tls.RequireAndVerifyClientCert,
-				ClientCAs:    pool,
-				MinVersion:   tls.VersionTLS12,
-			}, nil
-		},
+	cfg := &tls.Config{
+		Certificates:           []tls.Certificate{serverCert},
+		ClientAuth:             tls.RequireAndVerifyClientCert,
+		MinVersion:             tls.VersionTLS12,
+		SessionTicketsDisabled: true,
 	}
+	cfg.GetConfigForClient = func(info *tls.ClientHelloInfo) (*tls.Config, error) {
+		ctx := info.Context() // captured once; reused below by ensureFreshPool and VerifyPeerCertificate
+		if _, err := r.ensureFreshPool(ctx); err != nil {
+			return nil, fmt.Errorf("fetching KubeVirt CA for TLS handshake: %w", err)
+		}
+		clientCfg := cfg.Clone()
+		clientCfg.GetConfigForClient = nil              // clone copies the callback; clear to avoid recursion
+		clientCfg.ClientAuth = tls.RequireAnyClientCert // verification happens in VerifyPeerCertificate below, not here
+		clientCfg.ClientCAs = nil
+		clientCfg.VerifyPeerCertificate = func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+			return r.verifyPeerCertificate(ctx, rawCerts)
+		}
+		return clientCfg, nil
+	}
+	return cfg
 }
