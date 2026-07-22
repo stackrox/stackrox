@@ -26,7 +26,7 @@ func (m *managerImpl) initOpenShiftTLS() {
 	certwatch.WatchCertDir(
 		"OpenShift service-serving TLS",
 		env.OpenShiftTLSCertDir.Setting(),
-		MaybeGetDefaultTLSCertificateFromDirectory,
+		MaybeLoadOpenShiftTLSCertificateFromDirectory,
 		m.UpdateOpenShiftTLSCertificate,
 		certwatch.WithVerify(false),
 	)
