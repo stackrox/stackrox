@@ -38,7 +38,7 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 			providerCreated = true
 			return nil, nil
 		})
-	groupDS.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, nil)
+	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
 	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, _ *storage.Group) error {
 			if !providerCreated {
@@ -89,7 +89,7 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
 	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).Return(nil, nil)
-	groupDS.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, nil)
+	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
 	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).Return(nil)
 
 	ensurePermissionSet(ctx, roleDS)
@@ -102,10 +102,10 @@ func TestSeed_SubsequentBoot_GroupExists_NotOverwritten(t *testing.T) {
 	_, _, groupDS := setupMocks(t)
 	ctx := context.Background()
 
-	groupDS.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&storage.Group{
-		Props:    &storage.GroupProperties{Id: groupPropsID},
+	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return([]*storage.Group{{
+		Props:    &storage.GroupProperties{AuthProviderId: authProviderID, Key: "name", Value: "system:serviceaccount:openshift-monitoring:prometheus-k8s"},
 		RoleName: "User Modified Role",
-	}, nil)
+	}}, nil)
 
 	ensureGroup(ctx, groupDS)
 }
