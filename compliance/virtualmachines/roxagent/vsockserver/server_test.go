@@ -65,6 +65,14 @@ func TestServeAcceptLoop(t *testing.T) {
 // every other connection - including the legitimate one - for as long as
 // the stalled peer stayed connected. The handshake must run off the accept
 // loop so Accept() only ever blocks on Accept() itself.
+//
+// With maxConcurrentConns=1, the stalled peer is accepted first and holds
+// the semaphore for the duration of its (never-completing) handshake, so
+// the second peer always takes the rejectConn path and receives
+// ERROR_CODE_BUSY. That is enough to prove Accept() kept running: a blocked
+// accept loop would never handshake the second peer or write BUSY.
+// The client must only ReadFrame here - writing a request races rejectConn's
+// close-after-BUSY and flakes with broken pipe on Linux.
 func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing.T) {
 	handler := NewHandler(&ReportCache{}, "test")
 	srv := NewServer(handler, &tls.Config{Certificates: []tls.Certificate{testServerCert(t)}})
@@ -77,15 +85,14 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	go func() { srv.Serve(ctx, ln); close(serveDone) }()
 
 	// A stalled peer: opens the TCP connection but never sends a TLS
-	// ClientHello (or anything else). Before the fix, the server's
-	// HandshakeContext call for this connection would block Serve's single
-	// accept loop indefinitely, since it has no deadline of its own.
+	// ClientHello (or anything else). That peer wins the single semaphore
+	// slot; serveConn then blocks in HandshakeContext off the accept loop.
 	stalled, err := net.Dial("tcp", ln.Addr().String())
 	require.NoError(t, err)
 	defer func() { _ = stalled.Close() }()
 
-	// A well-behaved peer must still be accepted and served promptly,
-	// despite the stalled connection still being open.
+	// A second peer must still be accepted, handshaked, and answered with
+	// BUSY promptly while the stalled peer remains connected.
 	// require inside a non-test goroutine only stops that goroutine (via
 	// runtime.Goexit), not the test itself, so failures here use assert with
 	// an early return instead.
@@ -98,25 +105,23 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 		}
 		defer func() { _ = clientConn.Close() }()
 
-		req, _ := proto.Marshal(&pb.VMServiceRequest{Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}}})
-		if !assert.NoError(t, vsockframing.WriteFrame(clientConn, req)) {
-			return
-		}
 		respData, readErr := vsockframing.ReadFrame(clientConn, 1<<20)
-		if !assert.NoError(t, readErr) {
+		if !assert.NoError(t, readErr, "rejected peer should receive framed BUSY before the server closes") {
 			return
 		}
 		var resp pb.VMServiceResponse
 		if !assert.NoError(t, proto.Unmarshal(respData, &resp)) {
 			return
 		}
-		assert.NotNil(t, resp.GetError(), "expected NOT_READY, but any response at all proves the loop wasn't blocked")
+		if assert.NotNil(t, resp.GetError()) {
+			assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, resp.GetError().GetCode())
+		}
 	}()
 
 	select {
 	case <-done:
 	case <-time.After(5 * time.Second):
-		t.Fatal("well-behaved connection was not served promptly; accept loop is likely blocked by the stalled peer")
+		t.Fatal("second connection was not answered promptly; accept loop is likely blocked by the stalled peer")
 	}
 
 	// Unblock the stalled connection's server-side handshake goroutine
