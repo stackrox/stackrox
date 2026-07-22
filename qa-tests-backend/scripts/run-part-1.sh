@@ -65,6 +65,7 @@ config_part_1() {
 central:
   pauseReconciliation: true
   resourceProfile: ci
+  portForwarding: false
 securedCluster:
   pauseReconciliation: true
   resourceProfile: ci
