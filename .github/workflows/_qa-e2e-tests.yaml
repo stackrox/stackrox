@@ -224,7 +224,7 @@ jobs:
 
       - name: Install roxie
         run: |
-          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.4/roxie-linux-amd64
+          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.5/roxie-linux-amd64
           chmod +x /usr/local/bin/roxie
 
       - name: Install oc
