@@ -83,8 +83,6 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	ctx, cancel := context.WithCancel(context.Background())
 	serveDone := make(chan struct{})
 	go func() { srv.Serve(ctx, ln); close(serveDone) }()
-	// cancel/serveDone must run even if the select times out and calls
-	// t.Fatal; otherwise the accept-loop goroutine outlives the test.
 	defer func() {
 		cancel()
 		<-serveDone
@@ -99,36 +97,22 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	// without waiting out connDeadline.
 	defer func() { _ = stalled.Close() }()
 
-	// A second peer must still be accepted, handshaked, and answered with
-	// BUSY promptly while the stalled peer remains connected.
-	// require inside a non-test goroutine only stops that goroutine (via
-	// runtime.Goexit), not the test itself, so failures here use assert with
-	// an early return instead.
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		clientConn, dialErr := tls.Dial("tcp", ln.Addr().String(), &tls.Config{InsecureSkipVerify: true})
-		if !assert.NoError(t, dialErr) {
-			return
-		}
-		defer func() { _ = clientConn.Close() }()
-
-		respData, readErr := vsockframing.ReadFrame(clientConn, 1<<20)
-		if !assert.NoError(t, readErr, "rejected peer should receive framed BUSY before the server closes") {
-			return
-		}
-		var resp pb.VMServiceResponse
-		if !assert.NoError(t, proto.Unmarshal(respData, &resp)) {
-			return
-		}
-		if assert.NotNil(t, resp.GetError()) {
-			assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, resp.GetError().GetCode())
-		}
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		t.Fatal("second connection was not answered promptly; accept loop is likely blocked by the stalled peer")
+	// Second peer on the test goroutine (same style as TestServeAcceptLoop).
+	// NetDialer.Timeout bounds dial+TLS handshake: if Accept were blocked,
+	// TCP can still complete from the backlog, but the handshake would hang.
+	dialer := &tls.Dialer{
+		NetDialer: &net.Dialer{Timeout: 5 * time.Second},
+		Config:    &tls.Config{InsecureSkipVerify: true},
 	}
+	clientConn, err := dialer.DialContext(ctx, "tcp", ln.Addr().String())
+	require.NoError(t, err, "second peer should be accepted promptly; accept loop may be blocked")
+	defer func() { _ = clientConn.Close() }()
+
+	require.NoError(t, clientConn.SetDeadline(time.Now().Add(5*time.Second)))
+	respData, err := vsockframing.ReadFrame(clientConn, 1<<20)
+	require.NoError(t, err, "rejected peer should receive framed BUSY before the server closes")
+	var resp pb.VMServiceResponse
+	require.NoError(t, proto.Unmarshal(respData, &resp))
+	require.NotNil(t, resp.GetError())
+	assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, resp.GetError().GetCode())
 }
