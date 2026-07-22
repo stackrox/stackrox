@@ -77,15 +77,6 @@ EOF
             info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
             patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
-        if [[ "$(yq eval ".roxie.konfluxImages" "$config_file")" == "true" ]]; then
-            # Due to https://access.redhat.com/solutions/6540591 we need to patch the global pull secrets
-            # to be able to pull images after applying image-rewriting rules for downstream images.
-            # See https://docs.redhat.com/en/documentation/openshift_container_platform/4.12/html/images/
-            #     managing-images#images-update-global-pull-secret_using-image-pull-secrets.
-            #
-            # Can be removed once https://github.com/stackrox/roxie/pull/186 lands.
-            patch_global_openshift_pull_secret "quay.io/rhacs-eng" "${QUAY_RHACS_ENG_RO_USERNAME}" "${QUAY_RHACS_ENG_RO_PASSWORD}"
-        fi
         deploy_stackrox_with_roxie_compat "$config_file"
         setup_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
         # Note: The traditional deployment path still references PodSecurityPolicies,
@@ -106,29 +97,6 @@ EOF
     #deploy_clair_v4
 
     image_prefetcher_prebuilt_await
-}
-
-patch_global_openshift_pull_secret() {
-    local registry="$1"
-    local username="$2"
-    local password="$3"
-
-    info "Patching global OpenShift pull-secret to include credentials for ${registry}"
-    local tmp_pull_secret; tmp_pull_secret=$(mktemp)
-
-    oc get secret/pull-secret \
-        -n openshift-config \
-        --template='{{index .data ".dockerconfigjson" | base64decode}}' \
-        > "$tmp_pull_secret"
-    oc registry login \
-        --registry="$registry" \
-        --auth-basic="${username}:${password}" \
-        --to="$tmp_pull_secret"
-    oc set data secret/pull-secret \
-        -n openshift-config \
-        --from-file=.dockerconfigjson="$tmp_pull_secret"
-
-    rm -f "$tmp_pull_secret"
 }
 
 reuse_config_part_1() {
