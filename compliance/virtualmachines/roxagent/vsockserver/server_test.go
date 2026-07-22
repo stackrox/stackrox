@@ -83,12 +83,20 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	ctx, cancel := context.WithCancel(context.Background())
 	serveDone := make(chan struct{})
 	go func() { srv.Serve(ctx, ln); close(serveDone) }()
+	// cancel/serveDone must run even if the select times out and calls
+	// t.Fatal; otherwise the accept-loop goroutine outlives the test.
+	defer func() {
+		cancel()
+		<-serveDone
+	}()
 
 	// A stalled peer: opens the TCP connection but never sends a TLS
 	// ClientHello (or anything else). That peer wins the single semaphore
 	// slot; serveConn then blocks in HandshakeContext off the accept loop.
 	stalled, err := net.Dial("tcp", ln.Addr().String())
 	require.NoError(t, err)
+	// Close before cancel (defer LIFO) so the handshake goroutine unblocks
+	// without waiting out connDeadline.
 	defer func() { _ = stalled.Close() }()
 
 	// A second peer must still be accepted, handshaked, and answered with
@@ -123,10 +131,4 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	case <-time.After(5 * time.Second):
 		t.Fatal("second connection was not answered promptly; accept loop is likely blocked by the stalled peer")
 	}
-
-	// Unblock the stalled connection's server-side handshake goroutine
-	// immediately, rather than waiting out connDeadline, so the test stays fast.
-	_ = stalled.Close()
-	cancel()
-	<-serveDone
 }
