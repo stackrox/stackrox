@@ -110,10 +110,27 @@ func New(url, filePath string, interval time.Duration, opts ...Option) *Download
 	return d
 }
 
-// Start begins periodic downloading in a background goroutine.
+// Start begins periodic downloading in a background goroutine: an initial
+// download runs immediately, then Run takes over for the periodic loop.
 func (d *Downloader) Start() {
 	log.Infof("Starting file downloader for %q → %q", d.url, d.filePath)
-	go d.run()
+	go func() {
+		defer d.doneSig.Signal()
+
+		ctx, cancel := concurrency.DependentContext(context.Background(), &d.stopSig)
+		defer cancel()
+
+		// Check before the initial DownloadOnce too, so a persistent
+		// directory problem fails fast instead of wasting a network
+		// round trip on a download that could never be written to disk.
+		if err := d.ensureDestinationDir(); err != nil {
+			d.reportRunFailure(err)
+			return
+		}
+
+		_ = d.DownloadOnce(ctx)
+		_ = d.Run(ctx)
+	}()
 }
 
 // Stop signals the downloader to stop and blocks until it exits.
@@ -122,35 +139,38 @@ func (d *Downloader) Stop() {
 	<-d.doneSig.Done()
 }
 
-func (d *Downloader) run() {
-	defer d.doneSig.Signal()
-
-	ctx, cancel := concurrency.DependentContext(context.Background(), &d.stopSig)
-	defer cancel()
-
-	// Fail-fast on a persistent directory problem before wasting a network round trip.
-	if err := os.MkdirAll(filepath.Dir(d.filePath), 0700); err != nil {
-		mkdirErr := fmt.Errorf("creating directory for %q: %w", d.filePath, err)
-		log.Errorf("Downloader will not run: %v", mkdirErr)
-		if d.onComplete != nil {
-			d.onComplete(mkdirErr, 0)
-		}
-		return
-	}
-
-	_ = d.DownloadOnce(ctx)
-	d.tickLoop(ctx)
-}
-
 // Run downloads every interval until ctx is done, then returns ctx.Err().
 // Unlike Start, it performs no download on entry — call DownloadOnce first
 // if a mandatory initial fetch is needed. Don't mix with Start/Stop.
 func (d *Downloader) Run(ctx context.Context) error {
+	// Fail fast on a persistent directory problem before the first tick.
+	if err := d.ensureDestinationDir(); err != nil {
+		d.reportRunFailure(err)
+		return err
+	}
 	d.tickLoop(ctx)
 	return ctx.Err()
 }
 
-// tickLoop is the shared periodic loop behind both Start and Run.
+func (d *Downloader) ensureDestinationDir() error {
+	if err := os.MkdirAll(filepath.Dir(d.filePath), 0700); err != nil {
+		return fmt.Errorf("creating directory for %q: %w", d.filePath, err)
+	}
+	return nil
+}
+
+// reportRunFailure surfaces a fatal, pre-download setup error (currently
+// only a persistent directory problem) the same way DownloadOnce reports a
+// download failure: via OnComplete if configured, otherwise a log line.
+func (d *Downloader) reportRunFailure(err error) {
+	if d.onComplete != nil {
+		d.onComplete(err, 0)
+	} else {
+		log.Errorf("Downloader will not run: %v", err)
+	}
+}
+
+// tickLoop is the periodic loop behind Run (and, via Run, Start).
 func (d *Downloader) tickLoop(ctx context.Context) {
 	t := time.NewTimer(d.interval)
 	defer t.Stop()

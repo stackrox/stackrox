@@ -129,6 +129,31 @@ func TestStopSignal(t *testing.T) {
 	}
 }
 
+func TestStart(t *testing.T) {
+	t.Run("should fail fast without downloading when the destination directory cannot be created", func(t *testing.T) {
+		dir := t.TempDir()
+		blocker := filepath.Join(dir, "blocker")
+		require.NoError(t, os.WriteFile(blocker, []byte("x"), 0600))
+		// blocker is a regular file, so MkdirAll for a path nested under it
+		// fails - simulating a persistent, non-network directory problem.
+		filePath := filepath.Join(blocker, "nested", "data.json")
+
+		errCh := make(chan error, 1)
+		d := New("http://example.invalid/mapping.json", filePath, minInterval,
+			WithOnComplete(func(err error, _ time.Duration) { errCh <- err }),
+		)
+		d.Start()
+		t.Cleanup(d.Stop)
+
+		select {
+		case err := <-errCh:
+			assert.ErrorContains(t, err, "creating directory")
+		case <-time.After(2 * time.Second):
+			t.Fatal("onComplete was not called")
+		}
+	})
+}
+
 func TestOnCompleteCallback(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte("ok"))
@@ -350,5 +375,26 @@ func TestRun(t *testing.T) {
 			err := <-done
 			assert.ErrorIs(t, err, context.Canceled)
 		})
+	})
+
+	t.Run("should fail fast without downloading when the destination directory cannot be created", func(t *testing.T) {
+		dir := t.TempDir()
+		blocker := filepath.Join(dir, "blocker")
+		require.NoError(t, os.WriteFile(blocker, []byte("x"), 0600))
+		// blocker is a regular file, so MkdirAll for a path nested under it
+		// fails - simulating a persistent, non-network directory problem.
+		filePath := filepath.Join(blocker, "nested", "data.json")
+
+		var calls atomic.Int32
+		client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+			calls.Add(1)
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
+		})}
+		d := New("http://example.invalid/mapping.json", filePath, minInterval, WithHTTPClient(client))
+
+		err := d.Run(t.Context())
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "creating directory")
+		assert.Equal(t, int32(0), calls.Load(), "should not attempt a download")
 	})
 }
