@@ -3,15 +3,15 @@ prometheusImage: prom/prometheus:v2.34.0
 password: stackrox
 anonymousAdminAccess: true
 
-# Modest defaults for shared/dev clusters. Raise for long-retention Prometheus
-# workloads; see README for a smaller profile.
+# No memory limit: scrape/compaction spikes OOMKill under fixed caps on real
+# clusters. Request reserves scheduler headroom; the process may use more.
+# Keep a CPU limit so Prometheus cannot starve other pods when busy.
 resources:
   requests:
-    memory: "512Mi"
-    cpu: "200m"
-  limits:
-    memory: "1Gi"
+    memory: "2Gi"
     cpu: "500m"
+  limits:
+    cpu: "1000m"
 
 exposure:
   port: 443

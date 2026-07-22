@@ -29,17 +29,7 @@ Do not set alertmanager / kube-state-metrics `nameOverride` or `fullnameOverride
 
 ## Resources
 
-Default Prometheus container requests/limits are `512Mi`/`1Gi` memory. For smaller or contended workers:
-
-```yaml
-resources:
-  requests:
-    memory: "256Mi"
-    cpu: "100m"
-  limits:
-    memory: "512Mi"
-    cpu: "250m"
-```
+Prometheus defaults to a `2Gi` memory request, no memory limit, and a `1000m` CPU limit. Fixed memory limits OOMKill this chart under normal scrape load; omit that limit and let the process grow. Set `resources.limits.memory` in values if you need a hard cap.
 
 ## Design notes
 
