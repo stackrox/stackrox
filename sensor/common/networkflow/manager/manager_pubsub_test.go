@@ -3,10 +3,11 @@ package manager
 import (
 	"context"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/events"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
@@ -21,198 +22,187 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// capturingDispatcher records the RegisterConsumerToLane call so tests can
-// inspect and invoke the registered callback.
-type capturingDispatcher struct {
-	consumerID  pubsub.ConsumerID
-	topic       pubsub.Topic
-	laneID      pubsub.LaneID
-	callback    pubsub.EventCallback
-	registerErr error
-}
-
-func (c *capturingDispatcher) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
-	return nil
-}
-
-func (c *capturingDispatcher) RegisterConsumerToLane(id pubsub.ConsumerID, t pubsub.Topic, l pubsub.LaneID, cb pubsub.EventCallback) error {
-	c.consumerID = id
-	c.topic = t
-	c.laneID = l
-	c.callback = cb
-	return c.registerErr
-}
-
-func (c *capturingDispatcher) Publish(_ pubsub.Event) error { return nil }
-func (c *capturingDispatcher) Stop()                        {}
-
-func newManagerForPubSubTest(t *testing.T, dispatcher *capturingDispatcher) (Manager, *networkFlowManager) {
+func newManagerForTest(t *testing.T, pubsubEnabled bool) (Manager, *networkFlowManager, common.PubSubDispatcher, *internalmessage.MessageSubscriber) {
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
 
+	msgSub := internalmessage.NewMessageSubscriber()
+
+	var disp common.PubSubDispatcher
+	if pubsubEnabled {
+		var err error
+		disp, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+			[]pubsub.LaneConfig{
+				lane.NewBlockingLane(pubsub.ResourceSyncFinishedLane),
+			},
+		))
+		require.NoError(t, err)
+		t.Cleanup(disp.Stop)
+	}
+
 	m := NewManager(
 		mockEntityStore,
 		mockExternalStore,
 		mockDetector,
-		internalmessage.NewMessageSubscriber(),
-		dispatcher,
-		updatecomputer.New(),
-	)
-	return m, m.(*networkFlowManager)
-}
-
-// TestNewManager_PubSubEnabled_RegistersResourceSyncConsumer verifies that when
-// the pubsub feature flag is enabled, NewManager registers a consumer for
-// ResourceSyncFinishedTopic and that firing the callback marks the initial sync.
-func TestNewManager_PubSubEnabled_RegistersResourceSyncConsumer(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-
-	require.NotNil(t, capturing.callback, "expected RegisterConsumerToLane to be called with a non-nil callback")
-	assert.Equal(t, pubsub.NetworkFlowManagerResourceSyncConsumer, capturing.consumerID)
-	assert.Equal(t, pubsub.ResourceSyncFinishedTopic, capturing.topic)
-	assert.Equal(t, pubsub.ResourceSyncFinishedLane, capturing.laneID)
-
-	assert.False(t, mgr.initialSync.Load(), "initialSync must be false before the event fires")
-	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{}))
-	assert.True(t, mgr.initialSync.Load(), "initialSync must be true after ResourceSyncFinished fires")
-}
-
-// TestNewManager_PubSubEnabled_CallbackHonorsStopper verifies the stop-guard: when
-// the manager's stopper has been requested, the callback exits early without
-// marking the initial sync.
-func TestNewManager_PubSubEnabled_CallbackHonorsStopper(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-
-	require.NotNil(t, capturing.callback)
-	mgr.stopper.Client().Stop()
-	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{}))
-	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync when stopper is triggered")
-}
-
-// TestNewManager_PubSubDisabled_SubscribesViaInternalmessage verifies that when
-// the pubsub feature flag is off, NewManager uses the old internalmessage
-// subscription path, and triggering it still marks the initial sync.
-func TestNewManager_PubSubDisabled_SubscribesViaInternalmessage(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-
-	assert.Nil(t, capturing.callback, "RegisterConsumer must NOT be called when pubsub flag is off")
-	assert.False(t, mgr.initialSync.Load())
-
-	require.NoError(t, mgr.pubSub.Publish(&internalmessage.SensorInternalMessage{
-		Kind:     internalmessage.SensorMessageResourceSyncFinished,
-		Text:     "test sync",
-		Validity: context.Background(),
-	}))
-
-	// Publish dispatches goroutines; wait up to 500ms for the callback to fire.
-	assert.Eventually(t, func() bool {
-		return mgr.initialSync.Load()
-	}, 500*time.Millisecond, 5*time.Millisecond, "initialSync must be set after internalmessage publish")
-}
-
-// TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent verifies that the
-// callback drops stale events whose validity context has been cancelled.
-func TestNewManager_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-
-	require.NotNil(t, capturing.callback)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{
-		LifecycleEvent: events.LifecycleEvent{Validity: ctx},
-	}))
-	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for an expired event")
-}
-
-// TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType verifies that
-// the callback returns an error when it receives an unexpected event type.
-func TestNewManager_PubSubEnabled_CallbackRejectsWrongEventType(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-
-	require.NotNil(t, capturing.callback)
-
-	err := capturing.callback(&events.SoftRestartEvent{
-		LifecycleEvent: events.LifecycleEvent{Text: "wrong type"},
-	})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unexpected event type")
-	assert.False(t, mgr.initialSync.Load(), "callback must not set initialSync for wrong event type")
-}
-
-// TestNewManager_PubSubEnabled_RealDispatcher creates a real PubSub dispatcher
-// (not a capturing mock), publishes a ResourceSyncFinishedEvent through it, and
-// verifies initialSync is set. This exercises the actual lane routing.
-func TestNewManager_PubSubEnabled_RealDispatcher(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	mockCtrl := gomock.NewController(t)
-	disp, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
-		[]pubsub.LaneConfig{
-			lane.NewBlockingLane(pubsub.ResourceSyncFinishedLane),
-		},
-	))
-	require.NoError(t, err)
-	defer disp.Stop()
-
-	mgr := NewManager(
-		mocksManager.NewMockEntityStore(mockCtrl),
-		mocksExternalSrc.NewMockStore(mockCtrl),
-		mocksDetector.NewMockDetector(mockCtrl),
-		internalmessage.NewMessageSubscriber(),
+		msgSub,
 		disp,
 		updatecomputer.New(),
-	).(*networkFlowManager)
-	// Don't call mgr.Stop() — manager was never Start()ed, so the stopper
-	// goroutine would block indefinitely. The dispatcher cleanup is sufficient.
-
-	assert.False(t, mgr.initialSync.Load())
-
-	require.NoError(t, disp.Publish(&events.ResourceSyncFinishedEvent{}))
-
-	assert.Eventually(t, func() bool {
-		return mgr.initialSync.Load()
-	}, 500*time.Millisecond, 5*time.Millisecond, "initialSync must be set after publishing through real dispatcher")
+	)
+	return m, m.(*networkFlowManager), disp, msgSub
 }
 
-// TestNewManager_PubSubEnabled_ConcurrentCallbacks fires the registered callback
-// from many goroutines simultaneously and verifies no data races occur.
-// Run with -race to exercise the race detector.
-func TestNewManager_PubSubEnabled_ConcurrentCallbacks(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-	capturing := &capturingDispatcher{}
-	_, mgr := newManagerForPubSubTest(t, capturing)
-	require.NotNil(t, capturing.callback)
-
-	const goroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-	for range goroutines {
-		go func() {
-			defer wg.Done()
-			_ = capturing.callback(&events.ResourceSyncFinishedEvent{})
-		}()
+func boolString(b bool) string {
+	if b {
+		return "true"
 	}
-	wg.Wait()
+	return "false"
+}
 
-	assert.True(t, mgr.initialSync.Load(), "initialSync must be true after concurrent callbacks")
+// TestResourceSyncFinished_MarksInitialSync verifies that both delivery paths
+// (pubsub and legacy) correctly mark the manager's initialSync flag when the
+// ResourceSyncFinished event is published.
+func TestResourceSyncFinished_MarksInitialSync(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
+				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+
+				assert.False(t, mgr.initialSync.Load(), "initialSync must be false before event")
+
+				if tc.pubsubEnabled {
+					require.NoError(t, disp.Publish(&events.ResourceSyncFinishedEvent{}))
+				} else {
+					require.NoError(t, msgSub.Publish(&internalmessage.SensorInternalMessage{
+						Kind:     internalmessage.SensorMessageResourceSyncFinished,
+						Text:     "test sync",
+						Validity: context.Background(),
+					}))
+				}
+
+				synctest.Wait()
+				assert.True(t, mgr.initialSync.Load(), "initialSync must be true after event")
+			})
+		})
+	}
+}
+
+// TestResourceSyncFinished_PubSubHonorsStopper verifies that when the manager's stopper
+// has been triggered, the pubsub path exits early without marking initialSync.
+// The legacy path doesn't check the stopper (it goes through Notify which doesn't guard on stopper).
+func TestResourceSyncFinished_PubSubHonorsStopper(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+		_, mgr, disp, _ := newManagerForTest(t, true)
+
+		mgr.stopper.Client().Stop()
+
+		require.NoError(t, disp.Publish(&events.ResourceSyncFinishedEvent{}))
+
+		synctest.Wait()
+		assert.False(t, mgr.initialSync.Load(), "must not set initialSync when stopper is triggered")
+	})
+}
+
+// TestResourceSyncFinished_SkipsExpiredEvent verifies that both paths drop stale
+// events whose validity context has been cancelled.
+func TestResourceSyncFinished_SkipsExpiredEvent(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
+				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				if tc.pubsubEnabled {
+					require.NoError(t, disp.Publish(&events.ResourceSyncFinishedEvent{
+						LifecycleEvent: events.LifecycleEvent{Validity: ctx},
+					}))
+				} else {
+					require.NoError(t, msgSub.Publish(&internalmessage.SensorInternalMessage{
+						Kind:     internalmessage.SensorMessageResourceSyncFinished,
+						Text:     "test sync",
+						Validity: ctx,
+					}))
+				}
+
+				synctest.Wait()
+				assert.False(t, mgr.initialSync.Load(), "must not set initialSync for expired event")
+			})
+		})
+	}
+}
+
+// TestResourceSyncFinished_ConcurrentDelivery fires events from many goroutines
+// simultaneously and verifies no data races occur. Run with -race.
+func TestResourceSyncFinished_ConcurrentDelivery(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
+				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+
+				const goroutines = 50
+				var wg sync.WaitGroup
+				wg.Add(goroutines)
+				for range goroutines {
+					go func() {
+						defer wg.Done()
+						if tc.pubsubEnabled {
+							_ = disp.Publish(&events.ResourceSyncFinishedEvent{})
+						} else {
+							_ = msgSub.Publish(&internalmessage.SensorInternalMessage{
+								Kind:     internalmessage.SensorMessageResourceSyncFinished,
+								Validity: context.Background(),
+							})
+						}
+					}()
+				}
+				wg.Wait()
+				synctest.Wait()
+
+				assert.True(t, mgr.initialSync.Load(), "initialSync must be true after concurrent delivery")
+			})
+		})
+	}
+}
+
+// TestResourceSyncFinished_PubSubRejectsWrongEventType verifies that the pubsub
+// callback returns an error when it receives an unexpected event type. This is a
+// handler unit test (not a delivery test), so it has no legacy equivalent.
+func TestResourceSyncFinished_PubSubRejectsWrongEventType(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+		_, mgr, _, _ := newManagerForTest(t, true)
+
+		err := mgr.handleResourceSyncEvent(&events.SoftRestartEvent{
+			LifecycleEvent: events.LifecycleEvent{Text: "wrong type"},
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected event type")
+		assert.False(t, mgr.initialSync.Load(), "must not set initialSync for wrong event type")
+	})
 }
