@@ -1046,9 +1046,6 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 				},
-				"centralWorker": map[string]interface{}{
-					"enabled": false,
-				},
 			},
 		},
 

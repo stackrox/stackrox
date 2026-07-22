@@ -426,6 +426,9 @@ func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translatio
 }
 
 func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+	if c == nil && !defaults.IsSet() {
+		return nil
+	}
 	if c == nil {
 		c = &platform.CentralWorkerSpec{}
 	}
