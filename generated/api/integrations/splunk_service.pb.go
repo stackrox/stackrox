@@ -895,7 +895,7 @@ type SplunkViolation_FileAccessInfo struct {
 	EffectivePath string `protobuf:"bytes,1,opt,name=effective_path,json=effectivePath,proto3" json:"effective_path,omitempty"`
 	// Host path (e.g. /etc/passwd)
 	ActualPath string `protobuf:"bytes,2,opt,name=actual_path,json=actualPath,proto3" json:"actual_path,omitempty"`
-	// Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE", "ACL_CHANGE"
+	// Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE", "ACL_CHANGE", "XATTR_SET", "XATTR_REMOVE"
 	Operation string `protobuf:"bytes,3,opt,name=operation,proto3" json:"operation,omitempty"`
 	// For RENAME operations, the destination paths
 	MovedEffectivePath string `protobuf:"bytes,4,opt,name=moved_effective_path,json=movedEffectivePath,proto3" json:"moved_effective_path,omitempty"`
@@ -911,8 +911,10 @@ type SplunkViolation_FileAccessInfo struct {
 	// For node-level violations (no container/deployment), hostname is the primary location identifier.
 	Hostname string `protobuf:"bytes,11,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	// ACL-specific fields, populated only for ACL_CHANGE operations.
-	AclType       storage.AclType     `protobuf:"varint,12,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
-	AclEntries    []*storage.AclEntry `protobuf:"bytes,13,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
+	AclType    storage.AclType     `protobuf:"varint,12,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
+	AclEntries []*storage.AclEntry `protobuf:"bytes,13,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
+	// The extended attribute name, populated for XATTR_SET and XATTR_REMOVE operations.
+	XattrName     string `protobuf:"bytes,14,opt,name=xattr_name,json=xattrName,proto3" json:"xattr_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1038,6 +1040,13 @@ func (x *SplunkViolation_FileAccessInfo) GetAclEntries() []*storage.AclEntry {
 	return nil
 }
 
+func (x *SplunkViolation_FileAccessInfo) GetXattrName() string {
+	if x != nil {
+		return x.XattrName
+	}
+	return ""
+}
+
 var File_api_integrations_splunk_service_proto protoreflect.FileDescriptor
 
 const file_api_integrations_splunk_service_proto_rawDesc = "" +
@@ -1047,7 +1056,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
 	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationR\n" +
 	"violations\x12%\n" +
-	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xfb\x1f\n" +
+	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\x9a \n" +
 	"\x0fSplunkViolation\x12R\n" +
 	"\x0eviolation_info\x18\x01 \x01(\v2+.integrations.SplunkViolation.ViolationInfoR\rviolationInfo\x12F\n" +
 	"\n" +
@@ -1131,7 +1140,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\x11policy_categories\x18\x05 \x03(\tR\x10policyCategories\x126\n" +
 	"\x17policy_lifecycle_stages\x18\x06 \x03(\tR\x15policyLifecycleStages\x12'\n" +
 	"\x0fpolicy_severity\x18\a \x01(\tR\x0epolicySeverity\x12%\n" +
-	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersion\x1a\xc2\x04\n" +
+	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersion\x1a\xe1\x04\n" +
 	"\x0eFileAccessInfo\x12%\n" +
 	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
 	"\vactual_path\x18\x02 \x01(\tR\n" +
@@ -1149,7 +1158,9 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\bhostname\x18\v \x01(\tR\bhostname\x12+\n" +
 	"\bacl_type\x18\f \x01(\x0e2\x10.storage.AclTypeR\aaclType\x122\n" +
 	"\vacl_entries\x18\r \x03(\v2\x11.storage.AclEntryR\n" +
-	"aclEntriesB\f\n" +
+	"aclEntries\x12\x1d\n" +
+	"\n" +
+	"xattr_name\x18\x0e \x01(\tR\txattrNameB\f\n" +
 	"\n" +
 	"EntityInfoBE\n" +
 	"\"io.stackrox.proto.api.integrationsZ\x1f./api/integrations;integrationsb\x06proto3"
