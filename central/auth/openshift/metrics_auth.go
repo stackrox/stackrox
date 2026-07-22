@@ -2,7 +2,6 @@ package openshift
 
 import (
 	"context"
-	"errors"
 
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
@@ -14,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -27,7 +25,6 @@ import (
 const (
 	authProviderID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
 	permissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
-	groupPropsID    = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80d"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
@@ -200,22 +197,24 @@ func ensureAuthProvider(ctx context.Context, registry authproviders.Registry, ca
 }
 
 func ensureGroup(ctx context.Context, groupDS groupDataStore.DataStore) {
-	props := &storage.GroupProperties{
-		Id:             groupPropsID,
-		AuthProviderId: authProviderID,
-		Key:            "name",
-		Value:          env.SecureMetricsClientCertCN.Setting(),
-	}
-	existing, err := groupDS.Get(ctx, props)
-	if err != nil && !errors.Is(err, errox.NotFound) {
+	cn := env.SecureMetricsClientCertCN.Setting()
+	existing, err := groupDS.GetFiltered(ctx, func(g *storage.Group) bool {
+		p := g.GetProps()
+		return p.GetAuthProviderId() == authProviderID && p.GetKey() == "name" && p.GetValue() == cn
+	})
+	if err != nil {
 		log.Warnf("Failed to check OpenShift metrics group: %v", err)
 		return
 	}
-	if existing != nil {
+	if len(existing) > 0 {
 		return
 	}
 	group := &storage.Group{
-		Props:    props,
+		Props: &storage.GroupProperties{
+			AuthProviderId: authProviderID,
+			Key:            "name",
+			Value:          cn,
+		},
 		RoleName: roleName,
 	}
 	if err := groupDS.Add(ctx, group); err != nil {
