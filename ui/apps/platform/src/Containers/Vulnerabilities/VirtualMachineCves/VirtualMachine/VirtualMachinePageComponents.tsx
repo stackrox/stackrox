@@ -23,9 +23,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { listVMComponents } from 'services/VirtualMachineService';
 import type { VMComponentScanStatus } from 'services/VirtualMachineService';
+import { DEFAULT_VM_PAGE_SIZE, sourceTypeLabels } from '../../constants';
 import { getTableUIState } from 'utils/getTableUIState';
-
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
 import { scanStatuses } from '../../types';
 import { COMPONENT_SORT_FIELD } from '../../utils/sortFields';
@@ -90,11 +89,6 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
         setPage(1);
     };
 
-    const onSearchScanStatus: OnSearchCallback = (payload) => {
-        setSearchFilter(updateSearchFilter(searchFilter, payload));
-        setPage(1);
-    };
-
     const colSpan = 4;
 
     return (
@@ -109,7 +103,7 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
                     <SearchFilterSelectInclusive
                         attribute={attributeForScanStatus}
                         isSeparate
-                        onSearch={onSearchScanStatus}
+                        onSearch={onSearch}
                         searchFilter={searchFilter}
                     />
                     <ToolbarGroup className="pf-v6-u-w-100">
@@ -135,7 +129,7 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
                 borders={tableState.type === 'COMPLETE'}
                 variant="compact"
                 aria-live="polite"
-                aria-busy={false}
+                aria-busy={isLoading}
             >
                 <Thead>
                     <Tr>
@@ -165,7 +159,9 @@ function VirtualMachinePageComponents({ virtualMachineId }: VirtualMachinePageCo
                                         {scanStatusDisplayMap[componentRow.scanStatus] ??
                                             componentRow.scanStatus}
                                     </Td>
-                                    <Td dataLabel="Source">{componentRow.source}</Td>
+                                    <Td dataLabel="Source">
+                                        {sourceTypeLabels[componentRow.source]}
+                                    </Td>
                                 </Tr>
                             ))}
                         </Tbody>

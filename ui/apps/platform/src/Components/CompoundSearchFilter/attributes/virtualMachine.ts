@@ -1,3 +1,4 @@
+import { sourceTypeLabels, sourceTypes } from 'Containers/Vulnerabilities/constants';
 import type { CompoundSearchFilterAttribute, SelectSearchFilterAttribute } from '../types';
 
 export const VirtualMachineCVEName: CompoundSearchFilterAttribute = {
@@ -27,16 +28,10 @@ export const VirtualMachineComponentSource: SelectSearchFilterAttribute = {
     searchTerm: 'Component Source',
     inputType: 'select',
     inputProps: {
-        options: [
-            { label: 'OS', value: 'OS' },
-            { label: 'Python', value: 'PYTHON' },
-            { label: 'Java', value: 'JAVA' },
-            { label: 'Ruby', value: 'RUBY' },
-            { label: 'Node.js', value: 'NODEJS' },
-            { label: 'Go', value: 'GO' },
-            { label: '.NET Core Runtime', value: 'DOTNETCORERUNTIME' },
-            { label: 'Infrastructure', value: 'INFRASTRUCTURE' },
-        ],
+        options: sourceTypes.map((sourceType) => ({
+            label: sourceTypeLabels[sourceType],
+            value: sourceType,
+        })),
     },
 };
 

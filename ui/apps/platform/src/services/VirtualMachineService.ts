@@ -3,8 +3,8 @@ import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
 import { applyRegexSearchModifiers } from 'utils/searchUtils';
+
 import { buildNestedRawQueryParams } from './ComplianceCommon';
-import { applyRegexSearchModifiers } from 'utils/searchUtils';
 
 // Legacy API (v2/virtualmachines)
 
