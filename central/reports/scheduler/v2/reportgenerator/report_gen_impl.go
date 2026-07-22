@@ -120,6 +120,14 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(ctx context.Context, req *Re
 		return
 	}
 
+	// TODO(charmik): Remove after manual testing. Sleep to simulate long-running report
+	// so central can be killed while report is in PREPARING state.
+	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		log.Info("MANUAL TEST: Sleeping 2 minutes to simulate long-running VM report generation...")
+		time.Sleep(2 * time.Minute)
+		log.Info("MANUAL TEST: Sleep complete, continuing report generation.")
+	}
+
 	err = rg.generateReportAndNotify(ctx, req)
 	if err != nil {
 		rg.logAndUpsertError(ctx, err, req)
