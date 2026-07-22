@@ -7,25 +7,17 @@ INTERNAL USE ONLY. Deploys Prometheus, Grafana, Alertmanager, and kube-state-met
 ```bash
 export PAGERDUTY_INTEGRATION_KEY=dummy   # required; real key for PagerDuty
 helm dependency update deploy/charts/monitoring
-# ${PAGERDUTY_INTEGRATION_KEY} in values.yaml needs envsubst, or pass --set below.
-envsubst < deploy/charts/monitoring/values.yaml > /tmp/monitoring-values.yaml
-helm upgrade --install monitoring deploy/charts/monitoring \
-  -n stackrox --create-namespace \
-  -f /tmp/monitoring-values.yaml
-```
-
-Or without `envsubst`:
-
-```bash
 helm upgrade --install monitoring deploy/charts/monitoring \
   -n stackrox --create-namespace \
   -f deploy/charts/monitoring/values.yaml \
   --set "alertmanager.config.receivers[0].pagerduty_configs[0].service_key=${PAGERDUTY_INTEGRATION_KEY}"
 ```
 
+`values.yaml` still contains `${PAGERDUTY_INTEGRATION_KEY}` for classic deploy `envsubst`. For raw Helm, override it with `--set` as above (use a dummy value when you do not need real paging).
+
 `enableMonitoringPSPs` defaults to `false` (PSPs are gone on current clusters). Set `--set enableMonitoringPSPs=true` only on clusters that still expose the PodSecurityPolicy API.
 
-On OpenShift, if Helm reports an `imagePullSecrets` conflict on a ServiceAccount (OpenShift's image-registry controller vs Helm server-side apply), retry with `--force-conflicts`.
+On OpenShift, Helm may fail an upgrade with a ServiceAccount `imagePullSecrets` conflict (OpenShift's image-registry controller vs Helm server-side apply). With Helm 4, retry with `--force-conflicts`. With Helm 3, uninstall and reinstall the release instead (or delete the conflicting ServiceAccount and retry the upgrade).
 
 Roxie can install the same chart as add-on release `roxie-addon-monitoring` via `central.availableAddOns.monitoring`.
 
