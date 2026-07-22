@@ -97,15 +97,21 @@ runs:
         # git checkout sets all mtimes to "now", which differs between CI runs,
         # causing every test to miss the cache. Setting a fixed mtime makes the
         # test cache hit across runs when file content hasn't changed.
-        #
-        # Go's module index also caches parsed imports by (filename, mtime, size).
-        # A fixed mtime can cause stale cached imports when a file changes content
-        # but keeps the same size. This is mitigated by including go.mod hash in
-        # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
-
         git ls-files | xargs touch -t 200101010000
         # Also stabilize directory mtimes — tests using os.ReadDir or
         # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
+      shell: bash
+
+    - name: Disable Go module index (GODEBUG=goindex=0)
+      run: |
+        # Go's module index also caches parsed imports by (filename, mtime,
+        # size), so the fixed mtime above can serve a stale import when a
+        # file changes content but keeps the same size (see the golang-jwt
+        # v4->v5 incident). Disabling the index is safe: it's a pure
+        # performance optimization with an always-correct fallback path, and
+        # Go's own maintainer confirmed disabling it fixes this exact bug:
+        # https://github.com/golang/go/issues/69179 (closed not_planned --
+        # there's no fix of the underlying staleness coming).
+        echo "GODEBUG=${GODEBUG:+$GODEBUG,}goindex=0" >> "$GITHUB_ENV"
       shell: bash
