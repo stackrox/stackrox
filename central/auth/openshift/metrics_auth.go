@@ -63,7 +63,9 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 		ensureAccessScope(ctx, roleDS)
 		ensurePermissionSet(ctx, roleDS)
 		ensureRole(ctx, roleDS)
-		ensureAuthProvider(ctx, registry, caPEM)
+		// Auth provider uses DEFAULT origin — needs a context that allows it.
+		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
+		ensureAuthProvider(defaultCtx, registry, caPEM)
 		ensureGroup(ctx, groupDS)
 	}
 
