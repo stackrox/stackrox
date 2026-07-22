@@ -938,6 +938,8 @@ function launch_sensor {
       if [[ "${LIGHTSPEED_ENABLED:-false}" == "true" ]]; then
         echo "Enable Lightspeed integration"
         extra_helm_config+=(--set "lightspeed.enabled=true")
+        ${KUBE_COMMAND:-kubectl} label namespace "${sensor_namespace}" \
+          network.openshift.io/policy-group=ingress --overwrite 2>/dev/null || true
       fi
 
       if [[ -n "$CI" ]]; then

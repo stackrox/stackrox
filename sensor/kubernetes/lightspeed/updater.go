@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -74,9 +75,10 @@ type updaterImpl struct {
 	stopSig        concurrency.Signal
 	httpClient     *http.Client
 
-	mutex      sync.RWMutex
-	manualHost string // set by Central via ProcessMessage
-	autoHost   string // set by OLSConfig CRD auto-detection
+	mutex                 sync.RWMutex
+	manualHost            string // set by Central via ProcessMessage
+	autoHost              string // set by OLSConfig CRD auto-detection
+	namespaceLabelApplied bool
 }
 
 func (u *updaterImpl) Name() string {
@@ -217,6 +219,43 @@ func (u *updaterImpl) detectLightspeedHost() {
 
 	host := fmt.Sprintf("https://%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port)
 	u.setAutoHost(host)
+	u.ensureNamespaceLabel(ctx)
+}
+
+const ingressPolicyLabel = "network.openshift.io/policy-group"
+
+func (u *updaterImpl) ensureNamespaceLabel(ctx context.Context) {
+	if u.namespaceLabelApplied {
+		return
+	}
+
+	ns := pods.GetPodNamespace()
+	if ns == "" {
+		return
+	}
+
+	nsObj, err := u.k8sClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		log.Debugf("Failed to get namespace %s: %v", ns, err)
+		return
+	}
+
+	if nsObj.Labels[ingressPolicyLabel] == "ingress" {
+		u.namespaceLabelApplied = true
+		return
+	}
+
+	if nsObj.Labels == nil {
+		nsObj.Labels = make(map[string]string)
+	}
+	nsObj.Labels[ingressPolicyLabel] = "ingress"
+
+	if _, err := u.k8sClient.CoreV1().Namespaces().Update(ctx, nsObj, metav1.UpdateOptions{}); err != nil {
+		log.Warnf("Failed to label namespace %s for Lightspeed network access: %v", ns, err)
+		return
+	}
+	log.Infof("Labeled namespace %s with %s=ingress for Lightspeed network access", ns, ingressPolicyLabel)
+	u.namespaceLabelApplied = true
 }
 
 func (u *updaterImpl) checkHealthAndSendResponse() bool {
