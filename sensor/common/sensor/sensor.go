@@ -356,22 +356,16 @@ func (s *Sensor) onSoftRestart(e pubsub.Event) error {
 	if !ok {
 		return errors.Errorf("unexpected event type: %T", e)
 	}
-	if evt.IsExpired() {
-		return nil
-	}
-	s.centralCommunicationLock.Lock()
-	defer s.centralCommunicationLock.Unlock()
-	if s.centralCommunication == nil {
-		log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-		return nil
-	}
-	log.Infof("Connection restart requested: %s", evt.Text)
-	s.centralCommunication.Stop()
+	s.handleSoftRestart(evt.Text, evt.IsExpired())
 	return nil
 }
 
 func (s *Sensor) onSoftRestartLegacy(msg *internalmessage.SensorInternalMessage) {
-	if msg.IsExpired() {
+	s.handleSoftRestart(msg.Text, msg.IsExpired())
+}
+
+func (s *Sensor) handleSoftRestart(text string, expired bool) {
+	if expired {
 		return
 	}
 	s.centralCommunicationLock.Lock()
@@ -380,7 +374,7 @@ func (s *Sensor) onSoftRestartLegacy(msg *internalmessage.SensorInternalMessage)
 		log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 		return
 	}
-	log.Infof("Connection restart requested: %s", msg.Text)
+	log.Infof("Connection restart requested: %s", text)
 	s.centralCommunication.Stop()
 }
 
