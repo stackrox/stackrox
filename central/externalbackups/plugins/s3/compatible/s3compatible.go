@@ -41,7 +41,10 @@ func (c *s3compatibleConfigWrapper) GetEndpoint() string {
 }
 
 func (c *s3compatibleConfigWrapper) GetRegion() string {
-	return c.integration.GetS3Compatible().GetRegion()
+	if region := c.integration.GetS3Compatible().GetRegion(); region != "" {
+		return region
+	}
+	return "auto"
 }
 
 func (c *s3compatibleConfigWrapper) GetBucket() string {

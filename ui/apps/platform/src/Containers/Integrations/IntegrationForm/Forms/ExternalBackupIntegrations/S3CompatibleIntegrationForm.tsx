@@ -401,9 +401,9 @@ function S3CompatibleIntegrationForm({
                                 helpTitle="Region"
                                 helpText={
                                     <div>
-                                        Optional. Some S3-compatible providers require a
-                                        region. Consult the service provider&apos;s
-                                        instructions for the correct value.
+                                        Some S3-compatible providers require a region. Consult the
+                                        service provider&apos;s instructions for the correct value.
+                                        `auto` is used as a dummy value if not specified.
                                     </div>
                                 }
                                 ariaLabel="Help for region"
@@ -436,11 +436,11 @@ function S3CompatibleIntegrationForm({
                                         <List className="pf-v6-u-py-sm">
                                             <ListItem>
                                                 Virtual-hosted-style buckets are addressed as
-                                                https://&#60;bucket&#62;.&#60;endpoint&#62;
+                                                https://&#60;bucket&#62;.&#60;endpoint&#62;.
                                             </ListItem>
                                             <ListItem>
                                                 Path-style buckets are addressed as
-                                                https://&#60;endpoint&#62;/&#60;bucket&#62;
+                                                https://&#60;endpoint&#62;/&#60;bucket&#62;.
                                             </ListItem>
                                         </List>
                                         <Content component="p">
