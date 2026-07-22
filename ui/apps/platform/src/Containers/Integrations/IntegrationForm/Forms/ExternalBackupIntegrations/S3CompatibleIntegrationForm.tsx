@@ -112,7 +112,7 @@ export const validationSchema = yup.object().shape({
             bucket: yup.string().trim().required('Bucket is required'),
             objectPrefix: yup.string(),
             endpoint: yup.string(),
-            region: yup.string().trim().required('Region is required'),
+            region: yup.string().trim(),
             urlStyle: yup.string().trim().required('URL style is required'),
             accessKeyId: yup
                 .string()
@@ -395,15 +395,15 @@ function S3CompatibleIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
-                        isRequired
                         label="Region"
                         labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Region"
                                 helpText={
                                     <div>
-                                        Consult the service provider&apos;s S3 compatibility
-                                        instructions for the correct region.
+                                        Optional. Some S3-compatible providers require a
+                                        region. Consult the service provider&apos;s
+                                        instructions for the correct value.
                                     </div>
                                 }
                                 ariaLabel="Help for region"
@@ -436,7 +436,7 @@ function S3CompatibleIntegrationForm({
                                         <List className="pf-v6-u-py-sm">
                                             <ListItem>
                                                 Virtual-hosted-style buckets are addressed as
-                                                https://&#60;bucket&#62;.&#60;endpoint&#62
+                                                https://&#60;bucket&#62;.&#60;endpoint&#62;
                                             </ListItem>
                                             <ListItem>
                                                 Path-style buckets are addressed as

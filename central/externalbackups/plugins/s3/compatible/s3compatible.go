@@ -86,9 +86,5 @@ func (c *s3compatibleConfigWrapper) Validate() error {
 	if c.GetSecretAccessKey() == "" {
 		errorList.AddString("Secret Access Key must be specified")
 	}
-	if c.GetRegion() == "" {
-		errorList.AddString("Region must be specified")
-	}
-
 	return errorList.ToError()
 }

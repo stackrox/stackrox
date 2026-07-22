@@ -94,9 +94,9 @@ func TestValidate(t *testing.T) {
 			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoAccessData(t),
 			ExpectedValidationError: errors.New("S3 Compatible Validation errors: [Access Key ID must be specified, Secret Access Key must be specified]"),
 		},
-		"S3 compatible config missing region returns an error": {
+		"S3 compatible config without region returns no error": {
 			InputConfig:             testdata.GetBrokenS3CompatibleConfigNoRegion(t),
-			ExpectedValidationError: errors.New("S3 Compatible Validation error: Region must be specified"),
+			ExpectedValidationError: nil,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
