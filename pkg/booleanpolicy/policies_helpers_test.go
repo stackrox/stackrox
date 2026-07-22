@@ -331,46 +331,11 @@ func newDualPathFileAccessEvent(actualPath, effectivePath string, operation stor
 }
 
 func newFileAccessPolicy(eventSource storage.EventSource, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	var pathValues []*storage.PolicyValue
-	for _, path := range paths {
-		pathValues = append(pathValues, &storage.PolicyValue{Value: path})
-	}
-
-	policyGroups := []*storage.PolicyGroup{
-		{
-			FieldName: fieldnames.FilePath,
-			Values:    pathValues,
-		},
-	}
-
-	var operationValues []*storage.PolicyValue
+	opStrs := make([]string, 0, len(operations))
 	for _, op := range operations {
-		operationValues = append(operationValues, &storage.PolicyValue{Value: op.String()})
+		opStrs = append(opStrs, op.String())
 	}
-
-	if len(operationValues) != 0 {
-		policyGroups = append(policyGroups, &storage.PolicyGroup{
-			FieldName: fieldnames.FileOperation,
-			Values:    operationValues,
-			Negate:    negate,
-		})
-	}
-
-	return &storage.Policy{
-		Id:            uuid.NewV4().String(),
-		PolicyVersion: "1.1",
-		Name:          "File Access Policy",
-		Severity:      storage.Severity_HIGH_SEVERITY,
-		Categories:    []string{"File System"},
-		PolicySections: []*storage.PolicySection{
-			{
-				SectionName:  "section 1",
-				PolicyGroups: policyGroups,
-			},
-		},
-		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-		EventSource:     eventSource,
-	}
+	return newFileAccessPolicyWithStringOps(eventSource, opStrs, negate, paths...)
 }
 
 // newFileAccessPolicyWithStringOps is like newFileAccessPolicy but accepts

@@ -8691,11 +8691,11 @@
               },
               {
                 "name": "XATTR_SET",
-                "integer": 7
+                "integer": 6
               },
               {
                 "name": "XATTR_REMOVE",
-                "integer": 8
+                "integer": 7
               }
             ]
           }
