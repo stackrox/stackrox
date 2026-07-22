@@ -44,6 +44,35 @@ kube-state-metrics:
     runAsNonRoot: true
     runAsUser: 1000
     runAsGroup: 2000
+  # autoscaling/v2beta2 is gone on current clusters; the default HPA collector
+  # only produces "requested resource not found" log spam.
+  collectors:
+    - certificatesigningrequests
+    - configmaps
+    - cronjobs
+    - daemonsets
+    - deployments
+    - endpoints
+    - ingresses
+    - jobs
+    - limitranges
+    - mutatingwebhookconfigurations
+    - namespaces
+    - networkpolicies
+    - nodes
+    - persistentvolumeclaims
+    - persistentvolumes
+    - poddisruptionbudgets
+    - pods
+    - replicasets
+    - replicationcontrollers
+    - resourcequotas
+    - secrets
+    - services
+    - statefulsets
+    - storageclasses
+    - validatingwebhookconfigurations
+    - volumeattachments
 
 alertmanager:
   persistence:
@@ -61,6 +90,9 @@ alertmanager:
     allowPrivilegeEscalation: false
     capabilities:
       drop: ["ALL"]
+  # configmap-reload pulls from Docker Hub; same Hub auth as the parent pod.
+  imagePullSecrets:
+    - name: stackrox
   config:
     receivers:
       - name: pagerduty-notifications
@@ -72,4 +104,6 @@ alertmanager:
   configmapReload:
     enabled: true
 
-enableMonitoringPSPs: ${MONITORING_ENABLE_PSP}
+# PSPs are removed from modern Kubernetes/OpenShift/GKE. Classic deploy can
+# still enable them with --set enableMonitoringPSPs=true when the API exists.
+enableMonitoringPSPs: false

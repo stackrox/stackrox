@@ -7,12 +7,25 @@ INTERNAL USE ONLY. Deploys Prometheus, Grafana, Alertmanager, and kube-state-met
 ```bash
 export PAGERDUTY_INTEGRATION_KEY=dummy   # required; real key for PagerDuty
 helm dependency update deploy/charts/monitoring
+# ${PAGERDUTY_INTEGRATION_KEY} in values.yaml needs envsubst, or pass --set below.
+envsubst < deploy/charts/monitoring/values.yaml > /tmp/monitoring-values.yaml
 helm upgrade --install monitoring deploy/charts/monitoring \
   -n stackrox --create-namespace \
-  -f deploy/charts/monitoring/values.yaml
+  -f /tmp/monitoring-values.yaml
 ```
 
-`PAGERDUTY_INTEGRATION_KEY` is substituted into the Alertmanager config. Use a dummy value when you do not need real paging.
+Or without `envsubst`:
+
+```bash
+helm upgrade --install monitoring deploy/charts/monitoring \
+  -n stackrox --create-namespace \
+  -f deploy/charts/monitoring/values.yaml \
+  --set "alertmanager.config.receivers[0].pagerduty_configs[0].service_key=${PAGERDUTY_INTEGRATION_KEY}"
+```
+
+`enableMonitoringPSPs` defaults to `false` (PSPs are gone on current clusters). Set `--set enableMonitoringPSPs=true` only on clusters that still expose the PodSecurityPolicy API.
+
+On OpenShift, if Helm reports an `imagePullSecrets` conflict on a ServiceAccount (OpenShift's image-registry controller vs Helm server-side apply), retry with `--force-conflicts`.
 
 Roxie can install the same chart as add-on release `roxie-addon-monitoring` via `central.availableAddOns.monitoring`.
 
@@ -36,3 +49,4 @@ Prometheus defaults to a `2Gi` memory request, no memory limit, and a `1000m` CP
 - Prefer `nonroot-v2` over `anyuid`: least privilege, namespace-scoped `use` bindings only.
 - Prefer parent `values.yaml` overrides over forking the upstream alertmanager / kube-state-metrics charts.
 - Pod-level `runAsUser` on Alertmanager covers the configmap-reload sidecar, which has no container `securityContext` upstream.
+- Docker Hub `imagePullSecrets` (`stackrox`) are set on Pods, not ServiceAccounts, so OpenShift's SA dockercfg controller does not fight Helm on upgrade.
