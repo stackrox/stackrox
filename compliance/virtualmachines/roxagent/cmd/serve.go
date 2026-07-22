@@ -111,7 +111,8 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// The mapping file must exist locally before the first scan can run:
 	// scan() never fetches it itself, so this initial fetch is mandatory.
 	// If it fails, startup fails rather than running a scan against no data.
-	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath)
+	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
+		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
 	if err := mappingDownloader.DownloadOnce(ctx); err != nil {
 		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
 	}
@@ -162,6 +163,21 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// process doesn't exit mid-drain, mid-scan, or mid-fetch.
 	wg.Wait()
 	return nil
+}
+
+// logMappingDownloadResult logs a repository-to-CPE mapping download outcome and status of the local mapping file.
+func logMappingDownloadResult(url, cachePath string) func(err error, duration time.Duration) {
+	return func(err error, duration time.Duration) {
+		if err == nil {
+			log.Infof("Repository-to-CPE mapping file downloaded from %s in %s", url, duration)
+			return
+		}
+		if _, statErr := os.Stat(cachePath); statErr == nil {
+			log.Warnf("Repository-to-CPE mapping download failed after %s, scans keep using the previously cached file: %v", duration, err)
+			return
+		}
+		log.Errorf("Repository-to-CPE mapping download failed after %s, no cached file available: %v", duration, err)
+	}
 }
 
 // scan indexes the VM filesystem at hostPath, consulting the

@@ -19,17 +19,14 @@ const (
 // newMappingDownloader builds the filedownloader.Downloader that keeps the
 // repository-to-CPE mapping file at cachePath fresh. scan() only reads the
 // local file, so a flaky mapping endpoint never blocks a scan directly.
-func newMappingDownloader(url, cachePath string) *filedownloader.Downloader {
+// onComplete is invoked after every fetch attempt (the mandatory initial
+// one and every later periodic refresh); the caller decides what that
+// means for logging.
+func newMappingDownloader(url, cachePath string, onComplete func(err error, duration time.Duration)) *filedownloader.Downloader {
 	return filedownloader.New(url, cachePath, mappingRefreshInterval,
 		filedownloader.WithRequestTimeout(mappingClientTimeout),
 		filedownloader.WithRetryMax(mappingFetchRetryMax),
 		filedownloader.WithRetryWaitMin(mappingFetchRetryWaitMin),
-		filedownloader.WithOnComplete(func(err error, _ time.Duration) {
-			if err != nil {
-				log.Infof("Mapping file refresh failed (scans keep using the last successfully fetched file): %v", err)
-			} else {
-				log.Infof("Repository-to-CPE mapping file refreshed from %s", url)
-			}
-		}),
+		filedownloader.WithOnComplete(onComplete),
 	)
 }
