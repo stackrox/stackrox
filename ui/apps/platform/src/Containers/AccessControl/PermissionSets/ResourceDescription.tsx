@@ -13,31 +13,35 @@ const resourceDescriptions: Record<ResourceName, string> = {
     Cluster: 'Read: View secured clusters. Write: Add, modify, or delete secured clusters.',
     Compliance:
         'Read: View compliance standards, results, and runs. Write: Add, modify, or delete scheduled compliance runs.',
-    Deployment: 'Read: View deployments (workloads) in secured clusters. Write: N/A (deployment-like object changes should happen at cluster orchestrator level).',
+    Deployment:
+        'Read: View deployments (workloads) in secured clusters. Write: N/A (deployment-like object changes should happen at the cluster orchestrator level).',
     DeploymentExtension:
         'Read: View network, process listening on ports, and process baseline extensions, risk score of deployments. Write: Modify the process, process listening on ports, and network baseline extensions of deployments.',
-    Detection: 'Read: Check build-time policies against images or deployment YAMLs. Write: N/A (changes to the detection flow inputs either happen on the cluster or are driven by the WorkflowAdministration resource).',
-    Image: 'Read: View images, their components, and their vulnerabilities. Write: Trigger image scans, remove image information (workload activity on the clusters can bring image information back).',
+    Detection:
+        'Read: Check build-time policies against images or deployment YAMLs. Write: N/A (changes to the detection flow inputs either happen on the cluster or are driven by the WorkflowAdministration resource).',
+    Image: 'Read: View images, their components, and their vulnerabilities. Write: Trigger image scans, remove image information (workload activity on the clusters can bring back image information).',
     ImageAdministration:
         'Read: View base images and non-deployed watched images monitored. Write: Configure base images and watched images.',
     Integration:
         'Read: View integrations and their configuration. This includes backup, registry, image signature and notification systems, API tokens. Write: Add, modify, delete integrations and their configuration, API tokens.',
     K8sRole:
-        'Read: View roles for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at cluster orchestrator level).',
+        'Read: View roles for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at the cluster orchestrator level).',
     K8sRoleBinding:
-        'Read: View role bindings for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at cluster orchestrator level).',
+        'Read: View role bindings for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at the cluster orchestrator level).',
     K8sSubject:
-        'Read: View users and groups for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at cluster orchestrator level).',
-    Namespace: 'Read: View Kubernetes namespaces in secured clusters. Write: N/A (changes should happen at cluster orchestrator level).',
+        'Read: View users and groups for Kubernetes role-based access control in secured clusters. Write: N/A (cluster access control object changes should happen at the cluster orchestrator level).',
+    Namespace:
+        'Read: View Kubernetes namespaces in secured clusters. Write: N/A (changes should happen at the cluster orchestrator level).',
     NetworkGraph:
         'Read: View active and allowed network connections in secured clusters. Write: Add, modify or remove external network entities.',
     NetworkPolicy:
         'Read: View network policies in secured clusters and simulate changes. Write: Apply network policy changes in secured clusters.',
-    Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A (changes should happen at cluster orchestrator level).',
-    Secret: 'Read: View metadata about secrets in secured clusters. Write: N/A (changes should happen at cluster orchestrator level).',
-    ServiceAccount: 'Read: List Kubernetes service accounts in secured clusters. Write: N/A (cluster access control object changes should happen at cluster orchestrator level).',
+    Node: 'Read: View Kubernetes nodes in secured clusters. Write: N/A (changes should happen at the cluster orchestrator level).',
+    Secret: 'Read: View metadata about secrets in secured clusters. Write: N/A (changes should happen at the cluster orchestrator level).',
+    ServiceAccount:
+        'Read: List Kubernetes service accounts in secured clusters. Write: N/A (cluster access control object changes should happen at the cluster orchestrator level).',
     VirtualMachine:
-        'Read: View virtual machines, their packages, and their vulnerabilities. Write: N/A (virtual machine changes should happen at cluster orchestrator level or inside the virtual machine).',
+        'Read: View virtual machines, their packages, and their vulnerabilities. Write: N/A (virtual machine changes should happen at the cluster orchestrator level or inside the virtual machine).',
     VulnerabilityManagementApprovals:
         'Read: View all pending deferral or false positive requests for vulnerabilities. Write: Approve or deny any pending deferral or false positive requests and move any previously approved requests back to observed.',
     VulnerabilityManagementRequests:
