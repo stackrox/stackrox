@@ -22,7 +22,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func newManagerForTest(t *testing.T, pubsubEnabled bool) (Manager, *networkFlowManager, common.PubSubDispatcher, *internalmessage.MessageSubscriber) {
+func newManagerForTest(t *testing.T, pubsubEnabled bool) (*networkFlowManager, common.PubSubDispatcher, *internalmessage.MessageSubscriber) {
 	t.Helper()
 	mockCtrl := gomock.NewController(t)
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
@@ -51,7 +51,9 @@ func newManagerForTest(t *testing.T, pubsubEnabled bool) (Manager, *networkFlowM
 		disp,
 		updatecomputer.New(),
 	)
-	return m, m.(*networkFlowManager), disp, msgSub
+	mgr, ok := m.(*networkFlowManager)
+	require.True(t, ok, "NewManager must return a *networkFlowManager")
+	return mgr, disp, msgSub
 }
 
 func boolString(b bool) string {
@@ -75,7 +77,7 @@ func TestResourceSyncFinished_MarksInitialSync(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
-				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
 
 				assert.False(t, mgr.initialSync.Load(), "initialSync must be false before event")
 
@@ -102,7 +104,7 @@ func TestResourceSyncFinished_MarksInitialSync(t *testing.T) {
 func TestResourceSyncFinished_PubSubHonorsStopper(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-		_, mgr, disp, _ := newManagerForTest(t, true)
+		mgr, disp, _ := newManagerForTest(t, true)
 
 		mgr.stopper.Client().Stop()
 
@@ -126,7 +128,7 @@ func TestResourceSyncFinished_SkipsExpiredEvent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
-				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
 
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
@@ -163,7 +165,7 @@ func TestResourceSyncFinished_ConcurrentDelivery(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
-				_, mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
+				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
 
 				const goroutines = 50
 				var wg sync.WaitGroup
@@ -196,7 +198,7 @@ func TestResourceSyncFinished_ConcurrentDelivery(t *testing.T) {
 func TestResourceSyncFinished_PubSubRejectsWrongEventType(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-		_, mgr, _, _ := newManagerForTest(t, true)
+		mgr, _, _ := newManagerForTest(t, true)
 
 		err := mgr.handleResourceSyncEvent(&events.SoftRestartEvent{
 			LifecycleEvent: events.LifecycleEvent{Text: "wrong type"},
