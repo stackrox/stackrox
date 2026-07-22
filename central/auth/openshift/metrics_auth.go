@@ -58,17 +58,18 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 		return
 	}
 
-	caPEM := readClientCA(clientset)
-	if caPEM == "" {
-		return
+	onCA := func(caPEM string) {
+		ensurePermissionSet(ctx, roleDS)
+		ensureRole(ctx, roleDS)
+		ensureAuthProvider(ctx, registry, caPEM)
+		ensureGroup(ctx, groupDS)
 	}
 
-	ensurePermissionSet(ctx, roleDS)
-	ensureRole(ctx, roleDS)
-	ensureAuthProvider(ctx, registry, caPEM)
-	ensureGroup(ctx, groupDS)
+	if caPEM := readClientCA(ctx, clientset); caPEM != "" {
+		onCA(caPEM)
+	}
 
-	watchClientCA(ctx, clientset, registry)
+	watchClientCA(ctx, clientset, onCA)
 }
 
 func newK8sClient() (kubernetes.Interface, error) {
@@ -79,10 +80,10 @@ func newK8sClient() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
-func readClientCA(clientset kubernetes.Interface) string {
+func readClientCA(ctx context.Context, clientset kubernetes.Interface) string {
 	cm, err := clientset.CoreV1().ConfigMaps(
 		env.SecureMetricsClientCANamespace.Setting(),
-	).Get(context.Background(), env.SecureMetricsClientCAConfigMap.Setting(), metav1.GetOptions{})
+	).Get(ctx, env.SecureMetricsClientCAConfigMap.Setting(), metav1.GetOptions{})
 	if err != nil {
 		log.Warnf("Cannot read client CA ConfigMap %s/%s: %v",
 			env.SecureMetricsClientCANamespace.Setting(),
@@ -100,7 +101,7 @@ func readClientCA(clientset kubernetes.Interface) string {
 	return pem
 }
 
-func watchClientCA(ctx context.Context, clientset kubernetes.Interface, registry authproviders.Registry) {
+func watchClientCA(ctx context.Context, clientset kubernetes.Interface, onCA func(string)) {
 	watcher := k8scfgwatch.NewConfigMapWatcher(clientset, func(cm *v1.ConfigMap) {
 		if cm == nil {
 			return
@@ -109,11 +110,7 @@ func watchClientCA(ctx context.Context, clientset kubernetes.Interface, registry
 		if !ok || pem == "" {
 			return
 		}
-		provider := registry.GetProvider(authProviderID)
-		if provider == nil {
-			return
-		}
-		refreshCA(ctx, registry, provider, pem)
+		onCA(pem)
 	})
 	watcher.Watch(
 		ctx,
