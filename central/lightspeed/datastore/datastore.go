@@ -1,40 +1,44 @@
 package datastore
 
-import (
-	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/sync"
-)
+import "github.com/stackrox/rox/pkg/sync"
+
+// LightspeedInfo stores per-cluster OpenShift Lightspeed availability data.
+type LightspeedInfo struct {
+	IsAvailable bool
+	Endpoint    string
+}
 
 // DataStore stores per-cluster OpenShift Lightspeed availability state in memory.
 type DataStore interface {
-	Update(clusterID string, info *central.LightspeedInfo)
-	Get(clusterID string) *central.LightspeedInfo
+	Update(clusterID string, info LightspeedInfo)
+	Get(clusterID string) (LightspeedInfo, bool)
 	Remove(clusterID string)
-	GetAll() map[string]*central.LightspeedInfo
+	GetAll() map[string]LightspeedInfo
 }
 
 // New returns a new in-memory DataStore.
 func New() DataStore {
 	return &datastoreImpl{
-		store: make(map[string]*central.LightspeedInfo),
+		store: make(map[string]LightspeedInfo),
 	}
 }
 
 type datastoreImpl struct {
 	mu    sync.RWMutex
-	store map[string]*central.LightspeedInfo
+	store map[string]LightspeedInfo
 }
 
-func (d *datastoreImpl) Update(clusterID string, info *central.LightspeedInfo) {
+func (d *datastoreImpl) Update(clusterID string, info LightspeedInfo) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.store[clusterID] = info
 }
 
-func (d *datastoreImpl) Get(clusterID string) *central.LightspeedInfo {
+func (d *datastoreImpl) Get(clusterID string) (LightspeedInfo, bool) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	return d.store[clusterID]
+	info, ok := d.store[clusterID]
+	return info, ok
 }
 
 func (d *datastoreImpl) Remove(clusterID string) {
@@ -43,10 +47,10 @@ func (d *datastoreImpl) Remove(clusterID string) {
 	delete(d.store, clusterID)
 }
 
-func (d *datastoreImpl) GetAll() map[string]*central.LightspeedInfo {
+func (d *datastoreImpl) GetAll() map[string]LightspeedInfo {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
-	result := make(map[string]*central.LightspeedInfo, len(d.store))
+	result := make(map[string]LightspeedInfo, len(d.store))
 	for k, v := range d.store {
 		result[k] = v
 	}

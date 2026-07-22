@@ -40,10 +40,10 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetLightspeedStatus(_ context.Context, _ *v1.Empty) (*v1.LightspeedStatusResponse, error) {
 	for _, info := range s.datastore.GetAll() {
-		if info.GetIsAvailable() {
+		if info.IsAvailable {
 			return &v1.LightspeedStatusResponse{
 				Available: true,
-				Endpoint:  info.GetEndpoint(),
+				Endpoint:  info.Endpoint,
 			}, nil
 		}
 	}

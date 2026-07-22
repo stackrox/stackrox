@@ -113,6 +113,9 @@ var (
 	// BaseImageDetection enables base image detection and management functionality.
 	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION", enabled)
 
+	// LightspeedRiskSummary enables OpenShift Lightspeed integration for AI risk summary availability.
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
+
 	// DelegatedBaseImageScanning enables delegation of base image repository scanning to secured clusters.
 	DelegatedBaseImageScanning = registerFeature("Enable delegated base image scanning to secured clusters", "ROX_DELEGATED_BASE_IMAGE_SCANNING")
 

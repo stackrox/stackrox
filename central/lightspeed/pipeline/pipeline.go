@@ -49,7 +49,10 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(_ context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	info := msg.GetLightspeedInfo()
 	log.Debugf("Received Lightspeed info from cluster %s: available=%v endpoint=%s", clusterID, info.GetIsAvailable(), info.GetEndpoint())
-	s.datastore.Update(clusterID, info)
+	s.datastore.Update(clusterID, datastore.LightspeedInfo{
+		IsAvailable: info.GetIsAvailable(),
+		Endpoint:    info.GetEndpoint(),
+	})
 	return nil
 }
 
