@@ -113,7 +113,7 @@ func TestStopSignal(t *testing.T) {
 	filePath := filepath.Join(dir, "data.json")
 
 	d := New(server.URL, filePath, minInterval, WithHTTPClient(server.Client()))
-	d.Start()
+	require.NoError(t, d.Start(t.Context(), false))
 
 	require.Eventually(t, func() bool {
 		_, err := os.Stat(filePath)
@@ -131,26 +131,60 @@ func TestStopSignal(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	t.Run("should fail fast without downloading when the destination directory cannot be created", func(t *testing.T) {
-		dir := t.TempDir()
-		blocker := filepath.Join(dir, "blocker")
-		require.NoError(t, os.WriteFile(blocker, []byte("x"), 0600))
-		// blocker is a regular file, so MkdirAll for a path nested under it
-		// fails - simulating a persistent, non-network directory problem.
-		filePath := filepath.Join(blocker, "nested", "data.json")
+		for name, waitForInitial := range map[string]bool{"waiting for initial": true, "not waiting for initial": false} {
+			t.Run(name, func(t *testing.T) {
+				dir := t.TempDir()
+				blocker := filepath.Join(dir, "blocker")
+				require.NoError(t, os.WriteFile(blocker, []byte("x"), 0600))
+				// blocker is a regular file, so MkdirAll for a path nested under it
+				// fails - simulating a persistent, non-network directory problem.
+				filePath := filepath.Join(blocker, "nested", "data.json")
 
-		errCh := make(chan error, 1)
-		d := New("http://example.invalid/mapping.json", filePath, minInterval,
-			WithOnComplete(func(err error, _ time.Duration) { errCh <- err }),
-		)
-		d.Start()
-		t.Cleanup(d.Stop)
+				var calls atomic.Int32
+				client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
+					calls.Add(1)
+					return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
+				})}
+				d := New("http://example.invalid/mapping.json", filePath, minInterval, WithHTTPClient(client))
 
-		select {
-		case err := <-errCh:
-			assert.ErrorContains(t, err, "creating directory")
-		case <-time.After(2 * time.Second):
-			t.Fatal("onComplete was not called")
+				err := d.Start(t.Context(), waitForInitial)
+				require.Error(t, err)
+				assert.ErrorContains(t, err, "creating directory")
+				assert.Equal(t, int32(0), calls.Load(), "should not attempt a download")
+
+				// No goroutine was ever spawned; Stop must still return promptly.
+				done := make(chan struct{})
+				go func() { d.Stop(); close(done) }()
+				select {
+				case <-done:
+				case <-time.After(2 * time.Second):
+					t.Fatal("Stop did not return after a failed Start")
+				}
+			})
 		}
+	})
+
+	t.Run("should block on and return the initial download's error when waitForInitial is true", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}))
+		t.Cleanup(server.Close)
+
+		d := New(server.URL, filepath.Join(t.TempDir(), "data.json"), minInterval, WithHTTPClient(server.Client()))
+		err := d.Start(t.Context(), true)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "503")
+	})
+
+	t.Run("should not block when waitForInitial is false, even if the first download fails", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}))
+		t.Cleanup(server.Close)
+
+		d := New(server.URL, filepath.Join(t.TempDir(), "data.json"), minInterval, WithHTTPClient(server.Client()))
+		require.NoError(t, d.Start(t.Context(), false))
+		t.Cleanup(d.Stop)
 	})
 }
 
@@ -307,8 +341,11 @@ func TestDownloadOnce_RetriesViaRetryableHTTPThenSucceeds(t *testing.T) {
 	assert.Equal(t, "ok", string(data))
 }
 
-func TestRun(t *testing.T) {
-	t.Run("should not download immediately, unlike Start", func(t *testing.T) {
+// TestTickLoop exercises tickLoop directly (rather than through Start),
+// since that is where Start's periodic behavior after the initial
+// download actually lives.
+func TestTickLoop(t *testing.T) {
+	t.Run("should not download immediately", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			var calls atomic.Int32
 			client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
@@ -320,13 +357,13 @@ func TestRun(t *testing.T) {
 			)
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan error, 1)
-			go func() { done <- d.Run(ctx) }()
+			done := make(chan struct{})
+			go func() { d.tickLoop(ctx); close(done) }()
 			defer func() {
 				cancel()
 				<-done
 			}()
-			synctest.Wait() // Run is blocked waiting for the first tick
+			synctest.Wait() // tickLoop is blocked waiting for the first tick
 
 			assert.Equal(t, int32(0), calls.Load())
 		})
@@ -344,8 +381,8 @@ func TestRun(t *testing.T) {
 			)
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan error, 1)
-			go func() { done <- d.Run(ctx) }()
+			done := make(chan struct{})
+			go func() { d.tickLoop(ctx); close(done) }()
 			defer func() {
 				cancel()
 				<-done
@@ -362,39 +399,17 @@ func TestRun(t *testing.T) {
 		})
 	})
 
-	t.Run("should stop promptly when the context is cancelled and return ctx.Err()", func(t *testing.T) {
+	t.Run("should stop promptly when the context is cancelled", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			d := New("http://example.invalid/mapping.json", filepath.Join(t.TempDir(), "data.json"), minInterval)
 
 			ctx, cancel := context.WithCancel(t.Context())
-			done := make(chan error, 1)
-			go func() { done <- d.Run(ctx) }()
+			done := make(chan struct{})
+			go func() { d.tickLoop(ctx); close(done) }()
 			synctest.Wait()
 
 			cancel()
-			err := <-done
-			assert.ErrorIs(t, err, context.Canceled)
+			<-done
 		})
-	})
-
-	t.Run("should fail fast without downloading when the destination directory cannot be created", func(t *testing.T) {
-		dir := t.TempDir()
-		blocker := filepath.Join(dir, "blocker")
-		require.NoError(t, os.WriteFile(blocker, []byte("x"), 0600))
-		// blocker is a regular file, so MkdirAll for a path nested under it
-		// fails - simulating a persistent, non-network directory problem.
-		filePath := filepath.Join(blocker, "nested", "data.json")
-
-		var calls atomic.Int32
-		client := &http.Client{Transport: roundTripperFunc(func(*http.Request) (*http.Response, error) {
-			calls.Add(1)
-			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("ok"))}, nil
-		})}
-		d := New("http://example.invalid/mapping.json", filePath, minInterval, WithHTTPClient(client))
-
-		err := d.Run(t.Context())
-		require.Error(t, err)
-		assert.ErrorContains(t, err, "creating directory")
-		assert.Equal(t, int32(0), calls.Load(), "should not attempt a download")
 	})
 }

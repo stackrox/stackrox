@@ -110,46 +110,41 @@ func New(url, filePath string, interval time.Duration, opts ...Option) *Download
 	return d
 }
 
-// Start begins periodic downloading in a background goroutine: an initial
-// download runs immediately, then Run takes over for the periodic loop.
-func (d *Downloader) Start() {
+// Start downloads filePath, then refreshes it periodically in the
+// background. waitForInitial blocks until the first download succeeds.
+func (d *Downloader) Start(ctx context.Context, waitForInitial bool) error {
 	log.Infof("Starting file downloader for %q → %q", d.url, d.filePath)
+
+	// Fail fast on a persistent directory problem before downloading.
+	if err := d.ensureDestinationDir(); err != nil {
+		d.reportRunFailure(err)
+		d.doneSig.Signal() // no goroutine will run; Stop must not block on it
+		return err
+	}
+
+	if waitForInitial {
+		if err := d.DownloadOnce(ctx); err != nil {
+			d.doneSig.Signal() // no goroutine will run; Stop must not block on it
+			return err
+		}
+	}
+
 	go func() {
 		defer d.doneSig.Signal()
-
-		ctx, cancel := concurrency.DependentContext(context.Background(), &d.stopSig)
+		loopCtx, cancel := concurrency.DependentContext(ctx, &d.stopSig)
 		defer cancel()
-
-		// Check before the initial DownloadOnce too, so a persistent
-		// directory problem fails fast instead of wasting a network
-		// round trip on a download that could never be written to disk.
-		if err := d.ensureDestinationDir(); err != nil {
-			d.reportRunFailure(err)
-			return
+		if !waitForInitial {
+			_ = d.DownloadOnce(loopCtx)
 		}
-
-		_ = d.DownloadOnce(ctx)
-		_ = d.Run(ctx)
+		d.tickLoop(loopCtx)
 	}()
+	return nil
 }
 
 // Stop signals the downloader to stop and blocks until it exits.
 func (d *Downloader) Stop() {
 	d.stopSig.Signal()
 	<-d.doneSig.Done()
-}
-
-// Run downloads every interval until ctx is done, then returns ctx.Err().
-// Unlike Start, it performs no download on entry — call DownloadOnce first
-// if a mandatory initial fetch is needed. Don't mix with Start/Stop.
-func (d *Downloader) Run(ctx context.Context) error {
-	// Fail fast on a persistent directory problem before the first tick.
-	if err := d.ensureDestinationDir(); err != nil {
-		d.reportRunFailure(err)
-		return err
-	}
-	d.tickLoop(ctx)
-	return ctx.Err()
 }
 
 func (d *Downloader) ensureDestinationDir() error {
@@ -159,9 +154,8 @@ func (d *Downloader) ensureDestinationDir() error {
 	return nil
 }
 
-// reportRunFailure surfaces a fatal, pre-download setup error (currently
-// only a persistent directory problem) the same way DownloadOnce reports a
-// download failure: via OnComplete if configured, otherwise a log line.
+// reportRunFailure reports a fatal setup error via OnComplete if
+// configured, otherwise a log line - same as DownloadOnce does for errors.
 func (d *Downloader) reportRunFailure(err error) {
 	if d.onComplete != nil {
 		d.onComplete(err, 0)
@@ -170,7 +164,7 @@ func (d *Downloader) reportRunFailure(err error) {
 	}
 }
 
-// tickLoop is the periodic loop behind Run (and, via Run, Start).
+// tickLoop is the periodic download loop behind Start.
 func (d *Downloader) tickLoop(ctx context.Context) {
 	t := time.NewTimer(d.interval)
 	defer t.Stop()

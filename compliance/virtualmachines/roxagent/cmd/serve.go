@@ -111,9 +111,11 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	// The mapping file must exist locally before the first scan can run:
 	// scan() never fetches it itself, so this initial fetch is mandatory.
 	// If it fails, startup fails rather than running a scan against no data.
+	// Start(ctx, true) blocks until that fetch completes, then keeps
+	// refreshing the file in the background.
 	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
 		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
-	if err := mappingDownloader.DownloadOnce(ctx); err != nil {
+	if err := mappingDownloader.Start(ctx, true); err != nil {
 		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
 	}
 
@@ -155,13 +157,14 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
 	wg.Go(func() { vmRescanner.Run(ctx) })
-	wg.Go(func() { _ = mappingDownloader.Run(ctx) })
 
 	<-ctx.Done()
-	// Wait for Serve's graceful drain (in-flight connections), the rescan
-	// loop, and the mapping refresh loop to finish before returning, so the
-	// process doesn't exit mid-drain, mid-scan, or mid-fetch.
+	// Wait for Serve's graceful drain (in-flight connections) and the
+	// rescan loop to finish before returning, so the process doesn't exit
+	// mid-drain or mid-scan. mappingDownloader.Stop waits for its own
+	// background refresh loop the same way, once ctx is already done.
 	wg.Wait()
+	mappingDownloader.Stop()
 	return nil
 }
 
