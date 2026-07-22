@@ -48,9 +48,9 @@ var log = logging.LoggerForModule()
 // extension-apiserver-authentication ConfigMap (same CA that signs Prometheus client
 // certs). A ConfigMap watcher keeps the CA current across rotations.
 //
-// All seeded objects use IMPERATIVE origin. Ideally they would be DEFAULT
-// (non-user-modifiable), but the auth provider datastore rejects non-IMPERATIVE
-// origins through the normal creation path (see CanModifyResource).
+// The auth provider uses DEFAULT origin (not user-modifiable). Other seeded
+// objects (role, permission set, access scope, group) use IMPERATIVE origin
+// so operators can adjust them.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
@@ -66,7 +66,9 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 		ensureAccessScope(ctx, roleDS)
 		ensurePermissionSet(ctx, roleDS)
 		ensureRole(ctx, roleDS)
-		ensureAuthProvider(ctx, registry, caPEM)
+		// Auth provider uses DEFAULT origin — needs a context that allows it.
+		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
+		ensureAuthProvider(defaultCtx, registry, caPEM)
 		ensureGroup(ctx, groupDS)
 	}
 
