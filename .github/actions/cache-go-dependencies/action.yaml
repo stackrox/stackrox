@@ -18,12 +18,10 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
-        # Hash go.mod once for use in cache keys, so a dependency bump gets a
-        # fresh primary cache key. This narrows, but does not eliminate, the
-        # window for the module-index staleness bug below: the broader
-        # restore-key fallback can still restore a cache saved under a
-        # different go.mod hash. GODEBUG=goindex=0 (below) is what actually
-        # closes that gap.
+        # Hash go.mod once for use in cache keys. When dependencies change,
+        # the GOCACHE must be invalidated because Go's module index caches
+        # parsed imports by (filename, mtime, size) and our fixed mtimes
+        # can cause stale cached imports when file content changes.
         echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
@@ -31,7 +29,7 @@ runs:
 
     - name: Cache Go Build (save)
       if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v5
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -41,7 +39,7 @@ runs:
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v5
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
@@ -95,34 +93,23 @@ runs:
 
     - name: Stabilize file mtimes for Go test cache
       run: |
-        # Go's test cache validates runtime-read files (e.g. testdata/) by
-        # (path, size, mtime) — NOT content. git checkout sets all mtimes to
-        # "now", which differs between CI runs, causing every such test to
-        # miss the cache. A fixed mtime makes it hit across runs when file
-        # content hasn't changed. Also stabilize directory mtimes — tests
-        # using os.ReadDir or filepath.Walk check those too.
+        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
+        # git checkout sets all mtimes to "now", which differs between CI runs,
+        # causing every test to miss the cache. Setting a fixed mtime makes the
+        # test cache hit across runs when file content hasn't changed.
         git ls-files | xargs touch -t 200101010000
+        # Also stabilize directory mtimes — tests using os.ReadDir or
+        # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
 
-    # Go's module index (stored in $GOCACHE) caches each package directory's
-    # parsed imports keyed by (filename, mtime, size) — NOT content. Combined
-    # with the fixed mtime above, a same-size source change (e.g. a same-length
-    # import path swap) restored against a mismatched prior GOCACHE can produce
-    # a false "could not import ... (open : no such file or directory)" even
-    # though the code is correct (see golang-jwt v4->v5 incident). GOMOD_HASH
-    # narrows this but doesn't close it, since the restore-key fallback can
-    # still cross a go.mod hash boundary.
-    #
-    # Disabling the index entirely is the fix: it's a pure performance
-    # optimization (callers fall back to the same always-correct filesystem
-    # read path used before Go 1.19 introduced it), and Go's own module-index
-    # maintainer has publicly confirmed disabling it causes no correctness
-    # issues, specifically for this bug: https://github.com/golang/go/issues/69179
-    # (that issue was closed not_planned -- Go has no fix of its own for the
-    # underlying staleness, making this the sanctioned mitigation). The flag
-    # is undocumented (no formal compatibility guarantee) but has been stable
-    # since Go 1.19 with no indication of removal.
+    # Go's module index also caches parsed imports by (filename, mtime, size),
+    # so the fixed mtime above can serve a stale import when a file changes
+    # content but keeps the same size (see the golang-jwt v4->v5 incident).
+    # Disabling the index is safe: it's a pure performance optimization with
+    # an always-correct fallback path, and Go's own maintainer confirmed
+    # disabling it fixes this exact bug: https://github.com/golang/go/issues/69179
+    # (closed not_planned -- there's no fix of the underlying staleness coming).
     - name: Disable Go module index (GODEBUG=goindex=0)
       run: echo "GODEBUG=${GODEBUG:+$GODEBUG,}goindex=0" >> "$GITHUB_ENV"
       shell: bash
