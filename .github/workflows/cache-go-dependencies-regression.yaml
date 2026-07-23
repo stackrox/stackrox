@@ -26,14 +26,6 @@ concurrency:
 
 jobs:
   prime-cache:
-    strategy:
-      fail-fast: false
-      matrix:
-        # Runs both blob-hash keyspace variants independently so this
-        # workflow proves both in real CI: 'narrow' (the already-approved
-        # baseline shipping in PR #21719) and 'wide' (a follow-up
-        # improvement). See action.yaml's mtime-keyspace input.
-        keyspace: [narrow, wide]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -45,12 +37,9 @@ jobs:
           # force-save: this job must save even though it isn't a push to the
           # default branch, so verify-restore has a cache to restore.
           force-save: 'true'
-          # cache-scope: shared with verify-restore (per matrix leg) so both
-          # jobs (which necessarily have different job ids) produce the same
-          # cache key, without the two keyspace legs colliding with each
-          # other.
-          cache-scope: 'cicachetest-${{ matrix.keyspace }}'
-          mtime-keyspace: ${{ matrix.keyspace }}
+          # cache-scope: shared with verify-restore so both jobs (which
+          # necessarily have different job ids) produce the same cache key.
+          cache-scope: 'cicachetest'
           # This workflow verifies test-cache hits on schedule/dispatch runs
           # too, not just pull_request runs, so the production
           # non-PR-runs-always-clear-testcache behavior must be bypassed.
@@ -67,10 +56,6 @@ jobs:
 
   verify-restore:
     needs: prime-cache
-    strategy:
-      fail-fast: false
-      matrix:
-        keyspace: [narrow, wide]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -94,8 +79,7 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
-          cache-scope: 'cicachetest-${{ matrix.keyspace }}'
-          mtime-keyspace: ${{ matrix.keyspace }}
+          cache-scope: 'cicachetest'
           skip-test-cache-clear: 'true'
 
       - name: 'Assertion 1: module-index staleness must not recur'
