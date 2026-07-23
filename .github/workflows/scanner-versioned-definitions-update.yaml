@@ -513,10 +513,7 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    # TEMPORARY (test-only, do not merge): simplified to `failure()` so this
-    # fires from a scratch branch/dry-run test dispatch. Real condition:
-    # if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
-    if: failure()
+    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
     permissions:
       checks: read
       actions: read
@@ -623,8 +620,7 @@ jobs:
         REPO: ${{ github.repository }}
         SUMMARY: ${{ steps.annotations.outputs.summary }}
         JOB_STATUS: ${{ steps.annotations.outputs.job_status }}
-        # TEMPORARY (test-only, do not merge): real secret is SLACK_ONCALL_SCANNER_WEBHOOK.
-        SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
       run: |
         set -euo pipefail
         # shellcheck disable=SC2016 # backticks below are a Slack code-block
