@@ -9,6 +9,29 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  force-save:
+    description: >
+      Force a cache save regardless of branch/event. For the
+      cache-go-dependencies-regression.yaml test workflow only, which needs
+      to prime a cache on a non-default-branch run for a later job to restore.
+    required: false
+    default: 'false'
+  cache-scope:
+    description: >
+      Overrides the job-identity component of the cache key (normally
+      github.job). For the cache-go-dependencies-regression.yaml test
+      workflow only, which needs two differently-named jobs (prime/restore)
+      to share one cache key.
+    required: false
+    default: ''
+  skip-test-cache-clear:
+    description: >
+      Skip the "Clear test cache on non-PR runs" step below regardless of
+      event type. For the cache-go-dependencies-regression.yaml test
+      workflow only, which verifies test-cache hits on schedule/dispatch
+      runs, not just pull_request runs.
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -25,27 +48,31 @@ runs:
         echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
+        # Normally the job id; overridable so two differently-named jobs
+        # (e.g. in cache-go-dependencies-regression.yaml) can share a key.
+        scope="${{ inputs.cache-scope }}"
+        echo "SCOPE=${scope:-${{ github.job }}}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: "(inputs.save == 'true' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || inputs.force-save == 'true'"
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ !((inputs.save == 'true' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || inputs.force-save == 'true') }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Mark GOCACHE entries for stale detection
       run: |
@@ -82,7 +109,7 @@ runs:
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Clear test cache on non-PR runs
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && inputs.skip-test-cache-clear != 'true'
       run: |
         # Non-PR runs (master, release branches, nightlies) always run tests
         # from scratch to catch real failures. go clean -testcache removes
@@ -97,15 +124,45 @@ runs:
         # git checkout sets all mtimes to "now", which differs between CI runs,
         # causing every test to miss the cache. Setting a fixed mtime makes the
         # test cache hit across runs when file content hasn't changed.
-        #
-        # Go's module index also caches parsed imports by (filename, mtime, size).
-        # A fixed mtime can cause stale cached imports when a file changes content
-        # but keeps the same size. This is mitigated by including go.mod hash in
-        # the GOCACHE key — dependency changes invalidate the entire cache.
-        # See: https://github.com/golang/go/blob/go1.25.7/src/cmd/go/internal/modindex/read.go#L116
-
         git ls-files | xargs touch -t 200101010000
         # Also stabilize directory mtimes — tests using os.ReadDir or
         # filepath.Walk check directory mtimes too.
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
+      shell: bash
+
+    - name: Derive content-sensitive mtimes for Go module index
+      run: |
+        # Go's module index also caches parsed imports by (filename, mtime,
+        # size), so the fixed mtime above can serve a stale import when a
+        # .go file changes content but keeps the same size (e.g. an import
+        # path swapped for one of equal length -- the golang-jwt v4->v5
+        # incident). Re-stamp just the .go files with a mtime derived from
+        # their git blob hash, overriding the fixed value above for them:
+        # same content always hashes to the same mtime (cache hit),
+        # different content to a different one (correctly invalidates).
+        # Reads the current git index, so no history walk is needed --
+        # works on any checkout depth. (An earlier version of this step
+        # used each file's actual last-commit timestamp instead, which is
+        # more self-documenting, but needs full commit history: a shallow
+        # checkout has no parent for its boundary commit, so an unshallow
+        # is required, and even a blobless one still has to lazily fetch a
+        # tree per historical commit to compute the diff -- confirmed to
+        # take 45+ seconds and counting against this repo's ~23,600-commit
+        # history, so it was dropped rather than chase a further fix.)
+        #
+        # Spreads the hash across one year of seconds (2021-01-01 to
+        # 2021-12-31) -- 31,536,000 distinct values, so a real content
+        # change lands on a different mtime unless it happens to hash into
+        # the same 1-in-31.5M slot as the previous version. Anchored 20
+        # years after the fixed mtime base above (rather than the same
+        # year) purely for extra distance from the GOCACHE trim marker
+        # elsewhere in this file, though that marker only ever applies to
+        # files inside $GOCACHE, never to this source checkout.
+        git ls-files -s -- '*.go' | perl -lne '
+            /^100\S+ (\S+) \S+\t(.+)$/ or next;
+            my $v = 0;
+            $v = ($v * 16 + hex $_) % 31536000 for split //, $1;
+            my $ts = 1609459200 + $v;  # 2021-01-01T00:00:00Z + up to 1 year
+            utime $ts, $ts, $2;
+        '
       shell: bash
