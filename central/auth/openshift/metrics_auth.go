@@ -46,8 +46,9 @@ var log = logging.LoggerForModule()
 // extension-apiserver-authentication ConfigMap (same CA that signs Prometheus client
 // certs). A ConfigMap watcher keeps the CA current across rotations.
 //
-// The permission set and role use IMPERATIVE origin. The auth provider and group
-// use DEFAULT origin so they cannot be modified through the user-facing APIs.
+// The auth provider, access scope, and group use DEFAULT origin so they cannot
+// be modified through the user-facing APIs. The permission set and role use
+// IMPERATIVE origin so operators can adjust them.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
@@ -60,11 +61,12 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 	}
 
 	onCA := func(caPEM string) {
-		ensureAccessScope(ctx, roleDS)
+		// Access scope uses DEFAULT origin — tied to the operator-managed label.
+		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
+		ensureAccessScope(defaultCtx, roleDS)
 		ensurePermissionSet(ctx, roleDS)
 		ensureRole(ctx, roleDS)
-		// Auth provider uses DEFAULT origin — needs a context that allows it.
-		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
+		// Auth provider also uses DEFAULT origin.
 		ensureAuthProvider(defaultCtx, registry, caPEM)
 		ensureGroup(ctx, groupDS)
 	}
@@ -161,6 +163,9 @@ func ensureAccessScope(ctx context.Context, roleDS roleDataStore.DataStore) {
 		Id:          accessScopeID,
 		Name:        accessScopeName,
 		Description: "Scoped to clusters labeled stackrox.io/central-colocated (set automatically by the operator)",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
 		Rules: &storage.SimpleAccessScope_Rules{
 			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
 				{
