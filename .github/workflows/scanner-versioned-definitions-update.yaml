@@ -513,7 +513,10 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    # TEMPORARY (test-only, do not merge): simplified to `failure()` so this
+    # fires from a scratch branch/dry-run test dispatch. Real condition:
+    # if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    if: failure()
     permissions:
       checks: read
       actions: read
@@ -569,10 +572,11 @@ jobs:
         WORKFLOW: ${{ github.workflow }}
         REPO: ${{ github.repository }}
         SUMMARY: ${{ steps.annotations.outputs.summary }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        # TEMPORARY (test-only, do not merge): real secret is SLACK_ONCALL_SCANNER_WEBHOOK.
+        SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
       run: |
         set -euo pipefail
-        text=$(printf '<%s|Workflow %s> failed in repository %s: Failed to update vulnerabilities\n%s' \
+        text=$(printf '[TEST - Please Ignore]\n\n*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Failed steps:*\n%s' \
             "$RUN_URL" "$WORKFLOW" "$REPO" "$SUMMARY")
         jq -n --arg text "$text" '{text: $text}' \
             | curl -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
