@@ -166,25 +166,23 @@ runs:
         # algorithm shipping in PR #21719, unpacked as 5 base-6 digits into
         # the hour/minute/second of 2001-01-01.
         #
-        # 'wide': 31,536,000 slots (one year of seconds, 2021-01-01 to
-        # 2021-12-31) -- a follow-up improvement. Adversarial stress-testing
-        # (989,910-trial single-byte mutation sweep of a real file, 500,000
-        # random same-size substitutions) found zero collisions at this
-        # size, vs. one collision at the narrow size (a synthetic,
-        # non-compiling mutation of central/globaldb/postgres_test.go).
-        # Mining this repo's 53 most same-size-edit-prone files' full
-        # history (up to 114 commits each) found zero actual self-collisions
-        # under either keyspace, so this is a safety-margin improvement, not
-        # a fix for an observed failure. Anchored 20 years after the narrow
-        # variant's base purely for extra distance from the GOCACHE trim
-        # marker elsewhere in this file, though that marker only ever
-        # applies to files inside $GOCACHE, never to this source checkout.
+        # 'wide': 31,536,000 slots (one year of seconds, still from the same
+        # 2001-01-01 base as 'narrow' and the fixed mtime above -- no reason
+        # to introduce a second epoch) -- a follow-up improvement.
+        # Adversarial stress-testing (989,910-trial single-byte mutation
+        # sweep of a real file, 500,000 random same-size substitutions)
+        # found zero collisions at this size, vs. one collision at the
+        # narrow size (a synthetic, non-compiling mutation of
+        # central/globaldb/postgres_test.go). Mining this repo's 53 most
+        # same-size-edit-prone files' full history (up to 114 commits each)
+        # found zero actual self-collisions under either keyspace, so this
+        # is a safety-margin improvement, not a fix for an observed failure.
         if [[ '${{ inputs.mtime-keyspace }}' == 'wide' ]]; then
           git ls-files -s -- '*.go' | perl -lne '
               /^100\S+ (\S+) \S+\t(.+)$/ or next;
               my $v = 0;
               $v = ($v * 16 + hex $_) % 31536000 for split //, $1;
-              my $ts = 1609459200 + $v;  # 2021-01-01T00:00:00Z + up to 1 year
+              my $ts = 978307200 + $v;  # 2001-01-01T00:00:00Z + up to 1 year
               utime $ts, $ts, $2;
           '
         else
