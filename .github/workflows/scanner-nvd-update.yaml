@@ -151,11 +151,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
-      with:
-        fetch-depth: 1
 
-    - name: Fetch full history and tags for git describe
-      run: git fetch --unshallow --tags --no-recurse-submodules origin
   upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds

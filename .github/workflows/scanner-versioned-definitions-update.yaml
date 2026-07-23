@@ -343,11 +343,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
-      with:
-        fetch-depth: 1
 
-    - name: Fetch full history and tags for git describe
-      run: git fetch --unshallow --tags --no-recurse-submodules origin
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
@@ -439,11 +435,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
-      with:
-        fetch-depth: 1
 
-    - name: Fetch full history and tags for git describe
-      run: git fetch --unshallow --tags --no-recurse-submodules origin
   upload-definitions:
     needs:
     - build-and-run
@@ -452,11 +444,7 @@ jobs:
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 1
 
-    - name: Fetch full history and tags for git describe
-      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
       with:
         # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.

@@ -48,11 +48,7 @@ jobs:
       issues: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          fetch-depth: 1  # Need full history for git tag operations
 
-      - name: Fetch full history and tags for git describe
-        run: git fetch --unshallow --tags --no-recurse-submodules origin
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # ratchet:actions/setup-python@v5
         with:

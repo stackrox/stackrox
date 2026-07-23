@@ -66,8 +66,6 @@ jobs:
         ref: ${{ steps.get_previous_released_version.outputs.released_version }}
         path: .old-stackrox
 
-    - name: Fetch full history and tags for git describe
-      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Run crd-schema-checker for platform operator
       run: |
         set -e
