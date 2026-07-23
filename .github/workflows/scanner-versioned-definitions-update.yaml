@@ -535,14 +535,31 @@ jobs:
       run: |
         set -euo pipefail
 
+        # Fetch the job list once (may span multiple pages; gh emits each
+        # page's JSON body back-to-back, which jq happily processes as a
+        # stream of documents below) and reuse it for both the job-status
+        # overview and the per-job failure summary, instead of querying this
+        # endpoint twice.
+        jobs_json=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate)
+
         # Rendered inside a Slack code block (see "Send Slack notification"),
-        # so job names are plain text here, not mrkdwn-bolded.
+        # so job names are plain text here, not mrkdwn-bolded. Caps the
+        # number of messages shown per job so one very chatty failure can't
+        # blow out the whole Slack message -- truncated jobs get an explicit
+        # "... and N more" marker rather than being silently cut off.
+        max_messages_per_job=10
         summary=""
         while IFS=$'\t' read -r job_id job_name failed_step; do
             # Exclude the generic "Process completed with exit code N." annotation
             # that GitHub Actions auto-adds to every failed step -- it's noise here.
-            messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" \
-                --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message' 2>/dev/null || true)
+            # --paginate here too: a job with many broken sources can exceed
+            # the API's default 30-annotations-per-page limit.
+            if ! messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" --paginate \
+                --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message'); then
+                # Distinguish a real API failure from "no annotations found"
+                # (handled below) so the two aren't silently conflated.
+                messages="(failed to fetch annotations for this job via the GitHub API; see the workflow run directly for details)"
+            fi
 
             # Blank line between job blocks (not before the first one) for
             # readability when multiple jobs fail.
@@ -551,18 +568,22 @@ jobs:
             fi
             summary+="${job_name}: ${failed_step}"$'\n'
             if [ -n "$messages" ]; then
-                summary+="$(printf '%s\n' "$messages" | sed 's/^/  - /')"
+                total=$(printf '%s\n' "$messages" | grep -c .)
+                summary+="$(printf '%s\n' "$messages" | head -n "$max_messages_per_job" | sed 's/^/  - /')"
+                if [ "$total" -gt "$max_messages_per_job" ]; then
+                    summary+=$'\n'"  - ... and $((total - max_messages_per_job)) more (see the workflow run for full details)"
+                fi
             else
                 summary+="  - (no detailed error annotations found; see the workflow run for details)"
             fi
-        done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
-            --jq '.jobs[] | select(.conclusion == "failure") | [.id, .name, ([.steps[]? | select(.conclusion == "failure") | .name][0] // "unknown step")] | @tsv')
+        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | select(.conclusion == "failure") | [.id, .name, ([.steps[]? | select(.conclusion == "failure") | .name][0] // "unknown step")] | @tsv')
 
         if [ -z "$summary" ]; then
             summary="(no failed jobs found; see the workflow run for details)"
         fi
 
-        # Keep the Slack message readable and within size limits.
+        # Keep the Slack message readable and within size limits (safety net
+        # on top of the per-job cap above).
         summary=$(printf '%s' "$summary" | head -c 3000)
 
         # Per-job status overview (all jobs, not just failed ones), using
@@ -579,8 +600,7 @@ jobs:
                 *) icon="🟡" ;; # in_progress/null (eg. this job, still running)
             esac
             job_status+="${icon} ${job_name}"$'\n'
-        done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
-            --jq '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
+        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
 
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         {
@@ -612,4 +632,4 @@ jobs:
         text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
             "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
         jq -n --arg text "$text" '{text: $text}' \
-            | curl -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
+            | curl --fail --silent --show-error -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
