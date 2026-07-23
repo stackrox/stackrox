@@ -937,38 +937,38 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccess() {
 					expectAlert: true,
 				},
 				{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
-				expectAlert: true,
-			},
-			{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
-				expectAlert: true,
-			},
-			{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
-				expectAlert: true,
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
+					expectAlert: true,
+				},
 			},
 		},
-	},
-	{
-		description: "Deployment file policy with XATTR_CHANGE operation",
-		policy:      newFileAccessPolicyWithStringOps(storage.EventSource_DEPLOYMENT_EVENT, []string{"XATTR_CHANGE"}, false, "/etc/passwd"),
-		events: []eventWrapper{
-			{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
-				expectAlert: true,
-			},
-			{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
-				expectAlert: true,
-			},
-			{
-				access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
-				expectAlert: false, // Wrong operation
-			},
-			{
-				access:      newActualFileAccessEvent("/tmp/foo", storage.FileAccess_XATTR_SET),
-				expectAlert: false, // Wrong path
+		{
+			description: "Deployment file policy with XATTR_CHANGE operation",
+			policy:      newFileAccessPolicyWithStringOps(storage.EventSource_DEPLOYMENT_EVENT, []string{"XATTR_CHANGE"}, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: false, // Wrong operation
+				},
+				{
+					access:      newActualFileAccessEvent("/tmp/foo", storage.FileAccess_XATTR_SET),
+					expectAlert: false, // Wrong path
 				},
 			},
 		},

@@ -109,8 +109,8 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "file operation",
-		valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create", "rename", "RENAME", "XATTR_CHANGE", "xattr_change", "Xattr_Change"},
-		invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS", "ACL_CHANGE"},
+			valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create", "rename", "RENAME", "XATTR_CHANGE", "xattr_change", "Xattr_Change"},
+			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS", "ACL_CHANGE"},
 			r:       fileOperationRegex,
 		},
 	}
