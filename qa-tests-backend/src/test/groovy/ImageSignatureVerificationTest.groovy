@@ -42,6 +42,8 @@ class ImageSignatureVerificationTest extends BaseSpecification {
     static final private String KEYLESS_SIGSTORE_UNVERIFIABLE = "Keyless-Sigstore-Unverifiable"
     static final private String KEYLESS_RHTAS_MATCHING = "Keyless-RHTAS-Matching"
     static final private String KEYLESS_RHTAS_UNVERIFIABLE = "Keyless-RHTAS-Unverifiable"
+    static final private String REFERRER_SIGSTORE_BUNDLE_PUBKEY = "Referrer-SigstoreBundle-PubKey"
+    static final private String REFERRER_SIGSTORE_BUNDLE_KEYLESS = "Referrer-SigstoreBundle-Keyless"
 
     // List of integration names used within tests.
     // NOTE: If you add a new name, make sure to add it here.
@@ -59,6 +61,8 @@ class ImageSignatureVerificationTest extends BaseSpecification {
             KEYLESS_SIGSTORE_UNVERIFIABLE,
             KEYLESS_RHTAS_MATCHING,
             KEYLESS_RHTAS_UNVERIFIABLE,
+            REFERRER_SIGSTORE_BUNDLE_PUBKEY,
+            REFERRER_SIGSTORE_BUNDLE_KEYLESS,
     ]
 
     // Public keys used within signature integrations.
@@ -139,6 +143,17 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private String BYOPKI_UNVERIFIABLE_ISSUER = "invalid"
     static final private String BYOPKI_UNVERIFIABLE_IDENTITY = "invalid"
 
+    // Public key used to sign the referrer-based test images (both SimpleSigning and sigstore bundle).
+    // Source: https://vault.bitwarden.com/#/vault?itemId=95313e19-de46-4533-b160-af620120452a.
+    static final private Map<String, String> REFERRER_COSIGN_PUBLIC_KEY = [
+            "Referrer": """\
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEu8+OtJR+dVIDHk89zl8WnzcQskow
+bfbvZqSDudXtfGwpKu6tZ1CtH9utaLkglXynrLNecl0QvrhuCuKA/htSwA==
+-----END PUBLIC KEY-----
+""",
+    ]
+
     static final private String KEYLESS_SIGSTORE_ISSUER = "https://github.com/login/oauth"
     static final private String KEYLESS_SIGSTORE_IDENTITY = ".*@redhat.com"
     static final private String KEYLESS_SIGSTORE_REKOR_URL = "https://rekor.sigstore.dev"
@@ -191,6 +206,10 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             "sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
     static final private String KEYLESS_RHTAS_IMAGE_DIGEST =
             "sha256:e246aa22ad2cbdfbd19e2a6ca2b275e26245a21920e2b2d0666324cee3f15549"
+    static final private String REFERRER_SIGSTORE_BUNDLE_PUBKEY_IMAGE_DIGEST =
+            "sha256:9e2bbca079387d7965c3a9cee6d0c53f4f4e63ff7637877a83c4c05f2a666112"
+    static final private String REFERRER_SIGSTORE_BUNDLE_KEYLESS_IMAGE_DIGEST =
+            "sha256:98ad9d1a2be345201bb0709b0d38655eb1b370145c7d94ca1fe9c421f76e245a"
 
     static final private List<String> IMAGE_DIGESTS = [
             DISTROLESS_IMAGE_DIGEST,
@@ -202,6 +221,8 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             BYOPKI_IMAGE_DIGEST,
             KEYLESS_SIGSTORE_IMAGE_DIGEST,
             KEYLESS_RHTAS_IMAGE_DIGEST,
+            REFERRER_SIGSTORE_BUNDLE_PUBKEY_IMAGE_DIGEST,
+            REFERRER_SIGSTORE_BUNDLE_KEYLESS_IMAGE_DIGEST,
     ]
 
     // Deployment holding an image which has a cosign signature that is verifiable with the DISTROLESS_PUBLIC_KEY.
@@ -291,6 +312,26 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
             .setImagePrefetcherAffinity()
 
+    // Deployment holding an image signed with a public key using the sigstore bundle format.
+    static final private Deployment REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT = new Deployment()
+            .setName("referrer-sigstore-bundle-pubkey")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-pubkey" +
+                    "@$REFERRER_SIGSTORE_BUNDLE_PUBKEY_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-sigstore-bundle-pubkey")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
+    // Deployment holding an image signed keyless using the sigstore bundle format.
+    static final private Deployment REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT = new Deployment()
+            .setName("referrer-sigstore-bundle-keyless")
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-keyless" +
+                    "@$REFERRER_SIGSTORE_BUNDLE_KEYLESS_IMAGE_DIGEST")
+            .addLabel("app", "image-with-referrer-sigstore-bundle-keyless")
+            .setCommand(["sleep", "600"])
+            .setNamespace(SIGNATURE_TESTING_NAMESPACE)
+            .setImagePrefetcherAffinity()
+
     // List of deployments used within the tests. This will be used during setup of the spec / teardown to create /
     // delete all deployments.
     // NOTE: If you add another deployment, make sure to add it here as well.
@@ -304,6 +345,8 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
             BYOPKI_DEPLOYMENT,
             KEYLESS_SIGSTORE_DEPLOYMENT,
             KEYLESS_RHTAS_DEPLOYMENT,
+            REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT,
+            REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT,
     ]
 
     // Base policy which will be used for creating subsequent policies that have signature integration IDs as values.
@@ -486,6 +529,27 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
         assert keylessRHTASUnverifiableSignatureIntegrationID
         CREATED_SIGNATURE_INTEGRATIONS.put(KEYLESS_RHTAS_UNVERIFIABLE,
             keylessRHTASUnverifiableSignatureIntegrationID)
+
+        // Signature integration for referrer sigstore bundle signed with a public key.
+        String referrerSigstoreBundlePubKeyID = createSignatureIntegration(
+            REFERRER_SIGSTORE_BUNDLE_PUBKEY, REFERRER_COSIGN_PUBLIC_KEY,
+        )
+        assert referrerSigstoreBundlePubKeyID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_SIGSTORE_BUNDLE_PUBKEY, referrerSigstoreBundlePubKeyID)
+
+        // Signature integration for referrer sigstore bundle signed keyless via public Sigstore.
+        String referrerSigstoreBundleKeylessID = createSignatureIntegration(
+            REFERRER_SIGSTORE_BUNDLE_KEYLESS, NO_PUBLIC_KEYS,
+            new CertificateVerificationArgs(
+                chain: "",
+                identity: KEYLESS_SIGSTORE_IDENTITY,
+                issuer: KEYLESS_SIGSTORE_ISSUER,
+                ctlogEnabled: true,
+            ),
+            new TransparencyLogVerificationArgs(enabled: true, url: KEYLESS_SIGSTORE_REKOR_URL),
+        )
+        assert referrerSigstoreBundleKeylessID
+        CREATED_SIGNATURE_INTEGRATIONS.put(REFERRER_SIGSTORE_BUNDLE_KEYLESS, referrerSigstoreBundleKeylessID)
 
         // Create all required deployments.
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -704,7 +768,50 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
         KEYLESS_RHTAS_UNVERIFIABLE                 | SAME_DIGEST_WITH_SIGNATURE   | true
         KEYLESS_RHTAS_UNVERIFIABLE                 | TEKTON_DEPLOYMENT            | true
         KEYLESS_RHTAS_UNVERIFIABLE                 | UNVERIFIABLE_DEPLOYMENT      | true
-        KEYLESS_RHTAS_UNVERIFIABLE                 | WITHOUT_SIGNATURE_DEPLOYMENT | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | WITHOUT_SIGNATURE_DEPLOYMENT                     | true
+        // Existing integrations should alert for all referrer-based deployments.
+        DISTROLESS                                 | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        DISTROLESS                                 | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        TEKTON                                     | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        TEKTON                                     | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        UNVERIFIABLE                               | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        UNVERIFIABLE                               | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        DISTROLESS_AND_TEKTON                      | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        DISTROLESS_AND_TEKTON                      | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        POLICY_WITH_DISTROLESS_TEKTON_UNVERIFIABLE | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        SAME_DIGEST                                | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        SAME_DIGEST                                | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        BYOPKI_WILDCARD                            | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        BYOPKI_WILDCARD                            | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        BYOPKI_MATCHING                            | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        BYOPKI_MATCHING                            | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        BYOPKI_UNVERIFIABLE                        | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        BYOPKI_UNVERIFIABLE                        | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        BYOPKI_WILDCARD_AND_TEKTON                 | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        KEYLESS_SIGSTORE_MATCHING                  | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        KEYLESS_SIGSTORE_MATCHING                  | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE              | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        KEYLESS_SIGSTORE_UNVERIFIABLE              | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        KEYLESS_RHTAS_MATCHING                     | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        KEYLESS_RHTAS_MATCHING                     | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        KEYLESS_RHTAS_UNVERIFIABLE                 | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        // Referrer SimpleSigning with public key: only the matching deployment passes.
+        // Referrer SimpleSigning with keyless: only the matching deployment passes.
+        // Referrer sigstore bundle with public key: only the matching deployment passes.
+        REFERRER_SIGSTORE_BUNDLE_PUBKEY            | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | false
+        REFERRER_SIGSTORE_BUNDLE_PUBKEY            | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | true
+        REFERRER_SIGSTORE_BUNDLE_PUBKEY            | DISTROLESS_DEPLOYMENT                             | true
+        REFERRER_SIGSTORE_BUNDLE_PUBKEY            | TEKTON_DEPLOYMENT                                 | true
+        REFERRER_SIGSTORE_BUNDLE_PUBKEY            | WITHOUT_SIGNATURE_DEPLOYMENT                      | true
+        // Referrer sigstore bundle with keyless: only the matching deployment passes.
+        REFERRER_SIGSTORE_BUNDLE_KEYLESS           | REFERRER_SIGSTORE_BUNDLE_PUBKEY_DEPLOYMENT        | true
+        REFERRER_SIGSTORE_BUNDLE_KEYLESS           | REFERRER_SIGSTORE_BUNDLE_KEYLESS_DEPLOYMENT       | false
+        REFERRER_SIGSTORE_BUNDLE_KEYLESS           | DISTROLESS_DEPLOYMENT                             | true
+        REFERRER_SIGSTORE_BUNDLE_KEYLESS           | TEKTON_DEPLOYMENT                                 | true
+        REFERRER_SIGSTORE_BUNDLE_KEYLESS           | WITHOUT_SIGNATURE_DEPLOYMENT                      | true
     }
 
     // Helper which creates a policy builder for a policy which uses the image signature policy criteria.
