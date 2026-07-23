@@ -11,8 +11,8 @@ on:
       build-tag:
         description: The image tag produced by this build run.
         value: ${{ jobs.define-job-matrix.outputs.build-tag }}
-  # pull_request trigger removed: pr.yaml is now the single entry point for PR CI and
-  # calls this workflow via workflow_call, passing the tag through as a job output.
+  # pull_request trigger removed: e2e-dispatch.yaml is the single entry point for PR CI
+  # and calls this workflow via workflow_call, passing the tag through as a job output.
   push:
     tags:
     - '*-nightly-*'
