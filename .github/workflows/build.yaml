@@ -7,16 +7,16 @@ on:
         required: true
         type: string
   workflow_call:
-  # pull_request trigger removed: e2e-dispatch.yaml is the single entry point for PR CI
-  # and calls this workflow via workflow_call. The tag is computed independently by
-  # e2e-dispatch.yaml's compute-tag job rather than read from this workflow's output,
-  # since build.yaml doesn't (yet) declare one -- see #21722 and e2e-dispatch.yaml's
-  # compute-tag job comment for why that matters here.
   push:
     tags:
     - '*-nightly-*'
     branches:
     - master
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 defaults:
   run:
