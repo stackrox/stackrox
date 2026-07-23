@@ -25,11 +25,10 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// mappingCachePath is where the repository-to-CPE mapping file (see
-// mappingRefresher) is cached; scans always read from this file, never the
-// network, so a slow or unavailable mapping endpoint never blocks or fails
-// a scan directly. Hardcoded for now; make it a --mapping-cache-path flag
-// later if reviewers ask for it to be configurable.
+// mappingCachePath is where the repository-to-CPE mapping file is cached;
+// scans always read from this file, so a slow or unavailable mapping
+// endpoint never blocks or fails a scan directly. Hardcoded for now; make
+// it a --mapping-cache-path flag later if needed.
 var mappingCachePath = filepath.Join(os.TempDir(), "roxagent-repo2cpe.json")
 
 // Set via -ldflags at build time.
@@ -110,11 +109,13 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	}
 
 	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself (see mappingRefresher doc comment), so
-	// this initial fetch is mandatory, not best-effort - if it fails after
-	// retries, startup fails rather than running a scan against no data.
-	mr := newMappingRefresher(cfg.repoCPEURL, mappingCachePath)
-	if err := mr.fetchWithRetry(ctx); err != nil {
+	// scan() never fetches it itself, so this initial fetch is mandatory.
+	// If it fails, startup fails rather than running a scan against no data.
+	// Start(ctx, true) blocks until that fetch completes, then keeps
+	// refreshing the file in the background.
+	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
+		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
+	if err := mappingDownloader.Start(ctx, true); err != nil {
 		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
 	}
 
@@ -156,21 +157,35 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
 	wg.Go(func() { vmRescanner.Run(ctx) })
-	wg.Go(func() { mr.Run(ctx) })
 
 	<-ctx.Done()
-	// Wait for Serve's graceful drain (in-flight connections), the rescan
-	// loop, and the mapping refresh loop to finish before returning, so the
-	// process doesn't exit mid-drain, mid-scan, or mid-fetch.
+	// Wait for Serve's graceful drain (in-flight connections) and the
+	// rescan loop to finish before returning, so the process doesn't exit
+	// mid-drain or mid-scan. mappingDownloader.Stop waits for its own
+	// background refresh loop the same way, once ctx is already done.
 	wg.Wait()
+	mappingDownloader.Stop()
 	return nil
 }
 
+// logMappingDownloadResult logs a repository-to-CPE mapping download outcome and status of the local mapping file.
+func logMappingDownloadResult(url, cachePath string) func(err error, duration time.Duration) {
+	return func(err error, duration time.Duration) {
+		if err == nil {
+			log.Infof("Repository-to-CPE mapping file downloaded from %s in %s", url, duration)
+			return
+		}
+		if _, statErr := os.Stat(cachePath); statErr == nil {
+			log.Warnf("Repository-to-CPE mapping download failed after %s, scans keep using the previously cached file: %v", duration, err)
+			return
+		}
+		log.Errorf("Repository-to-CPE mapping download failed after %s, no cached file available: %v", duration, err)
+	}
+}
+
 // scan indexes the VM filesystem at hostPath, consulting the
-// repository-to-CPE mapping data cached at mappingFilePath. It never makes
-// a network call itself: mappingRefresher is solely responsible for
-// keeping mappingFilePath fresh (see its doc comment for why the fetch is
-// decoupled from every individual scan).
+// repository-to-CPE mapping data cached at mappingFilePath.
+// The mapping downloader keeps mappingFilePath fresh independently.
 func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
 	cfg := index.NodeIndexerConfig{
 		HostPath:            hostPath,
