@@ -32,6 +32,15 @@ inputs:
       runs, not just pull_request runs.
     required: false
     default: 'false'
+  mtime-keyspace:
+    description: >
+      Which blob-hash mtime keyspace to use: 'narrow' (6^5 = 7,776 slots,
+      the already-approved baseline shipping in PR #21719) or 'wide'
+      (31,536,000 slots, a follow-up improvement backed by adversarial and
+      historical-data testing). For the cache-go-dependencies-regression.yaml
+      test workflow only, which tests both independently in real CI.
+    required: false
+    default: 'narrow'
 runs:
   using: composite
   steps:
@@ -150,30 +159,41 @@ runs:
         # take 45+ seconds and counting against this repo's ~23,600-commit
         # history, so it was dropped rather than chase a further fix.)
         #
-        # Widened from an earlier 6^5=7,776-slot version: adversarial
-        # stress-testing (989,910-trial single-byte mutation sweep of a real
-        # file, 500,000 random same-size substitutions) found zero collisions
-        # at the 31,536,000-slot size below, vs. a real, reproducible
-        # collision at the 7,776-slot size (central/globaldb/postgres_test.go
-        # -- though that specific mutation happens to not compile). Mining
-        # this repo's 53 most same-size-edit-prone files' full history (up to
-        # 114 commits each) found zero actual self-collisions under either
-        # keyspace, so this is a safety-margin improvement, not a fix for an
-        # observed failure.
+        # inputs.mtime-keyspace selects between two variants so this
+        # workflow can prove both independently in real CI:
         #
-        # Spreads the hash across one year of seconds (2021-01-01 to
-        # 2021-12-31) -- 31,536,000 distinct values, so a real content
-        # change lands on a different mtime unless it happens to hash into
-        # the same 1-in-31.5M slot as the previous version. Anchored 20
-        # years after the fixed mtime base above (rather than the same
-        # year) purely for extra distance from the GOCACHE trim marker
-        # elsewhere in this file, though that marker only ever applies to
-        # files inside $GOCACHE, never to this source checkout.
-        git ls-files -s -- '*.go' | perl -lne '
-            /^100\S+ (\S+) \S+\t(.+)$/ or next;
-            my $v = 0;
-            $v = ($v * 16 + hex $_) % 31536000 for split //, $1;
-            my $ts = 1609459200 + $v;  # 2021-01-01T00:00:00Z + up to 1 year
-            utime $ts, $ts, $2;
-        '
+        # 'narrow' (default): the already-approved 6^5 = 7,776-slot
+        # algorithm shipping in PR #21719, unpacked as 5 base-6 digits into
+        # the hour/minute/second of 2001-01-01.
+        #
+        # 'wide': 31,536,000 slots (one year of seconds, 2021-01-01 to
+        # 2021-12-31) -- a follow-up improvement. Adversarial stress-testing
+        # (989,910-trial single-byte mutation sweep of a real file, 500,000
+        # random same-size substitutions) found zero collisions at this
+        # size, vs. one collision at the narrow size (a synthetic,
+        # non-compiling mutation of central/globaldb/postgres_test.go).
+        # Mining this repo's 53 most same-size-edit-prone files' full
+        # history (up to 114 commits each) found zero actual self-collisions
+        # under either keyspace, so this is a safety-margin improvement, not
+        # a fix for an observed failure. Anchored 20 years after the narrow
+        # variant's base purely for extra distance from the GOCACHE trim
+        # marker elsewhere in this file, though that marker only ever
+        # applies to files inside $GOCACHE, never to this source checkout.
+        if [[ '${{ inputs.mtime-keyspace }}' == 'wide' ]]; then
+          git ls-files -s -- '*.go' | perl -lne '
+              /^100\S+ (\S+) \S+\t(.+)$/ or next;
+              my $v = 0;
+              $v = ($v * 16 + hex $_) % 31536000 for split //, $1;
+              my $ts = 1609459200 + $v;  # 2021-01-01T00:00:00Z + up to 1 year
+              utime $ts, $ts, $2;
+          '
+        else
+          git ls-files -s -- '*.go' | perl -lne '
+              /^100\S+ (\S+) \S+\t(.+)$/ or next;
+              my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
+              $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
+              $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
+              utime $ts, $ts, $2;
+          '
+        fi
       shell: bash
