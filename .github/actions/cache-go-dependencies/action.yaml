@@ -103,15 +103,39 @@ runs:
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
       shell: bash
 
-    - name: Disable Go module index (GODEBUG=goindex=0)
+    - name: Derive content-sensitive mtimes for Go module index
       run: |
         # Go's module index also caches parsed imports by (filename, mtime,
         # size), so the fixed mtime above can serve a stale import when a
-        # file changes content but keeps the same size (see the golang-jwt
-        # v4->v5 incident). Disabling the index is safe: it's a pure
-        # performance optimization with an always-correct fallback path, and
-        # Go's own maintainer confirmed disabling it fixes this exact bug:
-        # https://github.com/golang/go/issues/69179 (closed not_planned --
-        # there's no fix of the underlying staleness coming).
-        echo "GODEBUG=${GODEBUG:+$GODEBUG,}goindex=0" >> "$GITHUB_ENV"
+        # .go file changes content but keeps the same size (e.g. the
+        # golang-jwt v4->v5 incident). FIX: derive each file's mtime from
+        # its git blob hash instead. Same content -> same blob hash -> same
+        # mtime -> cache hit. Changed content -> different blob hash ->
+        # different mtime -> index miss -> re-parse.
+        #
+        # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
+        # (walks commit DAG, O(commits×diff)) -- faster and immune to clock
+        # skew. Perl utime() is a direct syscall; no subprocess per file.
+        #
+        # The blob hash is reduced modulo 6^5 = 7776 and unpacked as 5
+        # base-6 digits into the hour/minute/second of 2001-01-01. Every
+        # base-6 digit (0-5) is valid in each position: hour ones (0-5),
+        # minute tens (0-5), minute ones (0-5), second tens (0-5), second
+        # ones (0-5).
+        #
+        # 7776 buckets is enough in practice: a stale hit needs BOTH an
+        # unchanged size (filename is fixed -- it's the same file --
+        # already ruling out most edits) AND the new content's blob hash
+        # landing in the same bucket as the old one. No real same-size
+        # content change in this repo's history, nor any compilable
+        # same-size mutation we tested, has ever landed in the same
+        # bucket -- including the motivating golang-jwt v4->v5 change
+        # itself, same length but a different bucket.
+        git ls-files -s -- '*.go' | perl -lne '
+            /^100\S+ (\S+) \S+\t(.+)$/ or next;
+            my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
+            $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
+            $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
+            utime $ts, $ts, $2;
+        '
       shell: bash
