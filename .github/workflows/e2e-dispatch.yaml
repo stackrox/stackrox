@@ -29,8 +29,15 @@ jobs:
   # Computes the same deterministic tag build.yaml computes internally. Runs
   # independently (no needs:) so it overlaps with should-dispatch/build rather than
   # waiting on them -- it only depends on the checked-out commit, not on any other
-  # job's outcome. Serves as a fallback for needs.build.outputs.build-tag below in
-  # case build.yaml doesn't (yet) expose that output; see #21722.
+  # job's outcome.
+  #
+  # This recomputes the tag instead of reading it from build.yaml's own output
+  # because referencing needs.build.outputs.<name> anywhere in this file causes a
+  # hard startup_failure (zero jobs created) until build.yaml declares that output
+  # on the base branch -- confirmed empirically, and not something a runtime `||`
+  # fallback can route around since the rejection happens at static schema
+  # validation, before any expression evaluates. See #21722, which would let us
+  # simplify this once merged, though there's no urgency since this already works.
   compute-tag:
     runs-on: ubuntu-slim
     outputs:
@@ -145,7 +152,7 @@ jobs:
     needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
+      tag: ${{ needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-tests }}
     secrets: inherit
     concurrency:
@@ -156,7 +163,7 @@ jobs:
     needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
+      tag: ${{ needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-test }}
     secrets: inherit
     concurrency:
@@ -167,7 +174,7 @@ jobs:
     needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
+      tag: ${{ needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-gke-upgrade-tests }}
     secrets: inherit
     concurrency:
@@ -178,7 +185,7 @@ jobs:
     needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
+      tag: ${{ needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests }}
     secrets: inherit
     concurrency:
