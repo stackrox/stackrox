@@ -513,8 +513,70 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    # TEMPORARY (test-only, do not merge): simplified to `failure()` so this
+    # fires from a scratch branch/dry-run test dispatch. Real condition:
+    # if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    if: failure()
+    permissions:
+      checks: read
+      actions: read
     steps:
-    - name: Send Slack notification on workflow failure
+    - name: Collect failure annotations
+      # Pulls the ::error:: annotations from every failed job in this run
+      # so the Slack message below has enough context to triage without
+      # clicking into the run. Jobs with no annotations (eg. failures that
+      # don't emit ::error::) get a generic fallback line instead of being
+      # silently omitted.
+      id: annotations
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.repository }}
+        RUN_ID: ${{ github.run_id }}
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        set -euo pipefail
+
+        summary=""
+        while IFS=$'\t' read -r job_id job_name; do
+            # Exclude the generic "Process completed with exit code N." annotation
+            # that GitHub Actions auto-adds to every failed step -- it's noise here.
+            messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" \
+                --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message' 2>/dev/null || true)
+
+            summary+=$'\n'"*${job_name}*:"$'\n'
+            if [ -n "$messages" ]; then
+                summary+="$(printf '%s\n' "$messages" | sed 's/^/  - /')"
+            else
+                summary+="  - (no detailed error annotations found; see the workflow run for details)"
+            fi
+            summary+=$'\n'
+        done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | select(.conclusion == "failure") | [.id, .name] | @tsv')
+
+        if [ -z "$summary" ]; then
+            summary=$'\n'"(no failed jobs found; see the workflow run for details)"
+        fi
+
+        # Keep the Slack message readable and within size limits.
+        summary=$(printf '%s' "$summary" | head -c 3000)
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        {
+            echo "summary<<$EOF"
+            echo "$summary"
+            echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Send Slack notification on workflow failure
+      env:
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        WORKFLOW: ${{ github.workflow }}
+        REPO: ${{ github.repository }}
+        SUMMARY: ${{ steps.annotations.outputs.summary }}
+        # TEMPORARY (test-only, do not merge): real secret is SLACK_ONCALL_SCANNER_WEBHOOK.
+        SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+      run: |
+        set -euo pipefail
+        text=$(printf '[TEST - Please Ignore]\n\n<%s|Workflow %s> failed in repository %s: Failed to update vulnerabilities\n%s' \
+            "$RUN_URL" "$WORKFLOW" "$REPO" "$SUMMARY")
+        jq -n --arg text "$text" '{text: $text}' \
+            | curl -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
