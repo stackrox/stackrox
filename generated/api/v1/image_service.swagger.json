@@ -522,6 +522,16 @@
       ],
       "default": "UI_NONE"
     },
+    "CosignSignatureSignatureFormat": {
+      "type": "string",
+      "enum": [
+        "UNSPECIFIED",
+        "SIMPLE_SIGNING",
+        "DEAD_SIMPLE_SIGNING_ENVELOPE"
+      ],
+      "default": "UNSPECIFIED",
+      "description": "Signature format used in this message.\n\n - SIMPLE_SIGNING: SimpleSigning: signature is stored across raw_signature, signature_payload,\ncert_pem, cert_chain_pem, and rekor_bundle.\n - DEAD_SIMPLE_SIGNING_ENVELOPE: DSSE (Dead Simple Signing Envelope): signature is a complete sigstore bundle\nstored in sigstore_bundle. The decomposed simple signing fields are not used."
+    },
     "EmbeddedVulnerabilityScoreVersion": {
       "type": "string",
       "enum": [
@@ -812,6 +822,14 @@
         "rekorBundle": {
           "type": "string",
           "format": "byte"
+        },
+        "signatureFormat": {
+          "$ref": "#/definitions/CosignSignatureSignatureFormat"
+        },
+        "sigstoreBundle": {
+          "type": "string",
+          "format": "byte",
+          "description": "Complete sigstore bundle as raw JSON. When populated, it supersedes the\ndecomposed simple signing fields."
         }
       }
     },
