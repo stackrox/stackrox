@@ -90,7 +90,12 @@ func startKeyBundleUpdater() {
 			}
 		}),
 	)
-	u.Start()
+	// Passing false for waitForInitial means Start does not block startup
+	// on the first download; WithOnComplete will report its outcome.
+	if err := u.Start(context.Background(), false); err != nil {
+		log.Errorf("Red Hat signing key bundle updater will not start: %v", err)
+		return
+	}
 	bundleUpdater = u
 }
 

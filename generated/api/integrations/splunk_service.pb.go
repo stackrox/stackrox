@@ -895,7 +895,7 @@ type SplunkViolation_FileAccessInfo struct {
 	EffectivePath string `protobuf:"bytes,1,opt,name=effective_path,json=effectivePath,proto3" json:"effective_path,omitempty"`
 	// Host path (e.g. /etc/passwd)
 	ActualPath string `protobuf:"bytes,2,opt,name=actual_path,json=actualPath,proto3" json:"actual_path,omitempty"`
-	// Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE"
+	// Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE", "ACL_CHANGE"
 	Operation string `protobuf:"bytes,3,opt,name=operation,proto3" json:"operation,omitempty"`
 	// For RENAME operations, the destination paths
 	MovedEffectivePath string `protobuf:"bytes,4,opt,name=moved_effective_path,json=movedEffectivePath,proto3" json:"moved_effective_path,omitempty"`
@@ -909,7 +909,10 @@ type SplunkViolation_FileAccessInfo struct {
 	// Node where the file activity occurred. Present on all file access violations.
 	// For deployment-level violations, deployment context is in SplunkViolation.DeploymentInfo.
 	// For node-level violations (no container/deployment), hostname is the primary location identifier.
-	Hostname      string `protobuf:"bytes,11,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	Hostname string `protobuf:"bytes,11,opt,name=hostname,proto3" json:"hostname,omitempty"`
+	// ACL-specific fields, populated only for ACL_CHANGE operations.
+	AclType       storage.AclType     `protobuf:"varint,12,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
+	AclEntries    []*storage.AclEntry `protobuf:"bytes,13,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1021,16 +1024,30 @@ func (x *SplunkViolation_FileAccessInfo) GetHostname() string {
 	return ""
 }
 
+func (x *SplunkViolation_FileAccessInfo) GetAclType() storage.AclType {
+	if x != nil {
+		return x.AclType
+	}
+	return storage.AclType(0)
+}
+
+func (x *SplunkViolation_FileAccessInfo) GetAclEntries() []*storage.AclEntry {
+	if x != nil {
+		return x.AclEntries
+	}
+	return nil
+}
+
 var File_api_integrations_splunk_service_proto protoreflect.FileDescriptor
 
 const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/integrations/splunk_service.proto\x12\fintegrations\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x80\x01\n" +
+	"%api/integrations/splunk_service.proto\x12\fintegrations\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x13storage/alert.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x80\x01\n" +
 	"\x18SplunkViolationsResponse\x12=\n" +
 	"\n" +
 	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationR\n" +
 	"violations\x12%\n" +
-	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\x9a\x1f\n" +
+	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xfb\x1f\n" +
 	"\x0fSplunkViolation\x12R\n" +
 	"\x0eviolation_info\x18\x01 \x01(\v2+.integrations.SplunkViolation.ViolationInfoR\rviolationInfo\x12F\n" +
 	"\n" +
@@ -1114,7 +1131,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\x11policy_categories\x18\x05 \x03(\tR\x10policyCategories\x126\n" +
 	"\x17policy_lifecycle_stages\x18\x06 \x03(\tR\x15policyLifecycleStages\x12'\n" +
 	"\x0fpolicy_severity\x18\a \x01(\tR\x0epolicySeverity\x12%\n" +
-	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersion\x1a\xe1\x03\n" +
+	"\x0epolicy_version\x18\b \x01(\tR\rpolicyVersion\x1a\xc2\x04\n" +
 	"\x0eFileAccessInfo\x12%\n" +
 	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
 	"\vactual_path\x18\x02 \x01(\tR\n" +
@@ -1129,7 +1146,10 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
 	"file_group\x18\n" +
 	" \x01(\tR\tfileGroup\x12\x1a\n" +
-	"\bhostname\x18\v \x01(\tR\bhostnameB\f\n" +
+	"\bhostname\x18\v \x01(\tR\bhostname\x12+\n" +
+	"\bacl_type\x18\f \x01(\x0e2\x10.storage.AclTypeR\aaclType\x122\n" +
+	"\vacl_entries\x18\r \x03(\v2\x11.storage.AclEntryR\n" +
+	"aclEntriesB\f\n" +
 	"\n" +
 	"EntityInfoBE\n" +
 	"\"io.stackrox.proto.api.integrationsZ\x1f./api/integrations;integrationsb\x06proto3"
@@ -1169,6 +1189,8 @@ var file_api_integrations_splunk_service_proto_goTypes = []any{
 	(*storage.ProcessSignal_LineageInfo)(nil),                  // 17: storage.ProcessSignal.LineageInfo
 	(*storage.Alert_Deployment_Container)(nil),                 // 18: storage.Alert.Deployment.Container
 	(*storage.ContainerImage)(nil),                             // 19: storage.ContainerImage
+	(storage.AclType)(0),                                       // 20: storage.AclType
+	(*storage.AclEntry)(nil),                                   // 21: storage.AclEntry
 }
 var file_api_integrations_splunk_service_proto_depIdxs = []int32{
 	2,  // 0: integrations.SplunkViolationsResponse.violations:type_name -> integrations.SplunkViolation
@@ -1198,11 +1220,13 @@ var file_api_integrations_splunk_service_proto_depIdxs = []int32{
 	16, // 24: integrations.SplunkViolation.FileAccessInfo.file_uid:type_name -> google.protobuf.UInt32Value
 	16, // 25: integrations.SplunkViolation.FileAccessInfo.file_gid:type_name -> google.protobuf.UInt32Value
 	16, // 26: integrations.SplunkViolation.FileAccessInfo.file_mode:type_name -> google.protobuf.UInt32Value
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	20, // 27: integrations.SplunkViolation.FileAccessInfo.acl_type:type_name -> storage.AclType
+	21, // 28: integrations.SplunkViolation.FileAccessInfo.acl_entries:type_name -> storage.AclEntry
+	29, // [29:29] is the sub-list for method output_type
+	29, // [29:29] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_api_integrations_splunk_service_proto_init() }

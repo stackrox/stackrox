@@ -8612,6 +8612,54 @@
       "def": {
         "enums": [
           {
+            "name": "AclEntry.AclTag",
+            "enum_fields": [
+              {
+                "name": "ACL_TAG_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TAG_USER_OBJ",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TAG_USER",
+                "integer": 2
+              },
+              {
+                "name": "ACL_TAG_GROUP_OBJ",
+                "integer": 3
+              },
+              {
+                "name": "ACL_TAG_GROUP",
+                "integer": 4
+              },
+              {
+                "name": "ACL_TAG_MASK",
+                "integer": 5
+              },
+              {
+                "name": "ACL_TAG_OTHER",
+                "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "AclType",
+            "enum_fields": [
+              {
+                "name": "ACL_TYPE_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TYPE_ACCESS",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TYPE_DEFAULT",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "FileAccess.Operation",
             "enum_fields": [
               {
@@ -8636,11 +8684,35 @@
               {
                 "name": "OPEN",
                 "integer": 5
+              },
+              {
+                "name": "ACL_CHANGE",
+                "integer": 6
               }
             ]
           }
         ],
         "messages": [
+          {
+            "name": "AclEntry",
+            "fields": [
+              {
+                "id": 1,
+                "name": "tag",
+                "type": "AclTag"
+              },
+              {
+                "id": 2,
+                "name": "perm",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "id",
+                "type": "uint32"
+              }
+            ]
+          },
           {
             "name": "FileAccess",
             "fields": [
@@ -8703,6 +8775,17 @@
                     "id": 5,
                     "name": "group",
                     "type": "string"
+                  },
+                  {
+                    "id": 6,
+                    "name": "acl_type",
+                    "type": "AclType"
+                  },
+                  {
+                    "id": 7,
+                    "name": "acl_entries",
+                    "type": "AclEntry",
+                    "is_repeated": true
                   }
                 ]
               },

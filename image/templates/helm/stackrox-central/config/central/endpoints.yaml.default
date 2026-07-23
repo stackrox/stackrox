@@ -16,7 +16,8 @@
 #   - listen: ":8444"
 #     tls:
 #       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
-#       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+#       # and 'default' (user-configured default TLS certificate), and 'openshift' (OpenShift service-serving
+#       # certificate for the central-ocp Service). If unset or empty, assume both default and service.
 #       serverCerts:
 #         - default
 #         - service
