@@ -52,7 +52,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       env:
@@ -111,8 +113,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Download NVD PR
       if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
@@ -211,8 +215,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: ./.github/actions/job-preamble
       with:
         free-disk-space: 50
@@ -221,9 +227,11 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ env.ROX_GIT_REF }}
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -336,8 +344,10 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
@@ -357,8 +367,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: ./.github/actions/job-preamble
       with:
         free-disk-space: 50
@@ -367,9 +379,11 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Authenticate with test GCS bucket
       if: github.event_name == 'pull_request'
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
@@ -426,8 +440,10 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
   upload-definitions:
     needs:
     - build-and-run
@@ -437,8 +453,10 @@ jobs:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
       with:
         # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.

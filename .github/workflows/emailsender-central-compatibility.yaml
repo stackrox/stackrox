@@ -45,14 +45,18 @@ jobs:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
+      - name: Fetch full history and tags for git describe
+        run: git fetch --unshallow --tags --no-recurse-submodules origin
       - name: Checkout stackrox/stackrox repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           repository: stackrox/stackrox
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
-          fetch-depth: 0
+          fetch-depth: 1
+      - name: Fetch full history and tags for git describe
+        run: git fetch --unshallow --tags --no-recurse-submodules origin
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v6
         with:

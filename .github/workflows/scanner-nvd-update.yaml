@@ -101,8 +101,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: ./.github/actions/job-preamble
       with:
         free-disk-space: 50
@@ -111,9 +113,11 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - name: Authenticate with test GCS bucket
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
@@ -148,8 +152,10 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
   upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds
@@ -159,9 +165,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.ref }}
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd-feeds
@@ -188,9 +196,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.ref }}
 
+    - name: Fetch full history and tags for git describe
+      run: git fetch --unshallow --tags --no-recurse-submodules origin
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd-api

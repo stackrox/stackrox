@@ -16,8 +16,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Fetch full history and tags for git describe
+        run: git fetch --unshallow --tags --no-recurse-submodules origin
       - name: Get PR image tag
         run: |
           MAIN_IMAGE_TAG="$(make --quiet --no-print-directory tag)"
@@ -48,9 +50,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
 
+      - name: Fetch full history and tags for git describe
+        run: git fetch --unshallow --tags --no-recurse-submodules origin
       - name: Checkout workflow scripts
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
