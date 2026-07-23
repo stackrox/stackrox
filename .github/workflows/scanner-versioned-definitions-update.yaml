@@ -535,6 +535,8 @@ jobs:
       run: |
         set -euo pipefail
 
+        # Rendered inside a Slack code block (see "Send Slack notification"),
+        # so job names are plain text here, not mrkdwn-bolded.
         summary=""
         while IFS=$'\t' read -r job_id job_name; do
             # Exclude the generic "Process completed with exit code N." annotation
@@ -542,18 +544,22 @@ jobs:
             messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" \
                 --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message' 2>/dev/null || true)
 
-            summary+=$'\n'"*${job_name}*:"$'\n'
+            # Blank line between job blocks (not before the first one) for
+            # readability when multiple jobs fail.
+            if [ -n "$summary" ]; then
+                summary+=$'\n\n'
+            fi
+            summary+="${job_name}:"$'\n'
             if [ -n "$messages" ]; then
                 summary+="$(printf '%s\n' "$messages" | sed 's/^/  - /')"
             else
                 summary+="  - (no detailed error annotations found; see the workflow run for details)"
             fi
-            summary+=$'\n'
         done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
             --jq '.jobs[] | select(.conclusion == "failure") | [.id, .name] | @tsv')
 
         if [ -z "$summary" ]; then
-            summary=$'\n'"(no failed jobs found; see the workflow run for details)"
+            summary="(no failed jobs found; see the workflow run for details)"
         fi
 
         # Keep the Slack message readable and within size limits.
@@ -576,7 +582,9 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
       run: |
         set -euo pipefail
-        text=$(printf '[TEST - Please Ignore]\n\n*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Failed steps:*\n%s' \
+        # shellcheck disable=SC2016 # backticks below are a Slack code-block
+        # delimiter, not shell command substitution.
+        text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Failed steps:*\n```\n%s\n```' \
             "$RUN_URL" "$WORKFLOW" "$REPO" "$SUMMARY")
         jq -n --arg text "$text" '{text: $text}' \
             | curl -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
