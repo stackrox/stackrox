@@ -67,14 +67,9 @@ jobs:
           # chars) keeps consumer.go's byte size identical — the crux of the
           # dirHash collision this test reproduces.
           sed -i 's/variantfoo/variantbar/g' tools/cicachetest/consumer/consumer.go
-          # `git add` so the index reflects this change like a real commit
-          # would (a genuine incident is always a real commit, checked out
-          # fresh -- index and working tree always agree). Without this,
-          # a blob-hash-based mtime scheme keys on the stale pre-swap index
-          # entry instead of the actual on-disk content, which reproduces
-          # this test's failure mode for the wrong reason (an unstaged
-          # local edit, not a realistic same-size content change).
-          git add tools/cicachetest/consumer/consumer.go
+          # NEGATIVE CONTROL: git add deliberately omitted to prove Assertion 1
+          # catches an unstaged swap (the exact bug this test hit for real on
+          # its first run). Will be restored once confirmed failing.
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
