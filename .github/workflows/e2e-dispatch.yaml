@@ -140,13 +140,9 @@ jobs:
   # Builds all images. E2E jobs below wait on this via needs: (a native GHA job
   # dependency) instead of polling the registry for images to appear.
   build:
-    needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.dispatch-any == 'true'
+    if: false
     uses: ./.github/workflows/build.yaml
     secrets: inherit
-    concurrency:
-      group: build-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-      cancel-in-progress: true
 
   e2e-byodb-tests:
     needs: [ build, compute-tag, should-dispatch ]
