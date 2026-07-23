@@ -123,7 +123,10 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/pubsub=%t", name, pubsubEnabled), func(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				det := mocks.NewMockDetector(ctrl)
-				det.EXPECT().ReprocessDeployments(gomock.Eq([]string{}))
+				done := make(chan struct{})
+				det.EXPECT().ReprocessDeployments().Do(func(...string) {
+					close(done)
+				})
 
 				env := newOutputTestEnv(t, det, pubsubEnabled, 10)
 				assert.NoError(t, env.queue.Start())
@@ -131,6 +134,13 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 
 				env.send(t, tc.message)
 				tc.assertion(t, env.queue.ResponsesC())
+
+				// Wait for async processing to complete in pubsub mode.
+				select {
+				case <-done:
+				case <-time.After(waitTimeout):
+					t.Fatal("timed out waiting for ReprocessDeployments")
+				}
 			})
 		}
 	}
@@ -172,7 +182,10 @@ func Test_OutputQueue_ForwardMessages(t *testing.T) {
 			t.Run(fmt.Sprintf("%s/pubsub=%t", name, pubsubEnabled), func(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				det := mocks.NewMockDetector(ctrl)
-				det.EXPECT().ReprocessDeployments(gomock.Eq([]string{}))
+				done := make(chan struct{})
+				det.EXPECT().ReprocessDeployments().Do(func(...string) {
+					close(done)
+				})
 
 				env := newOutputTestEnv(t, det, pubsubEnabled, 10)
 				assert.NoError(t, env.queue.Start())
@@ -180,6 +193,13 @@ func Test_OutputQueue_ForwardMessages(t *testing.T) {
 
 				env.send(t, tc.message)
 				tc.assertion(t, env.queue.ResponsesC())
+
+				// Wait for async processing to complete in pubsub mode.
+				select {
+				case <-done:
+				case <-time.After(waitTimeout):
+					t.Fatal("timed out waiting for ReprocessDeployments")
+				}
 			})
 		}
 	}
