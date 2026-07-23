@@ -36,7 +36,7 @@ const (
 	permissionSetName = "OpenShift Prometheus Metrics Reader"
 	accessScopeName   = "OpenShift Central Cluster"
 
-	centralServicesLabelKey = "stackrox.io/central-services"
+	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
 var log = logging.LoggerForModule()
@@ -147,13 +147,13 @@ func ensureAccessScope(ctx context.Context, roleDS roleDataStore.DataStore) {
 	scope := &storage.SimpleAccessScope{
 		Id:          accessScopeID,
 		Name:        accessScopeName,
-		Description: "Scoped to clusters labeled stackrox.io/central-services (set automatically by the operator)",
+		Description: "Scoped to clusters labeled stackrox.io/central-colocated (set automatically by the operator)",
 		Rules: &storage.SimpleAccessScope_Rules{
 			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
 				{
 					Requirements: []*storage.SetBasedLabelSelector_Requirement{
 						{
-							Key: centralServicesLabelKey,
+							Key: centralColocatedLabelKey,
 							Op:  storage.SetBasedLabelSelector_EXISTS,
 						},
 					},

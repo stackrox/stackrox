@@ -42,7 +42,7 @@ const (
 	legacyCollectionKernelModule = "KernelModule"
 	legacyCollectionEBPF         = "EBPF"
 
-	centralServicesLabelKey = "stackrox.io/central-services"
+	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
 var (
@@ -619,18 +619,20 @@ func getProcessIndicatorsValues(processIndicators *platform.ProcessIndicatorsSpe
 }
 
 // clusterLabels returns the user-specified cluster labels merged with
-// auto-detected labels. When a Central CR exists in the same namespace, the
-// label stackrox.io/central-services=true is added so that access scopes can
-// dynamically match the cluster where Central runs.
+// auto-detected labels. When a Central CR exists anywhere in the cluster, the
+// label stackrox.io/central-colocated=true is added so that access scopes can
+// dynamically match the cluster where Central runs. The Central CR may live
+// in a different namespace than the SecuredCluster CR, so the whole cluster
+// is searched rather than just the SecuredCluster's own namespace.
 func (t Translator) clusterLabels(ctx context.Context, sc platform.SecuredCluster) map[string]string {
 	centralList := &platform.CentralList{}
-	if err := t.client.List(ctx, centralList, ctrlClient.InNamespace(sc.GetNamespace())); err != nil {
+	if err := t.client.List(ctx, centralList); err != nil {
 		return sc.Spec.ClusterLabels
 	}
 	if len(centralList.Items) > 0 {
 		labels := make(map[string]string, len(sc.Spec.ClusterLabels)+1)
 		maps.Copy(labels, sc.Spec.ClusterLabels)
-		labels[centralServicesLabelKey] = "true"
+		labels[centralColocatedLabelKey] = "true"
 		return labels
 	}
 	return sc.Spec.ClusterLabels
