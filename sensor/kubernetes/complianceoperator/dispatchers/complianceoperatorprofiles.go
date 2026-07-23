@@ -44,9 +44,37 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	// useful for the deduping from sensor.
 	uid := string(complianceProfile.UID)
 
+	// Profiles using the CEL scanner (annotation compliance.openshift.io/scanner-type=CEL) have no
+	// XCCDF profile ID, so the compliance operator sets ComplianceScan.Spec.Profile to the profile's
+	// k8s object name instead. We must use the same value as ProfileId here so that BuildProfileRefID
+	// produces matching UUIDs on both the profile and the scan sides. The same pattern was applied to
+	// CEL-based tailored profiles in https://github.com/stackrox/stackrox/pull/19214 — see
+	// complianceoperatortailoredprofiles.go.
+	profileID := complianceProfile.ID
+	switch scannerType := complianceProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; scannerType {
+	case string(v1alpha1.ScannerTypeCEL):
+		profileID = complianceProfile.Name
+		log.Debugf("Profile %s uses CEL scanner: using k8s name %q as ProfileId instead of XCCDF ID %q",
+			complianceProfile.Name, profileID, complianceProfile.ID)
+	case string(v1alpha1.ScannerTypeOpenSCAP), "":
+		// OpenSCAP and unannotated profiles use the XCCDF content ID — no action needed.
+	default:
+		// Unknown scanner type: CO may have introduced a new type that also uses k8s name in
+		// ComplianceScan.Spec.Profile. If compliance coverage shows 0 results for this profile,
+		// check whether the scan's spec.profile matches the XCCDF ID or the k8s name and update
+		// this dispatcher accordingly.
+		log.Warnf("Profile %s has unrecognised scanner-type annotation %q: using XCCDF ID %q as ProfileId; "+
+			"if compliance coverage shows 0 results, this scanner type may need handling here",
+			complianceProfile.Name, scannerType, profileID)
+	}
+	if profileID == "" {
+		log.Warnf("Profile %s has an empty ProfileId; compliance coverage results will be missing for this profile",
+			complianceProfile.Name)
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
 		Id:          uid,
-		ProfileId:   complianceProfile.ID,
+		ProfileId:   profileID,
 		Name:        complianceProfile.Name,
 		Labels:      complianceProfile.Labels,
 		Annotations: complianceProfile.Annotations,
@@ -71,7 +99,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		protoProfile := &central.ComplianceOperatorProfileV2{
 			Id:             uid,
-			ProfileId:      complianceProfile.ID,
+			ProfileId:      profileID,
 			Name:           complianceProfile.Name,
 			ProfileVersion: complianceProfile.Version,
 			Labels:         complianceProfile.Labels,
