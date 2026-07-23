@@ -45,6 +45,14 @@ jobs:
           # non-PR-runs-always-clear-testcache behavior must be bypassed.
           skip-test-cache-clear: 'true'
 
+      - name: DEBUG diagnostics
+        run: |
+          go version
+          go env GOCACHE GOTOOLCHAIN
+          git ls-files -s -- tools/cicachetest/testcache/testdata/fixture.txt tools/cicachetest/testcache/testcache_test.go
+          stat tools/cicachetest/testcache/testdata/fixture.txt tools/cicachetest/testcache/testcache_test.go
+          realpath tools/cicachetest/testcache/testdata/fixture.txt
+
       - name: Build and test fixture (variantfoo state)
         run: |
           go build -C tools/cicachetest ./...
@@ -81,6 +89,14 @@ jobs:
         with:
           cache-scope: 'cicachetest'
           skip-test-cache-clear: 'true'
+
+      - name: DEBUG diagnostics
+        run: |
+          go version
+          go env GOCACHE GOTOOLCHAIN
+          git ls-files -s -- tools/cicachetest/testcache/testdata/fixture.txt tools/cicachetest/testcache/testcache_test.go
+          stat tools/cicachetest/testcache/testdata/fixture.txt tools/cicachetest/testcache/testcache_test.go
+          realpath tools/cicachetest/testcache/testdata/fixture.txt
 
       - name: 'Assertion 1: module-index staleness must not recur'
         run: |
