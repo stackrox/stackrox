@@ -26,6 +26,29 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
+  # Computes the same deterministic tag build.yaml computes internally. Runs
+  # independently (no needs:) so it overlaps with should-dispatch/build rather than
+  # waiting on them -- it only depends on the checked-out commit, not on any other
+  # job's outcome. Serves as a fallback for needs.build.outputs.build-tag below in
+  # case build.yaml doesn't (yet) expose that output; see #21722.
+  compute-tag:
+    runs-on: ubuntu-slim
+    outputs:
+      tag: ${{ steps.build-tag.outputs.tag }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: ./.github/actions/handle-tagged-build
+    - name: Compute build tag
+      id: build-tag
+      run: |
+        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   # Determines whether we should dispatch jobs that call real E2E workflows.
   # This allows to skip running E2E tests on draft PRs without corresponding labels or on untrusted forks.
   should-dispatch:
@@ -119,10 +142,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-byodb-tests:
-    needs: [ build, should-dispatch ]
+    needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag }}
+      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-tests }}
     secrets: inherit
     concurrency:
@@ -130,10 +153,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-db-backup-restore-test:
-    needs: [ build, should-dispatch ]
+    needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag }}
+      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-test }}
     secrets: inherit
     concurrency:
@@ -141,10 +164,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-gke-upgrade-tests:
-    needs: [ build, should-dispatch ]
+    needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-gke-upgrade-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag }}
+      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-gke-upgrade-tests }}
     secrets: inherit
     concurrency:
@@ -152,10 +175,10 @@ jobs:
       cancel-in-progress: true
 
   e2e-nongroovy-tests:
-    needs: [ build, should-dispatch ]
+    needs: [ build, compute-tag, should-dispatch ]
     uses: ./.github/workflows/e2e-nongroovy-tests.yaml
     with:
-      tag: ${{ needs.build.outputs.build-tag }}
+      tag: ${{ needs.build.outputs.build-tag || needs.compute-tag.outputs.tag }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-nongroovy-tests }}
     secrets: inherit
     concurrency:
