@@ -5,20 +5,25 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sigstore/cosign/v3/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v3/pkg/cosign"
 	"github.com/sigstore/cosign/v3/pkg/cosign/bundle"
 	"github.com/sigstore/cosign/v3/pkg/oci"
 	"github.com/sigstore/cosign/v3/pkg/oci/static"
 	rekorClient "github.com/sigstore/rekor/pkg/client"
+	sgbundle "github.com/sigstore/sigstore-go/pkg/bundle"
+	"github.com/sigstore/sigstore-go/pkg/root"
+	"github.com/sigstore/sigstore-go/pkg/verify"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/signature/payload"
@@ -47,6 +52,16 @@ var (
 	errNoVerifiedReferences = errors.New("no verified references")
 	errUnverifiedBundle     = errors.New("unverified transparency log bundle")
 )
+
+// verifiableSignature holds signature data ready for verification. Exactly one of
+// the two fields is populated:
+//   - sigstoreBundle: raw sigstore bundle JSON, verified via verifySigstoreBundle (sigstore-go).
+//   - signature: reconstructed oci.Signature from decomposed SimpleSigning fields, verified via
+//     cosign.VerifyImageSignature.
+type verifiableSignature struct {
+	sigstoreBundle []byte
+	signature      oci.Signature
+}
 
 var once sync.Once
 
@@ -173,7 +188,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 		return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, errNoVerificationData
 	}
 
-	sigs, hash, err := retrieveVerificationDataFromImage(image)
+	vsigs, hash, err := retrieveVerificationDataFromImage(image)
 	if err != nil {
 		return getVerificationResultStatusFromErr(err), nil, err
 	}
@@ -200,9 +215,9 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 	for _, opts := range c.verifierOpts {
-		for cnt, sig := range sigs {
+		for cnt, vsig := range vsigs {
 			wg.Go(func() {
-				verifierRefs, err := verifyImageSignature(ctx, sig, hash, image, opts)
+				verifierRefs, err := verifySignature(ctx, vsig.sigstoreBundle, vsig.signature, hash, image, opts)
 				mutex.Lock()
 				defer mutex.Unlock()
 				if err != nil {
@@ -212,7 +227,6 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 					)
 					return
 				}
-				// Successful verification. Keep the image references.
 				verifiedImageReferences.AddAll(verifierRefs...)
 			})
 		}
@@ -228,16 +242,131 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	return storage.ImageSignatureVerificationResult_FAILED_VERIFICATION, nil, allVerifyErrs
 }
 
+// transparencyLogsFromKeys converts cosign's TrustedTransparencyLogPubKeys map into
+// sigstore-go TransparencyLog entries.
+func transparencyLogsFromKeys(keys *cosign.TrustedTransparencyLogPubKeys) map[string]*root.TransparencyLog {
+	if keys == nil || len(keys.Keys) == 0 {
+		return nil
+	}
+	logs := make(map[string]*root.TransparencyLog, len(keys.Keys))
+	for logID, key := range keys.Keys {
+		idBytes, err := hex.DecodeString(logID)
+		if err != nil {
+			continue
+		}
+		logs[logID] = &root.TransparencyLog{
+			ID:                idBytes,
+			PublicKey:         key.PubKey,
+			HashFunc:          crypto.SHA256,
+			SignatureHashFunc: crypto.SHA256,
+			// sigstore-go VerifySET rejects zero-value ValidityPeriodStart
+			// as "not set". Unix epoch is a non-zero sentinel meaning "always valid".
+			ValidityPeriodStart: time.Unix(0, 0),
+		}
+	}
+	return logs
+}
+
+// trustedMaterialFromTlogKeys builds a root.TrustedMaterial from the Rekor and CTLog keys
+// on CheckOpts. Returns nil if no custom keys are configured (verifySigstoreBundle will
+// fall back to the public Sigstore TUF root).
+func trustedMaterialFromTlogKeys(opts cosign.CheckOpts) (root.TrustedMaterial, error) {
+	rekorLogs := transparencyLogsFromKeys(opts.RekorPubKeys)
+	ctLogs := transparencyLogsFromKeys(opts.CTLogPubKeys)
+	if len(rekorLogs) == 0 && len(ctLogs) == 0 {
+		return nil, nil
+	}
+	tr, err := root.NewTrustedRoot(root.TrustedRootMediaType01, nil, ctLogs, nil, rekorLogs)
+	if err != nil {
+		return nil, fmt.Errorf("building trusted root from transparency log keys: %w", err)
+	}
+	return tr, nil
+}
+
+// trustedMaterialFromCertificateChain builds a root.TrustedMaterial from a custom certificate
+// chain. The last cert in the chain is treated as the root; the rest are intermediates.
+func trustedMaterialFromCertificateChain(chain []*x509.Certificate, opts cosign.CheckOpts) (root.TrustedMaterial, error) {
+	ca := &root.FulcioCertificateAuthority{
+		Root:          chain[len(chain)-1],
+		Intermediates: chain[:len(chain)-1],
+	}
+	return root.NewTrustedRoot(
+		root.TrustedRootMediaType01,
+		[]root.CertificateAuthority{ca},
+		transparencyLogsFromKeys(opts.CTLogPubKeys),
+		nil,
+		transparencyLogsFromKeys(opts.RekorPubKeys),
+	)
+}
+
+// augmentTrustedMaterialWithSigChain extracts intermediates from a SimpleSigning
+// signature's embedded certificate chain and merges them into the TrustedMaterial.
+// This is necessary because cosign's ValidateAndUnpackCertWithIntermediates ignores
+// sig.Chain() intermediates when TrustedMaterial is set, but the configured chain
+// may only contain the root CA (BYOPKI pattern where the signer provides the
+// intermediate chain).
+func augmentTrustedMaterialWithSigChain(cosignOpts *cosign.CheckOpts, sig oci.Signature) error {
+	sigChain, err := sig.Chain()
+	if err != nil || len(sigChain) <= 1 {
+		return err
+	}
+	sigIntermediates := sigChain[:len(sigChain)-1]
+
+	cas := cosignOpts.TrustedMaterial.FulcioCertificateAuthorities()
+	augmented := make([]root.CertificateAuthority, 0, len(cas))
+	for _, ca := range cas {
+		fca, ok := ca.(*root.FulcioCertificateAuthority)
+		if !ok {
+			augmented = append(augmented, ca)
+			continue
+		}
+		merged := &root.FulcioCertificateAuthority{
+			Root:                fca.Root,
+			Intermediates:       append(append([]*x509.Certificate{}, fca.Intermediates...), sigIntermediates...),
+			ValidityPeriodStart: fca.ValidityPeriodStart,
+			ValidityPeriodEnd:   fca.ValidityPeriodEnd,
+		}
+		augmented = append(augmented, merged)
+	}
+
+	tm, err := root.NewTrustedRoot(
+		root.TrustedRootMediaType01,
+		augmented,
+		cosignOpts.TrustedMaterial.CTLogs(),
+		nil,
+		cosignOpts.TrustedMaterial.RekorLogs(),
+	)
+	if err != nil {
+		return fmt.Errorf("rebuilding trusted material with signature intermediates: %w", err)
+	}
+	cosignOpts.TrustedMaterial = tm
+	return nil
+}
+
+// sigstoreTrustedRoot returns the public Sigstore trusted root from TUF.
+func sigstoreTrustedRoot() (root.TrustedMaterial, error) {
+	tr, err := cosign.TrustedRoot()
+	if err != nil {
+		return nil, fmt.Errorf("loading sigstore trusted root: %w", err)
+	}
+	return tr, nil
+}
+
 func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error {
 	defaultOpts, err := c.defaultCosignCheckOpts(ctx)
 	if err != nil {
 		return errors.Wrap(err, "creating default cosign check opts")
 	}
 
+	// Build TrustedMaterial once from the tlog keys for public key verifiers.
+	publicKeyTrustedMaterial, err := trustedMaterialFromTlogKeys(defaultOpts)
+	if err != nil {
+		return err
+	}
+
 	var verifierErrs error
 	// Public key verifiers.
 	for _, key := range c.parsedPublicKeys {
-		// For now, only supporting SHA256 as algorithm.
 		v, err := signature.LoadVerifier(key, crypto.SHA256)
 		if err != nil {
 			verifierErrs = multierror.Append(verifierErrs, errors.Wrap(err, "creating verifier"))
@@ -245,6 +374,7 @@ func (c *cosignSignatureVerifier) createVerifierOpts(ctx context.Context) error 
 		}
 		opts := defaultOpts
 		opts.SigVerifier = v
+		opts.TrustedMaterial = publicKeyTrustedMaterial
 		c.verifierOpts = append(c.verifierOpts, opts)
 	}
 
@@ -317,9 +447,9 @@ func (c *cosignSignatureVerifier) defaultCosignCheckOpts(ctx context.Context) (c
 }
 
 func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opts cosign.CheckOpts) (cosign.CheckOpts, error) {
-	// Skip verifying the identities when the wildcard matching logic being used. This fixes an issue
-	// with verifying the identity which will yield an error when using the wildcard expressions _and_ the certificate
-	// to verify has no identities associated with it (i.e. within the BYOPKI use-case).
+	// Only set non-wildcard identities. CheckCertificatePolicy fails on BYOPKI certs
+	// that lack OIDC extensions. For the sigstore-go bundle path, verifySigstoreBundle
+	// injects wildcard identities when Identities is empty and SigVerifier is nil.
 	if cert.oidcIssuerExpr != ".*" && cert.identityExpr != ".*" {
 		opts.Identities = []cosign.Identity{{
 			IssuerRegExp:  cert.oidcIssuerExpr,
@@ -336,65 +466,87 @@ func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opt
 		}
 	}
 
-	// - If we have both cert and chain, we use both to verify the public key and the root.
-	// - If we only have the cert, we assume the fulcio trusted root.
-	// - If we only have the chain, we use this as the trusted root to verify certificates, if any.
-	// - If none is given, we set the fulcio roots.
-	switch {
-	case cert.cert != nil && len(cert.chain) > 0:
-		v, err := cosign.ValidateAndUnpackCertWithChain(cert.cert, cert.chain, &opts)
+	// Build TrustedMaterial: custom chain when provided, Sigstore (Fulcio) root otherwise.
+	// All certificate chain validation flows through TrustedMaterial — the legacy
+	// RootCerts/IntermediateCerts fields are not needed.
+	if len(cert.chain) > 0 {
+		opts.TrustedMaterial, err = trustedMaterialFromCertificateChain(cert.chain, opts)
 		if err != nil {
 			return opts, err
 		}
-		opts.SigVerifier = v
-		return opts, nil
-
-	case cert.cert != nil:
-		opts.RootCerts, err = fulcio.GetRoots()
+	} else {
+		opts.TrustedMaterial, err = sigstoreTrustedRoot()
 		if err != nil {
 			return opts, err
 		}
-		opts.IntermediateCerts, err = fulcio.GetIntermediates()
-		if err != nil {
-			return opts, err
-		}
-		v, err := cosign.ValidateAndUnpackCert(cert.cert, &opts)
-		if err != nil {
-			return opts, err
-		}
-		opts.SigVerifier = v
-		return opts, nil
-
-	case len(cert.chain) > 0:
-		pool := x509.NewCertPool()
-		for _, caCert := range cert.chain {
-			pool.AddCert(caCert)
-		}
-		opts.RootCerts = pool
-		return opts, nil
-
-	default:
-		opts.RootCerts, err = fulcio.GetRoots()
-		if err != nil {
-			return opts, err
-		}
-		return opts, nil
 	}
+
+	// When a leaf certificate is provided, validate it against TrustedMaterial and
+	// pin its public key as SigVerifier. This catches misconfigurations early (cert
+	// doesn't chain to the configured/Fulcio root, missing SCT) and pins the exact
+	// signing key so only signatures from this key are accepted.
+	if cert.cert != nil {
+		chains, err := verify.VerifyLeafCertificate(cert.cert.NotBefore, cert.cert, opts.TrustedMaterial)
+		if err != nil {
+			return opts, fmt.Errorf("validating configured certificate against trust root: %w", err)
+		}
+		if err := cosign.CheckCertificatePolicy(cert.cert, &opts); err != nil {
+			return opts, err
+		}
+		if !opts.IgnoreSCT {
+			contains, err := cosign.ContainsSCT(cert.cert.Raw)
+			if err != nil {
+				return opts, err
+			}
+			if !contains {
+				return opts, errors.New("certificate does not include required embedded SCT")
+			}
+			if err := verify.VerifySignedCertificateTimestamp(chains, 1, opts.TrustedMaterial); err != nil {
+				return opts, fmt.Errorf("verifying signed certificate timestamp: %w", err)
+			}
+		}
+		v, err := signature.LoadVerifier(cert.cert.PublicKey, crypto.SHA256)
+		if err != nil {
+			return opts, errors.Wrap(err, "loading verifier from certificate")
+		}
+		opts.SigVerifier = v
+	}
+
+	return opts, nil
 }
 
-func verifyImageSignature(ctx context.Context, signature oci.Signature,
+// verifySignature dispatches signature verification based on format:
+//   - Sigstore bundle: delegates to verifySigstoreBundle which uses cosign.VerifyNewBundle
+//     (sigstore-go). The bundle carries its own verification material (cert, tlog entry).
+//   - SimpleSigning: delegates to cosign.VerifyImageSignature which verifies the signature
+//     and rekor bundle (transparency log proof) from the decomposed proto fields.
+func verifySignature(ctx context.Context, sigstoreBundle []byte, sig oci.Signature,
 	imageHash gcrv1.Hash, image *storage.Image, cosignOpts cosign.CheckOpts,
 ) ([]string, error) {
-	// If there is no error during the verification, the signature was successfully verified
-	// as well as the claims.
-	bundleVerified, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts)
+	// Verify DSSE Sigstore bundle.
+	if len(sigstoreBundle) > 0 {
+		return verifySigstoreBundle(ctx, sigstoreBundle, imageHash, image, cosignOpts)
+	}
+
+	// Verify SimpleSigning signature.
+	// cosign's ValidateAndUnpackCertWithIntermediates uses VerifyLeafCertificate when
+	// TrustedMaterial is set, which only considers CAs from the TrustedMaterial and
+	// ignores intermediates embedded in the signature. Merge them in so the chain
+	// builds correctly for BYOPKI setups where the configured chain is just the root.
+	if cosignOpts.TrustedMaterial != nil {
+		if err := augmentTrustedMaterialWithSigChain(&cosignOpts, sig); err != nil {
+			return nil, err
+		}
+	}
+	rekorVerified, err := cosign.VerifyImageSignature(ctx, sig, imageHash, &cosignOpts)
 	if err != nil {
 		return nil, err
 	}
-	if !bundleVerified && !cosignOpts.IgnoreTlog {
+	if !rekorVerified && !cosignOpts.IgnoreTlog {
 		return nil, errUnverifiedBundle
 	}
-	refs, err := getVerifiedImageReference(signature, image)
+
+	refs, err := getVerifiedImageReference(sig, image)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting verified image references")
 	}
@@ -402,6 +554,42 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 		return nil, errNoVerifiedReferences
 	}
 	return refs, nil
+}
+
+// verifySigstoreBundle verifies a sigstore bundle directly via cosign.VerifyNewBundle.
+// TrustedMaterial must be set by the caller (createVerifierOpts / cosignCheckOptsFromCert).
+func verifySigstoreBundle(ctx context.Context, sigstoreBundle []byte,
+	imageHash gcrv1.Hash, image *storage.Image, cosignOpts cosign.CheckOpts,
+) ([]string, error) {
+	if cosignOpts.TrustedMaterial == nil {
+		return nil, errox.InvariantViolation.New("TrustedMaterial is required for sigstore bundle verification")
+	}
+
+	// sigstore-go requires at least one identity for cert-based verification.
+	// cosignCheckOptsFromCert skips Identities for wildcard BYOPKI certs (they lack
+	// OIDC extensions that the legacy path would check), so inject them here.
+	if len(cosignOpts.Identities) == 0 && cosignOpts.SigVerifier == nil {
+		cosignOpts.Identities = []cosign.Identity{{SubjectRegExp: ".*", IssuerRegExp: ".*"}}
+	}
+
+	bundle := &sgbundle.Bundle{}
+	if err := bundle.UnmarshalJSON(sigstoreBundle); err != nil {
+		return nil, fmt.Errorf("unmarshalling sigstore bundle: %w", err)
+	}
+
+	digestBytes, err := hex.DecodeString(imageHash.Hex)
+	if err != nil {
+		return nil, fmt.Errorf("decoding image digest hex: %w", err)
+	}
+
+	artifactPolicy := verify.WithArtifactDigest(imageHash.Algorithm, digestBytes)
+	if _, err := cosign.VerifyNewBundle(ctx, &cosignOpts, artifactPolicy, bundle); err != nil {
+		return nil, err
+	}
+
+	// Sigstore bundles bind to the image digest, not a docker reference, so all
+	// names sharing the same digest are considered verified.
+	return getAllImageReferences(image), nil
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
@@ -433,7 +621,13 @@ func unmarshalRekorBundle(byteBundle []byte) (*bundle.RekorBundle, error) {
 	return rekorBundle, nil
 }
 
-func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, gcrv1.Hash, error) {
+// retrieveVerificationDataFromImage reads stored signatures from the image proto and
+// prepares them for verification. Two storage formats are handled:
+//   - SigstoreBundle set: the raw bundle JSON is carried through for verifySigstoreBundle.
+//   - SigstoreBundle empty (legacy): the decomposed fields (RawSignature, SignaturePayload,
+//     CertPem, CertChainPem, RekorBundle) are reassembled into an oci.Signature for
+//     cosign.VerifyImageSignature.
+func retrieveVerificationDataFromImage(image *storage.Image) ([]verifiableSignature, gcrv1.Hash, error) {
 	imgSHA := imgUtils.GetSHA(image)
 	// If there is no digest associated with the image, we cannot safely do signature and claim verification.
 	if imgSHA == "" {
@@ -454,19 +648,29 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 			"invalid hashing algorithm %s used, only SHA256 is supported", hash.Algorithm)
 	}
 
-	// Each signature contains the base64 encoded version of it and the associated payload.
-	// In the future, this will also include potential rekor bundles for keyless verification.
-	signatures := make([]oci.Signature, 0, len(image.GetSignature().GetSignatures()))
+	vsigs := make([]verifiableSignature, 0, len(image.GetSignature().GetSignatures()))
 	for _, imgSig := range image.GetSignature().GetSignatures() {
 		if imgSig.GetCosign() == nil {
 			continue
 		}
-		b64Sig := base64.StdEncoding.EncodeToString(imgSig.GetCosign().GetRawSignature())
-		sigOpts := []static.Option{
-			static.WithCertChain(imgSig.GetCosign().GetCertPem(), imgSig.GetCosign().GetCertChainPem()),
+
+		cosignSig := imgSig.GetCosign()
+
+		// Sigstore bundle: carry the raw bundle for direct sigstore-go verification.
+		if len(cosignSig.GetSigstoreBundle()) > 0 {
+			vsigs = append(vsigs, verifiableSignature{
+				sigstoreBundle: cosignSig.GetSigstoreBundle(),
+			})
+			continue
 		}
 
-		rekorBundle, err := unmarshalRekorBundle(imgSig.GetCosign().GetRekorBundle())
+		// Legacy decomposed fields.
+		b64Sig := base64.StdEncoding.EncodeToString(cosignSig.GetRawSignature())
+		sigOpts := []static.Option{
+			static.WithCertChain(cosignSig.GetCertPem(), cosignSig.GetCertChainPem()),
+		}
+
+		rekorBundle, err := unmarshalRekorBundle(cosignSig.GetRekorBundle())
 		if err != nil {
 			log.Errorf("Failed to unmarshal rekor bundle for image %q: %s", image.GetName().GetFullName(), err)
 		}
@@ -474,19 +678,21 @@ func retrieveVerificationDataFromImage(image *storage.Image) ([]oci.Signature, g
 			sigOpts = append(sigOpts, static.WithBundle(rekorBundle))
 		}
 
-		sig, err := static.NewSignature(imgSig.GetCosign().GetSignaturePayload(), b64Sig, sigOpts...)
+		sig, err := static.NewSignature(cosignSig.GetSignaturePayload(), b64Sig, sigOpts...)
 		if err != nil {
 			return nil, gcrv1.Hash{}, errCorruptedSignature.CausedBy(err)
 		}
-		signatures = append(signatures, sig)
+		vsigs = append(vsigs, verifiableSignature{
+			signature: sig,
+		})
 	}
 
-	return signatures, hash, nil
+	return vsigs, hash, nil
 }
 
 // getVerifiedImageReferenceFromSignature retrieves the verified docker reference in the format of
-// <registry>/<repository> from the payload of the oci.Signature and filters out image names that are verified by
-// the docker reference using the image names associated with the storage.Image.
+// <registry>/<repository> from the payload of the SimpleSigning oci.Signature and filters out image
+// names that are verified by the docker reference using the image names associated with the storage.Image.
 func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([]string, error) {
 	payloadBytes, err := signature.Payload()
 	if err != nil {
@@ -530,6 +736,19 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 		}
 	}
 	return verifiedImageReferences, nil
+}
+
+func getAllImageReferences(image *storage.Image) []string {
+	imageNames := protoutils.SliceUnique(
+		append([]*storage.ImageName{image.GetName()}, image.GetNames()...),
+	)
+	refs := make([]string, 0, len(imageNames))
+	for _, n := range imageNames {
+		if fullName := n.GetFullName(); fullName != "" {
+			refs = append(refs, fullName)
+		}
+	}
+	return refs
 }
 
 func equalRegistryRepository(signatureIdentity, imageName string) (bool, error) {
