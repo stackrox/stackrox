@@ -50,6 +50,8 @@ type NodeVulnerabilityResolver interface {
 	OperatingSystem(ctx context.Context) string
 }
 
+var _ NodeVulnerabilityResolver = (*nodeCVEResolver)(nil)
+
 // NodeVulnerability resolves a single vulnerability based on an id
 func (resolver *Resolver) NodeVulnerability(ctx context.Context, args IDQuery) (NodeVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeVulnerability")

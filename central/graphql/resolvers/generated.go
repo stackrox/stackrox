@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -30,6 +31,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	utils.Must(builder.AddType("AclEntry", []string{
+		"id: Int!",
+		"perm: Int!",
+		"tag: AclEntry_AclTag!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclEntry_AclTag(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclType(0)))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
 	}))
@@ -343,6 +351,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
+		"sensorVersionCompatibility: SensorVersionCompatibility!",
 		"upgradeStatus: ClusterUpgradeStatus",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
@@ -568,6 +577,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerType(0)))
 	utils.Must(builder.AddType("CosignSignature", []string{
+		"certChainPem: String!",
+		"certPem: String!",
+		"rawSignature: String!",
+		"rekorBundle: String!",
+		"signaturePayload: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -661,6 +675,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+		"unused: String!",
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
@@ -681,6 +696,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"meta: FileAccess_FileMetadata",
 	}))
 	utils.Must(builder.AddType("FileAccess_FileMetadata", []string{
+		"aclEntries: [AclEntry]!",
+		"aclType: AclType!",
 		"gid: Int!",
 		"group: String!",
 		"mode: Int!",
@@ -884,6 +901,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ManagerType(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"compatibleSensorVersions: [String!]!",
 		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
 		"version: String!",
@@ -1366,6 +1384,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"k8SNodeName: String!",
 		"systemNamespaceId: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SensorVersionCompatibility(0)))
 	utils.Must(builder.AddType("ServiceAccount", []string{
 		"annotations: [Label!]!",
 		"automountToken: Boolean!",
@@ -1568,6 +1587,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Global",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+		"unused: String!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
@@ -1753,6 +1773,99 @@ func toAccesses(values *[]string) []storage.Access {
 	output := make([]storage.Access, len(*values))
 	for i, v := range *values {
 		output[i] = toAccess(&v)
+	}
+	return output
+}
+
+type aclEntryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AclEntry
+}
+
+func (resolver *Resolver) wrapAclEntry(value *storage.AclEntry, ok bool, err error) (*aclEntryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aclEntryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAclEntries(values []*storage.AclEntry, err error) ([]*aclEntryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aclEntryResolver, len(values))
+	for i, v := range values {
+		output[i] = &aclEntryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAclEntryWithContext(ctx context.Context, value *storage.AclEntry, ok bool, err error) (*aclEntryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aclEntryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAclEntriesWithContext(ctx context.Context, values []*storage.AclEntry, err error) ([]*aclEntryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aclEntryResolver, len(values))
+	for i, v := range values {
+		output[i] = &aclEntryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aclEntryResolver) Id(ctx context.Context) int32 {
+	value := resolver.data.GetId()
+	return int32(value)
+}
+
+func (resolver *aclEntryResolver) Perm(ctx context.Context) int32 {
+	value := resolver.data.GetPerm()
+	return int32(value)
+}
+
+func (resolver *aclEntryResolver) Tag(ctx context.Context) string {
+	value := resolver.data.GetTag()
+	return value.String()
+}
+
+func toAclEntry_AclTag(value *string) storage.AclEntry_AclTag {
+	if value != nil {
+		return storage.AclEntry_AclTag(storage.AclEntry_AclTag_value[*value])
+	}
+	return storage.AclEntry_AclTag(0)
+}
+
+func toAclEntry_AclTags(values *[]string) []storage.AclEntry_AclTag {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AclEntry_AclTag, len(*values))
+	for i, v := range *values {
+		output[i] = toAclEntry_AclTag(&v)
+	}
+	return output
+}
+
+func toAclType(value *string) storage.AclType {
+	if value != nil {
+		return storage.AclType(storage.AclType_value[*value])
+	}
+	return storage.AclType(0)
+}
+
+func toAclTypes(values *[]string) []storage.AclType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AclType, len(*values))
+	for i, v := range *values {
+		output[i] = toAclType(&v)
 	}
 	return output
 }
@@ -4709,6 +4822,11 @@ func (resolver *clusterStatusResolver) SensorVersion(ctx context.Context) string
 	return value
 }
 
+func (resolver *clusterStatusResolver) SensorVersionCompatibility(ctx context.Context) string {
+	value := resolver.data.GetSensorVersionCompatibility()
+	return value.String()
+}
+
 func (resolver *clusterStatusResolver) UpgradeStatus(ctx context.Context) (*clusterUpgradeStatusResolver, error) {
 	value := resolver.data.GetUpgradeStatus()
 	return resolver.root.wrapClusterUpgradeStatus(value, true, nil)
@@ -7014,29 +7132,29 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) string {
 	value := resolver.data.GetCertChainPem()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) string {
 	value := resolver.data.GetCertPem()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) string {
 	value := resolver.data.GetRawSignature()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) string {
 	value := resolver.data.GetRekorBundle()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) string {
 	value := resolver.data.GetSignaturePayload()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 type dataSourceResolver struct {
@@ -8013,6 +8131,10 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 	return output, nil
 }
 
+func (resolver *falsePositiveRequestResolver) Unused(ctx context.Context) string {
+	return ""
+}
+
 type fileAccessResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8182,6 +8304,16 @@ func (resolver *Resolver) wrapFileAccess_FileMetadatasWithContext(ctx context.Co
 		output[i] = &fileAccess_FileMetadataResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *fileAccess_FileMetadataResolver) AclEntries(ctx context.Context) ([]*aclEntryResolver, error) {
+	value := resolver.data.GetAclEntries()
+	return resolver.root.wrapAclEntries(value, nil)
+}
+
+func (resolver *fileAccess_FileMetadataResolver) AclType(ctx context.Context) string {
+	value := resolver.data.GetAclType()
+	return value.String()
 }
 
 func (resolver *fileAccess_FileMetadataResolver) Gid(ctx context.Context) int32 {
@@ -10327,6 +10459,11 @@ func (resolver *Resolver) wrapMetadatasWithContext(ctx context.Context, values [
 
 func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	value := resolver.data.GetBuildFlavor()
+	return value
+}
+
+func (resolver *metadataResolver) CompatibleSensorVersions(ctx context.Context) []string {
+	value := resolver.data.GetCompatibleSensorVersions()
 	return value
 }
 
@@ -14851,6 +14988,24 @@ func (resolver *sensorDeploymentIdentificationResolver) SystemNamespaceId(ctx co
 	return value
 }
 
+func toSensorVersionCompatibility(value *string) storage.SensorVersionCompatibility {
+	if value != nil {
+		return storage.SensorVersionCompatibility(storage.SensorVersionCompatibility_value[*value])
+	}
+	return storage.SensorVersionCompatibility(0)
+}
+
+func toSensorVersionCompatibilities(values *[]string) []storage.SensorVersionCompatibility {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SensorVersionCompatibility, len(*values))
+	for i, v := range *values {
+		output[i] = toSensorVersionCompatibility(&v)
+	}
+	return output
+}
+
 type serviceAccountResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -16805,6 +16960,10 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx 
 		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_GlobalResolver) Unused(ctx context.Context) string {
+	return ""
 }
 
 type vulnerabilityRequest_Scope_ImageResolver struct {

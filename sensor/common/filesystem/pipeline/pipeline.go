@@ -159,6 +159,25 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
+	case *sensorAPI.FileActivity_Acl:
+		acl := fs.GetAcl()
+		entries := make([]*storage.AclEntry, 0, len(acl.GetEntries()))
+		for _, e := range acl.GetEntries() {
+			entries = append(entries, &storage.AclEntry{
+				Tag:  toStorageAclTag(e.GetTag()),
+				Perm: e.GetPerm(),
+				Id:   e.GetId(),
+			})
+		}
+		access.File = &storage.FileAccess_File{
+			EffectivePath: acl.GetActivity().GetPath(),
+			ActualPath:    acl.GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				AclType:    toStorageAclType(acl.GetAclType()),
+				AclEntries: entries,
+			},
+		}
+		access.Operation = storage.FileAccess_ACL_CHANGE
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
@@ -418,5 +437,41 @@ func (p *Pipeline) run() {
 			detectorMetrics.FileAccessEventsReceived.Inc()
 			p.processFileActivity(fs)
 		}
+	}
+}
+
+// toStorageAclTag maps sensor AclTag values to storage AclTag values explicitly,
+// so that any future divergence between the two proto enum definitions is caught
+// at compile time rather than silently producing incorrect values.
+func toStorageAclTag(t sensorAPI.AclTag) storage.AclEntry_AclTag {
+	switch t {
+	case sensorAPI.AclTag_ACL_TAG_USER_OBJ:
+		return storage.AclEntry_ACL_TAG_USER_OBJ
+	case sensorAPI.AclTag_ACL_TAG_USER:
+		return storage.AclEntry_ACL_TAG_USER
+	case sensorAPI.AclTag_ACL_TAG_GROUP_OBJ:
+		return storage.AclEntry_ACL_TAG_GROUP_OBJ
+	case sensorAPI.AclTag_ACL_TAG_GROUP:
+		return storage.AclEntry_ACL_TAG_GROUP
+	case sensorAPI.AclTag_ACL_TAG_MASK:
+		return storage.AclEntry_ACL_TAG_MASK
+	case sensorAPI.AclTag_ACL_TAG_OTHER:
+		return storage.AclEntry_ACL_TAG_OTHER
+	default:
+		log.Warnf("unknown AclTag value: %v", t)
+		return storage.AclEntry_ACL_TAG_UNSPECIFIED
+	}
+}
+
+// toStorageAclType maps sensor AclType values to storage AclType values explicitly.
+func toStorageAclType(t sensorAPI.AclType) storage.AclType {
+	switch t {
+	case sensorAPI.AclType_ACL_TYPE_ACCESS:
+		return storage.AclType_ACL_TYPE_ACCESS
+	case sensorAPI.AclType_ACL_TYPE_DEFAULT:
+		return storage.AclType_ACL_TYPE_DEFAULT
+	default:
+		log.Warnf("unknown AclType value: %v", t)
+		return storage.AclType_ACL_TYPE_UNSPECIFIED
 	}
 }

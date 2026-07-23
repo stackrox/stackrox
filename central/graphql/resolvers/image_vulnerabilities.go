@@ -90,6 +90,8 @@ type ImageVulnerabilityResolver interface {
 	NvdScoreVersion(ctx context.Context) string
 }
 
+var _ ImageVulnerabilityResolver = (*imageCVEV2Resolver)(nil)
+
 // ImageVulnerability returns a vulnerability of the given id
 func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerability")

@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "storage/alert.proto";
 import "storage/deployment.proto";
+import "storage/file_access.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 
@@ -153,7 +154,7 @@ message SplunkViolation {
     string effective_path = 1;
     // Host path (e.g. /etc/passwd)
     string actual_path = 2;
-    // Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE"
+    // Operation enum name: "CREATE", "OPEN", "UNLINK", "RENAME", "PERMISSION_CHANGE", "OWNERSHIP_CHANGE", "ACL_CHANGE"
     string operation = 3;
 
     // For RENAME operations, the destination paths
@@ -171,5 +172,9 @@ message SplunkViolation {
     // For deployment-level violations, deployment context is in SplunkViolation.DeploymentInfo.
     // For node-level violations (no container/deployment), hostname is the primary location identifier.
     string hostname = 11;
+
+    // ACL-specific fields, populated only for ACL_CHANGE operations.
+    storage.AclType acl_type = 12;
+    repeated storage.AclEntry acl_entries = 13;
   }
 }

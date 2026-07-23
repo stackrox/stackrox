@@ -216,9 +216,10 @@ func (q *query) getPortionBeforeFromClause() string {
 	case COUNT:
 		countOn := "*"
 		if q.DistinctAppliedOnPrimaryKeySelect() {
-			var primaryKeyPaths []string
 			// Always select the primary keys for count.
-			for _, pk := range q.Schema.PrimaryKeys() {
+			primaryKeys := q.Schema.PrimaryKeys()
+			primaryKeyPaths := make([]string, 0, len(primaryKeys))
+			for _, pk := range primaryKeys {
 				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
 			}
 			countOn = fmt.Sprintf("distinct(%s)", strings.Join(primaryKeyPaths, ", "))

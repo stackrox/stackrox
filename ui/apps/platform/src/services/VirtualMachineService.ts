@@ -1,4 +1,5 @@
 import axios from 'services/instance';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
@@ -90,18 +91,6 @@ export type ListVMsResponse = {
     totalCount: number;
 };
 
-export function listVMs({
-    sortOption,
-    page,
-    perPage,
-    searchFilter,
-}: SearchQueryOptions): Promise<ListVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
-    return axios
-        .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
-        .then((response) => response.data);
-}
-
 export type VMCVEListItem = {
     cve: string;
     vmSeverityCounts: VulnCountBySeverity;
@@ -132,9 +121,30 @@ export type VMCVEDetail = {
     topCvss: number;
 };
 
-export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+export type VMCVEAffectedVMRow = {
+    vmId: string;
+    vmName: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    cvss: number;
+    guestOs: string;
+    affectedComponentCount: number;
+};
+
+export type ListVMCVEAffectedVMsResponse = {
+    vms: VMCVEAffectedVMRow[];
+    totalCount: number;
+};
+
+export function listVMs({
+    sortOption,
+    page,
+    perPage,
+    searchFilter,
+}: SearchQueryOptions): Promise<ListVMsResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
-        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
 
@@ -142,5 +152,21 @@ export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListV
     const params = buildNestedRawQueryParams({ page, perPage });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
+        .then((response) => response.data);
+}
+
+export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+    return axios
+        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .then((response) => response.data);
+}
+
+export function listVMCVEAffectedVMs(
+    cveId: string,
+    { sortOption, page, perPage }: SearchQueryOptions
+): Promise<ListVMCVEAffectedVMsResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    return axios
+        .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
         .then((response) => response.data);
 }
