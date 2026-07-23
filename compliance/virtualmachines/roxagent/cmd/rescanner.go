@@ -30,16 +30,16 @@ type rescanner struct {
 	mappingFilePath string
 	interval        time.Duration
 
-	// scanFn defaults to the package scan function; tests override it to
-	// inject failures. factsFn defaults to the package discoverFacts
-	// function; tests override it to avoid exercising the real
-	// filesystem, since discoverFacts otherwise reads real host paths
-	// (e.g. hostPath="" resolves to "/etc/pki/entitlement" et al., not a
-	// no-op). newDelay defaults to time.After (a one-shot timer); tests
-	// substitute a function returning a manually driven channel for
+	// scanFn defaults to scanWithDiagnostics, which returns the facts
+	// alongside the report from the same DiscoveredData probe used for
+	// diagnostics logging, rather than making Run probe the filesystem a
+	// second time for them. Tests override scanFn to inject failures and
+	// avoid exercising the real filesystem, since hostPath="" otherwise
+	// resolves to real absolute host paths (e.g. "/etc/pki/entitlement"),
+	// not a no-op. newDelay defaults to time.After (a one-shot timer);
+	// tests substitute a function returning a manually driven channel for
 	// precise control over Run's loop.
-	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
-	factsFn  func(hostPath string) map[string]string
+	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, map[string]string, error)
 	newDelay func(d time.Duration) <-chan time.Time
 }
 
@@ -49,8 +49,7 @@ func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath stri
 		hostPath:        hostPath,
 		mappingFilePath: mappingFilePath,
 		interval:        interval,
-		scanFn:          scan,
-		factsFn:         discoverFacts,
+		scanFn:          scanWithDiagnostics,
 		newDelay:        time.After,
 	}
 }
@@ -69,7 +68,7 @@ func (r *rescanner) Run(ctx context.Context) {
 			return
 		case <-delay:
 			log.Info("Starting rescan")
-			report, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
+			report, facts, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
 			if err != nil {
 				retryIn := min(backoff, r.interval)
 				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
@@ -77,7 +76,7 @@ func (r *rescanner) Run(ctx context.Context) {
 				delay = r.newDelay(retryIn)
 				continue
 			}
-			r.cache.SetReport(report, r.factsFn(r.hostPath))
+			r.cache.SetReport(report, facts)
 			log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
 			backoff = rescanRetryBaseBackoff
 			delay = r.newDelay(r.interval)
