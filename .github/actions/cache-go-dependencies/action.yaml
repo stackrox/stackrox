@@ -91,51 +91,44 @@ runs:
         echo "Cleared test cache for fresh run"
       shell: bash
 
-    - name: Stabilize file mtimes for Go test cache
+    - name: Stabilize file mtimes for Go test cache and module index
       run: |
-        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
-        # git checkout sets all mtimes to "now", which differs between CI runs,
-        # causing every test to miss the cache. Setting a fixed mtime makes the
-        # test cache hit across runs when file content hasn't changed.
-        git ls-files | xargs touch -t 200101010000
-        # Also stabilize directory mtimes — tests using os.ReadDir or
-        # filepath.Walk check directory mtimes too.
+        # Go's test cache and module index both validate inputs by
+        # (path, size, mtime) -- NOT content. Whatever mtime git checkout
+        # gives a file (which varies between runs) can make either cache
+        # serve a stale result when content changes but size doesn't (e.g.
+        # an import path swapped for one of equal length -- the golang-jwt
+        # v4->v5 incident). Derive each regular file's mtime from its git
+        # blob hash instead: same content always hashes to the same mtime
+        # (cache hit), different content to a different one (correctly
+        # invalidates). Reads the git index (git ls-files -s), so no
+        # history walk is needed -- works on any checkout depth.
+        #
+        # Spreads the hash across one year of seconds from 2001-01-01 --
+        # 31,536,000 distinct values. A stale hit needs BOTH an unchanged
+        # size (filename is fixed -- it's the same file -- already ruling
+        # out most edits) AND the new content's blob hash landing in the
+        # same 1-in-31.5M slot as the old one. No real same-size content
+        # change in this repo's history has ever landed in the same slot,
+        # including the motivating golang-jwt v4->v5 change itself (same
+        # length, different slot).
+        #
+        # Symlinks (mode 120000) and directories have no usable blob hash
+        # for this: a symlink's blob hash is its target path string, not
+        # file content, and utime() on a symlink path dereferences to the
+        # target anyway, so both get a fixed constant instead -- set
+        # first, so a symlink that happens to point at a tracked regular
+        # file doesn't clobber that file's content-derived mtime set
+        # afterward.
+        git ls-files -s | perl -lne '/^120000 \S+ \S+\t(.+)$/ and print $1' \
+          | xargs -r touch -t 200101010000
         git ls-files | sed 's|/[^/]*$||' | sort -u | xargs touch -t 200101010000
-      shell: bash
 
-    - name: Derive content-sensitive mtimes for Go module index
-      run: |
-        # Go's module index also caches parsed imports by (filename, mtime,
-        # size), so the fixed mtime above can serve a stale import when a
-        # .go file changes content but keeps the same size (e.g. the
-        # golang-jwt v4->v5 incident). FIX: derive each file's mtime from
-        # its git blob hash instead. Same content -> same blob hash -> same
-        # mtime -> cache hit. Changed content -> different blob hash ->
-        # different mtime -> index miss -> re-parse.
-        #
-        # Uses git ls-files -s (reads .git/index, O(N)) rather than git log
-        # (walks commit DAG, O(commits×diff)) -- faster and immune to clock
-        # skew. Perl utime() is a direct syscall; no subprocess per file.
-        #
-        # The blob hash is reduced modulo 6^5 = 7776 and unpacked as 5
-        # base-6 digits into the hour/minute/second of 2001-01-01. Every
-        # base-6 digit (0-5) is valid in each position: hour ones (0-5),
-        # minute tens (0-5), minute ones (0-5), second tens (0-5), second
-        # ones (0-5).
-        #
-        # 7776 buckets is enough in practice: a stale hit needs BOTH an
-        # unchanged size (filename is fixed -- it's the same file --
-        # already ruling out most edits) AND the new content's blob hash
-        # landing in the same bucket as the old one. No real same-size
-        # content change in this repo's history, nor any compilable
-        # same-size mutation we tested, has ever landed in the same
-        # bucket -- including the motivating golang-jwt v4->v5 change
-        # itself, same length but a different bucket.
-        git ls-files -s -- '*.go' | perl -lne '
+        git ls-files -s | perl -lne '
             /^100\S+ (\S+) \S+\t(.+)$/ or next;
-            my ($ts, $v) = (978307200, 0);  # 2001-01-01T00:00:00Z
-            $v = ($v * 16 + hex $_) % 6**5 for split //, $1;
-            $ts += ($v % 6) * $_, $v = int $v/6 for 1, 10, 60, 600, 3600;
+            my $v = 0;
+            $v = ($v * 16 + hex $_) % 31536000 for split //, $1;
+            my $ts = 978307200 + $v;  # 2001-01-01T00:00:00Z + up to 1 year
             utime $ts, $ts, $2;
         '
       shell: bash
