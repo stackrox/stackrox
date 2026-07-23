@@ -9223,6 +9223,22 @@
                 "integer": 6
               }
             ]
+          },
+          {
+            "name": "CosignSignature.SignatureFormat",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "SIMPLE_SIGNING",
+                "integer": 1
+              },
+              {
+                "name": "DEAD_SIMPLE_SIGNING_ENVELOPE",
+                "integer": 2
+              }
+            ]
           }
         ],
         "messages": [
@@ -9643,6 +9659,16 @@
               {
                 "id": 5,
                 "name": "rekor_bundle",
+                "type": "bytes"
+              },
+              {
+                "id": 6,
+                "name": "signature_format",
+                "type": "SignatureFormat"
+              },
+              {
+                "id": 7,
+                "name": "sigstore_bundle",
                 "type": "bytes"
               }
             ]
