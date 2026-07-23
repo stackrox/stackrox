@@ -22,6 +22,118 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// AclType distinguishes access ACLs from default (inherited) ACLs.
+type AclType int32
+
+const (
+	AclType_ACL_TYPE_UNSPECIFIED AclType = 0
+	AclType_ACL_TYPE_ACCESS      AclType = 1 // Controls current permissions on the file
+	AclType_ACL_TYPE_DEFAULT     AclType = 2 // Inherited by new files created in a directory
+)
+
+// Enum value maps for AclType.
+var (
+	AclType_name = map[int32]string{
+		0: "ACL_TYPE_UNSPECIFIED",
+		1: "ACL_TYPE_ACCESS",
+		2: "ACL_TYPE_DEFAULT",
+	}
+	AclType_value = map[string]int32{
+		"ACL_TYPE_UNSPECIFIED": 0,
+		"ACL_TYPE_ACCESS":      1,
+		"ACL_TYPE_DEFAULT":     2,
+	}
+)
+
+func (x AclType) Enum() *AclType {
+	p := new(AclType)
+	*p = x
+	return p
+}
+
+func (x AclType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AclType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_file_access_proto_enumTypes[0].Descriptor()
+}
+
+func (AclType) Type() protoreflect.EnumType {
+	return &file_storage_file_access_proto_enumTypes[0]
+}
+
+func (x AclType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AclType.Descriptor instead.
+func (AclType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_file_access_proto_rawDescGZIP(), []int{0}
+}
+
+// AclTag identifies the type of entity an ACL entry applies to.
+type AclEntry_AclTag int32
+
+const (
+	AclEntry_ACL_TAG_UNSPECIFIED AclEntry_AclTag = 0
+	AclEntry_ACL_TAG_USER_OBJ    AclEntry_AclTag = 1 // Owner user permissions
+	AclEntry_ACL_TAG_USER        AclEntry_AclTag = 2 // Specific user permissions
+	AclEntry_ACL_TAG_GROUP_OBJ   AclEntry_AclTag = 3 // Owning group permissions
+	AclEntry_ACL_TAG_GROUP       AclEntry_AclTag = 4 // Specific group permissions
+	AclEntry_ACL_TAG_MASK        AclEntry_AclTag = 5 // Maximum effective permissions mask
+	AclEntry_ACL_TAG_OTHER       AclEntry_AclTag = 6 // Everyone else
+)
+
+// Enum value maps for AclEntry_AclTag.
+var (
+	AclEntry_AclTag_name = map[int32]string{
+		0: "ACL_TAG_UNSPECIFIED",
+		1: "ACL_TAG_USER_OBJ",
+		2: "ACL_TAG_USER",
+		3: "ACL_TAG_GROUP_OBJ",
+		4: "ACL_TAG_GROUP",
+		5: "ACL_TAG_MASK",
+		6: "ACL_TAG_OTHER",
+	}
+	AclEntry_AclTag_value = map[string]int32{
+		"ACL_TAG_UNSPECIFIED": 0,
+		"ACL_TAG_USER_OBJ":    1,
+		"ACL_TAG_USER":        2,
+		"ACL_TAG_GROUP_OBJ":   3,
+		"ACL_TAG_GROUP":       4,
+		"ACL_TAG_MASK":        5,
+		"ACL_TAG_OTHER":       6,
+	}
+)
+
+func (x AclEntry_AclTag) Enum() *AclEntry_AclTag {
+	p := new(AclEntry_AclTag)
+	*p = x
+	return p
+}
+
+func (x AclEntry_AclTag) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AclEntry_AclTag) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_file_access_proto_enumTypes[1].Descriptor()
+}
+
+func (AclEntry_AclTag) Type() protoreflect.EnumType {
+	return &file_storage_file_access_proto_enumTypes[1]
+}
+
+func (x AclEntry_AclTag) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AclEntry_AclTag.Descriptor instead.
+func (AclEntry_AclTag) EnumDescriptor() ([]byte, []int) {
+	return file_storage_file_access_proto_rawDescGZIP(), []int{0, 0}
+}
+
 type FileAccess_Operation int32
 
 const (
@@ -31,6 +143,7 @@ const (
 	FileAccess_PERMISSION_CHANGE FileAccess_Operation = 3
 	FileAccess_OWNERSHIP_CHANGE  FileAccess_Operation = 4
 	FileAccess_OPEN              FileAccess_Operation = 5
+	FileAccess_ACL_CHANGE        FileAccess_Operation = 6
 )
 
 // Enum value maps for FileAccess_Operation.
@@ -42,6 +155,7 @@ var (
 		3: "PERMISSION_CHANGE",
 		4: "OWNERSHIP_CHANGE",
 		5: "OPEN",
+		6: "ACL_CHANGE",
 	}
 	FileAccess_Operation_value = map[string]int32{
 		"CREATE":            0,
@@ -50,6 +164,7 @@ var (
 		"PERMISSION_CHANGE": 3,
 		"OWNERSHIP_CHANGE":  4,
 		"OPEN":              5,
+		"ACL_CHANGE":        6,
 	}
 )
 
@@ -64,11 +179,11 @@ func (x FileAccess_Operation) String() string {
 }
 
 func (FileAccess_Operation) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_file_access_proto_enumTypes[0].Descriptor()
+	return file_storage_file_access_proto_enumTypes[2].Descriptor()
 }
 
 func (FileAccess_Operation) Type() protoreflect.EnumType {
-	return &file_storage_file_access_proto_enumTypes[0]
+	return &file_storage_file_access_proto_enumTypes[2]
 }
 
 func (x FileAccess_Operation) Number() protoreflect.EnumNumber {
@@ -77,7 +192,71 @@ func (x FileAccess_Operation) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FileAccess_Operation.Descriptor instead.
 func (FileAccess_Operation) EnumDescriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{0, 0}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 0}
+}
+
+// AclEntry represents a single POSIX ACL entry.
+type AclEntry struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Tag   AclEntry_AclTag        `protobuf:"varint,1,opt,name=tag,proto3,enum=storage.AclEntry_AclTag" json:"tag,omitempty"`
+	// Permission bits (e.g. 7 = rwx, 6 = rw-, 4 = r--)
+	Perm uint32 `protobuf:"varint,2,opt,name=perm,proto3" json:"perm,omitempty"`
+	// The uid or gid for ACL_TAG_USER / ACL_TAG_GROUP entries.
+	// Set to 0xFFFFFFFF when not applicable.
+	Id            uint32 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AclEntry) Reset() {
+	*x = AclEntry{}
+	mi := &file_storage_file_access_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AclEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AclEntry) ProtoMessage() {}
+
+func (x *AclEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_file_access_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AclEntry.ProtoReflect.Descriptor instead.
+func (*AclEntry) Descriptor() ([]byte, []int) {
+	return file_storage_file_access_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *AclEntry) GetTag() AclEntry_AclTag {
+	if x != nil {
+		return x.Tag
+	}
+	return AclEntry_ACL_TAG_UNSPECIFIED
+}
+
+func (x *AclEntry) GetPerm() uint32 {
+	if x != nil {
+		return x.Perm
+	}
+	return 0
+}
+
+func (x *AclEntry) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
 }
 
 // FileAccess contains fields related to arbitrary file accesses
@@ -106,7 +285,7 @@ type FileAccess struct {
 
 func (x *FileAccess) Reset() {
 	*x = FileAccess{}
-	mi := &file_storage_file_access_proto_msgTypes[0]
+	mi := &file_storage_file_access_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -118,7 +297,7 @@ func (x *FileAccess) String() string {
 func (*FileAccess) ProtoMessage() {}
 
 func (x *FileAccess) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_file_access_proto_msgTypes[0]
+	mi := &file_storage_file_access_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -131,7 +310,7 @@ func (x *FileAccess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileAccess.ProtoReflect.Descriptor instead.
 func (*FileAccess) Descriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{0}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *FileAccess) GetFile() *FileAccess_File {
@@ -177,19 +356,22 @@ func (x *FileAccess) GetHostname() string {
 }
 
 type FileAccess_FileMetadata struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Uid           uint32                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
-	Gid           uint32                 `protobuf:"varint,2,opt,name=gid,proto3" json:"gid,omitempty"`
-	Mode          uint32                 `protobuf:"varint,3,opt,name=mode,proto3" json:"mode,omitempty"`
-	Username      string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
-	Group         string                 `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Uid      uint32                 `protobuf:"varint,1,opt,name=uid,proto3" json:"uid,omitempty"`
+	Gid      uint32                 `protobuf:"varint,2,opt,name=gid,proto3" json:"gid,omitempty"`
+	Mode     uint32                 `protobuf:"varint,3,opt,name=mode,proto3" json:"mode,omitempty"`
+	Username string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	Group    string                 `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
+	// ACL-specific fields, populated only for ACL_CHANGE operations.
+	AclType       AclType     `protobuf:"varint,6,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
+	AclEntries    []*AclEntry `protobuf:"bytes,7,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FileAccess_FileMetadata) Reset() {
 	*x = FileAccess_FileMetadata{}
-	mi := &file_storage_file_access_proto_msgTypes[1]
+	mi := &file_storage_file_access_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +383,7 @@ func (x *FileAccess_FileMetadata) String() string {
 func (*FileAccess_FileMetadata) ProtoMessage() {}
 
 func (x *FileAccess_FileMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_file_access_proto_msgTypes[1]
+	mi := &file_storage_file_access_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +396,7 @@ func (x *FileAccess_FileMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileAccess_FileMetadata.ProtoReflect.Descriptor instead.
 func (*FileAccess_FileMetadata) Descriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{0, 0}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 0}
 }
 
 func (x *FileAccess_FileMetadata) GetUid() uint32 {
@@ -252,6 +434,20 @@ func (x *FileAccess_FileMetadata) GetGroup() string {
 	return ""
 }
 
+func (x *FileAccess_FileMetadata) GetAclType() AclType {
+	if x != nil {
+		return x.AclType
+	}
+	return AclType_ACL_TYPE_UNSPECIFIED
+}
+
+func (x *FileAccess_FileMetadata) GetAclEntries() []*AclEntry {
+	if x != nil {
+		return x.AclEntries
+	}
+	return nil
+}
+
 type FileAccess_File struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Relevant to deployment-based events, this is the path of a file in the
@@ -271,7 +467,7 @@ type FileAccess_File struct {
 
 func (x *FileAccess_File) Reset() {
 	*x = FileAccess_File{}
-	mi := &file_storage_file_access_proto_msgTypes[2]
+	mi := &file_storage_file_access_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -283,7 +479,7 @@ func (x *FileAccess_File) String() string {
 func (*FileAccess_File) ProtoMessage() {}
 
 func (x *FileAccess_File) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_file_access_proto_msgTypes[2]
+	mi := &file_storage_file_access_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -296,7 +492,7 @@ func (x *FileAccess_File) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileAccess_File.ProtoReflect.Descriptor instead.
 func (*FileAccess_File) Descriptor() ([]byte, []int) {
-	return file_storage_file_access_proto_rawDescGZIP(), []int{0, 1}
+	return file_storage_file_access_proto_rawDescGZIP(), []int{1, 1}
 }
 
 func (x *FileAccess_File) GetEffectivePath() string {
@@ -324,7 +520,19 @@ var File_storage_file_access_proto protoreflect.FileDescriptor
 
 const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x9b\x05\n" +
+	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xf5\x01\n" +
+	"\bAclEntry\x12*\n" +
+	"\x03tag\x18\x01 \x01(\x0e2\x18.storage.AclEntry.AclTagR\x03tag\x12\x12\n" +
+	"\x04perm\x18\x02 \x01(\rR\x04perm\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\rR\x02id\"\x98\x01\n" +
+	"\x06AclTag\x12\x17\n" +
+	"\x13ACL_TAG_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10ACL_TAG_USER_OBJ\x10\x01\x12\x10\n" +
+	"\fACL_TAG_USER\x10\x02\x12\x15\n" +
+	"\x11ACL_TAG_GROUP_OBJ\x10\x03\x12\x11\n" +
+	"\rACL_TAG_GROUP\x10\x04\x12\x10\n" +
+	"\fACL_TAG_MASK\x10\x05\x12\x11\n" +
+	"\rACL_TAG_OTHER\x10\x06\"\x8d\x06\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
@@ -332,18 +540,21 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostname\x1ax\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a\xd9\x01\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
 	"\x04mode\x18\x03 \x01(\rR\x04mode\x12\x1a\n" +
 	"\busername\x18\x04 \x01(\tR\busername\x12\x14\n" +
-	"\x05group\x18\x05 \x01(\tR\x05group\x1a\x84\x01\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\x12+\n" +
+	"\bacl_type\x18\x06 \x01(\x0e2\x10.storage.AclTypeR\aaclType\x122\n" +
+	"\vacl_entries\x18\a \x03(\v2\x11.storage.AclEntryR\n" +
+	"aclEntries\x1a\x84\x01\n" +
 	"\x04File\x12%\n" +
 	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
 	"\vactual_path\x18\x02 \x01(\tR\n" +
 	"actualPath\x124\n" +
-	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"f\n" +
+	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"v\n" +
 	"\tOperation\x12\n" +
 	"\n" +
 	"\x06CREATE\x10\x00\x12\n" +
@@ -353,7 +564,13 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x06RENAME\x10\x02\x12\x15\n" +
 	"\x11PERMISSION_CHANGE\x10\x03\x12\x14\n" +
 	"\x10OWNERSHIP_CHANGE\x10\x04\x12\b\n" +
-	"\x04OPEN\x10\x05B.\n" +
+	"\x04OPEN\x10\x05\x12\x0e\n" +
+	"\n" +
+	"ACL_CHANGE\x10\x06*N\n" +
+	"\aAclType\x12\x18\n" +
+	"\x14ACL_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fACL_TYPE_ACCESS\x10\x01\x12\x14\n" +
+	"\x10ACL_TYPE_DEFAULT\x10\x02B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -368,28 +585,34 @@ func file_storage_file_access_proto_rawDescGZIP() []byte {
 	return file_storage_file_access_proto_rawDescData
 }
 
-var file_storage_file_access_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_file_access_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_storage_file_access_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
+var file_storage_file_access_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_file_access_proto_goTypes = []any{
-	(FileAccess_Operation)(0),       // 0: storage.FileAccess.Operation
-	(*FileAccess)(nil),              // 1: storage.FileAccess
-	(*FileAccess_FileMetadata)(nil), // 2: storage.FileAccess.FileMetadata
-	(*FileAccess_File)(nil),         // 3: storage.FileAccess.File
-	(*timestamppb.Timestamp)(nil),   // 4: google.protobuf.Timestamp
-	(*ProcessIndicator)(nil),        // 5: storage.ProcessIndicator
+	(AclType)(0),                    // 0: storage.AclType
+	(AclEntry_AclTag)(0),            // 1: storage.AclEntry.AclTag
+	(FileAccess_Operation)(0),       // 2: storage.FileAccess.Operation
+	(*AclEntry)(nil),                // 3: storage.AclEntry
+	(*FileAccess)(nil),              // 4: storage.FileAccess
+	(*FileAccess_FileMetadata)(nil), // 5: storage.FileAccess.FileMetadata
+	(*FileAccess_File)(nil),         // 6: storage.FileAccess.File
+	(*timestamppb.Timestamp)(nil),   // 7: google.protobuf.Timestamp
+	(*ProcessIndicator)(nil),        // 8: storage.ProcessIndicator
 }
 var file_storage_file_access_proto_depIdxs = []int32{
-	3, // 0: storage.FileAccess.file:type_name -> storage.FileAccess.File
-	0, // 1: storage.FileAccess.operation:type_name -> storage.FileAccess.Operation
-	3, // 2: storage.FileAccess.moved:type_name -> storage.FileAccess.File
-	4, // 3: storage.FileAccess.timestamp:type_name -> google.protobuf.Timestamp
-	5, // 4: storage.FileAccess.process:type_name -> storage.ProcessIndicator
-	2, // 5: storage.FileAccess.File.meta:type_name -> storage.FileAccess.FileMetadata
-	6, // [6:6] is the sub-list for method output_type
-	6, // [6:6] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1, // 0: storage.AclEntry.tag:type_name -> storage.AclEntry.AclTag
+	6, // 1: storage.FileAccess.file:type_name -> storage.FileAccess.File
+	2, // 2: storage.FileAccess.operation:type_name -> storage.FileAccess.Operation
+	6, // 3: storage.FileAccess.moved:type_name -> storage.FileAccess.File
+	7, // 4: storage.FileAccess.timestamp:type_name -> google.protobuf.Timestamp
+	8, // 5: storage.FileAccess.process:type_name -> storage.ProcessIndicator
+	0, // 6: storage.FileAccess.FileMetadata.acl_type:type_name -> storage.AclType
+	3, // 7: storage.FileAccess.FileMetadata.acl_entries:type_name -> storage.AclEntry
+	5, // 8: storage.FileAccess.File.meta:type_name -> storage.FileAccess.FileMetadata
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_storage_file_access_proto_init() }
@@ -403,8 +626,8 @@ func file_storage_file_access_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_file_access_proto_rawDesc), len(file_storage_file_access_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

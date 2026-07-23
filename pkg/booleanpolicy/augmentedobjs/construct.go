@@ -14,6 +14,17 @@ const (
 	CompositeFieldCharSep = "\t"
 )
 
+// operationMapping maps storage-level file operations to their
+// detection-level names. Operations not in this map use their proto
+// enum name as-is. This allows multiple storage operations to be
+// collapsed into a single policy criterion value.
+var operationMapping = map[storage.FileAccess_Operation]string{
+	// An ACL change is a kind of permission change, so we collapse
+	// it so that a single "Permission changed" policy criterion
+	// matches both chmod-style and ACL changes.
+	storage.FileAccess_ACL_CHANGE: storage.FileAccess_PERMISSION_CHANGE.String(),
+}
+
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {
 	for i, container := range deployment.GetContainers() {
 		if container.GetName() == process.GetContainerName() {
@@ -180,8 +191,16 @@ func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj 
 		},
 	}
 
-	err := obj.AddPlainObjAt(fileAccessPaths, pathutil.FieldStep(fileAccessPathKey))
-	if err != nil {
+	if err := obj.AddPlainObjAt(fileAccessPaths, pathutil.FieldStep(fileAccessPathKey)); err != nil {
+		return nil
+	}
+
+	opName := fileAccess.GetOperation().String()
+	if mapped, ok := operationMapping[fileAccess.GetOperation()]; ok {
+		opName = mapped
+	}
+
+	if err := obj.AddPlainObjAt(&fileAccessOperation{Operation: opName}, pathutil.FieldStep(fileAccessOperationKey)); err != nil {
 		return nil
 	}
 

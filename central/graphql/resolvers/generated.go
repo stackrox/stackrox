@@ -31,6 +31,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"stsEnabled: Boolean!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	utils.Must(builder.AddType("AclEntry", []string{
+		"id: Int!",
+		"perm: Int!",
+		"tag: AclEntry_AclTag!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclEntry_AclTag(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.AclType(0)))
 	utils.Must(builder.AddType("AdmissionControlHealthInfo", []string{
 		"statusErrors: [String!]!",
 	}))
@@ -689,6 +696,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"meta: FileAccess_FileMetadata",
 	}))
 	utils.Must(builder.AddType("FileAccess_FileMetadata", []string{
+		"aclEntries: [AclEntry]!",
+		"aclType: AclType!",
 		"gid: Int!",
 		"group: String!",
 		"mode: Int!",
@@ -1764,6 +1773,99 @@ func toAccesses(values *[]string) []storage.Access {
 	output := make([]storage.Access, len(*values))
 	for i, v := range *values {
 		output[i] = toAccess(&v)
+	}
+	return output
+}
+
+type aclEntryResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AclEntry
+}
+
+func (resolver *Resolver) wrapAclEntry(value *storage.AclEntry, ok bool, err error) (*aclEntryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aclEntryResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAclEntries(values []*storage.AclEntry, err error) ([]*aclEntryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aclEntryResolver, len(values))
+	for i, v := range values {
+		output[i] = &aclEntryResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAclEntryWithContext(ctx context.Context, value *storage.AclEntry, ok bool, err error) (*aclEntryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aclEntryResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAclEntriesWithContext(ctx context.Context, values []*storage.AclEntry, err error) ([]*aclEntryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aclEntryResolver, len(values))
+	for i, v := range values {
+		output[i] = &aclEntryResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *aclEntryResolver) Id(ctx context.Context) int32 {
+	value := resolver.data.GetId()
+	return int32(value)
+}
+
+func (resolver *aclEntryResolver) Perm(ctx context.Context) int32 {
+	value := resolver.data.GetPerm()
+	return int32(value)
+}
+
+func (resolver *aclEntryResolver) Tag(ctx context.Context) string {
+	value := resolver.data.GetTag()
+	return value.String()
+}
+
+func toAclEntry_AclTag(value *string) storage.AclEntry_AclTag {
+	if value != nil {
+		return storage.AclEntry_AclTag(storage.AclEntry_AclTag_value[*value])
+	}
+	return storage.AclEntry_AclTag(0)
+}
+
+func toAclEntry_AclTags(values *[]string) []storage.AclEntry_AclTag {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AclEntry_AclTag, len(*values))
+	for i, v := range *values {
+		output[i] = toAclEntry_AclTag(&v)
+	}
+	return output
+}
+
+func toAclType(value *string) storage.AclType {
+	if value != nil {
+		return storage.AclType(storage.AclType_value[*value])
+	}
+	return storage.AclType(0)
+}
+
+func toAclTypes(values *[]string) []storage.AclType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.AclType, len(*values))
+	for i, v := range *values {
+		output[i] = toAclType(&v)
 	}
 	return output
 }
@@ -8202,6 +8304,16 @@ func (resolver *Resolver) wrapFileAccess_FileMetadatasWithContext(ctx context.Co
 		output[i] = &fileAccess_FileMetadataResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *fileAccess_FileMetadataResolver) AclEntries(ctx context.Context) ([]*aclEntryResolver, error) {
+	value := resolver.data.GetAclEntries()
+	return resolver.root.wrapAclEntries(value, nil)
+}
+
+func (resolver *fileAccess_FileMetadataResolver) AclType(ctx context.Context) string {
+	value := resolver.data.GetAclType()
+	return value.String()
 }
 
 func (resolver *fileAccess_FileMetadataResolver) Gid(ctx context.Context) int32 {

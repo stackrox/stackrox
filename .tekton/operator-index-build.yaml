@@ -118,7 +118,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7d1e11cd9426f81922aead3959bcef1c32e640a2cf76eefcf3aedc16419276f6
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3a1038af58f89ce3ea352ee8063b12d81ad6fb33c6bd19704aaa6971b80279c2
         - name: kind
           value: task
         resolver: bundles
@@ -215,7 +215,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2@sha256:e5ba1f8549e6a0f043629ef00bea7511957121e05304b688f40ff12304560f38
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.5@sha256:d5f39d5a89e8073774bac1a9b9013709c5931921dd4fb1cf662f800e6c5c9ee7
         - name: kind
           value: task
         resolver: bundles
@@ -234,7 +234,7 @@ spec:
         - name: name
           value: determine-image-expiration
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7d1e11cd9426f81922aead3959bcef1c32e640a2cf76eefcf3aedc16419276f6
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3a1038af58f89ce3ea352ee8063b12d81ad6fb33c6bd19704aaa6971b80279c2
         - name: kind
           value: task
         resolver: bundles
@@ -250,7 +250,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7d1e11cd9426f81922aead3959bcef1c32e640a2cf76eefcf3aedc16419276f6
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3a1038af58f89ce3ea352ee8063b12d81ad6fb33c6bd19704aaa6971b80279c2
         - name: kind
           value: task
         resolver: bundles
@@ -269,7 +269,7 @@ spec:
           description: Full operator-index image tag with v prefix and -fast suffix to avoid collision with GHA builds
         steps:
         - name: compute-index-tag
-          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:062c52ff973065752b0965787649db2bcf551a6c727a00e95a3eb42cebadbdab
+          image: registry.access.redhat.com/ubi9-minimal:latest@sha256:2e8edce823a48e51858f1fad3ff4cbf6875ce8a3f86b9eecf298bc2050c8652a
           imagePullPolicy: IfNotPresent
           script: |
             #!/bin/bash
@@ -296,7 +296,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:7d1e11cd9426f81922aead3959bcef1c32e640a2cf76eefcf3aedc16419276f6
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3a1038af58f89ce3ea352ee8063b12d81ad6fb33c6bd19704aaa6971b80279c2
         - name: kind
           value: task
         resolver: bundles
@@ -354,7 +354,7 @@ spec:
           - use
           - $(params.SOURCE_ARTIFACT)=/var/workdir/source
         - name: build-index-content
-          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1784190466@sha256:f99dd81b20e5971ef9f63a51ac27cf0aa591ff9921d021490548b67fd9b17144
+          image: registry.access.redhat.com/ubi9/go-toolset:9.8-1784751462@sha256:5f5c97d7e6d917b8328321bcf2c9d5700de65b72d434ecdbbba6f35aaebaad40
           imagePullPolicy: IfNotPresent
           workingDir: /var/workdir/source/operator
           securityContext:
