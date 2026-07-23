@@ -520,10 +520,8 @@ jobs:
     steps:
     - name: Collect failure annotations
       # Pulls the ::error:: annotations from every failed job in this run
-      # so the Slack message below has enough context to triage without
-      # clicking into the run. Jobs with no annotations (eg. failures that
-      # don't emit ::error::) get a generic fallback line instead of being
-      # silently omitted.
+      # Jobs with no annotations (eg. failures that don't emit ::error::)
+      # get a generic fallback line instead of being silently omitted.
       id: annotations
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -532,11 +530,9 @@ jobs:
       run: |
         set -euo pipefail
 
-        # Fetch the job list once (may span multiple pages; gh emits each
-        # page's JSON body back-to-back, which jq happily processes as a
-        # stream of documents below) and reuse it for both the job-status
-        # overview and the per-job failure summary, instead of querying this
-        # endpoint twice.
+        # Fetch the job list (may span multiple pages; gh emits each
+        # page's JSON body back-to-back, which jq processes as a
+        # stream of documents below)
         jobs_json=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate)
 
         # Rendered inside a Slack code block (see "Send Slack notification"),
