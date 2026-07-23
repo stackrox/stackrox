@@ -290,42 +290,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		"central-services label added when Central CR present": {
-			args: args{
-				client: newDefaultFakeClientWithCentral(t),
-				sc: platform.SecuredCluster{
-					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
-					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
-						ClusterLabels: map[string]string{
-							"user-label": "value",
-						},
-					},
-				},
-			},
-			want: chartutil.Values{
-				"clusterName": "test-cluster",
-				"clusterLabels": map[string]interface{}{
-					"user-label":                   "value",
-					"stackrox.io/central-services": "true",
-				},
-				"ca":            map[string]string{"cert": "ca central content"},
-				"createSecrets": false,
-				"scanner": map[string]interface{}{
-					"disable": true,
-				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]string{
-						"enabled": "true",
-					},
-				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
-						"enabled": true,
-					},
-				},
-			},
-		},
 		"local scanner autosense suppression": {
 			args: args{
 				client: newDefaultFakeClientWithCentral(t),
@@ -345,7 +309,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 			want: chartutil.Values{
 				"clusterName": "test-cluster",
 				"clusterLabels": map[string]interface{}{
-					"stackrox.io/central-services": "true",
+					centralColocatedLabelKey: "true",
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,

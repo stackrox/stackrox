@@ -125,8 +125,8 @@ func TestSeed_AccessScope_HasLabelSelector(t *testing.T) {
 				t.Error("access scope has no cluster label selectors")
 			}
 			req := scope.GetRules().GetClusterLabelSelectors()[0].GetRequirements()[0]
-			if req.GetKey() != centralServicesLabelKey {
-				t.Errorf("expected label key %q, got %q", centralServicesLabelKey, req.GetKey())
+			if req.GetKey() != centralColocatedLabelKey {
+				t.Errorf("expected label key %q, got %q", centralColocatedLabelKey, req.GetKey())
 			}
 			if req.GetOp() != storage.SetBasedLabelSelector_EXISTS {
 				t.Errorf("expected operator EXISTS, got %v", req.GetOp())
