@@ -53,13 +53,13 @@ function formatOctalDigit(digit: number): string {
     return octalToPermission[String(digit % 8)] || '---';
 }
 
-function formatAclEntry(entry: AclEntry): string {
+function formatAclEntry(entry: AclEntry): { label: string; permission: string } {
     const tagLabel = aclTagLabels.get(entry.tag) || entry.tag;
-    const permStr = formatOctalDigit(entry.perm);
+    const permission = formatOctalDigit(entry.perm);
     if ((entry.tag === 'ACL_TAG_USER' || entry.tag === 'ACL_TAG_GROUP') && !isNoId(entry.id)) {
-        return `${tagLabel}(${entry.id}): ${permStr}`;
+        return { label: `${tagLabel}(${entry.id})`, permission };
     }
-    return `${tagLabel}: ${permStr}`;
+    return { label: tagLabel, permission };
 }
 
 function formatOperation(operation: FileOperation): string {
@@ -168,11 +168,14 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                             {file.meta.aclEntries?.length > 0 && (
                                 <DescriptionListItem
                                     term="ACL entries"
-                                    desc={file.meta.aclEntries.map((entry) => (
-                                        <div key={`${entry.tag}-${entry.id}-${entry.perm}`}>
-                                            {formatAclEntry(entry)}
-                                        </div>
-                                    ))}
+                                    desc={file.meta.aclEntries.map((entry) => {
+                                        const { label, permission } = formatAclEntry(entry);
+                                        return (
+                                            <div key={`${entry.tag}-${entry.id}-${entry.perm}`}>
+                                                {label}: {permission}
+                                            </div>
+                                        );
+                                    })}
                                 />
                             )}
                         </>
