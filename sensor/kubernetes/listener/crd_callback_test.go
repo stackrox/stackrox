@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"testing/synctest"
 
@@ -16,175 +17,288 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// TestCrdWatcherCallbackWrapper_PubSubEnabled_PublishesSoftRestartEvent verifies
-// that when the feature flag is on and the condition is met, the callback
-// publishes a SoftRestartEvent via the pubsub dispatcher.
-func TestCrdWatcherCallbackWrapper_PubSubEnabled_PublishesSoftRestartEvent(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+// TestCrdWatcherCallback_PublishesSoftRestartEvent verifies that when the
+// condition is met, both delivery paths publish a SoftRestart event.
+func TestCrdWatcherCallback_PublishesSoftRestartEvent(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
 
-	const expectedText = "test soft restart"
-	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				const expectedText = "test soft restart"
+				mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				pubSub := internalmessage.NewMessageSubscriber()
 
-	var capturedEvent pubsub.Event
-	mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
-		capturedEvent = e
-		return nil
-	})
+				if tc.pubsubEnabled {
+					var capturedEvent pubsub.Event
+					mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
+						capturedEvent = e
+						return nil
+					})
 
-	cb := crdWatcherCallbackWrapper(
-		context.Background(),
-		allResourcesAvailable(),
-		internalmessage.NewMessageSubscriber(),
-		mockDispatcher,
-		expectedText,
-	)
-	cb(&watcher.Status{Available: true})
+					cb := crdWatcherCallbackWrapper(
+						context.Background(),
+						allResourcesAvailable(),
+						pubSub,
+						mockDispatcher,
+						expectedText,
+					)
+					cb(&watcher.Status{Available: true})
 
-	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
-	evt := capturedEvent.(*events.SoftRestartEvent)
-	assert.Equal(t, expectedText, evt.Text)
+					require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+					evt := capturedEvent.(*events.SoftRestartEvent)
+					assert.Equal(t, expectedText, evt.Text)
+				} else {
+					var received *internalmessage.SensorInternalMessage
+					require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+						received = msg
+					}))
+
+					cb := crdWatcherCallbackWrapper(
+						context.Background(),
+						allResourcesAvailable(),
+						pubSub,
+						mockDispatcher,
+						expectedText,
+					)
+					cb(&watcher.Status{Available: true})
+
+					synctest.Wait()
+					require.NotNil(t, received, "internalmessage SoftRestart callback must fire")
+					assert.Equal(t, expectedText, received.Text)
+					assert.Equal(t, internalmessage.SensorMessageSoftRestart, received.Kind)
+				}
+			})
+		})
+	}
 }
 
-// TestCrdWatcherCallbackWrapper_PubSubEnabled_ConditionNotMet_DoesNotPublish verifies
-// that the callback is a no-op when the callback condition is not satisfied.
-func TestCrdWatcherCallbackWrapper_PubSubEnabled_ConditionNotMet_DoesNotPublish(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+// TestCrdWatcherCallback_ConditionNotMet_DoesNotPublish verifies that the
+// callback is a no-op when the callback condition is not satisfied.
+func TestCrdWatcherCallback_ConditionNotMet_DoesNotPublish(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
 
-	// No EXPECT() on mockDispatcher — any Publish call would fail the test.
-	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				// No EXPECT() on mockDispatcher — any Publish call would fail the test.
+				mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				pubSub := internalmessage.NewMessageSubscriber()
 
-	cb := crdWatcherCallbackWrapper(
-		context.Background(),
-		allResourcesAvailable(), // expects Available == true
-		internalmessage.NewMessageSubscriber(),
-		mockDispatcher,
-		"should not fire",
-	)
-	cb(&watcher.Status{Available: false}) // condition not satisfied
+				var legacyReceived *internalmessage.SensorInternalMessage
+				if !tc.pubsubEnabled {
+					require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+						legacyReceived = msg
+					}))
+				}
+
+				cb := crdWatcherCallbackWrapper(
+					context.Background(),
+					allResourcesAvailable(), // expects Available == true
+					pubSub,
+					mockDispatcher,
+					"should not fire",
+				)
+				cb(&watcher.Status{Available: false}) // condition not satisfied
+
+				if !tc.pubsubEnabled {
+					synctest.Wait()
+					assert.Nil(t, legacyReceived, "legacy callback must not fire when condition not met")
+				}
+			})
+		})
+	}
 }
 
-// TestCrdWatcherCallbackWrapper_PubSubDisabled_PublishesViaInternalmessage verifies
-// that when the feature flag is off, the callback uses the legacy internalmessage
-// path instead of pubsub.
-func TestCrdWatcherCallbackWrapper_PubSubDisabled_PublishesViaInternalmessage(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
-	synctest.Test(t, func(t *testing.T) {
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
+// TestCrdWatcherCallback_ResourcesUnavailable verifies that the callback fires
+// when using the resourcesUnavailable condition (i.e., when a CRD is removed).
+func TestCrdWatcherCallback_ResourcesUnavailable(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 
-		// No EXPECT() — pubsub dispatcher must NOT be called when flag is off.
-		mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
 
-		pubSub := internalmessage.NewMessageSubscriber()
-		const expectedText = "legacy restart path"
+				const expectedText = "resources removed"
+				mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				pubSub := internalmessage.NewMessageSubscriber()
 
-		var received *internalmessage.SensorInternalMessage
-		require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
-			received = msg
-		}))
+				if tc.pubsubEnabled {
+					var capturedEvent pubsub.Event
+					mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
+						capturedEvent = e
+						return nil
+					})
 
-		cb := crdWatcherCallbackWrapper(
-			context.Background(),
-			allResourcesAvailable(),
-			pubSub,
-			mockDispatcher,
-			expectedText,
-		)
-		cb(&watcher.Status{Available: true})
+					cb := crdWatcherCallbackWrapper(
+						context.Background(),
+						resourcesUnavailable(),
+						pubSub,
+						mockDispatcher,
+						expectedText,
+					)
+					cb(&watcher.Status{Available: false})
 
-		synctest.Wait()
-		require.NotNil(t, received, "internalmessage SoftRestart callback must fire")
-		assert.Equal(t, expectedText, received.Text)
-		assert.Equal(t, internalmessage.SensorMessageSoftRestart, received.Kind)
-	})
+					require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+					assert.Equal(t, expectedText, capturedEvent.(*events.SoftRestartEvent).Text)
+				} else {
+					var received *internalmessage.SensorInternalMessage
+					require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+						received = msg
+					}))
+
+					cb := crdWatcherCallbackWrapper(
+						context.Background(),
+						resourcesUnavailable(),
+						pubSub,
+						mockDispatcher,
+						expectedText,
+					)
+					cb(&watcher.Status{Available: false})
+
+					synctest.Wait()
+					require.NotNil(t, received, "internalmessage callback must fire")
+					assert.Equal(t, expectedText, received.Text)
+					assert.Equal(t, internalmessage.SensorMessageSoftRestart, received.Kind)
+				}
+			})
+		})
+	}
 }
 
-// TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable verifies
-// that the callback also fires when using the resourcesUnavailable condition
-// (i.e., when a CRD is removed and status reports unavailable).
-func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+// TestCrdWatcherCallback_ResourcesUnavailable_ConditionNotMet verifies that the
+// unavailable condition does not fire when resources are available.
+func TestCrdWatcherCallback_ResourcesUnavailable_ConditionNotMet(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
 
-	const expectedText = "resources removed"
-	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				pubSub := internalmessage.NewMessageSubscriber()
 
-	var capturedEvent pubsub.Event
-	mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
-		capturedEvent = e
-		return nil
-	})
+				var legacyReceived *internalmessage.SensorInternalMessage
+				if !tc.pubsubEnabled {
+					require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+						legacyReceived = msg
+					}))
+				}
 
-	cb := crdWatcherCallbackWrapper(
-		context.Background(),
-		resourcesUnavailable(),
-		internalmessage.NewMessageSubscriber(),
-		mockDispatcher,
-		expectedText,
-	)
-	cb(&watcher.Status{Available: false})
+				cb := crdWatcherCallbackWrapper(
+					context.Background(),
+					resourcesUnavailable(),
+					pubSub,
+					mockDispatcher,
+					"should not fire",
+				)
+				cb(&watcher.Status{Available: true}) // condition NOT met for resourcesUnavailable
 
-	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
-	assert.Equal(t, expectedText, capturedEvent.(*events.SoftRestartEvent).Text)
+				if !tc.pubsubEnabled {
+					synctest.Wait()
+					assert.Nil(t, legacyReceived, "legacy callback must not fire when condition not met")
+				}
+			})
+		})
+	}
 }
 
-// TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet verifies
-// the unavailable condition does not fire when resources are available.
-func TestCrdWatcherCallbackWrapper_PubSubEnabled_ResourcesUnavailable_ConditionNotMet(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+// TestCrdWatcherCallback_CancelledContext verifies that when the context is
+// cancelled before the CRD status fires, the event carries the cancelled
+// context and reports IsExpired() == true.
+func TestCrdWatcherCallback_CancelledContext(t *testing.T) {
+	tests := map[string]struct {
+		pubsubEnabled bool
+	}{
+		"legacy": {pubsubEnabled: false},
+		"pubsub": {pubsubEnabled: true},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+				mockCtrl := gomock.NewController(t)
+				defer mockCtrl.Finish()
 
-	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+				pubSub := internalmessage.NewMessageSubscriber()
 
-	cb := crdWatcherCallbackWrapper(
-		context.Background(),
-		resourcesUnavailable(),
-		internalmessage.NewMessageSubscriber(),
-		mockDispatcher,
-		"should not fire",
-	)
-	cb(&watcher.Status{Available: true}) // condition NOT met for resourcesUnavailable
-}
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
 
-// TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext verifies that
-// when the context is cancelled before the CRD status fires, the published
-// SoftRestartEvent carries the cancelled context and reports IsExpired() == true.
-func TestCrdWatcherCallbackWrapper_PubSubEnabled_CancelledContext(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+				if tc.pubsubEnabled {
+					var capturedEvent pubsub.Event
+					mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
+						capturedEvent = e
+						return nil
+					})
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+					cb := crdWatcherCallbackWrapper(
+						ctx,
+						allResourcesAvailable(),
+						pubSub,
+						mockDispatcher,
+						"cancelled restart",
+					)
+					cb(&watcher.Status{Available: true})
 
-	mockDispatcher := listenerMocks.NewMockpubSubPublisher(mockCtrl)
+					require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
+					assert.True(t, capturedEvent.(*events.SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
+				} else {
+					var received *internalmessage.SensorInternalMessage
+					require.NoError(t, pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(msg *internalmessage.SensorInternalMessage) {
+						received = msg
+					}))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
+					cb := crdWatcherCallbackWrapper(
+						ctx,
+						allResourcesAvailable(),
+						pubSub,
+						mockDispatcher,
+						"cancelled restart",
+					)
+					cb(&watcher.Status{Available: true})
 
-	var capturedEvent pubsub.Event
-	mockDispatcher.EXPECT().Publish(gomock.Any()).DoAndReturn(func(e pubsub.Event) error {
-		capturedEvent = e
-		return nil
-	})
-
-	cb := crdWatcherCallbackWrapper(
-		ctx,
-		allResourcesAvailable(),
-		internalmessage.NewMessageSubscriber(),
-		mockDispatcher,
-		"cancelled restart",
-	)
-	cb(&watcher.Status{Available: true})
-
-	require.IsType(t, &events.SoftRestartEvent{}, capturedEvent)
-	assert.True(t, capturedEvent.(*events.SoftRestartEvent).IsExpired(), "event must be expired when context is cancelled")
+					synctest.Wait()
+					require.NotNil(t, received, "legacy callback must fire even with cancelled context")
+					assert.True(t, received.IsExpired(), "legacy message must be expired when context is cancelled")
+				}
+			})
+		})
+	}
 }

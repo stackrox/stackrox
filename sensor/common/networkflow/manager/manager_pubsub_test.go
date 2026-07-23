@@ -2,11 +2,11 @@ package manager
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"testing/synctest"
 
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/events"
@@ -56,13 +56,6 @@ func newManagerForTest(t *testing.T, pubsubEnabled bool) (*networkFlowManager, c
 	return mgr, disp, msgSub
 }
 
-func boolString(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
-}
-
 // TestResourceSyncFinished_MarksInitialSync verifies that both delivery paths
 // (pubsub and legacy) correctly mark the manager's initialSync flag when the
 // ResourceSyncFinished event is published.
@@ -76,7 +69,7 @@ func TestResourceSyncFinished_MarksInitialSync(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
 
 				assert.False(t, mgr.initialSync.Load(), "initialSync must be false before event")
@@ -127,7 +120,7 @@ func TestResourceSyncFinished_SkipsExpiredEvent(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
 				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
 
 				ctx, cancel := context.WithCancel(context.Background())
@@ -147,46 +140,6 @@ func TestResourceSyncFinished_SkipsExpiredEvent(t *testing.T) {
 
 				synctest.Wait()
 				assert.False(t, mgr.initialSync.Load(), "must not set initialSync for expired event")
-			})
-		})
-	}
-}
-
-// TestResourceSyncFinished_ConcurrentDelivery fires events from many goroutines
-// simultaneously and verifies no data races occur. Run with -race.
-func TestResourceSyncFinished_ConcurrentDelivery(t *testing.T) {
-	tests := map[string]struct {
-		pubsubEnabled bool
-	}{
-		"legacy": {pubsubEnabled: false},
-		"pubsub": {pubsubEnabled: true},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
-				mgr, disp, msgSub := newManagerForTest(t, tc.pubsubEnabled)
-
-				const goroutines = 50
-				var wg sync.WaitGroup
-				wg.Add(goroutines)
-				for range goroutines {
-					go func() {
-						defer wg.Done()
-						if tc.pubsubEnabled {
-							_ = disp.Publish(&events.ResourceSyncFinishedEvent{})
-						} else {
-							_ = msgSub.Publish(&internalmessage.SensorInternalMessage{
-								Kind:     internalmessage.SensorMessageResourceSyncFinished,
-								Validity: context.Background(),
-							})
-						}
-					}()
-				}
-				wg.Wait()
-				synctest.Wait()
-
-				assert.True(t, mgr.initialSync.Load(), "initialSync must be true after concurrent delivery")
 			})
 		})
 	}

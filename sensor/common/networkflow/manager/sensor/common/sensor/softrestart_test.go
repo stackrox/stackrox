@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"testing/synctest"
 
@@ -61,10 +60,19 @@ func sensorForTest(t *testing.T, pubsubEnabled bool) (*Sensor, common.PubSubDisp
 		require.NoError(t, err)
 		t.Cleanup(disp.Stop)
 		s.pubSubDispatcher = disp
+		s.registerSoftRestartHandler()
+	} else {
+		require.NoError(t, s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, s.onSoftRestartLegacy))
 	}
-	s.registerSoftRestartHandler()
 
 	return s, disp, s.pubSub
+}
+
+func boolString(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
 }
 
 // ---- tests ------------------------------------------------------------------
@@ -81,7 +89,7 @@ func TestSoftRestart_NilCommunication(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
 				s, disp, msgSub := sensorForTest(t, tc.pubsubEnabled)
 
 				if tc.pubsubEnabled {
@@ -116,7 +124,7 @@ func TestSoftRestart_StopsConnection(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
 				s, disp, msgSub := sensorForTest(t, tc.pubsubEnabled)
 				fakeCC := &fakeCentralComm{}
 				s.centralCommunication = fakeCC
@@ -152,7 +160,7 @@ func TestSoftRestart_SkipsExpiredEvent(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				t.Setenv(features.SensorInternalPubSub.EnvVar(), strconv.FormatBool(tc.pubsubEnabled))
+				t.Setenv(features.SensorInternalPubSub.EnvVar(), boolString(tc.pubsubEnabled))
 				s, disp, msgSub := sensorForTest(t, tc.pubsubEnabled)
 				fakeCC := &fakeCentralComm{}
 				s.centralCommunication = fakeCC
