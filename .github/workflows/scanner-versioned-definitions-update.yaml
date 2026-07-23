@@ -316,7 +316,7 @@ jobs:
         done
 
         if [ "${#failures[@]}" -gt 0 ]; then
-            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken"
+            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken (affected source(s) will be missing from the published bundle; this does not block publishing)"
             printf '  - %s\n' "${failures[@]}"
             exit 1
         fi
@@ -565,10 +565,34 @@ jobs:
         # Keep the Slack message readable and within size limits.
         summary=$(printf '%s' "$summary" | head -c 3000)
 
+        # Per-job status overview (all jobs, not just failed ones), using
+        # icons matching GitHub's own status indicators, so readers can see
+        # at a glance whether eg. upload-definitions actually published
+        # despite a validation failure elsewhere.
+        job_status=""
+        while IFS=$'\t' read -r job_name job_conclusion; do
+            case "$job_conclusion" in
+                success) icon="✅" ;;
+                failure) icon="❌" ;;
+                skipped) icon="⏭️" ;;
+                cancelled) icon="🚫" ;;
+                *) icon="🟡" ;; # in_progress/null (eg. this job, still running)
+            esac
+            job_status+="${icon} ${job_name}"$'\n'
+        done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
+            --jq '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
+
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         {
             echo "summary<<$EOF"
             echo "$summary"
+            echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        {
+            echo "job_status<<$EOF"
+            echo "$job_status"
             echo "$EOF"
         } >> "$GITHUB_OUTPUT"
 
@@ -578,13 +602,14 @@ jobs:
         WORKFLOW: ${{ github.workflow }}
         REPO: ${{ github.repository }}
         SUMMARY: ${{ steps.annotations.outputs.summary }}
+        JOB_STATUS: ${{ steps.annotations.outputs.job_status }}
         # TEMPORARY (test-only, do not merge): real secret is SLACK_ONCALL_SCANNER_WEBHOOK.
         SLACK_WEBHOOK: ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
       run: |
         set -euo pipefail
         # shellcheck disable=SC2016 # backticks below are a Slack code-block
         # delimiter, not shell command substitution.
-        text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Failed steps:*\n```\n%s\n```' \
-            "$RUN_URL" "$WORKFLOW" "$REPO" "$SUMMARY")
+        text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
+            "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
         jq -n --arg text "$text" '{text: $text}' \
             | curl -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
