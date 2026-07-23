@@ -538,7 +538,7 @@ jobs:
         # Rendered inside a Slack code block (see "Send Slack notification"),
         # so job names are plain text here, not mrkdwn-bolded.
         summary=""
-        while IFS=$'\t' read -r job_id job_name; do
+        while IFS=$'\t' read -r job_id job_name failed_step; do
             # Exclude the generic "Process completed with exit code N." annotation
             # that GitHub Actions auto-adds to every failed step -- it's noise here.
             messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" \
@@ -549,14 +549,14 @@ jobs:
             if [ -n "$summary" ]; then
                 summary+=$'\n\n'
             fi
-            summary+="${job_name}:"$'\n'
+            summary+="${job_name}: ${failed_step}"$'\n'
             if [ -n "$messages" ]; then
                 summary+="$(printf '%s\n' "$messages" | sed 's/^/  - /')"
             else
                 summary+="  - (no detailed error annotations found; see the workflow run for details)"
             fi
         done < <(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate \
-            --jq '.jobs[] | select(.conclusion == "failure") | [.id, .name] | @tsv')
+            --jq '.jobs[] | select(.conclusion == "failure") | [.id, .name, ([.steps[]? | select(.conclusion == "failure") | .name][0] // "unknown step")] | @tsv')
 
         if [ -z "$summary" ]; then
             summary="(no failed jobs found; see the workflow run for details)"
