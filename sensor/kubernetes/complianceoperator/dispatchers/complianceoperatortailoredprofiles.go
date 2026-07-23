@@ -40,7 +40,10 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		return nil
 	}
 
-	if tailoredProfile.Status.ID == "" {
+	if tailoredProfile.Status.ID == "" &&
+		tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation] != string(v1alpha1.ScannerTypeCEL) {
+		// CEL-based TPs may legitimately have no XCCDF Status.ID; we use the k8s name instead.
+		// Non-CEL TPs without a Status.ID are not yet ready (CO hasn't processed them).
 		log.Warnf("Tailored profile %s does not have an ID. Skipping...", tailoredProfile.Name)
 		return nil
 	}
@@ -75,9 +78,19 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	// broader ScannerTypeAnnotation check in CO's scansettingbinding controller.
 	// We must use the same value as ProfileId so that BuildProfileRefID produces
 	// matching UUIDs on both the profile and the scan sides.
-	profileID := tailoredProfile.Status.ID
-	if tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation] == string(v1alpha1.ScannerTypeCEL) {
+	var profileID string
+	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; {
+	case scannerType == string(v1alpha1.ScannerTypeCEL):
 		profileID = tailoredProfile.GetName()
+		log.Debugf("Tailored profile %s uses CEL scanner: using k8s name %q as ProfileId instead of XCCDF ID %q",
+			tailoredProfile.GetName(), profileID, tailoredProfile.Status.ID)
+	case scannerType == string(v1alpha1.ScannerTypeOpenSCAP), scannerType == "":
+		profileID = tailoredProfile.Status.ID
+	default:
+		profileID = tailoredProfile.Status.ID
+		log.Warnf("Tailored profile %s has unrecognised scanner-type annotation %q: using XCCDF ID %q as ProfileId; "+
+			"if compliance coverage shows 0 results, this scanner type may need handling here",
+			tailoredProfile.GetName(), scannerType, profileID)
 	}
 
 	protoProfile := &storage.ComplianceOperatorProfile{

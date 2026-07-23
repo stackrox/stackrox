@@ -243,7 +243,8 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	}, ruleNames)
 }
 
-// TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
+// TestProcessEvent_NoStatusID tests that non-CEL TPs without a Status.ID are skipped
+// (not yet processed by CO).
 func TestProcessEvent_NoStatusID(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -264,6 +265,65 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	assert.Nil(t, event)
+}
+
+// TestProcessEvent_CELTPWithNoStatusID verifies that a CEL-based TP is not skipped when
+// Status.ID is empty. CEL TPs use the k8s name as ProfileId, so Status.ID is not required.
+func TestProcessEvent_CELTPWithNoStatusID(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-cel-tp",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeCEL),
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-cel-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			// Status.ID intentionally empty — CO may not set it for CEL TPs
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event, "CEL TP without Status.ID should not be skipped")
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	assert.Equal(t, "my-cel-tp", profile.GetProfileId())
+}
+
+// TestProcessEvent_UnknownScannerType verifies that a TP with an unrecognised scanner-type
+// falls back to Status.ID as ProfileId (so the dispatcher doesn't silently break).
+func TestProcessEvent_UnknownScannerType(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "future-tp",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: "WASM", // hypothetical future type
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_future-tp",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	// Falls back to Status.ID — a Warn log is emitted by the dispatcher
+	assert.Equal(t, "xccdf_compliance.openshift.io_profile_future-tp", profile.GetProfileId())
 }
 
 // TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped
