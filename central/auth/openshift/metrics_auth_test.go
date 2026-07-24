@@ -33,8 +33,6 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 	registry, roleDS, groupDS := setupMocks(t)
 	ctx := context.Background()
 
-	roleDS.EXPECT().GetAccessScope(gomock.Any(), accessScopeID).Return(nil, false, nil)
-	roleDS.EXPECT().AddAccessScope(gomock.Any(), gomock.Any()).Return(nil)
 	roleDS.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).Return(nil, false, nil)
 	roleDS.EXPECT().AddPermissionSet(gomock.Any(), gomock.Any()).Return(nil)
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
@@ -56,7 +54,6 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 			return nil
 		})
 
-	ensureAccessScope(ctx, roleDS)
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
@@ -80,7 +77,6 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	registry, roleDS, groupDS := setupMocks(t)
 	ctx := context.Background()
 
-	roleDS.EXPECT().GetAccessScope(gomock.Any(), accessScopeID).Return(&storage.SimpleAccessScope{}, true, nil)
 	roleDS.EXPECT().GetPermissionSet(gomock.Any(), permissionSetID).Return(&storage.PermissionSet{}, true, nil)
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
@@ -89,7 +85,6 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
 	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).Return(nil)
 
-	ensureAccessScope(ctx, roleDS)
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
@@ -125,29 +120,6 @@ func TestSeed_SubsequentBoot_GroupExists_NotOverwritten(t *testing.T) {
 	}}, nil)
 
 	ensureGroup(ctx, groupDS)
-}
-
-func TestSeed_AccessScope_HasLabelSelector(t *testing.T) {
-	_, roleDS, _ := setupMocks(t)
-	ctx := context.Background()
-
-	roleDS.EXPECT().GetAccessScope(gomock.Any(), accessScopeID).Return(nil, false, nil)
-	roleDS.EXPECT().AddAccessScope(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, scope *storage.SimpleAccessScope) error {
-			if len(scope.GetRules().GetClusterLabelSelectors()) == 0 {
-				t.Error("access scope has no cluster label selectors")
-			}
-			req := scope.GetRules().GetClusterLabelSelectors()[0].GetRequirements()[0]
-			if req.GetKey() != centralColocatedLabelKey {
-				t.Errorf("expected label key %q, got %q", centralColocatedLabelKey, req.GetKey())
-			}
-			if req.GetOp() != storage.SetBasedLabelSelector_EXISTS {
-				t.Errorf("expected operator EXISTS, got %v", req.GetOp())
-			}
-			return nil
-		})
-
-	ensureAccessScope(ctx, roleDS)
 }
 
 // TestSeed_CARotation_RegistersNewCA runs against a real auth provider registry because
