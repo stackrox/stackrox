@@ -6,6 +6,7 @@ import type { ResourceName } from 'types/roleResources';
 // special meaning and mark parts related to respective operations.
 const resourceDescriptions: Record<ResourceName, string> = {
     Access: 'Read: View configuration for authentication and authorization, such as authentication services, roles, groups, and users. Write: Modify configuration for authentication and authorization.',
+    AIWorkload: 'Read: View AI workloads detected on RHOAI-enabled clusters. Write: N/A',
     Administration:
         'Read: View platform configuration (e.g., network graph, sensor, debugging configs). Write: Modify platform configuration, delete comments from other users.',
     Alert: 'Read: View policy violations. Write: Resolve or edit policy violations.',
