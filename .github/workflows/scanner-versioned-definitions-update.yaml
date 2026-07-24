@@ -587,10 +587,14 @@ jobs:
         while IFS=$'\t' read -r job_name job_conclusion; do
             case "$job_conclusion" in
                 success) icon="✅" ;;
-                failure) icon="❌" ;;
                 skipped) icon="⏭️" ;;
                 cancelled) icon="🚫" ;;
-                *) icon="🟡" ;; # in_progress/null (eg. this job, still running)
+                in_progress) icon="🟡" ;; # null conclusion (eg. this job, still running)
+                # All other terminal, non-success conclusions GitHub can
+                # report for a job (per the Actions/Checks API): treat as
+                # failed rather than defaulting to "in progress".
+                failure | timed_out | action_required | neutral | stale | startup_failure) icon="❌" ;;
+                *) icon="❔" ;; # genuinely unrecognized future conclusion value
             esac
             job_status+="${icon} ${job_name}"$'\n'
         done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
@@ -610,18 +614,30 @@ jobs:
         } >> "$GITHUB_OUTPUT"
 
     - name: Send Slack notification on workflow failure
+      # Runs even if "Collect failure annotations" itself failed (eg. the
+      # GitHub API call for the job list errored) -- a degraded, generic
+      # message still reaches on-call in that case, rather than nothing at
+      # all.
+      if: always()
       env:
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         WORKFLOW: ${{ github.workflow }}
         REPO: ${{ github.repository }}
         SUMMARY: ${{ steps.annotations.outputs.summary }}
         JOB_STATUS: ${{ steps.annotations.outputs.job_status }}
+        ANNOTATIONS_OUTCOME: ${{ steps.annotations.outcome }}
         SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
       run: |
         set -euo pipefail
         # shellcheck disable=SC2016 # backticks below are a Slack code-block
         # delimiter, not shell command substitution.
-        text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
-            "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
+        if [ "$ANNOTATIONS_OUTCOME" != "success" ]; then
+            text=$(printf ':warning: *Failed Workflow:* <%s|%s>\n*Repository:* %s\nCould not collect failure annotations for this run (the collection step itself failed) -- please check the workflow run directly for details.' \
+                "$RUN_URL" "$WORKFLOW" "$REPO")
+        else
+            text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
+                "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
+        fi
         jq -n --arg text "$text" '{text: $text}' \
-            | curl --fail --silent --show-error -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
+            | curl --fail --silent --show-error --connect-timeout 10 --max-time 300 \
+                -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
