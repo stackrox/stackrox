@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/search_query.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message AIWorkload {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  string cluster_id = 4;
+  string cluster_name = 5;
+
+  enum WorkloadType {
+    UNKNOWN = 0;
+    INFERENCE = 1;
+    TRAINING = 2;
+  }
+  WorkloadType workload_type = 6;
+
+  string model_format = 7;
+  string storage_uri = 8;
+  string runtime = 9;
+  string gpu_requests = 10;
+  string cpu_requests = 11;
+  string memory_requests = 12;
+  string deployment_mode = 13;
+  bool auth_enabled = 14;
+
+  google.protobuf.Timestamp last_updated = 15;
+}
+
+message GetAIWorkloadRequest {
+  string id = 1;
+}
+
+message ListAIWorkloadsResponse {
+  repeated AIWorkload ai_workloads = 1;
+  int32 total_count = 2;
+}
+
+message ListAIWorkloadsRequest {
+  RawQuery query = 1;
+}
+
+service AIWorkloadService {
+  rpc GetAIWorkload(GetAIWorkloadRequest) returns (AIWorkload) {
+    option (google.api.http) = {get: "/v2/aiworkloads/{id}"};
+  }
+
+  rpc ListAIWorkloads(ListAIWorkloadsRequest) returns (ListAIWorkloadsResponse) {
+    option (google.api.http) = {get: "/v2/aiworkloads"};
+  }
+}
