@@ -268,7 +268,7 @@ func (ImageSignatureVerificationResult_Status) EnumDescriptor() ([]byte, []int) 
 type CosignSignature_SignatureFormat int32
 
 const (
-	CosignSignature_UNSPECIFIED CosignSignature_SignatureFormat = 0
+	CosignSignature_SIGNATURE_FORMAT_UNSPECIFIED CosignSignature_SignatureFormat = 0
 	// SimpleSigning: signature is stored across raw_signature, signature_payload,
 	// cert_pem, cert_chain_pem, and rekor_bundle.
 	CosignSignature_SIMPLE_SIGNING CosignSignature_SignatureFormat = 1
@@ -280,12 +280,12 @@ const (
 // Enum value maps for CosignSignature_SignatureFormat.
 var (
 	CosignSignature_SignatureFormat_name = map[int32]string{
-		0: "UNSPECIFIED",
+		0: "SIGNATURE_FORMAT_UNSPECIFIED",
 		1: "SIMPLE_SIGNING",
 		2: "DEAD_SIMPLE_SIGNING_ENVELOPE",
 	}
 	CosignSignature_SignatureFormat_value = map[string]int32{
-		"UNSPECIFIED":                  0,
+		"SIGNATURE_FORMAT_UNSPECIFIED": 0,
 		"SIMPLE_SIGNING":               1,
 		"DEAD_SIMPLE_SIGNING_ENVELOPE": 2,
 	}
@@ -1438,7 +1438,7 @@ func (x *CosignSignature) GetSignatureFormat() CosignSignature_SignatureFormat {
 	if x != nil {
 		return x.SignatureFormat
 	}
-	return CosignSignature_UNSPECIFIED
+	return CosignSignature_SIGNATURE_FORMAT_UNSPECIFIED
 }
 
 func (x *CosignSignature) GetSigstoreBundle() []byte {
@@ -2206,7 +2206,7 @@ const file_storage_image_proto_rawDesc = "" +
 	"\afetched\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\afetched\"L\n" +
 	"\tSignature\x122\n" +
 	"\x06cosign\x18\x01 \x01(\v2\x18.storage.CosignSignatureH\x00R\x06cosignB\v\n" +
-	"\tSignature\"\x9f\x03\n" +
+	"\tSignature\"\xb0\x03\n" +
 	"\x0fCosignSignature\x12#\n" +
 	"\rraw_signature\x18\x01 \x01(\fR\frawSignature\x12+\n" +
 	"\x11signature_payload\x18\x02 \x01(\fR\x10signaturePayload\x12\x19\n" +
@@ -2214,9 +2214,9 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x0ecert_chain_pem\x18\x04 \x01(\fR\fcertChainPem\x12!\n" +
 	"\frekor_bundle\x18\x05 \x01(\fR\vrekorBundle\x12S\n" +
 	"\x10signature_format\x18\x06 \x01(\x0e2(.storage.CosignSignature.SignatureFormatR\x0fsignatureFormat\x12'\n" +
-	"\x0fsigstore_bundle\x18\a \x01(\fR\x0esigstoreBundle\"X\n" +
-	"\x0fSignatureFormat\x12\x0f\n" +
-	"\vUNSPECIFIED\x10\x00\x12\x12\n" +
+	"\x0fsigstore_bundle\x18\a \x01(\fR\x0esigstoreBundle\"i\n" +
+	"\x0fSignatureFormat\x12 \n" +
+	"\x1cSIGNATURE_FORMAT_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eSIMPLE_SIGNING\x10\x01\x12 \n" +
 	"\x1cDEAD_SIMPLE_SIGNING_ENVELOPE\x10\x02\"$\n" +
 	"\n" +

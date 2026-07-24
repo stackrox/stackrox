@@ -9228,7 +9228,7 @@
             "name": "CosignSignature.SignatureFormat",
             "enum_fields": [
               {
-                "name": "UNSPECIFIED"
+                "name": "SIGNATURE_FORMAT_UNSPECIFIED"
               },
               {
                 "name": "SIMPLE_SIGNING",
