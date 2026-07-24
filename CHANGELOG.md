@@ -16,6 +16,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
+- ROX-35938: The `rox_central_cert_exp_hours` custom Prometheus metric now also reports secured cluster (Sensor) certificate expiry, as a `SECURED_CLUSTER` component with the cluster name in a new `Name` label.
 - ROX-35545: Added ACL change as a file access operation for runtime policies.
 
 ### Removed Features
