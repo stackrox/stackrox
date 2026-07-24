@@ -16,8 +16,6 @@ import queryService from 'utils/queryService';
 
 import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
-import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
-import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
 import getSubListFromEntity from './getSubListFromEntity';
 
@@ -36,10 +34,6 @@ const ConfigManagementEntityCluster = ({
     if (entityListType === 'POLICY') {
         queryObject['Lifecycle Stage'] = 'DEPLOY';
     }
-    if (!queryObject.Standard && entityListType === 'CONTROL') {
-        queryObject.Standard = 'CIS';
-    }
-
     const variables = {
         id,
         query: queryService.objectToWhereClause(queryObject),
@@ -62,11 +56,6 @@ const ConfigManagementEntityCluster = ({
                 secretCount
                 policyCount(query: "Lifecycle Stage:DEPLOY")
                 serviceAccountCount
-                complianceControlCount(query: "Standard:CIS") {
-                    passingCount
-                    failingCount
-                    unknownCount
-                }
                 status {
                     orchestratorMetadata {
                         version
@@ -87,14 +76,8 @@ const ConfigManagementEntityCluster = ({
             'configmanagement'
         );
         const countQuery = getConfigMgmtCountQuery(entityListType);
-        const availableVars =
-            entityListType === 'CONTROL'
-                ? '$id: ID!, $query: String'
-                : '$id: ID!, $query: String, $pagination: Pagination';
-        const listQueryVars =
-            entityListType === 'CONTROL'
-                ? 'query: $query'
-                : 'query: $query, pagination: $pagination';
+        const availableVars = '$id: ID!, $query: String, $pagination: Pagination';
+        const listQueryVars = 'query: $query, pagination: $pagination';
 
         return gql`
             query getCluster_${entityListType}(${availableVars}) {
@@ -119,13 +102,9 @@ const ConfigManagementEntityCluster = ({
                     return <PageNotFound resourceType="CLUSTER" useCase="configmanagement" />;
                 }
 
-                const { complianceResults = [] } = entity;
-
                 if (entityListType) {
                     let listData = getSubListFromEntity(entity, entityListType);
-                    if (entityListType === 'CONTROL') {
-                        listData = getControlsWithStatus(complianceResults);
-                    } else if (entityListType === 'SUBJECT') {
+                    if (entityListType === 'SUBJECT') {
                         listData = listData.map((listItem) => {
                             return {
                                 ...listItem,
@@ -159,7 +138,6 @@ const ConfigManagementEntityCluster = ({
                     k8sRoleCount,
                     secretCount,
                     imageCount,
-                    complianceControlCount,
                     status: { orchestratorMetadata = null },
                 } = entity;
 
@@ -171,9 +149,6 @@ const ConfigManagementEntityCluster = ({
                         value: version,
                     },
                 ];
-
-                const { passingCount, failingCount, unknownCount } = complianceControlCount;
-                const totalControlCount = passingCount + failingCount + unknownCount;
 
                 return (
                     <div className="w-full">
@@ -231,12 +206,6 @@ const ConfigManagementEntityCluster = ({
                                     value={k8sRoleCount}
                                     entityType="ROLE"
                                 />
-                                <RelatedEntityListCount
-                                    className="mx-4 min-w-48 min-h-48 mb-4"
-                                    name="CIS Controls"
-                                    value={totalControlCount}
-                                    entityType="CONTROL"
-                                />
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Cluster Findings">
@@ -248,15 +217,6 @@ const ConfigManagementEntityCluster = ({
                                                 Cluster: name,
                                             })}
                                             message="No deployments violating policies in this cluster"
-                                            entityContext={{
-                                                ...entityContext,
-                                                CLUSTER: id,
-                                            }}
-                                        />
-                                    </Tab>
-                                    <Tab title="CIS Controls">
-                                        <NodesWithFailedControls
-                                            entityType="CLUSTER"
                                             entityContext={{
                                                 ...entityContext,
                                                 CLUSTER: id,

@@ -514,6 +514,14 @@
       ],
       "default": "PRIVILEGE_NONE"
     },
+    "CVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
     "CVSSV3UserInteraction": {
       "type": "string",
       "enum": [
@@ -731,7 +739,7 @@
           "$ref": "#/definitions/CVSSV3UserInteraction"
         },
         "scope": {
-          "$ref": "#/definitions/storageCVSSV3Scope"
+          "$ref": "#/definitions/CVSSV3Scope"
         },
         "confidentiality": {
           "$ref": "#/definitions/storageCVSSV3Impact"
@@ -769,14 +777,6 @@
         "IMPACT_HIGH"
       ],
       "default": "IMPACT_NONE"
-    },
-    "storageCVSSV3Scope": {
-      "type": "string",
-      "enum": [
-        "UNCHANGED",
-        "CHANGED"
-      ],
-      "default": "UNCHANGED"
     },
     "storageCVSSV3Severity": {
       "type": "string",

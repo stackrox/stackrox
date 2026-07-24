@@ -1,6 +1,5 @@
 import pf6 from '../selectors/pf6';
 
-import { hasFeatureFlag } from './features';
 import { getRouteMatcherMapForGraphQL } from './request';
 import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
@@ -16,7 +15,6 @@ export const getImagesAtMostRiskOpname = 'getImagesAtMostRisk';
 export const deploymentsWithProcessInfoAlias = 'deploymentswithprocessinfo';
 export const agingImagesQueryOpname = 'agingImagesQuery';
 export const alertsSummaryCountsGroupByCategoryAlias = 'alerts/summary/counts_CATEGORY';
-export const getAggregatedResultsOpname = 'getAggregatedResults';
 
 export const routeMatcherMapForSummaryCounts = getRouteMatcherMapForGraphQL([summaryCountsOpname]);
 const routeMatcherMapForSearchFilter = getRouteMatcherMapForGraphQL([
@@ -42,10 +40,6 @@ const routeMatcherMapForViolationsByPolicyCategory = {
         url: '/v1/alerts/summary/counts?request.query=&group_by=CATEGORY',
     },
 };
-const routeMatcherMapForComplianceLevelsByStandard = getRouteMatcherMapForGraphQL([
-    getAggregatedResultsOpname,
-]);
-
 function getRouteMatcherMap() {
     return {
         ...routeMatcherMapForSummaryCounts,
@@ -55,9 +49,6 @@ function getRouteMatcherMap() {
         ...routeMatcherMapForDeploymentsAtMostRisk,
         ...routeMatcherMapForAgingImages,
         ...routeMatcherMapForViolationsByPolicyCategory,
-        ...(hasFeatureFlag('ROX_DEPRECATED_COMPLIANCE_DASHBOARD')
-            ? routeMatcherMapForComplianceLevelsByStandard
-            : {}),
     };
 }
 

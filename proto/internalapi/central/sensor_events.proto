@@ -3,7 +3,6 @@ syntax = "proto3";
 package central;
 
 import "internalapi/central/compliance_operator.proto";
-import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
 import "internalapi/virtualmachine/v1/index_report.proto";
 import "internalapi/virtualmachine/v1/virtual_machine.proto";
@@ -140,46 +139,29 @@ message ContainerInstanceEnforcement {
   DeploymentEnforcement deployment_enforcement = 3;
 }
 
-// Scrape commands sent to sensor.
-//////////////////////////////////
+// Scrape messages removed with v1 compliance deletion.
+// Messages kept as empty stubs with reserved fields for wire compatibility.
 
 message ScrapeCommand {
-  string scrape_id = 1;
+  reserved 1, 2, 3;
+}
 
-  oneof command {
-    StartScrape start_scrape = 2;
-    KillScrape kill_scrape = 3;
-  }
+message ScrapeUpdate {
+  reserved 1, 2, 3, 4;
 }
 
 message StartScrape {
-  // Dictates the hosts we expect results from.
-  repeated string hostnames = 1;
-  // Dictates which standards the compliance pods should run.
-  repeated string standards = 2;
+  reserved 1, 2;
 }
 
 message KillScrape {}
 
-// Scrape updates received from sensor.
-////////////////////////////////////////
-
-message ScrapeUpdate {
-  string scrape_id = 1;
-
-  oneof update {
-    compliance.ComplianceReturn compliance_return = 2;
-    ScrapeStarted scrape_started = 3;
-    ScrapeKilled scrape_killed = 4;
-  }
-}
-
 message ScrapeStarted {
-  string error_message = 1;
+  reserved 1;
 }
 
 message ScrapeKilled {
-  string error_message = 1;
+  reserved 1;
 }
 
 // Network policy application.

@@ -25,11 +25,6 @@ export const NODE_FRAGMENT = gql`
             key
             value
         }
-        nodeComplianceControlCount(query: "Standard:CIS") {
-            failingCount
-            passingCount
-            unknownCount
-        }
     }
 `;
 export const NODES_QUERY = gql`
@@ -42,14 +37,6 @@ export const NODES_QUERY = gql`
             osImage
             containerRuntimeVersion
             joinedAt
-            complianceResults {
-                resource {
-                    __typename
-                }
-                control {
-                    id
-                }
-            }
         }
     }
 `;
@@ -81,22 +68,6 @@ export const NODE_NAME = gql`
         node(id: $id) {
             id
             name
-        }
-    }
-`;
-
-export const NODE_COMPLIANCE = gql`
-    query compliance {
-        aggregatedResults(groupBy: [STANDARD, NODE], unit: CONTROL) {
-            results {
-                aggregationKeys {
-                    id
-                }
-                numFailing
-                numPassing
-                numSkipped
-                unit
-            }
         }
     }
 `;
