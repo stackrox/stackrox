@@ -3,8 +3,10 @@ package openshift
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/globaldb"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -44,17 +46,29 @@ var log = logging.LoggerForModule()
 // SeedMetricsAuthProvider ensures that the userpki auth provider, permission set, role,
 // and group mapping required for OpenShift Prometheus to scrape /metrics exist.
 //
-// The auth provider uses the Kubernetes client CA from the
-// extension-apiserver-authentication ConfigMap (same CA that signs Prometheus client
-// certs). A ConfigMap watcher keeps the CA current across rotations.
+// The access scope, permission set, and role have static content with no dependency on
+// the client CA, so they are seeded unconditionally at startup. The auth provider's
+// config and the group's auth-provider reference, however, need the Kubernetes client CA
+// from the extension-apiserver-authentication ConfigMap (same CA that signs Prometheus
+// client certs), which may not be available yet; a ConfigMap watcher keeps the CA current
+// across rotations.
 //
-// The auth provider and access scope use DEFAULT origin (not user-modifiable).
-// Other seeded objects (role, permission set, group) use IMPERATIVE origin
-// so operators can adjust them.
+// The access scope uses DEFAULT origin (not user-modifiable) and is seeded the same way
+// as the other built-in DEFAULT access scopes (Unrestricted, Deny All): an idempotent
+// upsert straight to the underlying store, self-healing across restarts and upgrades.
+// The auth provider and group also use DEFAULT origin: the group can't be repointed to a
+// different role or deleted, which in turn keeps the role permanently referenced so it
+// can't be deleted either. Role and permission set use IMPERATIVE origin so operators can
+// still adjust their permissions or which access scope the role grants; they are only
+// created if missing, never overwritten.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
+
+	seedAccessScope(ctx)
+	ensurePermissionSet(ctx, roleDS)
+	ensureRole(ctx, roleDS)
 
 	clientset, err := newK8sClient()
 	if err != nil {
@@ -63,12 +77,8 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 	}
 
 	onCA := func(caPEM string) {
-		// Access scope uses DEFAULT origin — tied to the operator-managed label.
+		// Auth provider uses DEFAULT origin.
 		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
-		ensureAccessScope(defaultCtx, roleDS)
-		ensurePermissionSet(ctx, roleDS)
-		ensureRole(ctx, roleDS)
-		// Auth provider also uses DEFAULT origin.
 		ensureAuthProvider(defaultCtx, registry, caPEM)
 		ensureGroup(ctx, groupDS)
 	}
@@ -139,14 +149,13 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 }
 
-func ensureAccessScope(ctx context.Context, roleDS roleDataStore.DataStore) {
-	if _, exists, err := roleDS.GetAccessScope(ctx, accessScopeID); err != nil {
-		log.Warnf("Failed to check OpenShift metrics access scope: %v", err)
-		return
-	} else if exists {
-		return
-	}
-
+// seedAccessScope upserts the OpenShift metrics access scope directly into the
+// underlying store, the same way the built-in DEFAULT access scopes (Unrestricted, Deny
+// All) are seeded in central/role/datastore/singleton.go. This keeps the scope's content
+// always in sync with the code (self-healing across restarts and upgrades) without going
+// through the datastore's DEFAULT-origin write protection, which is meant to guard
+// against API callers, not this kind of internal, static, boot-time seeding.
+func seedAccessScope(ctx context.Context) {
 	scope := &storage.SimpleAccessScope{
 		Id:          accessScopeID,
 		Name:        accessScopeName,
@@ -167,8 +176,9 @@ func ensureAccessScope(ctx context.Context, roleDS roleDataStore.DataStore) {
 			},
 		},
 	}
-	if err := roleDS.AddAccessScope(ctx, scope); err != nil {
-		log.Warnf("Failed to create OpenShift metrics access scope: %v", err)
+	store := postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
+	if err := store.Upsert(ctx, scope); err != nil {
+		log.Warnf("Failed to seed OpenShift metrics access scope: %v", err)
 	}
 }
 
