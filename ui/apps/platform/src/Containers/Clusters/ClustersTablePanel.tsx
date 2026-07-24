@@ -26,6 +26,7 @@ import useAnalytics, {
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -79,6 +80,9 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showCompatibilityStatus = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -386,12 +390,12 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             }
                         />
                         <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
-                            {hasWriteAccessForAdministration && (
+                            {!showCompatibilityStatus && hasWriteAccessForAdministration && (
                                 <ToolbarItem className="pf-v6-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
-                            {hasWriteAccessForAdministration && (
+                            {!showCompatibilityStatus && hasWriteAccessForAdministration && (
                                 <ToolbarItem>
                                     <Button
                                         variant="secondary"
