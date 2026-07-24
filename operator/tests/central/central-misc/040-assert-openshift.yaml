@@ -60,6 +60,9 @@ spec:
          - mountPath: /run/secrets/stackrox.io/monitoring-tls
            name: monitoring-tls
            readOnly: true
+         - mountPath: /run/secrets/stackrox.io/ocp-tls
+           name: ocp-tls
+           readOnly: true
          - name: config-map-1
            mountPath: /run/stackrox.io/declarative-configuration/config-map-1
            readOnly: true
@@ -150,6 +153,10 @@ spec:
         secret:
           defaultMode: 420
           secretName: central-monitoring-tls
+      - name: ocp-tls
+        secret:
+          defaultMode: 420
+          secretName: central-ocp-tls
       - name: config-map-1
         configMap:
           name: config-map-1

@@ -91,7 +91,7 @@ jobs:
         set -e
         old_path="$PWD/.old-stackrox/operator/config/crd/bases"
         new_path="$PWD/operator/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify"
+        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
         set -x
         $crdify "file://${old_path}/platform.stackrox.io_securedclusters.yaml" "file://${new_path}/platform.stackrox.io_securedclusters.yaml"
         $crdify "file://${old_path}/platform.stackrox.io_centrals.yaml" "file://${new_path}/platform.stackrox.io_centrals.yaml"
@@ -101,6 +101,6 @@ jobs:
         set -e
         old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"
         new_path="$PWD/config-controller/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify"
+        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
         set -x
         $crdify "file://${old_path}/config.stackrox.io_securitypolicies.yaml" "file://${new_path}/config.stackrox.io_securitypolicies.yaml"

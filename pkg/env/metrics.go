@@ -27,6 +27,9 @@ var (
 	SecureMetricsClientCAKey = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CA_KEY", WithDefault("client-ca-file"))
 	// SecureMetricsClientCertCN has the expected subject common name of the client cert.
 	SecureMetricsClientCertCN = RegisterSetting("ROX_SECURE_METRICS_CLIENT_CERT_CN", WithDefault("system:serviceaccount:openshift-monitoring:prometheus-k8s"))
+
+	// OpenShiftTLSCertDir has the OpenShift service-serving certificate for the central-ocp Service.
+	OpenShiftTLSCertDir = RegisterSetting("ROX_OPENSHIFT_TLS_CERT_DIR", WithDefault("/run/secrets/stackrox.io/ocp-tls"))
 )
 
 // MetricsEnabled returns true if the metrics/debug http server should be started.

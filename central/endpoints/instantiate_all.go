@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"slices"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/pkg/env"
@@ -31,7 +33,16 @@ func loadAllConfigs() ([]EndpointConfig, error) {
 	var allEndpointCfgs []EndpointConfig
 
 	if !cfg.DisableDefault {
-		allEndpointCfgs = append(allEndpointCfgs, defaultEndpoint)
+		ep := defaultEndpoint
+		if tlsconfig.OpenShiftTLSConfigured() {
+			// Clone TLS config so we do not mutate package-level defaultTLSConfig shared
+			// with ROX_SECURE_ENDPOINTS. Add the OpenShift service-serving cert source used
+			// by the central-ocp Service (SNI: central-ocp.<ns>.svc).
+			tlsCfg := *ep.TLS
+			tlsCfg.ServerCerts = append(slices.Clone(ep.TLS.ServerCerts), "openshift")
+			ep.TLS = &tlsCfg
+		}
+		allEndpointCfgs = append(allEndpointCfgs, ep)
 	}
 
 	allEndpointCfgs = append(allEndpointCfgs, ParseLegacySpec(env.PlaintextEndpoints.Setting(), &plaintextTLSConfig)...)

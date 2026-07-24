@@ -24,6 +24,11 @@ on:
           release candidate version stream, appending `-rc` to the version
           stream vN (eg. v2-rc).
         required: false
+      vuln_bundles:
+        description: >
+          Sets a specific updater to run. If unset, all updaters are built.
+          Not supported by older git references, please double-check
+        required: false
       job:
         type: choice
         description: "Choose the NVD source"
@@ -242,7 +247,12 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run updater (multi bundle)
+      env:
+        VULN_BUNDLES: ${{ github.event.inputs.vuln_bundles }}
       run: |
+        if [ -n "$VULN_BUNDLES" ]; then
+            export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
+        fi
         tag=$(make -s --no-print-directory tag)
         # In pre-4.9, the exporter requires --split to generate multi-bundles.
         case "$tag" in
@@ -255,7 +265,67 @@ jobs:
         esac
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
+    - name: Validate bundle
+      # ROX-33993: fails on any per-source issue; "Upload definitions artifacts"
+      # still runs via if: always() so healthy sources still reach users.
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+
+        files=(bundles/*.json.zst)
+        if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::no vulnerability bundle files found in bundles/ directory"
+            exit 1
+        fi
+
+        # Accumulate failures so all sources are checked before exiting.
+        failures=()
+        fail() {
+            echo "::error::$*"
+            failures+=("$*")
+        }
+
+        # Counts JSON objects in an NDJSON stream, failing on any non-object value.
+        # shellcheck disable=SC2016 # $i is jq syntax, not a shell variable.
+        jq_filter='reduce inputs as $i (0; if ($i | type) == "object" then . + 1 else error("malformed JSON value: \($i | type)") end)'
+        for f in "${files[@]}"; do
+            name=$(basename "$f" .json.zst)
+
+            if [ ! -s "$f" ]; then
+                fail "source '$name': file $f is empty (0 bytes)"
+                continue
+            fi
+
+            if ! zstd -t "$f" >/dev/null 2>&1; then
+                fail "source '$name': file $f is not a valid zstd archive (corrupted/truncated?)"
+                continue
+            fi
+
+            if ! record_count=$(zstd -dc "$f" | jq -n "$jq_filter" 2>/dev/null); then
+                fail "source '$name': file $f decompressed successfully, but a malformed JSON value was found"
+                continue
+            fi
+
+            if [ "$record_count" -eq 0 ]; then
+                fail "source '$name': file $f decompresses fine but contains 0 JSON objects (expected >0)"
+                continue
+            fi
+
+            echo "source '$name': OK ($record_count records)"
+        done
+
+        if [ "${#failures[@]}" -gt 0 ]; then
+            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken"
+            printf '  - %s\n' "${failures[@]}"
+            exit 1
+        fi
+
+        echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
+
+    # Uploads the definitions as a temporary GitHub Actions artifact. The actual publishing to GCS happens on: upload-definitions
     - name: Upload definitions artifacts
+      if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
