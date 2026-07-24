@@ -1,3 +1,4 @@
+import type { ComponentClass } from 'react';
 import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
@@ -12,11 +13,13 @@ import {
     ResourcesEmptyIcon,
     UnknownIcon,
 } from '@patternfly/react-icons';
+import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import type {
     Cluster,
     ClusterHealthStatusLabel,
     ClusterProviderMetadata,
+    SensorVersionCompatibility,
 } from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
@@ -198,6 +201,25 @@ export const sensorUpgradeStyles = {
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,
+};
+
+const sensorCompatibilityStyle = {
+    MATCHED: {
+        Icon: CheckCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-success',
+    },
+    COMPATIBLE: {
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
+    },
+    INCOMPATIBLE: {
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    UNKNOWN: {
+        Icon: UnknownIcon,
+        fgColor: 'pf-v6-u-icon-color-subtle',
+    },
 };
 
 type UpgradeState = {
@@ -556,6 +578,51 @@ export function buildStatusMessage(
         message += ` ${formatDelayedText(distance)}`;
     }
     return message;
+}
+
+export function getSensorCompatibilityDisplayValue(
+    compatibility: SensorVersionCompatibility | undefined
+): string {
+    switch (compatibility) {
+        case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
+            return 'Matched';
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
+            return 'Compatible (Behind)';
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
+            return 'Compatible (Ahead)';
+        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
+            return 'Incompatible (Behind)';
+        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
+            return 'Incompatible (Ahead)';
+        case 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN':
+            return 'Unknown';
+        default:
+            return 'Unknown';
+    }
+}
+
+export function getSensorCompatibilityStyle(
+    compatibility: SensorVersionCompatibility | undefined
+): {
+    Icon: ComponentClass<SVGIconProps, unknown>;
+    fgColor: string;
+} {
+    switch (compatibility) {
+        case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
+            return sensorCompatibilityStyle.MATCHED;
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
+            return sensorCompatibilityStyle.COMPATIBLE;
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
+            return sensorCompatibilityStyle.COMPATIBLE;
+        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
+            return sensorCompatibilityStyle.INCOMPATIBLE;
+        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
+            return sensorCompatibilityStyle.INCOMPATIBLE;
+        case 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN':
+            return sensorCompatibilityStyle.UNKNOWN;
+        default:
+            return sensorCompatibilityStyle.UNKNOWN;
+    }
 }
 
 export default {
