@@ -2,6 +2,7 @@ import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 // Legacy API (v2/virtualmachines)
@@ -136,6 +137,25 @@ export type ListVMCVEAffectedVMsResponse = {
     totalCount: number;
 };
 
+export type VMCVEByVMRow = {
+    cve: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    cvss: number;
+    nvdCvss: number;
+    epssProbability: number;
+    affectedComponentCount: number;
+    publishedOn?: string;
+    summary: string;
+    link: string;
+    advisory?: { name: string; link: string };
+};
+
+export type ListVMCVEsByVMResponse = {
+    cves: VMCVEByVMRow[];
+    totalCount: number;
+};
+
 export function listVMs({
     sortOption,
     page,
@@ -168,5 +188,20 @@ export function listVMCVEAffectedVMs(
     const params = buildNestedRawQueryParams({ page, perPage, sortOption });
     return axios
         .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
+        .then((response) => response.data);
+}
+
+export function listVMCVEsByVM(
+    vmId: string,
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
+): Promise<ListVMCVEsByVMResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
+    return axios
+        .get<ListVMCVEsByVMResponse>(`/v2/virtualmachines/${vmId}/cves?${params}`)
         .then((response) => response.data);
 }
