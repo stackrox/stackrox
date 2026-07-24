@@ -2,6 +2,7 @@ import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 // Legacy API (v2/virtualmachines)
@@ -194,7 +195,12 @@ export function listVMCVEsByVM(
     vmId: string,
     { searchFilter, page, perPage, sortOption }: SearchQueryOptions
 ): Promise<ListVMCVEsByVMResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, searchFilter, sortOption });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
     return axios
         .get<ListVMCVEsByVMResponse>(`/v2/virtualmachines/${vmId}/cves?${params}`)
         .then((response) => response.data);
