@@ -42,11 +42,12 @@ func _() {
 	_ = x[NodeIndex-31]
 	_ = x[VirtualMachineIndex-32]
 	_ = x[VirtualMachine-33]
+	_ = x[AIWorkload-34]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndexVirtualMachine"
+const _Resource_name = "AlertDeploymentProcessIndicatorProcessListeningOnPortImageSecretNamespaceNetworkPolicyNodeNodeInventoryProviderMetadataComplianceReturnImageIntegrationServiceAccountPermissionSetRoleRoleBindingDeploymentReprocessPodComplianceOperatorCheckResultComplianceOperatorProfileComplianceOperatorScanSettingBindingComplianceOperatorRuleComplianceOperatorScanComplianceOperatorInfoComplianceOperatorCheckResultV2ComplianceOperatorRuleV2ComplianceOperatorProfileV2ComplianceOperatorScanV2ComplianceOperatorSuiteV2ComplianceOperatorRemediationV2NodeIndexVirtualMachineIndexVirtualMachineAIWorkload"
 
-var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477, 502, 533, 542, 561, 575}
+var _Resource_index = [...]uint16{0, 5, 15, 31, 53, 58, 64, 73, 86, 90, 103, 119, 135, 151, 165, 178, 182, 193, 212, 215, 244, 269, 305, 327, 349, 371, 402, 426, 453, 477, 502, 533, 542, 561, 575, 585}
 
 func (i Resource) String() string {
 	idx := int(i) - 0

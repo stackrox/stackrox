@@ -105,4 +105,7 @@ const (
 	// InitContainerSupport identifies the capability of Sensor to extract init containers from pod specs
 	// and of Central to handle init container data in deployments.
 	InitContainerSupport = "InitContainerSupport"
+
+	// AIWorkloadsSupported identifies the capability of Central to receive AI workload data from Sensor.
+	AIWorkloadsSupported = "AIWorkloadsSupported"
 )
