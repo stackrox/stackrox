@@ -191,12 +191,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"types: [CVE_CVEType!]!",
 	}))
 	utils.Must(builder.AddType("CVEInfo", []string{
+		"cisaKev: Boolean!",
 		"createdAt: Time",
 		"cve: String!",
 		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
 		"epss: EPSS",
+		"exploit: Exploit",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
@@ -673,6 +675,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Exclusion_Image", []string{
 		"name: String!",
+	}))
+	utils.Must(builder.AddType("Exploit", []string{
+		"dateAdded: String!",
+		"dueDate: String!",
+		"knownRansomwareCampaignUse: String!",
+		"requiredAction: String!",
+		"shortDescription: String!",
 	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
 		"unused: String!",
@@ -3382,6 +3391,11 @@ func (resolver *Resolver) wrapCVEInfosWithContext(ctx context.Context, values []
 	return output, nil
 }
 
+func (resolver *cVEInfoResolver) CisaKev(ctx context.Context) bool {
+	value := resolver.data.GetCisaKev()
+	return value
+}
+
 func (resolver *cVEInfoResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
@@ -3410,6 +3424,11 @@ func (resolver *cVEInfoResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, e
 func (resolver *cVEInfoResolver) Epss(ctx context.Context) (*ePSSResolver, error) {
 	value := resolver.data.GetEpss()
 	return resolver.root.wrapEPSS(value, true, nil)
+}
+
+func (resolver *cVEInfoResolver) Exploit(ctx context.Context) (*exploitResolver, error) {
+	value := resolver.data.GetExploit()
+	return resolver.root.wrapExploit(value, true, nil)
 }
 
 func (resolver *cVEInfoResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -8086,6 +8105,73 @@ func (resolver *Resolver) wrapExclusion_ImagesWithContext(ctx context.Context, v
 
 func (resolver *exclusion_ImageResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
+	return value
+}
+
+type exploitResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Exploit
+}
+
+func (resolver *Resolver) wrapExploit(value *storage.Exploit, ok bool, err error) (*exploitResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exploitResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExploits(values []*storage.Exploit, err error) ([]*exploitResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exploitResolver, len(values))
+	for i, v := range values {
+		output[i] = &exploitResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapExploitWithContext(ctx context.Context, value *storage.Exploit, ok bool, err error) (*exploitResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &exploitResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapExploitsWithContext(ctx context.Context, values []*storage.Exploit, err error) ([]*exploitResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*exploitResolver, len(values))
+	for i, v := range values {
+		output[i] = &exploitResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *exploitResolver) DateAdded(ctx context.Context) string {
+	value := resolver.data.GetDateAdded()
+	return value
+}
+
+func (resolver *exploitResolver) DueDate(ctx context.Context) string {
+	value := resolver.data.GetDueDate()
+	return value
+}
+
+func (resolver *exploitResolver) KnownRansomwareCampaignUse(ctx context.Context) string {
+	value := resolver.data.GetKnownRansomwareCampaignUse()
+	return value
+}
+
+func (resolver *exploitResolver) RequiredAction(ctx context.Context) string {
+	value := resolver.data.GetRequiredAction()
+	return value
+}
+
+func (resolver *exploitResolver) ShortDescription(ctx context.Context) string {
+	value := resolver.data.GetShortDescription()
 	return value
 }
 
