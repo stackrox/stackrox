@@ -288,7 +288,5 @@ export function listVMComponents(
 }
 
 export function getVM(vmId: string): Promise<VMDetail> {
-    return axios
-        .get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`)
-        .then((response) => response.data);
+    return axios.get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`).then((response) => response.data);
 }

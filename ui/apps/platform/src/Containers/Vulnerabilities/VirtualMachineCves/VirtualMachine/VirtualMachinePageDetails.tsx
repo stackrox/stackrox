@@ -22,17 +22,8 @@ export type VirtualMachinePageDetailsProps = {
 };
 
 function VirtualMachinePageDetails({ virtualMachineDetail }: VirtualMachinePageDetailsProps) {
-    const {
-        state,
-        agentStatus,
-        guestOs,
-        lastUpdated,
-        latestScan,
-        facts,
-        vsockCid,
-        labels,
-        annotations,
-    } = virtualMachineDetail;
+    const { state, agentStatus, guestOs, lastUpdated, latestScan, facts, labels, annotations } =
+        virtualMachineDetail;
 
     return (
         <PageSection isFilled padding={{ default: 'padding' }}>
@@ -81,7 +72,7 @@ function VirtualMachinePageDetails({ virtualMachineDetail }: VirtualMachinePageD
                             <DescriptionListGroup>
                                 <DescriptionListTerm>Top CVSS</DescriptionListTerm>
                                 <DescriptionListDescription>
-                                    {latestScan.topCvss || '-'}
+                                    {latestScan.topCvss ?? '-'}
                                 </DescriptionListDescription>
                             </DescriptionListGroup>
                         </>
@@ -109,10 +100,6 @@ function VirtualMachinePageDetails({ virtualMachineDetail }: VirtualMachinePageD
                         <DescriptionListDescription>
                             {facts.bootOrder || '-'}
                         </DescriptionListDescription>
-                    </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Vsock CID</DescriptionListTerm>
-                        <DescriptionListDescription>{vsockCid || '-'}</DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionList>
                 <ExpandableLabelSection toggleText="Labels" labels={recordToLabelArray(labels)} />
