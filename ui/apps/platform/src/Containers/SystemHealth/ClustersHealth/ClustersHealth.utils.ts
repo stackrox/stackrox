@@ -1,6 +1,7 @@
 import {
     findUpgradeState,
     getCredentialExpirationStatus,
+    getSensorCompatibilityState,
 } from 'Containers/Clusters/cluster.helpers';
 import type { CertExpiryStatus } from 'Containers/Clusters/clusterTypes'; // TODO types/cluster.proto.ts
 import type { Cluster } from 'types/cluster.proto';
@@ -134,4 +135,38 @@ export function getClustersHealthVariant(counts: ClusterStatusCounts): HealthVar
         return 'warning';
     }
     return 'success';
+}
+
+export function getSensorCompatibilityCounts(
+    clusters: Cluster[],
+    compatibleVersions: string[]
+): ClusterStatusCounts {
+    const counts = getClusterStatusCountsObject();
+
+    if (!compatibleVersions || compatibleVersions.length === 0) {
+        return counts;
+    }
+
+    clusters.forEach((cluster) => {
+        if (cluster && cluster.healthStatus) {
+            const { sensorVersionCompatibility } = cluster.status ?? {};
+            const compatibilityState = getSensorCompatibilityState(sensorVersionCompatibility);
+
+            if (!compatibilityState) {
+                counts.UNAVAILABLE += 1;
+                return;
+            }
+
+            const key =
+                compatibilityState.type === 'matched' || compatibilityState.type === 'compatible'
+                    ? 'HEALTHY'
+                    : compatibilityState.type === 'incompatible'
+                      ? 'UNHEALTHY'
+                      : 'DEGRADED';
+
+            counts[key] += 1;
+        }
+    });
+
+    return counts;
 }
