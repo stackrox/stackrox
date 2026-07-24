@@ -368,6 +368,18 @@ func (s *scheduler) queuePendingReports() {
 	}
 
 	for _, snap := range pendingReports {
+		// View-based reports have no associated report configuration, resource scope, or collection.
+		if snap.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
+			repRequest := &reportGen.ReportRequest{
+				ReportSnapshot: snap,
+			}
+			_, err = s.SubmitReportRequest(scheduledCtx, repRequest, true)
+			if err != nil {
+				log.Errorf("Error rescheduling pending view-based report job '%s': %s", snap.GetReportId(), err)
+			}
+			continue
+		}
+
 		_, found, err := s.reportConfigDatastore.GetReportConfiguration(scheduledCtx, snap.GetReportConfigurationId())
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)

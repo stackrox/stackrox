@@ -20,7 +20,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring/v2 v2.22.0
+	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.20.0
@@ -152,7 +152,7 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.48.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.289.0
+	google.golang.org/api v0.290.0
 	google.golang.org/genproto v0.0.0-20260519071638-aa98bba5eb94
 	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7
 	google.golang.org/grpc v1.82.1
@@ -165,13 +165,13 @@ require (
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.2
 	helm.sh/helm/v3 v3.21.3
-	k8s.io/api v0.36.2
-	k8s.io/apiextensions-apiserver v0.36.2
-	k8s.io/apimachinery v0.36.2
-	k8s.io/apiserver v0.36.2
-	k8s.io/cli-runtime v0.36.2
-	k8s.io/client-go v0.36.2
-	k8s.io/kubectl v0.36.2
+	k8s.io/api v0.36.3
+	k8s.io/apiextensions-apiserver v0.36.3
+	k8s.io/apimachinery v0.36.3
+	k8s.io/apiserver v0.36.3
+	k8s.io/cli-runtime v0.36.3
+	k8s.io/client-go v0.36.3
+	k8s.io/kubectl v0.36.3
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	kubevirt.io/api v1.8.4
@@ -462,13 +462,13 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/code-generator v0.36.2 // indirect
-	k8s.io/component-base v0.36.2 // indirect
-	k8s.io/component-helpers v0.36.2 // indirect
+	k8s.io/code-generator v0.36.3 // indirect
+	k8s.io/component-base v0.36.3 // indirect
+	k8s.io/component-helpers v0.36.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199 // indirect
-	k8s.io/streaming v0.36.2 // indirect
+	k8s.io/streaming v0.36.3 // indirect
 	kubevirt.io/containerized-data-importer-api v1.64.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	modernc.org/libc v1.73.4 // indirect
