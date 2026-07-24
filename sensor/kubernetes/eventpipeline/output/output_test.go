@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,10 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-)
-
-const (
-	waitTimeout = 100 * time.Millisecond
 )
 
 // testDispatcher extends pubSubRegister with Publish and Stop so tests can
@@ -71,19 +67,21 @@ func (e *outputTestEnv) send(t *testing.T, event *component.ResourceEvent) {
 	}
 }
 
-func shouldForwardMessage(t *testing.T, ch <-chan *message.ExpiringMessage) {
+func shouldHaveForwarded(t *testing.T, ch <-chan *message.ExpiringMessage) {
+	t.Helper()
 	select {
 	case <-ch:
-	case <-time.After(waitTimeout):
-		t.Error("expecting event to have arrived")
+	default:
+		t.Fatal("expecting event to have arrived")
 	}
 }
 
-func shouldNotForwardMessage(t *testing.T, ch <-chan *message.ExpiringMessage) {
+func shouldNotHaveForwarded(t *testing.T, ch <-chan *message.ExpiringMessage) {
+	t.Helper()
 	select {
 	case <-ch:
 		t.Error("expecting event to not have arrived")
-	case <-time.After(waitTimeout):
+	default:
 	}
 }
 
@@ -100,47 +98,40 @@ func Test_OutputQueue_ExpiringMessages(t *testing.T) {
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 				Context:         nil,
 			},
-			assertion: shouldForwardMessage,
+			assertion: shouldHaveForwarded,
 		},
 		"Not expired message is sent": {
 			message: &component.ResourceEvent{
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 				Context:         context.Background(),
 			},
-			assertion: shouldForwardMessage,
+			assertion: shouldHaveForwarded,
 		},
 		"Expired message is not sent": {
 			message: &component.ResourceEvent{
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 				Context:         expiredContext,
 			},
-			assertion: shouldNotForwardMessage,
+			assertion: shouldNotHaveForwarded,
 		},
 	}
 
 	for _, pubsubEnabled := range []bool{false, true} {
 		for name, tc := range testCases {
 			t.Run(fmt.Sprintf("%s/pubsub=%t", name, pubsubEnabled), func(t *testing.T) {
-				ctrl := gomock.NewController(t)
-				det := mocks.NewMockDetector(ctrl)
-				done := make(chan struct{})
-				det.EXPECT().ReprocessDeployments().Do(func(...string) {
-					close(done)
+				synctest.Test(t, func(t *testing.T) {
+					ctrl := gomock.NewController(t)
+					det := mocks.NewMockDetector(ctrl)
+					det.EXPECT().ReprocessDeployments()
+
+					env := newOutputTestEnv(t, det, pubsubEnabled, 10)
+					require.NoError(t, env.queue.Start())
+					defer env.queue.Stop()
+
+					env.send(t, tc.message)
+					synctest.Wait()
+					tc.assertion(t, env.queue.ResponsesC())
 				})
-
-				env := newOutputTestEnv(t, det, pubsubEnabled, 10)
-				assert.NoError(t, env.queue.Start())
-				defer env.queue.Stop()
-
-				env.send(t, tc.message)
-				tc.assertion(t, env.queue.ResponsesC())
-
-				// Wait for async processing to complete in pubsub mode.
-				select {
-				case <-done:
-				case <-time.After(waitTimeout):
-					t.Fatal("timed out waiting for ReprocessDeployments")
-				}
 			})
 		}
 	}
@@ -159,47 +150,40 @@ func Test_OutputQueue_ForwardMessages(t *testing.T) {
 				Context:         nil,
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 			},
-			assertion: shouldForwardMessage,
+			assertion: shouldHaveForwarded,
 		},
 		"non-expired message is forwarded": {
 			message: &component.ResourceEvent{
 				Context:         context.Background(),
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 			},
-			assertion: shouldForwardMessage,
+			assertion: shouldHaveForwarded,
 		},
 		"expired message is not forwarded": {
 			message: &component.ResourceEvent{
 				Context:         expiredCtx,
 				ForwardMessages: []*central.SensorEvent{{Id: "a"}},
 			},
-			assertion: shouldNotForwardMessage,
+			assertion: shouldNotHaveForwarded,
 		},
 	}
 
 	for _, pubsubEnabled := range []bool{false, true} {
 		for name, tc := range testCases {
 			t.Run(fmt.Sprintf("%s/pubsub=%t", name, pubsubEnabled), func(t *testing.T) {
-				ctrl := gomock.NewController(t)
-				det := mocks.NewMockDetector(ctrl)
-				done := make(chan struct{})
-				det.EXPECT().ReprocessDeployments().Do(func(...string) {
-					close(done)
+				synctest.Test(t, func(t *testing.T) {
+					ctrl := gomock.NewController(t)
+					det := mocks.NewMockDetector(ctrl)
+					det.EXPECT().ReprocessDeployments()
+
+					env := newOutputTestEnv(t, det, pubsubEnabled, 10)
+					require.NoError(t, env.queue.Start())
+					defer env.queue.Stop()
+
+					env.send(t, tc.message)
+					synctest.Wait()
+					tc.assertion(t, env.queue.ResponsesC())
 				})
-
-				env := newOutputTestEnv(t, det, pubsubEnabled, 10)
-				assert.NoError(t, env.queue.Start())
-				defer env.queue.Stop()
-
-				env.send(t, tc.message)
-				tc.assertion(t, env.queue.ResponsesC())
-
-				// Wait for async processing to complete in pubsub mode.
-				select {
-				case <-done:
-				case <-time.After(waitTimeout):
-					t.Fatal("timed out waiting for ReprocessDeployments")
-				}
 			})
 		}
 	}
@@ -208,38 +192,32 @@ func Test_OutputQueue_ForwardMessages(t *testing.T) {
 func Test_OutputQueue_DetectorCalls(t *testing.T) {
 	for _, pubsubEnabled := range []bool{false, true} {
 		t.Run(fmt.Sprintf("pubsub=%t", pubsubEnabled), func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			det := mocks.NewMockDetector(ctrl)
-			det.EXPECT().ReprocessDeployments("dep-a", "dep-b")
-			done := make(chan struct{})
-			det.EXPECT().ProcessDeployment(
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Eq(central.ResourceAction_CREATE_RESOURCE),
-			).Do(func(context.Context, *storage.Deployment, central.ResourceAction) {
-				close(done)
-			})
+			synctest.Test(t, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				det := mocks.NewMockDetector(ctrl)
+				det.EXPECT().ReprocessDeployments("dep-a", "dep-b")
+				det.EXPECT().ProcessDeployment(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Eq(central.ResourceAction_CREATE_RESOURCE),
+				)
 
-			env := newOutputTestEnv(t, det, pubsubEnabled, 10)
-			assert.NoError(t, env.queue.Start())
-			defer env.queue.Stop()
+				env := newOutputTestEnv(t, det, pubsubEnabled, 10)
+				require.NoError(t, env.queue.Start())
+				defer env.queue.Stop()
 
-			env.send(t, &component.ResourceEvent{
-				Context:              context.Background(),
-				ReprocessDeployments: []string{"dep-a", "dep-b"},
-				DetectorMessages: []component.DeploytimeDetectionRequest{
-					{
-						Object: &storage.Deployment{Id: "dep-c"},
-						Action: central.ResourceAction_CREATE_RESOURCE,
+				env.send(t, &component.ResourceEvent{
+					Context:              context.Background(),
+					ReprocessDeployments: []string{"dep-a", "dep-b"},
+					DetectorMessages: []component.DeploytimeDetectionRequest{
+						{
+							Object: &storage.Deployment{Id: "dep-c"},
+							Action: central.ResourceAction_CREATE_RESOURCE,
+						},
 					},
-				},
+				})
+				synctest.Wait()
 			})
-
-			select {
-			case <-done:
-			case <-time.After(waitTimeout):
-				t.Fatal("timed out waiting for detector calls")
-			}
 		})
 	}
 }
@@ -273,26 +251,29 @@ func Test_ProcessResourceEvent_WrongType(t *testing.T) {
 }
 
 func Test_ProcessResourceEvent_StopRequested(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-	ctrl := gomock.NewController(t)
-	det := mocks.NewMockDetector(ctrl)
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		det := mocks.NewMockDetector(ctrl)
 
-	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
-		lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
-	}))
-	require.NoError(t, err)
-	t.Cleanup(d.Stop)
+		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+		}))
+		require.NoError(t, err)
+		t.Cleanup(d.Stop)
 
-	q, err := New(det, 10, d)
-	assert.NoError(t, err)
-	assert.NoError(t, q.Start())
-	q.Stop()
+		q, err := New(det, 10, d)
+		assert.NoError(t, err)
+		assert.NoError(t, q.Start())
+		q.Stop()
 
-	event := &component.ResourceEvent{
-		Context:         context.Background(),
-		ForwardMessages: []*central.SensorEvent{{Id: "x"}},
-	}
-	event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
-	assert.NoError(t, d.Publish(event))
-	shouldNotForwardMessage(t, q.ResponsesC())
+		event := &component.ResourceEvent{
+			Context:         context.Background(),
+			ForwardMessages: []*central.SensorEvent{{Id: "x"}},
+		}
+		event.SetTopicAndLane(pubsub.ResolvedResourceEventTopic, pubsub.ResolvedResourceEventLane)
+		assert.NoError(t, d.Publish(event))
+		synctest.Wait()
+		shouldNotHaveForwarded(t, q.ResponsesC())
+	})
 }
