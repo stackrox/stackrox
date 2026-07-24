@@ -203,7 +203,7 @@ message CosignSignature {
 
   // Signature format used in this message.
   enum SignatureFormat {
-    UNSPECIFIED = 0;
+    SIGNATURE_FORMAT_UNSPECIFIED = 0;
     // SimpleSigning: signature is stored across raw_signature, signature_payload,
     // cert_pem, cert_chain_pem, and rekor_bundle.
     SIMPLE_SIGNING = 1;
