@@ -575,7 +575,7 @@ jobs:
                 success) icon="✅" ;;
                 skipped) icon="⏭️" ;;
                 cancelled) icon="🚫" ;;
-                in_progress) icon="🟡" ;; 
+                in_progress) icon="🟡" ;;
                 failure | timed_out | action_required | neutral | stale | startup_failure) icon="❌" ;;
                 *) icon="❔" ;; # genuinely unrecognized future conclusion value
             esac
