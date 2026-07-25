@@ -223,6 +223,24 @@ message ClusterCertExpiryStatus {
   google.protobuf.Timestamp sensor_cert_not_before = 2;
 }
 
+// SensorVersionCompatibility describes whether a sensor version is within
+// the compatible range of central. Derived from major.minor comparison.
+// Patch versions are ignored.
+enum SensorVersionCompatibility {
+  // Sensor version is not available.
+  SENSOR_VERSION_COMPATIBILITY_UNKNOWN = 0;
+  // Sensor's major.minor matches Central's major.minor.
+  SENSOR_VERSION_COMPATIBILITY_MATCHED = 1;
+  // Sensor is older than central but within the compatible range.
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND = 2;
+  // Sensor is newer than central but within the compatible range.
+  SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD = 3;
+  // Sensor is older than central and outside the compatible range.
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND = 4;
+  // Sensor is newer than central and outside the compatible range.
+  SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD = 5;
+}
+
 message ClusterStatus {
   string sensor_version = 1;
   // This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
@@ -231,6 +249,8 @@ message ClusterStatus {
   OrchestratorMetadata orchestrator_metadata = 4;
   ClusterUpgradeStatus upgrade_status = 5;
   ClusterCertExpiryStatus cert_expiry_status = 6;
+  // Computed at runtime, not persisted.
+  SensorVersionCompatibility sensor_version_compatibility = 7;
 }
 
 message ClusterUpgradeStatus {

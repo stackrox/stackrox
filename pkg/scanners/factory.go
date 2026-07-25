@@ -34,8 +34,10 @@ func NewFactory(set registries.Set) Factory {
 	clairV4ScannerType, clairV4ScannerCreator := clairV4Scanner.Creator(set)
 	reg.creators[clairV4ScannerType] = clairV4ScannerCreator
 
-	clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)
-	reg.creators[clairifyScannerType] = clairifyScannerCreator
+	if features.LegacyScanner.Enabled() {
+		clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)
+		reg.creators[clairifyScannerType] = clairifyScannerCreator
+	}
 
 	googleScannerType, googleScannerCreator := googleScanner.Creator()
 	reg.creators[googleScannerType] = googleScannerCreator

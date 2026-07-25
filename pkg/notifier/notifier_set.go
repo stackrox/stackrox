@@ -120,7 +120,7 @@ func (p *notifierSetImpl) GetNotifiers(_ context.Context) []notifiers.Notifier {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	var notifiers []notifiers.Notifier
+	notifiers := make([]notifiers.Notifier, 0, len(p.notifiers))
 	for _, notifier := range p.notifiers {
 		notifiers = append(notifiers, notifier)
 	}

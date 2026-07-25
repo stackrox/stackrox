@@ -96,6 +96,7 @@ spec:
                 - NOT_APPLICABLE
                 - DEPLOYMENT_EVENT
                 - AUDIT_LOG_EVENT
+                - NODE_EVENT
                 type: string
               exclusions:
                 description: Exclusions define deployments or images that should be

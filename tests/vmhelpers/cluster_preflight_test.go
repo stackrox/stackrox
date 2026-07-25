@@ -222,6 +222,15 @@ func TestVirtHandlerHostVsockVolumesLookUsable(t *testing.T) {
 			require.Truef(t, ok, "expected %s to pass preflight; diagnostics: %s", hostPath, diag)
 		})
 	}
+
+	t.Run("pending pod is considered not usable", func(t *testing.T) {
+		t.Parallel()
+		client := kubefake.NewSimpleClientset(
+			makeVirtHandlerPod("openshift-cnv", "virt-handler-1", coreV1.PodPending, "/dev/vhost-vsock"),
+		)
+		ok, diag := VirtHandlerHostVsockVolumesLookUsable(context.Background(), t, client, "openshift-cnv")
+		require.Falsef(t, ok, "expected pending pod to fail preflight; diagnostics: %s", diag)
+	})
 }
 
 func TestVerifyClusterVSOCKReadyPhases_ShouldGivePhaseTwoAFreshTimeoutAfterSlowPhaseOne(t *testing.T) {

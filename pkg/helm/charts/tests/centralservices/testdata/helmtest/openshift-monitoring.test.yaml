@@ -20,6 +20,7 @@ tests:
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
+        .services["central-ocp"] | assertThat(. != null)
 
     - name: "secure metrics endpoint is enabled"
       expect: |
@@ -29,9 +30,15 @@ tests:
           select(.name == "monitoring-tls") | assertThat(.containerPort == 9091)
         .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
           select(.name == "monitoring-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/monitoring-tls")
+        .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "ocp-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/ocp-tls")
         .services.central.spec.ports[] | select(.name == "monitoring-tls") | [
             assertThat(.targetPort == "monitoring-tls"),
             assertThat(.port == 9091)
+          ]
+        .services["central-ocp"].spec.ports[] | select(.name == "https") | [
+            assertThat(.targetPort == "api"),
+            assertThat(.port == 443)
           ]
         .networkpolicys["central-monitoring-tls"] | assertThat(. != null)
 
@@ -63,6 +70,7 @@ tests:
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
+        .services["central-ocp"] | assertThat(. != null)
         .rolebindings["rhacs-scanner-v4-auth-reader-stackrox"] | assertThat(. != null)
         .servicemonitors["scanner-v4-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
@@ -78,9 +86,15 @@ tests:
           select(.name == "monitoring-tls") | assertThat(.containerPort == 9091)
         .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
           select(.name == "monitoring-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/monitoring-tls")
+        .deployments.central.spec.template.spec.containers[0].volumeMounts[] |
+          select(.name == "ocp-tls") | assertThat(.mountPath == "/run/secrets/stackrox.io/ocp-tls")
         .services.central.spec.ports[] | select(.name == "monitoring-tls") | [
             assertThat(.targetPort == "monitoring-tls"),
             assertThat(.port == 9091)
+          ]
+        .services["central-ocp"].spec.ports[] | select(.name == "https") | [
+            assertThat(.targetPort == "api"),
+            assertThat(.port == 443)
           ]
         .networkpolicys["central-monitoring-tls"] | assertThat(. != null)
         .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
@@ -132,6 +146,7 @@ tests:
         .rolebindings["central-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-central-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["central-monitor-stackrox"] | assertThat(. == null)
+        .services["central-ocp"] | assertThat(. == null)
 
     - name: "secure metrics endpoint is disabled"
       expect: |

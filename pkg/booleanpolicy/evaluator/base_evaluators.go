@@ -54,10 +54,10 @@ func createBaseEvaluator(fieldName string, fieldType reflect.Type, values []stri
 		}
 		return baseEvaluatorFunc(func(path *pathutil.Path, instance reflect.Value) (*fieldResult, bool) {
 			valuesAndMatches := m(instance)
-			var values []string
 			if len(valuesAndMatches) == 0 {
 				return nil, false
 			}
+			values := make([]string, 0, len(valuesAndMatches))
 			for _, valueAndMatch := range valuesAndMatches {
 				values = append(values, valueAndMatch.value)
 			}

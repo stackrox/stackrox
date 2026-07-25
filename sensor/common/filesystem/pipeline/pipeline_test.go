@@ -250,6 +250,198 @@ func TestFileSystemPipelineBufferExpiration(t *testing.T) {
 	})
 }
 
+func TestFileSystemPipelineTranslation(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	base := func(path string) *sensorAPI.FileActivityBase {
+		return &sensorAPI.FileActivityBase{Path: path, HostPath: "/host" + path}
+	}
+
+	cases := map[string]struct {
+		activity      *sensorAPI.FileActivity
+		wantOperation storage.FileAccess_Operation
+		wantPath      string
+		wantHostPath  string
+		wantNilAccess bool
+		// Additional assertions for operation-specific metadata.
+		check func(t *testing.T, access *storage.FileAccess)
+	}{
+		"creation": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File:     &sensorAPI.FileActivity_Creation{Creation: &sensorAPI.FileCreation{Activity: base("/etc/passwd")}},
+			},
+			wantOperation: storage.FileAccess_CREATE,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+		},
+		"unlink": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File:     &sensorAPI.FileActivity_Unlink{Unlink: &sensorAPI.FileUnlink{Activity: base("/tmp/file")}},
+			},
+			wantOperation: storage.FileAccess_UNLINK,
+			wantPath:      "/tmp/file",
+			wantHostPath:  "/host/tmp/file",
+		},
+		"open": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File:     &sensorAPI.FileActivity_Open{Open: &sensorAPI.FileOpen{Activity: base("/etc/shadow")}},
+			},
+			wantOperation: storage.FileAccess_OPEN,
+			wantPath:      "/etc/shadow",
+			wantHostPath:  "/host/etc/shadow",
+		},
+		"rename": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Rename{Rename: &sensorAPI.FileRename{
+					Old: base("/old/path"),
+					New: base("/new/path"),
+				}},
+			},
+			wantOperation: storage.FileAccess_RENAME,
+			wantPath:      "/old/path",
+			wantHostPath:  "/host/old/path",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				assert.Equal(t, "/new/path", access.GetMoved().GetEffectivePath())
+				assert.Equal(t, "/host/new/path", access.GetMoved().GetActualPath())
+			},
+		},
+		"permission change": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Permission{Permission: &sensorAPI.FilePermissionChange{
+					Activity: base("/etc/sudoers"),
+					Mode:     0o644,
+				}},
+			},
+			wantOperation: storage.FileAccess_PERMISSION_CHANGE,
+			wantPath:      "/etc/sudoers",
+			wantHostPath:  "/host/etc/sudoers",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				assert.Equal(t, uint32(0o644), access.GetFile().GetMeta().GetMode())
+			},
+		},
+		"ownership change": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Ownership{Ownership: &sensorAPI.FileOwnershipChange{
+					Activity: base("/var/log/syslog"),
+					Uid:      1000,
+					Gid:      1000,
+					Username: "app",
+					Group:    "app",
+				}},
+			},
+			wantOperation: storage.FileAccess_OWNERSHIP_CHANGE,
+			wantPath:      "/var/log/syslog",
+			wantHostPath:  "/host/var/log/syslog",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				meta := access.GetFile().GetMeta()
+				assert.Equal(t, uint32(1000), meta.GetUid())
+				assert.Equal(t, uint32(1000), meta.GetGid())
+				assert.Equal(t, "app", meta.GetUsername())
+				assert.Equal(t, "app", meta.GetGroup())
+			},
+		},
+		"ACL change": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Acl{Acl: &sensorAPI.FileAclChange{
+					Activity: base("/etc/passwd"),
+					AclType:  sensorAPI.AclType_ACL_TYPE_ACCESS,
+					Entries: []*sensorAPI.AclEntry{
+						{Tag: sensorAPI.AclTag_ACL_TAG_USER_OBJ, Perm: 6, Id: 0xFFFFFFFF},
+						{Tag: sensorAPI.AclTag_ACL_TAG_USER, Perm: 4, Id: 1000},
+						{Tag: sensorAPI.AclTag_ACL_TAG_OTHER, Perm: 0, Id: 0xFFFFFFFF},
+					},
+				}},
+			},
+			wantOperation: storage.FileAccess_ACL_CHANGE,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				meta := access.GetFile().GetMeta()
+				require.NotNil(t, meta)
+				assert.Equal(t, storage.AclType_ACL_TYPE_ACCESS, meta.GetAclType())
+				require.Len(t, meta.GetAclEntries(), 3)
+				assert.Equal(t, storage.AclEntry_ACL_TAG_USER_OBJ, meta.GetAclEntries()[0].GetTag())
+				assert.Equal(t, uint32(6), meta.GetAclEntries()[0].GetPerm())
+				assert.Equal(t, storage.AclEntry_ACL_TAG_USER, meta.GetAclEntries()[1].GetTag())
+				assert.Equal(t, uint32(1000), meta.GetAclEntries()[1].GetId())
+			},
+		},
+		"ACL remove (empty entries)": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_Acl{Acl: &sensorAPI.FileAclChange{
+					Activity: base("/etc/passwd"),
+					AclType:  sensorAPI.AclType_ACL_TYPE_ACCESS,
+					Entries:  []*sensorAPI.AclEntry{},
+				}},
+			},
+			wantOperation: storage.FileAccess_ACL_CHANGE,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				meta := access.GetFile().GetMeta()
+				require.NotNil(t, meta)
+				assert.Equal(t, storage.AclType_ACL_TYPE_ACCESS, meta.GetAclType())
+				assert.Empty(t, meta.GetAclEntries())
+			},
+		},
+		"unhandled type returns nil": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File:     &sensorAPI.FileActivity_Write{Write: &sensorAPI.FileWrite{Activity: base("/tmp/data")}},
+			},
+			wantNilAccess: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				tp := newTestPipeline(t)
+
+				if tc.wantNilAccess {
+					// Unhandled types should be silently dropped.
+					tp.activityChan <- tc.activity
+					synctest.Wait()
+					// No ProcessFileAccess call expected.
+					return
+				}
+
+				tp.detector.EXPECT().ProcessFileAccess(gomock.Any(), gomock.Any()).DoAndReturn(
+					func(_ context.Context, access *storage.FileAccess) {
+						assert.Equal(t, tc.wantOperation, access.GetOperation())
+						assert.Equal(t, tc.wantPath, access.GetFile().GetEffectivePath())
+						assert.Equal(t, tc.wantHostPath, access.GetFile().GetActualPath())
+						if tc.check != nil {
+							tc.check(t, access)
+						}
+					},
+				)
+
+				tp.activityChan <- tc.activity
+				synctest.Wait()
+			})
+		})
+	}
+}
+
 func TestFileSystemPipelineStopWaitsForAllGoroutines(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 	defer goleak.AssertNoGoroutineLeaks(t)

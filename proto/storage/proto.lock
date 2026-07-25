@@ -1949,6 +1949,34 @@
             ]
           },
           {
+            "name": "SensorVersionCompatibility",
+            "enum_fields": [
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN"
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_MATCHED",
+                "integer": 1
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND",
+                "integer": 2
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD",
+                "integer": 3
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND",
+                "integer": 4
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD",
+                "integer": 5
+              }
+            ]
+          },
+          {
             "name": "ClusterUpgradeStatus.Upgradability",
             "enum_fields": [
               {
@@ -2625,6 +2653,11 @@
                 "id": 6,
                 "name": "cert_expiry_status",
                 "type": "ClusterCertExpiryStatus"
+              },
+              {
+                "id": 7,
+                "name": "sensor_version_compatibility",
+                "type": "SensorVersionCompatibility"
               }
             ]
           },
@@ -6331,6 +6364,36 @@
             ]
           },
           {
+            "name": "Exploit",
+            "fields": [
+              {
+                "id": 1,
+                "name": "date_added",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "short_description",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "required_action",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "due_date",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "known_ransomware_campaign_use",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "CVE",
             "fields": [
               {
@@ -6553,6 +6616,16 @@
                 "id": 12,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 13,
+                "name": "exploit",
+                "type": "Exploit"
+              },
+              {
+                "id": 14,
+                "name": "cisa_kev",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -8579,6 +8652,54 @@
       "def": {
         "enums": [
           {
+            "name": "AclEntry.AclTag",
+            "enum_fields": [
+              {
+                "name": "ACL_TAG_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TAG_USER_OBJ",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TAG_USER",
+                "integer": 2
+              },
+              {
+                "name": "ACL_TAG_GROUP_OBJ",
+                "integer": 3
+              },
+              {
+                "name": "ACL_TAG_GROUP",
+                "integer": 4
+              },
+              {
+                "name": "ACL_TAG_MASK",
+                "integer": 5
+              },
+              {
+                "name": "ACL_TAG_OTHER",
+                "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "AclType",
+            "enum_fields": [
+              {
+                "name": "ACL_TYPE_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TYPE_ACCESS",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TYPE_DEFAULT",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "FileAccess.Operation",
             "enum_fields": [
               {
@@ -8603,11 +8724,35 @@
               {
                 "name": "OPEN",
                 "integer": 5
+              },
+              {
+                "name": "ACL_CHANGE",
+                "integer": 6
               }
             ]
           }
         ],
         "messages": [
+          {
+            "name": "AclEntry",
+            "fields": [
+              {
+                "id": 1,
+                "name": "tag",
+                "type": "AclTag"
+              },
+              {
+                "id": 2,
+                "name": "perm",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "id",
+                "type": "uint32"
+              }
+            ]
+          },
           {
             "name": "FileAccess",
             "fields": [
@@ -8670,6 +8815,17 @@
                     "id": 5,
                     "name": "group",
                     "type": "string"
+                  },
+                  {
+                    "id": 6,
+                    "name": "acl_type",
+                    "type": "AclType"
+                  },
+                  {
+                    "id": 7,
+                    "name": "acl_entries",
+                    "type": "AclEntry",
+                    "is_repeated": true
                   }
                 ]
               },
@@ -20801,6 +20957,16 @@
                 "id": 26,
                 "name": "datasource",
                 "type": "string"
+              },
+              {
+                "id": 27,
+                "name": "exploit",
+                "type": "Exploit"
+              },
+              {
+                "id": 28,
+                "name": "cisa_kev",
+                "type": "bool"
               }
             ],
             "reserved_ids": [
