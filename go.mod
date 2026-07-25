@@ -20,7 +20,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
-	github.com/RoaringBitmap/roaring/v2 v2.22.0
+	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.20.0
@@ -171,7 +171,7 @@ require (
 	k8s.io/apiserver v0.36.3
 	k8s.io/cli-runtime v0.36.3
 	k8s.io/client-go v0.36.3
-	k8s.io/kubectl v0.36.2
+	k8s.io/kubectl v0.36.3
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5
 	kubevirt.io/api v1.8.4
@@ -464,7 +464,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/code-generator v0.36.3 // indirect
 	k8s.io/component-base v0.36.3 // indirect
-	k8s.io/component-helpers v0.36.2 // indirect
+	k8s.io/component-helpers v0.36.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199 // indirect
