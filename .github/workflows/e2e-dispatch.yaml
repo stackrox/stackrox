@@ -110,7 +110,15 @@ jobs:
             dispatch_any = any(jobs.values()) or input.is_draft != 'true'
             write('dispatch-any', str(dispatch_any).lower())
 
-  # Waits for images to be built so we don't start testing until they are available.
+  # Waits for upstream-built images to be available before starting tests.
+  # Note: the konflux-flavored qa-e2e-tests job also depends on this, but
+  # only needs Konflux-built images (release-* on Quay). The additional
+  # waiting for those happens inside the test job itself: PreSystemTests
+  # (.openshift-ci/pre_tests.py) calls poll_for_system_test_images()
+  # (scripts/ci/lib.sh), which checks USE_KONFLUX_IMAGES to select the
+  # correct image list. In practice, Konflux pipelines are slower than
+  # upstream, so the upstream wait here does not realistically cause any
+  # delays.
   wait-for-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.dispatch-any == 'true'
