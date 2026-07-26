@@ -27,8 +27,6 @@ jobs:
       ci-job-name: qa-e2e-tests-gke-konflux
       ci-job-short-name: qa-e2e-gke-konflux
       cluster-provisioning-method: direct-gke
-      # To address later:
-      #   SETUP_WORKLOAD_IDENTITIES=true
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
