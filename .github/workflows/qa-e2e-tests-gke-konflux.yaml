@@ -24,8 +24,8 @@ jobs:
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       tag: ${{ inputs.tag }}
-      ci-job-name: qa-e2e-tests-gke-konflux
-      ci-job-short-name: qa-e2e-gke-konflux
+      ci-job-name: gke-qa-e2e-tests-konflux
+      ci-job-short-name: gke-qa-e2e-konflux
       cluster-provisioning-method: direct-gke
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s

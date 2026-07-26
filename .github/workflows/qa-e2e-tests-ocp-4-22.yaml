@@ -24,8 +24,8 @@ jobs:
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       tag: ${{ inputs.tag }}
-      ci-job-name: qa-e2e-tests-ocp-4-22
-      ci-job-short-name: qa-e2e-ocp422
+      ci-job-name: ocp-4-22-qa-e2e-tests
+      ci-job-short-name: ocp422-qa-e2e
       cluster-provisioning-method: infra
       cluster-wait-timeout-minutes: 50
       infra-flavor: openshift-4

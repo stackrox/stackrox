@@ -25,7 +25,7 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests
-      ci-job-short-name: qa-e2e-gke
+      ci-job-short-name: gke-qa-e2e
       cluster-provisioning-method: direct-gke
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
