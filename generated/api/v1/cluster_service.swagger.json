@@ -723,6 +723,10 @@
         },
         "certExpiryStatus": {
           "$ref": "#/definitions/storageClusterCertExpiryStatus"
+        },
+        "sensorVersionCompatibility": {
+          "$ref": "#/definitions/storageSensorVersionCompatibility",
+          "description": "Computed at runtime, not persisted."
         }
       }
     },
@@ -954,6 +958,19 @@
         }
       },
       "description": "StackRoxDeploymentIdentification aims at uniquely identifying a StackRox Sensor deployment. It is used to determine\nwhether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network\npartition), or from a deployment in a different namespace or cluster."
+    },
+    "storageSensorVersionCompatibility": {
+      "type": "string",
+      "enum": [
+        "SENSOR_VERSION_COMPATIBILITY_UNKNOWN",
+        "SENSOR_VERSION_COMPATIBILITY_MATCHED",
+        "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND",
+        "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD",
+        "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND",
+        "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD"
+      ],
+      "default": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN",
+      "description": "SensorVersionCompatibility describes whether a sensor version is within\nthe compatible range of central. Derived from major.minor comparison.\nPatch versions are ignored.\n\n - SENSOR_VERSION_COMPATIBILITY_UNKNOWN: Sensor version is not available.\n - SENSOR_VERSION_COMPATIBILITY_MATCHED: Sensor's major.minor matches Central's major.minor.\n - SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND: Sensor is older than central but within the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD: Sensor is newer than central but within the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND: Sensor is older than central and outside the compatible range.\n - SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD: Sensor is newer than central and outside the compatible range."
     },
     "storageStaticClusterConfig": {
       "type": "object",

@@ -106,6 +106,8 @@ func (s *ImagesV2StoreSuite) TestStore() {
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
 			vuln.FixAvailableTimestamp = nil
+			vuln.Exploit = nil
+			vuln.CisaKev = false
 		}
 		comp.License = nil
 	}
