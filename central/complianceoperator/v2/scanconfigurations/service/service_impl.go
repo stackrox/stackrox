@@ -137,12 +137,8 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	// Convert to storage type
 	scanConfig := convertV2ScanConfigToStorage(ctx, req)
 
-	// grab clusters
-	clusterIDs := make([]string, 0, len(req.GetClusters()))
-	clusterIDs = append(clusterIDs, req.GetClusters()...)
-
 	// Process scan request, config may be updated in the event of errors from sensor.
-	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, clusterIDs)
+	scanConfig, err := s.manager.ProcessScanRequest(ctx, scanConfig, req.GetClusters())
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
@@ -162,12 +158,8 @@ func (s *serviceImpl) UpdateComplianceScanConfiguration(ctx context.Context, req
 	// Convert to storage type
 	scanConfig := convertV2ScanConfigToStorage(ctx, req)
 
-	// grab clusters
-	clusterIDs := make([]string, 0, len(req.GetClusters()))
-	clusterIDs = append(clusterIDs, req.GetClusters()...)
-
 	// Update scan request, config may be updated in the event of errors from sensor.
-	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, clusterIDs)
+	_, err := s.manager.UpdateScanRequest(ctx, scanConfig, req.GetClusters())
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
