@@ -16,6 +16,28 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+type capturingDispatcher struct {
+	consumerID pubsub.ConsumerID
+	topic      pubsub.Topic
+	laneID     pubsub.LaneID
+	callback   pubsub.EventCallback
+}
+
+func (d *capturingDispatcher) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
+	return nil
+}
+
+func (d *capturingDispatcher) RegisterConsumerToLane(id pubsub.ConsumerID, topic pubsub.Topic, laneID pubsub.LaneID, cb pubsub.EventCallback) error {
+	d.consumerID = id
+	d.topic = topic
+	d.laneID = laneID
+	d.callback = cb
+	return nil
+}
+
+func (d *capturingDispatcher) Publish(_ pubsub.Event) error { return nil }
+func (d *capturingDispatcher) Stop()                        {}
+
 // newPurgerForPubSubTest builds a purger with a fast real ticker (not the
 // WithPurgerTicker test override, which decouples purgerTickerC from
 // purgerTicker -- Reset()ing the real ticker wouldn't be observable through
@@ -84,7 +106,7 @@ func TestNewNetworkFlowPurger_PubSubEnabled_CallbackSkipsExpiredEvent(t *testing
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{Validity: ctx}))
+	require.NoError(t, capturing.callback(&events.ResourceSyncFinishedEvent{LifecycleEvent: events.LifecycleEvent{Validity: ctx}}))
 
 	assert.Never(t, purger.purgingDone.IsDone, 200*time.Millisecond, 10*time.Millisecond,
 		"purgingDone must not be signaled for an expired event since the ticker isn't reset")
@@ -101,7 +123,7 @@ func TestNewNetworkFlowPurger_PubSubEnabled_CallbackRejectsWrongEventType(t *tes
 	require.NoError(t, purger.Start())
 	require.NotNil(t, capturing.callback)
 
-	err := capturing.callback(&events.SoftRestartEvent{Text: "wrong type"})
+	err := capturing.callback(&events.SoftRestartEvent{LifecycleEvent: events.LifecycleEvent{Text: "wrong type"}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected event type")
 }
