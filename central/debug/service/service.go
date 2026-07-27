@@ -567,6 +567,7 @@ func (m safeRawMessage) MarshalJSON() ([]byte, error) {
 func (s *serviceImpl) getAuthProviders(_ context.Context) (interface{}, error) {
 	authProviders := s.authProviderRegistry.GetProviders(nil, nil)
 
+	// An empty slice and nil are marshaled differently. Therefore if keys is empty we want to keep result equal to nil
 	var storageAuthProviders []*storage.AuthProvider
 	if len(authProviders) > 0 {
 		storageAuthProviders = make([]*storage.AuthProvider, 0, len(authProviders))
