@@ -24,6 +24,7 @@ export type FileMetadata = {
     group: string | null; // only relevant for OWNERSHIP_CHANGE events
     aclType: AclType | null; // only relevant for ACL_CHANGE events
     aclEntries: AclEntry[]; // only relevant for ACL_CHANGE events
+    xattrName: string | null; // only relevant for XATTR_SET and XATTR_REMOVE events
 };
 
 export type AclTag =
@@ -50,4 +51,6 @@ export type FileOperation =
     | 'PERMISSION_CHANGE'
     | 'OWNERSHIP_CHANGE'
     | 'OPEN'
-    | 'ACL_CHANGE';
+    | 'ACL_CHANGE'
+    | 'XATTR_SET'
+    | 'XATTR_REMOVE';

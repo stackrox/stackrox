@@ -13,6 +13,8 @@ const fileOperations: Map<FileOperation, string> = new Map([
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
     ['ACL_CHANGE', 'ACL change'],
+    ['XATTR_SET', 'Extended attribute set'],
+    ['XATTR_REMOVE', 'Extended attribute removed'],
 ]);
 
 const aclTagLabels: Map<AclTag, string> = new Map([
@@ -179,6 +181,12 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                                 />
                             )}
                         </>
+                    )}
+                    {file.meta.xattrName && (
+                        <DescriptionListItem
+                            term="Extended attribute name"
+                            desc={file.meta.xattrName}
+                        />
                     )}
                 </DescriptionList>
             )}
