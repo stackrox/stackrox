@@ -319,7 +319,6 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 
 func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints() {
 
-	//nolint:prealloc
 	verifyCollectionTests := []struct {
 		name          string
 		collectionObj *storage.ResourceCollection
