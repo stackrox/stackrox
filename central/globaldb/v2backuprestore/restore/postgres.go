@@ -48,8 +48,12 @@ func LoadRestoreStream(fileReader io.Reader) error {
 }
 
 func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config *postgres.Config, restoreDB string) error {
-	// Set the options for pg_dump from the connection config
-	options := []string{ //nolint:prealloc
+	// Get the common DB connection info
+	connOpts := pgadmin.GetConnectionOptions(config)
+
+	// Set the options for pg_restore from the connection config
+	options := make([]string, 0, 9+len(connOpts))
+	options = append(options,
 		"-d",
 		restoreDB,
 		"--no-owner",
@@ -59,10 +63,8 @@ func runRestoreStream(fileReader io.Reader, sourceMap map[string]string, config 
 		"-Fc",
 		"-vvv",
 		"--single-transaction",
-	}
-
-	// Get the common DB connection info
-	options = append(options, pgadmin.GetConnectionOptions(config)...)
+	)
+	options = append(options, connOpts...)
 
 	cmd := exec.Command("pg_restore", options...)
 
