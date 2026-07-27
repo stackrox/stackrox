@@ -37,7 +37,7 @@ func TestSeedAccessScope(t *testing.T) {
 	assert.Equal(t, storage.Traits_DEFAULT, stored.GetTraits().GetOrigin())
 	require.Len(t, stored.GetRules().GetClusterLabelSelectors(), 1)
 	req := stored.GetRules().GetClusterLabelSelectors()[0].GetRequirements()[0]
-	assert.Equal(t, centralServicesLabelKey, req.GetKey())
+	assert.Equal(t, centralColocatedLabelKey, req.GetKey())
 	assert.Equal(t, storage.SetBasedLabelSelector_EXISTS, req.GetOp())
 
 	// Re-seeding is idempotent, matching the boot-time self-healing behavior.
