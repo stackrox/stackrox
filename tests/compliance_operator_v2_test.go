@@ -227,31 +227,29 @@ func createCustomRule(ctx context.Context, t *testing.T, client ctrlClient.Clien
 			Namespace: coNamespaceV2,
 		},
 		Spec: complianceoperatorv1.CustomRuleSpec{
-			RulePayload: complianceoperatorv1.RulePayload{
-				// CO recommendation: set metadata.name and spec.rulePayload.id
-				// to the same DNS-friendly value (lowercase, hyphens, no underscores).
-				ID:          name,
-				Title:       "ConfigMap has e2e marker",
-				Description: "Checks for a ConfigMap with an e2e-marker data key",
-				Rationale:   "E2E test marker must be present",
-				Severity:    "medium",
-				CheckType:   "Platform",
-			},
-			CustomRulePayload: complianceoperatorv1.CustomRulePayload{
-				ScannerType:   complianceoperatorv1.ScannerTypeCEL,
-				Expression:    fmt.Sprintf(`configmaps.items.exists(cm, has(cm.data) && "%s" in cm.data)`, markerKey),
-				FailureReason: fmt.Sprintf("No ConfigMap with '%s' data key found", markerKey),
-				Inputs: []complianceoperatorv1.InputPayload{
-					{
-						Name: "configmaps",
-						KubernetesInputSpec: complianceoperatorv1.KubernetesInputSpec{
-							APIVersion:        "v1",
-							Resource:          "configmaps",
-							ResourceNamespace: coNamespaceV2,
-						},
+		RulePayload: complianceoperatorv1.RulePayload{
+			// CO recommendation: set metadata.name and spec.rulePayload.id
+			// to the same DNS-friendly value (lowercase, hyphens, no underscores).
+			ID:            name,
+			Title:         "ConfigMap has e2e marker",
+			Description:   "Checks for a ConfigMap with an e2e-marker data key",
+			Rationale:     "E2E test marker must be present",
+			Severity:      "medium",
+			CheckType:     "Platform",
+			ScannerType:   complianceoperatorv1.ScannerTypeCEL,
+			Expression:    fmt.Sprintf(`configmaps.items.exists(cm, has(cm.data) && "%s" in cm.data)`, markerKey),
+			FailureReason: fmt.Sprintf("No ConfigMap with '%s' data key found", markerKey),
+			Inputs: []complianceoperatorv1.InputPayload{
+				{
+					Name: "configmaps",
+					KubernetesInputSpec: complianceoperatorv1.KubernetesInputSpec{
+						APIVersion:        "v1",
+						Resource:          "configmaps",
+						ResourceNamespace: coNamespaceV2,
 					},
 				},
 			},
+		},
 		},
 	}
 	if err := client.Create(ctx, cr); err != nil && !errors2.IsAlreadyExists(err) {
