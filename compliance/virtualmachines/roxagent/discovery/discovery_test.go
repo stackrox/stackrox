@@ -190,7 +190,7 @@ func TestDiscoverDnfRepoFilePresence(t *testing.T) {
 			}
 			require.Error(t, err)
 			for _, part := range tt.expectedErrParts {
-				assert.Contains(t, err.Error(), part)
+				assert.ErrorContains(t, err, part)
 			}
 		})
 	}
@@ -243,7 +243,7 @@ func TestDiscoverDnfCacheRepoDirPresence(t *testing.T) {
 			}
 			require.Error(t, err)
 			for _, part := range tt.expectedErrParts {
-				assert.Contains(t, err.Error(), part)
+				assert.ErrorContains(t, err, part)
 			}
 		})
 	}

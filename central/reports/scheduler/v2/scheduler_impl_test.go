@@ -9,6 +9,7 @@ import (
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	reportGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
+	collectionMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -272,6 +273,74 @@ func TestCancelReportRequestReturnsFalseForUnknownReport(t *testing.T) {
 	cancelled, err := s.CancelReportRequest(context.Background(), "nonexistent-id")
 	assert.NoError(t, err)
 	assert.False(t, cancelled)
+}
+
+func TestQueuePendingReports(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	mockSnapshotStore := snapshotMocks.NewMockDataStore(ctrl)
+	mockReportConfigDS := mocks.NewMockDataStore(ctrl)
+	mockCollectionDS := collectionMocks.NewMockDataStore(ctrl)
+
+	viewBasedSnap := &storage.ReportSnapshot{
+		ReportId: "view-based-report-1",
+		Name:     "View Based Report",
+		Type:     storage.ReportSnapshot_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:          storage.ReportStatus_PREPARING,
+			ReportRequestType: storage.ReportStatus_VIEW_BASED,
+		},
+		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
+			ViewBasedVulnReportFilters: &storage.ViewBasedVulnerabilityReportFilters{
+				Query: "CVE Type:IMAGE_CVE",
+			},
+		},
+		Requester: &storage.SlimUser{Id: "user-1", Name: "user-1"},
+	}
+
+	configBasedSnap := &storage.ReportSnapshot{
+		ReportId:              "config-based-report-1",
+		ReportConfigurationId: "config-1",
+		Name:                  "Config Based Report",
+		Type:                  storage.ReportSnapshot_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:          storage.ReportStatus_WAITING,
+			ReportRequestType: storage.ReportStatus_ON_DEMAND,
+		},
+		Filter: &storage.ReportSnapshot_VulnReportFilters{
+			VulnReportFilters: &storage.VulnerabilityReportFilters{},
+		},
+		ResourceScope: &storage.ResourceScope{
+			ScopeReference: &storage.ResourceScope_CollectionId{CollectionId: "collection-1"},
+		},
+		Collection: &storage.CollectionSnapshot{Id: "collection-1", Name: "collection-1"},
+		Requester:  &storage.SlimUser{Id: "user-2", Name: "user-2"},
+	}
+
+	mockSnapshotStore.EXPECT().
+		SearchReportSnapshots(gomock.Any(), gomock.Any()).
+		Return([]*storage.ReportSnapshot{viewBasedSnap, configBasedSnap}, nil)
+
+	// View-based report should NOT trigger a config lookup.
+	// Config-based report should trigger a config lookup.
+	mockReportConfigDS.EXPECT().
+		GetReportConfiguration(gomock.Any(), "config-1").
+		Return(&storage.ReportConfiguration{Id: "config-1"}, true, nil)
+
+	mockCollectionDS.EXPECT().
+		Get(gomock.Any(), "collection-1").
+		Return(&storage.ResourceCollection{Id: "collection-1"}, true, nil)
+
+	// Both should be updated via resubmission.
+	mockSnapshotStore.EXPECT().UpdateReportSnapshot(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+
+	cronScheduler := cron.New()
+	cronScheduler.Start()
+	defer cronScheduler.Stop()
+
+	s := newSchedulerImpl(mockReportConfigDS, mockSnapshotStore, mockCollectionDS, nil, nil, nil, cronScheduler, nil)
+	s.queuePendingReports()
+
+	assert.Equal(t, 2, s.reportRequestsQueue.Len())
 }
 
 func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {

@@ -2468,11 +2468,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPs() {
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
 			suite.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
 				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
 				suite.Nil(err)
@@ -2637,11 +2637,11 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
 			suite.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				insertPod := fmt.Sprintf("INSERT INTO pods (id, clusterid) VALUES ('%s', '%s')", podID, fixtureconsts.Cluster1)
 				_, err := suite.postgres.DB.Exec(suite.hasWriteCtx, insertPod)
 				suite.Nil(err)

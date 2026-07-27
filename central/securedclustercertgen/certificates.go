@@ -129,7 +129,7 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 	var caPem []byte
 
 	serviceCerts := make([]*storage.TypedServiceCertificate, 0, c.serviceTypes.Cardinality())
-	for _, serviceType := range c.serviceTypes.AsSlice() {
+	for serviceType := range c.serviceTypes.All() {
 		ca, cert, err := c.certificateFor(serviceType, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)

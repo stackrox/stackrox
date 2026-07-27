@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
 import { interceptAndWatchRequests } from '../../helpers/request';
 import { sortByTableHeader } from '../../helpers/tableHelpers';
-import { assertCannotFindThePage, visit } from '../../helpers/visit';
+import { visit } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
 
 const listSecretsAlias = 'listSecrets';
@@ -96,7 +96,8 @@ describe('Risk - Secrets page', () => {
         it('should not render the Secrets page', () => {
             visit('/main/risk/secrets');
 
-            assertCannotFindThePage();
+            // Without the feature flag, 'secrets' is interpreted as a deployment ID and the page will show an error
+            cy.get('h2').contains(`deployment with id 'secrets' does not exist`);
         });
 
         it('should show Risk as a plain nav link, not an expandable section', () => {

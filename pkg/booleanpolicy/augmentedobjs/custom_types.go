@@ -27,8 +27,15 @@ const (
 	KubernetesUserAgentCustomTag       = "User Agent"
 	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
 	FileAccessPathCustomTag            = "File Path"
+	FileAccessOperationCustomTag       = "File Operation"
 
 	RuntimeClassCustomTag = "Runtime Class"
+
+	// XattrChange is a virtual operation name used during detection.
+	// Both XATTR_SET and XATTR_REMOVE storage operations are mapped
+	// to this value in the augmented object so that a single policy
+	// criterion matches both.
+	XattrChange = "XATTR_CHANGE"
 )
 
 type dockerfileLine struct {
@@ -100,4 +107,11 @@ type NodeDetails struct {
 // (effective or actual)
 type fileAccessPath struct {
 	Path []string `search:"File Path"`
+}
+
+// fileAccessOperation replaces the proto's Operation enum field during
+// policy evaluation. The value comes from operationMapping in construct.go,
+// falling back to the proto enum name for unmapped operations.
+type fileAccessOperation struct {
+	Operation string `search:"File Operation"`
 }
