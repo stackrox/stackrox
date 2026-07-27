@@ -449,7 +449,7 @@ func (suite *IndicatorDataStoreTestSuite) buildIDsToPrune(count int) []string {
 	ids := make([]string, 0, count)
 	pruneIndicators := make([]*storage.ProcessIndicator, 0, count)
 
-	for i := 0; i < count; i++ {
+	for range count {
 		id := uuid.NewV4().String()
 		newIndicator := indicators[0].CloneVT()
 		newIndicator.Id = id

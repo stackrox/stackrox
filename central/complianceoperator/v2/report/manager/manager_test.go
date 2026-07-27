@@ -671,7 +671,7 @@ func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfig
 
 func getScans(numProfiles int) []*storage.ComplianceOperatorScanV2 {
 	var ret []*storage.ComplianceOperatorScanV2
-	for i := 0; i < numProfiles; i++ {
+	for i := range numProfiles {
 		name := fmt.Sprintf("profile-%d", i)
 		ret = append(ret, &storage.ComplianceOperatorScanV2{
 			ScanName: name,

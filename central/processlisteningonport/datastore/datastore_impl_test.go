@@ -2294,12 +2294,12 @@ func makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*st
 	nplops := 2 * nprocess * npod * nport
 
 	plops := make([]*storage.ProcessListeningOnPortFromSensor, nplops)
-	for podIdx := 0; podIdx < npod; podIdx++ {
+	for range npod {
 		podID := makeRandomString(10)
 		podUid := uuid.NewV4().String()
-		for processIdx := 0; processIdx < nprocess; processIdx++ {
+		for range nprocess {
 			execFilePath := makeRandomString(10)
-			for port := 0; port < nport; port++ {
+			for port := range nport {
 
 				plopTCP := &storage.ProcessListeningOnPortFromSensor{
 					Port:           uint32(port),
@@ -2805,7 +2805,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	go func() {
 		defer wg.Done()
 		iterations := 3
-		for i := 0; i < iterations; i++ {
+		for range iterations {
 			nport := 30
 			nprocess := 30
 			npod := 30

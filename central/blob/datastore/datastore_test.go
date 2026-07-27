@@ -52,7 +52,7 @@ func (s *blobTestSuite) SetupTest() {
 
 func (s *blobTestSuite) createBlobs(prefix string, size int, n int, modTime time.Time) []*storage.Blob {
 	var blobs []*storage.Blob
-	for i := 0; i < n; i++ {
+	for i := range n {
 		blob := &storage.Blob{
 			Name:         fmt.Sprintf("%s/test/%d", prefix, i),
 			ModifiedTime: protoconv.MustConvertTimeToTimestamp(modTime),

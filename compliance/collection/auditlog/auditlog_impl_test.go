@@ -104,7 +104,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	// Write a few more log lines and check that they are read and parsed
 	expectedEvents := make([]auditEvent, 0, 3)
 	lines := make([]string, 0, 3)
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		eventTime = eventTime.Add(60 * time.Second)
 		line, expectedEvent = s.fakeAuditLogLineAtTime("get", "configmaps", fmt.Sprintf("fake-map%d", i), "stackrox", eventTime.Format(time.RFC3339Nano))
 		expectedEvents = append(expectedEvents, expectedEvent)
@@ -145,7 +145,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchRe
 	defer s.cleanupFile(f, logPath)
 
 	// Write a few log lines that should get filtered out due to unsupported resource type
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		line, _ := s.fakeAuditLogLine("get", "something-else", "fake-thing", "stackrox")
 		_, err = f.Write([]byte(line))
 		s.NoError(err)
@@ -317,7 +317,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAfterSt
 	eventTime := time.Now()
 	var latestEvent auditEvent
 	var line string
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		eventTime = eventTime.Add(1 * time.Second)
 		line, latestEvent = s.fakeAuditLogLineAtTime("get", "secrets", "fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
 		_, err = f.Write([]byte(line))
@@ -358,7 +358,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderStartsSendingEventsAtStart
 	eventTime := time.Now().Add(1 * time.Minute)
 	var latestEvent auditEvent
 	var line string
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		eventTime = eventTime.Add(1 * time.Second)
 		line, latestEvent = s.fakeAuditLogLineAtTime("get", "secrets", "fake-token", "stackrox", eventTime.Format(time.RFC3339Nano))
 		_, err = f.Write([]byte(line))

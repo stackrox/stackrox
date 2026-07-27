@@ -38,7 +38,7 @@ func GetV1CloudSource() *v1.CloudSource {
 // GetManyStorageCloudSources returns the given number of cloud sources.
 func GetManyStorageCloudSources(num int) []*storage.CloudSource {
 	res := make([]*storage.CloudSource, 0, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		cloudSource := &storage.CloudSource{
 			Id:          uuid.NewV4().String(),
 			Name:        fmt.Sprintf("sample name %02d", i),

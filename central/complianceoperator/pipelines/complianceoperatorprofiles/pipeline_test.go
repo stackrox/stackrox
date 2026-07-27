@@ -127,7 +127,7 @@ func TestThrottlesConcurrency(t *testing.T) {
 
 	const numProfiles = 20
 
-	for i := 0; i < numProfiles; i++ {
+	for range numProfiles {
 		profile := &storage.ComplianceOperatorProfile{
 			Id:   uuid.NewV4().String(),
 			Name: "profile",

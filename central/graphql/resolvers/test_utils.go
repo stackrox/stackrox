@@ -732,7 +732,7 @@ func getNodeVulnerabilityResolver(ctx context.Context, t *testing.T, resolver *R
 
 func getTestImages(imageCount int) []*storage.Image {
 	images := make([]*storage.Image, 0, imageCount)
-	for i := 0; i < imageCount; i++ {
+	for i := range imageCount {
 		img := fixtures.GetImageWithUniqueComponents(100)
 		id := fmt.Sprintf("%d", i)
 		img.Id = id
@@ -743,7 +743,7 @@ func getTestImages(imageCount int) []*storage.Image {
 
 func getTestImagesV2(imageCount int) []*storage.ImageV2 {
 	images := make([]*storage.ImageV2, 0, imageCount)
-	for i := 0; i < imageCount; i++ {
+	for i := range imageCount {
 		img := fixtures.GetImageV2WithUniqueComponents(100)
 		img.Digest = fmt.Sprintf("%d", i)
 		img.Id = uuid.NewV5FromNonUUIDs(img.GetName().GetFullName(), img.GetDigest()).String()
@@ -760,7 +760,7 @@ func contextWithImagePerm(t testing.TB, ctrl *gomock.Controller) context.Context
 
 func getTestNodes(nodeCount int) []*storage.Node {
 	nodes := make([]*storage.Node, 0, nodeCount)
-	for i := 0; i < nodeCount; i++ {
+	for range nodeCount {
 		node := fixtures.GetNodeWithUniqueComponents(100, 5)
 		nodeConverter.MoveNodeVulnsToNewField(node)
 		id := uuid.NewV4().String()

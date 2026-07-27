@@ -198,7 +198,7 @@ func sarifEntriesFromJSONObject(jsonObject interface{}, pathExpressions map[stri
 	}
 
 	sarifEntries := make([]sarifEntry, 0, numberOfValues)
-	for i := 0; i < numberOfValues; i++ {
+	for i := range numberOfValues {
 		entry := sarifEntry{
 			ruleID:   data[SarifRuleJSONPathExpressionKey][i],
 			help:     data[SarifHelpJSONPathExpressionKey][i],
