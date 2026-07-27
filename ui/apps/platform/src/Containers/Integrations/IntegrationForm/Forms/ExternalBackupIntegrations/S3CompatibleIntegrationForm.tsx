@@ -112,7 +112,7 @@ export const validationSchema = yup.object().shape({
             bucket: yup.string().trim().required('Bucket is required'),
             objectPrefix: yup.string(),
             endpoint: yup.string(),
-            region: yup.string().trim(),
+            region: yup.string().trim().required('Region is required'),
             urlStyle: yup.string().trim().required('URL style is required'),
             accessKeyId: yup
                 .string()
@@ -395,26 +395,28 @@ function S3CompatibleIntegrationForm({
                         />
                     </FormLabelGroup>
                     <FormLabelGroup
+                        isRequired
                         label="Region"
                         labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Region"
                                 helpText={
                                     <div>
-                                        Some S3-compatible providers require a region. Consult the
+                                        The region for the S3-compatible endpoint. Consult the
                                         service provider&apos;s instructions for the correct value.
-                                        `auto` is used as a dummy value if not specified.
+                                        Many providers accept `us-east-1` as a default.
                                     </div>
                                 }
                                 ariaLabel="Help for region"
                             />
                         }
                         fieldId="externalBackup.s3compatible.region"
-                        helperText="example, us-west-2"
+                        helperText="example, us-east-1"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
+                            isRequired
                             type="text"
                             id="externalBackup.s3compatible.region"
                             value={values.externalBackup.s3compatible.region}
