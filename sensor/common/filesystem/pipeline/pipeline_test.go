@@ -401,6 +401,38 @@ func TestFileSystemPipelineTranslation(t *testing.T) {
 				assert.Empty(t, meta.GetAclEntries())
 			},
 		},
+		"xattr set": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_XattrSet{XattrSet: &sensorAPI.FileXattrChange{
+					Activity:  base("/etc/passwd"),
+					XattrName: "security.selinux",
+				}},
+			},
+			wantOperation: storage.FileAccess_XATTR_SET,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				assert.Equal(t, "security.selinux", access.GetFile().GetMeta().GetXattrName())
+			},
+		},
+		"xattr remove": {
+			activity: &sensorAPI.FileActivity{
+				Hostname: "test-host",
+				Process:  &sensorAPI.ProcessSignal{Id: testSignalID, Name: "test-process"},
+				File: &sensorAPI.FileActivity_XattrRemove{XattrRemove: &sensorAPI.FileXattrChange{
+					Activity:  base("/etc/passwd"),
+					XattrName: "user.custom",
+				}},
+			},
+			wantOperation: storage.FileAccess_XATTR_REMOVE,
+			wantPath:      "/etc/passwd",
+			wantHostPath:  "/host/etc/passwd",
+			check: func(t *testing.T, access *storage.FileAccess) {
+				assert.Equal(t, "user.custom", access.GetFile().GetMeta().GetXattrName())
+			},
+		},
 		"unhandled type returns nil": {
 			activity: &sensorAPI.FileActivity{
 				Hostname: "test-host",

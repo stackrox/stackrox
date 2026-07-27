@@ -19,6 +19,8 @@ var (
 		storage.FileAccess_PERMISSION_CHANGE: "permission changed",
 		storage.FileAccess_RENAME:            "renamed",
 		storage.FileAccess_ACL_CHANGE:        "ACL changed",
+		storage.FileAccess_XATTR_SET:         "extended attribute set",
+		storage.FileAccess_XATTR_REMOVE:      "extended attribute removed",
 	}
 )
 

@@ -518,6 +518,7 @@ func extractFileAccessInfo(from *storage.FileAccess) *integrations.SplunkViolati
 			info.FileGroup = m.GetGroup()
 			info.AclType = m.GetAclType()
 			info.AclEntries = m.GetAclEntries()
+			info.XattrName = m.GetXattrName()
 		}
 	}
 	if moved := from.GetMoved(); moved != nil {

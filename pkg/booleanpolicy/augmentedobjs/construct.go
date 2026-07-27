@@ -23,6 +23,10 @@ var operationMapping = map[storage.FileAccess_Operation]string{
 	// it so that a single "Permission changed" policy criterion
 	// matches both chmod-style and ACL changes.
 	storage.FileAccess_ACL_CHANGE: storage.FileAccess_PERMISSION_CHANGE.String(),
+	// Both XATTR_SET and XATTR_REMOVE are collapsed into a single
+	// "XATTR_CHANGE" so a single policy criterion matches both.
+	storage.FileAccess_XATTR_SET:    XattrChange,
+	storage.FileAccess_XATTR_REMOVE: XattrChange,
 }
 
 func findMatchingContainerIdxForProcess(deployment *storage.Deployment, process *storage.ProcessIndicator) (int, error) {

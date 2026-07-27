@@ -260,6 +260,36 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_ACL_CHANGE),
 					expectAlert: true,
 				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with XATTR_CHANGE operation",
+			policy:      newFileAccessPolicyWithStringOps(storage.EventSource_NODE_EVENT, []string{"XATTR_CHANGE"}, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_SET),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_XATTR_REMOVE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: false, // Wrong operation
+				},
+				{
+					access:      newActualFileAccessEvent("/tmp/foo", storage.FileAccess_XATTR_SET),
+					expectAlert: false, // Wrong path
+				},
 			},
 		},
 		{
