@@ -29,7 +29,7 @@
                   "$ref": "#/definitions/v1ExportNodeResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
+                  "$ref": "#/definitions/googleRpcStatus"
                 }
               },
               "title": "Stream result of v1ExportNodeResponse"
@@ -38,7 +38,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -75,7 +75,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -105,7 +105,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -130,6 +130,20 @@
     }
   },
   "definitions": {
+    "CVEInfoReference": {
+      "type": "object",
+      "properties": {
+        "URI": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "CVSSV2AccessComplexity": {
       "type": "string",
       "enum": [
@@ -193,7 +207,7 @@
       ],
       "default": "SCANNER"
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -274,7 +288,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageCVEInfoReference"
+            "$ref": "#/definitions/CVEInfoReference"
           }
         },
         "cvssMetrics": {
@@ -287,20 +301,6 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
-        }
-      }
-    },
-    "storageCVEInfoReference": {
-      "type": "object",
-      "properties": {
-        "URI": {
-          "type": "string"
-        },
-        "tags": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },
