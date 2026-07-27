@@ -90,11 +90,16 @@ wait_for_background_migrations() {
     local interval=30
     local i
     for ((i=0; i<retries; i++)); do
-        local val
-        val=$(roxcurl /metrics 2>/dev/null | grep '^rox_central_background_migration_complete ' | awk '{print $2}' || true)
-        if [[ "$val" == "1" ]]; then
-            info "Background migrations complete"
-            return 0
+        local response
+        if response=$(roxcurl /metrics --connect-timeout 5 --max-time 10 2>&1); then
+            local val
+            val=$(echo "$response" | grep '^rox_central_background_migration_complete ' | awk '{print $2}')
+            if [[ "$val" == "1" ]]; then
+                info "Background migrations complete"
+                return 0
+            fi
+        else
+            info "Metrics request failed (attempt $((i+1))/$retries), retrying..."
         fi
         sleep "$interval"
     done
