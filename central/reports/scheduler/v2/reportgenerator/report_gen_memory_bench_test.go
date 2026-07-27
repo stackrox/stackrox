@@ -5,7 +5,10 @@ package reportgenerator
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"runtime"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -413,4 +416,121 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 		}
 	})
+}
+
+// BenchmarkConcurrentStreamingConnections runs 5 streaming report jobs concurrently and
+// measures database connection pool usage. With streaming, each job holds simultaneously:
+//   - 1 long-lived connection: cursor transaction reading data from postgres
+//   - 1 long-lived connection: blob store transaction writing the report
+//   - 1 short-lived connection: CVE reference link lookups (acquired/released per batch)
+//
+// Two pool configurations are tested:
+//   - adequate_pool: 3*numJobs + 5 connections — comfortable headroom, no contention expected
+//   - tight_pool: exactly 3*numJobs connections — validates minimum required pool size
+//
+// Use: go test -tags sql_integration -bench BenchmarkConcurrentStreamingConnections -benchtime 1x -v
+func BenchmarkConcurrentStreamingConnections(b *testing.B) {
+	const numJobs = 5
+	const connsPerJob = 3 // 2 long (cursor tx + blob store tx) + 1 short (CVE lookup)
+
+	for name, tc := range map[string]struct {
+		maxConns int32
+	}{
+		"adequate_pool": {maxConns: int32(numJobs*connsPerJob + 5)},
+		"tight_pool":    {maxConns: int32(numJobs * connsPerJob)},
+	} {
+		b.Run(name, func(b *testing.B) {
+			s := setupMemoryBench(b, 10, 50, 500)
+
+			// Replace the pool from setupMemoryBench (MaxConns=4) with one sized for
+			// concurrent jobs. All jobs share this single pool so stats reflect total usage.
+			poolCfg := s.testDB.DB.Config().Copy()
+			poolCfg.Config.MaxConns = tc.maxConns
+			pool, err := postgres.New(context.Background(), poolCfg)
+			require.NoError(b, err)
+			b.Cleanup(func() { pool.Close() })
+			s.rg.db = pool
+			s.rg.blobStore = blobDS.NewTestDatastore(b, pool)
+
+			// Each snapshot needs its own report config (FK constraint) and unique
+			// ReportId to avoid blob path collisions between concurrent jobs.
+			reportConfigStore := reportConfigDS.GetTestPostgresDataStore(b, s.testDB.DB)
+			snaps := make([]*storage.ReportSnapshot, numJobs)
+			for i := range numJobs {
+				imageTypes := []storage.VulnerabilityReportFilters_ImageType{
+					storage.VulnerabilityReportFilters_DEPLOYED,
+					storage.VulnerabilityReportFilters_WATCHED,
+				}
+				snap := testReportSnapshot(s.collection.GetId(), storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
+				configID := uuid.NewV4().String()
+				snap.ReportConfigurationId = configID
+				snap.ReportId = uuid.NewV4().String()
+				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+				_, err := reportConfigStore.AddReportConfiguration(s.ctx, &storage.ReportConfiguration{
+					Id:   configID,
+					Name: fmt.Sprintf("bench-concurrent-%d", i),
+					Type: storage.ReportConfiguration_VULNERABILITY,
+				})
+				require.NoError(b, err)
+				snaps[i] = snap
+			}
+
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				// Capture baseline cumulative stats so we report per-iteration deltas.
+				initialStat := pool.Stat()
+				var peakAcquired, peakTotal atomic.Int32
+
+				// Sample pool stats periodically to capture peak concurrent connection usage.
+				stopSampler := make(chan struct{})
+				go func() {
+					ticker := time.NewTicker(time.Millisecond)
+					defer ticker.Stop()
+					for {
+						select {
+						case <-stopSampler:
+							return
+						case <-ticker.C:
+							stat := pool.Stat()
+							if cur := stat.AcquiredConns(); cur > peakAcquired.Load() {
+								peakAcquired.Store(cur)
+							}
+							if cur := stat.TotalConns(); cur > peakTotal.Load() {
+								peakTotal.Store(cur)
+							}
+						}
+					}
+				}()
+
+				var wg sync.WaitGroup
+				errs := make([]error, numJobs)
+				for j := range numJobs {
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+						errs[j] = s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
+							ReportSnapshot: snaps[j],
+							Collection:     s.collection,
+							DataStartTime:  time.Time{},
+						})
+					}()
+				}
+				wg.Wait()
+				close(stopSampler)
+
+				for j, e := range errs {
+					require.NoError(b, e, "job %d failed", j)
+				}
+
+				finalStat := pool.Stat()
+				b.ReportMetric(float64(peakAcquired.Load()), "peak-acquired-conns")
+				b.ReportMetric(float64(peakTotal.Load()), "peak-total-conns")
+				b.ReportMetric(float64(tc.maxConns), "max-pool-conns")
+				b.ReportMetric(float64(finalStat.AcquireCount()-initialStat.AcquireCount()), "iter-acquires")
+				b.ReportMetric(float64(finalStat.EmptyAcquireCount()-initialStat.EmptyAcquireCount()), "iter-empty-acquires")
+				b.ReportMetric(float64((finalStat.AcquireDuration() - initialStat.AcquireDuration()).Milliseconds()), "iter-acquire-wait-ms")
+			}
+		})
+	}
 }
