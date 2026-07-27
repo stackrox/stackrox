@@ -52,6 +52,7 @@ func (m *FileAccess_FileMetadata) CloneVT() *FileAccess_FileMetadata {
 	r.Username = m.Username
 	r.Group = m.Group
 	r.AclType = m.AclType
+	r.XattrName = m.XattrName
 	if rhs := m.AclEntries; rhs != nil {
 		tmpContainer := make([]*AclEntry, len(rhs))
 		for k, v := range rhs {
@@ -176,6 +177,9 @@ func (this *FileAccess_FileMetadata) EqualVT(that *FileAccess_FileMetadata) bool
 				return false
 			}
 		}
+	}
+	if this.XattrName != that.XattrName {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -323,6 +327,13 @@ func (m *FileAccess_FileMetadata) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.XattrName) > 0 {
+		i -= len(m.XattrName)
+		copy(dAtA[i:], m.XattrName)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.XattrName)))
+		i--
+		dAtA[i] = 0x42
 	}
 	if len(m.AclEntries) > 0 {
 		for iNdEx := len(m.AclEntries) - 1; iNdEx >= 0; iNdEx-- {
@@ -565,6 +576,10 @@ func (m *FileAccess_FileMetadata) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	l = len(m.XattrName)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -935,6 +950,38 @@ func (m *FileAccess_FileMetadata) UnmarshalVT(dAtA []byte) error {
 			if err := m.AclEntries[len(m.AclEntries)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.XattrName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1673,6 +1720,42 @@ func (m *FileAccess_FileMetadata) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.AclEntries[len(m.AclEntries)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field XattrName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.XattrName = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

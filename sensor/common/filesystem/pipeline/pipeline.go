@@ -178,6 +178,24 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 			},
 		}
 		access.Operation = storage.FileAccess_ACL_CHANGE
+	case *sensorAPI.FileActivity_XattrSet:
+		access.File = &storage.FileAccess_File{
+			EffectivePath: fs.GetXattrSet().GetActivity().GetPath(),
+			ActualPath:    fs.GetXattrSet().GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				XattrName: fs.GetXattrSet().GetXattrName(),
+			},
+		}
+		access.Operation = storage.FileAccess_XATTR_SET
+	case *sensorAPI.FileActivity_XattrRemove:
+		access.File = &storage.FileAccess_File{
+			EffectivePath: fs.GetXattrRemove().GetActivity().GetPath(),
+			ActualPath:    fs.GetXattrRemove().GetActivity().GetHostPath(),
+			Meta: &storage.FileAccess_FileMetadata{
+				XattrName: fs.GetXattrRemove().GetXattrName(),
+			},
+		}
+		access.Operation = storage.FileAccess_XATTR_REMOVE
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil

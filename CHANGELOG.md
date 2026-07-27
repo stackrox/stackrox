@@ -18,6 +18,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
 - ROX-35545: Added ACL change as a file access operation for runtime policies.
 
+- ROX-35546: File access policies now detect extended attribute (xattr) changes.
+
 ### Removed Features
 
 ### Deprecated Features
