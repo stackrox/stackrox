@@ -84,6 +84,23 @@ function roxcurl() {
   curl --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
+wait_for_background_migrations() {
+    info "Waiting for background migrations to complete..."
+    local retries=10
+    local interval=30
+    local i
+    for ((i=0; i<retries; i++)); do
+        local val
+        val=$(roxcurl /metrics 2>/dev/null | grep '^rox_central_background_migration_complete ' | awk '{print $2}' || true)
+        if [[ "$val" == "1" ]]; then
+            info "Background migrations complete"
+            return 0
+        fi
+        sleep "$interval"
+    done
+    die "Background migrations did not complete within $((retries * interval)) seconds"
+}
+
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
 
