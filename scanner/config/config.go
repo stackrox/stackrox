@@ -461,3 +461,17 @@ func Read(filename string) (*Config, error) {
 	}
 	return Load(r)
 }
+
+// NormalizeStringList trims whitespace from each entry and drops empty strings.
+func NormalizeStringList(entries []string) []string {
+	if entries == nil {
+		return nil
+	}
+	result := make([]string, 0, len(entries))
+	for _, s := range entries {
+		if t := strings.TrimSpace(s); t != "" {
+			result = append(result, t)
+		}
+	}
+	return result
+}
