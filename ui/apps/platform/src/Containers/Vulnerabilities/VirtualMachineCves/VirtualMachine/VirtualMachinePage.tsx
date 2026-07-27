@@ -34,6 +34,7 @@ import {
 } from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
 import VirtualMachinePageComponents from './VirtualMachinePageComponents';
+import VirtualMachinePageComponentsLegacy from './VirtualMachinePageComponentsLegacy';
 import VirtualMachinePageDetails from './VirtualMachinePageDetails';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
 import VirtualMachinePageVulnerabilitiesLegacy from './VirtualMachinePageVulnerabilitiesLegacy';
@@ -191,14 +192,18 @@ function VirtualMachinePage() {
                 )}
                 {activeTabKey === componentsTabKey && (
                     <TabContent id={COMPONENTS_TAB_ID}>
-                        <VirtualMachinePageComponents
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
-                            urlSearch={urlSearch}
-                            urlSorting={urlSorting}
-                            urlPagination={urlPagination}
-                        />
+                        {isEnhancedDataModelEnabled ? (
+                            <VirtualMachinePageComponents virtualMachineId={virtualMachineId} />
+                        ) : (
+                            <VirtualMachinePageComponentsLegacy
+                                virtualMachine={virtualMachine}
+                                isLoadingVirtualMachine={isLoading}
+                                errorVirtualMachine={error}
+                                urlSearch={urlSearch}
+                                urlSorting={urlSorting}
+                                urlPagination={urlPagination}
+                            />
+                        )}
                     </TabContent>
                 )}
                 {activeTabKey === detailsTabKey && (
