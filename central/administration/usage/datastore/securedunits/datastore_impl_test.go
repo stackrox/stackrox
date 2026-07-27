@@ -100,7 +100,7 @@ func (suite *UsageDataStoreTestSuite) TestWalk() {
 	const N = page + 2
 	first := time.Now()
 	last := first
-	for i := 0; i < N; i++ {
+	for i := range N {
 		ts, _ := protocompat.ConvertTimeToTimestampOrError(last)
 		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
 			Timestamp:   ts,
@@ -134,7 +134,7 @@ func (suite *UsageDataStoreTestSuite) TestGetMax() {
 	const N = page + 2
 	first := time.Now()
 	last := first
-	for i := 0; i < N; i++ {
+	for i := range N {
 		ts, _ := protocompat.ConvertTimeToTimestampOrError(last)
 		err = suite.datastore.Add(suite.hasWriteCtx, &storage.SecuredUnits{
 			Timestamp:   ts,

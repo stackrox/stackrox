@@ -15,6 +15,8 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
+source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
 test_e2e() {
     local output_dir="${1:-/tmp/e2e-test-logs}"
@@ -95,8 +97,12 @@ test_e2e() {
     restore_4_6_postgres_backup
 
     wait_for_api
+    trap cleanup_workload_identities EXIT
+    setup_workload_identities
     info "E2E external backup tests"
     make -C tests external-backup-tests || touch FAIL
+    cleanup_workload_identities
+    trap - EXIT
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }

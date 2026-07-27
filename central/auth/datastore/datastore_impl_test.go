@@ -430,7 +430,7 @@ func (s *datastorePostgresTestSuite) addRoles(
 		Traits: objectTraits.CloneVT(),
 	}))
 
-	for _, role := range testRoles.AsSlice() {
+	for role := range testRoles.All() {
 		s.Require().NoError(roleStore.Upsert(s.ctx, &storage.Role{
 			Name:            namePrefix + role,
 			Description:     "test role",

@@ -253,7 +253,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
 	go func() {
 		defer producer.Flow().ReportStopped()
-		for i := 0; i < 30; i++ {
+		for i := range 30 {
 			select {
 			case <-producer.Flow().StopRequested():
 				return
@@ -650,7 +650,7 @@ func (s *NodeInventoryHandlerTestSuite) generateTestInputNoClose(numToProduce in
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
-		for i := 0; i < numToProduce; i++ {
+		for i := range numToProduce {
 			select {
 			case <-st.Flow().StopRequested():
 				return
@@ -667,7 +667,7 @@ func consumeAndCount[T any](ch <-chan T, numToConsume int) concurrency.StopperCl
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
-		for i := 0; i < numToConsume; i++ {
+		for i := range numToConsume {
 			select {
 			case <-st.Flow().StopRequested():
 				st.LowLevel().ResetStopRequest()
@@ -695,7 +695,7 @@ func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianc
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
-		for i := 0; i < numToConsume; i++ {
+		for i := range numToConsume {
 			select {
 			case <-st.Flow().StopRequested():
 				t.Logf("Stop requested")
@@ -800,7 +800,7 @@ func (s *NodeInventoryHandlerTestSuite) generateNilTestInputNoClose(numToProduce
 	st := concurrency.NewStopper()
 	go func() {
 		defer st.Flow().ReportStopped()
-		for i := 0; i < numToProduce; i++ {
+		for range numToProduce {
 			select {
 			case <-st.Flow().StopRequested():
 				return

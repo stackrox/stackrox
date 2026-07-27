@@ -590,7 +590,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachinesSort() {
 }
 
 func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachinesSliceHandling() {
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		for _, testCluster := range []string{testconsts.Cluster1, testconsts.Cluster2} {
 			for _, testNamespace := range []string{testconsts.NamespaceA, testconsts.NamespaceB, testconsts.NamespaceC} {
 				err := s.injectNamespacedVirtualMachine(testCluster, testNamespace, i)
@@ -796,7 +796,7 @@ func BenchmarkGetVirtualMachine(b *testing.B) {
 			sac.ResourceScopeKeys(resources.VirtualMachine)))
 
 	// Pre-populate
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		vm := &storage.VirtualMachine{
 			Id:   uuid.NewTestUUID(i).String(),
 			Name: fmt.Sprintf("test-vm-%d", i),

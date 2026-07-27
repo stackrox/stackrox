@@ -141,7 +141,7 @@ func (c *endpointsTestCase) verifyDialResult(t testutils.T, conn *tls.Conn, err 
 	} else {
 		t.Errorf("conn is nil")
 	}
-	for i := 0; i < dialRetries; i++ {
+	for i := range dialRetries {
 		if err == nil {
 			ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
 			defer cancel()
@@ -219,7 +219,7 @@ func (c *endpointsTestCase) runConnectionTest(t testutils.T, testCtx *endpointsT
 }
 
 func (c *endpointsTestCase) tlsDialWithRetry(tlsConf *tls.Config) (conn *tls.Conn, err error) {
-	for i := 0; i < dialRetries; i++ {
+	for range dialRetries {
 		conn, err = tls.DialWithDialer(&dialer, "tcp", c.endpoint(), tlsConf)
 		if err == nil {
 			return

@@ -1526,12 +1526,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 			// Populate some actual data so the query returns what needs deleted
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
 			s.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
 			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
 			}
@@ -1722,12 +1722,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			// Populate some actual data so the query returns what needs deleted
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
 			s.Nil(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
 			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
 			}
@@ -1836,7 +1836,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
 			assert.NoError(t, err)
 
-			for _, depID := range c.deployments.AsSlice() {
+			for depID := range c.deployments.All() {
 				assert.NoError(t, deploymentDS.UpsertDeployment(pruningCtx, &storage.Deployment{Id: depID}))
 			}
 			for _, la := range c.initialAlerts {
@@ -2882,7 +2882,7 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
+	for range numberPods {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,
@@ -2893,7 +2893,7 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 }
 
 func (s *PruningTestSuite) addNodes(nodeDS testNodeDatastore.DataStore, clusterID string, numberOfNodes int) {
-	for i := 0; i < numberOfNodes; i++ {
+	for range numberOfNodes {
 		pod := &storage.Node{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,

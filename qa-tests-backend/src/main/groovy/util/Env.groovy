@@ -247,14 +247,6 @@ class Env {
         return mustGet("AWS_ASSUME_ROLE_TEST_CONDITION_ID")
     }
 
-    static String mustGetAWSS3BucketName() {
-        return mustGet("AWS_S3_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-backup-test
-    }
-
-    static String mustGetAWSS3BucketRegion() {
-        return mustGet("AWS_S3_BACKUP_TEST_BUCKET_REGION") // us-east-2
-    }
-
     static String mustGetAWSECRRegistryID() {
         return mustGet("AWS_ECR_REGISTRY_NAME") // 051999192406
     }
@@ -265,34 +257,6 @@ class Env {
 
     static String mustGetAWSECRDockerPullPassword() {
         return mustGet("AWS_ECR_DOCKER_PULL_PASSWORD") // aws ecr get-login-password
-    }
-
-    static String mustGetCloudflareR2BucketName() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME") // stackrox-ci-qa-backup-test
-    }
-
-    static String mustGetCloudflareR2BucketRegion() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_REGION") // ENAM
-    }
-
-    static String mustGetCloudflareR2Endpoint() {
-        return "${mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID")}.r2.cloudflarestorage.com"
-    }
-
-    static String mustGetCloudflareR2AccessKeyID() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCESS_KEY_ID")
-    }
-
-    static String mustGetCloudflareR2SecretAccessKey() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY")
-    }
-
-    static String mustGetGCSBucketName() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
-    }
-
-    static String mustGetGCSServiceAccount() {
-        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
     }
 
     static String mustGetGCRServiceAccount() {

@@ -54,7 +54,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 
 	// Keep the count low in CI. You can run w/ higher numbers locally.
 	totalAlerts := 1000
-	for i := 0; i < totalAlerts; i++ {
+	for range totalAlerts {
 		id := uuid.NewV4().String()
 		ids = append(ids, id)
 		a := fixtures.GetAlertWithID(id)

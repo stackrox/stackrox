@@ -47,13 +47,16 @@ aXKsg3TLHB3M3MiEMOmFjS+eDJg6bqKrqbOwYle6GiN3s7VewDyKzZsYQ==
 `
 )
 
-type bundleKey struct {
-	Name string `json:"name"`
-	PEM  string `json:"pem"`
+// cosignKeyEntry matches the CosignKey struct in the bundle JSON format.
+type cosignKeyEntry struct {
+	Name      string `json:"name"`
+	PublicKey string `json:"publicKey"`
 }
 
+// keyBundle matches the KeyBundle struct in the bundle JSON format.
 type keyBundle struct {
-	Keys []bundleKey `json:"keys"`
+	SchemaVersion string           `json:"schemaVersion,omitempty"`
+	CosignKeys    []cosignKeyEntry `json:"cosignKeys,omitempty"`
 }
 
 type RedHatSigningKeySuite struct {
@@ -121,14 +124,14 @@ func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 	resp, err := s.listIntegrations(ctx)
 	s.Require().NoError(err, "listing signature integrations")
 
-	var found bool
+	var matched int
 	for _, si := range resp.GetIntegrations() {
 		if si.GetId() != redHatIntegrationID {
 			continue
 		}
-		found = true
+		matched = len(si.GetCosign().GetPublicKeys())
 		s.Assert().Equal("Red Hat", si.GetName())
-		s.Assert().GreaterOrEqual(len(si.GetCosign().GetPublicKeys()), 1,
+		s.Assert().GreaterOrEqual(matched, 1,
 			"expected at least one cosign public key")
 		for _, pk := range si.GetCosign().GetPublicKeys() {
 			s.Assert().NotEmpty(pk.GetName(), "key name must not be empty")
@@ -136,9 +139,8 @@ func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 		}
 		break
 	}
-	s.Require().True(found, "Red Hat signature integration %q not found", redHatIntegrationID)
-	t.Logf("Red Hat integration found with %d key(s)",
-		len(resp.GetIntegrations()[0].GetCosign().GetPublicKeys()))
+	s.Require().NotZero(matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+	t.Logf("Red Hat integration found with %d key(s)", matched)
 }
 
 func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
@@ -158,9 +160,10 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	bundle := keyBundle{
-		Keys: []bundleKey{
-			{Name: "test-key-1", PEM: testPublicKeyPEM1},
-			{Name: "test-key-2", PEM: testPublicKeyPEM2},
+		SchemaVersion: "1.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "test-key-1", PublicKey: testPublicKeyPEM1},
+			{Name: "test-key-2", PublicKey: testPublicKeyPEM2},
 		},
 	}
 	bundleJSON, err := json.Marshal(bundle)
@@ -184,6 +187,152 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	t.Log("Watcher successfully picked up the bundle with 2 test keys")
 }
 
+func (s *RedHatSigningKeySuite) TestWatcherSkipsUnknownKeyGroups() {
+	t := s.T()
+	ns := namespaces.StackRox
+	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherSkipsUnknownKeyGroups", 10*time.Minute)
+	defer cancel()
+
+	defer func() {
+		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
+		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+	}()
+
+	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+
+	// Bundle with cosign keys + an unknown key group; only cosign keys should appear.
+	bundleMap := map[string]any{
+		"schemaVersion": "1.0",
+		"cosignKeys": []map[string]string{
+			{"name": "v1-key-1", "publicKey": testPublicKeyPEM1},
+		},
+		"pgpKeys": []map[string]string{
+			{"name": "v1-key-unsupported", "armoredKey": "opaque-pgp-data"},
+		},
+	}
+	bundleJSON, err := json.Marshal(bundleMap)
+	s.Require().NoError(err)
+
+	b64 := base64.StdEncoding.EncodeToString(bundleJSON)
+	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
+
+	s.logf("Writing bundle with cosign + unknown key group to Central pod")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
+
+	defer func() {
+		s.logf("Cleanup: removing test bundle file")
+		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
+	}()
+
+	s.logf("Waiting for watcher to pick up cosign keys and skip unknown group")
+	s.waitForIntegrationKeys(testCtx, []string{"v1-key-1"},
+		"watcher did not skip unknown key group")
+
+	t.Log("Watcher successfully picked up cosign keys and skipped unknown key group")
+}
+
+func (s *RedHatSigningKeySuite) TestWatcherAcceptsUnknownSchemaVersion() {
+	t := s.T()
+	ns := namespaces.StackRox
+	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherAcceptsUnknownSchemaVersion", 10*time.Minute)
+	defer cancel()
+
+	defer func() {
+		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
+		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+	}()
+
+	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+
+	bundle := keyBundle{
+		SchemaVersion: "3.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "future-key-1", PublicKey: testPublicKeyPEM1},
+		},
+	}
+	bundleJSON, err := json.Marshal(bundle)
+	s.Require().NoError(err)
+
+	b64 := base64.StdEncoding.EncodeToString(bundleJSON)
+	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
+
+	s.logf("Writing bundle with unknown schema version 3.0 to Central pod")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
+
+	defer func() {
+		s.logf("Cleanup: removing test bundle file")
+		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
+	}()
+
+	s.logf("Waiting for watcher to accept bundle with unknown schema version")
+	s.waitForIntegrationKeys(testCtx, []string{"future-key-1"},
+		"watcher did not accept bundle with unknown schema version")
+
+	t.Log("Watcher accepted bundle with unknown schema version 3.0 and extracted cosign key")
+}
+
+func (s *RedHatSigningKeySuite) TestWatcherBadBundleDoesNotOverwriteExistingKeys() {
+	t := s.T()
+	ns := namespaces.StackRox
+	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherBadBundleDoesNotOverwriteExistingKeys", 10*time.Minute)
+	defer cancel()
+
+	defer func() {
+		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
+		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
+		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+	}()
+
+	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+
+	goodBundle := keyBundle{
+		SchemaVersion: "1.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "good-key", PublicKey: testPublicKeyPEM1},
+		},
+	}
+	goodJSON, err := json.Marshal(goodBundle)
+	s.Require().NoError(err)
+
+	b64 := base64.StdEncoding.EncodeToString(goodJSON)
+	writeCmd := fmt.Sprintf("mkdir -p /tmp/redhat-signing-keys && echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64)
+	s.logf("Writing good bundle to establish baseline keys")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeCmd)
+
+	s.waitForIntegrationKeys(testCtx, []string{"good-key"},
+		"watcher did not pick up good bundle")
+	t.Log("Baseline established: integration has good-key")
+
+	// Bundle with only an unknown key group — no cosign keys.
+	badBundleJSON := []byte(`{"schemaVersion": "1.0", "pgpKeys": [{"name": "pgp-only", "armoredKey": "opaque"}]}`)
+
+	b64Bad := base64.StdEncoding.EncodeToString(badBundleJSON)
+	writeBadCmd := fmt.Sprintf("echo %s | base64 -d > /tmp/redhat-signing-keys/bundle.json", b64Bad)
+	s.logf("Overwriting with bad bundle (only unknown key groups)")
+	execInDeployment(t, s.k8s, "central", ns, "sh", "-c", writeBadCmd)
+
+	s.logf("Waiting two watcher cycles to confirm keys are NOT overwritten")
+	time.Sleep(25 * time.Second)
+
+	s.waitForIntegrationKeys(testCtx, []string{"good-key"},
+		"bad bundle overwrote existing keys — integration should still have good-key")
+
+	defer func() {
+		s.logf("Cleanup: removing test bundle file")
+		execInDeployment(t, s.k8s, "central", ns, "sh", "-c", "rm -f /tmp/redhat-signing-keys/bundle.json")
+	}()
+
+	t.Log("Bad bundle correctly did not overwrite existing keys")
+}
+
 func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	t := s.T()
 	ns := namespaces.StackRox
@@ -196,9 +345,10 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
 	bundle := keyBundle{
-		Keys: []bundleKey{
-			{Name: "updater-key-1", PEM: testPublicKeyPEM1},
-			{Name: "updater-key-2", PEM: testPublicKeyPEM2},
+		SchemaVersion: "1.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "updater-key-1", PublicKey: testPublicKeyPEM1},
+			{Name: "updater-key-2", PublicKey: testPublicKeyPEM2},
 		},
 	}
 	bundleJSON, err := json.Marshal(bundle)
@@ -335,8 +485,9 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
 	decoyBundle := keyBundle{
-		Keys: []bundleKey{
-			{Name: "updater-decoy-key", PEM: testPublicKeyPEM3},
+		SchemaVersion: "1.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "updater-decoy-key", PublicKey: testPublicKeyPEM3},
 		},
 	}
 	decoyBundleJSON, err := json.Marshal(decoyBundle)
@@ -414,10 +565,6 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	s.logf("Bundle URL: %s", bundleURL)
 
 	// Precondition: verify the decoy URL is reachable from within the cluster.
-	// Without this, a broken nginx service would produce the same result as
-	// offline mode (keys unchanged), making the negative assertion ambiguous.
-	// Retry because Service endpoints may not be routable immediately after
-	// the deployment is marked ready.
 	s.logf("Verifying decoy bundle URL is reachable from within the cluster")
 	wgetCmd := fmt.Sprintf("wget -q -O /dev/null %s", bundleURL)
 	mustEventually(t, testCtx, func() error {
@@ -460,8 +607,6 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	// --- Step 4: Verify the HTTP updater did NOT fetch the decoy bundle ---
-	// Wait long enough for the updater to have fired if it were active,
-	// then assert the integration still only has the default key.
 
 	s.logf("Waiting 30s to confirm the HTTP updater is disabled in offline mode")
 	time.Sleep(30 * time.Second)
@@ -493,9 +638,10 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	// --- Step 5: Mount a custom bundle via the file watcher path ---
 
 	watcherBundle := keyBundle{
-		Keys: []bundleKey{
-			{Name: "offline-watcher-key-1", PEM: testPublicKeyPEM1},
-			{Name: "offline-watcher-key-2", PEM: testPublicKeyPEM2},
+		SchemaVersion: "1.0",
+		CosignKeys: []cosignKeyEntry{
+			{Name: "offline-watcher-key-1", PublicKey: testPublicKeyPEM1},
+			{Name: "offline-watcher-key-2", PublicKey: testPublicKeyPEM2},
 		},
 	}
 	watcherBundleJSON, err := json.Marshal(watcherBundle)

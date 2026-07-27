@@ -344,12 +344,12 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			// Add deployments if necessary
 			deploymentDS, err := deploymentStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 			s.Require().NoError(err)
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				s.Require().NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
 			podDS := podStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Require().NoError(err)
 			}
@@ -375,11 +375,11 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			}
 			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs, processIndicatorDatastore.RemovalReasonProcessFilter))
 
-			for _, deploymentID := range c.deployments.AsSlice() {
+			for deploymentID := range c.deployments.All() {
 				s.Require().NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))
 			}
 
-			for _, podID := range c.pods.AsSlice() {
+			for podID := range c.pods.All() {
 				s.Require().NoError(podDS.RemovePod(s.ctx, podID))
 			}
 		})
@@ -511,7 +511,7 @@ func (s *PostgresPruningSuite) TestPruneAPITokens() {
 // Helper functions.
 
 func (s *PostgresPruningSuite) addSomePods(podDS podStore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
+	for range numberPods {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,
