@@ -30,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -106,7 +106,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -129,7 +129,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -160,7 +160,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -236,7 +236,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -312,7 +312,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -342,7 +342,7 @@
                   "$ref": "#/definitions/v1ExportDeploymentResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
+                  "$ref": "#/definitions/googleRpcStatus"
                 }
               },
               "title": "Stream result of v1ExportDeploymentResponse"
@@ -351,7 +351,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -426,6 +426,24 @@
       ],
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "LabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
     },
     "ListDeploymentsWithProcessInfoResponseDeploymentWithProcessInfo": {
       "type": "object",
@@ -506,6 +524,25 @@
         }
       }
     },
+    "RiskResult": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "factors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ResultFactor"
+          }
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
     "SeccompProfileProfileType": {
       "type": "string",
       "enum": [
@@ -552,7 +589,7 @@
       ],
       "default": "NONE"
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -878,7 +915,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageLabelSelectorRequirement"
+            "$ref": "#/definitions/LabelSelectorRequirement"
           }
         }
       },
@@ -895,24 +932,6 @@
         "NOT_EXISTS"
       ],
       "default": "UNKNOWN"
-    },
-    "storageLabelSelectorRequirement": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "op": {
-          "$ref": "#/definitions/storageLabelSelectorOperator"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "title": "Next available tag: 4"
     },
     "storageListDeployment": {
       "type": "object",
@@ -1044,27 +1063,8 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageRiskResult"
+            "$ref": "#/definitions/RiskResult"
           }
-        }
-      }
-    },
-    "storageRiskResult": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "factors": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/ResultFactor"
-          }
-        },
-        "score": {
-          "type": "number",
-          "format": "float"
         }
       }
     },
