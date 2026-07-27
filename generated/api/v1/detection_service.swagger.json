@@ -30,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -63,7 +63,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -96,7 +96,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -163,20 +163,6 @@
           }
         }
       }
-    },
-    "AlertResourceResourceType": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "SECRETS",
-        "CONFIGMAPS",
-        "CLUSTER_ROLES",
-        "CLUSTER_ROLE_BINDINGS",
-        "NETWORK_POLICIES",
-        "SECURITY_CONTEXT_CONSTRAINTS",
-        "EGRESS_FIREWALLS"
-      ],
-      "default": "UNKNOWN"
     },
     "AlertViolation": {
       "type": "object",
@@ -257,6 +243,14 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "ExclusionImage": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "KeyValueAttrsKeyValueAttr": {
       "type": "object",
       "properties": {
@@ -267,6 +261,24 @@
           "type": "string"
         }
       }
+    },
+    "LabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
     },
     "NetworkFlowInfoEntity": {
       "type": "object",
@@ -368,6 +380,20 @@
         }
       }
     },
+    "ResourceResourceType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "SECRETS",
+        "CONFIGMAPS",
+        "CLUSTER_ROLES",
+        "CLUSTER_ROLE_BINDINGS",
+        "NETWORK_POLICIES",
+        "SECURITY_CONTEXT_CONSTRAINTS",
+        "EGRESS_FIREWALLS"
+      ],
+      "default": "UNKNOWN"
+    },
     "SeccompProfileProfileType": {
       "type": "string",
       "enum": [
@@ -440,7 +466,7 @@
       ],
       "default": "NONE"
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -601,7 +627,7 @@
       "type": "object",
       "properties": {
         "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
+          "$ref": "#/definitions/ResourceResourceType"
         },
         "name": {
           "type": "string"
@@ -917,7 +943,7 @@
           "$ref": "#/definitions/storageExclusionDeployment"
         },
         "image": {
-          "$ref": "#/definitions/storageExclusionImage"
+          "$ref": "#/definitions/ExclusionImage"
         },
         "expiration": {
           "type": "string",
@@ -933,14 +959,6 @@
         },
         "scope": {
           "$ref": "#/definitions/storageScope"
-        }
-      }
-    },
-    "storageExclusionImage": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
         }
       }
     },
@@ -988,7 +1006,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageLabelSelectorRequirement"
+            "$ref": "#/definitions/LabelSelectorRequirement"
           }
         }
       },
@@ -1005,24 +1023,6 @@
         "NOT_EXISTS"
       ],
       "default": "UNKNOWN"
-    },
-    "storageLabelSelectorRequirement": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "op": {
-          "$ref": "#/definitions/storageLabelSelectorOperator"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "title": "Next available tag: 4"
     },
     "storageLifecycleStage": {
       "type": "string",

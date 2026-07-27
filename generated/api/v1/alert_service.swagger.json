@@ -30,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -103,7 +103,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -185,7 +185,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -218,7 +218,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -306,7 +306,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -382,7 +382,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -458,7 +458,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -489,7 +489,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -528,7 +528,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -592,17 +592,6 @@
     }
   },
   "definitions": {
-    "AlertDeploymentContainer": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "$ref": "#/definitions/storageContainerImage"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
     "AlertEnforcement": {
       "type": "object",
       "properties": {
@@ -721,6 +710,25 @@
             "type": "object",
             "$ref": "#/definitions/v1AlertEvent"
           }
+        }
+      }
+    },
+    "DeploymentContainer": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/storageContainerImage"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "ExclusionImage": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
         }
       }
     },
@@ -884,7 +892,7 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -1027,7 +1035,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/AlertDeploymentContainer"
+            "$ref": "#/definitions/DeploymentContainer"
           }
         },
         "annotations": {
@@ -1132,7 +1140,7 @@
           "$ref": "#/definitions/storageExclusionDeployment"
         },
         "image": {
-          "$ref": "#/definitions/storageExclusionImage"
+          "$ref": "#/definitions/ExclusionImage"
         },
         "expiration": {
           "type": "string",
@@ -1148,14 +1156,6 @@
         },
         "scope": {
           "$ref": "#/definitions/storageScope"
-        }
-      }
-    },
-    "storageExclusionImage": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
         }
       }
     },
