@@ -544,9 +544,10 @@ func (s *CollectionPostgresDataStoreTestSuite) TestVerifyCollectionConstraints()
 
 func (s *CollectionPostgresDataStoreTestSuite) TestCollectionToQueries() {
 
-	supportedLabelRules := make([]*storage.SelectorRule, 0, len(GetSupportedFieldLabels()))
+	supportedFieldLabels := GetSupportedFieldLabels()
+	supportedLabelRules := make([]*storage.SelectorRule, 0, len(supportedFieldLabels))
 
-	for _, label := range GetSupportedFieldLabels() {
+	for _, label := range supportedFieldLabels {
 		supportedLabelRules = append(supportedLabelRules, &storage.SelectorRule{
 			FieldName: label.String(),
 			Operator:  storage.BooleanOperator_OR,
