@@ -296,6 +296,8 @@ function WorkloadCvesOverviewPage() {
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     const isViewBasedReportsEnabled =
+        hasReadAccess('Image') &&
+        hasReadAccess('Deployment') &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||

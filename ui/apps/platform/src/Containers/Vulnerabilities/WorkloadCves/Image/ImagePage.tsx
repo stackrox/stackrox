@@ -162,6 +162,8 @@ function ImagePage({
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
+        hasReadAccess('Image') &&
+        hasReadAccess('Deployment') &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
