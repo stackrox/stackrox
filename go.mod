@@ -132,7 +132,6 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.19.0
 	github.com/travelaudience/go-promhttp v1.0.1
-	github.com/vbauerster/mpb/v4 v4.12.2
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
@@ -203,8 +202,6 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/RaduBerinde/axisds v0.1.0 // indirect
 	github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 // indirect
-	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
