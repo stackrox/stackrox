@@ -1278,6 +1278,44 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  resolve-cve-ids:
+    name: "Resolve CVE IDs for verification"
+    runs-on: ubuntu-latest
+    # Cheap, title-substring-only gate - kept intentionally broad (it'll
+    # also match plenty of non-vulnerability "ROX-" titled PRs) since the
+    # real filtering happens inside extract-cve-ids.sh via the JIRA
+    # cross-reference; this only exists to avoid running that lookup at all
+    # on PRs with clearly no CVE-related signal in the title.
+    if: >-
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      (contains(github.event.pull_request.title, 'CVE-') || contains(github.event.pull_request.title, 'ROX-'))
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      JIRA_USER: ${{ secrets.JIRA_USER }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+    outputs:
+      cves: ${{ steps.extract-cves.outputs.cves }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Extract CVE IDs from PR title
+        id: extract-cves
+        # continue-on-error: the job-level `if:` above only checks for the
+        # literal substrings "CVE-"/"ROX-", not a well-formed CVE-YYYY-NNNN
+        # id or a ROX ticket that actually resolves to one via JIRA. This
+        # lets that case fall through with an empty `cves` output (checked
+        # by verify-cve-fix-scan/verify-cve-fix below) instead of failing
+        # this job outright.
+        continue-on-error: true
+        run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
+
   verify-cve-fix-scan:
     # Shows the root build-tag even for stackrox-operator, whose actual
     # scanned tag differs (see "Determine image tag to scan" step below):
