@@ -63,7 +63,7 @@ func TestFetchTagPayloads_WithSignatures(t *testing.T) {
 	img, err := imgUtils.GenerateImageFromString(imgRef)
 	require.NoError(t, err)
 
-	payloads, err := fetchSignaturesByTag(types.ToImage(img), ref, nil)
+	payloads, err := fetchSignaturesByTag(imgUtils.GetSHA(types.ToImage(img)), ref, nil)
 	require.NoError(t, err)
 	assert.Len(t, payloads, 1)
 	assert.Equal(t, sigPayload, payloads[0].Payload)
@@ -80,7 +80,7 @@ func TestFetchTagPayloads_NoSignatures(t *testing.T) {
 	img, err := imgUtils.GenerateImageFromString(imgRef)
 	require.NoError(t, err)
 
-	payloads, err := fetchSignaturesByTag(types.ToImage(img), ref, nil)
+	payloads, err := fetchSignaturesByTag(imgUtils.GetSHA(types.ToImage(img)), ref, nil)
 	require.NoError(t, err)
 	assert.Empty(t, payloads)
 }

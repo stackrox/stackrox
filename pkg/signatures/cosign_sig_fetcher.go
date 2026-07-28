@@ -87,6 +87,8 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	remoteOpts := optionsFromRegistry(ctx, registry)
 	ociOpts := []ociremote.Option{ociremote.WithRemoteOptions(remoteOpts...)}
 
+	imgSHA := imgUtils.GetSHA(image)
+
 	// Fetch from both discovery methods concurrently. Each path retries independently
 	// so a transient failure in one does not block the other.
 	var (
@@ -98,11 +100,10 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	)
 	wg.Go(func() {
 		tagPayloads, tagErr = fetchWithRetry(ctx, ociOpts, retryOpts, func(opts []ociremote.Option) ([]signaturePayload, error) {
-			return fetchSignaturesByTag(image, imgRef, opts)
+			return fetchSignaturesByTag(imgSHA, imgRef, opts)
 		})
 	})
 	wg.Go(func() {
-		imgSHA := imgUtils.GetSHA(image)
 		if imgSHA == "" {
 			referrerErr = fmt.Errorf("image %q has no SHA digest for referrer lookup", fullImageName)
 			return

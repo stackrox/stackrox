@@ -528,48 +528,58 @@ func TestIsUnknownMimeTypeError(t *testing.T) {
 	}
 }
 
-func TestConvertPayloadsToSignatures_SigstoreBundle(t *testing.T) {
-	bundleJSON := []byte(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
-	payloads := []signaturePayload{{sigstoreBundle: bundleJSON}}
-
-	sigs := convertPayloadsToSignatures(payloads, "test:latest")
-	require.Len(t, sigs, 1)
-	cosignSig := sigs[0].GetCosign()
-	assert.Equal(t, bundleJSON, cosignSig.GetSigstoreBundle())
-	assert.Equal(t, storage.CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE, cosignSig.GetSignatureFormat())
-	assert.Empty(t, cosignSig.GetRawSignature())
-	assert.Empty(t, cosignSig.GetSignaturePayload())
-}
-
-func TestConvertPayloadsToSignatures_SimpleSigning(t *testing.T) {
-	sigPayload, err := base64.StdEncoding.DecodeString(payload1)
-	require.NoError(t, err)
-	payloads := []signaturePayload{
-		{SignedPayload: cosign.SignedPayload{Base64Signature: sig1, Payload: sigPayload}},
-	}
-
-	sigs := convertPayloadsToSignatures(payloads, "test:latest")
-	require.Len(t, sigs, 1)
-	cosignSig := sigs[0].GetCosign()
-	assert.Empty(t, cosignSig.GetSigstoreBundle())
-	assert.Equal(t, storage.CosignSignature_SIMPLE_SIGNING, cosignSig.GetSignatureFormat())
-	assert.Equal(t, sigPayload, cosignSig.GetSignaturePayload())
-	assert.NotEmpty(t, cosignSig.GetRawSignature())
-}
-
-func TestConvertPayloadsToSignatures_MixedFormats(t *testing.T) {
+func TestConvertPayloadsToSignatures(t *testing.T) {
 	sigPayload, err := base64.StdEncoding.DecodeString(payload1)
 	require.NoError(t, err)
 	bundleJSON := []byte(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
-	payloads := []signaturePayload{
-		{SignedPayload: cosign.SignedPayload{Base64Signature: sig1, Payload: sigPayload}},
-		{sigstoreBundle: bundleJSON},
+
+	cases := map[string]struct {
+		payloads []signaturePayload
+		assert   func(t *testing.T, sigs []*storage.Signature)
+	}{
+		"sigstore bundle": {
+			payloads: []signaturePayload{{sigstoreBundle: bundleJSON}},
+			assert: func(t *testing.T, sigs []*storage.Signature) {
+				require.Len(t, sigs, 1)
+				cosignSig := sigs[0].GetCosign()
+				assert.Equal(t, bundleJSON, cosignSig.GetSigstoreBundle())
+				assert.Equal(t, storage.CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE, cosignSig.GetSignatureFormat())
+				assert.Empty(t, cosignSig.GetRawSignature())
+				assert.Empty(t, cosignSig.GetSignaturePayload())
+			},
+		},
+		"simple signing": {
+			payloads: []signaturePayload{
+				{SignedPayload: cosign.SignedPayload{Base64Signature: sig1, Payload: sigPayload}},
+			},
+			assert: func(t *testing.T, sigs []*storage.Signature) {
+				require.Len(t, sigs, 1)
+				cosignSig := sigs[0].GetCosign()
+				assert.Empty(t, cosignSig.GetSigstoreBundle())
+				assert.Equal(t, storage.CosignSignature_SIMPLE_SIGNING, cosignSig.GetSignatureFormat())
+				assert.Equal(t, sigPayload, cosignSig.GetSignaturePayload())
+				assert.NotEmpty(t, cosignSig.GetRawSignature())
+			},
+		},
+		"mixed formats": {
+			payloads: []signaturePayload{
+				{SignedPayload: cosign.SignedPayload{Base64Signature: sig1, Payload: sigPayload}},
+				{sigstoreBundle: bundleJSON},
+			},
+			assert: func(t *testing.T, sigs []*storage.Signature) {
+				require.Len(t, sigs, 2)
+				assert.Empty(t, sigs[0].GetCosign().GetSigstoreBundle())
+				assert.Equal(t, bundleJSON, sigs[1].GetCosign().GetSigstoreBundle())
+			},
+		},
 	}
 
-	sigs := convertPayloadsToSignatures(payloads, "test:latest")
-	require.Len(t, sigs, 2)
-	assert.Empty(t, sigs[0].GetCosign().GetSigstoreBundle())
-	assert.Equal(t, bundleJSON, sigs[1].GetCosign().GetSigstoreBundle())
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			sigs := convertPayloadsToSignatures(c.payloads, "test:latest")
+			c.assert(t, sigs)
+		})
+	}
 }
 
 func TestCosignSignatureFetcher_FetchSignature_NoV2MetadataSkipsBoth(t *testing.T) {
