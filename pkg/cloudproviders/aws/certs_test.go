@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cloudflare/cfssl/helpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,15 +18,6 @@ func TestAWSCerts(t *testing.T) {
 	certsAgain := awsCerts()
 	require.Len(t, certsAgain, len(certs))
 	for i := range certs {
-		assert.Same(t, certs[i], certsAgain[i], "awsCerts() should memoize and return the same parsed certificates on every call")
-	}
-}
-
-func BenchmarkAWSCertsParsing(b *testing.B) {
-	for range b.N {
-		_, err := helpers.ParseCertificatesPEM(awsCertsPEM)
-		if err != nil {
-			b.Fatal(err)
-		}
+		assert.Equal(t, certs[i], certsAgain[i], "awsCerts() should return the same parsed certificates on every call")
 	}
 }

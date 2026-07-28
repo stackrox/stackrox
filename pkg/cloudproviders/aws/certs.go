@@ -8,9 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// awsCertsPEM contains the raw PEM bundle of all known AWS identity-document
-// certificates. Extracted as a var so the OnceValue closure is trivial and
-// benchmarks can measure fresh parsing cost.
+// awsCertsPEM lists all known AWS certificates as of time of writing.
 //
 // See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-rsa2048.html
 // for the current list of RSA-2048 certificates.
