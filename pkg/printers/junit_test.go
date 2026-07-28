@@ -2,13 +2,38 @@ package printers
 
 import (
 	"bytes"
+	"encoding/xml"
 	"testing"
 
-	"github.com/joshdk/go-junit"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type junitSuite struct {
+	XMLName  xml.Name      `xml:"testsuite"`
+	Name     string        `xml:"name,attr"`
+	Tests    int           `xml:"tests,attr"`
+	Failures int           `xml:"failures,attr"`
+	Skipped  int           `xml:"skipped,attr"`
+	Errors   int           `xml:"errors,attr"`
+	Cases    []xmlTestCase `xml:"testcase"`
+}
+
+type xmlTestCase struct {
+	Name    string        `xml:"name,attr"`
+	Failure *junitFailure `xml:"failure"`
+	Skipped *struct{}     `xml:"skipped"`
+}
+
+type junitFailure struct {
+	Message string `xml:",chardata"`
+}
+
+func parseJUnitXML(data []byte) (junitSuite, error) {
+	var s junitSuite
+	return s, xml.Unmarshal(data, &s)
+}
 
 type junitTestData struct {
 	Data junitTestStructure `json:"data"`
@@ -76,27 +101,24 @@ func TestJunitPrinter_Print_JaggedArray(t *testing.T) {
 	assert.Equal(t, expectedOutput, out.String())
 
 	// check that we can ingest the JUnit report and evaluate its content
-	suites, err := junit.Ingest(out.Bytes())
+	suite, err := parseJUnitXML(out.Bytes())
+	require.NoError(t, err)
 
-	assert.Len(t, suites, 1)
-	suite := suites[0]
-	assert.Equal(t, 4, suite.Totals.Tests)
-	assert.Equal(t, 2, suite.Totals.Failed)
-	assert.Equal(t, 0, suite.Totals.Skipped)
-	assert.Equal(t, 0, suite.Totals.Error)
+	assert.Equal(t, 4, suite.Tests)
+	assert.Equal(t, 2, suite.Failures)
+	assert.Equal(t, 0, suite.Skipped)
+	assert.Equal(t, 0, suite.Errors)
 	assert.Equal(t, "testsuite", suite.Name)
-	for i, test := range suite.Tests {
+	for i, tc := range suite.Cases {
 		testData := testObj.Data[i/len(testObj.Data)]
-		assert.Equal(t, testData.Tests[i%len(testData.Tests)].Name, test.Name)
+		assert.Equal(t, testData.Tests[i%len(testData.Tests)].Name, tc.Name)
 		for _, failedTest := range testData.FailedTests {
-			if test.Name == failedTest.Name {
-				require.Error(t, test.Error)
-				assert.Equal(t, failedTest.ErrMessage, test.Error.Error())
-				assert.Equal(t, junit.StatusFailed, test.Status)
+			if tc.Name == failedTest.Name {
+				require.NotNil(t, tc.Failure)
+				assert.Equal(t, failedTest.ErrMessage, tc.Failure.Message)
 			}
 		}
 	}
-	require.NoError(t, err)
 }
 
 func TestJunitPrinter_Print(t *testing.T) {
@@ -149,32 +171,28 @@ func TestJunitPrinter_Print(t *testing.T) {
 	assert.Equal(t, expectedOutput, out.String())
 
 	// check that we can ingest the JUnit report and evaluate its content
-	suites, err := junit.Ingest(out.Bytes())
+	suite, err := parseJUnitXML(out.Bytes())
+	require.NoError(t, err)
 
-	assert.Len(t, suites, 1)
-	suite := suites[0]
-	assert.Equal(t, 6, suite.Totals.Tests)
-	assert.Equal(t, 2, suite.Totals.Failed)
-	assert.Equal(t, 2, suite.Totals.Skipped)
-	assert.Equal(t, 0, suite.Totals.Error)
+	assert.Equal(t, 6, suite.Tests)
+	assert.Equal(t, 2, suite.Failures)
+	assert.Equal(t, 2, suite.Skipped)
+	assert.Equal(t, 0, suite.Errors)
 	assert.Equal(t, "testsuite", suite.Name)
-	for i, test := range suite.Tests {
-		assert.Equal(t, testObj.Data.Tests[i].Name, test.Name)
+	for i, tc := range suite.Cases {
+		assert.Equal(t, testObj.Data.Tests[i].Name, tc.Name)
 		for _, failedTest := range testObj.Data.FailedTests {
-			if test.Name == failedTest.Name {
-				require.Error(t, test.Error)
-				assert.Equal(t, failedTest.ErrMessage, test.Error.Error())
-				assert.Equal(t, junit.StatusFailed, test.Status)
+			if tc.Name == failedTest.Name {
+				require.NotNil(t, tc.Failure)
+				assert.Equal(t, failedTest.ErrMessage, tc.Failure.Message)
 			}
 		}
 		for _, skippedTest := range testObj.Data.SkippedTest {
-			if test.Name == skippedTest.Name {
-				assert.NoError(t, test.Error)
-				assert.Equal(t, junit.StatusSkipped, test.Status)
+			if tc.Name == skippedTest.Name {
+				assert.NotNil(t, tc.Skipped)
 			}
 		}
 	}
-	require.NoError(t, err)
 }
 
 func TestValidateJUnitSuiteData(t *testing.T) {
