@@ -1288,8 +1288,6 @@ github.com/stackrox/docker-registry-client v0.2.0 h1:91TLimNkFgdwO9QF8rUC57DoLGi
 github.com/stackrox/docker-registry-client v0.2.0/go.mod h1:4TU+pA11iczIvhtL0own2OJcJXc1o26tBHDivaXhlZU=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd h1:vEjp7Q66zd4W72//Uk3uyVN50Mh/nFLbN9pb7CVK7mE=
 github.com/stackrox/dotnet-scraper v0.0.0-20201023051640-72ef543323dd/go.mod h1:HILeV3i/EyJz844GcrC3+oU7oZONhjfujaIYBMJ/bZE=
-github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2 h1:gRDa1g3wlX7UDjv8nwkXcvnMbjFQkLPa6kDZJ6WpyZo=
-github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2/go.mod h1:M22zIb5zuZCYbYwcn9iOWswNBrxE+YPkAHU5Bkg5XE4=
 github.com/stackrox/hashstructure v0.0.4 h1:m6n9oRdmsfI7/oIZjsGU6hDCHPzQn5rQ1fQkUqgTq+c=
 github.com/stackrox/hashstructure v0.0.4/go.mod h1:FkaQJi8DJhUs7swo1VKuqzh9kYSKAr2R23/gMC26Gqc=
 github.com/stackrox/helm-operator v0.8.1-0.20251208094835-6f1985043d0d h1:vi8OBPMlPQzcQaIwWRQDQzqFWhZq6HoVDZQWQXARByA=
