@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/VividCortex/ewma"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -108,26 +107,31 @@ func (r *v2Restorer) updateTransferStatus(cancelCond concurrency.Waitable) {
 
 	// Function will only run if r.transferProgressBar != nil
 	lastVal := r.transferProgressBar.Current()
-	speed := ewma.NewMovingAverage()
+	var avgSpeed float64
+	const ewmaDecay = 2.0 / 31.0 // EWMA with age=30
 
 	for {
 		select {
 		case <-ticker.C:
 			currVal := r.transferProgressBar.Current()
-			progress := currVal - lastVal
+			progress := float64(currVal - lastVal)
 			lastVal = currVal
-			speed.Add(float64(progress))
-			avgSpeed := int64(speed.Value())
-			if avgSpeed <= 0 {
+			if avgSpeed == 0 {
+				avgSpeed = progress
+			} else {
+				avgSpeed += ewmaDecay * (progress - avgSpeed)
+			}
+			speedInt := int64(avgSpeed)
+			if speedInt <= 0 {
 				continue
 			}
 
 			remaining := r.headerSize + r.totalDataSize - currVal
-			remainingSecs := remaining / avgSpeed
+			remainingSecs := remaining / speedInt
 
 			newText := fmt.Sprintf(
 				"Transferring data at % 10.1f/s (ETA %02d:%02d:%02d)",
-				decor.SizeB1024(avgSpeed),
+				decor.SizeB1024(speedInt),
 				remainingSecs/3600,
 				(remainingSecs%3600)/60,
 				remainingSecs%60,
