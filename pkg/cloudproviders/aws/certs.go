@@ -2,9 +2,9 @@ package aws
 
 import (
 	"crypto/x509"
-	"sync"
 
 	"github.com/cloudflare/cfssl/helpers"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
