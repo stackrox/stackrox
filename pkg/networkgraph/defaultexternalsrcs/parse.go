@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/set"
@@ -13,13 +12,33 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+type externalNetworkSources struct {
+	ProviderNetworks []*providerNetworkRanges `json:"providerNetworks"`
+}
+
+type providerNetworkRanges struct {
+	ProviderName   string                 `json:"providerName"`
+	RegionNetworks []*regionNetworkDetail `json:"regionNetworks"`
+}
+
+type regionNetworkDetail struct {
+	RegionName      string             `json:"regionName"`
+	ServiceNetworks []*serviceIPRanges `json:"serviceNetworks"`
+}
+
+type serviceIPRanges struct {
+	ServiceName  string   `json:"serviceName"`
+	IPv4Prefixes []string `json:"ipv4Prefixes"`
+	IPv6Prefixes []string `json:"ipv6Prefixes"`
+}
+
 const (
 	multiRegion = "multi-region"
 )
 
 // ParseProviderNetworkData parses the provider networks bytes (default network graph external source), into *storage.NetworkEntity.
 func ParseProviderNetworkData(data []byte) ([]*storage.NetworkEntity, error) {
-	var networkData *common.ExternalNetworkSources
+	var networkData *externalNetworkSources
 	if err := json.Unmarshal(data, &networkData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling provider networks")
 	}
@@ -73,7 +92,7 @@ func newNetworkDataParser() *networkDataParser {
 	}
 }
 
-func (p *networkDataParser) parse(sources *common.ExternalNetworkSources) []*storage.NetworkEntity {
+func (p *networkDataParser) parse(sources *externalNetworkSources) []*storage.NetworkEntity {
 	for _, provider := range sources.ProviderNetworks {
 		for _, region := range provider.RegionNetworks {
 			for _, service := range region.ServiceNetworks {
