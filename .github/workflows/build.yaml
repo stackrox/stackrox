@@ -1411,6 +1411,13 @@ jobs:
 
       - name: Download all scan artifacts
         if: steps.extract-cves.outcome == 'success'
+        # continue-on-error: a download failure here degrades into the same
+        # "missing scan result" path that flatten-cve-scan-results.sh
+        # already handles below (it'll find nothing to flatten and report
+        # every image as missing), instead of skipping every step after
+        # it - including "Post PR comment" - and hard-failing this job on
+        # an infra hiccup.
+        continue-on-error: true
         uses: ./.github/actions/download-artifact-with-retry
         with:
           pattern: cve-verify_*.json
@@ -1419,6 +1426,12 @@ jobs:
       - name: Flatten scan results
         id: flatten
         if: steps.extract-cves.outcome == 'success'
+        # continue-on-error: same rationale as "Download all scan
+        # artifacts" above - an unexpected crash here (not just the
+        # anticipated missing-images case the script already handles via
+        # its own exit-0 `infra-failure` output) must not skip "Post PR
+        # comment" or fail this job.
+        continue-on-error: true
         run: >-
           .github/workflows/scripts/flatten-cve-scan-results.sh
           --source-dir scan-results
@@ -1427,7 +1440,11 @@ jobs:
 
       - name: Verify CVE fix
         id: verify
-        if: steps.extract-cves.outcome == 'success'
+        # Requires flatten's own outcome (not just its `infra-failure`
+        # output) since continue-on-error above means a flatten crash
+        # wouldn't otherwise stop this step from running against a
+        # missing or partial scan-results-flat directory.
+        if: steps.extract-cves.outcome == 'success' && steps.flatten.outcome == 'success'
         env:
           CVES: ${{ steps.extract-cves.outputs.cves }}
         run: >-
@@ -1436,13 +1453,18 @@ jobs:
           --scan-dir scan-results-flat
 
       - name: Post PR comment
+        # always(): this comment is the only feedback this job gives, so
+        # it must post even if "Download all scan artifacts", "Flatten
+        # scan results", or "Verify CVE fix" above failed or were skipped
+        # - not just when they all succeeded.
+        if: always()
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           CVE_EXTRACTION_FAILED: ${{ steps.extract-cves.outcome == 'failure' }}
-          INFRA_FAILURE: ${{ steps.flatten.outputs.infra-failure || 'false' }}
+          INFRA_FAILURE: ${{ steps.flatten.outcome == 'failure' || steps.flatten.outputs.infra-failure == 'true' }}
           EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
         run: >-
