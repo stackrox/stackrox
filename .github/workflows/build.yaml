@@ -1325,14 +1325,21 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - resolve-cve-ids
       - push-main-manifests
       - push-scanner-manifests
       - push-operator-manifests
       - build-and-push-db
+    # No longer checks the raw title text: this now runs only when
+    # resolve-cve-ids actually resolved at least one CVE ID (directly from
+    # the title, or via a linked ROX ticket's JIRA "Vulnerability" record).
+    # A resolve-cve-ids job that was itself skipped (no "CVE-"/"ROX-" in the
+    # title at all) implicitly skips this job too, since jobs whose `needs`
+    # includes a skipped job are skipped by default.
     if: >-
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.title, 'CVE-') &&
-      !github.event.pull_request.head.repo.fork
+      !github.event.pull_request.head.repo.fork &&
+      needs.resolve-cve-ids.outputs.cves != ''
     permissions:
       id-token: write
       contents: read
