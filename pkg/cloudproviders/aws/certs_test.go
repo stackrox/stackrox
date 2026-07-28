@@ -25,6 +25,9 @@ func TestAWSCerts(t *testing.T) {
 
 func BenchmarkAWSCertsParsing(b *testing.B) {
 	for range b.N {
-		helpers.ParseCertificatesPEM(awsCertsPEM)
+		_, err := helpers.ParseCertificatesPEM(awsCertsPEM)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
