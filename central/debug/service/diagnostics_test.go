@@ -75,7 +75,7 @@ func TestGetK8sDiagnostics(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, zipReader.File, 2)
 
-	var zipFileNames []string
+	zipFileNames := make([]string, 0, len(zipReader.File))
 	for _, file := range zipReader.File {
 		zipFileNames = append(zipFileNames, file.Name)
 	}
@@ -128,7 +128,7 @@ func TestPullSensorMetrics(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, zipReader.File, 1)
 
-	var zipFileNames []string
+	zipFileNames := make([]string, 0, len(zipReader.File))
 	for _, file := range zipReader.File {
 		zipFileNames = append(zipFileNames, file.Name)
 	}

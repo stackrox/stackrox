@@ -200,8 +200,8 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 		},
 	} {
 		s.Run(name, func() {
-			var searchResults []pkgSearch.Result
-			var resultIDs []string
+			searchResults := make([]pkgSearch.Result, 0, len(tc.results))
+			resultIDs := make([]string, 0, len(tc.results))
 			for _, result := range tc.results {
 				searchResults = append(searchResults, pkgSearch.Result{ID: result.ID})
 				resultIDs = append(resultIDs, result.ID)
@@ -252,8 +252,8 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 					Times(1).
 					Return(result.status)
 				// For each deployment, get alerts and mark them stale
-				var alertIDs []string
-				var resolvedAlerts []*storage.Alert
+				alertIDs := make([]string, 0, len(tc.results))
+				resolvedAlerts := make([]*storage.Alert, 0, len(tc.results))
 				for _, alertResult := range tc.results {
 					alertID := uuid.NewV5FromNonUUIDs(result.ID, alertResult.ID).String()
 					alertIDs = append(alertIDs, alertID)
@@ -333,7 +333,7 @@ func (s *clusterDataStoreTestSuite) TestPostRemoveCluster() {
 			}
 
 			// 13. Remove secrets
-			var listSecrets []*storage.ListSecret
+			listSecrets := make([]*storage.ListSecret, 0, len(tc.results))
 			for _, result := range tc.results {
 				listSecrets = append(listSecrets, &storage.ListSecret{Id: result.ID})
 				s.secretDS.EXPECT().
