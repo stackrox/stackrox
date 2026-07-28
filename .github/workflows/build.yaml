@@ -1425,16 +1425,25 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - resolve-cve-ids
       - verify-cve-fix-scan
+    # Runs whenever resolve-cve-ids ran at all (result == 'success'),
+    # regardless of whether it actually resolved a CVE - a "signal but no
+    # resolution" case (e.g. a malformed CVE-YYYY-NNNN, or a ROX ticket
+    # that JIRA says isn't a Vulnerability) still needs to post the
+    # explanatory NOT APPLICABLE comment below. If resolve-cve-ids was
+    # itself skipped (no "CVE-"/"ROX-" in the title at all), this job is
+    # skipped too - always() only bypasses the default success-of-needs
+    # gate, it doesn't force a run when a needed job never ran.
     if: >-
       always() &&
       github.event_name == 'pull_request' &&
-      contains(github.event.pull_request.title, 'CVE-') &&
-      !github.event.pull_request.head.repo.fork
+      !github.event.pull_request.head.repo.fork &&
+      needs.resolve-cve-ids.result == 'success'
     permissions:
       pull-requests: write
     env:
-      PR_TITLE: ${{ github.event.pull_request.title }}
+      CVES: ${{ needs.resolve-cve-ids.outputs.cves }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -1443,19 +1452,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Extract CVE IDs from PR title
-        id: extract-cves
-        # The job-level `if:` above only checks for the literal substring
-        # "CVE-", not a well-formed CVE-YYYY-NNNN id. continue-on-error lets
-        # a title that fails to parse fall through to "Post PR comment"
-        # below (later steps are individually guarded on this step's
-        # outcome) instead of hard-failing the job before ever explaining
-        # why.
-        continue-on-error: true
-        run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
-
       - name: Download all scan artifacts
-        if: steps.extract-cves.outcome == 'success'
+        if: needs.resolve-cve-ids.outputs.cves != ''
         # continue-on-error: a download failure here degrades into the same
         # "missing scan result" path that flatten-cve-scan-results.sh
         # already handles below (it'll find nothing to flatten and report
@@ -1470,7 +1468,7 @@ jobs:
 
       - name: Flatten scan results
         id: flatten
-        if: steps.extract-cves.outcome == 'success'
+        if: needs.resolve-cve-ids.outputs.cves != ''
         # continue-on-error: same rationale as "Download all scan
         # artifacts" above - an unexpected crash here (not just the
         # anticipated missing-images case the script already handles via
@@ -1489,9 +1487,7 @@ jobs:
         # output) since continue-on-error above means a flatten crash
         # wouldn't otherwise stop this step from running against a
         # missing or partial scan-results-flat directory.
-        if: steps.extract-cves.outcome == 'success' && steps.flatten.outcome == 'success'
-        env:
-          CVES: ${{ steps.extract-cves.outputs.cves }}
+        if: needs.resolve-cve-ids.outputs.cves != '' && steps.flatten.outcome == 'success'
         run: >-
           .github/workflows/scripts/run-cve-fix-verification.sh
           --cves "$CVES"
@@ -1508,7 +1504,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          CVE_EXTRACTION_FAILED: ${{ steps.extract-cves.outcome == 'failure' }}
+          CVE_EXTRACTION_FAILED: ${{ needs.resolve-cve-ids.outputs.cves == '' }}
           INFRA_FAILURE: ${{ steps.flatten.outcome == 'failure' || steps.flatten.outputs.infra-failure == 'true' }}
           EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
