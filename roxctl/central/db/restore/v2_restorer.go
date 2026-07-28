@@ -20,15 +20,12 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/v2backuprestore"
+	"github.com/stackrox/rox/roxctl/central/db/transfer"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
-	"golang.org/x/term"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -45,11 +42,6 @@ const (
 	retryDelay = 6 * time.Second
 )
 
-var (
-	defaultSpinner = []string{"⠇", "⠏", "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"}
-	waitingSpinner = sliceutils.Concat(defaultSpinner, sliceutils.Reversed(defaultSpinner))
-)
-
 type v2Restorer struct {
 	env           environment.Environment
 	retryDeadline time.Time // does not affect ongoing transfers
@@ -64,9 +56,7 @@ type v2Restorer struct {
 	headerSize    int64
 	totalDataSize int64
 
-	transferProgressBar *mpb.Bar
-	errorLine           statusLine
-	statusLine          statusLine
+	progressBar *transfer.ProgressBar
 
 	httpClient common.RoxctlHTTPClient
 	dbClient   v1.DBServiceClient
@@ -105,15 +95,14 @@ func (r *v2Restorer) updateTransferStatus(cancelCond concurrency.Waitable) {
 		r.transferStatusText = "Transferring data ..."
 	})
 
-	// Function will only run if r.transferProgressBar != nil
-	lastVal := r.transferProgressBar.Current()
+	lastVal := r.progressBar.Current()
 	var avgSpeed float64
 	const ewmaDecay = 2.0 / 31.0 // EWMA with age=30
 
 	for {
 		select {
 		case <-ticker.C:
-			currVal := r.transferProgressBar.Current()
+			currVal := r.progressBar.Current()
 			progress := float64(currVal - lastVal)
 			lastVal = currVal
 			if avgSpeed == 0 {
@@ -130,8 +119,8 @@ func (r *v2Restorer) updateTransferStatus(cancelCond concurrency.Waitable) {
 			remainingSecs := remaining / speedInt
 
 			newText := fmt.Sprintf(
-				"Transferring data at % 10.1f/s (ETA %02d:%02d:%02d)",
-				decor.SizeB1024(speedInt),
+				"Transferring data at %s/s (ETA %02d:%02d:%02d)",
+				transfer.FormatSize(speedInt),
 				remainingSecs/3600,
 				(remainingSecs%3600)/60,
 				remainingSecs%60,
@@ -161,55 +150,27 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		return nil, err
 	}
 
-	r.statusLine.SetSpinner(waitingSpinner)
-	r.statusLine.SetTextStatic("Initiating restore ...")
+	r.env.Logger().PrintfLn("Initiating restore ...")
 
-	termWidth, _, err := term.GetSize(int(os.Stderr.Fd())) //nolint:forbidigo // TODO(ROX-13473)
-	if err == nil && termWidth > 40 {
-		if termWidth > 120 {
-			termWidth = 120
-		}
+	bar, shutdown := transfer.CreateProgressBar(subCtx, filepath.Base(file.Name()), r.headerSize+r.totalDataSize, r.env.InputOutput().ErrOut())
+	r.progressBar = bar
+	defer shutdown()
 
-		progressBarContainer := mpb.NewWithContext(subCtx, mpb.WithOutput(r.env.InputOutput().ErrOut()), mpb.WithWidth(termWidth))
-		defer progressBarContainer.Wait()
-		defer cancel() // canceling twice doesn't hurt, but we need to ensure this gets called before Wait() above.
-
-		r.transferProgressBar = progressBarContainer.AddBar(
-			r.headerSize+r.totalDataSize,
-			mpb.PrependDecorators(decor.CountersKibiByte("% 10.1f / % 10.1f")),
-			mpb.AppendDecorators(
-				decor.Percentage(),
-				decor.Name(" "),
-				decor.Name(filepath.Base(file.Name())),
-			),
-		)
-
-		progressBarContainer.Add(0, &r.errorLine)
-		progressBarContainer.Add(0, &r.statusLine)
-
-		// In case we resumed, initialized the transfer progress bar with the refill.
-		pos, err := r.dataReader.Seek(0, io.SeekCurrent)
-		if err != nil {
-			return nil, errors.Wrap(err, "could not seek in stream")
-		}
-		r.transferProgressBar.IncrInt64(r.headerSize + pos)
-		r.transferProgressBar.SetRefill(r.headerSize + pos)
+	pos, err := r.dataReader.Seek(0, io.SeekCurrent)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not seek in stream")
+	}
+	if pos > 0 {
+		r.progressBar.SetCurrent(r.headerSize + pos)
 	}
 
 	for ctx.Err() == nil {
-		r.errorLine.SetTextStatic("")
-		r.statusLine.SetSpinner(defaultSpinner)
 		concurrency.WithLock(&r.transferStatusTextMutex, func() {
 			r.transferStatusText = "Initiating transfer ..."
 		})
-		r.statusLine.SetTextDynamic(r.transferStatus)
 
 		transferInProgressSig := concurrency.NewSignal()
-		if r.transferProgressBar != nil {
-			go r.updateTransferStatus(&transferInProgressSig)
-		} else {
-			r.env.Logger().PrintfLn("Transferring data ...")
-		}
+		go r.updateTransferStatus(&transferInProgressSig)
 		resp, err := r.performHTTPRequest(nextReq.WithContext(ctx))
 		transferInProgressSig.Signal()
 
@@ -218,28 +179,13 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 		}
 
 		for i := 0; i < resumeRetries && err != nil; i++ {
-			r.errorLine.SetTextStatic(err.Error())
-
 			if !r.retryDeadline.IsZero() && time.Now().After(r.retryDeadline) {
 				return nil, errox.InvariantViolation.New("absolute retry deadline has passed, please restart roxctl to resume the restore")
 			}
 
-			if r.transferProgressBar == nil {
-				r.env.Logger().ErrfLn("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)", err, retryDelay, i+1, resumeRetries)
-			}
+			r.env.Logger().ErrfLn("Encountered a temporary error: %v. Retrying in %v (attempt %d out of %d)", err, retryDelay, i+1, resumeRetries)
 
-			continueTime := time.Now().Add(retryDelay)
-			r.statusLine.SetSpinner(waitingSpinner)
-			r.statusLine.SetTextDynamic(func() string {
-				secondsLeft := time.Until(continueTime) / time.Second
-				inText := "now"
-				if secondsLeft > 0 {
-					inText = fmt.Sprintf("in %ds", secondsLeft)
-				}
-				return fmt.Sprintf("Encountered a temporary error. Retrying %s...", inText)
-			})
-
-			if concurrency.WaitWithDeadline(ctx, continueTime) {
+			if concurrency.WaitWithDeadline(ctx, time.Now().Add(retryDelay)) {
 				return nil, errors.Wrap(ctx.Err(), "waiting to retry restore")
 			}
 
@@ -257,8 +203,8 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 }
 
 func (r *v2Restorer) performHTTPRequest(req *http.Request) (*http.Response, error) {
-	if r.transferProgressBar != nil {
-		req.Body = r.transferProgressBar.ProxyReader(req.Body)
+	if r.progressBar != nil {
+		req.Body = r.progressBar.ProxyReader(req.Body)
 	}
 	resp, err := r.httpClient.Do(req)
 	return resp, errors.Wrap(err, "executing restore HTTP request")
@@ -415,11 +361,8 @@ func (r *v2Restorer) prepareResumeRequest(resumeInfo *v1.DBRestoreProcessStatus_
 		return nil, errors.Wrap(err, "seeking to restore resume position")
 	} else if pos != resumeInfo.GetPos() {
 		return nil, errox.NotFound.Newf("could not seek to resume position %d in data: data ends at position %d", resumeInfo.GetPos(), pos)
-	} else if r.transferProgressBar != nil {
-		// Interestingly, `SetCurrent` on a progress bar does not work as expected. It only works if it is used without
-		// ever using `Incr` beforehand.
-		r.transferProgressBar.IncrInt64(r.headerSize + pos - r.transferProgressBar.Current())
-		r.transferProgressBar.SetRefill(r.headerSize + pos)
+	} else if r.progressBar != nil {
+		r.progressBar.SetCurrent(r.headerSize + pos)
 	}
 
 	req, err := r.httpClient.NewReq(http.MethodPost, "/db/v2/resumerestore", io.NopCloser(r.dataReader))

@@ -12,20 +12,19 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/vbauerster/mpb/v4"
 )
 
 type progressWatchReader struct {
 	reader       io.Reader
 	lastActivity timestamp.MicroTS
-	progressBar  *mpb.Bar
+	bar          *ProgressBar
 }
 
-func newProgressWatchReader(r io.Reader, progressBar *mpb.Bar) *progressWatchReader {
+func newProgressWatchReader(r io.Reader, bar *ProgressBar) *progressWatchReader {
 	return &progressWatchReader{
 		reader:       r,
 		lastActivity: timestamp.Now(),
-		progressBar:  progressBar,
+		bar:          bar,
 	}
 }
 
@@ -37,7 +36,7 @@ func (r *progressWatchReader) Read(p []byte) (int, error) {
 	count, err := r.reader.Read(p)
 	if err == nil {
 		r.lastActivity.StoreAtomic(timestamp.Now())
-		r.progressBar.IncrBy(len(p))
+		r.bar.IncrBy(count)
 	}
 
 	return count, err //nolint:wrapcheck // we should not wrap EOF as it has special meaning and is not handled everywhere properly with errors.Is
@@ -47,7 +46,6 @@ func (r *progressWatchReader) Close() error {
 	if rc, ok := r.reader.(io.ReadCloser); ok {
 		return errors.Wrap(rc.Close(), "closing reader")
 	}
-	r.progressBar.SetTotal(r.progressBar.Current(), true)
 	r.lastActivity.StoreAtomic(timestamp.InfiniteFuture)
 	return nil
 }
@@ -83,7 +81,7 @@ func ViaHTTP(req *http.Request, client common.RoxctlHTTPClient, earliestDeadline
 	defer cancel()
 	req = req.WithContext(ctx)
 
-	bar, shutdown := createProgressBars(ctx, name, totalLen)
+	bar, shutdown := CreateProgressBar(ctx, name, totalLen, os.Stderr) //nolint:forbidigo // TODO(ROX-13473)
 	defer shutdown()
 
 	newBody := newProgressWatchReader(req.Body, bar)
@@ -105,7 +103,7 @@ func Copy(ctx context.Context, ctxCancel context.CancelFunc, fileName string, to
 	defer errSig.Signal()
 	concurrency.CancelContextOnSignal(ctx, ctxCancel, &errSig)
 
-	bar, shutdown := createProgressBars(ctx, fileName, totalSize)
+	bar, shutdown := CreateProgressBar(ctx, fileName, totalSize, os.Stderr) //nolint:forbidigo // TODO(ROX-13473)
 	defer shutdown()
 
 	watchReader := newProgressWatchReader(from, bar)
