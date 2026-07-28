@@ -14,8 +14,8 @@ const (
 
 // RefreshTokenData encapsulates data relevant to refresh tokens.
 type RefreshTokenData struct {
-	RefreshToken     string `schema:"refreshToken,required"`
-	RefreshTokenType string `schema:"refreshTokenType,omitempty"`
+	RefreshToken     string
+	RefreshTokenType string
 }
 
 // Type returns the inferred type of the refresh token stored in this type.
@@ -27,8 +27,8 @@ func (d *RefreshTokenData) Type() string {
 }
 
 type refreshTokenCookieData struct {
-	ProviderType string `schema:"providerType,required"`
-	ProviderID   string `schema:"providerId,required"`
+	ProviderType string
+	ProviderID   string
 	RefreshTokenData
 }
 
