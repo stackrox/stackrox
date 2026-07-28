@@ -22,7 +22,6 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
-	github.com/adhocore/gronx v1.20.0
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
