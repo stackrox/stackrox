@@ -1294,7 +1294,7 @@ jobs:
     if: >-
       github.event_name == 'pull_request' &&
       contains(github.event.pull_request.title, 'CVE-') &&
-      (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+      !github.event.pull_request.head.repo.fork
     permissions:
       id-token: write
       contents: read
@@ -1385,7 +1385,7 @@ jobs:
       always() &&
       github.event_name == 'pull_request' &&
       contains(github.event.pull_request.title, 'CVE-') &&
-      (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
+      !github.event.pull_request.head.repo.fork
     permissions:
       pull-requests: write
     env:
