@@ -35,8 +35,8 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/atomic"
 	"golang.org/x/sync/semaphore"
+	"sync/atomic"
 )
 
 const (
@@ -306,7 +306,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 
 	sema := semaphore.NewWeighted(5)
 	wg := concurrency.NewWaitGroup(0)
-	nReprocessed := atomic.NewInt32(0)
+	nReprocessed := new(atomic.Int32)
 	for _, id := range ids {
 		wg.Add(1)
 		if err := sema.Acquire(concurrency.AsContext(&l.stopSig), 1); err != nil {
@@ -317,7 +317,7 @@ func (l *loopImpl) runReprocessingForObjects(entityType string, getIDsFunc func(
 			defer sema.Release(1)
 			defer wg.Add(-1)
 			if individualReprocessFunc(id) {
-				nReprocessed.Inc()
+				nReprocessed.Add(1)
 			}
 		}(id)
 	}
@@ -393,7 +393,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
-	nReprocessed := atomic.NewInt32(0)
+	nReprocessed := new(atomic.Int32)
 	state := newReprocessingState(fetchOpt == imageEnricher.UseCachesIfPossible)
 	for _, result := range results {
 		wg.Add(1)
@@ -411,7 +411,7 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 			if !successfullyProcessed {
 				return
 			}
-			nReprocessed.Inc()
+			nReprocessed.Add(1)
 
 			utils.FilterSuppressedCVEsNoClone(image)
 			utils.StripCVEDescriptionsNoClone(image)
@@ -550,7 +550,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
-	nReprocessed := atomic.NewInt32(0)
+	nReprocessed := new(atomic.Int32)
 	state := newReprocessingState(fetchOpt == imageEnricher.UseCachesIfPossible)
 	for _, result := range results {
 		wg.Add(1)
@@ -567,7 +567,7 @@ func (l *loopImpl) reprocessImagesV2AndResyncDeployments(fetchOpt imageEnricher.
 			if !successfullyProcessed {
 				return
 			}
-			nReprocessed.Inc()
+			nReprocessed.Add(1)
 
 			utils.FilterSuppressedCVEsNoCloneV2(image)
 			utils.StripCVEDescriptionsNoCloneV2(image)
