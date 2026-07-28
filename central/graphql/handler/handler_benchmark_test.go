@@ -153,7 +153,8 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 	resolver := resolvers.NewMock()
 	resolver.DeploymentDataStore = testHelper.Deployments
 	resolver.ImageDataStore = testHelper.Images
-	// Override Deployment and Image loader to avoid panics
+	resolver.ImageV2DataStore = testHelper.ImagesV2
+	// Override Deployment, Image, and ImageV2 loaders to avoid panics
 	deploymentFactory := func() interface{} {
 		return loaders.NewDeploymentLoader(resolver.DeploymentDataStore, testHelper.DeploymentView)
 	}
@@ -162,6 +163,10 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 		return loaders.NewImageLoader(resolver.ImageDataStore, testHelper.ImageView)
 	}
 	loaders.RegisterTypeFactory(reflect.TypeFor[storage.Image](), imageFactory)
+	imageV2Factory := func() interface{} {
+		return loaders.NewImageV2Loader(testHelper.ImagesV2, testHelper.ImageView)
+	}
+	loaders.RegisterTypeFactory(reflect.TypeFor[storage.ImageV2](), imageV2Factory)
 	ourSchema, err := graphql.ParseSchema(schema, resolver)
 	if err != nil {
 		return nil, err
