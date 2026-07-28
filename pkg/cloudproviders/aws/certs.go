@@ -8,17 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// awsCerts lists all known AWS certificates as of time of writing.
+// awsCertsPEM contains the raw PEM bundle of all known AWS identity-document
+// certificates. Extracted as a var so the OnceValue closure is trivial and
+// benchmarks can measure fresh parsing cost.
+//
 // See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-rsa2048.html
 // for the current list of RSA-2048 certificates.
 //
 // Note: THIS CAN BE BRITTLE. THERE IS NO GUARANTEE THESE CERTS WILL LAST FOREVER.
 // See https://github.com/aws/aws-sdk-go/pull/1593#pullrequestreview-70664445.
 // It is probably in everyone's best interest to check on this periodically.
-var awsCerts = sync.OnceValue(func() []*x509.Certificate {
-	var awsCerts []*x509.Certificate
-	var err error
-	awsCerts, err = helpers.ParseCertificatesPEM([]byte(`
+var awsCertsPEM = []byte(`
 -----BEGIN CERTIFICATE-----
 MIIEEjCCAvqgAwIBAgIJALFpzEAVWaQZMA0GCSqGSIb3DQEBCwUAMFwxCzAJBgNV
 BAYTAlVTMRkwFwYDVQQIExBXYXNoaW5ndG9uIFN0YXRlMRAwDgYDVQQHEwdTZWF0
@@ -607,7 +607,10 @@ YeN5fsLZp7T/6YvbFSPpmbn1YoE2vKtuGKxObRrhU3h4JHdp1Zel1pZ6lh5iM0ec
 SD11SximGIYCjfZpRqI3q50mbxCd7ckULz+UUPwLrfOds4VrVVSj+x0ZdY19Plv2
 9shw5ez6Cn7E3IfzqNHO
 -----END CERTIFICATE-----
-`))
+`)
+
+var awsCerts = sync.OnceValue(func() []*x509.Certificate {
+	certs, err := helpers.ParseCertificatesPEM(awsCertsPEM)
 	utils.CrashOnError(err)
-	return awsCerts
+	return certs
 })
