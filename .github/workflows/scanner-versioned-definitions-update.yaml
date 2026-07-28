@@ -552,7 +552,7 @@ jobs:
             summary+="${job_name}: ${failed_step}"$'\n'
             if [ -n "$messages" ]; then
                 total=$(printf '%s\n' "$messages" | grep -c .)
-                summary+="$(printf '%s\n' "$messages" | head -n "$max_messages_per_job" | sed 's/^/  - /')"
+                summary+="$(printf '%s\n' "$messages" | sed -n "1,${max_messages_per_job}s/^/  - /p")"
                 if [ "$total" -gt "$max_messages_per_job" ]; then
                     summary+=$'\n'"  - ... and $((total - max_messages_per_job)) more (see the workflow run for full details)"
                 fi
@@ -566,7 +566,7 @@ jobs:
         fi
 
         # Safety-net truncation, on top of the per-job cap above.
-        summary=$(printf '%s' "$summary" | head -c 3000)
+        summary="${summary:0:3000}"
 
         # Status of every job (not just failed ones), icons matching GitHub's own.
         job_status=""
@@ -581,6 +581,8 @@ jobs:
             esac
             job_status+="${icon} ${job_name}"$'\n'
         done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
+
+        job_status="${job_status:0:3000}"
 
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         {
