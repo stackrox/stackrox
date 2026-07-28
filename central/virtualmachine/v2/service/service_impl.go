@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -280,6 +281,9 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be specified")
 	}
+	if _, err := uuid.FromString(request.GetId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "id must be a valid UUID (got: %q)", request.GetId())
+	}
 
 	vmQuery := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetId()).ProtoQuery()
 	count, err := s.vmDS.CountVirtualMachines(ctx, vmQuery)
@@ -318,6 +322,9 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEsByVMRequest) (*v2.ListVMCVEsByVMResponse, error) {
 	if request.GetVmId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id must be specified")
+	}
+	if _, err := uuid.FromString(request.GetVmId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "vm_id must be a valid UUID (got: %q)", request.GetVmId())
 	}
 
 	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
@@ -358,6 +365,9 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 	if request.GetVmId() == "" || request.GetCveId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id and cve_id must be specified")
 	}
+	if _, err := uuid.FromString(request.GetVmId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "vm_id must be a valid UUID (got: %q)", request.GetVmId())
+	}
 
 	q := search.ConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery(),
@@ -396,6 +406,9 @@ func (s *serviceImpl) GetVMCVEComponents(ctx context.Context, request *v2.GetVMC
 func (s *serviceImpl) ListVMComponents(ctx context.Context, request *v2.ListVMComponentsRequest) (*v2.ListVMComponentsResponse, error) {
 	if request.GetVmId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "vm_id must be specified")
+	}
+	if _, err := uuid.FromString(request.GetVmId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "vm_id must be a valid UUID (got: %q)", request.GetVmId())
 	}
 
 	searchQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
@@ -562,6 +575,9 @@ func (s *serviceImpl) ListVMCVEAffectedVMs(ctx context.Context, request *v2.List
 func (s *serviceImpl) GetVM(ctx context.Context, request *v2.GetVMRequest) (*v2.VMDetail, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be specified")
+	}
+	if _, err := uuid.FromString(request.GetId()); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "id must be a valid UUID (got: %q)", request.GetId())
 	}
 
 	vm, exists, err := s.vmDS.GetVirtualMachine(ctx, request.GetId())

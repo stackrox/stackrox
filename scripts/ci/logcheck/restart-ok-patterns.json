@@ -64,5 +64,17 @@
         "job": ".*",
         "logfile": "config-controller.*-manager-previous",
         "logline": "could not exchange token.*forbidden.*openid"
+    },
+    {
+        "comment": "Scanner V4 crash on DB connection refused in 4.9/4.10 (remove once 4.10 no longer included in compatability tests)",
+        "job": "compatibility",
+        "logfile": "400\\.(9|10)\\..*indexer-previous",
+        "logline": "unable to connect to database.*connection refused"
+    },
+    {
+        "comment": "Scanner V4 crash on DB connection refused in 4.9/4.10  (remove once 4.10 no longer included in compatability tests)",
+        "job": "compatibility",
+        "logfile": "400\\.(9|10)\\..*matcher-previous",
+        "logline": "unable to connect to database.*connection refused"
     }
 ]

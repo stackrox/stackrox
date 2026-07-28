@@ -31,14 +31,14 @@ func setupBench(b *testing.B, ctx context.Context, db *pghelper.TestPostgres) *b
 	pgutils.CreateTableFromModel(ctx, db.GetGormDB(), schema.CreateTableDeploymentsStmt)
 
 	data := &benchData{}
-	for i := 0; i < benchNumDeployments; i++ {
+	for i := range benchNumDeployments {
 		dep := &storage.Deployment{
 			Id:        uuid.NewV4().String(),
 			Name:      fmt.Sprintf("dep-%d", i),
 			Type:      "Deployment",
 			Namespace: "default",
 		}
-		for j := 0; j < benchContainersPerDep; j++ {
+		for j := range benchContainersPerDep {
 			hash := fmt.Sprintf("%064x", i*benchContainersPerDep+j)
 			dep.Containers = append(dep.GetContainers(), &storage.Container{
 				Image: &storage.ContainerImage{

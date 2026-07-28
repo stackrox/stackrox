@@ -84,7 +84,7 @@ func BenchmarkGet(b *testing.B) {
 func BenchmarkWalk(b *testing.B) {
 	store, ctx := setupBench(b)
 
-	for i := 0; i < 1000; i++ {
+	for i := range 1000 {
 		obj := makeBenchObj(fmt.Sprintf("walk-%d", i))
 		if err := store.Upsert(ctx, obj); err != nil {
 			b.Fatal(err)

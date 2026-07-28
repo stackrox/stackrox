@@ -1,6 +1,9 @@
 import axios from 'services/instance';
-import type { ScanComponent } from 'types/scanComponent.proto';
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
+
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 // Legacy API (v2/virtualmachines)
@@ -90,18 +93,6 @@ export type ListVMsResponse = {
     totalCount: number;
 };
 
-export function listVMs({
-    sortOption,
-    page,
-    perPage,
-    searchFilter,
-}: SearchQueryOptions): Promise<ListVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
-    return axios
-        .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
-        .then((response) => response.data);
-}
-
 export type VMCVEListItem = {
     cve: string;
     vmSeverityCounts: VulnCountBySeverity;
@@ -132,9 +123,71 @@ export type VMCVEDetail = {
     topCvss: number;
 };
 
-export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+export type VMCVEAffectedVMRow = {
+    vmId: string;
+    vmName: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    cvss: number;
+    guestOs: string;
+    affectedComponentCount: number;
+};
+
+export type ListVMCVEAffectedVMsResponse = {
+    vms: VMCVEAffectedVMRow[];
+    totalCount: number;
+};
+
+export type VMCVEByVMRow = {
+    cve: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    cvss: number;
+    nvdCvss: number;
+    epssProbability: number;
+    affectedComponentCount: number;
+    publishedOn?: string;
+    summary: string;
+    link: string;
+    advisory?: { name: string; link: string };
+};
+
+export type ListVMCVEsByVMResponse = {
+    cves: VMCVEByVMRow[];
+    totalCount: number;
+};
+
+export type VMComponentScanStatus =
+    | 'NOT_SCANNED'
+    | 'SCAN_PENDING'
+    | 'CPE_MISSING'
+    | 'REPO_UNKNOWN'
+    | 'SCANNED';
+
+export type VMComponentRow = {
+    id: string;
+    name: string;
+    version: string;
+    source: SourceType;
+    scanStatus: VMComponentScanStatus;
+    lastScanned?: string;
+    cveCount: number;
+};
+
+export type ListVMComponentsResponse = {
+    components: VMComponentRow[];
+    totalCount: number;
+};
+
+export function listVMs({
+    sortOption,
+    page,
+    perPage,
+    searchFilter,
+}: SearchQueryOptions): Promise<ListVMsResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
     return axios
-        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
 
@@ -142,5 +195,51 @@ export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListV
     const params = buildNestedRawQueryParams({ page, perPage });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
+        .then((response) => response.data);
+}
+
+export function getVMCVEDetail(cveId: string): Promise<VMCVEDetail> {
+    return axios
+        .get<VMCVEDetail>(`/v2/virtualmachines/cves/${cveId}`)
+        .then((response) => response.data);
+}
+
+export function listVMCVEAffectedVMs(
+    cveId: string,
+    { sortOption, page, perPage }: SearchQueryOptions
+): Promise<ListVMCVEAffectedVMsResponse> {
+    const params = buildNestedRawQueryParams({ page, perPage, sortOption });
+    return axios
+        .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
+        .then((response) => response.data);
+}
+
+export function listVMCVEsByVM(
+    vmId: string,
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
+): Promise<ListVMCVEsByVMResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
+    return axios
+        .get<ListVMCVEsByVMResponse>(`/v2/virtualmachines/${vmId}/cves?${params}`)
+        .then((response) => response.data);
+}
+
+export function listVMComponents(
+    vmId: string,
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
+): Promise<ListVMComponentsResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
+    return axios
+        .get<ListVMComponentsResponse>(`/v2/virtualmachines/${vmId}/components?${params}`)
         .then((response) => response.data);
 }

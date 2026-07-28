@@ -22,6 +22,7 @@ This document covers **StackRox internal CA mTLS** only.
 - Secondary CA (during rotation): `CertsPrefix/ca-secondary.pem`, `CertsPrefix/ca-secondary-key.pem`
 - Leaf cert: `CertsPrefix/cert.pem`, `CertsPrefix/key.pem`
 - Default cert: `/run/secrets/stackrox.io/default-tls-cert/` (`tls.crt`/`tls.key`)
+- OpenShift service-serving cert: `/run/secrets/stackrox.io/ocp-tls/` (`tls.crt`/`tls.key`) — issued by OpenShift's service CA for the `central-ocp` Service
 
 ## Key code locations
 
@@ -32,7 +33,8 @@ This document covers **StackRox internal CA mTLS** only.
 - TLS config composition: `pkg/mtls/certwatch/tls_config_holder.go` — `atomic.Pointer[tls.Config]`, rotates session ticket keys on every update to invalidate cached TLS sessions
 - Trust pool builders: `pkg/mtls/verifier/verify.go` — `TrustedCertPool()`, `NonCA.TLSConfig()`
 - Central TLS manager: `central/tlsconfig/manager_impl.go` — composes server certs + trust roots for incoming connections
-- Central TLS cert loaders: `central/tlsconfig/tlsconfig.go` — `LoadInternalCertificateFromDirectory()`, `MaybeGetDefaultTLSCertificateFromDirectory()`
+- Central TLS cert loaders: `central/tlsconfig/tlsconfig.go` — `LoadInternalCertificateFromDirectory()`, `MaybeGetDefaultTLSCertificateFromDirectory()`, `MaybeLoadOpenShiftTLSCertificateFromDirectory()`
+- OpenShift service-serving TLS: `central/tlsconfig/openshift_tls.go` — watches `/run/secrets/stackrox.io/ocp-tls/` for certs issued by OpenShift's service CA for the `central-ocp` Service
 - TLS challenge endpoint: `central/metadata/service/service_impl.go`
 - Cert issuance for Secured Clusters: `central/securedclustercertgen/certificates.go`
 - CentralHello cert bundle: `central/sensor/service/service_impl.go` — Central proactively issues certs and includes them in the CentralHello handshake message. Used by the CRS registration flow; typically ignored by Sensor during normal reconnects.
@@ -43,11 +45,12 @@ This document covers **StackRox internal CA mTLS** only.
 - Sensor cert refresh (TLS challenge + CA bundle): `sensor/kubernetes/certrefresh/`
 - Postgres DB cert reload (Central DB, Scanner V4 DB): `image/postgres/scripts/cert-watcher.sh`, `image/templates/helm/shared/templates/_cert-watcher.tpl`
 
-### Central has three independent cert-handling paths
+### Central has four independent cert-handling paths
 
-1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (watched) + sync.Once trust roots.
+1. **TLS manager** (`TLSConfigHolder`) — incoming connections. Composes default cert (watched) + internal cert (watched) + OpenShift cert (watched, if configured) + sync.Once trust roots.
 2. **Outbound client connections** (`clientconn.TLSConfig`) — reads leaf cert from disk on each TLS handshake, trust pool from `mtls.CACert()`.
 3. **TLS challenge endpoint** (`central/metadata/service`) — reads primary leaf via certwatch, issues secondary leaf with short validity and auto-renewal, reads CA via `mtls.CACert()`.
+4. **OpenShift service-serving TLS** (`central/tlsconfig/openshift_tls.go`) — on OpenShift, watches certs issued for the `central-ocp` Service. Presented via SNI on the same `:8443` listener alongside the StackRox internal cert.
 
 ## Certificate caching
 

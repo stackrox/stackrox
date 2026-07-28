@@ -35,7 +35,7 @@ func TestKeyedMutexDifferentKeys(t *testing.T) {
 	km := NewKeyedMutex(100000)
 
 	var counter atomic.Uint32
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		go func(key string) {
 			km.Lock(key)
 			counter.Add(1)

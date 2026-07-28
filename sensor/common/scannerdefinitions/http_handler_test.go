@@ -99,7 +99,7 @@ func TestServeHTTP_Responses(t *testing.T) {
 					centralClient: &http.Client{
 						Transport: httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 							assert.Equal(t, tt.args.request.URL.RawQuery, req.URL.RawQuery)
-							for _, header := range headersToProxy.AsSlice() {
+							for header := range headersToProxy.All() {
 								assert.Equal(t, tt.args.request.Header.Values(header), req.Header.Values(header))
 							}
 							return &http.Response{

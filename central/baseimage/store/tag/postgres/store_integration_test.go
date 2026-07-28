@@ -92,7 +92,7 @@ func (s *BaseImageTagsIntegrationSuite) TestCascadeDelete() {
 	s.NoError(s.repoStore.Upsert(ctx, repo))
 
 	// Create multiple tags
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		tag := &storage.BaseImageTag{
 			Id:                    uuid.NewV4().String(),
 			BaseImageRepositoryId: repo.GetId(),
