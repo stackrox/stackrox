@@ -1316,6 +1316,7 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Determine image tag to scan
         id: determine-tag
@@ -1324,14 +1325,29 @@ jobs:
         # the actual tag to poll for so that leg doesn't hit the
         # wait-for-image timeout below looking for a tag that was never
         # pushed.
+        #
+        # continue-on-error: a failure here (e.g. `make -C operator tag`
+        # erroring) degrades into the same "missing scan result" path that
+        # flatten-cve-scan-results.sh already handles below, instead of
+        # hard-failing this matrix leg.
+        continue-on-error: true
+        env:
+          IMAGE: ${{ matrix.image }}
+          DEFAULT_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
         run: >-
           .github/workflows/scripts/determine-cve-scan-image-tag.sh
-          --image "${{ matrix.image }}"
-          --default-tag "${{ needs.define-job-matrix.outputs.build-tag }}"
+          --image "$IMAGE"
+          --default-tag "$DEFAULT_TAG"
 
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
+        # Skip (instead of polling a nonexistent tag for the full
+        # wait-limit below) when tag determination failed - otherwise this
+        # leg would burn up to 30 minutes waiting for an image that was
+        # never going to appear before falling into the same "missing scan
+        # result" degradation path.
+        if: steps.determine-tag.outcome == 'success'
         # The composite action fails on ANY fixable CRITICAL/IMPORTANT CVE in
         # the image, not just the CVE(s) this PR is verifying. The scan
         # result artifact is still produced (uploaded via if: always() below)
@@ -1380,12 +1396,21 @@ jobs:
         with:
           fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Extract CVE IDs from PR title
         id: extract-cves
+        # The job-level `if:` above only checks for the literal substring
+        # "CVE-", not a well-formed CVE-YYYY-NNNN id. continue-on-error lets
+        # a title that fails to parse fall through to "Post PR comment"
+        # below (later steps are individually guarded on this step's
+        # outcome) instead of hard-failing the job before ever explaining
+        # why.
+        continue-on-error: true
         run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
 
       - name: Download all scan artifacts
+        if: steps.extract-cves.outcome == 'success'
         uses: ./.github/actions/download-artifact-with-retry
         with:
           pattern: cve-verify_*.json
@@ -1393,6 +1418,7 @@ jobs:
 
       - name: Flatten scan results
         id: flatten
+        if: steps.extract-cves.outcome == 'success'
         run: >-
           .github/workflows/scripts/flatten-cve-scan-results.sh
           --source-dir scan-results
@@ -1401,9 +1427,12 @@ jobs:
 
       - name: Verify CVE fix
         id: verify
+        if: steps.extract-cves.outcome == 'success'
+        env:
+          CVES: ${{ steps.extract-cves.outputs.cves }}
         run: >-
           .github/workflows/scripts/run-cve-fix-verification.sh
-          --cves "${{ steps.extract-cves.outputs.cves }}"
+          --cves "$CVES"
           --scan-dir scan-results-flat
 
       - name: Post PR comment
@@ -1411,12 +1440,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CVE_EXTRACTION_FAILED: ${{ steps.extract-cves.outcome == 'failure' }}
+          INFRA_FAILURE: ${{ steps.flatten.outputs.infra-failure || 'false' }}
+          EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
+          MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
         run: >-
           .github/workflows/scripts/post-cve-fix-comment.sh
-          --pr-number "${{ github.event.pull_request.number }}"
-          --infra-failure "${{ steps.flatten.outputs.infra-failure }}"
-          --exit-code "${{ steps.verify.outputs.exit-code }}"
-          --missing-images "${{ steps.flatten.outputs.missing-images }}"
+          --pr-number "$PR_NUMBER"
+          --cve-extraction-failed "$CVE_EXTRACTION_FAILED"
+          --infra-failure "$INFRA_FAILURE"
+          --exit-code "$EXIT_CODE"
+          --missing-images "$MISSING_IMAGES"
 
       - name: Fail if CVE still present
         if: steps.verify.outputs.exit-code == '1'
