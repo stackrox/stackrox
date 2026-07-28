@@ -8,8 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// awsCertsPEM lists all known AWS certificates as of time of writing.
-//
+// awsCerts lists all known AWS certificates as of time of writing.
 // See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/verify-rsa2048.html
 // for the current list of RSA-2048 certificates.
 //
