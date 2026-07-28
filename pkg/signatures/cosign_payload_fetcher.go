@@ -2,7 +2,6 @@ package signatures
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -73,9 +72,7 @@ func (s *tagSignedEntity) Signatures() (oci.Signatures, error) {
 
 func (s *tagSignedEntity) Attestations() (oci.Signatures, error) { return nil, nil }
 
-func (s *tagSignedEntity) Attachment(_ string) (oci.File, error) {
-	return nil, errors.New("attachments not supported on tag-based signature entity")
-}
+func (s *tagSignedEntity) Attachment(_ string) (oci.File, error) { return nil, nil }
 
 // fetchSignaturesByTag discovers SimpleSigning signatures via the cosign tag-based method.
 // Discovery: looks up the tag <algo>-<hex>.sig in the same repository as the image.
