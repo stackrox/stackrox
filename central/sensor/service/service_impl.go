@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -129,6 +130,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return errors.Errorf("unable to generate a pipeline for cluster %q", cluster.GetId())
 	}
 
+	var issuedCertExpiry *storage.ClusterCertExpiryStatus
 	if sensorSupportsHello {
 		installInfo, err := telemetry.FetchInstallInfo(context.Background(), s.installation)
 		utils.Should(err)
@@ -183,6 +185,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			if err != nil {
 				return errors.Wrap(err, "converting typed service certificate set to file map")
 			}
+			issuedCertExpiry = sensorCertExpiryFromCertSet(certificateSet)
 			return nil
 		}); err != nil {
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s.", err)
@@ -223,11 +226,20 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		log.Infof("Cleared init artifact ID (%s) of newly created cluster %s.", clusterInitArtifactId, cluster.GetName())
 	}
 
-	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
-		notBefore, notAfter := identity.ValidityPeriod()
-		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v.",
-			notBefore, notAfter, cluster.GetId(), err)
-	} else if expiryStatus != nil {
+	// Prefer the expiry of the newly issued cert (what sensor will use going forward)
+	// over the TLS handshake cert (what sensor connected with), so that the stored
+	// expiry matches the cert in the k8s secret.
+	expiryStatus := issuedCertExpiry
+	if expiryStatus == nil {
+		var err error
+		expiryStatus, err = getCertExpiryStatus(identity)
+		if err != nil {
+			notBefore, notAfter := identity.ValidityPeriod()
+			log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v.",
+				notBefore, notAfter, cluster.GetId(), err)
+		}
+	}
+	if expiryStatus != nil {
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
 			log.Warnf("Failed to update cluster expiry status for cluster %s: %v.", cluster.GetId(), err)
 		}
@@ -242,6 +254,34 @@ func isCARotationSupported(sensorHello *central.SensorHello) bool {
 	capabilities := sliceutils.FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)
 	capSet := set.NewSet(capabilities...)
 	return capSet.Contains(centralsensor.SensorCARotationSupported)
+}
+
+func sensorCertExpiryFromCertSet(certSet *storage.TypedServiceCertificateSet) *storage.ClusterCertExpiryStatus {
+	for _, sc := range certSet.GetServiceCerts() {
+		if sc.GetServiceType() != storage.ServiceType_SENSOR_SERVICE {
+			continue
+		}
+		certs, err := x509utils.ConvertPEMTox509Certs(sc.GetCert().GetCertPem())
+		if err != nil || len(certs) == 0 {
+			log.Warnf("Failed to parse newly issued sensor cert PEM: %v", err)
+			return nil
+		}
+		cert := certs[0]
+		status := &storage.ClusterCertExpiryStatus{}
+		expiryTS, err := protocompat.ConvertTimeToTimestampOrError(cert.NotAfter)
+		if err != nil {
+			log.Warnf("Failed to convert sensor cert NotAfter to proto timestamp: %v", err)
+			return nil
+		}
+		status.SensorCertExpiry = expiryTS
+		if !cert.NotBefore.IsZero() {
+			if nbTS, err := protocompat.ConvertTimeToTimestampOrError(cert.NotBefore); err == nil {
+				status.SensorCertNotBefore = nbTS
+			}
+		}
+		return status
+	}
+	return nil
 }
 
 func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {
