@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	resultsDatastore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
@@ -30,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	cronlib "gopkg.in/robfig/cron.v2"
 )
 
 var (
@@ -637,8 +637,7 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 			log.Error(err)
 			return "", err
 		}
-		cronValidator := gronx.New()
-		if !cronValidator.IsValid(cron) {
+		if _, parseErr := cronlib.Parse("0 " + cron); parseErr != nil {
 			err = errors.Errorf("Schedule for scan configuration named %q is invalid.", scanRequest.GetScanConfigName())
 			log.Error(err)
 			return "", err
