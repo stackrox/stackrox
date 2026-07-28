@@ -20,7 +20,11 @@ on:
 
 jobs:
   run:
-    if: inputs.should-run
+    if: >-
+      inputs.should-run && (
+        github.event_name != 'pull_request' ||
+        contains(github.event.pull_request.labels.*.name, 'konflux-build')
+      )
     uses: ./.github/workflows/_qa-e2e-tests.yaml
     with:
       tag: ${{ inputs.tag }}
