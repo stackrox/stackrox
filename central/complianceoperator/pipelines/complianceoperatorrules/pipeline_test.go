@@ -67,7 +67,7 @@ func TestThrottlesConcurrency(t *testing.T) {
 
 	const numRules = 20
 
-	for i := 0; i < numRules; i++ {
+	for range numRules {
 		mgr.EXPECT().AddRule(gomock.Any()).Do(func(_ *storage.ComplianceOperatorRule) {
 			cur := currentConcurrency.Add(1)
 			for {

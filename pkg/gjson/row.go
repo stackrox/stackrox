@@ -61,7 +61,7 @@ func (r *RowMapper) CreateRows() ([][]string, error) {
 // duplicateElems will duplicate a string element an arbitrary amount and return the slice
 func duplicateElems(s string, amount int) []string {
 	duplicatedElems := make([]string, 0, amount)
-	for i := 0; i < amount; i++ {
+	for range amount {
 		duplicatedElems = append(duplicatedElems, s)
 	}
 	return duplicatedElems
@@ -254,7 +254,7 @@ func (ct *columnTree) CreateColumns() [][]string {
 		}
 	}
 	deletionSet := set.IntSet{}
-	for columnIndex := 0; columnIndex < numberOfQueries; columnIndex++ {
+	for columnIndex := range numberOfQueries {
 		// For each query, the query ID == columnID on the node. Retrieve all values for the specific columnID
 		// and auto expand, if required, them.
 		// The values need to be merged based on their index.

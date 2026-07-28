@@ -22,7 +22,7 @@ import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayo
 import VirtualMachineScanScopeAlert from '../components/VirtualMachineScanScopeAlert';
 import {
     virtualMachineCVESearchFilterConfig,
-    virtualMachineComponentSearchFilterConfig,
+    virtualMachineComponentLegacySearchFilterConfig,
 } from '../../searchFilterConfig';
 import {
     getHiddenSeverities,
@@ -47,7 +47,7 @@ export type VirtualMachinePageVulnerabilitiesLegacyProps = {
 
 const searchFilterConfig = [
     virtualMachineCVESearchFilterConfig,
-    virtualMachineComponentSearchFilterConfig,
+    virtualMachineComponentLegacySearchFilterConfig,
 ];
 
 function VirtualMachinePageVulnerabilitiesLegacy({

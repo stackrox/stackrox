@@ -801,6 +801,10 @@
             "type": "object",
             "$ref": "#/definitions/storageAclEntry"
           }
+        },
+        "xattrName": {
+          "type": "string",
+          "description": "The extended attribute name, populated for XATTR_SET and XATTR_REMOVE operations."
         }
       }
     },
@@ -813,7 +817,9 @@
         "PERMISSION_CHANGE",
         "OWNERSHIP_CHANGE",
         "OPEN",
-        "ACL_CHANGE"
+        "ACL_CHANGE",
+        "XATTR_SET",
+        "XATTR_REMOVE"
       ],
       "default": "CREATE"
     },

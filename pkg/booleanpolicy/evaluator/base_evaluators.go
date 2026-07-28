@@ -230,7 +230,7 @@ func generateSliceMatcher(value string, fieldType reflect.Type, matchAll bool) (
 			return []valueMatchedPair{{value: "<empty>", matched: matchAll}}
 		}
 		valuesAndMatches := make([]valueMatchedPair, 0, length)
-		for i := 0; i < length; i++ {
+		for i := range length {
 			valuesAndMatches = append(valuesAndMatches, subMatcher(instance.Index(i))...)
 		}
 		return valuesAndMatches
@@ -482,7 +482,7 @@ func printKVs(kvPairs heap.Interface, totalElements int) string {
 	var asSlice []*mapeval.KeyValue
 	if length := kvPairs.Len(); length > 0 {
 		asSlice = make([]*mapeval.KeyValue, length)
-		for i := 0; i < length; i++ {
+		for i := range length {
 			// The heap is a max-heap, but we want to sort it in increasing value, so we fill
 			// in backwards.
 			asSlice[length-1-i] = heap.Pop(kvPairs).(*mapeval.KeyValue)

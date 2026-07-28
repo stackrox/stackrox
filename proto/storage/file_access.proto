@@ -54,6 +54,8 @@ message FileAccess {
     // ACL-specific fields, populated only for ACL_CHANGE operations.
     AclType acl_type = 6;
     repeated AclEntry acl_entries = 7;
+    // The extended attribute name, populated for XATTR_SET and XATTR_REMOVE operations.
+    string xattr_name = 8;
   }
 
   message File {
@@ -79,6 +81,8 @@ message FileAccess {
     OWNERSHIP_CHANGE = 4;
     OPEN = 5;
     ACL_CHANGE = 6;
+    XATTR_SET = 7;
+    XATTR_REMOVE = 8;
   }
 
   File file = 1;
