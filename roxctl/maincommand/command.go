@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/roxctl/doc"
 	"github.com/stackrox/rox/roxctl/helm"
 	"github.com/stackrox/rox/roxctl/image"
-	"github.com/stackrox/rox/roxctl/logconvert"
 	"github.com/stackrox/rox/roxctl/netpol"
 	"github.com/stackrox/rox/roxctl/sbom"
 	"github.com/stackrox/rox/roxctl/scanner"
@@ -79,7 +78,6 @@ func Command() *cobra.Command {
 		cluster.Command(cliEnvironment),
 		collector.Command(cliEnvironment),
 		deployment.Command(cliEnvironment),
-		logconvert.Command(cliEnvironment),
 		image.Command(cliEnvironment),
 		sbom.Command(cliEnvironment),
 		scanner.Command(cliEnvironment),
