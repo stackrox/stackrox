@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cloudproviders/gcp/auth"
@@ -102,7 +101,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		manager,
 		[]byte(config.GetServiceAccount()),
 		config.GetWifEnabled(),
-		artifactv1.DefaultAuthScopes()...,
+		auth.ArtifactRegistryScopes()...,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")
