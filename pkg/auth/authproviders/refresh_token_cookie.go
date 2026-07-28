@@ -4,18 +4,12 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/schema"
 	"github.com/pkg/errors"
 )
 
 const (
 	// RefreshTokenCookieName is the name of the cookie containing the refresh token.
 	RefreshTokenCookieName = "RoxRefreshToken"
-)
-
-var (
-	schemaEncoder = schema.NewEncoder()
-	schemaDecoder = schema.NewDecoder()
 )
 
 // RefreshTokenData encapsulates data relevant to refresh tokens.
@@ -56,9 +50,13 @@ func cookieDataFromRequest(req *http.Request) (*refreshTokenCookieData, error) {
 }
 
 func (r *refreshTokenCookieData) Encode() (string, error) {
-	vals := make(url.Values)
-	if err := schemaEncoder.Encode(r, vals); err != nil {
-		return "", err
+	vals := url.Values{
+		"providerType": {r.ProviderType},
+		"providerId":   {r.ProviderID},
+		"refreshToken": {r.RefreshToken},
+	}
+	if r.RefreshTokenType != "" {
+		vals.Set("refreshTokenType", r.RefreshTokenType)
 	}
 	return vals.Encode(), nil
 }
@@ -68,5 +66,9 @@ func (r *refreshTokenCookieData) Decode(encoded string) error {
 	if err != nil {
 		return errors.Wrap(err, "parsing encoded cookie data")
 	}
-	return schemaDecoder.Decode(r, vals)
+	r.ProviderType = vals.Get("providerType")
+	r.ProviderID = vals.Get("providerId")
+	r.RefreshToken = vals.Get("refreshToken")
+	r.RefreshTokenType = vals.Get("refreshTokenType")
+	return nil
 }
