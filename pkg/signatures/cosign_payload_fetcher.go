@@ -12,8 +12,6 @@ import (
 	"github.com/sigstore/cosign/v3/pkg/cosign"
 	"github.com/sigstore/cosign/v3/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v3/pkg/oci/remote"
-	"github.com/stackrox/rox/generated/storage"
-	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 )
 
 const (
@@ -52,11 +50,11 @@ type tagSignedEntity struct {
 	imgSHA string
 }
 
-func newTagSignedEntity(img *storage.Image, imgRef name.Reference, opts ...ociremote.Option) *tagSignedEntity {
+func newTagSignedEntity(imgSHA string, imgRef name.Reference, opts ...ociremote.Option) *tagSignedEntity {
 	return &tagSignedEntity{
 		opts:   opts,
 		imgRef: imgRef,
-		imgSHA: imgUtils.GetSHA(img),
+		imgSHA: imgSHA,
 	}
 }
 
@@ -82,8 +80,8 @@ func (s *tagSignedEntity) Attachment(_ string) (oci.File, error) {
 // fetchSignaturesByTag discovers SimpleSigning signatures via the cosign tag-based method.
 // Discovery: looks up the tag <algo>-<hex>.sig in the same repository as the image.
 // Format: always SimpleSigning (signature and payload stored in OCI layer annotations).
-func fetchSignaturesByTag(image *storage.Image, imgRef name.Reference, opts []ociremote.Option) ([]signaturePayload, error) {
-	se := newTagSignedEntity(image, imgRef, opts...)
+func fetchSignaturesByTag(imgSHA string, imgRef name.Reference, opts []ociremote.Option) ([]signaturePayload, error) {
+	se := newTagSignedEntity(imgSHA, imgRef, opts...)
 	payloads, err := cosign.FetchSignatures(se)
 	if err != nil && (isMissingSignatureError(err) || isUnknownMimeTypeError(err)) {
 		return nil, nil
@@ -104,6 +102,7 @@ func fetchSignaturesByReferrer(ctx context.Context, digestRef name.Digest, repo 
 ) ([]signaturePayload, error) {
 	index, err := ociremote.Referrers(digestRef, "", opts...)
 	if err != nil {
+		// Registries that do not implement the OCI 1.1 Referrers API return 404.
 		if checkIfErrorContainsCode(err, http.StatusNotFound) {
 			log.Warnf("OCI referrers API not supported for %s (404)", digestRef.String())
 			return nil, nil
@@ -114,27 +113,31 @@ func fetchSignaturesByReferrer(ctx context.Context, digestRef name.Digest, repo 
 		return nil, nil
 	}
 
-	manifests := index.Manifests
-	if len(manifests) > maxReferrerManifests {
-		log.Warnf("Image %s has %d referrer manifests, processing only first %d",
-			digestRef.String(), len(manifests), maxReferrerManifests)
-		manifests = manifests[:maxReferrerManifests]
+	// Filter for sigstore bundle artifact types first, then clamp so the budget is
+	// consumed only by manifests we are willing to process.
+	var bundleDescs []v1.Descriptor
+	for _, desc := range index.Manifests {
+		if strings.HasPrefix(desc.ArtifactType, bundleSigArtifactTypePrefix) {
+			bundleDescs = append(bundleDescs, desc)
+		}
+	}
+	if len(bundleDescs) > maxReferrerManifests {
+		log.Warnf("Image %s has %d sigstore bundle referrers, processing only first %d",
+			digestRef.String(), len(bundleDescs), maxReferrerManifests)
+		bundleDescs = bundleDescs[:maxReferrerManifests]
 	}
 
 	var payloads []signaturePayload
-	for _, desc := range manifests {
+	for _, desc := range bundleDescs {
 		if ctx.Err() != nil {
 			break
-		}
-		if !strings.HasPrefix(desc.ArtifactType, bundleSigArtifactTypePrefix) {
-			continue
 		}
 		p, err := fetchSigstoreBundle(repo.Digest(desc.Digest.String()), opts)
 		if err != nil {
 			log.Warnf("Failed to fetch sigstore bundle from referrer %s: %v", desc.Digest, err)
 			continue
 		}
-		payloads = append(payloads, p...)
+		payloads = append(payloads, p)
 	}
 	return payloads, nil
 }
@@ -143,18 +146,16 @@ func fetchSignaturesByReferrer(ctx context.Context, digestRef name.Digest, repo 
 // Format: sigstore bundle (DSSE envelope + verification material + tlog entries in one blob).
 // Storage: the raw bundle JSON is stored in SigstoreBundle; no decomposition into individual
 // fields. Verification is deferred to verifySigstoreBundle which uses sigstore-go directly.
-func fetchSigstoreBundle(bundleRef name.Reference, opts []ociremote.Option) ([]signaturePayload, error) {
+func fetchSigstoreBundle(bundleRef name.Reference, opts []ociremote.Option) (signaturePayload, error) {
 	b, err := ociremote.Bundle(bundleRef, opts...)
 	if err != nil {
-		return nil, err
+		return signaturePayload{}, err
 	}
 
 	bundleJSON, err := b.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("marshalling sigstore bundle: %w", err)
+		return signaturePayload{}, fmt.Errorf("marshalling sigstore bundle: %w", err)
 	}
 
-	return []signaturePayload{{
-		sigstoreBundle: bundleJSON,
-	}}, nil
+	return signaturePayload{sigstoreBundle: bundleJSON}, nil
 }
