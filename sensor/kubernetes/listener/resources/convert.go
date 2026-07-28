@@ -27,6 +27,7 @@ import (
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
@@ -289,7 +290,19 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list pods")
 	}
-	return filterOnOwners(hierarchy, w.Id, pods), nil
+	owned := filterOnOwners(hierarchy, w.Id, pods)
+	if len(owned) > 0 {
+		return owned, nil
+	}
+	// Fallback: the label selector didn't match any owned pods. This can happen
+	// when the selector diverges from actual pod labels (e.g., OpenShift overrides
+	// the deploymentconfig label on pods to match the DC name). List all pods in
+	// the namespace and filter by ownership only.
+	allPods, err := lister.Pods(w.Namespace).List(labels.Everything())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list pods for ownership fallback")
+	}
+	return filterOnOwners(hierarchy, w.Id, allPods), nil
 }
 
 func (w *deploymentWrap) populateDataFromPods(localImages set.StringSet, pods ...*v1.Pod) {
