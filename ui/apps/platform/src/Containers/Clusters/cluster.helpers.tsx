@@ -1,4 +1,3 @@
-import type { ComponentClass } from 'react';
 import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
@@ -13,7 +12,6 @@ import {
     ResourcesEmptyIcon,
     UnknownIcon,
 } from '@patternfly/react-icons';
-import type { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
 import type {
     Cluster,
@@ -203,24 +201,38 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
-const sensorCompatibilityStyle = {
-    MATCHED: {
+const sensorCompatibilityMap = {
+    SENSOR_VERSION_COMPATIBILITY_MATCHED: {
+        displayValue: 'Matched',
         Icon: CheckCircleIcon,
         fgColor: 'pf-v6-u-icon-color-status-success',
     },
-    COMPATIBLE: {
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND: {
+        displayValue: 'Compatible (Behind)',
         Icon: InfoCircleIcon,
         fgColor: 'pf-v6-u-icon-color-status-info',
     },
-    INCOMPATIBLE: {
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD: {
+        displayValue: 'Compatible (Ahead)',
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
+    },
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND: {
+        displayValue: 'Incompatible (Behind)',
         Icon: ExclamationCircleIcon,
         fgColor: 'pf-v6-u-icon-color-status-danger',
     },
-    UNKNOWN: {
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD: {
+        displayValue: 'Incompatible (Ahead)',
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    SENSOR_VERSION_COMPATIBILITY_UNKNOWN: {
+        displayValue: 'Unknown',
         Icon: UnknownIcon,
         fgColor: 'pf-v6-u-icon-color-subtle',
     },
-};
+} as const;
 
 type UpgradeState = {
     displayValue: string;
@@ -580,49 +592,12 @@ export function buildStatusMessage(
     return message;
 }
 
-export function getSensorCompatibilityDisplayValue(
-    compatibility: SensorVersionCompatibility | undefined
-): string {
-    switch (compatibility) {
-        case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
-            return 'Matched';
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
-            return 'Compatible (Behind)';
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
-            return 'Compatible (Ahead)';
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
-            return 'Incompatible (Behind)';
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
-            return 'Incompatible (Ahead)';
-        case 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN':
-            return 'Unknown';
-        default:
-            return 'Unknown';
-    }
-}
+const defaultSensorCompatibility = sensorCompatibilityMap.SENSOR_VERSION_COMPATIBILITY_UNKNOWN;
 
-export function getSensorCompatibilityStyle(
-    compatibility: SensorVersionCompatibility | undefined
-): {
-    Icon: ComponentClass<SVGIconProps, unknown>;
-    fgColor: string;
-} {
-    switch (compatibility) {
-        case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
-            return sensorCompatibilityStyle.MATCHED;
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
-            return sensorCompatibilityStyle.COMPATIBLE;
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
-            return sensorCompatibilityStyle.COMPATIBLE;
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
-            return sensorCompatibilityStyle.INCOMPATIBLE;
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
-            return sensorCompatibilityStyle.INCOMPATIBLE;
-        case 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN':
-            return sensorCompatibilityStyle.UNKNOWN;
-        default:
-            return sensorCompatibilityStyle.UNKNOWN;
-    }
+export function getSensorCompatibilityInfo(compatibility: SensorVersionCompatibility | undefined) {
+    return compatibility
+        ? (sensorCompatibilityMap[compatibility] ?? defaultSensorCompatibility)
+        : defaultSensorCompatibility;
 }
 
 export default {

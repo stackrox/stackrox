@@ -63,6 +63,9 @@ function ClustersTable({
     const [expanded, setExpanded] = useState<ExpansionMap>({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
+    const sensorColumnLabel = isSensorCompatStatusEnabled
+        ? 'Sensor compatibility status'
+        : 'Sensor upgrade status';
 
     function toggle(clusterId: string, col: ExpandableColumnId) {
         setExpanded((prev) => ({
@@ -98,11 +101,7 @@ function ClustersTable({
                         <Th>Cluster</Th>
                         <Th>Provider (Region)</Th>
                         <Th>Cluster status</Th>
-                        <Th width={20}>
-                            {isSensorCompatStatusEnabled
-                                ? 'Sensor compatibility status'
-                                : 'Sensor upgrade status'}
-                        </Th>
+                        <Th width={20}>{sensorColumnLabel}</Th>
                         <Th>Credential expiration</Th>
                         <Th>Cluster deletion</Th>
                     </Tr>
@@ -172,11 +171,7 @@ function ClustersTable({
                                                 />
                                             </Td>
                                             <Td
-                                                dataLabel={
-                                                    isSensorCompatStatusEnabled
-                                                        ? 'Sensor compatibility status'
-                                                        : 'Sensor upgrade status'
-                                                }
+                                                dataLabel={sensorColumnLabel}
                                                 compoundExpand={
                                                     clusterInfo?.status?.upgradeStatus
                                                         ? {
