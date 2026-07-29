@@ -76,69 +76,6 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
-// TestProcessEvent_OpenSCAPTailoredProfileUsesStatusID verifies that OpenSCAP TPs use Status.ID
-// as ProfileId, matching what the scan dispatcher reads from ComplianceScan.Spec.Profile.
-func TestProcessEvent_OpenSCAPTailoredProfileUsesStatusID(t *testing.T) {
-	tp := &v1alpha1.TailoredProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "tp-openscap",
-			UID:  "tp-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeOpenSCAP),
-			},
-		},
-		Spec: v1alpha1.TailoredProfileSpec{
-			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
-		},
-		Status: v1alpha1.TailoredProfileStatus{
-			ID:    "xccdf_compliance.openshift.io_profile_tp-openscap",
-			State: "READY",
-		},
-	}
-
-	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
-	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	assert.Equal(t, "xccdf_compliance.openshift.io_profile_tp-openscap", profile.GetProfileId())
-}
-
-// TestProcessEvent_CELTailoredProfileUsesK8sName verifies that CEL TPs use the k8s object name
-// as ProfileId. The compliance operator sets ComplianceScan.Spec.Profile to the k8s name for
-// any CEL-based TP (ScannerTypeAnnotation=CEL). This covers:
-//   - TPs with CustomRules (also have CustomRuleProfileAnnotation=true)
-//   - TPs with CEL-typed rules but no CustomRules
-//   - TPs extending a CEL base profile
-func TestProcessEvent_CELTailoredProfileUsesK8sName(t *testing.T) {
-	tp := &v1alpha1.TailoredProfile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-cel-tp",
-			UID:  "tp-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeCEL),
-			},
-		},
-		Spec: v1alpha1.TailoredProfileSpec{
-			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-cel-rule"}},
-		},
-		Status: v1alpha1.TailoredProfileStatus{
-			ID:    "xccdf_compliance.openshift.io_profile_my-cel-tp",
-			State: "READY",
-		},
-	}
-
-	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
-	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	// Must match what CO puts in ComplianceScan.Spec.Profile for CEL TPs
-	assert.Equal(t, "my-cel-tp", profile.GetProfileId())
-}
-
 // TestProcessEvent_ExtendsProfile tests rule computation and metadata handling when extending a base profile:
 // - effective rules = base rules - disabled rules + enabled rules
 // - labels, annotations, description parsed from tailored profile
@@ -222,6 +159,69 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 		"ocp4-api-server-encryption-provider-cipher",
 		"ocp4-audit-log-forwarding-enabled",
 	}, ruleNames)
+}
+
+// TestProcessEvent_OpenSCAPTailoredProfileUsesStatusID verifies that OpenSCAP TPs use Status.ID
+// as ProfileId, matching what the scan dispatcher reads from ComplianceScan.Spec.Profile.
+func TestProcessEvent_OpenSCAPTailoredProfileUsesStatusID(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "tp-openscap",
+			UID:  "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeOpenSCAP),
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_tp-openscap",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	assert.Equal(t, "xccdf_compliance.openshift.io_profile_tp-openscap", profile.GetProfileId())
+}
+
+// TestProcessEvent_CELTailoredProfileUsesK8sName verifies that CEL TPs use the k8s object name
+// as ProfileId. The compliance operator sets ComplianceScan.Spec.Profile to the k8s name for
+// any CEL-based TP (ScannerTypeAnnotation=CEL). This covers:
+//   - TPs with CustomRules (also have CustomRuleProfileAnnotation=true)
+//   - TPs with CEL-typed rules but no CustomRules
+//   - TPs extending a CEL base profile
+func TestProcessEvent_CELTailoredProfileUsesK8sName(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-cel-tp",
+			UID:  "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeCEL),
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-cel-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_my-cel-tp",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	// Must match what CO puts in ComplianceScan.Spec.Profile for CEL TPs
+	assert.Equal(t, "my-cel-tp", profile.GetProfileId())
 }
 
 // TestProcessEvent_StoresTailoredProfileMetadata tests that all metadata fields are stored
