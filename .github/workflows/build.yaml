@@ -1544,7 +1544,6 @@ jobs:
       - pre-build-ui
       - push-matching-collector-scanner
       - scan-go-binaries
-      - verify-cve-fix
     permissions:
       actions: read
     steps:
