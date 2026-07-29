@@ -252,6 +252,7 @@ func transparencyLogsFromKeys(keys *cosign.TrustedTransparencyLogPubKeys) map[st
 	for logID, key := range keys.Keys {
 		idBytes, err := hex.DecodeString(logID)
 		if err != nil {
+			log.Warnf("Skipping transparency log key with malformed log ID %q: %v", logID, err)
 			continue
 		}
 		logs[logID] = &root.TransparencyLog{
@@ -333,7 +334,7 @@ func augmentTrustedMaterialWithSigChain(cosignOpts *cosign.CheckOpts, sig oci.Si
 		root.TrustedRootMediaType01,
 		augmented,
 		cosignOpts.TrustedMaterial.CTLogs(),
-		nil,
+		cosignOpts.TrustedMaterial.TimestampingAuthorities(),
 		cosignOpts.TrustedMaterial.RekorLogs(),
 	)
 	if err != nil {
@@ -486,7 +487,7 @@ func cosignCheckOptsFromCert(ctx context.Context, cert certVerificationData, opt
 	// doesn't chain to the configured/Fulcio root, missing SCT) and pins the exact
 	// signing key so only signatures from this key are accepted.
 	if cert.cert != nil {
-		chains, err := verify.VerifyLeafCertificate(cert.cert.NotBefore, cert.cert, opts.TrustedMaterial)
+		chains, err := verify.VerifyLeafCertificate(time.Now(), cert.cert, opts.TrustedMaterial)
 		if err != nil {
 			return opts, fmt.Errorf("validating configured certificate against trust root: %w", err)
 		}
@@ -562,7 +563,11 @@ func verifySigstoreBundle(ctx context.Context, sigstoreBundle []byte,
 	imageHash gcrv1.Hash, image *storage.Image, cosignOpts cosign.CheckOpts,
 ) ([]string, error) {
 	if cosignOpts.TrustedMaterial == nil {
-		return nil, errox.InvariantViolation.New("TrustedMaterial is required for sigstore bundle verification")
+		var err error
+		cosignOpts.TrustedMaterial, err = sigstoreTrustedRoot()
+		if err != nil {
+			return nil, fmt.Errorf("loading fallback trusted material for bundle verification: %w", err)
+		}
 	}
 
 	// sigstore-go requires at least one identity for cert-based verification.

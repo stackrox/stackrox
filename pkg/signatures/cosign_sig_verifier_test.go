@@ -809,9 +809,9 @@ func TestRetrieveVerificationDataFromImage_MixedFormats(t *testing.T) {
 	vsigs, _, err := retrieveVerificationDataFromImage(img)
 	require.NoError(t, err)
 	assert.Len(t, vsigs, 2)
-	assert.NotNil(t, vsigs[0].sig, "first signature should be SimpleSigning")
+	assert.NotNil(t, vsigs[0].signature, "first signature should be SimpleSigning")
 	assert.Empty(t, vsigs[0].sigstoreBundle)
-	assert.Nil(t, vsigs[1].sig, "second signature should be bundle-only")
+	assert.Nil(t, vsigs[1].signature, "second signature should be bundle-only")
 	assert.Equal(t, bundleJSON, vsigs[1].sigstoreBundle)
 }
 
