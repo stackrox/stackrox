@@ -169,7 +169,7 @@ export -f get_issue
 # field (customfield_10667) on stdout - but only when the issue exists and
 # is of type "Vulnerability". Prints nothing and returns 0 in every other
 # case (issue not found, network/API error, non-Vulnerability issue type, or
-# an empty CVE ID field): this is a best-effort cross-reference against
+# a null/unset CVE ID field): this is a best-effort cross-reference against
 # whatever JIRA key a PR title happens to mention, most of which are
 # unrelated feature/bug tickets, not vulnerability trackers, so failure to
 # resolve one is the expected common case, not an error.
@@ -187,6 +187,18 @@ get_cve_id_for_issue() {
     fi
 
     if [[ "$(jq -r '.fields.issuetype.name // empty' <<< "$issue")" != "Vulnerability" ]]; then
+        return 0
+    fi
+
+    # Distinguish "field key absent from the response" from "field present
+    # but null/unset": the latter is the expected common case (a
+    # Vulnerability issue whose CVE ID hasn't been filled in yet) and stays
+    # silent, but the former usually means customfield_10667 itself is
+    # stale or wrong (e.g. renamed in a JIRA schema change), which would
+    # otherwise silently disable this whole cross-reference feature with no
+    # error anywhere - so it gets a loud warning instead.
+    if [[ "$(jq -r '.fields | has("customfield_10667")' <<< "$issue")" != "true" ]]; then
+        gh_log warning "JIRA issue ${ISSUE_KEY} has no customfield_10667 field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
         return 0
     fi
 
