@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -48,6 +49,15 @@ type reportRequest struct {
 	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
 	clusterData        map[string]*report.ClusterData
 	numFailedClusters  int
+}
+
+// retiredScanConfigWatcherInfo is recorded when a ScanConfigWatcher retires; see
+// managerImpl.retiredScanConfigWatchers.
+type retiredScanConfigWatcherInfo struct {
+	retiredAt time.Time
+	// missingScans holds the "clusterID:scanID" identities that were still
+	// outstanding when the watcher retired.
+	missingScans set.StringSet
 }
 
 type managerImpl struct {
@@ -87,21 +97,28 @@ type managerImpl struct {
 	watchingScanConfigsLock sync.Mutex
 	// watchingScanConfigs a map holding the ScanConfigWatchers
 	watchingScanConfigs map[string]watcher.ScanConfigWatcher
-	// retiredScanConfigWatchers records, per scan configuration ID, when (Central's own
-	// clock) a ScanConfigWatcher last retired (e.g. timed out) after processing at
-	// least one scan for that configuration. getOrCreateScanConfigWatcher treats any
-	// scan arriving within retiredScanConfigWatcherGracePeriod of that retirement as a
-	// late arrival of the same cycle and skips creating a duplicate watcher for it,
-	// even when no report snapshot exists (e.g. no notifiers configured, see
-	// createAutomaticSnapshotAndSubscribe).
+	// retiredScanConfigWatchers records, per scan configuration ID, the scans that were
+	// still outstanding ("clusterID:scanID", the same identity used as ScanResults
+	// map keys) when a ScanConfigWatcher last retired (e.g. timed out) after
+	// processing at least one scan for that configuration, together with when (Central's
+	// own clock) that happened. getOrCreateScanConfigWatcher treats a scan arriving
+	// within retiredScanConfigWatcherGracePeriod of that retirement as a late arrival of
+	// the same cycle -- and skips creating a duplicate watcher for it, even when no
+	// report snapshot exists (e.g. no notifiers configured, see
+	// createAutomaticSnapshotAndSubscribe) -- only if it is one of the recorded
+	// outstanding scans.
 	//
-	// This intentionally uses Central's own clock instead of comparing the scans' own
+	// Matching by scan identity, rather than only by elapsed time, matters: a bare
+	// time-based guard cannot tell a late arrival of the retired cycle apart from a
+	// scan belonging to a genuinely new cycle (e.g. the scan configuration manually
+	// re-run shortly after the timeout) and would silently drop the latter's results
+	// too. Matching by identity also does not depend on comparing the scans' own
 	// self-reported LastStartedTime across clusters: in-cluster testing showed two
 	// clusters scanned "at the same time" for the same cycle can still differ by a
 	// second or more, which is enough to break a strict timestamp comparison and
 	// re-open the exact cascade this map exists to prevent. Guarded by
 	// watchingScanConfigsLock.
-	retiredScanConfigWatchers map[string]time.Time
+	retiredScanConfigWatchers map[string]retiredScanConfigWatcherInfo
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 
@@ -140,7 +157,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 		watchingScansStartTime:    make(map[string]time.Time),
 		readyQueue:                queue.NewQueue[*watcher.ScanWatcherResults](),
 		watchingScanConfigs:       make(map[string]watcher.ScanConfigWatcher),
-		retiredScanConfigWatchers: make(map[string]time.Time),
+		retiredScanConfigWatchers: make(map[string]retiredScanConfigWatcherInfo),
 		scanConfigReadyQueue:      queue.NewQueue[*watcher.ScanConfigWatcherResults](),
 		metricsTicker:             gmt,
 		metricsTickerC:            gmt.C,
@@ -551,18 +568,23 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 	if sc == nil {
 		return nil, nil, false, errors.Errorf("ScanConfiguration not found for scan %s", results.Scan.GetScanName())
 	}
-	w, watcherIsRunning, retiredAt := concurrency.WithLock3[watcher.ScanConfigWatcher, bool, time.Time](&m.watchingScanConfigsLock, func() (watcher.ScanConfigWatcher, bool, time.Time) {
+	w, watcherIsRunning, retiredInfo := concurrency.WithLock3[watcher.ScanConfigWatcher, bool, retiredScanConfigWatcherInfo](&m.watchingScanConfigsLock, func() (watcher.ScanConfigWatcher, bool, retiredScanConfigWatcherInfo) {
 		w, watcherIsRunning := m.watchingScanConfigs[sc.GetId()]
 		return w, watcherIsRunning, m.retiredScanConfigWatchers[sc.GetId()]
 	})
 	if !watcherIsRunning {
-		if !retiredAt.IsZero() && time.Since(retiredAt) < retiredScanConfigWatcherGracePeriod() {
-			// A ScanConfigWatcher already retired (e.g. timed out) recently after
-			// processing at least one scan for this scan configuration. Treat this scan
-			// as a late arrival of that same cycle rather than spinning up a second
-			// watcher for it. This check does not depend on a report snapshot existing,
-			// so it also covers scan configurations with no notifiers configured, unlike
-			// the snapshot search below.
+		scanKey := fmt.Sprintf("%s:%s", results.Scan.GetClusterId(), results.Scan.GetId())
+		if !retiredInfo.retiredAt.IsZero() && retiredInfo.missingScans.Contains(scanKey) &&
+			time.Since(retiredInfo.retiredAt) < retiredScanConfigWatcherGracePeriod() {
+			// A ScanConfigWatcher already retired (e.g. timed out) recently while still
+			// waiting for exactly this scan. Treat it as a late arrival of that same
+			// cycle rather than spinning up a second watcher for it. Matching by scan
+			// identity (not just elapsed time) means a genuinely new cycle for the same
+			// scan configuration -- e.g. a manual re-run shortly after the timeout,
+			// which uses a different scan -- is not mistaken for a late arrival and
+			// silently dropped. This check does not depend on a report snapshot
+			// existing, so it also covers scan configurations with no notifiers
+			// configured, unlike the snapshot search below.
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
 		query := search.NewQueryBuilder().
@@ -604,6 +626,23 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 // consistently leave enough margin and lets the cascade this exists to prevent through.
 func retiredScanConfigWatcherGracePeriod() time.Duration {
 	return env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+}
+
+// computeMissingScans returns the "clusterID:scanID" identities that were expected for
+// the scan configuration but are not present in the given results. This mirrors the
+// computation watcher.DeleteOldResultsFromMissingScans performs (called right after
+// this, from handleReadyScanConfig); the small amount of duplicated work is a deliberate
+// simplification to avoid restructuring that function's signature just to share it.
+func (m *managerImpl) computeMissingScans(ctx context.Context, result *watcher.ScanConfigWatcherResults) set.StringSet {
+	scans, err := watcher.GetScansFromScanConfiguration(ctx, result.ScanConfig, m.profileDataStore, m.scanDataStore)
+	if err != nil {
+		log.Warnf("unable to compute missing scans for scan config %s: %v", result.ScanConfig.GetScanConfigName(), err)
+		return nil
+	}
+	for _, scanResult := range result.ScanResults {
+		scans.Remove(fmt.Sprintf("%s:%s", scanResult.Scan.GetClusterId(), scanResult.Scan.GetId()))
+	}
+	return scans
 }
 
 // createAutomaticSnapshotAndSubscribe creates a snapshot for an automatic report (not on-demand)
@@ -652,13 +691,21 @@ func (m *managerImpl) handleReadyScanConfig() {
 	for scanConfigWatcherResult := range m.scanConfigReadyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
 		log.Infof("Scan config %s completed with %d scans, %d reports, error: %v",
 			scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot), scanConfigWatcherResult.Error)
+		// Only record a retirement if at least one scan was actually processed: if none
+		// were, there is no already-succeeded data a duplicate watcher could endanger,
+		// so a late scan is free to start a fresh watcher. Computed outside the lock
+		// since it queries the datastores.
+		var missingScans set.StringSet
+		if len(scanConfigWatcherResult.ScanResults) > 0 {
+			missingScans = m.computeMissingScans(m.automaticReportingCtx, scanConfigWatcherResult)
+		}
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
-			// Only record a retirement if at least one scan was actually processed: if
-			// none were, there is no already-succeeded data a duplicate watcher could
-			// endanger, so a late scan is free to start a fresh watcher.
 			if len(scanConfigWatcherResult.ScanResults) > 0 {
-				m.retiredScanConfigWatchers[scanConfigWatcherResult.WatcherID] = time.Now()
+				m.retiredScanConfigWatchers[scanConfigWatcherResult.WatcherID] = retiredScanConfigWatcherInfo{
+					retiredAt:    time.Now(),
+					missingScans: missingScans,
+				}
 			}
 		})
 		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
