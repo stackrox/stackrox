@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	providerMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"go.uber.org/mock/gomock"
 )
 
@@ -30,7 +31,6 @@ func TestSeed_FirstBoot_CreatesAllObjects(t *testing.T) {
 	roleDS.EXPECT().GetRole(gomock.Any(), roleName).Return(nil, false, nil)
 	roleDS.EXPECT().AddRole(gomock.Any(), gomock.Any()).Return(nil)
 
-	// Auth provider created BEFORE group.
 	providerCreated := false
 	registry.EXPECT().GetProvider(authProviderID).Return(nil)
 	registry.EXPECT().CreateProvider(gomock.Any(), gomock.Any()).DoAndReturn(
@@ -95,6 +95,25 @@ func TestSeed_PartialRecovery_PermissionSetExists_RoleMissing(t *testing.T) {
 	ensurePermissionSet(ctx, roleDS)
 	ensureRole(ctx, roleDS)
 	ensureAuthProvider(ctx, registry, testCAPEM)
+	ensureGroup(ctx, groupDS)
+}
+
+func TestSeed_Group_IsDefaultOriginAndImmutable(t *testing.T) {
+	_, _, groupDS := setupMocks(t)
+	ctx := context.Background()
+
+	groupDS.EXPECT().GetFiltered(gomock.Any(), gomock.Any()).Return(nil, nil)
+	groupDS.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(addCtx context.Context, group *storage.Group) error {
+			if group.GetProps().GetTraits().GetOrigin() != storage.Traits_DEFAULT {
+				t.Errorf("expected group to use DEFAULT origin, got %v", group.GetProps().GetTraits().GetOrigin())
+			}
+			if !declarativeconfig.CanModifyResource(addCtx, group.GetProps()) {
+				t.Error("expected ensureGroup to pass a context that can modify DEFAULT-origin resources")
+			}
+			return nil
+		})
+
 	ensureGroup(ctx, groupDS)
 }
 
