@@ -1297,6 +1297,7 @@ jobs:
       JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
     outputs:
       cves: ${{ steps.extract-cves.outputs.cves }}
+      applicable: ${{ steps.extract-cves.outputs.applicable }}
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
@@ -1427,19 +1428,27 @@ jobs:
       - define-job-matrix
       - resolve-cve-ids
       - verify-cve-fix-scan
-    # Runs whenever resolve-cve-ids ran at all (result == 'success'),
-    # regardless of whether it actually resolved a CVE - a "signal but no
-    # resolution" case (e.g. a malformed CVE-YYYY-NNNN, or a ROX ticket
-    # that JIRA says isn't a Vulnerability) still needs to post the
-    # explanatory NOT APPLICABLE comment below. If resolve-cve-ids was
-    # itself skipped (no "CVE-"/"ROX-" in the title at all), this job is
-    # skipped too - always() only bypasses the default success-of-needs
-    # gate, it doesn't force a run when a needed job never ran.
+    # Runs when resolve-cve-ids ran (result == 'success') AND actually found
+    # a genuine CVE signal (outputs.applicable == 'true') - either the title
+    # itself mentioned "CVE-", or a referenced ROX ticket resolved via JIRA
+    # to a Vulnerability issue - even if that signal still didn't resolve
+    # into a usable CVE ID (e.g. a malformed CVE-YYYY-NNNN, or a
+    # Vulnerability ticket with no CVE ID field set yet): that "signal but
+    # no resolution" case still needs to post the explanatory NOT
+    # APPLICABLE comment below. Deliberately NOT the same as "cves == ''":
+    # most PRs in this repo reference an ordinary ROX-NNNNN ticket that
+    # simply isn't a vulnerability tracker at all, and that expected common
+    # case must stay completely silent rather than post NOT APPLICABLE on
+    # nearly every PR in the repo. If resolve-cve-ids was itself skipped (no
+    # "CVE-"/"ROX-" in the title at all), this job is skipped too - always()
+    # only bypasses the default success-of-needs gate, it doesn't force a
+    # run when a needed job never ran.
     if: >-
       always() &&
       github.event_name == 'pull_request' &&
       !github.event.pull_request.head.repo.fork &&
-      needs.resolve-cve-ids.result == 'success'
+      needs.resolve-cve-ids.result == 'success' &&
+      needs.resolve-cve-ids.outputs.applicable == 'true'
     permissions:
       pull-requests: write
     env:

@@ -165,28 +165,43 @@ get_issue() {
 }
 export -f get_issue
 
-# Given a JIRA issue key, prints the CVE ID recorded in its "CVE ID" custom
-# field (customfield_10667) on stdout - but only when the issue exists and
-# is of type "Vulnerability". Prints nothing and returns 0 in every other
-# case (issue not found, network/API error, non-Vulnerability issue type, or
-# a null/unset CVE ID field): this is a best-effort cross-reference against
-# whatever JIRA key a PR title happens to mention, most of which are
-# unrelated feature/bug tickets, not vulnerability trackers, so failure to
-# resolve one is the expected common case, not an error.
+# Given a JIRA issue key, performs a single fetch and prints two lines:
+#   1. "true" or "false" - whether the issue's type is "Vulnerability".
+#   2. the CVE ID recorded in its "CVE ID" custom field (customfield_10667),
+#      which may be empty even when line 1 is "true" (a Vulnerability
+#      issue whose CVE ID hasn't been filled in yet).
+#
+# Prints "false" and an empty second line in every other case (issue not
+# found, network/API error, or non-Vulnerability issue type): this is a
+# best-effort cross-reference against whatever JIRA key a PR title happens
+# to mention, most of which are unrelated feature/bug tickets, not
+# vulnerability trackers, so failing to resolve one is the expected common
+# case, not an error.
+#
+# Callers use line 1 (not just "is line 2 non-empty") to tell "this ROX
+# ticket isn't a vulnerability tracker at all" (silence is the right
+# response) apart from "it is a vulnerability tracker but has no CVE ID
+# set yet" (worth surfacing, since the PR is clearly meant to fix a CVE).
 #
 # Example:
-#   get_cve_id_for_issue "ROX-35673"   # => "CVE-2026-39822"
-#   get_cve_id_for_issue "ROX-12345"   # => "" (not a Vulnerability issue)
-get_cve_id_for_issue() {
+#   get_vulnerability_info_for_issue "ROX-35673"
+#     # => "true"
+#     #    "CVE-2026-39822"
+#   get_vulnerability_info_for_issue "ROX-12345"   # not a Vulnerability issue
+#     # => "false"
+#     #    ""
+get_vulnerability_info_for_issue() {
     local ISSUE_KEY="$1"
 
     local issue
     if ! issue="$(get_issue "$ISSUE_KEY" 2>/dev/null)"; then
         gh_log warning "Could not fetch JIRA issue ${ISSUE_KEY}; skipping CVE cross-reference for it." >&2
+        printf 'false\n\n'
         return 0
     fi
 
     if [[ "$(jq -r '.fields.issuetype.name // empty' <<< "$issue")" != "Vulnerability" ]]; then
+        printf 'false\n\n'
         return 0
     fi
 
@@ -199,12 +214,13 @@ get_cve_id_for_issue() {
     # error anywhere - so it gets a loud warning instead.
     if [[ "$(jq -r '.fields | has("customfield_10667")' <<< "$issue")" != "true" ]]; then
         gh_log warning "JIRA issue ${ISSUE_KEY} has no customfield_10667 field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
+        printf 'true\n\n'
         return 0
     fi
 
-    jq -r '.fields.customfield_10667 // empty' <<< "$issue"
+    printf 'true\n%s\n' "$(jq -r '.fields.customfield_10667 // empty' <<< "$issue")"
 }
-export -f get_cve_id_for_issue
+export -f get_vulnerability_info_for_issue
 
 # Adds COMMENT to a JIRA issue with ISSUE_KEY.
 #
