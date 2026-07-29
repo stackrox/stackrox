@@ -875,9 +875,13 @@ func (s *ReportServiceTestSuite) TestAuthzPermissions() {
 		"Image":                  storage.Access_READ_ACCESS,
 		"Deployment":             storage.Access_READ_ACCESS,
 	}
-	// viewImageOnly is insufficient for any report API since Deployment access is missing.
+	// viewImageOnly is insufficient for view-based report APIs since Deployment access is missing.
 	viewImageOnly := map[string]storage.Access{
 		"Image": storage.Access_READ_ACCESS,
+	}
+	// deploymentOnly has no Image access, so it is denied by any report API that requires View Image.
+	deploymentOnly := map[string]storage.Access{
+		"Deployment": storage.Access_READ_ACCESS,
 	}
 
 	testCases := map[string]struct {
@@ -885,7 +889,7 @@ func (s *ReportServiceTestSuite) TestAuthzPermissions() {
 		allowedPerms map[string]storage.Access
 		deniedPerms  map[string]storage.Access
 	}{
-		// View-based report APIs require only View Image + View Deployment; no WorkflowAdministration needed.
+		// View-based report APIs require View Image + View Deployment; no WorkflowAdministration needed.
 		"PostViewBasedReport allowed with View Image+Deployment, denied without Deployment": {
 			method:       apiV2.ReportService_PostViewBasedReport_FullMethodName,
 			allowedPerms: viewImageDeployment,
@@ -901,10 +905,11 @@ func (s *ReportServiceTestSuite) TestAuthzPermissions() {
 			allowedPerms: viewImageDeployment,
 			deniedPerms:  viewImageOnly,
 		},
-		"CancelReport allowed with View Image+Deployment, denied without Deployment": {
+		// CancelReport and DeleteReport only require View Image (per-user job operations).
+		"CancelReport allowed with View Image, denied without Image": {
 			method:       apiV2.ReportService_CancelReport_FullMethodName,
-			allowedPerms: viewImageDeployment,
-			deniedPerms:  viewImageOnly,
+			allowedPerms: viewImageOnly,
+			deniedPerms:  deploymentOnly,
 		},
 		// Collection-based report APIs require WorkflowAdministration; View Image+Deployment alone is insufficient.
 		"RunReport requires Modify WorkflowAdministration, denied with View Image+Deployment only": {
@@ -912,10 +917,10 @@ func (s *ReportServiceTestSuite) TestAuthzPermissions() {
 			allowedPerms: modifyWorkflow,
 			deniedPerms:  viewImageDeployment,
 		},
-		"DeleteReport requires Modify WorkflowAdministration, denied with View Image+Deployment only": {
+		"DeleteReport allowed with View Image, denied without Image": {
 			method:       apiV2.ReportService_DeleteReport_FullMethodName,
-			allowedPerms: viewImageDeployment,
-			deniedPerms:  viewImageOnly,
+			allowedPerms: viewImageOnly,
+			deniedPerms:  deploymentOnly,
 		},
 		"ListReportConfigurations requires View WorkflowAdministration, denied without it": {
 			method:       apiV2.ReportService_ListReportConfigurations_FullMethodName,
