@@ -51,6 +51,7 @@
   {{- end -}}
   {{- $labels := dict -}}
   {{- $_ := include "srox._labels" (list $ $labels $extraLabels $objType $objName true) }}
+  {{- $_ = set $labels "sidecar.istio.io/inject" "false" -}}
   {{- toYaml $labels -}}
 {{- end -}}
 
