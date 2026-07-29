@@ -83,7 +83,7 @@ type deploymentResourcesToBeManaged struct {
 
 func createRandMap(stringSize, entries int) map[string]string {
 	m := make(map[string]string, entries)
-	for i := 0; i < entries; i++ {
+	for range entries {
 		m[randStringWithLength(stringSize)] = randStringWithLength(stringSize)
 	}
 	return m
@@ -91,7 +91,7 @@ func createRandMap(stringSize, entries int) map[string]string {
 
 func createMap(entries int) map[string]string {
 	m := make(map[string]string, entries)
-	for i := 0; i < entries; i++ {
+	for i := range entries {
 		m[fmt.Sprintf("key-%d", i)] = fmt.Sprintf("value-%d", i)
 	}
 	return m

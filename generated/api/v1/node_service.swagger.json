@@ -301,6 +301,12 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
+        },
+        "cisaKev": {
+          "type": "boolean"
         }
       }
     },
@@ -658,9 +664,15 @@
         "datasource": {
           "type": "string",
           "title": "datasource is for internal use only"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
+        },
+        "cisaKev": {
+          "type": "boolean"
         }
       },
-      "title": "Next Tag: 27"
+      "title": "Next Tag: 29"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -671,6 +683,27 @@
       "default": "V2",
       "description": "- V2: No unset for automatic backwards compatibility",
       "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageExploit": {
+      "type": "object",
+      "properties": {
+        "dateAdded": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "requiredAction": {
+          "type": "string"
+        },
+        "dueDate": {
+          "type": "string"
+        },
+        "knownRansomwareCampaignUse": {
+          "type": "string"
+        }
+      },
+      "description": "Exploit stores CISA Known Exploited Vulnerabilities (KEV) catalog data."
     },
     "storageNode": {
       "type": "object",

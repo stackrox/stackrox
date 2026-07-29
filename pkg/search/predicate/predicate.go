@@ -423,7 +423,7 @@ func createSliceNestedPredicate(parentType reflect.Type, field reflect.StructFie
 		}
 		var results []*search.Result
 		length := instance.Len()
-		for i := 0; i < length; i++ {
+		for i := range length {
 			idx := instance.Index(i)
 			if res, matches := nested.Evaluate(idx); matches {
 				results = append(results, res)
@@ -502,7 +502,7 @@ func nilCheck(f reflect.Value) bool {
 }
 
 var (
-	imageScanPtrType = reflect.TypeOf((*storage.ImageScan)(nil))
+	imageScanPtrType = reflect.TypeFor[*storage.ImageScan]()
 )
 
 func createStructFieldNestedPredicate(field reflect.StructField, structTy reflect.Type, pred internalPredicate) internalPredicate {

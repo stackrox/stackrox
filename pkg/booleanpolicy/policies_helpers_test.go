@@ -331,6 +331,17 @@ func newDualPathFileAccessEvent(actualPath, effectivePath string, operation stor
 }
 
 func newFileAccessPolicy(eventSource storage.EventSource, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+	opStrs := make([]string, 0, len(operations))
+	for _, op := range operations {
+		opStrs = append(opStrs, op.String())
+	}
+	return newFileAccessPolicyWithStringOps(eventSource, opStrs, negate, paths...)
+}
+
+// newFileAccessPolicyWithStringOps is like newFileAccessPolicy but accepts
+// operation names as strings. This is needed for virtual operation names
+// like "XATTR_CHANGE" that don't correspond to a proto enum value.
+func newFileAccessPolicyWithStringOps(eventSource storage.EventSource, operations []string, negate bool, paths ...string) *storage.Policy {
 	var pathValues []*storage.PolicyValue
 	for _, path := range paths {
 		pathValues = append(pathValues, &storage.PolicyValue{Value: path})
@@ -345,7 +356,7 @@ func newFileAccessPolicy(eventSource storage.EventSource, operations []storage.F
 
 	var operationValues []*storage.PolicyValue
 	for _, op := range operations {
-		operationValues = append(operationValues, &storage.PolicyValue{Value: op.String()})
+		operationValues = append(operationValues, &storage.PolicyValue{Value: op})
 	}
 
 	if len(operationValues) != 0 {

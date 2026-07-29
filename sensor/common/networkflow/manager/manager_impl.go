@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -30,6 +32,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -142,6 +145,7 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher common.PubSubDispatcher,
 	updateComputer *updatecomputer.Computer,
 	opts ...Option,
 ) Manager {
@@ -183,13 +187,24 @@ func NewManager(
 	enricherTicker.Stop()
 	mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))
 
-	if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
-		if msg.IsExpired() {
-			return
+	if features.SensorInternalPubSub.Enabled() {
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.NetworkFlowManagerResourceSyncConsumer,
+			pubsub.ResourceSyncFinishedTopic,
+			pubsub.ResourceSyncFinishedLane,
+			mgr.handleResourceSyncEvent,
+		); err != nil {
+			log.Panicf("unable to register consumer for ResourceSyncFinished: %v", err)
 		}
-		mgr.Notify(common.SensorComponentEventResourceSyncFinished)
-	}); err != nil {
-		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+	} else {
+		if err := mgr.pubSub.Subscribe(internalmessage.SensorMessageResourceSyncFinished, func(msg *internalmessage.SensorInternalMessage) {
+			if msg.IsExpired() {
+				return
+			}
+			mgr.Notify(common.SensorComponentEventResourceSyncFinished)
+		}); err != nil {
+			log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
+		}
 	}
 	for _, o := range opts {
 		o(mgr)
@@ -299,13 +314,39 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	}()
 	switch e {
 	case common.SensorComponentEventResourceSyncFinished:
-		if m.initialSync.CompareAndSwap(false, true) {
-			m.enricherTicker.Reset(enricherCycle)
-		}
+		m.handleResourceSyncFinished()
 	case common.SensorComponentEventOfflineMode:
 		// In offline mode with event buffering enabled, we continue operation
 		return
 	}
+}
+
+func (m *networkFlowManager) handleResourceSyncFinished() {
+	if m.initialSync.CompareAndSwap(false, true) {
+		m.enricherTicker.Reset(enricherCycle)
+	}
+}
+
+func (m *networkFlowManager) handleResourceSyncEvent(e pubsub.Event) error {
+	evt, ok := e.(*events.ResourceSyncFinishedEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", e)
+	}
+	if evt.IsExpired() {
+		return nil
+	}
+	select {
+	case <-m.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+	m.handleResourceSyncFinished()
+	if m.purger != nil {
+		// Note: The purger could ideally subscribe to ResourceSyncFinished directly
+		// instead of being notified here (if order is not important).
+		m.purger.Notify(common.SensorComponentEventResourceSyncFinished)
+	}
+	return nil
 }
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {

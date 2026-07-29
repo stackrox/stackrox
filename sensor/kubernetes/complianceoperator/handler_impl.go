@@ -535,7 +535,7 @@ func (m *handlerImpl) getScanSettingForUpdate(getFunc func() (*unstructured.Unst
 	}
 
 	// Check if scanSetting has the "Suspend" field
-	if _, ok := reflect.TypeOf(scanSetting).FieldByName("Suspend"); ok {
+	if _, ok := reflect.TypeFor[v1alpha1.ScanSetting]().FieldByName("Suspend"); ok {
 		scanSetting.Suspend = *config.Suspend
 	} else {
 		// Handle the case where the field doesn't exist (older CRD)

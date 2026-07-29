@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 
@@ -138,12 +139,7 @@ func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructF
 }
 
 func rejectedType(p reflect.Type, blacklist []reflect.Type) bool {
-	for _, t := range blacklist {
-		if t == p {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(blacklist, p)
 }
 
 func rejectedField(parentType reflect.Type, field reflect.StructField, blacklist []generator2.TypeAndField) bool {

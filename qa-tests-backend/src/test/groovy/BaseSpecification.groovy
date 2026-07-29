@@ -371,8 +371,7 @@ class BaseSpecification extends Specification {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
-        if (!Env.IN_CI && (Env.get("REGISTRY_USERNAME", null) == null ||
-                           Env.get("REGISTRY_PASSWORD", null) == null)) {
+        if (!Env.get("REGISTRY_USERNAME", null) || !Env.get("REGISTRY_PASSWORD", null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
             LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
@@ -403,7 +402,7 @@ class BaseSpecification extends Specification {
     }
 
     static addGCRImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null) == null) {
+        if (!Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null)) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
             LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER_V2 env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
@@ -434,9 +433,8 @@ class BaseSpecification extends Specification {
     }
 
     static addRedHatImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
-                           Env.get("REDHAT_PASSWORD") == null)) {
-            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+        if (!Env.get("REDHAT_USERNAME") || !Env.get("REDHAT_PASSWORD")) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing or empty. " +
                     "(this is ok if your test does not use images from registry.redhat.io)"
             return
         }

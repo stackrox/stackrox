@@ -132,7 +132,7 @@ func FormatAlert(alert *storage.Alert, alertLink string, funcMap template.FuncMa
 	if funcMap == nil {
 		return "", errors.New("Function map passed to FormatAlert cannot be nil")
 	}
-	for _, k := range requiredFunctions.AsSlice() {
+	for k := range requiredFunctions.All() {
 		if _, ok := funcMap[k]; !ok {
 			return "", fmt.Errorf("FuncMap key '%v' must be defined", k)
 		}
@@ -229,7 +229,7 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 // isViolationKeyValue returns try if src is of type **storage.Alert_Violation_KeyValueAttrs_
 // Used to validate if a one-of is of type KeyValueAttrs within a template
 func isViolationKeyValue(src interface{}) bool {
-	return reflect.TypeOf(src) == reflect.TypeOf((*storage.Alert_Violation_KeyValueAttrs_)(nil))
+	return reflect.TypeOf(src) == reflect.TypeFor[*storage.Alert_Violation_KeyValueAttrs_]()
 }
 
 // isFileAccess returns true if src is of type **storage.Alert_Violation_FileAccess
@@ -263,7 +263,7 @@ func valuePrinter(values []*storage.PolicyValue, op storage.BooleanOperator, neg
 		opString = " AND "
 	}
 
-	var valueStrings []string
+	valueStrings := make([]string, 0, len(values))
 	for _, value := range values {
 		valueStrings = append(valueStrings, value.GetValue())
 	}

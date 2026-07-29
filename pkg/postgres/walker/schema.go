@@ -51,11 +51,11 @@ func getIdxField(s *Schema) Field {
 			variable: true,
 			value:    "idx",
 		},
-		Type:       reflect.TypeOf(0).String(),
+		Type:       reflect.TypeFor[int]().String(),
 		ColumnName: "idx",
 		DataType:   postgres.Integer,
 		SQLType:    "integer",
-		ModelType:  reflect.TypeOf(0).String(),
+		ModelType:  reflect.TypeFor[int]().String(),
 		Options: PostgresOptions{
 			Ignored:    false,
 			PrimaryKey: true,
@@ -89,7 +89,7 @@ type SchemaRelationship struct {
 
 // ThisSchemaColumnNames generates the sequence of column names for this schema
 func (s *SchemaRelationship) ThisSchemaColumnNames() []string {
-	var seq []string
+	seq := make([]string, 0, len(s.MappedColumnNames))
 	for _, p := range s.MappedColumnNames {
 		seq = append(seq, p.ColumnNameInThisSchema)
 	}
@@ -98,7 +98,7 @@ func (s *SchemaRelationship) ThisSchemaColumnNames() []string {
 
 // OtherSchemaColumnNames generates the list of column names for the other schema
 func (s *SchemaRelationship) OtherSchemaColumnNames() []string {
-	var seq []string
+	seq := make([]string, 0, len(s.MappedColumnNames))
 	for _, p := range s.MappedColumnNames {
 		seq = append(seq, p.ColumnNameInOtherSchema)
 	}

@@ -1,9 +1,9 @@
 package resources
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 
 	openshiftAppsV1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
-	appArmorAnnotationTemplate                 = `container.apparmor.security.beta.kubernetes.io/%s`
+	appArmorAnnotationTemplate = `container.apparmor.security.beta.kubernetes.io/%s`
 )
 
 var (
@@ -67,37 +66,14 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, clusterID,
 	kind := deploymentType
 
 	// Ignore resources that are owned by another tracked resource.
-	for _, ref := range objMeta.GetOwnerReferences() {
-		if IsTrackedOwnerReference(ref) {
-			return nil, nil
-		}
-	}
-
-	// This only applies to OpenShift
-	if encDeploymentConfig, ok := objMeta.GetLabels()[openshiftEncodedDeploymentConfigAnnotation]; ok {
-		newMeta, newKind, err := extractDeploymentConfig(encDeploymentConfig)
-		if err != nil {
-			log.Error(err)
-		} else {
-			objMeta, kind = newMeta, newKind
-		}
+	if slices.ContainsFunc(objMeta.GetOwnerReferences(), IsTrackedOwnerReference) {
+		return nil, nil
 	}
 
 	wrap := newWrap(objMeta, kind, clusterID, registryOverride)
 	wrap.populateFields(obj)
 	return wrap.Deployment, nil
 
-}
-
-func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, string, error) {
-	// Anonymous struct that only contains the fields we are interested in (note: json.Unmarshal silently ignores
-	// fields that are not in the destination object).
-	dc := struct {
-		metav1.TypeMeta
-		MetaData metav1.ObjectMeta `json:"metadata"`
-	}{}
-	err := json.Unmarshal([]byte(encodedDeploymentConfig), &dc)
-	return &dc.MetaData, dc.Kind, err
 }
 
 func newWrap(meta metav1.Object, kind, clusterID, registryOverride string) *DeploymentWrap {

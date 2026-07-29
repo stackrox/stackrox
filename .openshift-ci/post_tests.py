@@ -19,6 +19,9 @@ class PostTestsConstants:
     COLLECT_INFRA_TIMEOUT = 12 * 60
     CHECK_TIMEOUT = 5 * 60
     STORE_TIMEOUT = 5 * 60
+    # k8s service logs include many namespaces, pod logs, and OpenShift
+    # must-gather audit archives; gsutil uploads routinely exceed STORE_TIMEOUT.
+    STORE_LARGE_TIMEOUT = 20 * 60
     FIXUP_TIMEOUT = 5 * 60
     ARTIFACTS_TIMEOUT = 3 * 60
     # QA_TEST_DEBUG_LOGS - where the QA tests store failure logs.
@@ -84,6 +87,12 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
         self.store_artifacts(test_outputs)
         self.handle_run_failure()
 
+    def _store_timeout_for(self, source):
+        artifact_name = os.path.basename(source.rstrip(os.sep))
+        if artifact_name == "k8s-logs":
+            return self.STORE_LARGE_TIMEOUT
+        return self.STORE_TIMEOUT
+
     def store_artifacts(self, test_outputs=None):
         if test_outputs is not None:
             self.data_to_store = test_outputs + self.data_to_store
@@ -99,7 +108,7 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
                 )
             self.run_with_best_effort(
                 args,
-                timeout=self.STORE_TIMEOUT,
+                timeout=self._store_timeout_for(source),
             )
 
         self._store_osci_artifacts()

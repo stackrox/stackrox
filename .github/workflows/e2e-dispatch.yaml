@@ -12,7 +12,7 @@ on:
     - opened
     - reopened
     - synchronize
-    - labeled
+    - ready_for_review
 
 permissions:
   contents: read
@@ -39,17 +39,18 @@ jobs:
       id: determine
       shell: python
       env:
+        GH_TOKEN: ${{ github.token }}
         PYTHONUNBUFFERED: "1"
         input__event_name: ${{ github.event_name }}
-        input__event_action: ${{ github.event.action }}
-        input__labeled_with: ${{ github.event.label.name }}
         input__is_fork: ${{ github.event.pull_request.head.repo.fork }}
         input__is_draft: ${{ github.event.pull_request.draft }}
-        input__all_labels: ${{ join(github.event.pull_request.labels.*.name, ',') }}
         input__ui_only_change: ${{ needs.detect-changes.outputs.ui_only }}
+        input__repo: ${{ github.repository }}
+        input__pr_number: ${{ github.event.pull_request.number }}
       run: |
         import json
         import os
+        import subprocess
         from types import SimpleNamespace
 
         input = SimpleNamespace(**{
@@ -59,10 +60,17 @@ jobs:
         for k, v in vars(input).items():
             print(f'{k} = {v}')
 
+        if input.event_name != 'pull_request':
+            all_labels = []
+        else:
+            p = subprocess.run(
+                ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
+                check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
+            all_labels = p.stdout.strip().splitlines()
+        print(f'all_labels = {", ".join(all_labels)}')
+
         def should_run(job):
             if input.is_fork == 'true':
-                return False
-            if input.event_action == 'labeled' and input.labeled_with != job:
                 return False
             if input.event_name != 'pull_request':
                 return True
@@ -72,7 +80,7 @@ jobs:
                 return False
             if input.is_draft != 'true':
                 return True
-            if f',{input.all_labels},'.find(f',{job},') >= 0:
+            if job in all_labels:
                 return True
             return False
 
@@ -83,7 +91,7 @@ jobs:
                 file.write(line + '\n')
 
             jobs = { job: should_run(job) for job in [
-                    'e2e-byodb-test',
+                    'e2e-byodb-tests',
                     'e2e-db-backup-restore-test',
                     'e2e-gke-upgrade-tests',
                     'e2e-nongroovy-tests',
@@ -91,7 +99,14 @@ jobs:
                 ]}
 
             write('jobs', json.dumps(jobs))
-            write('dispatch-any', str(any(jobs.values())).lower())
+
+            # dispatch_any==False is a shortcut to prevent executing the further workflow for draft PRs which don't
+            # qualify for running any actual e2e jobs.
+            # We must make sure that dispatch_any is True for non-drafts even if no actual jobs are to be dispatched
+            # (the case of UI-only PRs) because this lets GHA enter the corresponding workflows and skip the test jobs
+            # inside them "in proper way" that allows to satisfy branch protection rules.
+            dispatch_any = any(jobs.values()) or input.is_draft != 'true'
+            write('dispatch-any', str(dispatch_any).lower())
 
   # Waits for images to be built so we don't start testing until they are available.
   wait-for-images:
@@ -109,7 +124,7 @@ jobs:
       cancel-in-progress: true
     steps:
     - name: Checkout repo
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -140,15 +155,15 @@ jobs:
           rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
-  e2e-byodb-test:
+  e2e-byodb-tests:
     needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-byodb-test.yaml
+    uses: ./.github/workflows/e2e-byodb-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-test }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-byodb-tests }}
     secrets: inherit
     concurrency:
-      group: e2e-byodb-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-db-backup-restore-test:

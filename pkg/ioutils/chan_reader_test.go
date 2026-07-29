@@ -90,7 +90,7 @@ func TestChanReader_ReadError(t *testing.T) {
 
 	// Test that the error reemains stable, even if there is new data to read.
 	ch <- []byte("foo")
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		n, err := r.Read(buf[:])
 		assert.Zero(t, n)
 		assert.Equal(t, context.Canceled, err)

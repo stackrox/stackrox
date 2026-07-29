@@ -97,6 +97,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		}
 		return nil
 	}
+	cmd.AddCommand(ServeCmd(ctx))
 	return &cmd
 }
 

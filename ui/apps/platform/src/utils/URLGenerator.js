@@ -4,11 +4,15 @@ import { generatePath } from 'react-router-dom-v5-compat';
 import pageTypes from 'constants/pageTypes';
 import { pagingParams, searchParams, sortParams } from 'constants/searchParams';
 import useCases from 'constants/useCaseTypes';
+
 import {
     clustersBasePath,
     clustersPathWithParam,
+    configManagementPath,
     policiesPath,
-    riskPath,
+    policyManagementBasePath,
+    riskWorkloadPath,
+    riskWorkloadsBasePath,
     secretsPath,
     urlEntityListTypes,
     urlEntityTypes,
@@ -28,19 +32,19 @@ const legacyPathMap = {
         [pageTypes.DASHBOARD]: clustersBasePath,
     },
     [useCases.RISK]: {
-        [pageTypes.ENTITY]: riskPath,
-        [pageTypes.LIST]: '/main/risk',
-        [pageTypes.DASHBOARD]: '/main/risk',
+        [pageTypes.ENTITY]: riskWorkloadPath,
+        [pageTypes.LIST]: riskWorkloadsBasePath,
+        [pageTypes.DASHBOARD]: riskWorkloadsBasePath,
     },
     [useCases.SECRET]: {
         [pageTypes.ENTITY]: secretsPath,
-        [pageTypes.LIST]: '/main/configmanagement/secrets',
-        [pageTypes.DASHBOARD]: '/main/configmanagement/secrets',
+        [pageTypes.LIST]: `${configManagementPath}/secrets`,
+        [pageTypes.DASHBOARD]: `${configManagementPath}/secrets`,
     },
     [useCases.POLICY]: {
         [pageTypes.ENTITY]: policiesPath,
-        [pageTypes.LIST]: '/main/policies',
-        [pageTypes.DASHBOARD]: '/main/policies',
+        [pageTypes.LIST]: policyManagementBasePath,
+        [pageTypes.DASHBOARD]: policyManagementBasePath,
     },
 };
 function generateURL(workflowState) {

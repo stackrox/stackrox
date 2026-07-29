@@ -16,12 +16,16 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-34997: The Central CR now supports `spec.central.rolloutStrategy` (`Recreate` or `RollingUpdate`) to configure the central deployment rollout strategy. Default remains `Recreate`.
 
 - ROX-35181: Administrative events are now exposed as configurable custom Prometheus metrics (`rox_central_admin_event_*`), aggregated by Type, Level, Domain, ResourceType, and ResourceName. Requires permission to read Administration resource, globally scoped.
+- ROX-35545: Added ACL change as a file access operation for runtime policies.
+
+- ROX-35546: File access policies now detect extended attribute (xattr) changes.
 
 ### Removed Features
 
 ### Deprecated Features
 
 - ROX-26281: block creation of new GCR integrations. Users are directed to use Google Artifact Registry instead.
+- ROX-35079: installation of the `app.k8s.io/v1beta1/Application` resource when central is installed is deprecated. It will be removed in a future release.
 
 ### Technical Changes
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).

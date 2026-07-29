@@ -250,8 +250,8 @@ func collectVulnReportDataSQFNewDataModel(cveResponses []*ImageCVEQueryResponse)
 	deploymentNames := set.NewStringSet()
 	imageNames := set.NewStringSet()
 	componentNames := set.NewStringSet()
-	cveNames := make([]string, 0)
-	cvss := make([]float64, 0)
+	cveNames := make([]string, 0, len(cveResponses))
+	cvss := make([]float64, 0, len(cveResponses))
 
 	for _, res := range cveResponses {
 		if res.GetDeployment() != "" {

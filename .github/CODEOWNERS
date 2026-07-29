@@ -19,6 +19,7 @@ migrator/**/*                       @stackrox/core-workflows
 pkg/postgres/**/*                   @stackrox/core-workflows
 tests/upgrade/*                     @stackrox/core-workflows
 pkg/search/**/*                     @stackrox/core-workflows
+tests/policy_as_code_test.go        @stackrox/core-workflows
 
 # sensor-ecosystem main responsibilities include:
 # administration events, authN (authproviders), authZ (SAC)

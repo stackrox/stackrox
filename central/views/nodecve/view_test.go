@@ -815,7 +815,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECores(filter *filterImpl) []Cve
 			}
 		}
 	}
-	var expected []CveCore
+	expected := make([]CveCore, 0, len(cveMap))
 	for _, withStats := range cveMap {
 		core := withStats.response
 		core.CVEIDs = set.NewStringSet(core.CVEIDs...).AsSlice()
@@ -904,10 +904,7 @@ func (s *NodeCVEViewTestSuite) compileExpectedCVECoresWithPagination(filter *fil
 	if limit == 0 {
 		return expected
 	}
-	end := offset + limit
-	if end > len(expected) {
-		end = len(expected)
-	}
+	end := min(offset+limit, len(expected))
 	return expected[offset:end]
 }
 
