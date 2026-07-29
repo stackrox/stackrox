@@ -433,6 +433,212 @@ func (m *ManagerTestSuite) TestHandleReadyScanDeleteOldResultsGate() {
 	}
 }
 
+// TestGetOrCreateScanConfigWatcherRetiredGuard covers the getOrCreateScanConfigWatcher
+// dedup guard for late-arriving scans after a ScanConfigWatcher has retired (e.g. timed
+// out). It specifically covers scan configurations without notifiers, where no report
+// snapshot is ever created, so the snapshot-based check alone cannot detect that the
+// cycle was already handled (see ROX-34779 / PR #22000).
+//
+// The guard is time-based (Central's own clock), not a comparison of the scans' own
+// self-reported LastStartedTime: in-cluster testing showed two clusters scanning "at
+// the same time" for the same cycle can still differ by a second or more, which broke
+// an earlier, timestamp-comparison-based version of this guard in practice.
+func (m *ManagerTestSuite) TestGetOrCreateScanConfigWatcherRetiredGuard() {
+	scWithNotifiers := getTestScanConfig()
+	scNoNotifiers := scWithNotifiers.CloneVT()
+	scNoNotifiers.Notifiers = nil
+
+	gracePeriod := retiredScanConfigWatcherGracePeriod()
+
+	tests := map[string]struct {
+		scanConfig          *storage.ComplianceOperatorScanConfigurationV2
+		retiredAt           time.Time
+		snapshotSearchCalls int
+		snapshotsFound      []*storage.ComplianceOperatorReportSnapshotV2
+		expectHandled       bool
+	}{
+		"no notifiers, no retired record, no snapshot: starts a new watcher": {
+			scanConfig:          scNoNotifiers,
+			snapshotSearchCalls: 1,
+		},
+		"no notifiers, retired very recently: already handled without a DB search": {
+			scanConfig:          scNoNotifiers,
+			retiredAt:           time.Now(),
+			snapshotSearchCalls: 0,
+			expectHandled:       true,
+		},
+		"no notifiers, retired just under one grace period ago: already handled without a DB search": {
+			scanConfig:          scNoNotifiers,
+			retiredAt:           time.Now().Add(-gracePeriod + time.Second),
+			snapshotSearchCalls: 0,
+			expectHandled:       true,
+		},
+		"no notifiers, retired more than one grace period ago: falls through to a new watcher": {
+			scanConfig:          scNoNotifiers,
+			retiredAt:           time.Now().Add(-gracePeriod - time.Second),
+			snapshotSearchCalls: 1,
+		},
+		"notifiers configured, no retired record, snapshot exists: already handled (defense in depth)": {
+			scanConfig:          scWithNotifiers,
+			snapshotSearchCalls: 1,
+			snapshotsFound:      []*storage.ComplianceOperatorReportSnapshotV2{{}},
+			expectHandled:       true,
+		},
+	}
+
+	for name, tc := range tests {
+		m.Run(name, func() {
+			ctrl := gomock.NewController(m.T())
+			scanConfigDS := scanConfigurationDS.NewMockDataStore(ctrl)
+			snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+			generator := reportGen.NewMockComplianceReportGenerator(ctrl)
+
+			scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Eq(tc.scanConfig.GetScanConfigName())).
+				Times(1).Return(tc.scanConfig, nil)
+			snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).
+				Times(tc.snapshotSearchCalls).Return(tc.snapshotsFound, nil)
+
+			manager := New(scanConfigDS, m.scanDataStore, m.profileDataStore, snapshotDS, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, generator)
+			managerImplementation, ok := manager.(*managerImpl)
+			require.True(m.T(), ok)
+			if !tc.retiredAt.IsZero() {
+				managerImplementation.retiredScanConfigWatchers[tc.scanConfig.GetId()] = tc.retiredAt
+			}
+
+			results := &watcher.ScanWatcherResults{
+				Scan: &storage.ComplianceOperatorScanV2{
+					ScanConfigName:  tc.scanConfig.GetScanConfigName(),
+					LastStartedTime: protocompat.TimestampNow(),
+				},
+			}
+			w, returnedSC, wasAlreadyRunning, err := managerImplementation.getOrCreateScanConfigWatcher(
+				context.Background(), results, scanConfigDS, managerImplementation.scanConfigReadyQueue)
+
+			if tc.expectHandled {
+				assert.ErrorIs(m.T(), err, watcher.ErrScanAlreadyHandled)
+				assert.Nil(m.T(), w)
+				concurrency.WithLock(&managerImplementation.watchingScanConfigsLock, func() {
+					assert.Len(m.T(), managerImplementation.watchingScanConfigs, 0)
+				})
+			} else {
+				require.NoError(m.T(), err)
+				require.NotNil(m.T(), w)
+				assert.False(m.T(), wasAlreadyRunning)
+				assert.Equal(m.T(), tc.scanConfig.GetId(), returnedSC.GetId())
+				w.Stop()
+			}
+		})
+	}
+}
+
+// TestGetOrCreateScanConfigWatcherAlreadyRunning covers the fast path where a watcher is
+// already running for the scan configuration: neither the retired-record check nor the
+// snapshot search should be consulted.
+func (m *ManagerTestSuite) TestGetOrCreateScanConfigWatcherAlreadyRunning() {
+	sc := getTestScanConfig()
+	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
+		Times(1).Return(sc, nil)
+	// No SearchSnapshots expectation: it must not be called while a watcher is running.
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	managerImplementation, ok := manager.(*managerImpl)
+	require.True(m.T(), ok)
+	existing := &stubScanConfigWatcher{}
+	concurrency.WithLock(&managerImplementation.watchingScanConfigsLock, func() {
+		managerImplementation.watchingScanConfigs[sc.GetId()] = existing
+	})
+
+	results := &watcher.ScanWatcherResults{
+		Scan: &storage.ComplianceOperatorScanV2{
+			ScanConfigName:  sc.GetScanConfigName(),
+			LastStartedTime: protocompat.TimestampNow(),
+		},
+	}
+	w, _, wasAlreadyRunning, err := managerImplementation.getOrCreateScanConfigWatcher(
+		context.Background(), results, m.scanConfigDataStore, managerImplementation.scanConfigReadyQueue)
+	require.NoError(m.T(), err)
+	assert.True(m.T(), wasAlreadyRunning)
+	assert.Same(m.T(), watcher.ScanConfigWatcher(existing), w)
+}
+
+// TestHandleReadyScanConfigRecordsRetirement verifies that when a ScanConfigWatcher
+// retires (success, timeout, or cancellation) having processed at least one scan,
+// handleReadyScanConfig records the retirement time (Central's own clock), keyed by
+// scan configuration ID. This is what allows getOrCreateScanConfigWatcher to recognize
+// late scans from the same cycle without depending on a report snapshot (see
+// TestGetOrCreateScanConfigWatcherRetiredGuard). If no scan was ever processed, no
+// retirement is recorded, since there is no already-succeeded data to protect.
+func (m *ManagerTestSuite) TestHandleReadyScanConfigRecordsRetirement() {
+	sc := getTestScanConfig()
+
+	// No profiles reported for the scan config, so GetScansFromScanConfiguration (and thus
+	// DeleteOldResultsFromMissingScans) returns an empty set and no further datastore calls
+	// are made.
+	m.profileDataStore.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorProfileV2{}, nil)
+	m.reportGen.EXPECT().Stop().AnyTimes()
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager.Start()
+	m.T().Cleanup(manager.Stop)
+	managerImplementation, ok := manager.(*managerImpl)
+	require.True(m.T(), ok)
+
+	beforePush := time.Now()
+	result := &watcher.ScanConfigWatcherResults{
+		WatcherID:  sc.GetId(),
+		ScanConfig: sc,
+		ScanResults: map[string]*watcher.ScanWatcherResults{
+			"cluster-1:scan-1": {Scan: &storage.ComplianceOperatorScanV2{LastStartedTime: protocompat.TimestampNow()}},
+		},
+		Error: watcher.ErrScanConfigTimeout,
+	}
+	managerImplementation.scanConfigReadyQueue.Push(result)
+
+	m.Assert().Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImplementation.watchingScanConfigsLock, func() bool {
+			retiredAt, ok := managerImplementation.retiredScanConfigWatchers[sc.GetId()]
+			return ok && !retiredAt.Before(beforePush)
+		})
+	}, 2*time.Second, 10*time.Millisecond, "expected retiredScanConfigWatchers to record the retirement time")
+}
+
+// TestHandleReadyScanConfigDoesNotRecordRetirementWithoutScans verifies that no
+// retirement is recorded when a ScanConfigWatcher retires without ever having
+// processed a scan (e.g. it timed out immediately): there is nothing for a duplicate
+// watcher to endanger in that case, so late scans should be free to start fresh.
+func (m *ManagerTestSuite) TestHandleReadyScanConfigDoesNotRecordRetirementWithoutScans() {
+	sc := getTestScanConfig()
+	m.profileDataStore.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).AnyTimes().
+		Return([]*storage.ComplianceOperatorProfileV2{}, nil)
+	m.reportGen.EXPECT().Stop().AnyTimes()
+
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
+	manager.Start()
+	m.T().Cleanup(manager.Stop)
+	managerImplementation, ok := manager.(*managerImpl)
+	require.True(m.T(), ok)
+
+	result := &watcher.ScanConfigWatcherResults{
+		WatcherID:   sc.GetId(),
+		ScanConfig:  sc,
+		ScanResults: map[string]*watcher.ScanWatcherResults{},
+		Error:       watcher.ErrScanConfigTimeout,
+	}
+	managerImplementation.scanConfigReadyQueue.Push(result)
+
+	m.Assert().Eventually(func() bool {
+		return concurrency.WithLock1[bool](&managerImplementation.watchingScanConfigsLock, func() bool {
+			_, watcherStillTracked := managerImplementation.watchingScanConfigs[sc.GetId()]
+			return !watcherStillTracked
+		})
+	}, 2*time.Second, 10*time.Millisecond, "expected the watcher to be removed")
+	concurrency.WithLock(&managerImplementation.watchingScanConfigsLock, func() {
+		_, ok := managerImplementation.retiredScanConfigWatchers[sc.GetId()]
+		assert.False(m.T(), ok, "expected no retirement to be recorded when no scans were processed")
+	})
+}
+
 func (m *ManagerTestSuite) TestHandleScan() {
 	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
 		Return(

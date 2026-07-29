@@ -87,6 +87,21 @@ type managerImpl struct {
 	watchingScanConfigsLock sync.Mutex
 	// watchingScanConfigs a map holding the ScanConfigWatchers
 	watchingScanConfigs map[string]watcher.ScanConfigWatcher
+	// retiredScanConfigWatchers records, per scan configuration ID, when (Central's own
+	// clock) a ScanConfigWatcher last retired (e.g. timed out) after processing at
+	// least one scan for that configuration. getOrCreateScanConfigWatcher treats any
+	// scan arriving within retiredScanConfigWatcherGracePeriod of that retirement as a
+	// late arrival of the same cycle and skips creating a duplicate watcher for it,
+	// even when no report snapshot exists (e.g. no notifiers configured, see
+	// createAutomaticSnapshotAndSubscribe).
+	//
+	// This intentionally uses Central's own clock instead of comparing the scans' own
+	// self-reported LastStartedTime across clusters: in-cluster testing showed two
+	// clusters scanned "at the same time" for the same cycle can still differ by a
+	// second or more, which is enough to break a strict timestamp comparison and
+	// re-open the exact cascade this map exists to prevent. Guarded by
+	// watchingScanConfigsLock.
+	retiredScanConfigWatchers map[string]time.Time
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 
@@ -107,27 +122,28 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 	reportGen reportGen.ComplianceReportGenerator) Manager {
 	gmt := time.NewTicker(env.ComplianceScansRunningInParallelMetricObservationPeriod.DurationSetting())
 	return &managerImpl{
-		scanConfigDataStore:    scanConfigDS,
-		scanDataStore:          scanDataStore,
-		profileDataStore:       profileDataStore,
-		snapshotDataStore:      snapshotDatastore,
-		integrationDataStore:   complianceIntegration,
-		suiteDataStore:         suiteDataStore,
-		bindingsDataStore:      bindingsDataStore,
-		checkResultDataStore:   checkResultDataStore,
-		stopper:                concurrency.NewStopper(),
-		runningReportConfigs:   make(map[string]*reportRequest, maxRequests),
-		reportRequests:         make(chan *reportRequest, maxRequests),
-		concurrencySem:         semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
-		reportGen:              reportGen,
-		automaticReportingCtx:  sac.WithAllAccess(context.Background()),
-		watchingScans:          make(map[string]watcher.ScanWatcher),
-		watchingScansStartTime: make(map[string]time.Time),
-		readyQueue:             queue.NewQueue[*watcher.ScanWatcherResults](),
-		watchingScanConfigs:    make(map[string]watcher.ScanConfigWatcher),
-		scanConfigReadyQueue:   queue.NewQueue[*watcher.ScanConfigWatcherResults](),
-		metricsTicker:          gmt,
-		metricsTickerC:         gmt.C,
+		scanConfigDataStore:       scanConfigDS,
+		scanDataStore:             scanDataStore,
+		profileDataStore:          profileDataStore,
+		snapshotDataStore:         snapshotDatastore,
+		integrationDataStore:      complianceIntegration,
+		suiteDataStore:            suiteDataStore,
+		bindingsDataStore:         bindingsDataStore,
+		checkResultDataStore:      checkResultDataStore,
+		stopper:                   concurrency.NewStopper(),
+		runningReportConfigs:      make(map[string]*reportRequest, maxRequests),
+		reportRequests:            make(chan *reportRequest, maxRequests),
+		concurrencySem:            semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
+		reportGen:                 reportGen,
+		automaticReportingCtx:     sac.WithAllAccess(context.Background()),
+		watchingScans:             make(map[string]watcher.ScanWatcher),
+		watchingScansStartTime:    make(map[string]time.Time),
+		readyQueue:                queue.NewQueue[*watcher.ScanWatcherResults](),
+		watchingScanConfigs:       make(map[string]watcher.ScanConfigWatcher),
+		retiredScanConfigWatchers: make(map[string]time.Time),
+		scanConfigReadyQueue:      queue.NewQueue[*watcher.ScanConfigWatcherResults](),
+		metricsTicker:             gmt,
+		metricsTickerC:            gmt.C,
 	}
 }
 
@@ -505,6 +521,8 @@ func (m *managerImpl) handleReadyScan() {
 		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
 		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			log.Debugf("Scan config for scan %s was already handled by a previous ScanConfigWatcher, skipping",
+				scanWatcherResult.Scan.GetScanName())
 			continue
 		}
 		if err != nil {
@@ -533,11 +551,20 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 	if sc == nil {
 		return nil, nil, false, errors.Errorf("ScanConfiguration not found for scan %s", results.Scan.GetScanName())
 	}
-	w, watcherIsRunning := concurrency.WithLock2[watcher.ScanConfigWatcher, bool](&m.watchingScanConfigsLock, func() (watcher.ScanConfigWatcher, bool) {
+	w, watcherIsRunning, retiredAt := concurrency.WithLock3[watcher.ScanConfigWatcher, bool, time.Time](&m.watchingScanConfigsLock, func() (watcher.ScanConfigWatcher, bool, time.Time) {
 		w, watcherIsRunning := m.watchingScanConfigs[sc.GetId()]
-		return w, watcherIsRunning
+		return w, watcherIsRunning, m.retiredScanConfigWatchers[sc.GetId()]
 	})
 	if !watcherIsRunning {
+		if !retiredAt.IsZero() && time.Since(retiredAt) < retiredScanConfigWatcherGracePeriod() {
+			// A ScanConfigWatcher already retired (e.g. timed out) recently after
+			// processing at least one scan for this scan configuration. Treat this scan
+			// as a late arrival of that same cycle rather than spinning up a second
+			// watcher for it. This check does not depend on a report snapshot existing,
+			// so it also covers scan configurations with no notifiers configured, unlike
+			// the snapshot search below.
+			return nil, nil, false, watcher.ErrScanAlreadyHandled
+		}
 		query := search.NewQueryBuilder().
 			AddExactMatches(search.ComplianceOperatorScanConfig, sc.GetId()).
 			AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scan.GetLastStartedTime().AsTime(), timestamp.InfiniteFuture.GoTime()).
@@ -548,7 +575,9 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		}
 		if len(snapshot) > 0 {
 			// A snapshot for this scan configuration already exists for this time range,
-			// meaning a prior ScanConfigWatcher already processed this scan cycle.
+			// meaning a prior ScanConfigWatcher already processed this scan cycle. This is
+			// a defense-in-depth backstop for the (rare) case where retiredScanConfigWatchers
+			// lost the in-memory record, e.g. across a Central restart.
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
 		log.Debugf("Starting config watcher %s", sc.GetId())
@@ -558,6 +587,23 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		})
 	}
 	return w, sc, watcherIsRunning, nil
+}
+
+// retiredScanConfigWatcherGracePeriod returns how long after a ScanConfigWatcher
+// retires a newly-arriving scan is still considered a late arrival of the same cycle
+// (see retiredScanConfigWatchers).
+//
+// An individual scan can legitimately still be in flight for up to
+// ComplianceScanWatcherTimeout from whenever its own ScanWatcher started, independent
+// of when the scan configuration's watcher started counting down. Since the scan
+// configuration watcher's own timeout (ComplianceScanScheduleWatcherTimeout) can fire
+// as soon as it is created -- i.e. as early as when the very first scan of the cycle
+// arrives -- the worst-case gap between the scan config watcher retiring and a slower
+// sibling scan's own watcher finally timing out is bounded by the sum of both
+// durations. In-cluster testing confirmed that using either timeout alone does not
+// consistently leave enough margin and lets the cascade this exists to prevent through.
+func retiredScanConfigWatcherGracePeriod() time.Duration {
+	return env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
 }
 
 // createAutomaticSnapshotAndSubscribe creates a snapshot for an automatic report (not on-demand)
@@ -608,6 +654,12 @@ func (m *managerImpl) handleReadyScanConfig() {
 			scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot), scanConfigWatcherResult.Error)
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
+			// Only record a retirement if at least one scan was actually processed: if
+			// none were, there is no already-succeeded data a duplicate watcher could
+			// endanger, so a late scan is free to start a fresh watcher.
+			if len(scanConfigWatcherResult.ScanResults) > 0 {
+				m.retiredScanConfigWatchers[scanConfigWatcherResult.WatcherID] = time.Now()
+			}
 		})
 		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
 			log.Errorf("unable to delete old CheckResults: %v", err)
