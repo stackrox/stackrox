@@ -82,8 +82,6 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; {
 	case scannerType == string(v1alpha1.ScannerTypeCEL):
 		profileID = tailoredProfile.GetName()
-		log.Debugf("Tailored profile %s uses CEL scanner: using k8s name %q as ProfileId instead of XCCDF ID %q",
-			tailoredProfile.GetName(), profileID, tailoredProfile.Status.ID)
 	case scannerType == string(v1alpha1.ScannerTypeOpenSCAP), scannerType == "":
 		profileID = tailoredProfile.Status.ID
 	default:

@@ -54,8 +54,6 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	switch scannerType := complianceProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; scannerType {
 	case string(v1alpha1.ScannerTypeCEL):
 		profileID = complianceProfile.Name
-		log.Debugf("Profile %s uses CEL scanner: using k8s name %q as ProfileId instead of XCCDF ID %q",
-			complianceProfile.Name, profileID, complianceProfile.ID)
 	case string(v1alpha1.ScannerTypeOpenSCAP), "":
 		// OpenSCAP and unannotated profiles use the XCCDF content ID — no action needed.
 	default:
