@@ -103,12 +103,20 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 	}
 	successfulScanNames := clusterData.ScanNames
 	if clusterData.FailedInfo != nil {
-		allScansSet := set.NewStringSet(successfulScanNames...)
-		failedScansSet := set.NewStringSet()
-		for _, scan := range clusterData.FailedInfo.FailedScans {
-			failedScansSet.Add(scan.GetScanName())
+		if len(clusterData.FailedInfo.FailedScans) == 0 {
+			// The entire cluster failed to report (e.g. sensor disconnected,
+			// scan config watcher timed out without receiving any results from
+			// this cluster). Exclude all results to avoid including stale data
+			// from a previous scan cycle in the report.
+			return ret, statuses, nil
+		} else {
+			allScansSet := set.NewStringSet(successfulScanNames...)
+			failedScansSet := set.NewStringSet()
+			for _, scan := range clusterData.FailedInfo.FailedScans {
+				failedScansSet.Add(scan.GetScanName())
+			}
+			successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 		}
-		successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 	}
 	scanConfigQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
