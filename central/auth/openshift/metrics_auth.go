@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	permissionsUtils "github.com/stackrox/rox/pkg/auth/permissions/utils"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -184,6 +185,7 @@ func ensureAuthProvider(ctx context.Context, registry authproviders.Registry, ca
 		authproviders.WithEnabled(true),
 		authproviders.WithActive(true),
 		authproviders.WithVisibility(storage.Traits_HIDDEN),
+		authproviders.WithOrigin(storage.Traits_DEFAULT),
 		authproviders.WithConfig(map[string]string{
 			userpki.ConfigKeys: caPEM,
 		}),
@@ -211,10 +213,15 @@ func ensureGroup(ctx context.Context, groupDS groupDataStore.DataStore) {
 			AuthProviderId: authProviderID,
 			Key:            "name",
 			Value:          cn,
+			Traits: &storage.Traits{
+				Origin: storage.Traits_DEFAULT,
+			},
 		},
 		RoleName: roleName,
 	}
-	if err := groupDS.Add(ctx, group); err != nil {
+	// Group uses DEFAULT origin so a user can't repoint or delete the mapping and thereby
+	// orphan (and delete) the role out from under it.
+	if err := groupDS.Add(declarativeconfig.WithModifyDefaultResource(ctx), group); err != nil {
 		log.Warnf("Failed to create OpenShift metrics group: %v", err)
 	}
 }
