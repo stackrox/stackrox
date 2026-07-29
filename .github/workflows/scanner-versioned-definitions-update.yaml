@@ -559,7 +559,7 @@ jobs:
             else
                 summary+="  - (no detailed error annotations found; see the workflow run for details)"
             fi
-        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | select(.conclusion == "failure") | [.id, .name, ([.steps[]? | select(.conclusion == "failure") | .name][0] // "unknown step")] | @tsv')
+        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | [.id, .name, ([.steps[]? | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | .name][0] // "unknown step")] | @tsv')
 
         if [ -z "$summary" ]; then
             summary="(no failed jobs found; see the workflow run for details)"
@@ -621,6 +621,10 @@ jobs:
             text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
                 "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
         fi
+        # --retry-all-errors means a slow-but-eventually-successful post could be
+        # retried and sent twice; unlikely in practice, but possible.
         jq -n --arg text "$text" '{text: $text}' \
-            | curl --fail --silent --show-error --connect-timeout 10 --max-time 300 \
+            | curl --fail --silent --show-error \
+                --retry 3 --retry-all-errors --retry-delay 5 \
+                --connect-timeout 10 --max-time 300 \
                 -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"
