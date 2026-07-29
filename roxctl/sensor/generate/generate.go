@@ -196,7 +196,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		"Istio version when deploying into an Istio-enabled cluster (has no effect; ACS now automatically prevents Istio sidecar injection).")
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
-	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Deprecated: Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+	utils.Must(c.PersistentFlags().MarkDeprecated("enable-pod-security-policies", "PodSecurityPolicy support is deprecated and will be removed in a future release."))
 
 	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
 	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
