@@ -3,6 +3,7 @@ package store
 import (
 	"testing"
 
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -724,6 +725,107 @@ func (s *storeSuite) Test_UpdateStateOrCreateShouldRefreshRuntimeFields() {
 	} else {
 		assert.Equal(s.T(), *update.VSOCKCID, *actual.VSOCKCID)
 	}
+}
+
+func (s *storeSuite) Test_RuntimeUpdatesShouldPreserveAgentFacts() {
+	agentFacts := map[string]string{
+		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+	}
+
+	s.Run("AddOrUpdate preserves when nil", func() {
+		original := &virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: agentFacts,
+		}
+		update := &virtualmachine.Info{
+			ID:          vmID,
+			Name:        vmName,
+			Namespace:   vmNamespace,
+			Description: "updated description",
+		}
+
+		s.store.AddOrUpdate(original)
+		s.store.AddOrUpdate(update)
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), agentFacts, actual.AgentFacts)
+	})
+
+	s.Run("AddOrUpdate overrides when provided", func() {
+		originalFacts := map[string]string{"original": "value"}
+		updatedFacts := map[string]string{
+			pkgVM.ActivationStatusKey: pkgVM.ActivationStatusInactive,
+		}
+
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: originalFacts,
+		})
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: updatedFacts,
+		})
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), updatedFacts, actual.AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate preserves when nil", func() {
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: agentFacts,
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
+			ID:        vmID,
+			Name:      vmName,
+			Namespace: vmNamespace,
+			Running:   true,
+			VSOCKCID:  newVSOCKCID(1),
+			GuestOS:   "Red Hat Enterprise Linux 9",
+		})
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), agentFacts, actual.AgentFacts)
+	})
+
+	s.Run("UpdateStateOrCreate overrides when provided", func() {
+		originalFacts := map[string]string{"original": "value"}
+		updatedFacts := map[string]string{
+			pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
+		}
+
+		s.store = NewVirtualMachineStore()
+		s.store.AddOrUpdate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			AgentFacts: originalFacts,
+		})
+		s.store.UpdateStateOrCreate(&virtualmachine.Info{
+			ID:         vmID,
+			Name:       vmName,
+			Namespace:  vmNamespace,
+			Running:    true,
+			AgentFacts: updatedFacts,
+		})
+
+		actual := s.store.Get(vmID)
+		s.Require().NotNil(actual)
+		assert.Equal(s.T(), updatedFacts, actual.AgentFacts)
+	})
 }
 
 func (s *storeSuite) Test_RemoveVirtualMachine() {

@@ -1,6 +1,8 @@
 package store
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -49,6 +51,12 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
 		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
 		vm.NodeName = oldVM.NodeName
+		if vm.AgentFacts == nil && len(oldVM.AgentFacts) > 0 {
+			vm.AgentFacts = maps.Clone(oldVM.AgentFacts)
+		}
+	}
+	if vm.AgentFacts != nil {
+		vm.AgentFacts = maps.Clone(vm.AgentFacts)
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -170,6 +178,9 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.Description = updateInfo.Description
 	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
 	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
+	if updateInfo.AgentFacts != nil {
+		prev.AgentFacts = maps.Clone(updateInfo.AgentFacts)
+	}
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {
