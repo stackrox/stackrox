@@ -80,6 +80,8 @@ central:
           certificate: null # string
           destinationCACertificate: null # string
           key: null # string
+  notifierSecretsEncryption:
+    enabled: null # bool
   declarativeConfiguration:
     mounts:
       configMaps: null # [string]

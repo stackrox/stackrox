@@ -101,12 +101,10 @@ spec:
           mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
-        {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
         - name: central-encryption-key-chain
           mountPath: /run/secrets/stackrox.io/central-encryption-key-chain
           readOnly: true
-        {{- end }}
         {{- end }}
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       terminationGracePeriodSeconds: 30
@@ -130,12 +128,10 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      {{- if ._rox.central.notifierSecretsEncryption }}
       {{- if ._rox.central.notifierSecretsEncryption.enabled }}
       - name: central-encryption-key-chain
         secret:
           secretName: central-encryption-key-chain
-      {{- end }}
       {{- end }}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
 {{- end }}
