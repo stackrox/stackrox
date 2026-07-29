@@ -40,10 +40,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		return nil
 	}
 
-	if tailoredProfile.Status.ID == "" &&
-		tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation] != string(v1alpha1.ScannerTypeCEL) {
-		// CEL-based TPs may legitimately have no XCCDF Status.ID; we use the k8s name instead.
-		// Non-CEL TPs without a Status.ID are not yet ready (CO hasn't processed them).
+	if tailoredProfile.Status.ID == "" {
 		log.Warnf("Tailored profile %s does not have an ID. Skipping...", tailoredProfile.Name)
 		return nil
 	}
