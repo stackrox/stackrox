@@ -498,7 +498,9 @@ spec:
           - description: Storage API key. If not set, telemetry is disabled.
             displayName: Key
             path: central.telemetry.storage.key
-          - description: If set to true, pruning and reporting jobs run in a separate Deployment.
+          - description: |-
+              If set to true, pruning and reporting jobs run in a separate Deployment.
+              The default is: false.
             displayName: Enabled
             path: centralWorker.enabled
           - description: |-

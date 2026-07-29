@@ -644,6 +644,7 @@ const (
 // CentralWorkerSpec defines the central-worker configuration.
 type CentralWorkerSpec struct {
 	// If set to true, pruning and reporting jobs run in a separate Deployment.
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Enabled"
 	Enabled *bool `json:"enabled,omitempty"`
 

@@ -124,8 +124,9 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
-      - description: If set to true, pruning and reporting jobs run in a separate
-          Deployment.
+      - description: |-
+          If set to true, pruning and reporting jobs run in a separate Deployment.
+          The default is: false.
         displayName: Enabled
         path: centralWorker.enabled
       - description: |-

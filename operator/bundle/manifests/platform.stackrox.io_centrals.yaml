@@ -672,8 +672,9 @@ spec:
                   separate Deployment instead of inside Central.
                 properties:
                   enabled:
-                    description: If set to true, pruning and reporting jobs run in
-                      a separate Deployment.
+                    description: |-
+                      If set to true, pruning and reporting jobs run in a separate Deployment.
+                      The default is: false.
                     type: boolean
                   hostAliases:
                     description: HostAliases allows configuring additional hostnames
