@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
@@ -32,7 +33,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	}
 
 	var auth central.ServiceCertAuth
-	if err := auth.UnmarshalVTUnsafe(authBytes); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&auth, authBytes); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal service cert auth structure")
 	}
 

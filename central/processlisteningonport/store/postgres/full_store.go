@@ -212,13 +212,13 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := msg.UnmarshalVTUnsafe(serialized); err != nil {
+		if err := pgutils.UnmarshalVTMessage(&msg, serialized); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
 		if procSerialized != nil {
-			if err := procMsg.UnmarshalVTUnsafe(procSerialized); err != nil {
+			if err := pgutils.UnmarshalVTMessage(&procMsg, procSerialized); err != nil {
 				return nil, err
 			}
 		}

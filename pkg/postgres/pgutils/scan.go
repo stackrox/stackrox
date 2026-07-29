@@ -7,7 +7,7 @@ import (
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	UnmarshalVTUnsafe(dAtA []byte) error
+	VTUnmarshaler
 	*T
 }
 
@@ -40,7 +40,7 @@ func Unmarshal[T any, PT Unmarshaler[T]](row pgx.Row) (*T, error) {
 		return nil, err
 	}
 	msg := new(T)
-	if err := PT(msg).UnmarshalVTUnsafe(data); err != nil {
+	if err := UnmarshalVTMessage(PT(msg), data); err != nil {
 		return nil, err
 	}
 	return msg, nil
