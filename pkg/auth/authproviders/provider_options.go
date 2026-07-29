@@ -166,3 +166,18 @@ func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 		return nil
 	}
 }
+
+// WithOrigin sets the origin for the auth provider.
+func WithOrigin(origin storage.Traits_Origin) ProviderOption {
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
+		}
+		if pr.storedInfo.GetTraits() != nil {
+			pr.storedInfo.Traits.Origin = origin
+		} else {
+			pr.storedInfo.Traits = &storage.Traits{Origin: origin}
+		}
+		return nil
+	}
+}
