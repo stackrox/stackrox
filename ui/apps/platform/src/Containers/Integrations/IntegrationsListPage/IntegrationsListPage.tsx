@@ -6,12 +6,14 @@ import {
     AlertGroup,
     Breadcrumb,
     BreadcrumbItem,
+    Content,
     Flex,
     PageSection,
     Title,
     pluralize,
 } from '@patternfly/react-core';
 
+import { Link } from 'react-router-dom-v5-compat';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PageTitle from 'Components/PageTitle';
@@ -36,6 +38,8 @@ import {
     getIsCloudSource,
     getIsGCR,
     getIsMachineAccessConfig,
+    getIsS3,
+    getIsS3Compatible,
     getIsScannerV4,
     getIsSignatureIntegration,
 } from '../utils/integrationUtils';
@@ -71,6 +75,8 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const isScannerV4 = getIsScannerV4(source, type);
     const isGCR = getIsGCR(source, type);
     const isCloudSource = getIsCloudSource(source);
+    const isS3 = getIsS3(source, type);
+    const isS3Compatible = getIsS3Compatible(source, type);
 
     // There is currently nothing relevant in Tech Preview.
     const isTechPreview = false;
@@ -163,6 +169,49 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
                             </a>
                         </ExternalLink>{' '}
                         for more information.
+                    </Alert>
+                </PageSection>
+            )}
+            {isS3 && (
+                <PageSection>
+                    <Alert title="AWS S3 backup storage" component="p" variant="info" isInline>
+                        This integration is for AWS S3 only. For other S3-compatible storage
+                        providers, use the{' '}
+                        <Link to={`${integrationsPath}/backups/s3compatible`}>
+                            S3 API Compatible integration
+                        </Link>{' '}
+                        instead.
+                    </Alert>
+                </PageSection>
+            )}
+            {isS3Compatible && (
+                <PageSection>
+                    <Alert
+                        title="S3 API compatible backup storage"
+                        component="p"
+                        variant="info"
+                        isInline
+                    >
+                        <Content component="p">
+                            For AWS S3, use the{' '}
+                            <Link to={`${integrationsPath}/backups/s3`}>Amazon S3 integration</Link>{' '}
+                            instead.
+                        </Content>
+                        <Content component="p">
+                            <ExternalLink>
+                                <a
+                                    href="https://www.redhat.com/en/technologies/cloud-computing/openshift-data-foundation"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Red Hat OpenShift Data Foundation
+                                </a>
+                            </ExternalLink>{' '}
+                            is officially supported as an S3-compatible backup target. Compatibility
+                            with other S3 storage providers depends on their adherence to the S3
+                            specification. <span style={{ whiteSpace: 'nowrap' }}>Red Hat</span>{' '}
+                            does not test and support every S3 API compatible provider.
+                        </Content>
                     </Alert>
                 </PageSection>
             )}
