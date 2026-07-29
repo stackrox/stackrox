@@ -270,6 +270,7 @@ func (s *scanWatcherImpl) scanName() string {
 
 func (s *scanWatcherImpl) run() {
 	defer func() {
+		s.cancel()
 		s.stopped.Signal()
 		<-s.stopped.Done()
 		s.timeout.Stop()

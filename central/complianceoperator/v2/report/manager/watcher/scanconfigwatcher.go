@@ -196,6 +196,7 @@ func (w *scanConfigWatcherImpl) scanConfigName() string {
 
 func (w *scanConfigWatcherImpl) run(timer Timer) {
 	defer func() {
+		w.cancel()
 		w.stopped.Signal()
 		<-w.stopped.Done()
 		timer.Stop()
