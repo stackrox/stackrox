@@ -539,7 +539,7 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 	})
 	if !watcherIsRunning {
 		query := search.NewQueryBuilder().
-			AddExactMatches(search.ComplianceOperatorScanRef, results.Scan.GetScanRefId()).
+			AddExactMatches(search.ComplianceOperatorScanConfig, sc.GetId()).
 			AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scan.GetLastStartedTime().AsTime(), timestamp.InfiniteFuture.GoTime()).
 			ProtoQuery()
 		snapshot, err := m.snapshotDataStore.SearchSnapshots(m.automaticReportingCtx, query)
@@ -547,10 +547,11 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 			return nil, nil, false, errors.Wrap(err, "unable to retrieve snapshots from the store")
 		}
 		if len(snapshot) > 0 {
-			// We already handled a scan newer than this one, we ignore this scanResults
+			// A snapshot for this scan configuration already exists for this time range,
+			// meaning a prior ScanConfigWatcher already processed this scan cycle.
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
-		log.Debugf("Staring config watcher %s", sc.GetId())
+		log.Debugf("Starting config watcher %s", sc.GetId())
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			w = watcher.NewScanConfigWatcher(m.automaticReportingCtx, ctx, sc.GetId(), sc, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, queue)
 			m.watchingScanConfigs[sc.GetId()] = w
