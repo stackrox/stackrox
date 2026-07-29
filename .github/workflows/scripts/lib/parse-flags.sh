@@ -27,8 +27,13 @@ parse_flags() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --*)
-        out_args["${1#--}"]="${2:-}"
-        if [[ $# -ge 2 ]]; then shift 2; else shift; fi
+        if [[ $# -ge 2 && "$2" != --* ]]; then
+          out_args["${1#--}"]="$2"
+          shift 2
+        else
+          out_args["${1#--}"]=""
+          shift
+        fi
         ;;
       *)
         echo "$0: unknown argument: $1" >&2
