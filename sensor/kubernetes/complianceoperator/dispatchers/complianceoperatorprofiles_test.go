@@ -20,133 +20,74 @@ func profileToUnstructured(t *testing.T, p *v1alpha1.Profile) *unstructured.Unst
 	return &unstructured.Unstructured{Object: obj}
 }
 
-// TestProfileDispatcher_OpenSCAPProfileID verifies that OpenSCAP profiles use the XCCDF content ID
-// (complianceProfile.ID) as ProfileId, so that BuildProfileRefID matches the scan side.
-func TestProfileDispatcher_OpenSCAPProfileID(t *testing.T) {
-	profile := &v1alpha1.Profile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "ocp4-cis",
-			UID:  "some-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeOpenSCAP),
-			},
+// TestProfileDispatcher_ProfileIDSelection verifies ProfileId selection for every scanner-type
+// annotation value, so that BuildProfileRefID produces matching UUIDs on both the profile and
+// the scan sides. Unrecognised scanner types and empty XCCDF IDs still produce a valid event
+// (not dropped) — the dispatcher only logs a Warn in those cases.
+func TestProfileDispatcher_ProfileIDSelection(t *testing.T) {
+	tests := map[string]struct {
+		scannerType   string
+		xccdfID       string
+		name          string
+		wantProfileID string
+	}{
+		"OpenSCAP uses XCCDF content ID": {
+			scannerType:   string(v1alpha1.ScannerTypeOpenSCAP),
+			xccdfID:       "xccdf_org.ssgproject.content_profile_cis",
+			name:          "ocp4-cis",
+			wantProfileID: "xccdf_org.ssgproject.content_profile_cis",
 		},
-		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "xccdf_org.ssgproject.content_profile_cis",
-		},
-	}
-
-	dispatcher := NewProfileDispatcher()
-	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v1Profile.GetProfileId())
-}
-
-// TestProfileDispatcher_CELProfileID verifies that CEL profiles use the k8s object name as
-// ProfileId, mirroring what ComplianceScan.Spec.Profile is set to by the compliance operator,
-// so that BuildProfileRefID produces matching UUIDs on both the profile and the scan sides.
-func TestProfileDispatcher_CELProfileID(t *testing.T) {
-	profile := &v1alpha1.Profile{
-		ObjectMeta: metav1.ObjectMeta{
-			// K8s name: what CO puts in ComplianceScan.Spec.Profile for CEL profiles
-			Name: "ocp4virt-cis-vm-extension",
-			UID:  "cel-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: string(v1alpha1.ScannerTypeCEL),
-			},
-		},
-		ProfilePayload: v1alpha1.ProfilePayload{
+		"CEL uses k8s object name": {
+			scannerType: string(v1alpha1.ScannerTypeCEL),
 			// Short content ID — no XCCDF prefix — which CO does NOT use in spec.profile
-			ID: "cis-vm-extension",
+			xccdfID:       "cis-vm-extension",
+			name:          "ocp4virt-cis-vm-extension",
+			wantProfileID: "ocp4virt-cis-vm-extension",
+		},
+		"no annotation falls back to XCCDF ID (CO < 1.9)": {
+			scannerType:   "",
+			xccdfID:       "xccdf_org.ssgproject.content_profile_cis",
+			name:          "ocp4-cis",
+			wantProfileID: "xccdf_org.ssgproject.content_profile_cis",
+		},
+		"unrecognised scanner type falls back to XCCDF ID": {
+			scannerType:   "WASM", // hypothetical future type
+			xccdfID:       "xccdf_org.ssgproject.content_profile_future",
+			name:          "future-profile",
+			wantProfileID: "xccdf_org.ssgproject.content_profile_future",
+		},
+		"no XCCDF ID and no annotation yields empty ProfileId": {
+			scannerType:   "",
+			xccdfID:       "",
+			name:          "incomplete-profile",
+			wantProfileID: "",
 		},
 	}
 
-	dispatcher := NewProfileDispatcher()
-	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			profile := &v1alpha1.Profile{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: tc.name,
+					UID:  "some-uid",
+					Annotations: map[string]string{
+						v1alpha1.ScannerTypeAnnotation: tc.scannerType,
+					},
+				},
+				ProfilePayload: v1alpha1.ProfilePayload{
+					ID: tc.xccdfID,
+				},
+			}
 
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	// Must match what the scan dispatcher reads from ComplianceScan.Spec.Profile
-	assert.Equal(t, "ocp4virt-cis-vm-extension", v1Profile.GetProfileId())
-}
+			dispatcher := NewProfileDispatcher()
+			event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
 
-// TestProfileDispatcher_NoAnnotation verifies that profiles with no scanner-type annotation
-// fall back to using the XCCDF content ID as ProfileId (same as OpenSCAP). This is a defensive
-// fallback for CO < 1.9, which predates the scanner-type annotation.
-func TestProfileDispatcher_NoAnnotation(t *testing.T) {
-	profile := &v1alpha1.Profile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "ocp4-cis",
-			UID:  "some-uid",
-			// No annotations — simulates CO < 1.9, before scanner-type existed
-		},
-		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "xccdf_org.ssgproject.content_profile_cis",
-		},
+			require.NotNil(t, event)
+			require.NotEmpty(t, event.ForwardMessages)
+			v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+			assert.Equal(t, tc.wantProfileID, v1Profile.GetProfileId())
+		})
 	}
-
-	dispatcher := NewProfileDispatcher()
-	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v1Profile.GetProfileId())
-}
-
-// TestProfileDispatcher_UnknownScannerType verifies that a profile with an unrecognised scanner-type
-// falls back to the XCCDF ID (a Warn log is emitted; the dispatcher does not break).
-func TestProfileDispatcher_UnknownScannerType(t *testing.T) {
-	profile := &v1alpha1.Profile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "future-profile",
-			UID:  "some-uid",
-			Annotations: map[string]string{
-				v1alpha1.ScannerTypeAnnotation: "WASM", // hypothetical future type
-			},
-		},
-		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "xccdf_org.ssgproject.content_profile_future",
-		},
-	}
-
-	dispatcher := NewProfileDispatcher()
-	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	// Falls back to XCCDF ID — a Warn log is emitted by the dispatcher
-	assert.Equal(t, "xccdf_org.ssgproject.content_profile_future", v1Profile.GetProfileId())
-}
-
-// TestProfileDispatcher_EmptyProfileID verifies that a profile with no XCCDF content ID and no
-// scanner-type annotation still produces a valid event (not dropped), with an empty ProfileId.
-// This exercises the empty-ProfileId Warn path in the dispatcher.
-func TestProfileDispatcher_EmptyProfileID(t *testing.T) {
-	profile := &v1alpha1.Profile{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "incomplete-profile",
-			UID:  "some-uid",
-			// No annotations, no XCCDF ID — malformed or in-progress profile
-		},
-		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "",
-		},
-	}
-
-	dispatcher := NewProfileDispatcher()
-	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
-
-	// The dispatcher does not drop the event — it logs a Warn and proceeds.
-	require.NotNil(t, event)
-	require.NotEmpty(t, event.ForwardMessages)
-	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
-	assert.Equal(t, "", v1Profile.GetProfileId())
 }
 
 // TestProfileDispatcher_CELProfileID_V2 verifies the V2 event also carries the k8s name as ProfileId.
