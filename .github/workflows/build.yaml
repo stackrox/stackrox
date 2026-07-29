@@ -1493,28 +1493,48 @@ jobs:
           --cves "$CVES"
           --scan-dir scan-results-flat
 
-      - name: Post PR comment
+      - name: Render PR comment
+        id: render-comment
         # always(): this comment is the only feedback this job gives, so
-        # it must post even if "Download all scan artifacts", "Flatten
+        # it must render even if "Download all scan artifacts", "Flatten
         # scan results", or "Verify CVE fix" above failed or were skipped
         # - not just when they all succeeded.
         if: always()
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           CVE_EXTRACTION_FAILED: ${{ needs.resolve-cve-ids.outputs.cves == '' }}
           INFRA_FAILURE: ${{ steps.flatten.outcome == 'failure' || steps.flatten.outputs.infra-failure == 'true' }}
           EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
         run: >-
           .github/workflows/scripts/post-cve-fix-comment.sh
-          --pr-number "$PR_NUMBER"
           --cve-extraction-failed "$CVE_EXTRACTION_FAILED"
           --infra-failure "$INFRA_FAILURE"
           --exit-code "$EXIT_CODE"
           --missing-images "$MISSING_IMAGES"
+          > cve-fix-comment.md
+
+      - name: Post PR comment
+        # Updates the same comment in place across re-runs (matched by a
+        # fixed message-id, not by "last comment posted by this identity")
+        # instead of piling up a new comment on every push. This is the
+        # same pattern performance-tests.yml already uses for its own
+        # add-pr-comment step, and deliberately avoids the failure mode of
+        # `gh pr comment --edit-last`: that command would blindly edit
+        # whatever comment this job's identity (the default GITHUB_TOKEN,
+        # i.e. github-actions[bot]) posted most recently on the PR -
+        # including a comment from an unrelated job like
+        # performance-tests.yml's, which posts as that same identity on
+        # the same pull_request events. message-id instead finds (or
+        # creates) only the one comment carrying this specific hidden
+        # marker, so the two features can never clobber each other.
+        if: always() && steps.render-comment.outcome == 'success'
+        continue-on-error: true
+        uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
+        with:
+          message-id: cve-fix-verify
+          message-path: cve-fix-comment.md
 
       - name: Fail if CVE still present
         if: steps.verify.outputs.exit-code == '1'
