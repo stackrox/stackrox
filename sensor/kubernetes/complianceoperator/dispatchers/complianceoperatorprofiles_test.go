@@ -75,18 +75,14 @@ func TestProfileDispatcher_CELProfileID(t *testing.T) {
 }
 
 // TestProfileDispatcher_NoAnnotation verifies that profiles with no scanner-type annotation
-// fall back to using the XCCDF content ID as ProfileId (same as OpenSCAP). Verified against a
-// live cluster (CO v1.9.1) that every parsed profile actually carries the annotation today —
-// the compliance operator's profileparser unconditionally sets scanner-type=OpenSCAP on every
-// XCCDF profile since v1.9.0, when the annotation was introduced alongside CEL support. This
-// case only applies to CO < v1.9.0, which predates the scanner-type mechanism entirely; it's
-// tested here purely as a defensive fallback, not as a realistic deployment scenario.
+// fall back to using the XCCDF content ID as ProfileId (same as OpenSCAP). This is a defensive
+// fallback for CO < 1.9, which predates the scanner-type annotation.
 func TestProfileDispatcher_NoAnnotation(t *testing.T) {
 	profile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "ocp4-cis",
 			UID:  "some-uid",
-			// No annotations — simulates CO < v1.9.0, before scanner-type existed
+			// No annotations — simulates CO < 1.9, before scanner-type existed
 		},
 		ProfilePayload: v1alpha1.ProfilePayload{
 			ID: "xccdf_org.ssgproject.content_profile_cis",
