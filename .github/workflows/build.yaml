@@ -1281,6 +1281,8 @@ jobs:
   resolve-cve-ids:
     name: "Resolve CVE IDs for verification"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # Cheap, title-substring-only gate - kept intentionally broad (it'll
     # also match plenty of non-vulnerability "ROX-" titled PRs) since the
     # real filtering happens inside extract-cve-ids.sh via the JIRA
