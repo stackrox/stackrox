@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/gorilla/schema"
 	"github.com/pkg/errors"
 )
 
@@ -13,15 +12,10 @@ const (
 	RefreshTokenCookieName = "RoxRefreshToken"
 )
 
-var (
-	schemaEncoder = schema.NewEncoder()
-	schemaDecoder = schema.NewDecoder()
-)
-
 // RefreshTokenData encapsulates data relevant to refresh tokens.
 type RefreshTokenData struct {
-	RefreshToken     string `schema:"refreshToken,required"`
-	RefreshTokenType string `schema:"refreshTokenType,omitempty"`
+	RefreshToken     string
+	RefreshTokenType string
 }
 
 // Type returns the inferred type of the refresh token stored in this type.
@@ -33,8 +27,8 @@ func (d *RefreshTokenData) Type() string {
 }
 
 type refreshTokenCookieData struct {
-	ProviderType string `schema:"providerType,required"`
-	ProviderID   string `schema:"providerId,required"`
+	ProviderType string
+	ProviderID   string
 	RefreshTokenData
 }
 
@@ -56,9 +50,13 @@ func cookieDataFromRequest(req *http.Request) (*refreshTokenCookieData, error) {
 }
 
 func (r *refreshTokenCookieData) Encode() (string, error) {
-	vals := make(url.Values)
-	if err := schemaEncoder.Encode(r, vals); err != nil {
-		return "", err
+	vals := url.Values{
+		"providerType": {r.ProviderType},
+		"providerId":   {r.ProviderID},
+		"refreshToken": {r.RefreshToken},
+	}
+	if r.RefreshTokenType != "" {
+		vals.Set("refreshTokenType", r.RefreshTokenType)
 	}
 	return vals.Encode(), nil
 }
@@ -68,5 +66,9 @@ func (r *refreshTokenCookieData) Decode(encoded string) error {
 	if err != nil {
 		return errors.Wrap(err, "parsing encoded cookie data")
 	}
-	return schemaDecoder.Decode(r, vals)
+	r.ProviderType = vals.Get("providerType")
+	r.ProviderID = vals.Get("providerId")
+	r.RefreshToken = vals.Get("refreshToken")
+	r.RefreshTokenType = vals.Get("refreshTokenType")
+	return nil
 }

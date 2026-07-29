@@ -2,7 +2,6 @@ package complianceoperator
 
 import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
-	"github.com/adhocore/gronx"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/sensor/utils"
+	cronlib "gopkg.in/robfig/cron.v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -193,8 +193,7 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
-		cron := gronx.New()
-		if !cron.IsValid(req.GetCron()) {
+		if _, err := cronlib.Parse("0 " + req.GetCron()); err != nil {
 			errList.AddStrings("schedule is not valid")
 		}
 	}
@@ -213,8 +212,7 @@ func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanCo
 		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
-		cron := gronx.New()
-		if !cron.IsValid(req.GetCron()) {
+		if _, err := cronlib.Parse("0 " + req.GetCron()); err != nil {
 			errList.AddStrings("schedule is not valid")
 		}
 	}

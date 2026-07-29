@@ -10,6 +10,26 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+// FlattenMap recursively flattens a nested map using dot-separated keys.
+// For example, {"a": {"b": 1}} becomes {"a.b": 1}.
+func FlattenMap(m map[string]any, prefix string) map[string]any {
+	result := make(map[string]any)
+	for k, v := range m {
+		key := k
+		if prefix != "" {
+			key = prefix + "." + k
+		}
+		if sub, ok := v.(map[string]any); ok {
+			for sk, sv := range FlattenMap(sub, key) {
+				result[sk] = sv
+			}
+		} else {
+			result[key] = v
+		}
+	}
+	return result
+}
+
 // AssertEqualPathValue helps asserting path values which requires a path to exist, otherwise it fails.
 func AssertEqualPathValue(t *testing.T, values chartutil.Values, expected interface{}, path string, msgAndArgs ...interface{}) {
 	v := readPath(t, values, path)

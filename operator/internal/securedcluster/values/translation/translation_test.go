@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -1180,8 +1179,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			assert.NoError(t, err)
 
-			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
-			assert.NoError(t, err)
+			wantFlattened := testingUtils.FlattenMap(wantAsValues, "")
 
 			for key, wantValue := range wantFlattened {
 				gotValue, err := got.PathValue(key)
@@ -1528,17 +1526,15 @@ func TestDeploymentDefaults(t *testing.T) {
 			values, err := translator.translate(t.Context(), tt.securedCluster)
 			require.NoError(t, err)
 
-			flatValues, err := flatten.Flatten(values, "", flatten.DotStyle)
-			require.NoError(t, err)
+			flatValues := testingUtils.FlattenMap(values, "")
 
 			for _, path := range componentPaths {
 				t.Run(path.Name, func(t *testing.T) {
 					exp := tt.expectations[path.Name]
-					flatExpected, err := flatten.Flatten(map[string]any{
+					flatExpected := testingUtils.FlattenMap(map[string]any{
 						path.NodeSelectorPath: exp.NodeSelector,
 						path.TolerationsPath:  exp.Tolerations,
-					}, "", flatten.DotStyle)
-					require.NoError(t, err)
+					}, "")
 
 					for k, v := range flatExpected {
 						assert.Equal(t, v, flatValues[k], "mismatch at %s", k)

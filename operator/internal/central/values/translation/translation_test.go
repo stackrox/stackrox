@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/common"
 	"github.com/stackrox/rox/operator/internal/central/extensions"
+	testingUtils "github.com/stackrox/rox/operator/internal/values/testing"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -1765,8 +1765,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 			got, err := translator.translate(context.Background(), tt.args.c)
 			assert.NoError(t, err)
 
-			wantFlattened, err := flatten.Flatten(wantAsValues, "", flatten.DotStyle)
-			assert.NoError(t, err)
+			wantFlattened := testingUtils.FlattenMap(wantAsValues, "")
 			for key, wantValue := range wantFlattened {
 				gotValue, err := got.PathValue(key)
 				if wantValue == nil {

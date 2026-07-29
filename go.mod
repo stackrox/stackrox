@@ -3,7 +3,6 @@ module github.com/stackrox/rox
 go 1.26.3
 
 require (
-	cloud.google.com/go/artifactregistry v1.26.0
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.19.0
 	cloud.google.com/go/securitycenter v1.46.0
@@ -22,8 +21,6 @@ require (
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
-	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.20.0
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
@@ -63,7 +60,6 @@ require (
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.23.0
-	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.4.1
 	github.com/graph-gophers/graphql-go v1.10.3-0.20260702060009-60399cce0c05
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
@@ -77,8 +73,6 @@ require (
 	github.com/helm/helm-mapkubeapis v0.6.1
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/jeremywohl/flatten v1.0.1
-	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.19.1
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
@@ -125,7 +119,6 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
-	github.com/stackrox/external-network-pusher v0.0.0-20231115153210-b82d72f500a2
 	github.com/stackrox/hashstructure v0.0.4
 	github.com/stackrox/helmtest v0.0.9
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
@@ -133,10 +126,7 @@ require (
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.19.0
-	github.com/tkuchiki/go-timezone v0.2.3
 	github.com/travelaudience/go-promhttp v1.0.1
-	github.com/vbauerster/mpb/v4 v4.12.2
-	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.3.0
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.28.0
@@ -207,7 +197,6 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/RaduBerinde/axisds v0.1.0 // indirect
 	github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 // indirect
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
@@ -452,6 +441,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect

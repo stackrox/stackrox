@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 
-	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
 	securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/secretinformer"
@@ -109,7 +108,7 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 	}
 
 	scopes := []string{storagev1.CloudPlatformScope}
-	scopes = append(scopes, artifactv1.DefaultAuthScopes()...)
+	scopes = append(scopes, ArtifactRegistryScopes()...)
 	scopes = append(scopes, securitycenterv1.DefaultAuthScopes()...)
 
 	c.mutex.RLock()

@@ -4,8 +4,9 @@ import (
 	"runtime"
 	"strings"
 
+	"sync/atomic"
+
 	"github.com/stackrox/rox/pkg/sync"
-	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -54,9 +55,11 @@ type Module struct {
 
 // newModule creates a new module with name, logLevel and initial referenceCount of 1.
 func newModule(name string, logLevel zap.AtomicLevel) *Module {
+	rc := &atomic.Int32{}
+	rc.Store(1)
 	return &Module{
 		logLevel:   logLevel,
-		refCounter: atomic.NewInt32(1),
+		refCounter: rc,
 		name:       name,
 	}
 }
@@ -87,7 +90,7 @@ func (m *Module) SetLogLevel(level zapcore.Level) {
 // ref increments the reference count of m by 1.
 func (m *Module) ref() {
 	if m != nil {
-		m.refCounter.Inc()
+		m.refCounter.Add(1)
 	}
 }
 
@@ -95,7 +98,7 @@ func (m *Module) ref() {
 // if the counter has reached 0.
 func (m *Module) unref() bool {
 	if m != nil {
-		return m.refCounter.Dec() == 0
+		return m.refCounter.Add(-1) == 0
 	}
 	return false
 }

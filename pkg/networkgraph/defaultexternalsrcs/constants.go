@@ -4,20 +4,19 @@ import (
 	"path"
 	"strings"
 
-	"github.com/stackrox/external-network-pusher/pkg/common"
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
 const (
 	// LatestPrefixFileName is the name of the file that contains name of directory holding most recent
 	// network graph default external sources.
-	LatestPrefixFileName = common.LatestPrefixFileName
+	LatestPrefixFileName = "latest_prefix"
 	// ChecksumFileName is the name of the file that contains the network graph default external sources checksum.
-	ChecksumFileName = common.ChecksumFileName
+	ChecksumFileName = "checksum"
 	// DataFileName is the name of the file that contains the network graph default external sources data.
-	DataFileName = common.NetworkFileName
+	DataFileName = "networks"
 	// SubDir represents the sub-directory which holds the external sources data and checksum files locally.
-	SubDir = common.MasterBucketPrefix
+	SubDir = "external-networks"
 	// ZipFileName is the name of the zip bundle that contains external sources data and checksum.
 	ZipFileName = "external-networks.zip"
 	// RemoteBaseBucketURL points to the remote bucket which contains the data
@@ -26,11 +25,11 @@ const (
 
 var (
 	// RemoteLatestPrefixFileURL points to the file which contains the name of the latest networks directory.
-	RemoteLatestPrefixFileURL = strings.Join([]string{RemoteBaseBucketURL, path.Clean(common.MasterBucketPrefix), path.Clean(LatestPrefixFileName)}, "/")
+	RemoteLatestPrefixFileURL = strings.Join([]string{RemoteBaseBucketURL, path.Clean(SubDir), path.Clean(LatestPrefixFileName)}, "/")
 	// LocalChecksumBlobPath store the network graph default external sources checksum locally.
 	LocalChecksumBlobPath = path.Join("/localcache/external-networks", ChecksumFileName)
 	// BundledZip points to zip containing the external sources data and checksum files.
-	BundledZip = path.Join("/stackrox/static-data", common.MasterBucketPrefix, ZipFileName)
+	BundledZip = path.Join("/stackrox/static-data", SubDir, ZipFileName)
 )
 
 // GetRemoteDataAndCksumURLs returns the URLs to the latest networks data and checksum file
