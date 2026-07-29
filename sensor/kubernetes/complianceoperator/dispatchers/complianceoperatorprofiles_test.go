@@ -74,6 +74,80 @@ func TestProfileDispatcher_CELProfileID(t *testing.T) {
 	assert.Equal(t, "ocp4virt-cis-vm-extension", v1Profile.GetProfileId())
 }
 
+// TestProfileDispatcher_NoAnnotation verifies that profiles with no scanner-type annotation
+// (the common case for pre-CEL content bundles) use the XCCDF content ID as ProfileId.
+func TestProfileDispatcher_NoAnnotation(t *testing.T) {
+	profile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "ocp4-cis",
+			UID:  "some-uid",
+			// No annotations — normal for existing OpenSCAP content bundles
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID: "xccdf_org.ssgproject.content_profile_cis",
+		},
+	}
+
+	dispatcher := NewProfileDispatcher()
+	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	assert.Equal(t, "xccdf_org.ssgproject.content_profile_cis", v1Profile.GetProfileId())
+}
+
+// TestProfileDispatcher_UnknownScannerType verifies that a profile with an unrecognised scanner-type
+// falls back to the XCCDF ID (a Warn log is emitted; the dispatcher does not break).
+func TestProfileDispatcher_UnknownScannerType(t *testing.T) {
+	profile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "future-profile",
+			UID:  "some-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: "WASM", // hypothetical future type
+			},
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID: "xccdf_org.ssgproject.content_profile_future",
+		},
+	}
+
+	dispatcher := NewProfileDispatcher()
+	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	// Falls back to XCCDF ID — a Warn log is emitted by the dispatcher
+	assert.Equal(t, "xccdf_org.ssgproject.content_profile_future", v1Profile.GetProfileId())
+}
+
+// TestProfileDispatcher_EmptyProfileID verifies that a profile with no XCCDF content ID and no
+// scanner-type annotation still produces a valid event (not dropped), with an empty ProfileId.
+// This exercises the empty-ProfileId Warn path in the dispatcher.
+func TestProfileDispatcher_EmptyProfileID(t *testing.T) {
+	profile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "incomplete-profile",
+			UID:  "some-uid",
+			// No annotations, no XCCDF ID — malformed or in-progress profile
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID: "",
+		},
+	}
+
+	dispatcher := NewProfileDispatcher()
+	event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	// The dispatcher does not drop the event — it logs a Warn and proceeds.
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	assert.Equal(t, "", v1Profile.GetProfileId())
+}
+
 // TestProfileDispatcher_CELProfileID_V2 verifies the V2 event also carries the k8s name as ProfileId.
 func TestProfileDispatcher_CELProfileID_V2(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
