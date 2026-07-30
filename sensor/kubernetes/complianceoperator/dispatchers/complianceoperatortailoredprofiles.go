@@ -76,10 +76,10 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	// We must use the same value as ProfileId so that BuildProfileRefID produces
 	// matching UUIDs on both the profile and the scan sides.
 	var profileID string
-	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; {
-	case scannerType == string(v1alpha1.ScannerTypeCEL):
+	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; scannerType {
+	case string(v1alpha1.ScannerTypeCEL):
 		profileID = tailoredProfile.GetName()
-	case scannerType == string(v1alpha1.ScannerTypeOpenSCAP), scannerType == "":
+	case string(v1alpha1.ScannerTypeOpenSCAP), "":
 		profileID = tailoredProfile.Status.ID
 	default:
 		profileID = tailoredProfile.Status.ID
