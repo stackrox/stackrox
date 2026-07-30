@@ -6,6 +6,7 @@ import (
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/cve/converter/utils"
 	mockImagesDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
 	mockImageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	mockNamespaceDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
@@ -77,24 +78,63 @@ func (s *cveMatcherTestSuite) TestValidEKSVersion() {
 }
 
 func (s *cveMatcherTestSuite) TestMatchVersions() {
-	versionPairs := [][]string{
-		{"1.15.5", "1.15.5"},
-		{"v1.15.5", "1.15.5"},
-		{"1.15.5", "v1.15.5"},
-		{"1.14.5", "1.15.5"},
-		{"1.15.5", "1.15.5-beta1"},
-		{"1.15.5", "1.15.5+build"},
+	// Test base-version matching via CPE with update field "*".
+	// A CPE like kubernetes:VERSION:* matches that version and all its prereleases/builds.
+	baseVersionCases := map[string]struct {
+		cpeVersion     string
+		clusterVersion string
+		expected       bool
+	}{
+		"same version":                {"1.15.5", "1.15.5", true},
+		"v prefix on cluster":         {"1.15.5", "v1.15.5", true},
+		"different version":           {"1.14.5", "1.15.5", false},
+		"prerelease matches base":     {"1.15.5", "1.15.5-beta1", true},
+		"build metadata matches base": {"1.15.5", "1.15.5+build", true},
 	}
-	expectedExactVersionsMatchVals := []bool{true, true, true, false, false, true}
-	expectedBaseVersionMatchVals := []bool{true, true, true, false, true, true}
-	for i, versionPair := range versionPairs {
-		ok, err := matchExactVersion(versionPair[0], versionPair[1])
-		s.Nil(err)
-		s.Equal(expectedExactVersionsMatchVals[i], ok)
+	for name, tc := range baseVersionCases {
+		s.Run("base/"+name, func() {
+			node := &schema.NVDCVEFeedJSON10DefNode{
+				Operator: "OR",
+				CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+					{
+						Vulnerable: true,
+						Cpe23Uri:   "cpe:2.3:a:kubernetes:kubernetes:" + tc.cpeVersion + ":*:*:*:*:*:*:*",
+					},
+				},
+			}
+			ok, err := s.cveMatcher.MatchVersions(node, tc.clusterVersion, utils.K8s)
+			s.NoError(err)
+			s.Equal(tc.expected, ok)
+		})
+	}
 
-		ok, err = matchBaseVersion(versionPair[0], versionPair[1])
-		s.Nil(err)
-		s.Equal(expectedBaseVersionMatchVals[i], ok)
+	// Test exact-version matching via CPE with specific update field.
+	// A CPE like kubernetes:VERSION:UPDATE matches exactly VERSION-UPDATE.
+	exactVersionCases := map[string]struct {
+		cpeVersion     string
+		cpeUpdate      string
+		clusterVersion string
+		expected       bool
+	}{
+		"exact match":          {"1.15.5", "alpha1", "1.15.5-alpha1", true},
+		"no prerelease":        {"1.15.5", "alpha1", "1.15.5", false},
+		"different prerelease": {"1.15.5", "alpha1", "1.15.5-beta1", false},
+	}
+	for name, tc := range exactVersionCases {
+		s.Run("exact/"+name, func() {
+			node := &schema.NVDCVEFeedJSON10DefNode{
+				Operator: "OR",
+				CPEMatch: []*schema.NVDCVEFeedJSON10DefCPEMatch{
+					{
+						Vulnerable: true,
+						Cpe23Uri:   "cpe:2.3:a:kubernetes:kubernetes:" + tc.cpeVersion + ":" + tc.cpeUpdate + ":*:*:*:*:*:*",
+					},
+				},
+			}
+			ok, err := s.cveMatcher.MatchVersions(node, tc.clusterVersion, utils.K8s)
+			s.NoError(err)
+			s.Equal(tc.expected, ok)
+		})
 	}
 }
 

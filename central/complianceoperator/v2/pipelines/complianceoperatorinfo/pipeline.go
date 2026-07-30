@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	countMetrics "github.com/stackrox/rox/central/metrics"
