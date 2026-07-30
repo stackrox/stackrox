@@ -4,13 +4,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RoaringBitmap/roaring/v2"
 	"github.com/stackrox/rox/central/processindicator"
 )
 
 const (
 	jaccardThreshold = 0.6
 )
+
+type wordSet map[string]struct{}
 
 type prunerFactoryImpl struct {
 	minProcesses int
@@ -21,32 +22,34 @@ func normalizeWord(word string) string {
 	return numericRegex.ReplaceAllString(word, "#")
 }
 
-// knownStrings maps each string we see to a unique integer.
-func normalizeArgs(args string, knownStrings map[string]int) *roaring.Bitmap {
+func normalizeArgs(args string) wordSet {
 	words := strings.Fields(args)
-
-	bitmap := roaring.New()
+	set := make(wordSet, len(words))
 	for _, word := range words {
-		normalized := normalizeWord(word)
-		var val int
-		if mapValue, ok := knownStrings[normalized]; ok {
-			val = mapValue
-		} else {
-			// If this is a previously unseen string, assign it the next available integer (for which
-			// we just use the current length of the map), and add it to knownStrings.
-			val = len(knownStrings)
-			knownStrings[normalized] = val
-		}
-		bitmap.AddInt(val)
+		set[normalizeWord(word)] = struct{}{}
 	}
-	return bitmap
+	return set
 }
 
-func jaccardSimilarity(first, second *roaring.Bitmap) float64 {
-	return float64(first.AndCardinality(second)) / float64(first.OrCardinality(second))
+func jaccardSimilarity(a, b wordSet) float64 {
+	// Iterate over the smaller set for efficiency.
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	var intersection int
+	for w := range a {
+		if _, ok := b[w]; ok {
+			intersection++
+		}
+	}
+	union := len(a) + len(b) - intersection
+	if union == 0 {
+		return 0
+	}
+	return float64(intersection) / float64(union)
 }
 
-func isCloseToAnExistingSet(existingSets []*roaring.Bitmap, candidate *roaring.Bitmap) bool {
+func isCloseToAnExistingSet(existingSets []wordSet, candidate wordSet) bool {
 	for _, existingSet := range existingSets {
 		if jaccardSimilarity(existingSet, candidate) >= jaccardThreshold {
 			return true
@@ -56,19 +59,17 @@ func isCloseToAnExistingSet(existingSets []*roaring.Bitmap, candidate *roaring.B
 }
 
 func (p *prunerFactoryImpl) Prune(processes []processindicator.IDAndArgs) (idsToRemove []string) {
-	knownStrings := make(map[string]int)
-
 	if len(processes) <= p.minProcesses {
 		return nil
 	}
 
-	prunedNormalized := make([]*roaring.Bitmap, 0, p.minProcesses)
+	prunedNormalized := make([]wordSet, 0, p.minProcesses)
 
 	for _, process := range processes {
 		if len(processes)-len(idsToRemove) <= p.minProcesses {
 			return
 		}
-		normalized := normalizeArgs(process.Args, knownStrings)
+		normalized := normalizeArgs(process.Args)
 		if !isCloseToAnExistingSet(prunedNormalized, normalized) {
 			prunedNormalized = append(prunedNormalized, normalized)
 		} else {
