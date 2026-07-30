@@ -283,25 +283,24 @@ func (rg *reportGeneratorImpl) generateReportInMemoryDownload(ctx context.Contex
 	return nil
 }
 
-// generateReportStreamingDownload streams report data directly through CSV -> ZIP -> blob store
-// via io.Pipe, avoiding accumulation of the full dataset in memory.
-func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Context, req *ReportRequest) error {
-	type querySpec struct {
-		schema *walker.Schema
-		query  *v1.Query
-	}
+type querySpec struct {
+	schema *walker.Schema
+	query  *v1.Query
+}
 
+// buildReportQueries constructs the cursor queries for a report request.
+func (rg *reportGeneratorImpl) buildReportQueries(ctx context.Context, req *ReportRequest) ([]querySpec, error) {
 	var queries []querySpec
-
 	snap := req.ReportSnapshot
+
 	if snap.GetVulnReportFilters() != nil {
 		rQuery, err := rg.buildReportQuery(ctx, snap, req.Collection, req.DataStartTime)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 			q := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
@@ -312,7 +311,7 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
 			watchedImages, err := rg.getWatchedImages(ctx)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if len(watchedImages) != 0 {
 				q := search.ConjunctionQuery(
@@ -327,11 +326,11 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 	if snap.GetViewBasedVulnReportFilters() != nil {
 		watchedImages, err := rg.getWatchedImages(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		vbQuery, err := rg.buildReportQueryViewBased(ctx, snap, watchedImages)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		vbQuery.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
 		vbQuery.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
@@ -343,7 +342,18 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 			queries = append(queries, querySpec{schema: watchedImagesQueryParts.Schema, query: vbQuery.WatchedImagesQuery})
 		}
 	}
+	return queries, nil
+}
 
+// generateReportStreamingDownload streams report data directly through CSV -> ZIP -> blob store
+// via io.Pipe, avoiding accumulation of the full dataset in memory.
+func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Context, req *ReportRequest) error {
+	queries, err := rg.buildReportQueries(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	snap := req.ReportSnapshot
 	pr, pw := io.Pipe()
 	// Always close the reader so the writer goroutine is unblocked if blobStore.Upsert
 	// returns early (e.g. on a DB error) before draining the pipe.
@@ -420,6 +430,93 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 	return nil
 }
 
+// generateReportTransaction wraps all cursor-based reads in a single database
+// transaction for consistent snapshot isolation. It reads data in batches via
+// a postgres cursor, generates a zipped CSV, and writes the result to blob store.
+//
+// Connection usage: only 1 connection is held at any time. The transaction is
+// used for cursor reads and CVE reference link lookups (serialized). After the
+// transaction completes, the buffered report is written to blob store which
+// acquires its own short-lived connection.
+func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, req *ReportRequest) error {
+	snap := req.ReportSnapshot
+	queries, err := rg.buildReportQueries(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	if err := rg.readAndBuildCSV(ctx, snap, queries, &buf); err != nil {
+		return err
+	}
+
+	parentDir := snap.GetReportConfigurationId()
+	if snap.GetVulnReportFilters() == nil {
+		parentDir = "view-based-report"
+	}
+	blobPath := common.GetReportBlobPath(parentDir, snap.GetReportId())
+	blob := &storage.Blob{
+		Name:         blobPath,
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
+		Length:       int64(buf.Len()),
+	}
+	if err := rg.blobStore.Upsert(reportGenCtx, blob, &buf); err != nil {
+		return errors.Wrap(err, "error writing report to blob store")
+	}
+
+	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
+	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
+		return errors.Wrap(err, "Error changing report status to GENERATED")
+	}
+	return nil
+}
+
+// readAndBuildCSV opens a read-only transaction, reads all data via cursor,
+// resolves CVE reference links, and writes a zipped CSV into buf.
+// All DB operations share the single transaction connection.
+func (rg *reportGeneratorImpl) readAndBuildCSV(
+	ctx context.Context,
+	snap *storage.ReportSnapshot,
+	queries []querySpec,
+	buf *bytes.Buffer,
+) error {
+	tx, err := rg.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting report transaction")
+	}
+	defer postgres.FinishReadOnlyTransaction(tx)
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	zipWriter := zip.NewWriter(buf)
+	zipEntry, err := zipWriter.Create(csvReportName(snap.GetName()))
+	if err != nil {
+		return errors.Wrap(err, "creating zip entry")
+	}
+	csvW := csv.NewWriter(zipEntry)
+	csvW.UseCRLF = true
+	if err := csvW.Write(csvHeader); err != nil {
+		return errors.Wrap(err, "writing CSV header")
+	}
+
+	refLinksCache := make(map[string]string)
+	rowCount := 0
+	for _, qs := range queries {
+		if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
+			return err
+		}
+	}
+
+	csvW.Flush()
+	if err := csvW.Error(); err != nil {
+		return errors.Wrap(err, "flushing CSV writer")
+	}
+	if err := zipWriter.Close(); err != nil {
+		return errors.Wrap(err, "closing zip writer")
+	}
+	return nil
+}
+
 const refLinkBatchSize = 1000
 
 // streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
@@ -445,7 +542,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 			}
 		}
 		if unseenIDs.Cardinality() > 0 {
-			cves, err := rg.imageCVE2Datastore.GetBatch(reportGenCtx, unseenIDs.AsSlice())
+			cves, err := rg.imageCVE2Datastore.GetBatch(ctx, unseenIDs.AsSlice())
 			if err != nil {
 				return errors.Wrap(err, "fetching CVE reference links")
 			}
