@@ -165,9 +165,15 @@ get_issue() {
 }
 export -f get_issue
 
+# JIRA custom field ID for the "CVE ID" field on Vulnerability-type issues.
+# If get_vulnerability_info_for_issue below starts silently returning empty
+# CVE IDs for issues that clearly have one set, check whether this field was
+# recreated (and thus got a new ID) in the JIRA project schema.
+JIRA_CVE_ID_FIELD="customfield_10667"
+
 # Given a JIRA issue key, performs a single fetch and prints two lines:
 #   1. "true" or "false" - whether the issue's type is "Vulnerability".
-#   2. the CVE ID recorded in its "CVE ID" custom field (customfield_10667),
+#   2. the CVE ID recorded in its "CVE ID" custom field ($JIRA_CVE_ID_FIELD),
 #      which may be empty even when line 1 is "true" (a Vulnerability
 #      issue whose CVE ID hasn't been filled in yet).
 #
@@ -212,13 +218,13 @@ get_vulnerability_info_for_issue() {
     # stale or wrong (e.g. renamed in a JIRA schema change), which would
     # otherwise silently disable this whole cross-reference feature with no
     # error anywhere - so it gets a loud warning instead.
-    if [[ "$(jq -r '.fields | has("customfield_10667")' <<< "$issue")" != "true" ]]; then
-        gh_log warning "JIRA issue ${ISSUE_KEY} has no customfield_10667 field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
+    if [[ "$(jq -r --arg field "$JIRA_CVE_ID_FIELD" '.fields | has($field)' <<< "$issue")" != "true" ]]; then
+        gh_log warning "JIRA issue ${ISSUE_KEY} has no ${JIRA_CVE_ID_FIELD} field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
         printf 'true\n\n'
         return 0
     fi
 
-    printf 'true\n%s\n' "$(jq -r '.fields.customfield_10667 // empty' <<< "$issue")"
+    printf 'true\n%s\n' "$(jq -r --arg field "$JIRA_CVE_ID_FIELD" '.fields[$field] // empty' <<< "$issue")"
 }
 export -f get_vulnerability_info_for_issue
 
