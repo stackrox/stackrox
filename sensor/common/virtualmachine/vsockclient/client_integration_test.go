@@ -2,8 +2,11 @@ package vsockclient
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"testing"
+	"testing/synctest"
+	"time"
 
 	roxagentvsock "github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -14,10 +17,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// exchangeTimeout bounds a single client/handler exchange. Under synctest the
+// fake clock advances this duration instantly once every goroutine is durably
+// blocked (e.g. a protocol deadlock on net.Pipe), so GetReport's context
+// cancel closes the stream via AfterFunc and the test fails fast instead of
+// hanging the package.
+const exchangeTimeout = 5 * time.Second
+
 // protocolHarness drives a real Sensor client against a real roxagent handler
 // over net.Pipe(), validating the protocol contract end-to-end.
 type protocolHarness struct {
-	t       testing.TB
 	client  *Client
 	cache   *roxagentvsock.ReportCache
 	handler *roxagentvsock.Handler
@@ -31,7 +40,7 @@ type protocolHarnessOptions struct {
 	seedFacts       map[string]string
 }
 
-func newProtocolHarness(t testing.TB, opts protocolHarnessOptions) *protocolHarness {
+func newProtocolHarness(t *testing.T, opts protocolHarnessOptions) *protocolHarness {
 	t.Helper()
 
 	if opts.capabilities == nil {
@@ -50,27 +59,50 @@ func newProtocolHarness(t testing.TB, opts protocolHarnessOptions) *protocolHarn
 	}
 
 	return &protocolHarness{
-		t:       t,
 		client:  NewClient(opts.capabilities, opts.maxResponseSize),
 		cache:   cache,
 		handler: roxagentvsock.NewHandler(cache, opts.agentVersion),
 	}
 }
 
-func (h *protocolHarness) getReport(ifNewerThan, knownEpoch uint32) (*GetReportResult, error) {
-	h.t.Helper()
+func (h *protocolHarness) getReport(t *testing.T, ifNewerThan, knownEpoch uint32) (*GetReportResult, error) {
+	t.Helper()
+	return exchangeOnce(t, h.client, ifNewerThan, knownEpoch, h.handler.HandleConn)
+}
 
-	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+// exchangeOnce runs a single GetReport against responder over net.Pipe()
+// inside a synctest bubble. A stuck peer makes the exchange timeout fire on
+// the fake clock (via GetReport's AfterFunc stream close) instead of hanging
+// the package on wall time.
+func exchangeOnce(t *testing.T, client *Client, ifNewerThan, knownEpoch uint32, responder func(net.Conn)) (*GetReportResult, error) {
+	t.Helper()
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		h.handler.HandleConn(agentConn)
-	}()
+	var result *GetReportResult
+	var err error
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(t.Context(), exchangeTimeout)
+		defer cancel()
 
-	result, err := h.client.GetReport(context.Background(), clientConn, ifNewerThan, knownEpoch)
-	<-done
+		clientConn, agentConn := net.Pipe()
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			responder(agentConn)
+		}()
+
+		result, err = client.GetReport(ctx, clientConn, ifNewerThan, knownEpoch)
+		// Close the client end before waiting so a responder blocked in WriteFrame
+		// (or similar) is unblocked even when GetReport already returned.
+		_ = clientConn.Close()
+		select {
+		case <-done:
+		case <-ctx.Done():
+			if err == nil {
+				err = fmt.Errorf("waiting for responder: %w", ctx.Err())
+			}
+		}
+	})
 	return result, err
 }
 
@@ -151,7 +183,7 @@ func TestGetReportIntegration(t *testing.T) {
 				agentVersion: tc.agentVersion,
 			})
 
-			result, err := h.getReport(tc.ifNewerThan, tc.knownEpoch)
+			result, err := h.getReport(t, tc.ifNewerThan, tc.knownEpoch)
 
 			if tc.wantErr != nil {
 				require.Error(t, err)
@@ -167,41 +199,41 @@ func TestGetReportIntegration(t *testing.T) {
 }
 
 // TestGetReportIntegration_KnownEpochSingleRoundTrip drives a real Client
-// against a real roxagent Handler to verify the single-round-trip contract:
+// against a real roxagent Handler to verify the single-round-trip contract.
 // report_generation resets to 1 on every roxagent restart, so a restarted
 // agent can coincidentally match a generation Sensor already has cached.
-// Before known_epoch, Sensor could only detect this from the response epoch
-// and had to make a second, forced request. Now the agent resolves it
-// itself, in the same response, using the epoch Sensor reports knowing.
+// known_epoch lets the agent detect that restart itself, in a single round
+// trip, by comparing Sensor's last-seen epoch against its current one.
 func TestGetReportIntegration_KnownEpochSingleRoundTrip(t *testing.T) {
 	h := newProtocolHarness(t, protocolHarnessOptions{
 		seedReport: &v4.IndexReport{HashId: "epoch-test-hash"},
 	})
 
 	// First-ever request for this VM: Sensor has no cached epoch yet.
-	first, err := h.getReport(0, 0)
+	first, err := h.getReport(t, 0, 0)
 	require.NoError(t, err)
 	require.False(t, first.Unchanged)
 	epoch := first.Meta.GetEpoch()
 	require.NotZero(t, epoch, "agent should seed a non-zero epoch")
 
 	t.Run("unchanged in a single round trip when known epoch matches", func(t *testing.T) {
-		result, err := h.getReport(1, epoch)
+		result, err := h.getReport(t, 1, epoch)
 		require.NoError(t, err)
 		assert.True(t, result.Unchanged)
 		assert.Nil(t, result.IndexReport)
 	})
 
 	t.Run("full report in a single round trip when known epoch mismatches despite matching generation", func(t *testing.T) {
-		result, err := h.getReport(1, epoch+1)
+		result, err := h.getReport(t, 1, epoch+1)
 		require.NoError(t, err)
 		assert.False(t, result.Unchanged, "epoch mismatch must be resolved in this same response, not a second dial")
 		require.NotNil(t, result.IndexReport)
 		assert.Equal(t, "epoch-test-hash", result.IndexReport.GetHashId())
+		assert.Equal(t, epoch, result.Meta.GetEpoch(), "response must carry the agent's current epoch")
 	})
 
 	t.Run("unchanged when known epoch is zero (backward compat: falls back to generation-only)", func(t *testing.T) {
-		result, err := h.getReport(1, 0)
+		result, err := h.getReport(t, 1, 0)
 		require.NoError(t, err)
 		assert.True(t, result.Unchanged)
 	})
@@ -209,70 +241,57 @@ func TestGetReportIntegration_KnownEpochSingleRoundTrip(t *testing.T) {
 
 // --- Compatibility persona helpers ---
 
-// exchangeWithResponder runs a single GetReport exchange using a fake agent
-// responder instead of the real handler. This allows testing protocol
-// compatibility with simulated older or future agent behavior.
-func exchangeWithResponder(t *testing.T, client *Client, ifNewerThan uint32, responder func(net.Conn)) (*GetReportResult, error) {
-	t.Helper()
+// respondOnce reads one framed VMServiceRequest, builds a response, and writes
+// it back. Used by fake agent personas that only differ in response content.
+func respondOnce(conn net.Conn, build func(*pb.VMServiceRequest) *pb.VMServiceResponse) {
+	defer func() { _ = conn.Close() }()
 
-	clientConn, agentConn := net.Pipe()
-	defer func() { _ = clientConn.Close() }()
+	reqData, err := vsockframing.ReadFrame(conn, 1<<20)
+	if err != nil {
+		return
+	}
+	var req pb.VMServiceRequest
+	if err := proto.Unmarshal(reqData, &req); err != nil {
+		return
+	}
 
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		responder(agentConn)
-	}()
-
-	result, err := client.GetReport(context.Background(), clientConn, ifNewerThan, 0)
-	<-done
-	return result, err
+	resp := build(&req)
+	respData, err := proto.Marshal(resp)
+	if err != nil {
+		return
+	}
+	_ = vsockframing.WriteFrame(conn, respData)
 }
 
 // oldAgentResponder models a plausible older roxagent that:
 //   - supports only get_report
 //   - does not advertise supported_methods
-//   - does not include facts or report_generated_at
-//   - always returns the full report (ignores last_known_generation)
+//   - does not include facts, report_generated_at, or epoch
+//   - always returns the full report (ignores last_known_generation and known_epoch)
 //   - returns UNKNOWN_METHOD for anything else
 func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
-		defer func() { _ = conn.Close() }()
-
-		reqData, err := vsockframing.ReadFrame(conn, 1<<20)
-		if err != nil {
-			return
-		}
-		var req pb.VMServiceRequest
-		if err := proto.Unmarshal(reqData, &req); err != nil {
-			return
-		}
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{
-				AgentVersion:     "roxagent-0.1.0",
-				ReportGeneration: generation,
-			},
-		}
-
-		if req.GetGetReport() != nil {
-			resp.Result = &pb.VMServiceResponse_GetReport{
-				GetReport: &pb.GetReportResponse{IndexReport: report},
-			}
-		} else {
-			resp.Result = &pb.VMServiceResponse_Error{
-				Error: &pb.ErrorResponse{
-					Code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
-					Message: "unsupported method",
+		respondOnce(conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
+			resp := &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{
+					AgentVersion:     "roxagent-0.1.0",
+					ReportGeneration: generation,
 				},
 			}
-		}
-
-		respData, err := proto.Marshal(resp)
-		if err != nil {
-			return
-		}
-		_ = vsockframing.WriteFrame(conn, respData)
+			if req.GetGetReport() != nil {
+				resp.Result = &pb.VMServiceResponse_GetReport{
+					GetReport: &pb.GetReportResponse{IndexReport: report},
+				}
+			} else {
+				resp.Result = &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{
+						Code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
+						Message: "unsupported method",
+					},
+				}
+			}
+			return resp
+		})
 	}
 }
 
@@ -284,51 +303,36 @@ func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn)
 //   - returns UNKNOWN_METHOD for methods it doesn't recognize
 func futureAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
-		defer func() { _ = conn.Close() }()
-
-		reqData, err := vsockframing.ReadFrame(conn, 1<<20)
-		if err != nil {
-			return
-		}
-		var req pb.VMServiceRequest
-		if err := proto.Unmarshal(reqData, &req); err != nil {
-			return
-		}
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{
-				AgentVersion:     "roxagent-2.0.0-future",
-				ReportGeneration: generation,
-				SupportedMethods: []string{"get_report", "get_config", "submit_event"},
-				Facts:            map[string]string{"os_id": "rhel", "protocol_version": "2"},
-			},
-		}
-
-		switch {
-		case req.GetGetReport() != nil:
-			if req.GetGetReport().GetLastKnownGeneration() == generation {
-				resp.Result = &pb.VMServiceResponse_GetReport{
-					GetReport: &pb.GetReportResponse{Unchanged: true},
-				}
-			} else {
-				resp.Result = &pb.VMServiceResponse_GetReport{
-					GetReport: &pb.GetReportResponse{IndexReport: report},
-				}
-			}
-		default:
-			resp.Result = &pb.VMServiceResponse_Error{
-				Error: &pb.ErrorResponse{
-					Code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
-					Message: "unsupported method",
+		respondOnce(conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
+			resp := &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{
+					AgentVersion:     "roxagent-2.0.0-future",
+					ReportGeneration: generation,
+					SupportedMethods: []string{"get_report", "get_config", "submit_event"},
+					Facts:            map[string]string{"os_id": "rhel", "protocol_version": "2"},
 				},
 			}
-		}
-
-		respData, err := proto.Marshal(resp)
-		if err != nil {
-			return
-		}
-		_ = vsockframing.WriteFrame(conn, respData)
+			switch {
+			case req.GetGetReport() != nil:
+				if req.GetGetReport().GetLastKnownGeneration() == generation {
+					resp.Result = &pb.VMServiceResponse_GetReport{
+						GetReport: &pb.GetReportResponse{Unchanged: true},
+					}
+				} else {
+					resp.Result = &pb.VMServiceResponse_GetReport{
+						GetReport: &pb.GetReportResponse{IndexReport: report},
+					}
+				}
+			default:
+				resp.Result = &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{
+						Code:    pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD,
+						Message: "unsupported method",
+					},
+				}
+			}
+			return resp
+		})
 	}
 }
 
@@ -340,6 +344,7 @@ func TestGetReportCompatibility(t *testing.T) {
 		// Arguments
 		responder   func(net.Conn)
 		ifNewerThan uint32
+		knownEpoch  uint32
 		// Expectations
 		checkResult func(t *testing.T, result *GetReportResult)
 	}{
@@ -361,6 +366,16 @@ func TestGetReportCompatibility(t *testing.T) {
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged, "old agent does not support unchanged optimization")
 				require.NotNil(t, result.IndexReport)
+			},
+		},
+		"old agent should tolerate non-zero known_epoch and omit epoch in response": {
+			responder:   oldAgentResponder(report, 1),
+			ifNewerThan: 1,
+			knownEpoch:  42,
+			checkResult: func(t *testing.T, result *GetReportResult) {
+				assert.False(t, result.Unchanged)
+				require.NotNil(t, result.IndexReport)
+				assert.Zero(t, result.Meta.GetEpoch(), "old agent does not populate epoch")
 			},
 		},
 		"future agent should serve get_report to current sensor": {
@@ -398,7 +413,7 @@ func TestGetReportCompatibility(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			result, err := exchangeWithResponder(t, client, tc.ifNewerThan, tc.responder)
+			result, err := exchangeOnce(t, client, tc.ifNewerThan, tc.knownEpoch, tc.responder)
 
 			require.NoError(t, err)
 			if tc.checkResult != nil {
