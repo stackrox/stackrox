@@ -801,8 +801,13 @@ func (s *virtualMachineHandlerSuite) TestSend_FairFIFO_ReactiveDoesNotJumpAheadO
 	s.Equal("vm-3", received[2], "a reactive report must not jump ahead of an already-queued different VM")
 
 	// Only report3 (the reactive one, non-zero generatedAt) should have
-	// observed the SLA latency histogram.
-	s.Equal(initialLatencyCount+1, s.reactiveLatencySampleCount(),
+	// observed the SLA latency histogram. Observe runs after the blocking
+	// send into ResponsesC returns, so poll briefly for the sample rather
+	// than asserting on the count in the same instant the third message
+	// arrives.
+	s.Eventually(func() bool {
+		return s.reactiveLatencySampleCount() == initialLatencyCount+1
+	}, time.Second, 10*time.Millisecond,
 		"exactly one observation (the reactive report) should be recorded; the two scheduled reports must not add samples")
 }
 
