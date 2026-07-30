@@ -26,7 +26,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log                  = logging.LoggerForModule()
+	errStartMoreThanOnce = errors.New("unable to start the VM scraper more than once")
+)
 
 const (
 	mandatoryRefreshAfter = 4 * time.Hour
@@ -67,6 +70,7 @@ type VMScraper struct {
 	concurrency  int
 	warnMaxBytes int
 	stopper      concurrency.Stopper
+	started      atomic.Bool
 	now          func() time.Time
 
 	mu        sync.Mutex
@@ -114,6 +118,9 @@ func (s *VMScraper) IsActivelyScraped(key string) bool {
 func (s *VMScraper) Name() string { return "virtualmachine.vmscraper" }
 
 func (s *VMScraper) Start() error {
+	if s.started.Swap(true) {
+		return errStartMoreThanOnce
+	}
 	s.stopper = concurrency.NewStopper()
 	go s.run()
 	return nil

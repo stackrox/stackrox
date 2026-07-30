@@ -419,6 +419,14 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 	}
 }
 
+func TestVMScraper_StartRejectsSecondCall(t *testing.T) {
+	s := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	require.NoError(t, s.Start())
+	t.Cleanup(s.Stop)
+
+	assert.ErrorIs(t, s.Start(), errStartMoreThanOnce)
+}
+
 func TestVMScraper_PrunesStaleState(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
