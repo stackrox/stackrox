@@ -31,10 +31,6 @@ var (
 	errStartMoreThanOnce = errors.New("unable to start the VM scraper more than once")
 )
 
-const (
-	mandatoryRefreshAfter = 4 * time.Hour
-)
-
 func getVsockPort() uint32 {
 	return uint32(env.VirtualMachinesVsockPort.IntegerSetting())
 }
@@ -61,17 +57,18 @@ type ProtocolClient interface {
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
-	store        RunningVMStore
-	sender       IndexReportSender
-	dialer       VMDialer
-	client       ProtocolClient
-	interval     time.Duration
-	perVMTimeout time.Duration
-	concurrency  int
-	warnMaxBytes int
-	stopper      concurrency.Stopper
-	started      atomic.Bool
-	now          func() time.Time
+	store                 RunningVMStore
+	sender                IndexReportSender
+	dialer                VMDialer
+	client                ProtocolClient
+	interval              time.Duration
+	perVMTimeout          time.Duration
+	mandatoryRefreshAfter time.Duration
+	concurrency           int
+	warnMaxBytes          int
+	stopper               concurrency.Stopper
+	started               atomic.Bool
+	now                   func() time.Time
 
 	mu        sync.Mutex
 	vmState   map[string]*vmState
@@ -89,13 +86,14 @@ var _ common.SensorComponent = (*VMScraper)(nil)
 // New creates a VMScraper with production defaults.
 func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	return &VMScraper{
-		store:        store,
-		sender:       sender,
-		dialer:       dialer,
-		client:       client,
-		interval:     env.VirtualMachinesScraperPollInterval.DurationSetting(),
-		perVMTimeout: env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
-		concurrency:  env.VirtualMachinesScraperConcurrency.IntegerSetting(),
+		store:                 store,
+		sender:                sender,
+		dialer:                dialer,
+		client:                client,
+		interval:              env.VirtualMachinesScraperPollInterval.DurationSetting(),
+		perVMTimeout:          env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
+		mandatoryRefreshAfter: env.VirtualMachinesScraperMandatoryRefreshInterval.DurationSetting(),
+		concurrency:           env.VirtualMachinesScraperConcurrency.IntegerSetting(),
 		// Warn once a report is halfway to the hard response-size ceiling,
 		// so operators get advance notice before reports start actually
 		// being rejected at that limit.
@@ -211,7 +209,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	// first (and only) round trip instead of asking "anything newer?" and
 	// re-dialing once told no.
 	ifNewerThan, knownEpoch := state.lastGeneration, state.lastEpoch
-	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > mandatoryRefreshAfter
+	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > s.mandatoryRefreshAfter
 	if mandatoryRefreshDue {
 		ifNewerThan, knownEpoch = 0, 0
 	}

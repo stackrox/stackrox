@@ -102,4 +102,11 @@ var (
 	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
 	// and pulling a report in a single scrape cycle.
 	VirtualMachinesScraperPerVMTimeout = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_PER_VM_TIMEOUT", 30*time.Second)
+
+	// VirtualMachinesScraperMandatoryRefreshInterval defines the maximum age of a VM's last forwarded
+	// report before the scraper requests a full report regardless of whether roxagent reports it as
+	// unchanged. This bounds how long a report can go unevaluated against newly published Scanner V4
+	// vulnerability definitions, mirroring ROX_REPROCESSING_INTERVAL and ROX_NODE_SCANNING_INTERVAL's
+	// role for image and node scanning.
+	VirtualMachinesScraperMandatoryRefreshInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_MANDATORY_REFRESH_INTERVAL", 4*time.Hour)
 )

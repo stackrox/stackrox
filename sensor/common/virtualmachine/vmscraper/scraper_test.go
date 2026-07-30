@@ -233,8 +233,8 @@ func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
 	s.pollOnce(context.Background())
 	require.Len(t, sender.sent, 1)
 
-	// Simulate 4h+1s elapsed
-	s.now = func() time.Time { return time.Now().Add(mandatoryRefreshAfter + time.Second) }
+	// Simulate mandatoryRefreshAfter+1s elapsed
+	s.now = func() time.Time { return time.Now().Add(s.mandatoryRefreshAfter + time.Second) }
 
 	// The mandatory refresh is known before dialing, so a single call
 	// requesting the full report (ifNewerThan=0) is enough.
@@ -456,13 +456,14 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	return &VMScraper{
-		store:        store,
-		sender:       sender,
-		dialer:       dialer,
-		client:       client,
-		interval:     5 * time.Minute,
-		perVMTimeout: 10 * time.Second,
-		concurrency:  1,
+		store:                 store,
+		sender:                sender,
+		dialer:                dialer,
+		client:                client,
+		interval:              5 * time.Minute,
+		perVMTimeout:          10 * time.Second,
+		mandatoryRefreshAfter: 4 * time.Hour,
+		concurrency:           1,
 		// Half of the 16MiB default pull response-size ceiling — same
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
 		warnMaxBytes: 8 << 20,
