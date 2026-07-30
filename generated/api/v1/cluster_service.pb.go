@@ -380,6 +380,7 @@ func (x *ClustersList) GetClusterIdToRetentionInfo() map[string]*DecommissionedC
 type GetClustersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -419,6 +420,13 @@ func (x *GetClustersRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *GetClustersRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
 }
 
 // Deprecated: Marked as deprecated in api/v1/cluster_service.proto.
@@ -470,7 +478,7 @@ var File_api_v1_cluster_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1capi/v1/cluster_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x15storage/cluster.proto\"\x8a\x01\n" +
+	"\x1capi/v1/cluster_service.proto\x12\x02v1\x1a\x13api/v1/common.proto\x1a\x12api/v1/empty.proto\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x15storage/cluster.proto\"\x8a\x01\n" +
 	"\"DecommissionedClusterRetentionInfo\x12!\n" +
 	"\vis_excluded\x18\x01 \x01(\bH\x00R\n" +
 	"isExcluded\x120\n" +
@@ -488,9 +496,12 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\x1ccluster_id_to_retention_info\x18\x02 \x03(\v2..v1.ClustersList.ClusterIdToRetentionInfoEntryR\x18clusterIdToRetentionInfo\x1as\n" +
 	"\x1dClusterIdToRetentionInfoEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
-	"\x05value\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoR\x05value:\x028\x01\"*\n" +
+	"\x05value\x18\x02 \x01(\v2&.v1.DecommissionedClusterRetentionInfoR\x05value:\x028\x01\"Z\n" +
 	"\x12GetClustersRequest\x12\x14\n" +
-	"\x05query\x18\x01 \x01(\tR\x05query\"^\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\x12.\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\"^\n" +
 	"\x1eKernelSupportAvailableResponse\x128\n" +
 	"\x18kernel_support_available\x18\x01 \x01(\bR\x16kernelSupportAvailable:\x02\x18\x01*>\n" +
 	"\x10DeploymentFormat\x12\v\n" +
@@ -512,7 +523,7 @@ const file_api_v1_cluster_service_proto_rawDesc = "" +
 	"\rDeleteCluster\x12\x10.v1.ResourceByID\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/clusters/{id}\x12\x80\x01\n" +
 	"\x19GetKernelSupportAvailable\x12\t.v1.Empty\x1a\".v1.KernelSupportAvailableResponse\"4\x82\xd3\xe4\x93\x02+\x12)/v1/clusters-env/kernel-support-available\x88\x02\x01\x12_\n" +
 	"\x17GetClusterDefaultValues\x12\t.v1.Empty\x1a\x1b.v1.ClusterDefaultsResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-defaultsB'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x03b\x06proto3"
 
 var (
 	file_api_v1_cluster_service_proto_rawDescOnce sync.Once
@@ -539,34 +550,36 @@ var file_api_v1_cluster_service_proto_goTypes = []any{
 	(*KernelSupportAvailableResponse)(nil),     // 7: v1.KernelSupportAvailableResponse
 	nil,                                        // 8: v1.ClustersList.ClusterIdToRetentionInfoEntry
 	(*storage.Cluster)(nil),                    // 9: storage.Cluster
-	(*ResourceByID)(nil),                       // 10: v1.ResourceByID
-	(*Empty)(nil),                              // 11: v1.Empty
+	(*Pagination)(nil),                         // 10: v1.Pagination
+	(*ResourceByID)(nil),                       // 11: v1.ResourceByID
+	(*Empty)(nil),                              // 12: v1.Empty
 }
 var file_api_v1_cluster_service_proto_depIdxs = []int32{
 	9,  // 0: v1.ClusterResponse.cluster:type_name -> storage.Cluster
 	2,  // 1: v1.ClusterResponse.cluster_retention_info:type_name -> v1.DecommissionedClusterRetentionInfo
 	9,  // 2: v1.ClustersList.clusters:type_name -> storage.Cluster
 	8,  // 3: v1.ClustersList.cluster_id_to_retention_info:type_name -> v1.ClustersList.ClusterIdToRetentionInfoEntry
-	2,  // 4: v1.ClustersList.ClusterIdToRetentionInfoEntry.value:type_name -> v1.DecommissionedClusterRetentionInfo
-	6,  // 5: v1.ClustersService.GetClusters:input_type -> v1.GetClustersRequest
-	10, // 6: v1.ClustersService.GetCluster:input_type -> v1.ResourceByID
-	9,  // 7: v1.ClustersService.PostCluster:input_type -> storage.Cluster
-	9,  // 8: v1.ClustersService.PutCluster:input_type -> storage.Cluster
-	10, // 9: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
-	11, // 10: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
-	11, // 11: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
-	5,  // 12: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
-	3,  // 13: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
-	3,  // 14: v1.ClustersService.PostCluster:output_type -> v1.ClusterResponse
-	3,  // 15: v1.ClustersService.PutCluster:output_type -> v1.ClusterResponse
-	11, // 16: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
-	7,  // 17: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
-	4,  // 18: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 4: v1.GetClustersRequest.pagination:type_name -> v1.Pagination
+	2,  // 5: v1.ClustersList.ClusterIdToRetentionInfoEntry.value:type_name -> v1.DecommissionedClusterRetentionInfo
+	6,  // 6: v1.ClustersService.GetClusters:input_type -> v1.GetClustersRequest
+	11, // 7: v1.ClustersService.GetCluster:input_type -> v1.ResourceByID
+	9,  // 8: v1.ClustersService.PostCluster:input_type -> storage.Cluster
+	9,  // 9: v1.ClustersService.PutCluster:input_type -> storage.Cluster
+	11, // 10: v1.ClustersService.DeleteCluster:input_type -> v1.ResourceByID
+	12, // 11: v1.ClustersService.GetKernelSupportAvailable:input_type -> v1.Empty
+	12, // 12: v1.ClustersService.GetClusterDefaultValues:input_type -> v1.Empty
+	5,  // 13: v1.ClustersService.GetClusters:output_type -> v1.ClustersList
+	3,  // 14: v1.ClustersService.GetCluster:output_type -> v1.ClusterResponse
+	3,  // 15: v1.ClustersService.PostCluster:output_type -> v1.ClusterResponse
+	3,  // 16: v1.ClustersService.PutCluster:output_type -> v1.ClusterResponse
+	12, // 17: v1.ClustersService.DeleteCluster:output_type -> v1.Empty
+	7,  // 18: v1.ClustersService.GetKernelSupportAvailable:output_type -> v1.KernelSupportAvailableResponse
+	4,  // 19: v1.ClustersService.GetClusterDefaultValues:output_type -> v1.ClusterDefaultsResponse
+	13, // [13:20] is the sub-list for method output_type
+	6,  // [6:13] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_cluster_service_proto_init() }
@@ -576,6 +589,7 @@ func file_api_v1_cluster_service_proto_init() {
 	}
 	file_api_v1_common_proto_init()
 	file_api_v1_empty_proto_init()
+	file_api_v1_pagination_proto_init()
 	file_api_v1_cluster_service_proto_msgTypes[0].OneofWrappers = []any{
 		(*DecommissionedClusterRetentionInfo_IsExcluded)(nil),
 		(*DecommissionedClusterRetentionInfo_DaysUntilDeletion)(nil),

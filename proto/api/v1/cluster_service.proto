@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
 import "storage/cluster.proto";
 
@@ -53,6 +54,7 @@ message ClustersList {
 
 message GetClustersRequest {
   string query = 1;
+  Pagination pagination = 2;
 }
 
 message KernelSupportAvailableResponse {

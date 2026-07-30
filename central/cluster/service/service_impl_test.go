@@ -223,6 +223,67 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	}
 }
 
+func (suite *ClusterServiceTestSuite) TestGetClustersSkewFiltering() {
+	clusters := []*storage.Cluster{
+		{
+			Id: "matched",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED,
+			},
+		},
+		{
+			Id: "compatible behind",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND,
+			},
+		},
+	}
+
+	ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
+	// The skew field has no DB column, so the query sent to the datastore
+	// should not contain it; here that means the datastore receives an
+	// effectively match-all query.
+	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
+	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
+
+	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+
+	query := search.NewQueryBuilder().AddStrings(
+		search.SensorVersionCompatibility,
+		storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND.String(),
+	).Query()
+
+	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{Query: query})
+	suite.NoError(err)
+	suite.Require().Len(results.GetClusters(), 1)
+	suite.Equal("compatible behind", results.GetClusters()[0].GetId())
+}
+
+func (suite *ClusterServiceTestSuite) TestGetClustersPagination() {
+	clusters := []*storage.Cluster{
+		{Id: "cluster-1"},
+		{Id: "cluster-2"},
+		{Id: "cluster-3"},
+	}
+
+	ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
+	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
+	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
+
+	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+
+	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{
+		Query: search.EmptyQuery().String(),
+		Pagination: &v1.Pagination{
+			Offset: 1,
+			Limit:  1,
+		},
+	})
+	suite.NoError(err)
+	suite.Require().Len(results.GetClusters(), 1)
+	suite.Equal("cluster-2", results.GetClusters()[0].GetId())
+}
+
 func daysAgo(days int) time.Time {
 	return time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 }
