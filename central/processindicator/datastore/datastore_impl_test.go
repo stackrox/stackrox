@@ -299,11 +299,12 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
+	// Prune number of the batch size to test batching
 	batchCases := []int{
-		deleteBatchSize,
-		deleteBatchSize - 1,
-		deleteBatchSize + 1,
-		70000,
+		deleteBatchSize,     // Prune number of the batch size to test batching
+		deleteBatchSize - 1, // Prune number under the batch size to test batching
+		deleteBatchSize + 1, // Prune over batch size to test batching
+		70000,               // Prune over the max allowed SQL parameters (65K) to ensure batching is performed
 	}
 
 	for _, batchSize := range batchCases {
