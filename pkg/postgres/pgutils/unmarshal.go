@@ -10,7 +10,6 @@ type VTUnmarshaler interface {
 	UnmarshalVTUnsafe([]byte) error
 }
 
-//go:fix inline
 func UnmarshalVTMessage(msg VTUnmarshaler, data []byte) error {
 	if useUnsafe {
 		return msg.UnmarshalVTUnsafe(data)
