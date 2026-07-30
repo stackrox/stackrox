@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -211,11 +212,6 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 }
 
 func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	s.handler.Notify(common.SensorComponentEventCentralReachable)
-	defer s.handler.Stop()
-
 	vmID := virtualmachine.VMID("test-vm")
 	cases := map[string]struct {
 		vsockCID string
@@ -231,28 +227,43 @@ func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			go func() {
-				err := s.handler.Send(context.Background(), &v1.IndexReport{
-					VmId:     string(vmID),
-					VsockCid: tc.vsockCID,
-				})
+			synctest.Test(s.T(), func(t *testing.T) {
+				handler := &handlerImpl{
+					centralReady: concurrency.NewSignal(),
+					lock:         &sync.RWMutex{},
+					stopper:      concurrency.NewStopper(),
+					store:        s.store,
+				}
+				err := handler.Start()
 				s.Require().NoError(err)
-			}()
+				handler.Notify(common.SensorComponentEventCentralReachable)
+				defer handler.Stop()
 
-			select {
-			case msg := <-s.handler.ResponsesC():
-				s.Require().NotNil(msg)
-				sensorEvent := msg.GetEvent()
-				s.Require().NotNil(sensorEvent)
-				s.Assert().Equal(string(vmID), sensorEvent.GetId())
-				indexEvent := sensorEvent.GetVirtualMachineIndexReport()
-				s.Require().NotNil(indexEvent)
-				s.Assert().Equal(string(vmID), indexEvent.GetId())
-				s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
-				s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
-			case <-time.After(time.Second):
-				s.Fail("Expected message to be sent to central")
-			}
+				go func() {
+					err := handler.Send(context.Background(), &v1.IndexReport{
+						VmId:     string(vmID),
+						VsockCid: tc.vsockCID,
+					})
+					s.Require().NoError(err)
+				}()
+
+				synctest.Wait()
+
+				select {
+				case msg := <-handler.ResponsesC():
+					s.Require().NotNil(msg)
+					sensorEvent := msg.GetEvent()
+					s.Require().NotNil(sensorEvent)
+					s.Assert().Equal(string(vmID), sensorEvent.GetId())
+					indexEvent := sensorEvent.GetVirtualMachineIndexReport()
+					s.Require().NotNil(indexEvent)
+					s.Assert().Equal(string(vmID), indexEvent.GetId())
+					s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
+					s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
+				default:
+					s.Fail("Expected message to be sent to central")
+				}
+			})
 		})
 	}
 }
