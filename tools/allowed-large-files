@@ -29,9 +29,9 @@ generated/**/*.pb.gw.go
 generated/**/*.swagger.json
 go.sum
 operator/bundle/manifests/*.yaml
-operator/internal/central/values/translation/translation_test.go
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
+operator/internal/central/values/translation/translation_test.go
 operator/install/manifest.yaml
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_builtin_test.go
