@@ -249,20 +249,16 @@ func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
 
 				synctest.Wait()
 
-				select {
-				case msg := <-handler.ResponsesC():
-					s.Require().NotNil(msg)
-					sensorEvent := msg.GetEvent()
-					s.Require().NotNil(sensorEvent)
-					s.Assert().Equal(string(vmID), sensorEvent.GetId())
-					indexEvent := sensorEvent.GetVirtualMachineIndexReport()
-					s.Require().NotNil(indexEvent)
-					s.Assert().Equal(string(vmID), indexEvent.GetId())
-					s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
-					s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
-				default:
-					s.Fail("Expected message to be sent to central")
-				}
+				msg := <-handler.ResponsesC()
+				s.Require().NotNil(msg)
+				sensorEvent := msg.GetEvent()
+				s.Require().NotNil(sensorEvent)
+				s.Assert().Equal(string(vmID), sensorEvent.GetId())
+				indexEvent := sensorEvent.GetVirtualMachineIndexReport()
+				s.Require().NotNil(indexEvent)
+				s.Assert().Equal(string(vmID), indexEvent.GetId())
+				s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
+				s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
 			})
 		})
 	}
