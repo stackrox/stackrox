@@ -116,7 +116,7 @@ func TestQueueSeq(t *testing.T) {
 		numItems := 30
 		results := make(chan int, numItems)
 		expectedItems := make([]int, 0, numItems)
-		for i := 0; i < numItems; i++ {
+		for i := range numItems {
 			q.Push(i)
 			expectedItems = append(expectedItems, i)
 		}
@@ -133,7 +133,7 @@ func TestQueueSeq(t *testing.T) {
 
 		wg := sync.WaitGroup{}
 		wg.Add(numGoroutines)
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			go func(goroutineID int) {
 				defer wg.Done()
 

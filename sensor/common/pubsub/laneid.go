@@ -16,6 +16,8 @@ const (
 	DetectorScanResultLane
 	DetectorDeployAlertOutputLane
 	ResolvedResourceEventLane
+	SoftRestartLane
+	ResourceSyncFinishedLane
 )
 
 var (
@@ -33,6 +35,8 @@ var (
 		DetectorScanResultLane:         "DetectorScanResult",
 		DetectorDeployAlertOutputLane:  "DetectorDeployAlertOutput",
 		ResolvedResourceEventLane:      "ResolvedResourceEvent",
+		SoftRestartLane:                "SoftRestart",
+		ResourceSyncFinishedLane:       "ResourceSyncFinished",
 	}
 )
 

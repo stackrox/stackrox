@@ -1,4 +1,5 @@
-import type { CompoundSearchFilterAttribute } from '../types';
+import { sourceTypeLabels, sourceTypes } from 'Containers/Vulnerabilities/constants';
+import type { CompoundSearchFilterAttribute, SelectSearchFilterAttribute } from '../types';
 
 export const VirtualMachineCVEName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
@@ -19,6 +20,19 @@ export const VirtualMachineComponentVersion: CompoundSearchFilterAttribute = {
     filterChipLabel: 'Virtual machine component version',
     searchTerm: 'Component Version',
     inputType: 'text',
+};
+
+export const VirtualMachineComponentSource: SelectSearchFilterAttribute = {
+    displayName: 'Source',
+    filterChipLabel: 'Virtual machine component source',
+    searchTerm: 'Component Source',
+    inputType: 'select',
+    inputProps: {
+        options: sourceTypes.map((sourceType) => ({
+            label: sourceTypeLabels[sourceType],
+            value: sourceType,
+        })),
+    },
 };
 
 export const VirtualMachineID: CompoundSearchFilterAttribute = {

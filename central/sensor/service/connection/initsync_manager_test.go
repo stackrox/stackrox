@@ -37,7 +37,7 @@ func TestInitSyncManager(t *testing.T) {
 	t.Setenv(env.CentralMaxInitSyncSensors.EnvVar(), "3")
 	m := NewInitSyncManager()
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		assert.True(t, m.Add(fmt.Sprintf("test-%d", i)))
 	}
 	assert.False(t, m.Add("test-a"), "Unable to add after limit is reached")

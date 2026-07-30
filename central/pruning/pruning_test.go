@@ -170,7 +170,7 @@ func newImageInstance(id string, daysOld int) *storage.Image {
 }
 
 func newDeployment(imageIDs ...string) *storage.Deployment {
-	var containers []*storage.Container
+	containers := make([]*storage.Container, 0, len(imageIDs))
 	for _, id := range imageIDs {
 		digest := types.NewDigest(id).Digest()
 		containers = append(containers, &storage.Container{
@@ -611,7 +611,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 				remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
 				require.NoError(t, err)
 
-				var ids []string
+				ids := make([]string, 0, len(remainingImages))
 				for _, i := range remainingImages {
 					ids = append(ids, i.GetDigest())
 				}
@@ -621,7 +621,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 				assert.ElementsMatch(t, c.expectedIDs, ids)
 
-				var cleanUpIDs []string
+				cleanUpIDs := make([]string, 0, len(remainingImages))
 				for _, image := range remainingImages {
 					cleanUpIDs = append(cleanUpIDs, image.GetId())
 				}
@@ -634,7 +634,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 				remainingImages, err := images.SearchListImages(ctx, search.EmptyQuery())
 				require.NoError(t, err)
 
-				var ids []string
+				ids := make([]string, 0, len(remainingImages))
 				for _, i := range remainingImages {
 					ids = append(ids, i.GetId())
 				}
@@ -824,7 +824,7 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 			remainingImages, err := imagesV2.SearchRawImages(ctx, search.EmptyQuery())
 			require.NoError(t, err)
 
-			var remainingIDs []string
+			remainingIDs := make([]string, 0, len(remainingImages))
 			for _, img := range remainingImages {
 				remainingIDs = append(remainingIDs, img.GetId())
 			}
@@ -1379,7 +1379,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			require.NoError(t, err)
 
 			log.Infof("Remaining alerts: %v", remainingAlerts)
-			var ids []string
+			ids := make([]string, 0, len(remainingAlerts))
 			for _, i := range remainingAlerts {
 				ids = append(ids, i.GetId())
 			}
@@ -2882,7 +2882,7 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
-	for i := 0; i < numberPods; i++ {
+	for range numberPods {
 		pod := &storage.Pod{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,
@@ -2893,7 +2893,7 @@ func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID s
 }
 
 func (s *PruningTestSuite) addNodes(nodeDS testNodeDatastore.DataStore, clusterID string, numberOfNodes int) {
-	for i := 0; i < numberOfNodes; i++ {
+	for range numberOfNodes {
 		pod := &storage.Node{
 			Id:        uuid.NewV4().String(),
 			ClusterId: clusterID,

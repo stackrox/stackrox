@@ -119,7 +119,7 @@ func generateMsgToSensor() *central.MsgToSensor {
 
 func generateDeploymentMsg(id string, noOfDeployments int) *central.DeploymentEnhancementRequest {
 	d := make([]*storage.Deployment, noOfDeployments)
-	for i := 0; i < noOfDeployments; i++ {
+	for i := range noOfDeployments {
 		d[i] = &storage.Deployment{Id: uuid.NewV4().String()}
 	}
 	return &central.DeploymentEnhancementRequest{

@@ -261,7 +261,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 
 	t.Run("only one message", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
 		tt.Stop()
@@ -271,7 +271,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 		tc.add(time.Hour)
 		tc.add(time.Second)
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
 		tt.Stop()
@@ -279,7 +279,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	})
 	t.Run("different prefix", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()
@@ -287,7 +287,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	})
 	t.Run("different event", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			tt.Identify(telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()

@@ -34,7 +34,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	ids := make([]string, 0, 100)
 	nodes := make([]*storage.Node, 0, 100)
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		node := fixtures.GetNodeWithUniqueComponents(5, 5)
 		converter.MoveNodeVulnsToNewField(node)
 		id := uuid.NewV4().String()

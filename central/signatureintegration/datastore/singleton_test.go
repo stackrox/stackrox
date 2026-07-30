@@ -59,7 +59,7 @@ func TestWriteExampleBundle(t *testing.T) {
 
 	bundle, err := signatures.ParseKeyBundle(data)
 	require.NoError(t, err, "example bundle must be valid")
-	assert.NotEmpty(t, bundle.Keys, "example bundle must contain keys")
+	assert.NotEmpty(t, bundle.CosignKeys, "example bundle must contain cosign keys")
 }
 
 func TestStartKeyBundleUpdaterOfflineMode(t *testing.T) {

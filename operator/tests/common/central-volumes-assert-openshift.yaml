@@ -60,6 +60,9 @@ spec:
         - mountPath: /run/secrets/stackrox.io/monitoring-tls
           name: monitoring-tls
           readOnly: true
+        - mountPath: /run/secrets/stackrox.io/ocp-tls
+          name: ocp-tls
+          readOnly: true
         - mountPath: /etc/pki/injected-ca-trust/
           name: trusted-ca-volume
           readOnly: true
@@ -138,6 +141,10 @@ spec:
         secret:
           defaultMode: 420
           secretName: central-monitoring-tls
+      - name: ocp-tls
+        secret:
+          defaultMode: 420
+          secretName: central-ocp-tls
       - configMap:
           defaultMode: 420
           items:

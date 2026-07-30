@@ -98,7 +98,7 @@ func (s *ListenNotifySuite) TestMultipleChannels() {
 	s.Require().NoError(Notify(s.ctx, s.pool, "chan_b", "msg_b"))
 
 	messages := make(map[string]string)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		select {
 		case msg := <-received:
 			messages[msg.channel] = msg.payload

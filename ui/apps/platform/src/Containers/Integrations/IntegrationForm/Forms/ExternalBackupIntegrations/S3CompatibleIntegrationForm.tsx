@@ -402,19 +402,21 @@ function S3CompatibleIntegrationForm({
                                 helpTitle="Region"
                                 helpText={
                                     <div>
-                                        Consult the service provider&apos;s S3 compatibility
-                                        instructions for the correct region.
+                                        The region for the S3-compatible endpoint. Consult the
+                                        service provider&apos;s instructions for the correct value.
+                                        Many providers accept `us-east-1` as a default.
                                     </div>
                                 }
                                 ariaLabel="Help for region"
                             />
                         }
                         fieldId="externalBackup.s3compatible.region"
-                        helperText="example, us-west-2"
+                        helperText="example, us-east-1"
                         touched={touched}
                         errors={errors}
                     >
                         <TextInput
+                            isRequired
                             type="text"
                             id="externalBackup.s3compatible.region"
                             value={values.externalBackup.s3compatible.region}
@@ -436,11 +438,11 @@ function S3CompatibleIntegrationForm({
                                         <List className="pf-v6-u-py-sm">
                                             <ListItem>
                                                 Virtual-hosted-style buckets are addressed as
-                                                https://&#60;bucket&#62;.&#60;endpoint&#62
+                                                https://&#60;bucket&#62;.&#60;endpoint&#62;.
                                             </ListItem>
                                             <ListItem>
                                                 Path-style buckets are addressed as
-                                                https://&#60;endpoint&#62;/&#60;bucket&#62;
+                                                https://&#60;endpoint&#62;/&#60;bucket&#62;.
                                             </ListItem>
                                         </List>
                                         <Content component="p">

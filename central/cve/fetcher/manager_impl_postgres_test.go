@@ -650,7 +650,7 @@ func (s *TestClusterCVEOpsInPostgresTestSuite) TestBasicOps() {
 func getTestClusterCVEParts(numCVEs int, clusters ...string) ([]*storage.EmbeddedVulnerability, map[string][]*storage.Cluster) {
 	vulns := make([]*storage.EmbeddedVulnerability, 0, numCVEs)
 	vulnToClustersMap := make(map[string][]*storage.Cluster)
-	for i := 0; i < numCVEs; i++ {
+	for i := range numCVEs {
 		cve := fmt.Sprintf("cve-%d", i)
 		vulns = append(vulns, &storage.EmbeddedVulnerability{
 			Cve: cve,

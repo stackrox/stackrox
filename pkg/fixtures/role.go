@@ -21,7 +21,7 @@ func GetScopedK8SRole(id string, clusterID string, namespace string) *storage.K8
 func GetMultipleK8SRoles(numRoles int) []*storage.K8SRole {
 	roles := make([]*storage.K8SRole, 0, numRoles)
 	clusterRole := false
-	for i := 0; i < numRoles; i++ {
+	for i := range numRoles {
 		roles = append(roles, &storage.K8SRole{
 			Id:          uuid.NewV4().String(),
 			Name:        fmt.Sprintf("role%d", i),

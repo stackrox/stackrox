@@ -445,7 +445,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 		externalFlow(deployments[1], entities[2], false, nil),
 	}
 
-	allFlows := []*storage.NetworkFlow{singleEntityFlow}
+	allFlows := make([]*storage.NetworkFlow, 0, 1+len(multiEntityFlows))
+	allFlows = append(allFlows, singleEntityFlow)
 	allFlows = append(allFlows, multiEntityFlows...)
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)

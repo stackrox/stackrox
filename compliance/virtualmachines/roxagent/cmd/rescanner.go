@@ -20,10 +20,10 @@ const (
 // the VM filesystem and publishing results to cache, independent of how the
 // cached report is served over VSOCK. Kept separate from Server/CARefresher
 // wiring in runServe so its retry/backoff policy is easier to reason about
-// and test on its own. Scanning no longer involves any network call - see
-// mappingRefresher - so unlike an earlier version of this type, scans
-// themselves are not retried here; only the schedule for the next rescan
-// attempt is, after one fails.
+// and test on its own. Scanning does not make a network call; the downloader
+// built by newMappingDownloader keeps the mapping file fresh independently,
+// on its own schedule, so only the schedule for the next rescan attempt is
+// retried here, not the scan itself.
 type rescanner struct {
 	cache           *vsockserver.ReportCache
 	hostPath        string
