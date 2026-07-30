@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -43,8 +41,6 @@ var (
 		storage.Severity_HIGH_SEVERITY:     "error",
 		storage.Severity_CRITICAL_SEVERITY: "critical",
 	}
-
-	httpStatusCodePattern = regexp.MustCompile(`^HTTP Status Code: ([0-9]{3})\b`)
 )
 
 type pagerDuty struct {
@@ -148,17 +144,9 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 			logging.Any("response", resp), logging.Err(err), logging.ErrCode(codes.PagerDutyGeneric),
 			logging.NotifierName(p.GetName()))
 
-		matches := httpStatusCodePattern.FindAllString(err.Error(), 1)
-		if len(matches) == 0 {
-			return err
-		}
-		statusCodeStr := strings.TrimSpace(strings.Split(matches[0], ":")[1])
-		statusCode, convErr := strconv.Atoi(statusCodeStr)
-		if convErr != nil {
-			return err
-		}
-		if statusCode != http.StatusAccepted {
-			return errors.Errorf("Received HTTP status code %d from PagerDuty. Check central logs for full error.", statusCode)
+		var apiErr pd.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode != http.StatusAccepted {
+			return errors.Errorf("Received HTTP status code %d from PagerDuty. Check central logs for full error.", apiErr.StatusCode)
 		}
 	}
 	return err
