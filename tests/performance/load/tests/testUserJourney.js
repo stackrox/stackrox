@@ -15,17 +15,29 @@ import { deployments } from '../groups/deployments.js';
 import { clustersAndPolicies } from '../groups/clustersAndPolicies.js';
 import { collections } from '../groups/collections.js';
 import { systemAdmin } from '../groups/systemAdmin.js';
+import { compliance } from '../groups/compliance.js';
+import { networkGraph } from '../groups/networkGraph.js';
+import { risk } from '../groups/risk.js';
+import { accessControl } from '../groups/accessControl.js';
+import { integrations } from '../groups/integrations.js';
+import { platformCveManagement } from '../groups/platformCveManagement.js';
 
 const pages = [
     { name: 'mainDashboard', fn: mainDashboard, weight: 1.0 },
     { name: 'violations', fn: violations, weight: 0.7 },
     { name: 'imageCveManagement', fn: imageCveManagement, weight: 0.5 },
     { name: 'vulnMgmtDashboard', fn: vulnerabilityManagementDashboard, weight: 0.5 },
-    { name: 'configManagement', fn: configManagement, weight: 0.3 },
-    { name: 'reports', fn: reports, weight: 0.2 },
+    { name: 'risk', fn: risk, weight: 0.4 },
     { name: 'deployments', fn: deployments, weight: 0.4 },
+    { name: 'compliance', fn: compliance, weight: 0.35 },
+    { name: 'configManagement', fn: configManagement, weight: 0.3 },
     { name: 'nodeCveManagement', fn: nodeCveManagement, weight: 0.3 },
     { name: 'clustersAndPolicies', fn: clustersAndPolicies, weight: 0.3 },
+    { name: 'platformCveManagement', fn: platformCveManagement, weight: 0.25 },
+    { name: 'networkGraph', fn: networkGraph, weight: 0.25 },
+    { name: 'integrations', fn: integrations, weight: 0.2 },
+    { name: 'reports', fn: reports, weight: 0.2 },
+    { name: 'accessControl', fn: accessControl, weight: 0.15 },
     { name: 'collections', fn: collections, weight: 0.15 },
     { name: 'systemAdmin', fn: systemAdmin, weight: 0.1 },
 ];
