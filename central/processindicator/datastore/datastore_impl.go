@@ -46,6 +46,9 @@ type datastoreImpl struct {
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
 	stopper concurrency.Stopper
+
+	experimentEnabled bool
+	experimentCycleID int
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -254,13 +257,21 @@ func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processi
 
 func (ds *datastoreImpl) prune(ctx context.Context) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Prune, "ProcessIndicator")
-	pruner := ds.prunerFactory.StartPruning()
-	defer pruner.Finish()
+	p := ds.prunerFactory.StartPruning()
+	defer p.Finish()
 
 	processInfoToArgs, err := ds.getProcessInfoToArgs(ctx)
 	if err != nil {
 		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
 		return
+	}
+
+	if ds.experimentEnabled {
+		ds.experimentCycleID++
+		if err := cleanupOldCycles(ctx, ds.db, ds.experimentCycleID); err != nil {
+			log.Errorf("EXPERIMENT: failed to cleanup old shadow cycles: %v", err)
+		}
+		log.Infof("EXPERIMENT: starting prune cycle %d with %d process groups", ds.experimentCycleID, len(processInfoToArgs))
 	}
 
 	for processInfo, args := range processInfoToArgs {
@@ -272,7 +283,12 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 			}
 		}
 		incrementProcessPruningCacheMissesMetric()
-		idsToRemove := pruner.Prune(args)
+
+		if ds.experimentEnabled {
+			ds.runExperiment(ctx, processInfo, args)
+		}
+
+		idsToRemove := p.Prune(args)
 		var successfullyPruned int
 		if len(idsToRemove) > 0 {
 			successfullyPruned = ds.pruneIndicators(ctx, idsToRemove, PruneReasonSimilarity)
@@ -285,6 +301,31 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 		if _, exists := processInfoToArgs[processInfo]; !exists {
 			delete(ds.prunedArgsLengthCache, processInfo)
 		}
+	}
+}
+
+func (ds *datastoreImpl) runExperiment(ctx context.Context, info processindicator.ProcessWithContainerInfo, args []processindicator.IDAndArgs) {
+	jaccardResults := pruner.JaccardPrune(args, minArgsPerProcess)
+	nemResults := pruner.NEMPrune(args, minArgsPerProcess)
+
+	var jPrune, nPrune, disagree int
+	for i := range jaccardResults {
+		if jaccardResults[i].WouldPrune {
+			jPrune++
+		}
+		if nemResults[i].WouldPrune {
+			nPrune++
+		}
+		if jaccardResults[i].WouldPrune != nemResults[i].WouldPrune {
+			disagree++
+		}
+	}
+
+	log.Infof("EXPERIMENT: group pod=%s container=%s process=%s count=%d jaccard_prune=%d nem_prune=%d disagree=%d",
+		info.PodID, info.ContainerName, info.ProcessName, len(args), jPrune, nPrune, disagree)
+
+	if err := recordShadowResults(ctx, ds.db, ds.experimentCycleID, info, args, jaccardResults, nemResults); err != nil {
+		log.Errorf("EXPERIMENT: failed to record shadow results: %v", err)
 	}
 }
 

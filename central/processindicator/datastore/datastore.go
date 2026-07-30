@@ -61,6 +61,14 @@ func New(db postgres.DB, store store.Store, plopStorage plopStore.Store, prunerF
 	ctx := sac.WithAllAccess(context.Background())
 
 	if env.ProcessPruningEnabled.BooleanSetting() {
+		if env.ProcessPruningExperiment.BooleanSetting() {
+			if err := initShadowTable(ctx, db); err != nil {
+				log.Errorf("EXPERIMENT: failed to create shadow table: %v", err)
+			} else {
+				log.Info("EXPERIMENT: shadow table process_indicators_shadow created/verified")
+				d.experimentEnabled = true
+			}
+		}
 		go d.prunePeriodically(ctx)
 	}
 	return d
