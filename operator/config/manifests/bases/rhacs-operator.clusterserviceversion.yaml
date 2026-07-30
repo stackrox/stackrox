@@ -306,6 +306,11 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure
+          tolerations and affinity settings here.
+        displayName: Affinity
+        path: centralWorker.affinity
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
@@ -408,6 +413,9 @@ spec:
           Defaults to the Central certificate authority.
         displayName: Destination CA Certificate
         path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: Configures the priority class name for the central-worker deployment.
+        displayName: Priority Class Name
+        path: centralWorker.priorityClassName
       - description: |-
           Default tolerations applied to all Deployment-based components. Use this when your target
           nodes have custom taints that pods must tolerate.

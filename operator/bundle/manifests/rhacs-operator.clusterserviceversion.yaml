@@ -504,6 +504,14 @@ spec:
             displayName: Enabled
             path: centralWorker.enabled
           - description: |-
+              If you want this component to only run on specific nodes, you can configure
+              tolerations and affinity settings here.
+            displayName: Affinity
+            path: centralWorker.affinity
+          - description: Configures the priority class name for the central-worker deployment.
+            displayName: Priority Class Name
+            path: centralWorker.priorityClassName
+          - description: |-
               Allows overriding the default resource settings for this component. Please consult the documentation
               for an overview of default resource requirements and a sizing guide.
             displayName: Resources

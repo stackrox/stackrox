@@ -2,6 +2,7 @@ package translation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -439,9 +440,30 @@ func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.
 	cv.SetBoolValue("enabled", enabled)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetScheduling("nodeSelector", translation.TolerationsKey, &c.DeploymentSpec, defaults)
+	if c.Affinity != nil {
+		affinityMap, err := toStringInterfaceMap(c.Affinity)
+		if err != nil {
+			cv.SetError(err)
+		} else {
+			cv.SetMap("affinity", affinityMap)
+		}
+	}
+	cv.SetString("priorityClassName", c.PriorityClassName)
 	if len(c.HostAliases) > 0 {
 		cv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, c.HostAliases))
 	}
 
 	return &cv
+}
+
+func toStringInterfaceMap(v any) (map[string]interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }

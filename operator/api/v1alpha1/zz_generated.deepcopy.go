@@ -464,6 +464,16 @@ func (in *CentralWorkerSpec) DeepCopyInto(out *CentralWorkerSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Affinity != nil {
+		in, out := &in.Affinity, &out.Affinity
+		*out = new(v1.Affinity)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.PriorityClassName != nil {
+		in, out := &in.PriorityClassName, &out.PriorityClassName
+		*out = new(string)
+		**out = **in
+	}
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
 }
 

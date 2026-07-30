@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -647,6 +648,15 @@ type CentralWorkerSpec struct {
 	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Enabled"
 	Enabled *bool `json:"enabled,omitempty"`
+
+	// If you want this component to only run on specific nodes, you can configure
+	// tolerations and affinity settings here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Affinity"
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// Configures the priority class name for the central-worker deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Priority Class Name"
+	PriorityClassName *string `json:"priorityClassName,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
