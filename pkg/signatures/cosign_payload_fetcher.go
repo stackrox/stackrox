@@ -127,12 +127,11 @@ func fetchSignaturesByReferrer(ctx context.Context, digestRef name.Digest, repo 
 	var payloads []signaturePayload
 	for _, desc := range bundleDescs {
 		if ctx.Err() != nil {
-			break
+			return payloads, ctx.Err()
 		}
 		p, err := fetchSigstoreBundle(repo.Digest(desc.Digest.String()), opts)
 		if err != nil {
-			log.Warnf("Failed to fetch sigstore bundle from referrer %s: %v", desc.Digest, err)
-			continue
+			return payloads, fmt.Errorf("fetching sigstore bundle from referrer %s: %w", desc.Digest, err)
 		}
 		payloads = append(payloads, p)
 	}

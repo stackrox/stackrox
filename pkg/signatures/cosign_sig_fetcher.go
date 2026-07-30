@@ -115,7 +115,8 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	})
 	wg.Wait()
 
-	// Merge payloads from both discovery methods.
+	// Merge payloads from both discovery methods. A path is successful when it
+	// returns no error, regardless of whether it found signatures.
 	var allPayloads []signaturePayload
 	if tagErr == nil {
 		allPayloads = append(allPayloads, tagPayloads...)
@@ -128,8 +129,9 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 		log.Warnf("Referrer-based discovery failed for %q: %v", fullImageName, referrerErr)
 	}
 
-	fetchErr := errors.Join(tagErr, referrerErr)
-	if fetchErr != nil && len(allPayloads) == 0 {
+	// Return an error only when both discovery paths failed.
+	if tagErr != nil && referrerErr != nil {
+		fetchErr := errors.Join(tagErr, referrerErr)
 		if isUnauthorizedError(tagErr) || isUnauthorizedError(referrerErr) {
 			return nil, errox.NotAuthorized.CausedBy(fetchErr)
 		}
