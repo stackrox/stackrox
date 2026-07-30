@@ -67,8 +67,8 @@ require (
 	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.4.1
 	github.com/graph-gophers/graphql-go v1.10.3-0.20260702060009-60399cce0c05
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.29.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
