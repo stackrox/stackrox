@@ -18,7 +18,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 	"strconv"
 
 	"github.com/gorilla/websocket"
@@ -119,9 +118,7 @@ func buildWSURL(config *rest.Config, resource, namespace, name, subresource stri
 		return "", fmt.Errorf("unsupported scheme %q", u.Scheme)
 	}
 
-	u.Path = path.Join(u.Path,
-		fmt.Sprintf("/apis/%s/%s/namespaces/%s/%s/%s/%s",
-			subresourceAPIGroup, apiVersion, namespace, resource, name, subresource))
+	u = u.JoinPath("apis", subresourceAPIGroup, apiVersion, "namespaces", namespace, resource, name, subresource)
 	if len(queryParams) > 0 {
 		u.RawQuery = queryParams.Encode()
 	}
