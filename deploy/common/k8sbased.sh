@@ -523,6 +523,10 @@ function launch_central {
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
 
+      # Red Hat signing key bundle watcher needs a short poll interval for e2e tests
+      # (tests/redhat_signing_key_test.go); avoids a Central restart mid-test-suite.
+      ${ORCH_CMD} -n stackrox set env deploy/central ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s
+
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
         exit 1

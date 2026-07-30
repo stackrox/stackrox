@@ -72,25 +72,24 @@ func (s *RedHatSigningKeySuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
 	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
 
-	// Set once for the whole suite instead of per sub-test: every sub-test
-	// needs the watcher to poll quickly, and each Central restart costs
-	// ~30s, so sharing this one restart across sub-tests instead of paying
-	// it twice per sub-test saves several minutes of suite time.
+	// e2e deploy scripts (tests/e2e/lib.sh, deploy/common/k8sbased.sh) already
+	// set watchIntervalEnv=shortWatchInterval on Central at deploy time, before
+	// any test runs, so every sub-test gets fast polling without paying for a
+	// restart here. This call is a same-value no-op there (Kubernetes doesn't
+	// bump the pod template generation, so no rollout is triggered) - it only
+	// causes a real restart as a fallback for setups that deploy Central some
+	// other way (e.g. local dev, or a pre-existing cluster like the one used
+	// for manual verification) and haven't set this already.
+	//
+	// Deliberately no matching TearDownSuite: removing the env var again would
+	// undo the deploy-time optimization above and force a real restart just to
+	// restore a functionally-inert default (nothing else reads this interval),
+	// mirroring how e.g. ROX_RISK_REPROCESSING_INTERVAL is also never restored.
 	ns := namespaces.StackRox
 	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
 	defer cancel()
-	s.logf("Setting %s=%s on central for the whole suite", watchIntervalEnv, shortWatchInterval)
+	s.logf("Ensuring %s=%s on central for the whole suite", watchIntervalEnv, shortWatchInterval)
 	s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
-}
-
-// TearDownSuite reverts the watch-interval override applied in SetupSuite.
-func (s *RedHatSigningKeySuite) TearDownSuite() {
-	ns := namespaces.StackRox
-	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
-	defer cancel()
-	s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-	s.mustDeleteDeploymentEnvVar(ctx, ns, "central", watchIntervalEnv)
 	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
 }
 
