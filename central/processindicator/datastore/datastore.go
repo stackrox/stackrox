@@ -44,7 +44,6 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store.
-// New returns a new instance of DataStore using the input store.
 func New(db postgres.DB, store store.Store) DataStore {
 	return &datastoreImpl{
 		db:      db,
