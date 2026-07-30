@@ -164,7 +164,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 		if features.VulnerabilityReportStreamingDownload.Enabled() {
 			log.Info("Streaming report generation")
-			return rg.generateReportStreamingDownload(ctx, req)
+			return rg.generateReportTransaction(ctx, req)
 		}
 		return rg.generateReportInMemoryDownload(ctx, req)
 	}
@@ -456,14 +456,14 @@ func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Conte
 	return nil
 }
 
-// generateReportTransaction wraps all cursor-based reads in a single database
-// transaction for consistent snapshot isolation. It reads data in batches via
-// a postgres cursor, generates a zipped CSV, and writes the result to blob store.
+// generateReportTransaction runs all report operations — cursor reads, CVE
+// lookups, CSV/ZIP generation, and blob store write — within a single database
+// transaction. The writeFn callback writes directly to a PostgreSQL large
+// object, so memory usage stays constant regardless of report size.
 //
-// Connection usage: only 1 connection is held at any time. The transaction is
-// used for cursor reads and CVE reference link lookups (serialized). After the
-// transaction completes, the buffered report is written to blob store which
-// acquires its own short-lived connection.
+// Connection usage: 1 connection. All operations (cursor FETCH, CVE lookups,
+// large object writes, metadata upsert) share the same transaction on a single
+// goroutine, so there are no concurrent-tx-access issues.
 func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, req *ReportRequest) error {
 	snap := req.ReportSnapshot
 	queries, err := rg.buildReportQueries(ctx, req)
@@ -471,10 +471,16 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		return err
 	}
 
-	var buf bytes.Buffer
-	if err := rg.readAndBuildCSV(ctx, snap, queries, &buf); err != nil {
-		return err
+	tx, err := rg.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting report transaction")
 	}
+	defer func() {
+		if err := tx.Commit(context.Background()); err != nil {
+			log.Errorf("failed to commit report transaction: %v", err)
+		}
+	}()
+	txCtx := postgres.ContextWithTx(ctx, tx)
 
 	parentDir := snap.GetReportConfigurationId()
 	if snap.GetVulnReportFilters() == nil {
@@ -485,60 +491,43 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		Name:         blobPath,
 		LastUpdated:  protocompat.TimestampNow(),
 		ModifiedTime: protocompat.TimestampNow(),
-		Length:       int64(buf.Len()),
+		Length:       -1,
 	}
-	if err := rg.blobStore.Upsert(reportGenCtx, blob, &buf); err != nil {
-		return errors.Wrap(err, "error writing report to blob store")
+
+	refLinksCache := make(map[string]string)
+	rowCount := 0
+
+	err = rg.blobStore.UpsertWithWriter(txCtx, tx, blob, func(w io.Writer) error {
+		zipWriter := zip.NewWriter(w)
+		zipEntry, err := zipWriter.Create(csvReportName(snap.GetName()))
+		if err != nil {
+			return errors.Wrap(err, "creating zip entry")
+		}
+		csvW := csv.NewWriter(zipEntry)
+		csvW.UseCRLF = true
+		if err := csvW.Write(csvHeader); err != nil {
+			return errors.Wrap(err, "writing CSV header")
+		}
+
+		for _, qs := range queries {
+			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
+				return err
+			}
+		}
+
+		csvW.Flush()
+		if err := csvW.Error(); err != nil {
+			return errors.Wrap(err, "flushing CSV writer")
+		}
+		return zipWriter.Close()
+	})
+	if err != nil {
+		return errors.Wrap(err, "error streaming report to blob store")
 	}
 
 	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
 	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
-	}
-	return nil
-}
-
-// readAndBuildCSV opens a read-only transaction, reads all data via cursor,
-// resolves CVE reference links, and writes a zipped CSV into buf.
-// All DB operations share the single transaction connection.
-func (rg *reportGeneratorImpl) readAndBuildCSV(
-	ctx context.Context,
-	snap *storage.ReportSnapshot,
-	queries []querySpec,
-	buf *bytes.Buffer,
-) error {
-	tx, err := rg.db.Begin(ctx)
-	if err != nil {
-		return errors.Wrap(err, "starting report transaction")
-	}
-	defer postgres.FinishReadOnlyTransaction(tx)
-	txCtx := postgres.ContextWithTx(ctx, tx)
-
-	zipWriter := zip.NewWriter(buf)
-	zipEntry, err := zipWriter.Create(csvReportName(snap.GetName()))
-	if err != nil {
-		return errors.Wrap(err, "creating zip entry")
-	}
-	csvW := csv.NewWriter(zipEntry)
-	csvW.UseCRLF = true
-	if err := csvW.Write(csvHeader); err != nil {
-		return errors.Wrap(err, "writing CSV header")
-	}
-
-	refLinksCache := make(map[string]string)
-	rowCount := 0
-	for _, qs := range queries {
-		if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
-			return err
-		}
-	}
-
-	csvW.Flush()
-	if err := csvW.Error(); err != nil {
-		return errors.Wrap(err, "flushing CSV writer")
-	}
-	if err := zipWriter.Close(); err != nil {
-		return errors.Wrap(err, "closing zip writer")
 	}
 	return nil
 }

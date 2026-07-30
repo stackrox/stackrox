@@ -30,11 +30,11 @@ func (s *NewDataModelEnhancedReportingTestSuite) setupTransactionDeps() (
 ) {
 	s.T().Helper()
 
-	// generateReportTransaction serializes DB access: the cursor transaction
-	// (including CVE lookups) completes before blob store Upsert starts,
-	// so only 1 connection is held at a time.
+	// generateReportTransaction runs cursor reads, CVE lookups, and blob
+	// store writes all within a single transaction (1 connection) on a
+	// single goroutine, so no concurrent tx access occurs.
 	poolCfg := s.testDB.DB.Config().Copy()
-	poolCfg.Config.MaxConns = 2
+	poolCfg.Config.MaxConns = 1
 	pool, err := postgres.New(context.Background(), poolCfg)
 	s.Require().NoError(err)
 	s.T().Cleanup(func() { pool.Close() })
