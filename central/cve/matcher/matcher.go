@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
-	"github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/utils"
@@ -26,11 +26,11 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	gkeVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+-gke\.[0-9]+$`)
-	eksVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+.*eks.*$`)
+	gkeVersionRegex = regexp.MustCompile(`^[vV]?[0-9]+\.[0-9]+\.[0-9]+-gke\.[0-9]+$`)
+	eksVersionRegex = regexp.MustCompile(`^[vV]?[0-9]+\.[0-9]+\.[0-9]+.*eks.*$`)
 )
 
-// CVEMatcher provides funcitonality to determine whether non-image cve is applicable to cluster
+// CVEMatcher provides functionality to determine whether non-image cve is applicable to cluster
 type CVEMatcher struct {
 	clusters   clusterDataStore.DataStore
 	namespaces nsDataStore.DataStore
@@ -236,20 +236,25 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 			return false, errList.ToError()
 		}
 
-		targetVersion, err := version.NewVersion(versionToMatch)
+		targetVersion, err := semver.NewVersion(versionToMatch)
 		if err != nil {
 			log.Error(errors.Wrapf(err, "could not create version for cluster version: %q", versionToMatch))
 			continue
 		}
 
-		// This is the case where there is just one version so check against it
-		// Note that cpeVersionAndUpdate can't be "*:*" in this case, since there is no info about start and end versions
+		// This is the case where there is just one version so check against it.
+		// Note that cpeVersionAndUpdate can't be "*:*" in this case, since there is no info about start and end versions.
 		if stringutils.AllEmpty(cpeMatch.VersionStartIncluding, cpeMatch.VersionEndIncluding, cpeMatch.VersionEndExcluding) {
-			// This means this version and all prelease, build versions of this version. For example 1.6.4:*
+			// This means this version and all prerelease, build versions of this version. For example 1.6.4:*
 			if before, ok := strings.CutSuffix(cpeVersionAndUpdate, ":*"); ok {
-				if match, err := matchBaseVersion(before, versionToMatch); err != nil {
-					errList.AddError(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
-				} else if match {
+				cpeVer, err := semver.NewVersion(before)
+				if err != nil {
+					errList.AddError(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", before, versionToMatch))
+					continue
+				}
+				// Match if versions are equal (handles build metadata) or if
+				// base versions are equal (handles prerelease variants).
+				if cpeVer.Equal(targetVersion) || cpeVer.Equal(getBaseVersion(targetVersion)) {
 					return true, errList.ToError()
 				}
 				continue
@@ -257,40 +262,43 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 
 			// Case of specific version and prerelease. Example 1.6.4:beta0
 			cpeVersion := strings.Join(strings.Split(cpeVersionAndUpdate, ":"), "-")
-			if match, err := matchExactVersion(cpeVersion, versionToMatch); err != nil {
+			cpeVer, err := semver.NewVersion(cpeVersion)
+			if err != nil {
 				errList.AddError(errors.Wrapf(err, "could not compare exact version %q with cluster version: %q", cpeVersion, versionToMatch))
 				continue
-			} else if match {
+			}
+			if cpeVer.Equal(targetVersion) {
 				return true, errList.ToError()
 			}
 		} else {
-			// This is case where we're dealing with block of versions
-			targetVersion, err := getBaseVersion(targetVersion)
-			if err != nil {
-				continue
-			}
+			// This is case where we're dealing with block of versions.
+			// Use base version (no prerelease/metadata) for range comparison.
+			baseVersion := getBaseVersion(targetVersion)
 
-			var constraints []*version.Constraint
+			var parts []string
 			if cpeMatch.VersionStartIncluding != "" {
-				cs := getConstraints(fmt.Sprintf(">= %s", cpeMatch.VersionStartIncluding))
-				constraints = append(constraints, cs...)
+				parts = append(parts, fmt.Sprintf(">= %s", cpeMatch.VersionStartIncluding))
 			}
 
 			if cpeMatch.VersionEndIncluding != "" {
-				cs := getConstraints(fmt.Sprintf("<= %s", cpeMatch.VersionEndIncluding))
-				constraints = append(constraints, cs...)
+				parts = append(parts, fmt.Sprintf("<= %s", cpeMatch.VersionEndIncluding))
 			}
 
 			if cpeMatch.VersionEndExcluding != "" {
-				cs := getConstraints(fmt.Sprintf("< %s", cpeMatch.VersionEndExcluding))
-				constraints = append(constraints, cs...)
+				parts = append(parts, fmt.Sprintf("< %s", cpeMatch.VersionEndExcluding))
 			}
 
-			val := true
-			for _, c := range constraints {
-				val = val && c.Check(targetVersion)
+			// Unlike the prior implementation using hashicorp/go-version, where
+			// individually-parsed constraints were AND'd in a loop -- meaning
+			// if all parses failed the empty slice defaulted to true (false
+			// positive) -- this parses the full constraint string at once and
+			// skips on error, correctly returning no-match.
+			constraint, err := semver.NewConstraint(strings.Join(parts, ", "))
+			if err != nil {
+				log.Error(err)
+				continue
 			}
-			if val {
+			if constraint.Check(baseVersion) {
 				return true, errList.ToError()
 			}
 		}
@@ -298,59 +306,14 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 	return false, errList.ToError()
 }
 
-func getConstraints(s string) []*version.Constraint {
-	cs, err := version.NewConstraint(s)
-	if err != nil {
-		log.Error(err)
-		return []*version.Constraint{}
+// getBaseVersion strips prerelease and metadata, returning only major.minor.patch.
+// The error from NewVersion is impossible with three non-negative integers.
+func getBaseVersion(v *semver.Version) *semver.Version {
+	if v.Prerelease() == "" {
+		return v
 	}
-	return cs
-}
-
-func matchBaseVersion(version1, version2 string) (bool, error) {
-	v1, err := version.NewVersion(version1)
-	if err != nil {
-		return false, err
-	}
-	v2, err := version.NewVersion(version2)
-	if err != nil {
-		return false, err
-	}
-	// For ex [1.6.4, 1.6.4] Or [1.6.4, 1.6.4+build1] should be matched
-	if v1.Equal(v2) {
-		return true, nil
-	}
-	// For ex [1.6.4 and 1.6.4-beta1
-	v2, err = getBaseVersion(v2)
-	if err != nil {
-		return false, err
-	}
-	return v1.Equal(v2), nil
-}
-
-func matchExactVersion(version1, version2 string) (bool, error) {
-	v1, err := version.NewVersion(version1)
-	if err != nil {
-		return false, err
-	}
-	v2, err := version.NewVersion(version2)
-	if err != nil {
-		return false, err
-	}
-	return v1.Equal(v2), nil
-}
-
-func getBaseVersion(v *version.Version) (*version.Version, error) {
-	prerelease := v.Prerelease()
-	if prerelease == "" {
-		return v, nil
-	}
-	versionWithoutPrerelease := strings.ReplaceAll(v.String(), "-"+prerelease, "")
-	bv, err := version.NewVersion(versionWithoutPrerelease)
-	if err != nil {
-		return nil, err
-	}
-	return bv, nil
+	base, _ := semver.NewVersion(fmt.Sprintf("%d.%d.%d", v.Major(), v.Minor(), v.Patch()))
+	return base
 }
 
 func getVersionAndUpdateFromCpe(cpe string, ct utils.CVEType) string {
