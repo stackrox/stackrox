@@ -20,6 +20,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v1.8.0
+	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.20.0
@@ -206,7 +207,6 @@ require (
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/RaduBerinde/axisds v0.1.0 // indirect
 	github.com/RaduBerinde/btreemap v0.0.0-20250419174037-3d62b7205d54 // indirect
-	github.com/RoaringBitmap/roaring/v2 v2.24.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
