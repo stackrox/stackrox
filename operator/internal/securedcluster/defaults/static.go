@@ -14,7 +14,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 	AdmissionControl: &platform.AdmissionControlComponentSpec{
 		Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 		FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-		Replicas:      ptr.To(int32(3)),
+		Replicas:      new(int32(3)),
 	},
 	PerNode: &platform.PerNodeSpec{
 		Collector: &platform.CollectorContainerSpec{
@@ -36,9 +36,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 		Analyzer: &platform.ScannerAnalyzerComponent{
 			Scaling: &platform.ScannerComponentScaling{
 				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
-				Replicas:    ptr.To(int32(3)),
-				MinReplicas: ptr.To(int32(2)),
-				MaxReplicas: ptr.To(int32(5)),
+				Replicas:    new(int32(3)),
+				MinReplicas: new(int32(2)),
+				MaxReplicas: new(int32(5)),
 			},
 		},
 	},
@@ -47,22 +47,22 @@ var staticDefaults = platform.SecuredClusterSpec{
 		Indexer: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
 				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
-				Replicas:    ptr.To(int32(3)),
-				MinReplicas: ptr.To(int32(2)),
-				MaxReplicas: ptr.To(int32(5)),
+				Replicas:    new(int32(3)),
+				MinReplicas: new(int32(2)),
+				MaxReplicas: new(int32(5)),
 			},
 		},
 		DB: &platform.ScannerV4DB{
 			Persistence: &platform.ScannerV4Persistence{
 				PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-					ClaimName: ptr.To("scanner-v4-db"),
+					ClaimName: new("scanner-v4-db"),
 				},
 			},
 		},
 	},
 	Monitoring: &platform.GlobalMonitoring{
 		OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-			Enabled: ptr.To(true),
+			Enabled: new(true),
 		},
 	},
 	Network: &platform.GlobalNetworkSpec{

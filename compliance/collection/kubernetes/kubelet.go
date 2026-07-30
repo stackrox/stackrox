@@ -27,16 +27,16 @@ func init() {
 
 func applyConfigDefaults(kc *v1beta1.KubeletConfiguration) {
 	// --anonymous-auth
-	kc.Authentication.Anonymous.Enabled = pointers.Bool(true)
+	kc.Authentication.Anonymous.Enabled = new(true)
 	// --authentication-token-webhook
-	kc.Authentication.Webhook.Enabled = pointers.Bool(false)
+	kc.Authentication.Webhook.Enabled = new(false)
 	// --authorization-mode
 	kc.Authorization.Mode = v1beta1.KubeletAuthorizationModeAlwaysAllow
 	// --read-only-port
 	kc.ReadOnlyPort = 10255
 
 	kc.StreamingConnectionIdleTimeout = metav1.Duration{Duration: 4 * time.Hour}
-	kc.MakeIPTablesUtilChains = pointers.Bool(true)
+	kc.MakeIPTablesUtilChains = new(true)
 	kc.EventRecordQPS = pointers.Int32(5)
 }
 

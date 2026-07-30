@@ -6,12 +6,14 @@ import (
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 )
 
+//go:fix inline
 func statePtr(state storage.UpgradeProgress_UpgradeState) *storage.UpgradeProgress_UpgradeState {
-	return &state
+	return new(state)
 }
 
+//go:fix inline
 func upgradeTypePtr(typ storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType) *storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
-	return &typ
+	return new(typ)
 }
 
 var (
@@ -32,7 +34,7 @@ var (
 		// So we MUST handle all non-terminal states through the below transitions.
 
 		{
-			workflowMatch: pointers.String(""),
+			workflowMatch: new(""),
 			currentStateMatch: anyStateFrom(
 				storage.UpgradeProgress_UPGRADE_INITIALIZING, // This should basically never happen, but being defensive can't hurt.
 
@@ -53,7 +55,7 @@ var (
 		},
 		{
 			// Upgrader restarted in the middle of rolling back. Tell it to keep rolling back.
-			workflowMatch:     pointers.String(""),
+			workflowMatch:     new(""),
 			currentStateMatch: anyStateFrom(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK),
 
 			workflowToExecute: sensorupgrader.RollBackWorkflow,
@@ -66,7 +68,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(rollForwardStagesBeforePreFlight...),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 
 			workflowToExecute: sensorupgrader.RollForwardWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_UPGRADER_LAUNCHED),
@@ -76,7 +78,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(rollForwardStagesBeforePreFlight...),
-			errOccurredMatch: pointers.Bool(true),
+			errOccurredMatch: new(true),
 
 			workflowToExecute: sensorupgrader.CleanupWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_UPGRADE_INITIALIZATION_ERROR),
@@ -86,7 +88,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.PreflightStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 
 			workflowToExecute: sensorupgrader.RollForwardWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_PRE_FLIGHT_CHECKS_COMPLETE),
@@ -95,7 +97,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.PreflightStage),
-			errOccurredMatch: pointers.Bool(true),
+			errOccurredMatch: new(true),
 
 			workflowToExecute: sensorupgrader.CleanupWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_PRE_FLIGHT_CHECKS_FAILED),
@@ -105,7 +107,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.ExecuteStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 			upgradeTypeMatch: upgradeTypePtr(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE),
 
 			// For upgrades, tell the upgrader to stay in the roll-forward workflow, and keep polling until
@@ -117,7 +119,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.ExecuteStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 			upgradeTypeMatch: upgradeTypePtr(storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION),
 
 			// For cert rotation, when the upgrader says it's done, we mark the upgrade complete.
@@ -128,7 +130,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollForwardWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.ExecuteStage),
-			errOccurredMatch: pointers.Bool(true),
+			errOccurredMatch: new(true),
 
 			workflowToExecute: sensorupgrader.RollBackWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK),
@@ -141,7 +143,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollBackWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.SnapshotForRollbackStage, sensorupgrader.GenerateRollbackPlanStage, sensorupgrader.PreflightNoFailStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 
 			workflowToExecute: sensorupgrader.RollBackWorkflow,
 			nextState:         statePtr(storage.UpgradeProgress_UPGRADE_ERROR_ROLLING_BACK),
@@ -150,7 +152,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollBackWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.ExecuteStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 			upgradeTypeMatch: upgradeTypePtr(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UPGRADE),
 
 			workflowToExecute: sensorupgrader.CleanupWorkflow,
@@ -160,7 +162,7 @@ var (
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollBackWorkflow),
 			stageMatch:       anyStageFrom(sensorupgrader.ExecuteStage),
-			errOccurredMatch: pointers.Bool(false),
+			errOccurredMatch: new(false),
 			upgradeTypeMatch: upgradeTypePtr(storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION),
 
 			workflowToExecute: sensorupgrader.CleanupWorkflow,
@@ -170,7 +172,7 @@ var (
 		// Any error when rolling back => rollback failed. Not much we can do at this point. :(
 		{
 			workflowMatch:    pointers.String(sensorupgrader.RollBackWorkflow),
-			errOccurredMatch: pointers.Bool(true),
+			errOccurredMatch: new(true),
 
 			// Upgrader might as well clean up.
 			workflowToExecute: sensorupgrader.CleanupWorkflow,

@@ -44,7 +44,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
-				OperatorInstalled:                 pointers.Bool(true),
+				OperatorInstalled:                 new(true),
 				OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 				ClusterID:                         fixtureconsts.Cluster1,
 				ClusterName:                       mockClusterName,
@@ -77,7 +77,7 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
-				OperatorInstalled:                 pointers.Bool(true),
+				OperatorInstalled:                 new(true),
 				OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 				ClusterID:                         testconsts.Cluster1,
 				ClusterName:                       mockClusterName,

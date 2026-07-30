@@ -539,7 +539,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestIPMapConsistencyAfterIPRecyclingViaA
 	})
 }
 
-func ptr[T any](v T) *T { return &v }
+//go:fix inline
+func ptr[T any](v T) *T { return new(v) }
 
 // This is a different version of `TestIPMapConsistencyAfterIPRecyclingViaApply`
 // that uses direct calls to `deleteDeploymentFromCurrent` instead of `Store.Apply`.
@@ -558,8 +559,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestDeleteDeploymentFromCurrentRemovesSt
 	s.Run("deleting one of two deployments sharing an IP cleans ipMap", func() {
 		store := newPodIPsStoreWithMemory(0)
 
-		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
-		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplA": new(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": new(makeData("10.0.0.1"))}, true)
 
 		// Precondition: both deployments share the IP.
 		s.Require().Equal(2, store.ipMap[ip].Cardinality())
@@ -581,8 +582,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestDeleteDeploymentFromCurrentRemovesSt
 	s.Run("deleting all deployments that shared an IP leaves maps empty", func() {
 		store := newPodIPsStoreWithMemory(0)
 
-		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
-		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplA": new(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": new(makeData("10.0.0.1"))}, true)
 
 		store.deleteDeploymentFromCurrent("deplA")
 		store.deleteDeploymentFromCurrent("deplB")
@@ -597,11 +598,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestDeleteDeploymentFromCurrentRemovesSt
 		store := newPodIPsStoreWithMemory(0)
 
 		// Simulate IP recycling: deplA gets the IP, then deplB, then deplC.
-		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
-		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplA": new(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": new(makeData("10.0.0.1"))}, true)
 		store.deleteDeploymentFromCurrent("deplA")
 
-		store.applyNoLock(map[string]*EntityData{"deplC": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplC": new(makeData("10.0.0.1"))}, true)
 		store.deleteDeploymentFromCurrent("deplB")
 
 		store.deleteDeploymentFromCurrent("deplC")

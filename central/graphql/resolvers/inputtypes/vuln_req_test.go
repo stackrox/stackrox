@@ -28,7 +28,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 		{
 			name: "Expiring at time",
 			input: &VulnReqExpiry{
-				ExpiresWhenFixed: boolPtr(false),
+				ExpiresWhenFixed: new(false),
 				ExpiresOn:        &graphql.Time{Time: now},
 			},
 			expectedExpiry: &storage.RequestExpiry{
@@ -49,7 +49,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 		{
 			name: "Expiring when fixed with some value in ExpiresOn",
 			input: &VulnReqExpiry{
-				ExpiresWhenFixed: boolPtr(true),
+				ExpiresWhenFixed: new(true),
 				ExpiresOn:        &graphql.Time{Time: now},
 			},
 			expectedExpiry: &storage.RequestExpiry{
@@ -60,7 +60,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 		},
 		{
 			name:  "Expiring when fixed with nil ExpiresOn",
-			input: &VulnReqExpiry{ExpiresWhenFixed: boolPtr(true)},
+			input: &VulnReqExpiry{ExpiresWhenFixed: new(true)},
 			expectedExpiry: &storage.RequestExpiry{
 				Expiry: &storage.RequestExpiry_ExpiresWhenFixed{
 					ExpiresWhenFixed: true,
@@ -70,7 +70,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 		{
 			name: "Never expiring with nil ExpiresOn",
 			input: &VulnReqExpiry{
-				ExpiresWhenFixed: boolPtr(false),
+				ExpiresWhenFixed: new(false),
 				ExpiresOn:        nil,
 			},
 			expectedExpiry: &storage.RequestExpiry{},
@@ -88,7 +88,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 		{
 			name: "Expiring at zero time",
 			input: &VulnReqExpiry{
-				ExpiresWhenFixed: boolPtr(false),
+				ExpiresWhenFixed: new(false),
 				ExpiresOn:        &graphql.Time{Time: time.Time{}},
 			},
 			expectedExpiry: &storage.RequestExpiry{
@@ -106,6 +106,7 @@ func (s *VulnReqInputResolversTestSuite) TestAsRequestExpiry() {
 	}
 }
 
+//go:fix inline
 func boolPtr(b bool) *bool {
-	return &b
+	return new(b)
 }

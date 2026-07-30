@@ -321,7 +321,7 @@ func TestTranslate(t *testing.T) {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: ptr.To(true),
+								Enabled: new(true),
 							},
 						},
 						Central: &platform.CentralComponentSpec{

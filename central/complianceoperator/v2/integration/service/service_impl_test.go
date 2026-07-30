@@ -205,7 +205,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				Return([]*datastore.IntegrationDetails{{
 					ID:                                uuid.NewDummy().String(),
 					Version:                           "22",
-					OperatorInstalled:                 pointers.Bool(true),
+					OperatorInstalled:                 new(true),
 					OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 					ClusterID:                         fixtureconsts.Cluster1,
 					ClusterName:                       mockClusterName,

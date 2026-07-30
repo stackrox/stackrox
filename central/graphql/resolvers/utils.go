@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -296,17 +295,17 @@ func paginate[T any](pv *v1.QueryPagination, slice []T, err error) ([]T, error) 
 // V1RawQueryAsResolverQuery parse v1.RawQuery into inputtypes.RawQuery and inputtypes.Pagination queries used by graphQL resolvers.
 func V1RawQueryAsResolverQuery(rQ *v1.RawQuery) (RawQuery, PaginatedQuery) {
 	if rQ.GetPagination() == nil {
-		return RawQuery{pointers.String(rQ.GetQuery()), nil}, PaginatedQuery{Query: pointers.String(rQ.GetQuery())}
+		return RawQuery{new(rQ.GetQuery()), nil}, PaginatedQuery{Query: new(rQ.GetQuery())}
 	}
 
-	return RawQuery{pointers.String(rQ.GetQuery()), nil}, PaginatedQuery{
-		Query: pointers.String(rQ.GetQuery()),
+	return RawQuery{new(rQ.GetQuery()), nil}, PaginatedQuery{
+		Query: new(rQ.GetQuery()),
 		Pagination: &inputtypes.Pagination{
-			Limit:  pointers.Int32(rQ.GetPagination().GetLimit()),
-			Offset: pointers.Int32(rQ.GetPagination().GetOffset()),
+			Limit:  new(rQ.GetPagination().GetLimit()),
+			Offset: new(rQ.GetPagination().GetOffset()),
 			SortOption: &inputtypes.SortOption{
-				Field:    pointers.String(rQ.GetPagination().GetSortOption().GetField()),
-				Reversed: pointers.Bool(rQ.GetPagination().GetSortOption().GetReversed()),
+				Field:    new(rQ.GetPagination().GetSortOption().GetField()),
+				Reversed: new(rQ.GetPagination().GetSortOption().GetReversed()),
 			},
 		},
 	}
@@ -325,7 +324,7 @@ func logErrorOnQueryContainingField(query *v1.Query, label search.FieldLabel, re
 // FilterFieldFromRawQuery removes the given field from RawQuery
 func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
 	return RawQuery{
-		Query: pointers.String(search.FilterFields(rq.String(), func(field string) bool {
+		Query: new(search.FilterFields(rq.String(), func(field string) bool {
 			return label.String() != field
 		})),
 		ScopeQuery: rq.ScopeQuery,
