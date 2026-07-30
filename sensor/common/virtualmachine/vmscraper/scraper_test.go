@@ -74,7 +74,7 @@ type protocolCall struct {
 	knownEpoch  uint32
 }
 
-func (m *mockProtocolClient) GetReport(_ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
+func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
 	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan, knownEpoch: knownEpoch})
 	idx := m.callIdx
 	m.callIdx++
@@ -529,7 +529,7 @@ type safeProtocolClient struct {
 	calls int
 }
 
-func (c *safeProtocolClient) GetReport(_ io.ReadWriteCloser, _ uint32, _ uint32) (*vsockclient.GetReportResult, error) {
+func (c *safeProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, _ uint32, _ uint32) (*vsockclient.GetReportResult, error) {
 	c.mu.Lock()
 	c.calls++
 	c.mu.Unlock()

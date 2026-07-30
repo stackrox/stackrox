@@ -1,6 +1,7 @@
 package vsockclient
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -67,8 +68,17 @@ func NewClient(capabilities []string, maxResponseSize int) *Client {
 // when unknown. Sending it lets the agent detect a restart-coincidence false
 // match and serve the full report in this same round trip, instead of the
 // caller needing a second, forced request.
-// The stream must be an io.ReadWriteCloser (from MultiDialer.Dial).
-func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*GetReportResult, error) {
+//
+// The stream must be an io.ReadWriteCloser (from MultiDialer.Dial). If ctx is
+// cancelled while a write or read is in progress, the stream is closed so the
+// blocked I/O unblocks promptly — needed on Sensor shutdown, where parent
+// cancel does not rewrite the dial-time socket deadline.
+func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*GetReportResult, error) {
+	stop := context.AfterFunc(ctx, func() {
+		_ = stream.Close()
+	})
+	defer stop()
+
 	req := &pb.VMServiceRequest{
 		Meta: &pb.RequestMeta{
 			RequestId:    uuid.NewV4().String(),
@@ -87,12 +97,12 @@ func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownE
 		return nil, fmt.Errorf("marshaling request: %w", err)
 	}
 	if err := vsockframing.WriteFrame(stream, reqData); err != nil {
-		return nil, fmt.Errorf("sending request: %w", err)
+		return nil, wrapStreamErr(ctx, "sending request", err)
 	}
 
 	respData, err := vsockframing.ReadFrame(stream, uint32(c.maxResponseSize))
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return nil, wrapStreamErr(ctx, "reading response", err)
 	}
 
 	var resp pb.VMServiceResponse
@@ -115,6 +125,13 @@ func (c *Client) GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownE
 	default:
 		return nil, fmt.Errorf("unexpected response type: %T", resp.GetResult())
 	}
+}
+
+func wrapStreamErr(ctx context.Context, op string, err error) error {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf("%s: %w", op, ctxErr)
+	}
+	return fmt.Errorf("%s: %w", op, err)
 }
 
 func errorFromResponse(e *pb.ErrorResponse) error {

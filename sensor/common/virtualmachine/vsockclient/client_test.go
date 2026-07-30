@@ -1,8 +1,10 @@
 package vsockclient
 
 import (
+	"context"
 	"net"
 	"testing"
+	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -50,7 +52,7 @@ func TestSendGetReport_Success(t *testing.T) {
 		assert.Equal(t, uint32(0), req.GetGetReport().GetLastKnownGeneration())
 	})
 
-	result, err := client.GetReport(clientConn, 0, 0)
+	result, err := client.GetReport(context.Background(), clientConn, 0, 0)
 	require.NoError(t, err)
 	assert.Equal(t, "test-hash", result.IndexReport.GetHashId())
 	assert.False(t, result.Unchanged)
@@ -72,7 +74,7 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 		assert.Equal(t, uint32(42), req.GetGetReport().GetKnownEpoch())
 	})
 
-	result, err := client.GetReport(clientConn, 5, 42)
+	result, err := client.GetReport(context.Background(), clientConn, 5, 42)
 	require.NoError(t, err)
 	assert.Nil(t, result.IndexReport)
 	assert.True(t, result.Unchanged)
@@ -91,7 +93,7 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 		},
 	}, nil)
 
-	_, err := client.GetReport(clientConn, 0, 0)
+	_, err := client.GetReport(context.Background(), clientConn, 0, 0)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "IndexReport is nil")
 }
@@ -133,12 +135,53 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 				},
 			}, nil)
 
-			_, err := client.GetReport(clientConn, 0, 0)
+			_, err := client.GetReport(context.Background(), clientConn, 0, 0)
 			require.Error(t, err)
 			assert.ErrorIs(t, err, tc.wantErr)
 			if tc.wantInMsg != "" {
 				assert.Contains(t, err.Error(), tc.wantInMsg)
 			}
 		})
+	}
+}
+
+// Cancelling ctx must unblock a GetReport that is stuck waiting for a
+// response — shutdown cancel does not rewrite the dial-time deadline, so
+// GetReport closes the stream itself.
+func TestSendGetReport_ContextCancelUnblocks(t *testing.T) {
+	client := NewClient(nil, 10<<20)
+	clientConn, agentConn := net.Pipe()
+	defer utils.IgnoreError(agentConn.Close)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Consume the request so GetReport is blocked in ReadFrame, then cancel.
+	reqRead := make(chan struct{})
+	go func() {
+		defer close(reqRead)
+		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
+		require.NoError(t, err)
+	}()
+
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := client.GetReport(ctx, clientConn, 0, 0)
+		errCh <- err
+	}()
+
+	select {
+	case <-reqRead:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for GetReport to send request")
+	}
+	cancel()
+
+	select {
+	case err := <-errCh:
+		require.Error(t, err)
+		assert.ErrorIs(t, err, context.Canceled)
+	case <-time.After(2 * time.Second):
+		t.Fatal("GetReport did not unblock on context cancel")
 	}
 }

@@ -52,7 +52,7 @@ type IndexReportSender interface {
 
 // ProtocolClient performs the request/response protocol over a stream.
 type ProtocolClient interface {
-	GetReport(stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error)
+	GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error)
 }
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
@@ -318,7 +318,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 	defer func() { _ = stream.Close() }()
 
 	readStart := s.now()
-	result, err := s.client.GetReport(stream, ifNewerThan, knownEpoch)
+	result, err := s.client.GetReport(ctx, stream, ifNewerThan, knownEpoch)
 	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
 	if err != nil {
 		s.handleGetReportError(ctx, key, err)
@@ -328,10 +328,9 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 }
 
 func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err error) {
-	// Dial already applies ctx's deadline to the socket's read/write
-	// deadlines, so a timed-out read surfaces here as a plain I/O error.
-	// Prefer ctx.Err() so those land as timeout (matching the dial path)
-	// rather than as a protocol/read error.
+	// Timed-out or cancelled reads surface here after Dial's deadline
+	// and/or GetReport's close-on-cancel. Prefer ctx.Err() so those land
+	// as timeout (matching the dial path) rather than as a protocol/read error.
 	if ctx.Err() != nil {
 		log.Warnf("VMScraper: reading report from %q timed out: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()

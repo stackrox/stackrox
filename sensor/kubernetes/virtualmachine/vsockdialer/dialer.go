@@ -46,13 +46,12 @@ func NewMultiDialer(config *rest.Config, wsReadLimit int64) *MultiDialer {
 
 // Dial connects to the named VMI's VSOCK port in the given namespace.
 // The context controls dial timeout and, if it carries a deadline, that
-// deadline is propagated to the connection's read/write deadlines so
-// the entire operation (dial + request + response) is bounded.
+// deadline is propagated to the connection's read/write deadlines so the
+// per-VM timeout budget covers dial + request + response.
 //
-// An alternative would be threading context.Context through GetReport
-// with goroutine+select cancellation — we chose deadline propagation
-// for simplicity since the scraper's per-VM context already expresses
-// the right timeout budget for the whole exchange.
+// Deadline propagation alone does not abort an in-flight read when the
+// parent context is cancelled without a nearer deadline (e.g. Sensor
+// shutdown). GetReport closes the stream on ctx cancel for that case.
 func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uint32, useTLS bool) (io.ReadWriteCloser, error) {
 	params := url.Values{}
 	params.Set("port", strconv.FormatUint(uint64(port), 10))
