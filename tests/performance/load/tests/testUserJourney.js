@@ -56,7 +56,7 @@ export const options = Object.assign({}, defaultOptions, {
                 { duration: '3m', target: 10 },
                 { duration: '1m', target: 0 },
             ],
-            exec: 'userJourney',
+            exec: 'default',
         },
     },
     thresholds: {
@@ -68,6 +68,7 @@ export const options = Object.assign({}, defaultOptions, {
         'group_duration{group:::image cve management}': ['p(95)<5000'],
         'group_duration{group:::vulnerability management dashboard}': ['p(95)<10000'],
         'group_duration{group:::configuration management}': ['p(95)<20000'],
+        http_req_failed: ['rate<0.01'],
     },
 });
 
