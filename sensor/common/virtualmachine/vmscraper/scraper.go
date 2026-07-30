@@ -321,13 +321,22 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 	result, err := s.client.GetReport(stream, ifNewerThan, knownEpoch)
 	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
 	if err != nil {
-		s.handleGetReportError(key, err)
+		s.handleGetReportError(ctx, key, err)
 		return nil, false
 	}
 	return result, true
 }
 
-func (s *VMScraper) handleGetReportError(key string, err error) {
+func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err error) {
+	// Dial already applies ctx's deadline to the socket's read/write
+	// deadlines, so a timed-out read surfaces here as a plain I/O error.
+	// Prefer ctx.Err() so those land as timeout (matching the dial path)
+	// rather than as a protocol/read error.
+	if ctx.Err() != nil {
+		log.Warnf("VMScraper: reading report from %q timed out: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
+		return
+	}
 	switch {
 	case errors.Is(err, vsockclient.ErrNotReady):
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)

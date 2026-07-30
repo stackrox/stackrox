@@ -9,11 +9,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -425,6 +427,29 @@ func TestVMScraper_StartRejectsSecondCall(t *testing.T) {
 	t.Cleanup(s.Stop)
 
 	assert.ErrorIs(t, s.Start(), errStartMoreThanOnce)
+}
+
+// GetReport does not take a context; Dial stamps ctx's deadline onto the
+// socket, so a timed-out read returns a plain I/O error after ctx is already
+// done. Classification must follow ctx.Err(), same as the dial-failure path.
+func TestVMScraper_GetReportTimeoutClassified(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	client := &mockProtocolClient{
+		errQueue: []error{errors.New("i/o timeout")},
+	}
+	s := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+
+	timeoutBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout))
+	readErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, ok := s.dialAndGetReport(ctx, vm, "ns1/vm-a", 1, 0, 0)
+
+	assert.False(t, ok)
+	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout)))
+	assert.Equal(t, readErrBefore, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError)),
+		"timed-out read must not be counted as a protocol/read error")
 }
 
 func TestVMScraper_PrunesStaleState(t *testing.T) {
