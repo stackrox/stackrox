@@ -140,11 +140,7 @@ func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
 
 func (s *VMScraper) run() {
 	defer s.stopper.Flow().ReportStopped()
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		<-s.stopper.Flow().StopRequested()
-		cancel()
-	}()
+	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
 
 	// Poll immediately on start so VMs don't wait a full interval before first scrape.
 	s.pollOnce(ctx)
