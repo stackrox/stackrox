@@ -394,15 +394,19 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	return &VMScraper{
-		store:       store,
-		sender:      sender,
-		dialer:      dialer,
-		client:      client,
-		interval:    5 * time.Minute,
-		concurrency: 1,
-		vmState:     make(map[string]*vmState),
-		activeVMs:   set.NewStringSet(),
-		now:         time.Now,
+		store:        store,
+		sender:       sender,
+		dialer:       dialer,
+		client:       client,
+		interval:     5 * time.Minute,
+		perVMTimeout: 10 * time.Second,
+		concurrency:  1,
+		// Half of the 16MiB default pull response-size ceiling — same
+		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
+		warnMaxBytes: 8 << 20,
+		vmState:      make(map[string]*vmState),
+		activeVMs:    set.NewStringSet(),
+		now:          time.Now,
 	}
 }
 
@@ -474,15 +478,17 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 	client := &safeProtocolClient{gen: 1}
 
 	s := &VMScraper{
-		store:       store,
-		sender:      sender,
-		dialer:      dialer,
-		client:      client,
-		interval:    5 * time.Minute,
-		concurrency: concurrency,
-		vmState:     make(map[string]*vmState),
-		activeVMs:   set.NewStringSet(),
-		now:         time.Now,
+		store:        store,
+		sender:       sender,
+		dialer:       dialer,
+		client:       client,
+		interval:     5 * time.Minute,
+		perVMTimeout: 10 * time.Second,
+		concurrency:  concurrency,
+		warnMaxBytes: 8 << 20,
+		vmState:      make(map[string]*vmState),
+		activeVMs:    set.NewStringSet(),
+		now:          time.Now,
 	}
 
 	s.pollOnce(context.Background())
