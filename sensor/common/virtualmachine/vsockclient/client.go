@@ -8,10 +8,13 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 )
+
+var log = logging.LoggerForModule()
 
 // CapabilityReportV1 is the protocol capability for the v1 report exchange.
 const CapabilityReportV1 = "report_v1"
@@ -52,6 +55,8 @@ type Client struct {
 // size setting) fall back to defaultMaxResponseSize.
 func NewClient(capabilities []string, maxResponseSize int) *Client {
 	if maxResponseSize <= 0 || int64(maxResponseSize) > math.MaxUint32 {
+		log.Warnf("VMScraper: configured max response size %d is out of range (0, %d], falling back to default of %d bytes",
+			maxResponseSize, uint32(math.MaxUint32), defaultMaxResponseSize)
 		maxResponseSize = defaultMaxResponseSize
 	}
 	return &Client{capabilities: capabilities, maxResponseSize: maxResponseSize}
