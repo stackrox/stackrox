@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,8 +24,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 var log = logging.LoggerForModule()
@@ -292,6 +291,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 // it. scrapeVM calls this twice on the epoch-mismatch fallback path (see
 // the Unchanged branch above), so keeping the timing and error-handling
 // logic in one place ensures both calls are measured the same way.
+//
+// Because each call observes PullDialDurationSeconds and
+// PullReadDurationSeconds, that fallback path produces two histogram
+// samples for one logical VM scrape. PullRequestsTotal is still
+// incremented once (on the final outcome). Dashboard authors should not
+// equate sum(rate(..._count)) of those histograms with PullRequestsTotal.
+// The second dial (and thus the double observation) goes away once
+// ROX-35756 replaces the generation+epoch pair with a single per-scan
+// token, which removes the restart-coincidence fallback entirely.
 func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Info, key string, port, ifNewerThan, knownEpoch uint32) (*vsockclient.GetReportResult, bool) {
 	dialStart := s.now()
 	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
