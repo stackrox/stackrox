@@ -79,11 +79,7 @@ jobs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster nongroovy
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
       # roxctl is used for various CLI e2e tests (token-file, authz-trace, istio-support, etc.)
