@@ -4,19 +4,13 @@ import (
 	"context"
 	"errors"
 	"slices"
-	"time"
 
-	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/processindicator/views"
-	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -37,13 +31,6 @@ type datastoreImpl struct {
 	db postgres.DB
 
 	storage store.Store
-	// ProcessListeningOnPort storage is needed for correct pruning. It
-	// logically belongs to the datastore implementation of PLOP, but this way
-	// it would be an import cycle, so call the Store directly.
-	plopStorage plopStore.Store
-
-	prunerFactory         pruner.Factory
-	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
 
 	stopper concurrency.Stopper
 }
@@ -141,7 +128,6 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 		return 0
 	}
 
-	// Batch the deletes
 	initialSize := len(ids)
 	localBatchSize := deleteBatchSize
 	var successfullyPruned int
@@ -166,7 +152,6 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
-		// Move the slice forward to start the next batch
 		ids = ids[localBatchSize:]
 	}
 
@@ -192,7 +177,6 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	cloned := q.CloneVT()
-	// Add the select fields of the view to the query.
 	cloned.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
@@ -203,89 +187,12 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
 	}
 
-	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
 	if err != nil {
 		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
 	}
 
 	return err
-}
-
-func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {
-	defer ds.stopper.Flow().ReportStopped()
-
-	if ds.prunerFactory == nil {
-		return
-	}
-
-	t := time.NewTicker(ds.prunerFactory.Period())
-	defer t.Stop()
-	for {
-		select {
-		case <-t.C:
-			ds.prune(ctx)
-		case <-ds.stopper.Flow().StopRequested():
-			return
-		}
-	}
-}
-
-func (ds *datastoreImpl) getProcessInfoToArgs(ctx context.Context) (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ProcessIndicator", "getProcessInfoToArgs")
-	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
-	err := ds.storage.Walk(ctx, func(pi *storage.ProcessIndicator) error {
-		info := processindicator.ProcessWithContainerInfo{
-			ContainerName: pi.GetContainerName(),
-			PodID:         pi.GetPodId(),
-			ProcessName:   pi.GetSignal().GetName(),
-		}
-		processNamesToArgs[info] = append(processNamesToArgs[info], processindicator.IDAndArgs{
-			ID:   pi.GetId(),
-			Args: pi.GetSignal().GetArgs(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return processNamesToArgs, nil
-}
-
-func (ds *datastoreImpl) prune(ctx context.Context) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Prune, "ProcessIndicator")
-	pruner := ds.prunerFactory.StartPruning()
-	defer pruner.Finish()
-
-	processInfoToArgs, err := ds.getProcessInfoToArgs(ctx)
-	if err != nil {
-		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
-		return
-	}
-
-	for processInfo, args := range processInfoToArgs {
-		numArgsReceived := len(args)
-		if previouslyPrunedArgsLength, found := ds.prunedArgsLengthCache[processInfo]; found {
-			if previouslyPrunedArgsLength == numArgsReceived {
-				incrementProcessPruningCacheHitsMetrics()
-				continue
-			}
-		}
-		incrementProcessPruningCacheMissesMetric()
-		idsToRemove := pruner.Prune(args)
-		var successfullyPruned int
-		if len(idsToRemove) > 0 {
-			successfullyPruned = ds.pruneIndicators(ctx, idsToRemove, PruneReasonSimilarity)
-		}
-		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - successfullyPruned
-	}
-
-	// Clean up the prunedArgsLengthCache by processes that are no longer in the DB.
-	for processInfo := range ds.prunedArgsLengthCache {
-		if _, exists := processInfoToArgs[processInfo]; !exists {
-			delete(ds.prunedArgsLengthCache, processInfo)
-		}
-	}
 }
 
 func (ds *datastoreImpl) Stop() {
