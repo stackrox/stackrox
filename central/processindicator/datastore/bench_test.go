@@ -19,7 +19,7 @@ import (
 
 func BenchmarkAddIndicator(b *testing.B) {
 	var indicators []*storage.ProcessIndicator
-	for i := 0; i < 100000; i++ {
+	for range 100000 {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		indicators = append(indicators, pi)
@@ -61,7 +61,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	//   D1PodID1: 3,025 (55%)
 	//   D1PodID2: 1,375 (25%)
 	//   D1PodID3: 1,100 (20%)
-	for i := 0; i < 5500; i++ {
+	for i := range 5500 {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment1
@@ -79,7 +79,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	//   D2PodID1: 1,375 (55%)
 	//   D2PodID2: 625 (25%)
 	//   D2PodID3: 500 (20%)
-	for i := 0; i < 2500; i++ {
+	for i := range 2500 {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment2
@@ -97,7 +97,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	//   D3PodID1: 1,100 (55%)
 	//   D3PodID2: 500 (25%)
 	//   D3PodID3: 400 (20%)
-	for i := 0; i < 2000; i++ {
+	for i := range 2000 {
 		pi := fixtures.GetProcessIndicator()
 		pi.Id = uuid.NewV4().String()
 		pi.DeploymentId = fixtureconsts.Deployment3

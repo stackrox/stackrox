@@ -36,16 +36,18 @@ func (bu *PostgresBackup) WriteTo(_ context.Context, out io.Writer) error {
 		return err
 	}
 
+	// Get the common DB connection info
+	connOpts := pgadmin.GetConnectionOptions(config)
+
 	// Set the options for pg_dump from the connection config
-	options := []string{
+	options := make([]string, 0, 4+len(connOpts))
+	options = append(options,
 		"-d",
 		pgconfig.GetActiveDB(),
 		"-Fc", // Custom format, compressed hopefully supports stdin to restore
 		"-v",
-	}
-
-	// Get the common DB connection info
-	options = append(options, pgadmin.GetConnectionOptions(config)...)
+	)
+	options = append(options, connOpts...)
 
 	cmd := exec.Command("pg_dump", options...)
 

@@ -131,7 +131,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	}
 	query := &v1.Query{}
 
-	results := make([]deploymentsView.DeploymentCore, 0)
+	results := make([]deploymentsView.DeploymentCore, 0, 2)
 	core1 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
 	core1.EXPECT().GetDeploymentID().Return(dep1)
 	results = append(results, core1)
@@ -150,7 +150,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	}, deployments)
 
 	// Get a non-preloaded deployment from id.
-	results = make([]deploymentsView.DeploymentCore, 0)
+	results = make([]deploymentsView.DeploymentCore, 0, 3)
 	core1 = deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
 	core1.EXPECT().GetDeploymentID().Return(dep1)
 	results = append(results, core1)
@@ -178,7 +178,7 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	}, deployments)
 
 	// Above call should now be preloaded.
-	results = make([]deploymentsView.DeploymentCore, 0)
+	results = make([]deploymentsView.DeploymentCore, 0, 3)
 	core1 = deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
 	core1.EXPECT().GetDeploymentID().Return(dep1)
 	results = append(results, core1)

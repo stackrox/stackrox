@@ -199,7 +199,7 @@ func BenchmarkBuildIndicatorFilterMemory(b *testing.B) {
 	manager.buildIndicatorFilter()
 
 	// Force multiple garbage collections to get accurate heap profile
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		runtime.GC()
 		time.Sleep(500 * time.Millisecond)
 	}

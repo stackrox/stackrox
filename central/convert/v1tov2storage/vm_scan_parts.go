@@ -250,7 +250,7 @@ func compareVersionSegments(a, b string) int {
 
 	maxLen := max(len(bParts), len(aParts))
 
-	for i := 0; i < maxLen; i++ {
+	for i := range maxLen {
 		var aVal, bVal int
 		if i < len(aParts) {
 			aVal, _ = strconv.Atoi(aParts[i])

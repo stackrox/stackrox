@@ -24,7 +24,6 @@ func (s *VMScanningSuite) TestScanPipeline() {
 		s.T().Run(vm.Name, func(t *testing.T) {
 			var first *v2.VirtualMachine
 			var metricsBefore pipelineMetricsSnapshot
-			var metricsMidpoint pipelineMetricsSnapshot
 			metricsChecksEnabled := true
 			roxagentOK := false
 
@@ -85,18 +84,6 @@ func (s *VMScanningSuite) TestScanPipeline() {
 					"scan.operating_system should be populated via Sensor DiscoveredData")
 			})
 
-			// Snapshot metrics after the first report is fully visible in Central and
-			// before kicking off the rescan. This is used for diagnostics without
-			// making the midpoint another strict gate.
-			if ok := t.Run("MetricsMidpoint", func(t *testing.T) {
-				if !metricsChecksEnabled {
-					t.Skip("skipping: baseline metric scrape failed")
-				}
-				metricsMidpoint = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
-			}); !ok {
-				metricsChecksEnabled = false
-			}
-
 			beforeTime := s.mustGetScanTimestamp(first.GetId())
 			var rescan *v2.VirtualMachine
 
@@ -126,7 +113,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				if !metricsChecksEnabled {
 					t.Skip("metric prerequisite scrape failed earlier in this VM scenario")
 				}
-				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore, metricsMidpoint)
+				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore)
 			})
 
 			t.Run("ConsistencyCheck", func(t *testing.T) {

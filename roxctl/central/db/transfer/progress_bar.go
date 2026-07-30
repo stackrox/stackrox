@@ -53,7 +53,7 @@ func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, _ *decor.Statistic
 
 	bar := strings.Builder{}
 	_, _ = bar.WriteRune('[')
-	for i := 0; i < effectiveWidth; i++ {
+	for i := range effectiveWidth {
 		if i > f.tick || (f.tick-i)%total >= arrowWidth {
 			_, _ = bar.WriteRune('-')
 		} else {

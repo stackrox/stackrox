@@ -400,7 +400,7 @@ func getTestProfile(profileUID string, profileName string, version string, clust
 
 	if ruleCount > 0 {
 		rules = make([]*storage.ComplianceOperatorProfileV2_Rule, 0, ruleCount)
-		for i := 0; i < ruleCount; i++ {
+		for i := range ruleCount {
 			rules = append(rules, &storage.ComplianceOperatorProfileV2_Rule{
 				RuleName: fmt.Sprintf("name-%d", i),
 			})

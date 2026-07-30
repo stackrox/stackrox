@@ -18,7 +18,7 @@ func GetSACTestResourceSet[R any](scopedResourceCreator func(id string, clusterI
 	resources := make([]R, 0, len(clusters)*len(namespaces)*numberOfAccounts)
 	for _, cluster := range clusters {
 		for _, namespace := range namespaces {
-			for i := 0; i < numberOfAccounts; i++ {
+			for range numberOfAccounts {
 				resources = append(resources, scopedResourceCreator(uuid.NewV4().String(), cluster, namespace))
 			}
 		}

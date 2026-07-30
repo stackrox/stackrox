@@ -97,7 +97,7 @@ func createAlertsRequest(alerts []*storage.Alert) *sensor.AdmissionControlAlerts
 
 func createAlertsMessage(numAlerts int) []*storage.Alert {
 	ret := make([]*storage.Alert, numAlerts)
-	for i := 0; i < numAlerts; i++ {
+	for i := range numAlerts {
 		ret[i] = &storage.Alert{
 			Id: fmt.Sprintf("alert-%d", i),
 		}

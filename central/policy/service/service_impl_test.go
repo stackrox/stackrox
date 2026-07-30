@@ -189,7 +189,7 @@ func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {
 	expectedSORTFields := set.NewStringSet("SORTLifecycleStage", "SORTEnforcement", "SORTName")
 	policyType := reflect.TypeFor[storage.Policy]()
 	numFields := policyType.NumField()
-	for i := 0; i < numFields; i++ {
+	for i := range numFields {
 		fieldName := policyType.Field(i).Name
 		if strings.HasPrefix(fieldName, "SORT") {
 			s.Contains(expectedSORTFields, fieldName, "Found unexpected SORT field %s, SORT fields must be cleared in exported policies in removeInternal()", fieldName)
@@ -240,7 +240,7 @@ func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {
 	ctx := context.Background()
 	basePolicy := fixtures.GetPolicy()
 	policies := make([]*storage.Policy, 4)
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		p := basePolicy.CloneVT()
 		p.Id = fmt.Sprintf("policy-%d", i)
 		policies = append(policies, p)
