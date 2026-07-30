@@ -279,23 +279,26 @@ func RunSelectCursorForSchemaFn[T any](ctx context.Context, db postgres.DB, sche
 		}
 
 		scanner := scanAPI.NewRowScanner(rows)
-		count := 0
+		var batch []*T
 		for rows.Next() {
 			var row T
 			if err := scanner.Scan(&row); err != nil {
 				rows.Close()
 				return err
 			}
-			if err := fn(&row); err != nil {
-				rows.Close()
-				return err
-			}
-			count++
+			batch = append(batch, &row)
 		}
 		rows.Close()
 		if err := rows.Err(); err != nil {
 			return err
 		}
+
+		for _, r := range batch {
+			if err := fn(r); err != nil {
+				return err
+			}
+		}
+		count := len(batch)
 
 		if count < cursorBatchSize {
 			break

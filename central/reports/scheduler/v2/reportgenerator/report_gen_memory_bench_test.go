@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"runtime"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -505,16 +505,14 @@ func BenchmarkConcurrentStreamingConnections(b *testing.B) {
 				var wg sync.WaitGroup
 				errs := make([]error, numJobs)
 				for j := range numJobs {
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
+					wg.Go(func() {
 						iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 						errs[j] = s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
 							ReportSnapshot: snaps[j],
 							Collection:     s.collection,
 							DataStartTime:  time.Time{},
 						})
-					}()
+					})
 				}
 				wg.Wait()
 				close(stopSampler)
