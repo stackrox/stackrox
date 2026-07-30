@@ -118,6 +118,20 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
+// VirtualMachineReactiveIndexReportLatencySeconds measures end-to-end latency
+// from roxagent producing a reactively-triggered report
+// (ResponseMeta.report_generated_at) to Sensor successfully handing it off
+// toward Central. Used to validate the ~5 minute reactive-update SLA.
+var VirtualMachineReactiveIndexReportLatencySeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_reactive_index_report_latency_seconds",
+		Help:      "End-to-end latency from roxagent producing a reactive index report to Sensor handing it to Central",
+		Buckets:   prometheus.ExponentialBuckets(1, 2, 12), // 1s to ~34min
+	},
+)
+
 // VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
 var VMDiscoveredData = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -140,6 +154,20 @@ var VMDiscoveredDataDNFStatus = prometheus.NewCounterVec(
 		Help:      "Total number of DNF status flags observed in VM index reports received by Sensor",
 	},
 	[]string{"dnf_status"},
+)
+
+// VMDiscoveredDataScanTrigger is a counter for the scan trigger classification
+// ("scheduled", "reactive", or "unknown" for older agents) reported by
+// roxagent alongside each pulled report, letting operators see reactive-scan
+// volume over time.
+var VMDiscoveredDataScanTrigger = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_discovered_data_scan_trigger_total",
+		Help:      "Total number of VM index reports received by Sensor grouped by scan trigger (scheduled, reactive, or unknown)",
+	},
+	[]string{"scan_trigger"},
 )
 
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
@@ -287,8 +315,10 @@ func init() {
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
+		VirtualMachineReactiveIndexReportLatencySeconds,
 		VMDiscoveredData,
 		VMDiscoveredDataDNFStatus,
+		VMDiscoveredDataScanTrigger,
 		IndexReportAcksReceived,
 		// Pull-mode metrics.
 		PullDialDurationSeconds,

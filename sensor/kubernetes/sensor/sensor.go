@@ -347,7 +347,7 @@ type vmScraperSenderAdapter struct {
 	handler vmIndex.Handler
 }
 
-func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
 	if vm == nil {
 		return errors.New("virtual machine info is nil")
 	}
@@ -359,7 +359,7 @@ func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.In
 		VsockCid: cidStr,
 		VmId:     string(vm.ID),
 		IndexV4:  report,
-	}); err != nil {
+	}, generatedAt); err != nil {
 		return errors.Wrap(err, "sending index report")
 	}
 	return nil

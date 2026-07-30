@@ -40,4 +40,42 @@ func TestLogAndRecordDiscoveredFacts(t *testing.T) {
 		logAndRecordDiscoveredFacts("ns/vm-2", map[string]string{"dnf_status": "none"})
 		assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredDataDNFStatus.WithLabelValues("none")))
 	})
+
+	t.Run("records scan_trigger metric for a reactive report", func(t *testing.T) {
+		before := testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("reactive"))
+		logAndRecordDiscoveredFacts("ns/vm-3", map[string]string{"scan_trigger": "reactive"})
+		assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("reactive")))
+	})
+
+	t.Run("missing scan_trigger records the unknown label (older agents)", func(t *testing.T) {
+		before := testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("unknown"))
+		logAndRecordDiscoveredFacts("ns/vm-4", map[string]string{"detected_os": "RHEL"})
+		assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("unknown")))
+	})
+
+	t.Run("garbage scan_trigger value records the unknown label", func(t *testing.T) {
+		before := testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("unknown"))
+		logAndRecordDiscoveredFacts("ns/vm-5", map[string]string{"scan_trigger": "bogus-value"})
+		assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredDataScanTrigger.WithLabelValues("unknown")))
+	})
+}
+
+func TestIsReactiveTrigger(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		facts    map[string]string
+		expected bool
+	}{
+		"reactive fact returns true":        {facts: map[string]string{"scan_trigger": "reactive"}, expected: true},
+		"scheduled fact returns false":      {facts: map[string]string{"scan_trigger": "scheduled"}, expected: false},
+		"absent fact defaults to false":     {facts: map[string]string{}, expected: false},
+		"nil facts default to false":        {facts: nil, expected: false},
+		"unrecognized value defaults false": {facts: map[string]string{"scan_trigger": "bogus"}, expected: false},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expected, isReactiveTrigger(tc.facts))
+		})
+	}
 }

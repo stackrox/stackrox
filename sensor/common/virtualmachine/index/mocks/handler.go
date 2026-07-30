@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -144,17 +145,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport, generatedAt time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, vm, generatedAt)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, vm, generatedAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm, generatedAt)
 }
 
 // Start mocks base method.

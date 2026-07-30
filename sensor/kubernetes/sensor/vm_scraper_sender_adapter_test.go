@@ -3,6 +3,7 @@ package sensor
 import (
 	"context"
 	"testing"
+	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -52,8 +53,8 @@ func TestVMScraperSenderAdapter_Send(t *testing.T) {
 
 			if !tc.wantErr {
 				handler.EXPECT().
-					Send(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ context.Context, report *v1.IndexReport) error {
+					Send(gomock.Any(), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ context.Context, report *v1.IndexReport, _ time.Time) error {
 						assert.Equal(t, tc.wantVmID, report.GetVmId())
 						assert.Equal(t, tc.wantVsockCid, report.GetVsockCid())
 						assert.Equal(t, "IndexFinished", report.GetIndexV4().GetState())
@@ -61,7 +62,7 @@ func TestVMScraperSenderAdapter_Send(t *testing.T) {
 					})
 			}
 
-			err := adapter.Send(t.Context(), tc.vm, &v4.IndexReport{State: "IndexFinished"})
+			err := adapter.Send(t.Context(), tc.vm, &v4.IndexReport{State: "IndexFinished"}, time.Time{})
 			if tc.wantErr {
 				require.Error(t, err)
 				return
