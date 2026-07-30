@@ -64,8 +64,7 @@ jobs:
         GKE_SPOT: "true"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster dbbr
+        scripts/ci/gke.sh provision_gke_cluster dbbr
         echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
