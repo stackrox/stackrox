@@ -128,6 +128,7 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 		return 0
 	}
 
+	// Batch the deletes
 	initialSize := len(ids)
 	localBatchSize := deleteBatchSize
 	var successfullyPruned int
@@ -152,6 +153,7 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
+		// Move the slice forward to start the next batch
 		ids = ids[localBatchSize:]
 	}
 
@@ -177,6 +179,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
 func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Context, q *v1.Query, fn func(*views.ProcessIndicatorRiskView) error) error {
 	cloned := q.CloneVT()
+	// Add the select fields of the view to the query.
 	cloned.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ContainerName).Proto(),
@@ -187,6 +190,7 @@ func (ds *datastoreImpl) IterateOverProcessIndicatorsRiskView(ctx context.Contex
 		pkgSearch.NewQuerySelect(pkgSearch.ProcessArguments).Proto(),
 	}
 
+	// We do not need the entire process indicator to process risk.  That object is large.  Use a view instead
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ProcessIndicatorRiskView](ctx, ds.db, pkgSchema.ProcessIndicatorsSchema, cloned, fn)
 	if err != nil {
 		log.Errorf("unable to iterate over indicators for risk processing: %v", err)
