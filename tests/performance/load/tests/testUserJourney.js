@@ -1,5 +1,7 @@
 import { sleep } from 'k6';
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
+import { jUnit, textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js';
 import { getHeaderWithAdminPass, getHeaderWithToken } from '../src/utils.js';
 import { defaultOptions } from '../src/options.js';
 
@@ -74,6 +76,16 @@ function getHeaders() {
         return getHeaderWithToken(__ENV.ROX_API_TOKEN);
     }
     return getHeaderWithAdminPass(__ENV.ROX_ADMIN_PASSWORD);
+}
+
+export function handleSummary(data) {
+    return {
+        stdout: textSummary(data, { indent: '  ', enableColors: true }),
+        'performance-results/user-journey-report.txt': textSummary(data, { indent: '  ', enableColors: false }),
+        'performance-results/user-journey-report.xml': jUnit(data),
+        'performance-results/user-journey-report.json': JSON.stringify(data),
+        'performance-results/user-journey-report.html': htmlReport(data),
+    };
 }
 
 export default function userJourney() {
