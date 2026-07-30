@@ -58,6 +58,13 @@ type retiredScanConfigWatcherInfo struct {
 	// missingScans holds the "clusterID:scanID" identities that were still
 	// outstanding when the watcher retired.
 	missingScans set.StringSet
+	// latestScanStartTime is the latest LastStartedTime among the scans that
+	// actually reported to the retired watcher. It serves as the reference
+	// timestamp for the cycle: a late arrival of the same cycle will have a
+	// LastStartedTime close to this value (within cross-cluster scheduling
+	// skew), while a rerun's LastStartedTime will typically be newer (CO
+	// sets a fresh StartTimestamp each time it processes a rescan).
+	latestScanStartTime time.Time
 }
 
 type managerImpl struct {
@@ -101,23 +108,35 @@ type managerImpl struct {
 	// still outstanding ("clusterID:scanID", the same identity used as ScanResults
 	// map keys) when a ScanConfigWatcher last retired (e.g. timed out) after
 	// processing at least one scan for that configuration, together with when (Central's
-	// own clock) that happened. getOrCreateScanConfigWatcher treats a scan arriving
-	// within retiredScanConfigWatcherGracePeriod of that retirement as a late arrival of
-	// the same cycle -- and skips creating a duplicate watcher for it, even when no
-	// report snapshot exists (e.g. no notifiers configured, see
-	// createAutomaticSnapshotAndSubscribe) -- only if it is one of the recorded
-	// outstanding scans.
+	// own clock) that happened and the latest LastStartedTime among the scans that
+	// actually reported.
 	//
-	// Matching by scan identity, rather than only by elapsed time, matters: a bare
-	// time-based guard cannot tell a late arrival of the retired cycle apart from a
-	// scan belonging to a genuinely new cycle (e.g. the scan configuration manually
-	// re-run shortly after the timeout) and would silently drop the latter's results
-	// too. Matching by identity also does not depend on comparing the scans' own
-	// self-reported LastStartedTime across clusters: in-cluster testing showed two
-	// clusters scanned "at the same time" for the same cycle can still differ by a
-	// second or more, which is enough to break a strict timestamp comparison and
-	// re-open the exact cascade this map exists to prevent. Guarded by
-	// watchingScanConfigsLock.
+	// getOrCreateScanConfigWatcher treats a scan as a late arrival of the same cycle
+	// and skips creating a duplicate watcher for it -- even when no report snapshot
+	// exists (e.g. no notifiers configured, see createAutomaticSnapshotAndSubscribe)
+	// -- only if ALL of the following are true:
+	//
+	//  1. Identity match: the incoming scan's "clusterID:scanID" is one of the
+	//     recorded outstanding scans. This prevents a genuinely new scan (e.g. a
+	//     cluster/profile added to the config) from being suppressed.
+	//
+	//  2. Timestamp tolerance: the incoming scan's own LastStartedTime is within
+	//     lastStartedTimeTolerance() of the reference timestamp. This catches the
+	//     common case where a rerun is triggered after the watcher times out: the
+	//     rerun's LastStartedTime is substantially newer than the reference. It does
+	//     NOT reliably catch a rerun triggered while the watcher was still running
+	//     (the rerun's timestamp could be close to the original cycle's). This check
+	//     is necessary because reruns reuse the exact same ComplianceScan K8s object
+	//     (same UID → same scanID → same identity): both CO's scheduled rerunner and
+	//     StackRox's manual "Run Now" fetch the existing object by name, set a rescan
+	//     annotation, and Update() it — never Create(). Identity alone cannot tell
+	//     a late arrival apart from a rerun.
+	//
+	//  3. Elapsed-time TTL: Central's clock hasn't moved past
+	//     retiredScanConfigWatcherGracePeriod() since the retirement. This prevents
+	//     stale entries from suppressing scans indefinitely.
+	//
+	// Guarded by watchingScanConfigsLock.
 	retiredScanConfigWatchers map[string]retiredScanConfigWatcherInfo
 	// scanConfigReadyQueue holds the scan configurations that are ready to be reported
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
@@ -574,17 +593,25 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 	})
 	if !watcherIsRunning {
 		scanKey := fmt.Sprintf("%s:%s", results.Scan.GetClusterId(), results.Scan.GetId())
-		if !retiredInfo.retiredAt.IsZero() && retiredInfo.missingScans.Contains(scanKey) &&
-			time.Since(retiredInfo.retiredAt) < retiredScanConfigWatcherGracePeriod() {
-			// A ScanConfigWatcher already retired (e.g. timed out) recently while still
-			// waiting for exactly this scan. Treat it as a late arrival of that same
-			// cycle rather than spinning up a second watcher for it. Matching by scan
-			// identity (not just elapsed time) means a genuinely new cycle for the same
-			// scan configuration -- e.g. a manual re-run shortly after the timeout,
-			// which uses a different scan -- is not mistaken for a late arrival and
-			// silently dropped. This check does not depend on a report snapshot
-			// existing, so it also covers scan configurations with no notifiers
-			// configured, unlike the snapshot search below.
+		incomingStartTime := results.Scan.GetLastStartedTime().AsTime()
+		if !retiredInfo.retiredAt.IsZero() &&
+			retiredInfo.missingScans.Contains(scanKey) &&
+			time.Since(retiredInfo.retiredAt) < retiredScanConfigWatcherGracePeriod() &&
+			!retiredInfo.latestScanStartTime.IsZero() &&
+			!incomingStartTime.IsZero() &&
+			absDuration(incomingStartTime.Sub(retiredInfo.latestScanStartTime)) <= lastStartedTimeTolerance() {
+			// All three conditions for the dedup guard are met (see
+			// retiredScanConfigWatchers doc comment for why all three matter):
+			//  1. Identity: this scan was one of the missing scans when the watcher retired.
+			//  2. Timestamp: its LastStartedTime is close to the retired cycle's reference
+			//     timestamp, so it's from the same scheduling cycle, not a rerun (which
+			//     would have a substantially newer timestamp).
+			//  3. TTL: the retirement was recent enough to still be relevant.
+			log.Debugf("Suppressing late scan %s for scan config %s (retired %s ago, start time delta %s, tolerance %s)",
+				scanKey, sc.GetId(),
+				time.Since(retiredInfo.retiredAt),
+				absDuration(incomingStartTime.Sub(retiredInfo.latestScanStartTime)),
+				lastStartedTimeTolerance())
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
 		query := search.NewQueryBuilder().
@@ -626,6 +653,37 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 // consistently leave enough margin and lets the cascade this exists to prevent through.
 func retiredScanConfigWatcherGracePeriod() time.Duration {
 	return env.ComplianceScanScheduleWatcherTimeout.DurationSetting() + env.ComplianceScanWatcherTimeout.DurationSetting()
+}
+
+// lastStartedTimeTolerance returns the maximum allowed difference between an incoming
+// scan's LastStartedTime and the retired cycle's reference timestamp for the scan to be
+// considered a late arrival of the same cycle (as opposed to a rerun).
+//
+// The value is ComplianceScanScheduleWatcherTimeout / 3. This is much larger than
+// realistic cross-cluster scheduling skew (~seconds), so legitimate late arrivals from
+// the same cycle are always within tolerance.
+//
+// For reruns triggered after the watcher times out (the common case: a human notices the
+// timeout and clicks "Run Now"), the gap between the original cycle's timestamps and the
+// rerun's is at least ComplianceScanScheduleWatcherTimeout, so the tolerance provides a
+// 3× safety margin.
+//
+// Caveat: a rerun triggered while the watcher is still running (before timeout) can have
+// a LastStartedTime close to the original cycle's, falling within tolerance. In that
+// case the timestamp check does not help and the rerun may be suppressed if it also
+// matches by identity and arrives after the watcher retires. This is an accepted
+// limitation; the identity check (condition 1) and the TTL (condition 3) narrow the
+// window further, and check results are persisted independently at the pipeline level
+// regardless of this guard's decision.
+func lastStartedTimeTolerance() time.Duration {
+	return env.ComplianceScanScheduleWatcherTimeout.DurationSetting() / 3
+}
+
+func absDuration(d time.Duration) time.Duration {
+	if d < 0 {
+		return -d
+	}
+	return d
 }
 
 // computeMissingScans returns the "clusterID:scanID" identities that were expected for
@@ -696,15 +754,22 @@ func (m *managerImpl) handleReadyScanConfig() {
 		// so a late scan is free to start a fresh watcher. Computed outside the lock
 		// since it queries the datastores.
 		var missingScans set.StringSet
+		var latestScanStartTime time.Time
 		if len(scanConfigWatcherResult.ScanResults) > 0 {
 			missingScans = m.computeMissingScans(m.automaticReportingCtx, scanConfigWatcherResult)
+			for _, scanResult := range scanConfigWatcherResult.ScanResults {
+				if t := scanResult.Scan.GetLastStartedTime().AsTime(); t.After(latestScanStartTime) {
+					latestScanStartTime = t
+				}
+			}
 		}
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 			if len(scanConfigWatcherResult.ScanResults) > 0 {
 				m.retiredScanConfigWatchers[scanConfigWatcherResult.WatcherID] = retiredScanConfigWatcherInfo{
-					retiredAt:    time.Now(),
-					missingScans: missingScans,
+					retiredAt:           time.Now(),
+					missingScans:        missingScans,
+					latestScanStartTime: latestScanStartTime,
 				}
 			}
 		})
