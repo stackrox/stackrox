@@ -152,8 +152,7 @@ func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
 	return sensorAck != nil && sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
 }
 
-// ProcessMessage logs SensorACK/NACK messages that Central sends for VM
-// index reports pulled by this scraper.
+// ProcessMessage handles SensorACK/NACK for pull-mode VM index reports.
 func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	sensorAck := msg.GetSensorAck()
 	if sensorAck == nil {
@@ -162,7 +161,6 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 
 	switch sensorAck.GetAction() {
 	case central.SensorACK_ACK:
-		// No action needed on ACK currently.
 		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
 	case central.SensorACK_NACK:
 		s.handleNACK(sensorAck.GetResourceId())
@@ -172,10 +170,7 @@ func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) 
 	return nil
 }
 
-// handleNACK reacts to Central rejecting a previously-sent VM index report by
-// clearing the VM's cached generation, so the next poll fetches and resends a
-// full report instead of trusting roxagent's "unchanged" response and
-// waiting for the next mandatoryRefreshAfter window.
+// handleNACK clears the cached generation so the next poll resends a full report.
 func (s *VMScraper) handleNACK(resourceID string) {
 	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
 	if key == "" {
@@ -185,8 +180,6 @@ func (s *VMScraper) handleNACK(resourceID string) {
 
 	concurrency.WithLock(&s.mu, func() {
 		if state, ok := s.vmState[key]; ok {
-			// Sensor and roxagent must not agree on 'unchanged' when Central NACKed;
-			// force a full report on the next poll instead.
 			state.lastGeneration = 0
 		}
 	})
@@ -275,7 +268,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrapedVMs set.StringSet) bool {
 	key := vmKey(vm)
-	state := s.getOrCreateState(key)
+	snap := s.snapshotVMState(key)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
@@ -287,8 +280,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	// can make before dialing at all, so request the full report on this
 	// first (and only) round trip instead of asking "anything newer?" and
 	// re-dialing once told no.
-	ifNewerThan, knownEpoch := state.lastGeneration, state.lastEpoch
-	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > s.mandatoryRefreshAfter
+	ifNewerThan, knownEpoch := snap.lastGeneration, snap.lastEpoch
+	mandatoryRefreshDue := s.now().Sub(snap.lastForwardedAt) > s.mandatoryRefreshAfter
 	if mandatoryRefreshDue {
 		ifNewerThan, knownEpoch = 0, 0
 	}
@@ -318,15 +311,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		// current roxagent can only report Unchanged for a reason other
 		// than the mandatory refresh — i.e. an epoch mismatch below.
 		epoch := result.Meta.GetEpoch()
-		epochMismatch := epoch != 0 && epoch != state.lastEpoch
+		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
 		if !epochMismatch {
 			s.registerScrapedVM(scrapedVMs, vm)
-			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
+			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
 		}
 		log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
-			key, state.lastEpoch, epoch, state.lastGeneration)
+			key, snap.lastEpoch, epoch, snap.lastGeneration)
 		result, ok = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
 		if !ok {
 			return false
@@ -352,13 +345,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		return false
 	}
 
-	state.lastGeneration = result.Meta.GetReportGeneration()
-	state.lastEpoch = result.Meta.GetEpoch()
-	state.lastForwardedAt = s.now()
+	// Skip the cache update if a NACK cleared the generation while Send was in flight.
+	newGen := result.Meta.GetReportGeneration()
+	if !s.commitVMState(snap.state, snap.lastGeneration, newGen, result.Meta.GetEpoch()) {
+		log.Debugf("VMScraper: dropping cache update for %q after NACK during send", key)
+	}
 	s.registerScrapedVM(scrapedVMs, vm)
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
-		key, state.lastGeneration, len(result.IndexReport.GetContents().GetPackages()), reportSize,
+		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
 		time.Since(totalStart).Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
@@ -448,18 +443,40 @@ func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachi
 	})
 }
 
-// getOrCreateState returns the vmState for key, creating it if absent.
-// The returned pointer is mutated outside the lock — this is safe because
-// each VM key is processed by exactly one goroutine per poll cycle
-// (the VM list contains unique entries, and errgroup assigns one goroutine each).
-func (s *VMScraper) getOrCreateState(key string) *vmState {
-	return concurrency.WithLock1(&s.mu, func() *vmState {
+type vmStateSnapshot struct {
+	state           *vmState
+	lastGeneration  uint32
+	lastEpoch       uint32
+	lastForwardedAt time.Time
+}
+
+func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
+	return concurrency.WithLock1(&s.mu, func() vmStateSnapshot {
 		st, ok := s.vmState[key]
 		if !ok {
 			st = &vmState{}
 			s.vmState[key] = st
 		}
-		return st
+		return vmStateSnapshot{
+			state:           st,
+			lastGeneration:  st.lastGeneration,
+			lastEpoch:       st.lastEpoch,
+			lastForwardedAt: st.lastForwardedAt,
+		}
+	})
+}
+
+// commitVMState updates cached scrape state only if lastGeneration is still
+// observedGen, so a concurrent NACK reset is not overwritten by a late Send.
+func (s *VMScraper) commitVMState(state *vmState, observedGen, newGen, newEpoch uint32) bool {
+	return concurrency.WithLock1(&s.mu, func() bool {
+		if state.lastGeneration != observedGen {
+			return false
+		}
+		state.lastGeneration = newGen
+		state.lastEpoch = newEpoch
+		state.lastForwardedAt = s.now()
+		return true
 	})
 }
 

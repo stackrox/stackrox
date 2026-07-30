@@ -432,6 +432,88 @@ func TestVMScraper_NACK(t *testing.T) {
 	}
 }
 
+// gateSender blocks the Nth Send (1-based) until release is closed.
+type gateSender struct {
+	blockAt int
+	entered chan struct{}
+	release chan struct{}
+	mu      sync.Mutex
+	n       int
+	sent    []*v4.IndexReport
+}
+
+func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	g.mu.Lock()
+	g.n++
+	n := g.n
+	g.sent = append(g.sent, report)
+	g.mu.Unlock()
+	if n == g.blockAt {
+		close(g.entered)
+		<-g.release
+	}
+	return nil
+}
+
+func TestVMScraper_NACKWinsOverInFlightSend(t *testing.T) {
+	vmA := makeVM("ns1", "vm-a", 100)
+	vmA.ID = "vm-a-id"
+	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+	client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}}
+	s := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+
+	s.pollOnce(t.Context())
+	require.Equal(t, uint32(1), s.vmState["ns1/vm-a"].lastGeneration)
+
+	gate := &gateSender{
+		blockAt: 1,
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	s.sender = gate
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.pollOnce(t.Context())
+	}()
+
+	select {
+	case <-gate.entered:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for in-flight Send")
+	}
+
+	require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				Action:      central.SensorACK_NACK,
+				ResourceId:  "vm-a-id:100",
+			},
+		},
+	}))
+	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration)
+
+	close(gate.release)
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for pollOnce to finish")
+	}
+	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
+		"in-flight Send must not overwrite a concurrent NACK reset")
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
+	s.sender = &mockSender{}
+	s.pollOnce(t.Context())
+	require.Len(t, client.calls, 1)
+	assert.Equal(t, uint32(0), client.calls[0].ifNewerThan)
+}
+
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 	vms := []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
