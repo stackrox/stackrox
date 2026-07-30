@@ -10,9 +10,6 @@ export function integrations(host, headers, tags) {
             ['GET', `${host}/v1/signatureintegrations`, null, { headers, tags }],
             ['GET', `${host}/v1/cloud-sources`, null, { headers, tags }],
             ['GET', `${host}/v1/delegatedregistryconfig`, null, { headers, tags }],
-        ]);
-
-        http.batch([
             ['GET', `${host}/v1/integrationhealth/imageintegrations`, null, { headers, tags }],
             ['GET', `${host}/v1/integrationhealth/notifiers`, null, { headers, tags }],
             ['GET', `${host}/v1/integrationhealth/externalbackups`, null, { headers, tags }],
