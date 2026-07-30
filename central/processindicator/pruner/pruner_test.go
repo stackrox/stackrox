@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,6 +75,113 @@ func TestRabbitMQPruning(t *testing.T) {
 	pruner.Finish()
 	assert.Len(t, prunedIDs, len(processes)-2)
 	assert.NotContains(t, prunedIDs, deterministicRabbitMQProcess.GetId())
+}
+
+// jaccardSimilarity computes Jaccard similarity between two word sets for
+// test assertions. This reproduces the old pruner's algorithm to demonstrate
+// cases where it incorrectly merges security-relevant commands.
+func jaccardSimilarity(a, b map[string]struct{}) float64 {
+	if len(a) > len(b) {
+		a, b = b, a
+	}
+	var intersection int
+	for w := range a {
+		if _, ok := b[w]; ok {
+			intersection++
+		}
+	}
+	union := len(a) + len(b) - intersection
+	if union == 0 {
+		return 0
+	}
+	return float64(intersection) / float64(union)
+}
+
+func toWordSet(args string) map[string]struct{} {
+	set := make(map[string]struct{})
+	for _, w := range strings.Fields(args) {
+		set[numericRegex.ReplaceAllString(w, "#")] = struct{}{}
+	}
+	return set
+}
+
+// TestJaccardWouldMergeSecurityRelevantCommands demonstrates that the old
+// Jaccard similarity approach (threshold 0.6) merges commands that differ in
+// a single security-critical word. "kubectl get pods" and "kubectl get secrets"
+// share enough flag words to exceed the 0.6 threshold, so the old pruner
+// would delete the "secrets" indicator — destroying evidence that someone
+// enumerated secrets in the cluster.
+func TestJaccardWouldMergeSecurityRelevantCommands(t *testing.T) {
+	getPods := "kubectl get pods --namespace kube-system -o json --field-selector status.phase=Running"
+	getSecrets := "kubectl get secrets --namespace kube-system -o json --field-selector status.phase=Running"
+	getNodes := "kubectl get nodes --namespace kube-system -o json --field-selector status.phase=Running"
+
+	// Prove that the old Jaccard algorithm would consider these "similar"
+	// (>= 0.6 threshold) and merge them.
+	sim := jaccardSimilarity(toWordSet(getPods), toWordSet(getSecrets))
+	assert.Greater(t, sim, 0.6,
+		"expected Jaccard similarity between 'get pods' and 'get secrets' to exceed the old 0.6 threshold (got %f); "+
+			"this proves the old pruner would have merged them", sim)
+
+	sim = jaccardSimilarity(toWordSet(getPods), toWordSet(getNodes))
+	assert.Greater(t, sim, 0.6,
+		"expected Jaccard similarity between 'get pods' and 'get nodes' to exceed 0.6 (got %f)", sim)
+
+	// Now verify that the current normalized-exact-match pruner preserves
+	// all three as distinct, because "pods", "secrets", and "nodes" are
+	// different words.
+	processes := []processindicator.IDAndArgs{
+		{ID: "get-pods", Args: getPods},
+		{ID: "get-secrets", Args: getSecrets},
+		{ID: "get-nodes", Args: getNodes},
+	}
+	pruner := NewFactory(1, time.Second).StartPruning()
+	prunedIDs := pruner.Prune(processes)
+	pruner.Finish()
+
+	assert.Empty(t, prunedIDs, "all three semantically distinct kubectl commands should survive pruning")
+}
+
+func TestSemanticallyDistinctCommandsPreserved(t *testing.T) {
+	processes := []processindicator.IDAndArgs{
+		{ID: "1", Args: "kubectl get pods --namespace kube-system -o wide --timeout 30"},
+		{ID: "2", Args: "kubectl get deployments --namespace kube-system -o wide --timeout 30"},
+		{ID: "3", Args: "kubectl get secrets --namespace kube-system -o wide --timeout 30"},
+		{ID: "4", Args: "kubectl get configmaps --namespace kube-system -o wide --timeout 30"},
+		{ID: "5", Args: "kubectl get pods --namespace kube-system -o wide --timeout 45"},
+		{ID: "6", Args: "kubectl get pods --namespace default -o wide --timeout 30"},
+		{ID: "7", Args: "kubectl get secrets --namespace default -o wide --timeout 30"},
+	}
+	pruner := NewFactory(1, time.Second).StartPruning()
+	prunedIDs := pruner.Prune(processes)
+	pruner.Finish()
+
+	kept := make(map[string]bool)
+	prunedSet := make(map[string]bool)
+	for _, id := range prunedIDs {
+		prunedSet[id] = true
+	}
+	for _, p := range processes {
+		if !prunedSet[p.ID] {
+			kept[p.ID] = true
+		}
+	}
+
+	// "pods" and "deployments" and "secrets" and "configmaps" are different resources.
+	// With normalized-exact-match, the only merges are digit-only differences:
+	// ID 1 (pods, kube-system, timeout 30) and ID 5 (pods, kube-system, timeout 45)
+	// normalize to the same string since 30→# and 45→#.
+	// ID 3 (secrets, kube-system) and ID 7 (secrets, default) differ in namespace,
+	// so they stay distinct.
+	// ID 6 (pods, default) differs from ID 1 (pods, kube-system) only in namespace,
+	// so they stay distinct.
+	assert.True(t, kept["1"], "first 'kubectl get pods' should be kept")
+	assert.True(t, kept["2"], "'kubectl get deployments' should be kept (different resource)")
+	assert.True(t, kept["3"], "'kubectl get secrets kube-system' should be kept")
+	assert.True(t, kept["4"], "'kubectl get configmaps' should be kept")
+	assert.True(t, prunedSet["5"], "second 'kubectl get pods' with different timeout should be pruned (digit-only diff)")
+	assert.True(t, kept["6"], "'kubectl get pods default' should be kept (different namespace)")
+	assert.True(t, kept["7"], "'kubectl get secrets default' should be kept (different namespace)")
 }
 
 func BenchmarkRabbitMQPruning(b *testing.B) {

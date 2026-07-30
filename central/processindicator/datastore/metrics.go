@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	// PruneReasonSimilarity represents pruning based on Jaccard similarity algorithm
+	// PruneReasonSimilarity represents pruning of process indicators with
+	// duplicate normalized arguments (digits replaced with #).
 	PruneReasonSimilarity = "similarity"
 	// PruneReasonOrphanedByDeployment represents pruning of indicators orphaned by deleted deployments
 	PruneReasonOrphanedByDeployment = "orphaned_deployment"
