@@ -1,0 +1,10 @@
+{
+  "name": "NIST 800-53 High-Impact Baseline for OpenShift 5",
+  "provider": "NIST",
+  "shortName": "NIST-800-53",
+  "profiles": [
+    { "profileName": "ocp5-high" },
+    { "profileName": "ocp5-high-node" },
+    { "profileName": "rhcos5-high" }
+  ]
+}
