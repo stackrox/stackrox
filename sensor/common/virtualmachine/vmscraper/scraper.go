@@ -31,8 +31,21 @@ var (
 	errStartMoreThanOnce = errors.New("unable to start the VM scraper more than once")
 )
 
+// minPollInterval clamps ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to avoid
+// accidental high-churn vsock polling.
+const minPollInterval = time.Minute
+
 func getVsockPort() uint32 {
 	return uint32(env.VirtualMachinesVsockPort.IntegerSetting())
+}
+
+func clampPollInterval(interval time.Duration) time.Duration {
+	if interval < minPollInterval {
+		log.Warnf("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%v is below the minimum of %v; using %v",
+			interval, minPollInterval, minPollInterval)
+		return minPollInterval
+	}
+	return interval
 }
 
 // RunningVMStore provides the list of running VMs.
@@ -90,7 +103,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		sender:                sender,
 		dialer:                dialer,
 		client:                client,
-		interval:              env.VirtualMachinesScraperPollInterval.DurationSetting(),
+		interval:              clampPollInterval(env.VirtualMachinesScraperPollInterval.DurationSetting()),
 		perVMTimeout:          env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
 		mandatoryRefreshAfter: env.VirtualMachinesScraperMandatoryRefreshInterval.DurationSetting(),
 		concurrency:           env.VirtualMachinesScraperConcurrency.IntegerSetting(),

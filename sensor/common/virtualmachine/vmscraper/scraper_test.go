@@ -592,3 +592,28 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 	require.Greater(t, maxObserved, int32(1),
 		"expected multiple VMs to be dialed concurrently, observed max concurrency of %d", maxObserved)
 }
+
+func TestClampPollInterval(t *testing.T) {
+	cases := map[string]struct {
+		in   time.Duration
+		want time.Duration
+	}{
+		"should leave values at the minimum unchanged": {
+			in:   time.Minute,
+			want: time.Minute,
+		},
+		"should leave values above the minimum unchanged": {
+			in:   5 * time.Minute,
+			want: 5 * time.Minute,
+		},
+		"should clamp values below the minimum up to one minute": {
+			in:   30 * time.Second,
+			want: time.Minute,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.want, clampPollInterval(tc.in))
+		})
+	}
+}
