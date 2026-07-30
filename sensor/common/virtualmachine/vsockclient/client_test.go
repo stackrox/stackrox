@@ -13,34 +13,42 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// serveOnce plays the agent side of a request/response exchange over
+// agentConn. Run in its own goroutine, since GetReport blocks on the
+// response for the duration of the net.Pipe round trip.
+func serveOnce(t *testing.T, agentConn net.Conn, resp *pb.VMServiceResponse, validateReq func(*pb.VMServiceRequest)) {
+	defer utils.IgnoreError(agentConn.Close)
+	reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
+	require.NoError(t, err)
+
+	if validateReq != nil {
+		var req pb.VMServiceRequest
+		require.NoError(t, proto.Unmarshal(reqData, &req))
+		validateReq(&req)
+	}
+
+	respData, err := proto.Marshal(resp)
+	require.NoError(t, err)
+	require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
+}
+
 func TestSendGetReport_Success(t *testing.T) {
 	client := NewClient([]string{CapabilityReportV1}, 10<<20)
 	clientConn, agentConn := net.Pipe()
 	defer utils.IgnoreError(clientConn.Close)
 
-	go func() {
-		defer utils.IgnoreError(agentConn.Close)
-		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
-		require.NoError(t, err)
-
-		var req pb.VMServiceRequest
-		require.NoError(t, proto.Unmarshal(reqData, &req))
+	go serveOnce(t, agentConn, &pb.VMServiceResponse{
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Result: &pb.VMServiceResponse_GetReport{
+			GetReport: &pb.GetReportResponse{
+				IndexReport: &v4.IndexReport{HashId: "test-hash"},
+			},
+		},
+	}, func(req *pb.VMServiceRequest) {
 		assert.NotEmpty(t, req.GetMeta().GetRequestId())
 		assert.Equal(t, []string{CapabilityReportV1}, req.GetMeta().GetCapabilities())
 		assert.Equal(t, uint32(0), req.GetGetReport().GetLastKnownGeneration())
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
-			Result: &pb.VMServiceResponse_GetReport{
-				GetReport: &pb.GetReportResponse{
-					IndexReport: &v4.IndexReport{HashId: "test-hash"},
-				},
-			},
-		}
-		respData, err := proto.Marshal(resp)
-		require.NoError(t, err)
-		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-	}()
+	})
 
 	result, err := client.GetReport(clientConn, 0, 0)
 	require.NoError(t, err)
@@ -54,26 +62,15 @@ func TestSendGetReport_Unchanged(t *testing.T) {
 	clientConn, agentConn := net.Pipe()
 	defer utils.IgnoreError(clientConn.Close)
 
-	go func() {
-		defer utils.IgnoreError(agentConn.Close)
-		reqData, err := vsockframing.ReadFrame(agentConn, 10<<20)
-		require.NoError(t, err)
-
-		var req pb.VMServiceRequest
-		require.NoError(t, proto.Unmarshal(reqData, &req))
+	go serveOnce(t, agentConn, &pb.VMServiceResponse{
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 5},
+		Result: &pb.VMServiceResponse_GetReport{
+			GetReport: &pb.GetReportResponse{Unchanged: true},
+		},
+	}, func(req *pb.VMServiceRequest) {
 		assert.Equal(t, uint32(5), req.GetGetReport().GetLastKnownGeneration())
 		assert.Equal(t, uint32(42), req.GetGetReport().GetKnownEpoch())
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 5},
-			Result: &pb.VMServiceResponse_GetReport{
-				GetReport: &pb.GetReportResponse{Unchanged: true},
-			},
-		}
-		respData, err := proto.Marshal(resp)
-		require.NoError(t, err)
-		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-	}()
+	})
 
 	result, err := client.GetReport(clientConn, 5, 42)
 	require.NoError(t, err)
@@ -87,21 +84,12 @@ func TestSendGetReport_NilReportRejected(t *testing.T) {
 	clientConn, agentConn := net.Pipe()
 	defer utils.IgnoreError(clientConn.Close)
 
-	go func() {
-		defer utils.IgnoreError(agentConn.Close)
-		_, err := vsockframing.ReadFrame(agentConn, 10<<20)
-		require.NoError(t, err)
-
-		resp := &pb.VMServiceResponse{
-			Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
-			Result: &pb.VMServiceResponse_GetReport{
-				GetReport: &pb.GetReportResponse{},
-			},
-		}
-		respData, err := proto.Marshal(resp)
-		require.NoError(t, err)
-		require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-	}()
+	go serveOnce(t, agentConn, &pb.VMServiceResponse{
+		Meta: &pb.ResponseMeta{AgentVersion: "test-agent", ReportGeneration: 1},
+		Result: &pb.VMServiceResponse_GetReport{
+			GetReport: &pb.GetReportResponse{},
+		},
+	}, nil)
 
 	_, err := client.GetReport(clientConn, 0, 0)
 	require.Error(t, err)
@@ -138,21 +126,12 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			clientConn, agentConn := net.Pipe()
 			defer utils.IgnoreError(clientConn.Close)
 
-			go func() {
-				defer utils.IgnoreError(agentConn.Close)
-				_, err := vsockframing.ReadFrame(agentConn, 10<<20)
-				require.NoError(t, err)
-
-				resp := &pb.VMServiceResponse{
-					Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
-					Result: &pb.VMServiceResponse_Error{
-						Error: &pb.ErrorResponse{Code: tc.code, Message: tc.message},
-					},
-				}
-				respData, err := proto.Marshal(resp)
-				require.NoError(t, err)
-				require.NoError(t, vsockframing.WriteFrame(agentConn, respData))
-			}()
+			go serveOnce(t, agentConn, &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{Code: tc.code, Message: tc.message},
+				},
+			}, nil)
 
 			_, err := client.GetReport(clientConn, 0, 0)
 			require.Error(t, err)
