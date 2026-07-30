@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/owenrumney/go-sarif/v2/sarif"
-	"github.com/pkg/errors"
+	"github.com/owenrumney/go-sarif/v3/pkg/report"
+	"github.com/owenrumney/go-sarif/v3/pkg/report/v210/sarif"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
@@ -125,43 +125,40 @@ func (s *SarifPrinter) Print(object interface{}, out io.Writer) error {
 		WithVersion(version.GetMainVersion()).
 		WithFullName("roxctl command line utility")
 
-	report, err := sarif.New(sarif.Version210)
-	if err != nil {
-		return errors.Wrap(err, "creating sarif report")
-	}
+	sarifReport := report.NewV210Report()
 
 	for _, entry := range sarifEntries {
 		s.addEntry(run, entry)
 	}
 
-	report.AddRun(run)
-	return report.PrettyWrite(out)
+	sarifReport.AddRun(run)
+	return sarifReport.PrettyWrite(out)
 }
 
 func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 	rule := run.AddRule(entry.ruleID)
 	rule.WithName(s.reportType).
 		// Setting the description is also setting the title displayed in GitHub.
-		WithShortDescription(sarif.NewMultiformatMessageString(entry.ruleID)).
-		WithFullDescription(sarif.NewMultiformatMessageString(entry.ruleID)).
-		WithHelp(sarif.NewMultiformatMessageString(entry.help))
+		WithShortDescription(sarif.NewMultiformatMessageString().WithText(entry.ruleID)).
+		WithFullDescription(sarif.NewMultiformatMessageString().WithText(entry.ruleID)).
+		WithHelp(sarif.NewMultiformatMessageString().WithText(entry.help))
 
 	if entry.helpLink != "" {
 		rule.WithHelpURI(entry.helpLink)
 	}
 
-	properties := sarif.Properties{
+	properties := sarif.NewPropertyBag().
 		// Precision very-high ensures this violation is shown first within GitHub.
-		"precision": "very-high",
+		Add("precision", "very-high").
 		// Tags allow filtering, which is desirable to have.
-		"tags": []string{
+		WithTags([]string{
 			utils.IfThenElse(s.reportType == SarifVulnerabilityReport, "security", "policy-violation"),
 			entry.severity,
-		},
-	}
+		})
+
 	// For vulnerability reports, generated the security severity based of the severity reported.
 	if s.reportType == SarifVulnerabilityReport {
-		properties["security-severity"] = toSecuritySeverity(entry.severity)
+		properties.Add("security-severity", toSecuritySeverity(entry.severity))
 	}
 	rule.WithProperties(properties)
 
@@ -172,7 +169,7 @@ func (s *SarifPrinter) addEntry(run *sarif.Run, entry sarifEntry) {
 		WithLocations([]*sarif.Location{
 			{
 				PhysicalLocation: &sarif.PhysicalLocation{
-					ArtifactLocation: sarif.NewArtifactLocation().WithUri(s.entity),
+					ArtifactLocation: sarif.NewArtifactLocation().WithURI(s.entity),
 					Region:           sarif.NewSimpleRegion(1, 1),
 				},
 			},
