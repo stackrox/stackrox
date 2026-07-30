@@ -25,9 +25,6 @@ export function systemAdmin(host, headers, tags) {
                 null,
                 { headers, tags },
             ],
-        ]);
-
-        http.batch([
             [
                 'GET',
                 `${host}/v1/administration/usage/secured-units/current`,

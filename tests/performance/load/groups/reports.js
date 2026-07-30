@@ -22,9 +22,7 @@ export function reports(host, headers, tags) {
                     { headers, tags }
                 );
             }
-        } catch (_) {
-            // no report configs available
-        }
+        } catch (_) {}
 
         http.get(
             `${host}/v2/reports/view-based/history?reportParamQuery.pagination.offset=0&reportParamQuery.pagination.limit=10&reportParamQuery.pagination.sortOption.field=${encodeURIComponent('Report Completion Time')}&reportParamQuery.pagination.sortOption.reversed=true`,
