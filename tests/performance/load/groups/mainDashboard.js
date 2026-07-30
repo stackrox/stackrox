@@ -1,31 +1,5 @@
 import { group } from 'k6';
 import http from 'k6/http';
-import { URLSearchParams } from 'https://jslib.k6.io/url/1.0.0/index.js';
-
-function getDeploymentAtMostRiskSearchParams() {
-    const params = new URLSearchParams([
-        ['pagination', [
-            ['offset', 0],
-            ['limit', 6],
-            ['sortOption', [
-                ['field', 'Deployment Risk Priority'],
-                ['reversed', 'false'],
-            ]]
-        ]],
-    ]);
-    return params.toString();
-}
-
-function getAlertSummaryCountSearchParams() {
-    const params = new URLSearchParams([
-        ['request', [
-            ['query', '']
-        ]],
-        ['group_by', 'CATEGORY'],
-    ]);
-    return params.toString();
-
-}
 
 export function mainDashboard(host, headers, tags) {
     group('main dashboard', function () {
@@ -167,7 +141,7 @@ export function mainDashboard(host, headers, tags) {
         );
 
         http.get(
-            `${host}/v1/deploymentswithprocessinfo?${getDeploymentAtMostRiskSearchParams()}`,
+            `${host}/v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=6&pagination.sortOption.field=${encodeURIComponent('Deployment Risk Priority')}&pagination.sortOption.reversed=false`,
             { headers, tags }
         );
 
@@ -192,7 +166,7 @@ export function mainDashboard(host, headers, tags) {
         );
 
         http.get(
-            `${host}/v1/alerts/summary/counts?${getAlertSummaryCountSearchParams()}`,
+            `${host}/v1/alerts/summary/counts?request.query=&group_by=CATEGORY`,
             { headers, tags }
         );
 

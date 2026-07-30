@@ -6,7 +6,7 @@ export function risk(host, headers, tags) {
         http.batch([
             [
                 'GET',
-                `${host}/v1/deploymentswithrisk?pagination.offset=0&pagination.limit=50&pagination.sortOption.field=${encodeURIComponent('Deployment Risk Priority')}&pagination.sortOption.reversed=false`,
+                `${host}/v1/deploymentswithprocessinfo?pagination.offset=0&pagination.limit=50&pagination.sortOption.field=${encodeURIComponent('Deployment Risk Priority')}&pagination.sortOption.reversed=false&query=${encodeURIComponent('Platform Component:false')}`,
                 null,
                 { headers, tags },
             ],

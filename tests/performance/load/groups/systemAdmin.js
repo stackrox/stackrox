@@ -21,7 +21,7 @@ export function systemAdmin(host, headers, tags) {
             ['GET', `${host}/v1/clusters`, null, { headers, tags }],
             [
                 'GET',
-                `${host}/v1/integrationhealth/vulndefinitions?component=SCANNER`,
+                `${host}/v1/integrationhealth/vulndefinitions?component=SCANNER_V4`,
                 null,
                 { headers, tags },
             ],

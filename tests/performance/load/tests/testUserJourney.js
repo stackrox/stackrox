@@ -76,7 +76,7 @@ function getHeaders() {
     return getHeaderWithAdminPass(__ENV.ROX_ADMIN_PASSWORD);
 }
 
-export function userJourney() {
+export default function userJourney() {
     const headers = getHeaders();
 
     loginInit(__ENV.HOST, headers, { page: 'login' });
