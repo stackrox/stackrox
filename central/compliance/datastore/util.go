@@ -10,7 +10,7 @@ import (
 // metadata of all referenced cluster/standard pair and their successful/failed runs.
 func ValidResultsAndSources(allResults map[compliance.ClusterStandardPair]types.ResultsWithStatus) ([]*storage.ComplianceRunResults, []*storage.ComplianceAggregation_Source) {
 	var validResults []*storage.ComplianceRunResults
-	var sources []*storage.ComplianceAggregation_Source
+	sources := make([]*storage.ComplianceAggregation_Source, 0, len(allResults))
 
 	for key, res := range allResults {
 		if res.LastSuccessfulResults != nil {

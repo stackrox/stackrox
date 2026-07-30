@@ -2675,7 +2675,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemoveOrphanedPLOPsByProcesses() {
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutProcessIndicatorOrProcessInfo() {
 	indicators := getIndicators()
 
-	var indicatorIds []string
+	indicatorIds := make([]string, 0, len(indicators))
 
 	for _, indicator := range indicators {
 		indicatorIds = append(indicatorIds, indicator.GetId())

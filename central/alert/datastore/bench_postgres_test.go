@@ -99,7 +99,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
 
-	var expected []*violationsBySeverity
+	expected := make([]*violationsBySeverity, 0, len(sevToCount))
 	for sev, count := range sevToCount {
 		expected = append(expected, &violationsBySeverity{count, int(sev)})
 	}
