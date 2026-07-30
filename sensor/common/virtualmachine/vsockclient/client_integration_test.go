@@ -1,6 +1,7 @@
 package vsockclient
 
 import (
+	"context"
 	"net"
 	"testing"
 
@@ -68,7 +69,7 @@ func (h *protocolHarness) getReport(ifNewerThan, knownEpoch uint32) (*GetReportR
 		h.handler.HandleConn(agentConn)
 	}()
 
-	result, err := h.client.GetReport(clientConn, ifNewerThan, knownEpoch)
+	result, err := h.client.GetReport(context.Background(), clientConn, ifNewerThan, knownEpoch)
 	<-done
 	return result, err
 }
@@ -223,7 +224,7 @@ func exchangeWithResponder(t *testing.T, client *Client, ifNewerThan uint32, res
 		responder(agentConn)
 	}()
 
-	result, err := client.GetReport(clientConn, ifNewerThan, 0)
+	result, err := client.GetReport(context.Background(), clientConn, ifNewerThan, 0)
 	<-done
 	return result, err
 }
