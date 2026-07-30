@@ -703,6 +703,10 @@ deploy_sensor_via_operator() {
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
         customize_envVars+=$'\n      value: "true"'
+        # Shorten pull-mode scraper cadence so VM e2e does not wait on the
+        # production default (5m) between Sensor polls of guest agents.
+        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL'
+        customize_envVars+=$'\n      value: "'"${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-30s}"'"'
     fi
     # For VM e2e tests that may send multiple index reports per minute.
     if [[ -n "${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE:-}" ]]; then
