@@ -1,6 +1,6 @@
 import { sleep } from 'k6';
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 import { getHeaderWithAdminPass, getHeaderWithToken } from '../src/utils.js';
-import { createRng, randomBetween, pickWeighted } from '../src/random.js';
 import { defaultOptions } from '../src/options.js';
 
 import { loginInit } from '../groups/loginInit.js';
@@ -77,16 +77,19 @@ function getHeaders() {
 }
 
 export function userJourney() {
-    const rng = createRng(__VU, __ITER);
     const headers = getHeaders();
 
     loginInit(__ENV.HOST, headers, { page: 'login' });
-    sleep(randomBetween(rng, 1, 3));
+    sleep(randomIntBetween(1, 3));
 
-    const selectedPages = pickWeighted(rng, pages);
+    const selected = pages.filter((p) => Math.random() < p.weight);
+    for (let i = selected.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [selected[i], selected[j]] = [selected[j], selected[i]];
+    }
 
-    for (const page of selectedPages) {
+    for (const page of selected) {
         page.fn(__ENV.HOST, headers, { page: page.name });
-        sleep(randomBetween(rng, 3, 10));
+        sleep(randomIntBetween(3, 10));
     }
 }
