@@ -64,6 +64,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/gorilla/schema v1.4.1
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/grafana/pyroscope-go v1.4.1
 	github.com/graph-gophers/graphql-go v1.10.3-0.20260702060009-60399cce0c05
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
@@ -318,7 +319,6 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.19 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
-	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.11 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -473,7 +473,7 @@ require (
 	k8s.io/component-helpers v0.36.3 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199 // indirect
+	k8s.io/kube-openapi v0.31.0 // indirect
 	k8s.io/streaming v0.36.3 // indirect
 	kubevirt.io/containerized-data-importer-api v1.64.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
