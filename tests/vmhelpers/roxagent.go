@@ -13,9 +13,10 @@ const (
 	// DefaultRoxagentInstallPath is the path used when copying and running roxagent on the guest.
 	DefaultRoxagentInstallPath = "/usr/local/bin/roxagent"
 	roxagentStagingPath        = "/tmp/roxagent"
-	roxagentServeLogPath       = "/tmp/roxagent-serve.log"
-	roxagentServePIDPath       = "/tmp/roxagent-serve.pid"
 	roxagentServePort          = "818"
+	// Transient systemd unit started by EnsureRoxagentServing (systemd-run --unit=...).
+	roxagentE2EUnit            = "roxagent-e2e.service"
+	roxagentE2EUnitName        = "roxagent-e2e"
 	roxagentListenReadyMarker  = "Listening on VSOCK port"
 	roxagentListenPollInterval = 5 * time.Second
 )
@@ -66,16 +67,13 @@ func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm st
 	})
 }
 
-// EnsureRoxagentServing starts `roxagent serve` on the guest if it is not already
-// running, then waits until the VSOCK listener is up. Sensor pulls reports from
-// this long-running process; the test does not push index reports.
+// EnsureRoxagentServing starts `roxagent serve` on the guest via a transient systemd
+// unit if it is not already active, then waits until the VSOCK listener is up.
+// Sensor pulls reports from this long-running process; the test does not push
+// index reports.
 //
 // repo2cpeURL is passed as --repo-cpe-url (serve does not read ROXAGENT_REPO2CPE_URL).
-// The URL must not contain single quotes.
 func EnsureRoxagentServing(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
-	if strings.Contains(repo2cpeURL, "'") {
-		return fmt.Errorf("repo2cpe URL must not contain single quotes: %q", repo2cpeURL)
-	}
 	if err := startRoxagentServeIfNeeded(ctx, virt, namespace, vm, repo2cpeURL); err != nil {
 		return err
 	}
@@ -84,80 +82,97 @@ func EnsureRoxagentServing(ctx context.Context, virt Virtctl, namespace, vm, rep
 
 func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
 	return retryOnSSHTransport(ctx, virt.Logf, "start roxagent serve", func(ctx context.Context) error {
-		// PID-file check avoids matching the sudo/bash wrapper that embeds the
-		// same "roxagent serve" substring in its argv.
-		script := fmt.Sprintf(`set -euo pipefail
-if [ -f %[1]s ] && kill -0 "$(cat %[1]s)" 2>/dev/null; then
-  echo ALREADY
-  exit 0
-fi
-rm -f %[1]s %[2]s
-nohup %[3]s serve --port %[4]s --host-path / --repo-cpe-url '%[5]s' >%[2]s 2>&1 </dev/null &
-echo $! > %[1]s
-sleep 1
-if ! kill -0 "$(cat %[1]s)" 2>/dev/null; then
-  echo 'roxagent serve exited immediately' >&2
-  if [ -f %[2]s ]; then cat %[2]s >&2; fi
-  exit 1
-fi
-echo STARTED
-`, roxagentServePIDPath, roxagentServeLogPath, DefaultRoxagentInstallPath, roxagentServePort, repo2cpeURL)
-
-		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "start roxagent serve",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "sudo", "bash", "-c", script)
+		state, err := roxagentServeState(ctx, virt, namespace, vm)
 		if err != nil {
-			combined := strings.TrimSpace(stdout + "\n" + stderr)
-			if isVsockUnavailableOutput(combined) {
-				return fmt.Errorf("%w: roxagent serve: no retry for vsock device error: %w (stderr: %s)",
-					ErrTerminalVSOCKUnavailable, err, strings.TrimSpace(stderr))
-			}
-			return fmt.Errorf("start roxagent serve: %w (stderr: %s)", err, strings.TrimSpace(stderr))
+			return err
 		}
-		virt.Logf("roxagent serve: %s", strings.TrimSpace(stdout))
+		if state == "active" || state == "activating" {
+			virt.Logf("roxagent serve: %s already %s", roxagentE2EUnit, state)
+			return nil
+		}
+
+		// systemd-run refuses to reuse a unit name that still exists (failed or
+		// stopped). Clear leftovers from a prior attempt, then start fresh.
+		_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+			description:            "stop leftover roxagent-e2e unit",
+			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+		}, "sudo", "systemctl", "stop", roxagentE2EUnit)
+		_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+			description:            "reset-failed roxagent-e2e unit",
+			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+		}, "sudo", "systemctl", "reset-failed", roxagentE2EUnit)
+
+		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+			description:            "systemd-run roxagent serve",
+			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+		}, "sudo", "systemd-run",
+			"--unit="+roxagentE2EUnitName,
+			"--property=Type=simple",
+			DefaultRoxagentInstallPath, "serve",
+			"--port", roxagentServePort,
+			"--host-path", "/",
+			"--repo-cpe-url", repo2cpeURL,
+		)
+		if err != nil {
+			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+			combined := strings.TrimSpace(stderr + "\n" + logs)
+			if isVsockUnavailableOutput(combined) {
+				return fmt.Errorf("%w: systemd-run roxagent serve: %w (output: %s)",
+					ErrTerminalVSOCKUnavailable, err, combined)
+			}
+			return fmt.Errorf("systemd-run roxagent serve: %w (stderr: %s; journal: %s)",
+				err, strings.TrimSpace(stderr), logs)
+		}
+
+		// Transient units can take a moment to leave "activating".
+		timer := time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return fmt.Errorf("context expired after systemd-run: %w", ctx.Err())
+		case <-timer.C:
+		}
+		state, err = roxagentServeState(ctx, virt, namespace, vm)
+		if err != nil {
+			return err
+		}
+		if state != "active" && state != "activating" {
+			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+			if isVsockUnavailableOutput(logs) {
+				return fmt.Errorf("%w: roxagent serve unit %q after systemd-run (journal: %s)",
+					ErrTerminalVSOCKUnavailable, state, logs)
+			}
+			return fmt.Errorf("roxagent serve unit %q after systemd-run (journal: %s)", state, logs)
+		}
+		virt.Logf("roxagent serve: started %s (%s)", roxagentE2EUnit, state)
 		return nil
 	})
 }
 
 func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm string) error {
-	script := fmt.Sprintf(`set -euo pipefail
-if [ ! -f %[1]s ] || ! kill -0 "$(cat %[1]s)" 2>/dev/null; then
-  echo DEAD
-  if [ -f %[2]s ]; then cat %[2]s; fi
-  exit 1
-fi
-if [ -f %[2]s ] && grep -q %[3]q %[2]s; then
-  echo READY
-  exit 0
-fi
-echo WAITING
-exit 0
-`, roxagentServePIDPath, roxagentServeLogPath, roxagentListenReadyMarker)
-
 	for {
-		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "check roxagent serve readiness",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "sudo", "bash", "-c", script)
-		status := strings.TrimSpace(stdout)
+		state, err := roxagentServeState(ctx, virt, namespace, vm)
 		if err != nil {
-			combined := strings.TrimSpace(stdout + "\n" + stderr)
-			if isVsockUnavailableOutput(combined) {
-				return fmt.Errorf("%w: roxagent serve died with vsock device error: %w (output: %s)",
-					ErrTerminalVSOCKUnavailable, err, combined)
-			}
-			return fmt.Errorf("roxagent serve not running: %w (output: %s)", err, combined)
+			return err
 		}
-		switch {
-		case strings.HasPrefix(status, "READY"):
+		switch state {
+		case "active", "activating":
+			// keep waiting for the listen log line
+		default:
+			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+			if isVsockUnavailableOutput(logs) {
+				return fmt.Errorf("%w: roxagent serve unit %q (journal: %s)",
+					ErrTerminalVSOCKUnavailable, state, logs)
+			}
+			return fmt.Errorf("roxagent serve unit %q (journal: %s)", state, logs)
+		}
+
+		logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+		if strings.Contains(logs, roxagentListenReadyMarker) {
 			virt.Logf("roxagent serve is listening on VSOCK")
 			return nil
-		case strings.HasPrefix(status, "WAITING"):
-			virt.Logf("roxagent serve still starting (waiting for %q)", roxagentListenReadyMarker)
-		default:
-			return fmt.Errorf("unexpected roxagent serve readiness status %q (stderr: %s)", status, strings.TrimSpace(stderr))
 		}
+		virt.Logf("roxagent serve still starting (unit=%s, waiting for %q)", state, roxagentListenReadyMarker)
 
 		timer := time.NewTimer(roxagentListenPollInterval)
 		select {
@@ -167,4 +182,33 @@ exit 0
 		case <-timer.C:
 		}
 	}
+}
+
+// roxagentServeState returns the systemctl is-active state for the e2e unit.
+// Non-zero exit for inactive/failed is expected and not treated as failure here.
+func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            "systemctl is-active roxagent-e2e",
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "systemctl", "is-active", roxagentE2EUnit)
+	state := strings.TrimSpace(stdout)
+	if errors.Is(err, errSSHTransport) {
+		return "", fmt.Errorf("systemctl is-active %s: %w (stderr: %s)",
+			roxagentE2EUnit, err, strings.TrimSpace(stderr))
+	}
+	if state == "" {
+		return "unknown", nil
+	}
+	return state, nil
+}
+
+func fetchRoxagentServeJournal(ctx context.Context, virt Virtctl, namespace, vm string) string {
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            "journalctl roxagent-e2e",
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "journalctl", "-u", roxagentE2EUnit, "-b", "--no-pager", "-o", "cat", "-n", "200")
+	if err != nil {
+		return strings.TrimSpace(stdout + "\n" + stderr)
+	}
+	return strings.TrimSpace(stdout)
 }
