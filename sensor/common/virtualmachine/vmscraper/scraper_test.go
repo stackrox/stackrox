@@ -28,14 +28,30 @@ type mockStore struct {
 func (m *mockStore) ListRunning() []*virtualmachine.Info { return m.vms }
 
 type mockDialer struct {
-	err error
+	err      error
+	errQueue []error
+	callIdx  int
 }
 
 func (m *mockDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	idx := m.callIdx
+	m.callIdx++
+	if idx < len(m.errQueue) && m.errQueue[idx] != nil {
+		return nil, m.errQueue[idx]
+	}
 	if m.err != nil {
 		return nil, m.err
 	}
 	return nopCloser{}, nil
+}
+
+// blockingDialer waits until ctx is done, then returns ctx.Err(). Used to
+// exercise the per-VM timeout classification in dialAndGetReport.
+type blockingDialer struct{}
+
+func (blockingDialer) Dial(ctx context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
 }
 
 type nopCloser struct{}
@@ -347,22 +363,60 @@ func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 	assert.Len(t, sender.sent, 2, "should forward on generation change")
 }
 
-func TestVMScraper_HandlesDialError(t *testing.T) {
-	store := &mockStore{vms: []*virtualmachine.Info{
+func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
+	vms := []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
 		makeVM("ns2", "vm-b", 200),
-	}}
-	sender := &mockSender{}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{nil, makeReport(1)},
-		errQueue:    []error{errors.New("connection refused"), nil},
 	}
 
-	s := newTestScraper(store, sender, dialer, client)
-	s.pollOnce(context.Background())
+	cases := map[string]struct {
+		dialer       VMDialer
+		perVMTimeout time.Duration
+		resultQueue  []*vsockclient.GetReportResult
+		errQueue     []error
+		wantCalls    int
+		wantSent     int
+	}{
+		"should still send for vm-b when vm-a hits a protocol error": {
+			dialer:      &mockDialer{},
+			resultQueue: []*vsockclient.GetReportResult{nil, makeReport(1)},
+			errQueue:    []error{errors.New("connection refused"), nil},
+			wantCalls:   2,
+			wantSent:    1,
+		},
+		"should still send for vm-b when vm-a dial fails": {
+			dialer: &mockDialer{
+				errQueue: []error{errors.New("dial failed"), nil},
+			},
+			resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+			wantCalls:   1,
+			wantSent:    1,
+		},
+		"should forward nothing when every dial times out": {
+			dialer:       blockingDialer{},
+			perVMTimeout: 20 * time.Millisecond,
+			wantCalls:    0,
+			wantSent:     0,
+		},
+	}
 
-	assert.Len(t, sender.sent, 1, "should still send for vm-b despite vm-a protocol error")
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			sender := &mockSender{}
+			client := &mockProtocolClient{
+				resultQueue: tc.resultQueue,
+				errQueue:    tc.errQueue,
+			}
+			s := newTestScraper(&mockStore{vms: vms}, sender, tc.dialer, client)
+			if tc.perVMTimeout > 0 {
+				s.perVMTimeout = tc.perVMTimeout
+			}
+			s.pollOnce(context.Background())
+
+			assert.Len(t, client.calls, tc.wantCalls)
+			assert.Len(t, sender.sent, tc.wantSent)
+		})
+	}
 }
 
 func TestVMScraper_PrunesStaleState(t *testing.T) {
