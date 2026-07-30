@@ -689,18 +689,18 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureCanonicalScan runs a single guest-side roxagent invocation.
-// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
-func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
+// ensureRoxagentServing starts pull-mode `roxagent serve` on the guest (if needed)
+// and waits until its VSOCK listener is ready. Sensor scrapes the report afterward.
+func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
-		return errors.New("ensureCanonicalScan: nil VM handle")
+		return errors.New("ensureRoxagentServing: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
 	if err := s.waitForScannerV4Initialized(); err != nil {
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
 }
 
 // waitForScan polls Central in order until scan data is visible.
