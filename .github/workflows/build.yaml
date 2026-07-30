@@ -1420,7 +1420,7 @@ jobs:
         if: always() && steps.scan-image.outputs.result-path != ''
         uses: ./.github/actions/upload-artifact-with-retry
         with:
-          name: cve-verify_${{ matrix.image }}.json
+          name: cve-verify_${{ matrix.image }}
           path: ${{ steps.scan-image.outputs.result-path }}
 
   verify-cve-fix:
@@ -1474,7 +1474,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/download-artifact-with-retry
         with:
-          pattern: cve-verify_*.json
+          pattern: cve-verify_*
           path: scan-results
 
       - name: Flatten scan results
