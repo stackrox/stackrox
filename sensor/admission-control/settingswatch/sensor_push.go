@@ -3,7 +3,6 @@ package settingswatch
 import (
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -61,10 +60,6 @@ func (w *sensorPushWatch) run() {
 			}
 
 			nextBackOff := eb.NextBackOff()
-			if nextBackOff == backoff.Stop {
-				log.Errorf("exceeded the maximum elapsed time %v to reconnect to Sensor", eb.MaxElapsedTime)
-				return
-			}
 			log.Warnf("Communication to sensor failed: %v. Retrying in %v", err, nextBackOff)
 			tC = time.After(nextBackOff)
 
