@@ -426,6 +426,7 @@ func getConfigControllerValues(c *platform.ConfigAsCodeSpec, defaults translatio
 }
 
 func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+	// TODO(ROX-32705): Always emit `enabled` explicitly instead of short-circuiting on nil.
 	if c == nil && !defaults.IsSet() {
 		return nil
 	}
