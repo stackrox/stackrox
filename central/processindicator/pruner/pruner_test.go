@@ -99,7 +99,7 @@ func jaccardSimilarity(a, b map[string]struct{}) float64 {
 
 func toWordSet(args string) map[string]struct{} {
 	set := make(map[string]struct{})
-	for _, w := range strings.Fields(args) {
+	for w := range strings.FieldsSeq(args) {
 		set[numericRegex.ReplaceAllString(w, "#")] = struct{}{}
 	}
 	return set
@@ -113,7 +113,7 @@ func toWordSet(args string) map[string]struct{} {
 // enumerated secrets in the cluster.
 func TestJaccardWouldMergeSecurityRelevantCommands(t *testing.T) {
 	getPods := "kubectl get pods --namespace kube-system -o json --field-selector status.phase=Running"
-	getSecrets := "kubectl get secrets --namespace kube-system -o json --field-selector status.phase=Running"
+	getSecrets := "kubectl get secrets --namespace kube-system -o json --field-selector status.phase=Running" //nolint:gosec // G101 false positive: test data, not credentials
 	getNodes := "kubectl get nodes --namespace kube-system -o json --field-selector status.phase=Running"
 
 	// Prove that the old Jaccard algorithm would consider these "similar"
