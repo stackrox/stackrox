@@ -64,11 +64,7 @@ jobs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster cent-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -211,11 +207,7 @@ jobs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster pg-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
@@ -357,11 +349,7 @@ jobs:
       run: |
         source scripts/ci/gke.sh
         provision_gke_cluster sens-up
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Docker login to Quay.io
       env:
