@@ -222,6 +222,10 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
         {{- end }}
+        {{- if ._rox.virtualMachines.enabled }}
+        - name: ROX_VIRTUAL_MACHINES
+          value: "true"
+        {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}
         - name: ROX_SCANNER_GRPC_ENDPOINT
