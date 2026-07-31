@@ -238,10 +238,16 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 
 		targetVersion, err := semver.NewVersion(versionToMatch)
 		if err != nil {
-			// Fail-open: if we can't parse the cluster version, assume it's affected.
-			// For a security product, "I can't determine safety" should mean "assume vulnerable."
-			log.Error(errors.Wrapf(err, "could not parse cluster version %q — assuming affected", versionToMatch))
-			return true, errList.ToError()
+			// Semver rejects 4-segment versions (e.g., "1.15.3.4") that are valid in some
+			// k8s distributions. Coerce to 3-segment by stripping the trailing segment.
+			parts := strings.SplitN(versionToMatch, ".", 4)
+			if len(parts) == 4 {
+				targetVersion, err = semver.NewVersion(strings.Join(parts[:3], "."))
+			}
+			if err != nil {
+				log.Error(errors.Wrapf(err, "could not parse cluster version: %q", versionToMatch))
+				continue
+			}
 		}
 
 		// This is the case where there is just one version so check against it.

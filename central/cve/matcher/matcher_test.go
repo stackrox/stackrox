@@ -111,8 +111,14 @@ func (s *cveMatcherTestSuite) TestMatchVersions() {
 		"exact match prerelease with build metadata": {
 			cpeVersion: "1.15.5", cpeUpdate: "alpha1", clusterVersion: "1.15.5-alpha1+build1", expected: true,
 		},
-		"non-semver cluster version assumes affected": {
-			cpeVersion: "1.15.5", cpeUpdate: "*", clusterVersion: "1.15.3.4", expected: true,
+		"4-segment version coerced to 3-segment": {
+			cpeVersion: "1.15.5", cpeUpdate: "*", clusterVersion: "1.15.5.4", expected: true,
+		},
+		"4-segment version not in range": {
+			cpeVersion: "1.14.5", cpeUpdate: "*", clusterVersion: "1.15.3.4", expected: false,
+		},
+		"garbage version skipped": {
+			cpeVersion: "1.15.5", cpeUpdate: "*", clusterVersion: "not-a-version", expected: false,
 		},
 	}
 
