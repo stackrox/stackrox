@@ -312,6 +312,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
 
 		ids := suite.buildIDsToPrune(batchSize)
 
+		// Try to remove indicators by id
 		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids, PruneReasonOrphanedByDeployment)
 		suite.Require().NoError(err)
 		suite.Require().Equal(batchSize, indicatorCount)
