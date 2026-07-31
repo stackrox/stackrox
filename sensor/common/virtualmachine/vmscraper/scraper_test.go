@@ -103,13 +103,11 @@ func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 
 // --- Helpers ---
 
-func ptr32(v uint32) *uint32 { return &v }
-
 func makeVM(ns, name string, cid uint32) *virtualmachine.Info {
 	return &virtualmachine.Info{
 		Namespace: ns,
 		Name:      name,
-		VSOCKCID:  ptr32(cid),
+		VSOCKCID:  new(cid),
 		Running:   true,
 	}
 }
