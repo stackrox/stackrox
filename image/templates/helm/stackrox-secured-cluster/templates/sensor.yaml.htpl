@@ -22,7 +22,6 @@ spec:
     metadata:
       labels:
         app: sensor
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
