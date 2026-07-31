@@ -100,8 +100,9 @@ func (p *processorImpl) tryToSendAudit(ctx context.Context, notifier notifiers.N
 			protoNotifier := notifier.ProtoNotifier()
 			log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
 			p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_UNHEALTHY, fmt.Sprintf("Unable to send audit msg: %v", err))
+		} else {
+			p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_HEALTHY, "")
 		}
-		p.UpdateNotifierHealthStatus(notifier, storage.IntegrationHealth_HEALTHY, "")
 	}
 }
 
