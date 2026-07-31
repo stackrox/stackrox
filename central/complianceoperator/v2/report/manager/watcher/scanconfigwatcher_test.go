@@ -125,6 +125,7 @@ func TestScanConfigWatcher(t *testing.T) {
 	}
 	for tName, tCase := range cases {
 		t.Run(tName, func(t *testing.T) {
+			t.Setenv("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", "1ms")
 			watcherID := "sc-id"
 			scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
 				Id: watcherID,
@@ -140,7 +141,7 @@ func TestScanConfigWatcher(t *testing.T) {
 			}
 			require.Eventually(t, func() bool {
 				return resultsQueue.Len() != 0
-			}, 200*time.Millisecond, 10*time.Millisecond)
+			}, 1*time.Second, 10*time.Millisecond)
 			result := resultsQueue.Pull()
 			require.NotNil(t, result)
 			require.Len(t, result.ScanResults, len(tCase.assertScanIDs))
@@ -166,6 +167,7 @@ func TestScanConfigWatcher(t *testing.T) {
 }
 
 func TestScanConfigWatcherCancel(t *testing.T) {
+	t.Setenv("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", "1ms")
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
@@ -183,11 +185,11 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
-	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
 	cancel()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(1 * time.Second):
 		t.Error("timeout waiting for the watcher to stop")
 	}
 	assert.Equal(t, 1, resultQueue.Len())
@@ -196,6 +198,7 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 }
 
 func TestScanConfigWatcherStop(t *testing.T) {
+	t.Setenv("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", "1ms")
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
@@ -212,11 +215,11 @@ func TestScanConfigWatcherStop(t *testing.T) {
 	}
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
-	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
 	scanConfigWatcher.Stop()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(1 * time.Second):
 		t.Error("timeout waiting for the watcher to stop")
 	}
 	assert.Equal(t, 1, resultQueue.Len())
@@ -277,8 +280,12 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		readyQueue:  resultQueue,
 		scansToWait: set.NewStringSet(),
 	}
-	go scanConfigWatcher.run(timeout)
+	stabilizeC := make(chan time.Time)
+	defer close(stabilizeC)
+	stabilize := &testTimer{ch: stabilizeC}
+	go scanConfigWatcher.run(timeout, stabilize)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	stabilizeC <- time.Now()
 	timeoutC <- time.Now()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
@@ -292,6 +299,7 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 }
 
 func TestScanConfigWatcherSubscribe(t *testing.T) {
+	t.Setenv("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", "1ms")
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
@@ -320,7 +328,7 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		return resultsQueue.Len() != 0
-	}, 200*time.Millisecond, 10*time.Millisecond)
+	}, 1*time.Second, 10*time.Millisecond)
 
 	require.Equal(t, 1, resultsQueue.Len())
 	result := resultsQueue.Pull()
@@ -343,6 +351,7 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 }
 
 func TestScanConfigWatcherGetScans(t *testing.T) {
+	t.Setenv("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", "1ms")
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
 	profileDS := profileDatastore.NewMockDataStore(ctrl)
@@ -365,12 +374,12 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	require.Eventually(t, func() bool {
 		return len(scanConfigWatcher.GetScans()) == 1
-	}, 200*time.Millisecond, 10*time.Millisecond)
+	}, 1*time.Second, 10*time.Millisecond)
 
 	handleScanResults("scan-1")(t, scanConfigWatcher)
 	require.Eventually(t, func() bool {
 		return resultsQueue.Len() != 0
-	}, 200*time.Millisecond, 10*time.Millisecond)
+	}, 1*time.Second, 10*time.Millisecond)
 
 	scans = scanConfigWatcher.GetScans()
 	require.Len(t, scans, 2)

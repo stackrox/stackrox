@@ -22,6 +22,12 @@ var (
 	// The default is 45 mins.
 	ComplianceScanScheduleWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT", 45*time.Minute)
 
+	// ComplianceScanConfigWatcherStabilizationDelay is the debounce period for the ScanConfigWatcher.
+	// After receiving the first scan result, the watcher buffers results and waits for this duration
+	// of inactivity before processing them. This gives the Compliance Operator time to create all
+	// scan resources before GetScansFromScanConfiguration queries the database.
+	ComplianceScanConfigWatcherStabilizationDelay = registerDurationSetting("ROX_COMPLIANCE_SCAN_CONFIG_WATCHER_STABILIZATION_DELAY", 30*time.Second)
+
 	// ComplianceMaxNumberOfErrorsInReport defines the max number of errors that a report will store. This is done to avoid overwhelming the UI with many errors.
 	// The default is 4
 	ComplianceMaxNumberOfErrorsInReport = RegisterIntegerSetting("ROX_COMPLIANCE_MAX_NUMBER_OF_ERRORS_IN_REPORT", 4)
