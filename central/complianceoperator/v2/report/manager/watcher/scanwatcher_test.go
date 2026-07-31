@@ -51,6 +51,35 @@ func handleScanWithAnnotation(id, checkCount string, startTime *protocompat.Time
 	}
 }
 
+func handleScanNotApplicable(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
+	return func(t *testing.T, scanWatcher ScanWatcher) {
+		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
+			Id:              id,
+			Annotations:     map[string]string{CheckCountAnnotationKey: "0"},
+			LastStartedTime: startTime,
+			Status: &storage.ScanStatus{
+				Phase:  "DONE",
+				Result: ScanResultNotApplicable,
+			},
+		})
+		require.NoError(t, err)
+	}
+}
+
+func handleScanNotApplicableNoAnnotation(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
+	return func(t *testing.T, scanWatcher ScanWatcher) {
+		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
+			Id:              id,
+			LastStartedTime: startTime,
+			Status: &storage.ScanStatus{
+				Phase:  "DONE",
+				Result: ScanResultNotApplicable,
+			},
+		})
+		require.NoError(t, err)
+	}
+}
+
 func handleResult(id string, startTime *protocompat.Timestamp) func(*testing.T, ScanWatcher) {
 	return func(t *testing.T, scanWatcher ScanWatcher) {
 		err := scanWatcher.PushCheckResult(&storage.ComplianceOperatorCheckResultV2{
@@ -140,6 +169,28 @@ func TestScanWatcher(t *testing.T) {
 			assertScanID:    "id-1",
 			assertResultIDs: []string{"id-1", "id-2"},
 		},
+		"scan not-applicable with zero check-count annotation": {
+			events: []testEvent{
+				handleScanNotApplicable("id-1", timestampNow),
+			},
+			assertScanID:    "id-1",
+			assertResultIDs: []string{},
+		},
+		"scan not-applicable without check-count annotation": {
+			events: []testEvent{
+				handleScanNotApplicableNoAnnotation("id-1", timestampNow),
+			},
+			assertScanID:    "id-1",
+			assertResultIDs: []string{},
+		},
+		"scan -> scan not-applicable (two-step update)": {
+			events: []testEvent{
+				handleScan("id-1", timestampNow),
+				handleScanNotApplicable("id-1", timestampNow),
+			},
+			assertScanID:    "id-1",
+			assertResultIDs: []string{},
+		},
 	}
 	for tName, tCase := range cases {
 		t.Run(tName, func(t *testing.T) {
@@ -155,7 +206,9 @@ func TestScanWatcher(t *testing.T) {
 			}, 200*time.Millisecond, 10*time.Millisecond)
 			result := resultQueue.Pull()
 			require.NotNil(t, result)
+			assert.NoError(t, result.Error)
 			assert.Equal(t, tCase.assertScanID, result.Scan.GetId())
+			assert.Equal(t, len(tCase.assertResultIDs), len(result.CheckResults))
 			for _, checkID := range tCase.assertResultIDs {
 				found := false
 				for checkResult := range result.CheckResults {

@@ -41,6 +41,7 @@ const (
 	minimumComplianceOperatorVersion = "v1.6.0"
 	CheckCountAnnotationKey          = "compliance.openshift.io/check-count"
 	LastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
+	ScanResultNotApplicable          = "NOT-APPLICABLE"
 	defaultChanelSize                = 100
 )
 
@@ -316,6 +317,12 @@ func (s *scanWatcherImpl) run() {
 			watcherFinishType.WithLabelValues(s.scanName(), "done").Inc()
 			return
 		}
+		if s.totalChecks == 0 && numCheckResults == 0 && s.scanResults.Scan.GetStatus().GetResult() == ScanResultNotApplicable {
+			log.Infof("Scan %s completed as NOT-APPLICABLE with 0 check results (watcher id: %s)", s.scanName(), s.scanResults.WatcherID)
+			s.readyQueue.Push(s.scanResults)
+			watcherFinishType.WithLabelValues(s.scanName(), "not_applicable").Inc()
+			return
+		}
 	}
 }
 
@@ -346,15 +353,15 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()
 
-	if s.scanResults.Scan == nil {
-		s.scanResults.Scan = scan
-	}
 	// If we received a newer timestamp we need to reset the watcher.
 	if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) < 0 {
 		s.lastStartedTime = scan.GetLastStartedTime()
 		s.scanResults.Scan = scan
 		s.scanResults.CheckResults = set.NewStringSet()
 		s.timeout.Reset()
+	} else if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) == 0 {
+		// Same timestamp: update scan to pick up status changes (e.g., NOT-APPLICABLE).
+		s.scanResults.Scan = scan
 	}
 	return nil
 }
