@@ -1515,13 +1515,11 @@ jobs:
         env:
           COMMENT_BODY: ${{ steps.verify.outputs.comment }}
           CVE_EXTRACTION_FAILED: ${{ needs.resolve-cve-ids.outputs.cves == '' }}
-          INFRA_FAILURE: ${{ steps.flatten.outcome == 'failure' || steps.flatten.outputs.infra-failure == 'true' }}
           EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
         run: >-
           .github/workflows/scripts/post-cve-fix-comment.sh
           --cve-extraction-failed "$CVE_EXTRACTION_FAILED"
-          --infra-failure "$INFRA_FAILURE"
           --exit-code "$EXIT_CODE"
           --missing-images "$MISSING_IMAGES"
           > cve-fix-comment.md
