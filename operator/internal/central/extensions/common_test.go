@@ -187,7 +187,7 @@ func buildFakeCentral(c secretReconciliationTestCase) *platform.Central {
 }
 
 func buildFakeClient(t *testing.T, c secretReconciliationTestCase, central *platform.Central) ctrlClient.Client {
-	var existingSecrets []ctrlClient.Object
+	existingSecrets := make([]ctrlClient.Object, 0, len(c.Existing)+len(c.ExistingManaged))
 	for _, existingSecret := range c.Existing {
 		existingSecrets = append(existingSecrets, existingSecret.DeepCopy())
 	}
@@ -196,7 +196,7 @@ func buildFakeClient(t *testing.T, c secretReconciliationTestCase, central *plat
 		managedSecret.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(central, central.GroupVersionKind())})
 		existingSecrets = append(existingSecrets, managedSecret)
 	}
-	var otherExisting []runtime.Object
+	otherExisting := make([]runtime.Object, 0, len(c.Other))
 	for _, existingObj := range c.Other {
 		otherExisting = append(otherExisting, existingObj.DeepCopyObject())
 	}

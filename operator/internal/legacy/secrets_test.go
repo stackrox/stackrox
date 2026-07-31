@@ -98,7 +98,7 @@ func Test_injector_Enrich(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			obj := &unstructured.Unstructured{}
 			obj.SetNamespace("some-ns")
-			var secrets []runtime.Object
+			secrets := make([]runtime.Object, 0, len(tt.existingSecrets))
 			for _, secretName := range tt.existingSecrets {
 				secrets = append(secrets, &corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{

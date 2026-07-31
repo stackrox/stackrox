@@ -198,7 +198,7 @@ func createTLSSecret(name, caContent string) *v1.Secret {
 }
 
 func createAllTLSSecrets(caContent string) []ctrlClient.Object {
-	var secrets []ctrlClient.Object
+	secrets := make([]ctrlClient.Object, 0, len(securedcluster.AllTLSSecretNames))
 	for _, name := range securedcluster.AllTLSSecretNames {
 		secrets = append(secrets, createTLSSecret(name, caContent))
 	}
