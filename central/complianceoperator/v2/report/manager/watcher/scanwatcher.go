@@ -354,18 +354,19 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 	if err != nil {
 		return err
 	}
-	s.totalChecks = numChecks
 
 	s.resultsLock.Lock()
 	defer s.resultsLock.Unlock()
 
 	// If we received a newer timestamp we need to reset the watcher.
 	if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) < 0 {
+		s.totalChecks = numChecks
 		s.lastStartedTime = scan.GetLastStartedTime()
 		s.scanResults.Scan = scan
 		s.scanResults.CheckResults = set.NewStringSet()
 		s.timeout.Reset()
 	} else if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) == 0 {
+		s.totalChecks = numChecks
 		// Same timestamp: update scan to pick up status changes (e.g., NOT-APPLICABLE).
 		s.scanResults.Scan = scan
 	}

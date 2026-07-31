@@ -32,16 +32,35 @@ func withExpectCall(fn func(*mocksComplianceIntegrationDS.MockDataStore)) func(*
 func TestValidateScanConfigResults(t *testing.T) {
 	ctx := t.Context()
 	cases := map[string]struct {
-		results                *ScanConfigWatcherResults
-		expectFn               func(*mocksComplianceIntegrationDS.MockDataStore)
-		expectedFailedClusters map[string]*report.FailedCluster
-		expectedError          bool
-		expectedExactError     error
+		results                  *ScanConfigWatcherResults
+		expectFn                 func(*mocksComplianceIntegrationDS.MockDataStore)
+		expectedFailedClusters   map[string]*report.FailedCluster
+		expectedError            bool
+		expectedExactError       error
+		expectedScanResultsCount int
+		checkScanResultsCount    bool
 	}{
 		"no error": {
 			results:                getScanConfigResults(2, 0, 0, 1, nil),
 			expectFn:               withExpectCall(nil),
 			expectedFailedClusters: make(map[string]*report.FailedCluster),
+		},
+		"not-applicable scans are removed from results": {
+			results: func() *ScanConfigWatcherResults {
+				r := getScanConfigResults(1, 0, 0, 1, nil)
+				r.ScanResults["cluster-0:not-applicable-scan"] = &ScanWatcherResults{
+					Scan: &storage.ComplianceOperatorScanV2{
+						ClusterId: "cluster-0",
+						ScanName:  "not-applicable-scan",
+						Status:    &storage.ScanStatus{Result: ScanResultNotApplicable},
+					},
+				}
+				return r
+			}(),
+			expectFn:                 withExpectCall(nil),
+			expectedFailedClusters:   make(map[string]*report.FailedCluster),
+			checkScanResultsCount:    true,
+			expectedScanResultsCount: 1,
 		},
 		"two failed clusters": {
 			results: getScanConfigResults(2, 2, 0, 1, nil),
@@ -154,6 +173,9 @@ func TestValidateScanConfigResults(t *testing.T) {
 				if tCase.expectedExactError != nil {
 					assert.ErrorIs(tt, err, tCase.expectedExactError)
 				}
+			}
+			if tCase.checkScanResultsCount {
+				assert.Equal(tt, tCase.expectedScanResultsCount, len(tCase.results.ScanResults))
 			}
 		})
 	}

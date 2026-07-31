@@ -282,10 +282,6 @@ func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.Comp
 			return nil, errors.Wrap(err, "unable to search the scans")
 		}
 		for _, s := range scans {
-			if IsScanNotApplicable(s) {
-				log.Debugf("Skipping NOT-APPLICABLE scan %s", s.GetScanName())
-				continue
-			}
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
 			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
 		}

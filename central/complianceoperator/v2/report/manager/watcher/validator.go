@@ -17,7 +17,11 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 	failedClusters := make(map[string]*report.FailedCluster)
 	errList := errorhelpers.NewErrorList("failed clusters")
 	clustersWithResults := set.NewStringSet()
-	for _, scanResult := range results.ScanResults {
+	for key, scanResult := range results.ScanResults {
+		if IsScanNotApplicable(scanResult.Scan) {
+			delete(results.ScanResults, key)
+			continue
+		}
 		clustersWithResults.Add(scanResult.Scan.GetClusterId())
 		failedClusterInfo, isInstallationError := ValidateScanResults(ctx, scanResult, integrationDataStore)
 		if failedClusterInfo == nil {
