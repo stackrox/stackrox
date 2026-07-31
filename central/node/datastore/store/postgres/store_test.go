@@ -343,7 +343,8 @@ func (s *NodesStoreSuite) TestWalkByQueryWithTransactionContext() {
 }
 
 // TestStore_DenormalizedCountsUpdatedAfterOrphaning tests that the denormalized CVE counts
-// in the nodes table are recalculated after CVEs are marked as orphaned.
+// in the nodes table are recalculated after CVEs are marked as orphaned, that updating one
+// node doesn't affect another, and that the serialized blob stays in sync with the columns.
 func (s *NodesStoreSuite) TestStore_DenormalizedCountsUpdatedAfterOrphaning() {
 	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
 	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
@@ -354,60 +355,74 @@ func (s *NodesStoreSuite) TestStore_DenormalizedCountsUpdatedAfterOrphaning() {
 
 	store := New(s.pool, false, concurrency.NewKeyFence())
 
-	// Create a node with multiple CVEs
-	node := &storage.Node{}
-	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	// Create two nodes with CVEs
+	node1 := &storage.Node{}
+	s.NoError(testutils.FullInit(node1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
+	s.Require().NotEmpty(node1.GetScan().GetComponents())
+	s.Require().NotEmpty(node1.GetScan().GetComponents()[0].GetVulnerabilities())
 
-	// Ensure the node has components with vulnerabilities
-	s.Require().NotEmpty(node.GetScan().GetComponents())
-	s.Require().NotEmpty(node.GetScan().GetComponents()[0].GetVulnerabilities())
+	node2 := &storage.Node{}
+	s.NoError(testutils.FullInit(node2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 
-	// Count initial CVEs and fixable CVEs
-	initialCVECount := int32(0)
-	cveSet := make(map[string]bool)
-	for _, comp := range node.GetScan().GetComponents() {
-		for _, vuln := range comp.GetVulnerabilities() {
-			cveName := vuln.GetCveBaseInfo().GetCve()
-			if _, exists := cveSet[cveName]; !exists {
-				cveSet[cveName] = vuln.GetFixedBy() != ""
-				initialCVECount++
-			}
-		}
-	}
+	enricher.FillScanStats(node1)
+	enricher.FillScanStats(node2)
 
-	s.Require().Greater(initialCVECount, int32(0), "Test requires node with CVEs")
+	s.NoError(store.Upsert(s.ctx, node1))
+	s.NoError(store.Upsert(s.ctx, node2))
 
-	// Fill scan stats to populate denormalized counts
-	enricher.FillScanStats(node)
-
-	// Upsert the node
-	s.NoError(store.Upsert(s.ctx, node))
-
-	// Verify initial counts match
-	foundNode, exists, err := store.GetNodeMetadata(s.ctx, node.GetId())
+	// Verify initial counts
+	foundNode1, exists, err := store.GetNodeMetadata(s.ctx, node1.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(initialCVECount, foundNode.GetCves(), "Initial CVE count should match")
+	node1InitialCVEs := foundNode1.GetCves()
+	s.Require().Greater(node1InitialCVEs, int32(0), "Test requires node with CVEs")
 
-	// Update the node to remove all vulnerabilities (simulating Scanner V4 replacing Scanner V2)
-	updatedNode := foundNode.CloneVT()
+	foundNode2, exists, err := store.GetNodeMetadata(s.ctx, node2.GetId())
+	s.NoError(err)
+	s.True(exists)
+	node2InitialCVEs := foundNode2.GetCves()
+	s.Require().Greater(node2InitialCVEs, int32(0))
+
+	// Orphan all CVEs from node1 only
+	updatedNode1 := foundNode1.CloneVT()
 	newScanTime := time.Now().Add(time.Minute)
-	updatedNode.Scan = &storage.NodeScan{
+	updatedNode1.Scan = &storage.NodeScan{
 		ScanTime:   protocompat.ConvertTimeToTimestampOrNil(&newScanTime),
-		Components: []*storage.EmbeddedNodeScanComponent{}, // No components = no CVEs
+		Components: []*storage.EmbeddedNodeScanComponent{},
 	}
+	enricher.FillScanStats(updatedNode1)
 
-	// Fill scan stats for the updated node (will set counts to 0)
-	enricher.FillScanStats(updatedNode)
+	s.NoError(store.Upsert(s.ctx, updatedNode1))
 
-	s.NoError(store.Upsert(s.ctx, updatedNode))
-
-	// Verify the denormalized counts are updated to 0
-	finalNode, exists, err := store.GetNodeMetadata(s.ctx, node.GetId())
+	// Verify node1 counts are 0
+	finalNode1, exists, err := store.GetNodeMetadata(s.ctx, node1.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(int32(0), finalNode.GetCves(), "CVE count should be 0 after all CVEs are orphaned")
-	s.Equal(int32(0), finalNode.GetFixableCves(), "Fixable CVE count should be 0 after all CVEs are orphaned")
+	s.Equal(int32(0), finalNode1.GetCves(), "CVE count should be 0 after all CVEs are orphaned")
+	s.Equal(int32(0), finalNode1.GetFixableCves(), "Fixable CVE count should be 0 after all CVEs are orphaned")
+
+	// Verify node2 is unchanged
+	finalNode2, exists, err := store.GetNodeMetadata(s.ctx, node2.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(node2InitialCVEs, finalNode2.GetCves(), "Node2 CVE count should be unchanged")
+
+	// Verify the serialized blob matches the denormalized columns for node1
+	var serializedData []byte
+	var columnCves, columnFixableCves int32
+	err = s.pool.QueryRow(s.ctx,
+		"SELECT serialized, Cves, FixableCves FROM nodes WHERE Id = $1",
+		node1.GetId(),
+	).Scan(&serializedData, &columnCves, &columnFixableCves)
+	s.NoError(err)
+
+	var deserialized storage.Node
+	s.NoError(deserialized.UnmarshalVTUnsafe(serializedData))
+
+	s.Equal(columnCves, deserialized.GetCves(),
+		"Serialized blob CVE count must match the Cves column")
+	s.Equal(columnFixableCves, deserialized.GetFixableCves(),
+		"Serialized blob fixable CVE count must match the FixableCves column")
 }
 
 // TestStore_DenormalizedCountsPartialOrphaning tests that counts are correctly updated
@@ -493,64 +508,6 @@ func (s *NodesStoreSuite) TestStore_DenormalizedCountsPartialOrphaning() {
 	s.Equal(expectedCVECount, finalNode.GetCves(), "CVE count should match remaining CVEs")
 	s.Equal(expectedFixableCount, finalNode.GetFixableCves(), "Fixable CVE count should match remaining fixable CVEs")
 	s.Less(finalNode.GetCves(), initialCVECount, "CVE count should be less than initial")
-}
-
-// TestStore_DenormalizedCountsMultipleNodes tests that updating one node's counts
-// doesn't affect other nodes.
-func (s *NodesStoreSuite) TestStore_DenormalizedCountsMultipleNodes() {
-	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
-	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
-		s.T().SkipNow()
-	}
-	defer s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
-
-	store := New(s.pool, false, concurrency.NewKeyFence())
-
-	// Create two nodes
-	node1 := &storage.Node{}
-	s.NoError(testutils.FullInit(node1, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	node2 := &storage.Node{}
-	s.NoError(testutils.FullInit(node2, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-
-	// Fill scan stats to populate denormalized counts
-	enricher.FillScanStats(node1)
-	enricher.FillScanStats(node2)
-
-	s.NoError(store.Upsert(s.ctx, node1))
-	s.NoError(store.Upsert(s.ctx, node2))
-
-	// Get initial counts for both nodes
-	foundNode1, _, _ := store.GetNodeMetadata(s.ctx, node1.GetId())
-	foundNode2, _, _ := store.GetNodeMetadata(s.ctx, node2.GetId())
-
-	node1InitialCVEs := foundNode1.GetCves()
-	node2InitialCVEs := foundNode2.GetCves()
-
-	s.Require().Greater(node1InitialCVEs, int32(0))
-	s.Require().Greater(node2InitialCVEs, int32(0))
-
-	// Orphan all CVEs from node1 only
-	updatedNode1, _, _ := store.Get(s.ctx, node1.GetId())
-	newScanTime := time.Now()
-	updatedNode1.Scan = &storage.NodeScan{
-		ScanTime:   protocompat.ConvertTimeToTimestampOrNil(&newScanTime),
-		Components: []*storage.EmbeddedNodeScanComponent{},
-	}
-
-	// Fill scan stats for the updated node (will set counts to 0)
-	enricher.FillScanStats(updatedNode1)
-
-	s.NoError(store.Upsert(s.ctx, updatedNode1))
-
-	// Verify node1 has 0 CVEs
-	finalNode1, _, _ := store.GetNodeMetadata(s.ctx, node1.GetId())
-	s.Equal(int32(0), finalNode1.GetCves(), "Node1 should have 0 CVEs")
-
-	// Verify node2 is unchanged
-	finalNode2, _, _ := store.GetNodeMetadata(s.ctx, node2.GetId())
-	s.Equal(node2InitialCVEs, finalNode2.GetCves(), "Node2 CVE count should be unchanged")
 }
 
 // TestStore_OrphanedComponentCVEEdgesCleanup tests that orphaned component-CVE edges
@@ -713,52 +670,4 @@ func (s *NodesStoreSuite) TestStore_SharedComponentsNotDeletedWhenStillReference
 	err = s.pool.QueryRow(s.ctx, "SELECT COUNT(*) FROM node_components_cves_edges").Scan(&componentCVEEdgeCount)
 	s.NoError(err)
 	s.Equal(0, componentCVEEdgeCount, "Component-CVE edge should be CASCADE deleted when component is deleted")
-}
-
-// TestStore_SerializedBlobCVECountsMatchColumns verifies that the serialized blob's CVE counts
-// stay in sync with the denormalized Cves/FixableCves columns after CVEs are orphaned.
-func (s *NodesStoreSuite) TestStore_SerializedBlobCVECountsMatchColumns() {
-	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
-	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
-		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
-		s.T().SkipNow()
-	}
-	defer s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
-
-	store := New(s.pool, false, concurrency.NewKeyFence())
-
-	node := &storage.Node{}
-	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	s.Require().NotEmpty(node.GetScan().GetComponents())
-	s.Require().NotEmpty(node.GetScan().GetComponents()[0].GetVulnerabilities())
-
-	enricher.FillScanStats(node)
-	s.NoError(store.Upsert(s.ctx, node))
-
-	// Remove all components so CVEs become orphaned, changing counts
-	updatedNode, _, _ := store.Get(s.ctx, node.GetId())
-	newScanTime := time.Now()
-	updatedNode.Scan = &storage.NodeScan{
-		ScanTime:   protocompat.ConvertTimeToTimestampOrNil(&newScanTime),
-		Components: []*storage.EmbeddedNodeScanComponent{},
-	}
-	enricher.FillScanStats(updatedNode)
-	s.NoError(store.Upsert(s.ctx, updatedNode))
-
-	// Read the serialized blob and the individual columns directly
-	var serializedData []byte
-	var columnCves, columnFixableCves int32
-	err := s.pool.QueryRow(s.ctx,
-		"SELECT serialized, Cves, FixableCves FROM nodes WHERE Id = $1",
-		node.GetId(),
-	).Scan(&serializedData, &columnCves, &columnFixableCves)
-	s.NoError(err)
-
-	var deserialized storage.Node
-	s.NoError(deserialized.UnmarshalVTUnsafe(serializedData))
-
-	s.Equal(columnCves, deserialized.GetCves(),
-		"Serialized blob CVE count must match the Cves column")
-	s.Equal(columnFixableCves, deserialized.GetFixableCves(),
-		"Serialized blob fixable CVE count must match the FixableCves column")
 }
