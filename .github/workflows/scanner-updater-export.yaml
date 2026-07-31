@@ -75,9 +75,11 @@ jobs:
             exit 0
         fi
         # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
-        if ./.github/workflows/scripts/scanner-updater-check-freshness.sh; then
+        rc=0
+        ./.github/workflows/scripts/scanner-updater-check-freshness.sh || rc=$?
+        if [[ $rc -eq 0 ]]; then
             echo "result=skip" >> "$GITHUB_OUTPUT"
-        elif [[ $? -eq 1 ]]; then
+        elif [[ $rc -eq 1 ]]; then
             echo "result=run" >> "$GITHUB_OUTPUT"
         else
             echo "result=error" >> "$GITHUB_OUTPUT"
