@@ -62,6 +62,36 @@ func TestValidateScanConfigResults(t *testing.T) {
 			checkScanResultsCount:    true,
 			expectedScanResultsCount: 1,
 		},
+		"cluster with only not-applicable scans is flagged": {
+			results: func() *ScanConfigWatcherResults {
+				return &ScanConfigWatcherResults{
+					ScanResults: map[string]*ScanWatcherResults{
+						"cluster-0:master-scan": {
+							Scan: &storage.ComplianceOperatorScanV2{
+								ClusterId: "cluster-0",
+								ScanName:  "master-scan",
+								Status:    &storage.ScanStatus{Result: ScanResultNotApplicable},
+							},
+						},
+					},
+					ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{
+						Clusters: []*storage.ComplianceOperatorScanConfigurationV2_Cluster{
+							{ClusterId: "cluster-0"},
+						},
+					},
+				}
+			}(),
+			expectFn: withExpectCall(nil),
+			expectedFailedClusters: map[string]*report.FailedCluster{
+				"cluster-0": {
+					ClusterId: "cluster-0",
+					Reasons:   []string{report.SCAN_NOT_APPLICABLE},
+				},
+			},
+			expectedError:            true,
+			checkScanResultsCount:    true,
+			expectedScanResultsCount: 0,
+		},
 		"two failed clusters": {
 			results: getScanConfigResults(2, 2, 0, 1, nil),
 			expectFn: withExpectCall(func(ds *mocksComplianceIntegrationDS.MockDataStore) {

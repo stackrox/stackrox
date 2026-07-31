@@ -17,8 +17,10 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 	failedClusters := make(map[string]*report.FailedCluster)
 	errList := errorhelpers.NewErrorList("failed clusters")
 	clustersWithResults := set.NewStringSet()
+	clustersNotApplicable := set.NewStringSet()
 	for key, scanResult := range results.ScanResults {
 		if IsScanNotApplicable(scanResult.Scan) {
+			clustersNotApplicable.Add(scanResult.Scan.GetClusterId())
 			delete(results.ScanResults, key)
 			continue
 		}
@@ -41,6 +43,14 @@ func ValidateScanConfigResults(ctx context.Context, results *ScanConfigWatcherRe
 	if len(results.ScanConfig.GetClusters()) > len(clustersWithResults) {
 		for _, cluster := range results.ScanConfig.GetClusters() {
 			if clustersWithResults.Contains(cluster.GetClusterId()) {
+				continue
+			}
+			if clustersNotApplicable.Contains(cluster.GetClusterId()) {
+				failedClusters[cluster.GetClusterId()] = &report.FailedCluster{
+					ClusterId: cluster.GetClusterId(),
+					Reasons:   []string{report.SCAN_NOT_APPLICABLE},
+				}
+				errList.AddError(errors.New(fmt.Sprintf("cluster %s: all scans not applicable", cluster.GetClusterId())))
 				continue
 			}
 			clusterInfo := ValidateClusterHealth(ctx, cluster.GetClusterId(), integrationDataStore)
