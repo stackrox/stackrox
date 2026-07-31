@@ -31,6 +31,7 @@ parse_flags() {
           out_args["${1#--}"]="$2"
           shift 2
         else
+          # shellcheck disable=SC2034 # written through the out_args nameref; shellcheck loses track of it in this branch
           out_args["${1#--}"]=""
           shift
         fi
