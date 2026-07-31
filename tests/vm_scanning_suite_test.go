@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -323,6 +322,31 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "daemonset", "collector", "compliance", ns, wantEnv)
+	s.mustVerifySensorVSOCKRBAC(ctx)
+}
+
+// mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
+// Pull-mode scraping fails without this; operator e2e applies the binding in lib.sh
+// because SecuredCluster cannot set Helm virtualMachines.enabled yet.
+func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
+	t := s.T()
+	t.Helper()
+
+	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
+	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
+		"Sensor cannot scrape guest agents over vsock without this RBAC "+
+		"(operator e2e should apply tests/e2e/yaml/sensor-vsock-rbac.yaml when ROX_VIRTUAL_MACHINES=true)")
+	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
+	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
+
+	foundSensorSA := false
+	for _, sub := range binding.Subjects {
+		if sub.Kind == "ServiceAccount" && sub.Name == "sensor" && sub.Namespace == namespaces.StackRox {
+			foundSensorSA = true
+			break
+		}
+	}
+	require.True(t, foundSensorSA, "ClusterRoleBinding stackrox:vsock-access-binding must bind stackrox/sensor")
 }
 
 // mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
@@ -749,16 +773,6 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 		return s.cfg.DeleteTimeout
 	}
 	return defaultVMDeleteTimeout
-}
-
-func (s *VMScanningSuite) mustGetScanTimestamp(id string) *timestamppb.Timestamp {
-	t := s.T()
-	t.Helper()
-	vm := s.mustGetVM(id)
-	require.NotNil(t, vm.GetScan(), "mustGetScanTimestamp: GetVirtualMachine id=%q returned nil scan", id)
-	ts := vm.GetScan().GetScanTime()
-	require.NotNil(t, ts, "mustGetScanTimestamp: GetVirtualMachine id=%q scan_time is nil", id)
-	return ts
 }
 
 func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {

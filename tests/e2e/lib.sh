@@ -747,6 +747,18 @@ deploy_sensor_via_operator() {
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
 
+    # Operator cannot set Helm virtualMachines.enabled yet; without that value
+    # the chart skips VSOCK RBAC. Pull-mode scraping needs get on
+    # virtualmachineinstances/vsock, so apply the equivalent roles here.
+    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        info "Applying Sensor VSOCK RBAC for virtual machine pull-mode scraping"
+        if [[ "${sensor_namespace}" != "stackrox" ]]; then
+            # Manifest hard-codes the sensor SA namespace as stackrox.
+            die "ROX_VIRTUAL_MACHINES VSOCK RBAC currently requires sensor_namespace=stackrox (got ${sensor_namespace})"
+        fi
+        retrying_kubectl </dev/null apply -f "${ROOT}/tests/e2e/yaml/sensor-vsock-rbac.yaml"
+    fi
+
     collector_envs=()
 
     if [[ -n "${ROX_AFTERGLOW_PERIOD:-}" ]]; then

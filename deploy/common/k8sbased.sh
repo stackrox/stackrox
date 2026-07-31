@@ -895,6 +895,11 @@ function launch_sensor {
         helm_args+=(--set scannerV4.disable=false)
       fi
 
+      if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        # Enables Sensor VSOCK RBAC and ROX_VIRTUAL_MACHINES on Sensor.
+        extra_helm_config+=(--set "virtualMachines.enabled=true")
+      fi
+
       if [[ -n "$LOGLEVEL" ]]; then
         helm_args+=(
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
