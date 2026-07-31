@@ -148,7 +148,7 @@ spec:
         - name: ROX_SCANNER_V4
           value: "true"
         {{- end }}
-        {{- if ._rox._scannerEnabled }}
+        {{- if ._rox._legacyScannerEnabled }}
         - name: ROX_LEGACY_SCANNER
           value: "true"
         {{- else }}
