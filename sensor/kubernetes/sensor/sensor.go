@@ -159,7 +159,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
-	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
+	complianceCommandHandler := compliance.NewCommandHandler(complianceService, internalMessageDispatcher)
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))

@@ -18,6 +18,7 @@ const (
 	ResolvedResourceEventLane
 	SoftRestartLane
 	ResourceSyncFinishedLane
+	ComplianceReturnLane
 )
 
 var (
@@ -37,6 +38,7 @@ var (
 		ResolvedResourceEventLane:      "ResolvedResourceEvent",
 		SoftRestartLane:                "SoftRestart",
 		ResourceSyncFinishedLane:       "ResourceSyncFinished",
+		ComplianceReturnLane:           "ComplianceReturn",
 	}
 )
 
