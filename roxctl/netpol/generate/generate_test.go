@@ -186,8 +186,3 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		})
 	}
 }
-
-//go:fix inline
-func ptrFromString(s string) *string {
-	return new(s)
-}

@@ -495,8 +495,3 @@ func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
 	assert.True(t, initContainer.GetSecurityContext().GetPrivileged())
 	assert.True(t, initContainer.GetLivenessProbe().GetDefined())
 }
-
-//go:fix inline
-func boolPtr(b bool) *bool {
-	return new(b)
-}

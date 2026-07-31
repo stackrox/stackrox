@@ -15,9 +15,6 @@ const (
 	testNamespace = "stackrox"
 )
 
-//go:fix inline
-func int32Ptr(i int32) *int32 { return new(i) }
-
 func newTestRolloutChecker(client *fake.Clientset) *k8sRolloutChecker {
 	return &k8sRolloutChecker{
 		client:    client,
@@ -33,7 +30,7 @@ func readyDeployment() *appsv1.Deployment {
 			Generation: 1,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: int32Ptr(1),
+			Replicas: new(int32(1)),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"app": "central"},
 			},

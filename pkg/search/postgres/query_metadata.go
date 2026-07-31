@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/readable"
 )
@@ -94,7 +93,7 @@ var (
 		},
 		postgres.BigInteger: {
 			alloc: func() interface{} {
-				return pointers.Int64(0)
+				return new(int64(0))
 			},
 			printer: func(val interface{}) []string {
 				return []string{strconv.FormatInt(*val.(*int64), 10)}

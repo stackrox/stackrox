@@ -539,9 +539,6 @@ func (s *ClusterEntitiesStoreTestSuite) TestIPMapConsistencyAfterIPRecyclingViaA
 	})
 }
 
-//go:fix inline
-func ptr[T any](v T) *T { return new(v) }
-
 // This is a different version of `TestIPMapConsistencyAfterIPRecyclingViaApply`
 // that uses direct calls to `deleteDeploymentFromCurrent` instead of `Store.Apply`.
 //

@@ -52,10 +52,6 @@ var (
 
 // alertToMatchKey converts a *storage.Alert to an *alertviews.AlertMatchKey,
 // extracting the fields the same way the alertAdapter does in the impl file.
-//
-//go:fix inline
-func ptr[T any](v T) *T { return new(v) }
-
 func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
 	key := &alertviews.AlertMatchKey{
 		ID:             a.GetId(),

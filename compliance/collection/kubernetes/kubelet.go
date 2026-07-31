@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	complianceUtils "github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/set"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -37,7 +36,7 @@ func applyConfigDefaults(kc *v1beta1.KubeletConfiguration) {
 
 	kc.StreamingConnectionIdleTimeout = metav1.Duration{Duration: 4 * time.Hour}
 	kc.MakeIPTablesUtilChains = new(true)
-	kc.EventRecordQPS = pointers.Int32(5)
+	kc.EventRecordQPS = new(int32(5))
 }
 
 // GatherKubelet gets the KubeletConfiguration
