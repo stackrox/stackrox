@@ -26,11 +26,11 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	gkeVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+-gke\.[0-9]+$`)
-	eksVersionRegex = regexp.MustCompile(`^[v|V]?[0-9]+\.[0-9]+\.[0-9]+.*eks.*$`)
+	gkeVersionRegex = regexp.MustCompile(`^[vV]?[0-9]+\.[0-9]+\.[0-9]+-gke\.[0-9]+$`)
+	eksVersionRegex = regexp.MustCompile(`^[vV]?[0-9]+\.[0-9]+\.[0-9]+.*eks.*$`)
 )
 
-// CVEMatcher provides funcitonality to determine whether non-image cve is applicable to cluster
+// CVEMatcher provides functionality to determine whether non-image cve is applicable to cluster
 type CVEMatcher struct {
 	clusters   clusterDataStore.DataStore
 	namespaces nsDataStore.DataStore
@@ -345,8 +345,8 @@ func getBaseVersion(v *version.Version) (*version.Version, error) {
 	if prerelease == "" {
 		return v, nil
 	}
-	versionWithoutPrerelease := strings.ReplaceAll(v.String(), "-"+prerelease, "")
-	bv, err := version.NewVersion(versionWithoutPrerelease)
+	seg := v.Segments()
+	bv, err := version.NewVersion(fmt.Sprintf("%d.%d.%d", seg[0], seg[1], seg[2]))
 	if err != nil {
 		return nil, err
 	}
