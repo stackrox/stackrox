@@ -20,7 +20,7 @@ on:
         required: true
         type: string
       skip_freshness_check:
-        description: "When true, bypass the freshness recheck (used for PR validation)"
+        description: "Skip the freshness recheck and run the update unconditionally"
         required: false
         type: boolean
         default: false
@@ -39,6 +39,7 @@ permissions:
 
 jobs:
   recheck:
+    if: ${{ !inputs.skip_freshness_check }}
     runs-on: ubuntu-latest
     outputs:
       result: ${{ steps.check.outputs.result }}
@@ -55,8 +56,7 @@ jobs:
     - name: Authenticate with GCS
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        # TODO(ROX-33377): production cutover — use conditional credentials:
-        # credentials_json: ${{ github.event_name == 'pull_request' && secrets.GOOGLE_SA_CIRCLECI_SCANNER || secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER.
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
@@ -68,12 +68,7 @@ jobs:
         GCS_OBJECT: ${{ inputs.object }}
         UPDATER_SOURCE: ${{ inputs.source }}
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
-        SKIP_FRESHNESS_CHECK: ${{ inputs.skip_freshness_check }}
       run: |
-        if [[ "$SKIP_FRESHNESS_CHECK" == "true" ]]; then
-            echo "result=run" >> "$GITHUB_OUTPUT"
-            exit 0
-        fi
         # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
         rc=0
         ./.github/workflows/scripts/scanner-updater-check-freshness.sh || rc=$?
@@ -85,24 +80,13 @@ jobs:
             echo "result=error" >> "$GITHUB_OUTPUT"
         fi
 
-    - name: Notify on recheck error
-      if: github.event_name != 'pull_request' && steps.check.outputs.result == 'error'
-      env:
-        OBJECT: ${{ inputs.object }}
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability updater freshness check failed for *${OBJECT}*: <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
-
     - name: Fail on recheck error
       if: steps.check.outputs.result == 'error'
       run: exit 1
 
   update:
     needs: recheck
-    if: needs.recheck.outputs.result == 'run'
+    if: needs.recheck.result == 'skipped' || needs.recheck.outputs.result == 'run'
     runs-on: ubuntu-latest
     concurrency:
       group: scanner-updater-export-${{ inputs.object }}
@@ -166,8 +150,8 @@ jobs:
     - name: Authenticate with GCS for upload
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        # TODO(ROX-33377): production cutover — use conditional credentials:
-        # credentials_json: ${{ github.event_name == 'pull_request' && secrets.GOOGLE_SA_CIRCLECI_SCANNER || secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER
+        # for non-PR runs (select via inputs.skip_freshness_check or a dedicated input).
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
@@ -190,19 +174,28 @@ jobs:
 
         echo "Uploaded $src -> $GCS_OBJECT (digest=$digest)"
 
-    - name: Notify on failure
-      if: failure() && github.event_name != 'pull_request'
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
-        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: |
-        curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Vulnerability updater *${UPDATER_SOURCE}* failed: <${RUN_URL}|View logs>\"}" \
-          "$SLACK_WEBHOOK"
-
     - name: Checkout repository (cleanup)
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
         fetch-depth: 0
         persist-credentials: false
+
+  notify:
+    needs: [recheck, update]
+    if: >-
+      !inputs.skip_freshness_check &&
+      always() &&
+      (needs.recheck.result == 'failure' || needs.update.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify on failure
+      env:
+        SOURCE: ${{ inputs.source }}
+        OBJECT: ${{ inputs.object }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability updater *${SOURCE}* failed (object: ${OBJECT}): <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
