@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	"github.com/stackrox/rox/central/processindicator/views"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -44,16 +45,18 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store.
-func New(db postgres.DB, store store.Store) DataStore {
+func New(db postgres.DB, store store.Store, plopStorage plopStore.Store) DataStore {
 	return &datastoreImpl{
-		db:      db,
-		storage: store,
-		stopper: concurrency.NewStopper(),
+		db:          db,
+		storage:     store,
+		plopStorage: plopStorage,
+		stopper:     concurrency.NewStopper(),
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	return New(pool, dbstore)
+	plopStorage := plopStore.New(pool)
+	return New(pool, dbstore, plopStorage)
 }

@@ -61,7 +61,7 @@ func (s *PodDatastoreSuite) SetupTest() {
 	indicatorStorage := processIndicatorStorage.New(s.postgres.DB)
 
 	s.indicatorDataStore = processIndicatorDataStore.New(s.postgres.DB,
-		indicatorStorage)
+		indicatorStorage, plopStorage)
 
 	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore, s.postgres.DB)
 

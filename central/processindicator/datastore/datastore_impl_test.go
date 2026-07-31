@@ -9,6 +9,7 @@ import (
 
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -81,12 +82,12 @@ func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
-	suite.datastore = New(suite.postgres.DB, postgresStore.New(suite.postgres.DB))
+	suite.datastore = New(suite.postgres.DB, postgresStore.New(suite.postgres.DB), plopStore.New(suite.postgres.DB))
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() *storeMocks.MockStore {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	suite.datastore = New(suite.postgres.DB, mockStorage)
+	suite.datastore = New(suite.postgres.DB, mockStorage, nil)
 
 	return mockStorage
 }

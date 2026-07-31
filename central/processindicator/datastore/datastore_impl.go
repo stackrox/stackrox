@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/processindicator/views"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -31,6 +32,10 @@ type datastoreImpl struct {
 	db postgres.DB
 
 	storage store.Store
+	// ProcessListeningOnPort storage is needed for correct pruning. It
+	// logically belongs to the datastore implementation of PLOP, but this way
+	// it would be an import cycle, so call the Store directly.
+	plopStorage plopStore.Store
 
 	stopper concurrency.Stopper
 }

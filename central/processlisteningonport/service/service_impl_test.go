@@ -62,7 +62,7 @@ func (suite *PLOPServiceTestSuite) SetupTest() {
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
 
 	suite.indicatorDataStore = processIndicatorDataStore.New(suite.postgres.DB,
-		indicatorStorage)
+		indicatorStorage, suite.store)
 	suite.datastore = plopDataStore.New(suite.store, suite.indicatorDataStore, suite.postgres)
 	suite.service = &serviceImpl{
 		dataStore: suite.datastore,

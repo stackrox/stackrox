@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -26,7 +27,7 @@ func BenchmarkAddIndicator(b *testing.B) {
 
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
-	datastore := New(db, store)
+	datastore := New(db, store, plopStore.New(db))
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -115,7 +116,7 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
-	datastore := New(db, store)
+	datastore := New(db, store, plopStore.New(db))
 
 	ctx := sac.WithAllAccess(context.Background())
 	// Add all data once
