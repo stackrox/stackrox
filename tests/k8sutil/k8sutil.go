@@ -36,10 +36,11 @@ func (l testutilsLogger) Printf(format string, v ...any) { l.Logf(format, v...) 
 // for network resilience. This adds automatic retry logic for transient network errors.
 func ConfigureRetryableTransport(t testutils.T, restCfg *rest.Config) {
 	if restCfg.Timeout == 0 {
-		restCfg.Timeout = 30 * time.Second
+		restCfg.Timeout = 2 * time.Minute
 	}
 	retryablehttp.ConfigureRESTConfig(restCfg,
 		retryablehttp.WithLogger(&testutilsLogger{t}),
+		retryablehttp.WithResponseHeaderTimeout(30*time.Second),
 	)
 }
 
