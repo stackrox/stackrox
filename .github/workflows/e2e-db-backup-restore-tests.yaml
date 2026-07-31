@@ -1,4 +1,4 @@
-name: e2e-db-backup-restore-test
+name: e2e-db-backup-restore-tests
 
 on:
   workflow_call:
@@ -27,13 +27,13 @@ defaults:
     shell: bash
 
 jobs:
-  gke-db-backup-restore-test:
+  gke-db-backup-restore-tests:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-test
+      CI_JOB_NAME: gke-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ROX_SCANNER_V4: "false"
