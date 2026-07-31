@@ -506,7 +506,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	return nil
 }
 
-const refLinkBatchSize = 1000
+const refLinkBatchSize = 100
 
 // streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
 // to the provided csv.Writer. CVE reference links are resolved incrementally in batches and cached.
@@ -519,8 +519,11 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 	rowCount *int,
 ) error {
 	var batch []*ImageCVEQueryResponse
+	batchNum := 0
 
 	flushBatch := func() error {
+		batchNum++
+		log.Infof("Processing batch %d (%d rows so far)", batchNum, *rowCount)
 		unseenIDs := set.NewStringSet()
 		for _, r := range batch {
 			id := r.GetCVEID()

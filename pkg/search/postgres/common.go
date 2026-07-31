@@ -39,7 +39,7 @@ var (
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
 )
 
-const cursorBatchSize = 1000
+const cursorBatchSize = 100
 
 type cursorSession struct {
 	id string
