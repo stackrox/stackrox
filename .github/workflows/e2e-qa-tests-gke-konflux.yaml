@@ -25,7 +25,7 @@ jobs:
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'konflux-build')
       )
-    uses: ./.github/workflows/_qa-e2e-tests.yaml
+    uses: ./.github/workflows/e2e-qa-tests.yaml
     with:
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests-konflux

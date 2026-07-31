@@ -220,44 +220,44 @@ jobs:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-qa-e2e-tests-gke:
+  e2e-qa-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
     if: >-
       github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests-gha')
-    uses: ./.github/workflows/qa-e2e-tests-gke.yaml
+      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke')
+    uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-gke }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke }}
     secrets: inherit
     concurrency:
-      group: qa-e2e-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-qa-e2e-tests-ocp-4-22:
+  e2e-qa-tests-ocp-4-22:
     needs: [ wait-for-images, should-dispatch ]
     if: >-
-      contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests-gha') &&
+      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-ocp-4-22') &&
       github.event_name == 'pull_request'
-    uses: ./.github/workflows/qa-e2e-tests-ocp-4-22.yaml
+    uses: ./.github/workflows/e2e-qa-tests-ocp-4-22.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-ocp-4-22 }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-4-22 }}
     secrets: inherit
     concurrency:
-      group: qa-e2e-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-qa-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  dispatch-qa-e2e-tests-gke-konflux:
+  e2e-qa-tests-gke-konflux:
     needs: [ wait-for-images, should-dispatch ]
     if: >-
       github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'qa-e2e-tests-gha')
-    uses: ./.github/workflows/qa-e2e-tests-gke-konflux.yaml
+      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke-konflux')
+    uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}${{ needs.wait-for-images.outputs.konflux_suffix }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).qa-e2e-tests-gke-konflux }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke-konflux }}
     secrets: inherit
     concurrency:
-      group: qa-e2e-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-qa-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
