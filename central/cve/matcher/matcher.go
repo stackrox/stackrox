@@ -238,8 +238,10 @@ func (m *CVEMatcher) MatchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 
 		targetVersion, err := semver.NewVersion(versionToMatch)
 		if err != nil {
-			log.Error(errors.Wrapf(err, "could not create version for cluster version: %q", versionToMatch))
-			continue
+			// Fail-open: if we can't parse the cluster version, assume it's affected.
+			// For a security product, "I can't determine safety" should mean "assume vulnerable."
+			log.Error(errors.Wrapf(err, "could not parse cluster version %q — assuming affected", versionToMatch))
+			return true, errList.ToError()
 		}
 
 		// This is the case where there is just one version so check against it.
