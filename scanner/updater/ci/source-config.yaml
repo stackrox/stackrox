@@ -44,6 +44,20 @@ bundles:
     - stackrox-rhel-csaf
     - suse
     - ubuntu
+  v3:
+    - alpine
+    - aws
+    - debian
+    - epss
+    - manual
+    - nvd
+    - oracle
+    - osv
+    - photon
+    - rhel-vex
+    - stackrox-rhel-csaf
+    - suse
+    - ubuntu
 
 updaters:
   default:

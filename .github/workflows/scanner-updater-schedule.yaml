@@ -85,8 +85,8 @@ jobs:
         matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual/data.json.zst\"}]}"
         printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
 
-    - name: Validate matrix builder (scheduled/dispatch)
-      if: github.event_name != 'pull_request'
+    - name: Validate matrix builder (PR)
+      if: github.event_name == 'pull_request'
       env:
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
       run: |
