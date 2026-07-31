@@ -57,6 +57,6 @@ func New(db postgres.DB, store store.Store, plopStorage plopStore.Store) DataSto
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	plopStorage := plopStore.New(pool)
-	return New(pool, dbstore, plopStorage)
+	plopDBstore := plopStore.New(pool)
+	return New(pool, dbstore, plopDBstore)
 }

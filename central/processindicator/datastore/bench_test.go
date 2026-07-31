@@ -27,7 +27,9 @@ func BenchmarkAddIndicator(b *testing.B) {
 
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
-	datastore := New(db, store, plopStore.New(db))
+	plopStore := plopStore.New(db)
+
+	datastore := New(db, store, plopStore)
 
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -116,7 +118,9 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
-	datastore := New(db, store, plopStore.New(db))
+	plopStore := plopStore.New(db)
+
+	datastore := New(db, store, plopStore)
 
 	ctx := sac.WithAllAccess(context.Background())
 	// Add all data once
