@@ -167,8 +167,11 @@ func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm stri
 			return fmt.Errorf("roxagent serve unit %q (journal: %s)", state, logs)
 		}
 
-		logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
-		if strings.Contains(logs, roxagentListenReadyMarker) {
+		listening, err := roxagentServeListening(ctx, virt, namespace, vm)
+		if err != nil {
+			return err
+		}
+		if listening {
 			virt.Logf("roxagent serve is listening on VSOCK")
 			return nil
 		}
@@ -202,6 +205,26 @@ func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string)
 	return state, nil
 }
 
+// roxagentServeListening reports whether the e2e unit journal contains the
+// VSOCK listen marker. Matching runs server-side via journalctl --grep so a
+// chatty agent cannot scroll the marker out of a fixed client-side tail.
+func roxagentServeListening(ctx context.Context, virt Virtctl, namespace, vm string) (bool, error) {
+	_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            "journalctl grep roxagent listening",
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "journalctl", "-u", roxagentE2EUnit, "-b", "--no-pager", "-q", "--grep", roxagentListenReadyMarker)
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, errSSHTransport) {
+		return false, fmt.Errorf("journalctl --grep %q: %w (stderr: %s)",
+			roxagentListenReadyMarker, err, strings.TrimSpace(stderr))
+	}
+	// journalctl exits non-zero when --grep finds no matches.
+	return false, nil
+}
+
+// fetchRoxagentServeJournal returns a short recent journal dump for error messages.
 func fetchRoxagentServeJournal(ctx context.Context, virt Virtctl, namespace, vm string) string {
 	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 		description:            "journalctl roxagent-e2e",
