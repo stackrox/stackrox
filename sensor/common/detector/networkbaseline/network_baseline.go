@@ -90,8 +90,7 @@ func (e *networkBaselineEvaluator) checkPeerInBaselineForEntity(
 		peer = networkbaseline.PeerFromNetworkEntityInfo(peerEntity, peerEntityName, dstPort, protocol, isIngressToBaselineEntity)
 	}
 
-	_, peerInBaseline := baselineInfo.BaselinePeers[peer]
-	return peerInBaseline
+	return baselineInfo.BaselinePeers.Has(peer)
 }
 
 // IsOutsideLockedBaseline checks if the network flow is within a locked baseline

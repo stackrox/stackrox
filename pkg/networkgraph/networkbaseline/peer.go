@@ -71,8 +71,8 @@ type EntityProperties struct {
 }
 
 // ConvertPeersFromProto converts proto NetworkBaselinePeer to its in memory representation
-func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[Peer]struct{}, error) {
-	out := make(map[Peer]struct{}, len(protoPeers))
+func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (*PeerSet, error) {
+	out := NewPeerSet()
 	for _, protoPeer := range protoPeers {
 		entity := networkgraph.Entity{ID: protoPeer.GetEntity().GetInfo().GetId(), Type: protoPeer.GetEntity().GetInfo().GetType()}
 
@@ -91,26 +91,26 @@ func ConvertPeersFromProto(protoPeers []*storage.NetworkBaselinePeer) (map[Peer]
 
 		name := nameFn(protoPeer.GetEntity().GetInfo())
 		for _, props := range protoPeer.GetProperties() {
-			out[Peer{
+			out.Add(Peer{
 				IsIngress: props.GetIngress(),
 				Entity:    entity,
 				Name:      name,
 				DstPort:   props.GetPort(),
 				Protocol:  props.GetProtocol(),
 				CidrBlock: cidr,
-			}] = struct{}{}
+			})
 		}
 	}
 	return out, nil
 }
 
 // ConvertPeersToProto converts in-memory representation of network baseline peers to protos
-func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselinePeer, error) {
-	if len(peerSet) == 0 {
+func ConvertPeersToProto(peerSet *PeerSet) ([]*storage.NetworkBaselinePeer, error) {
+	if peerSet == nil || peerSet.IsEmpty() {
 		return nil, nil
 	}
 	propertiesByEntity := make(map[entityWithName]EntityProperties)
-	for peer := range peerSet {
+	peerSet.ForEach(func(peer Peer) {
 		entity := entityWithName{
 			Entity: peer.Entity,
 			Name:   peer.Name,
@@ -137,7 +137,7 @@ func ConvertPeersToProto(peerSet map[Peer]struct{}) ([]*storage.NetworkBaselineP
 			}
 		}
 
-	}
+	})
 
 	out := make([]*storage.NetworkBaselinePeer, 0, len(propertiesByEntity))
 	for entity, properties := range propertiesByEntity {
