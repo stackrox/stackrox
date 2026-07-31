@@ -597,3 +597,36 @@ func TestDeleteOldResults(t *testing.T) {
 		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
 	})
 }
+
+func TestIsScanNotApplicable(t *testing.T) {
+	cases := map[string]struct {
+		scan     *storage.ComplianceOperatorScanV2
+		expected bool
+	}{
+		"nil scan": {
+			scan:     nil,
+			expected: false,
+		},
+		"nil status": {
+			scan:     &storage.ComplianceOperatorScanV2{},
+			expected: false,
+		},
+		"empty result": {
+			scan:     &storage.ComplianceOperatorScanV2{Status: &storage.ScanStatus{Result: ""}},
+			expected: false,
+		},
+		"NON-COMPLIANT result": {
+			scan:     &storage.ComplianceOperatorScanV2{Status: &storage.ScanStatus{Result: "NON-COMPLIANT"}},
+			expected: false,
+		},
+		"NOT-APPLICABLE result": {
+			scan:     &storage.ComplianceOperatorScanV2{Status: &storage.ScanStatus{Result: ScanResultNotApplicable}},
+			expected: true,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, IsScanNotApplicable(tc.scan))
+		})
+	}
+}

@@ -502,6 +502,10 @@ func (m *managerImpl) handleReadyScan() {
 			log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
 			continue
 		}
+		if watcher.IsScanNotApplicable(scanWatcherResult.Scan) {
+			log.Infof("Scan %s is NOT-APPLICABLE, skipping report inclusion", scanWatcherResult.Scan.GetScanName())
+			continue
+		}
 		log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
 		w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
