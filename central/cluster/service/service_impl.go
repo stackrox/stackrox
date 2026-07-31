@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -195,6 +196,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
 	}
+	fmt.Println("lvm --> fullQuery: ", fullQuery.String())
 
 	// Split the query: dbQuery contains everything the DB can filter on
 	// (Cluster, ClusterID, labels, etc); skewQuery contains only the
@@ -203,10 +205,19 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	dbQuery, _ := search.InverseFilterQueryWithMap(fullQuery, skewOptionsMap)
 	skewQuery, _ := search.FilterQueryWithMap(fullQuery, skewOptionsMap)
 
+	fmt.Println("lvm --> dbQuery: ", dbQuery.String())
+	fmt.Println("lvm --> skewQuery: ", skewQuery.String())
+
 	clusters, err := s.datastore.SearchRawClusters(ctx, dbQuery)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("lvm --> INITIAL CLUSTERS")
+	for _, c := range clusters {
+		fmt.Println("lvm --> cluster: ", c.GetName(), " v: ", c.GetStatus().GetSensorVersion())
+	}
+	fmt.Println("lvm --> END INITIAL CLUSTERS")
 
 	if skewQuery != nil {
 		pred, err := clusterPredicateFactory.GeneratePredicate(skewQuery)
@@ -222,9 +233,21 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		clusters = filtered
 	}
 
+	fmt.Println("lvm --> FILTERED CLUSTERS")
+	for _, c := range clusters {
+		fmt.Println("lvm --> cluster: ", c.GetName(), " v: ", c.GetStatus().GetSensorVersion())
+	}
+	fmt.Println("lvm --> END FILTERED CLUSTERS")
+
 	// Pagination happens last, in memory, so that it operates on the count
 	// after both the DB-side and in-memory filters have been applied.
 	clusters = paginated.PaginateSlice(int(req.GetPagination().GetOffset()), int(req.GetPagination().GetLimit()), clusters)
+
+	fmt.Println("lvm --> PAGINATED CLUSTERS")
+	for _, c := range clusters {
+		fmt.Println("lvm --> cluster: ", c.GetName(), " v: ", c.GetStatus().GetSensorVersion())
+	}
+	fmt.Println("lvm --> END PAGINATED CLUSTERS")
 
 	clusterIDToRetentionInfoMap, err := s.getClusterIDToRetentionInfoMap(ctx, clusters)
 	if err != nil {
