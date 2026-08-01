@@ -53,6 +53,7 @@ type getReportDataTestCase struct {
 	numFailedChecksPerCluster int
 	numMixedChecksPerCluster  int
 	numFailedClusters         int
+	numFullyFailedClusters    int
 	expectedWalkByErr         error
 }
 
@@ -73,6 +74,14 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration()
 			numMixedChecksPerCluster:  3,
 			numFailedClusters:         1,
 		},
+		"generate report data with fully failed cluster excludes stale results": {
+			numClusters:               2,
+			numProfiles:               2,
+			numPassedChecksPerCluster: 2,
+			numFailedChecksPerCluster: 1,
+			numMixedChecksPerCluster:  3,
+			numFullyFailedClusters:    1,
+		},
 		"generate report walk by error": {
 			numClusters:       3,
 			numProfiles:       4,
@@ -82,9 +91,11 @@ func (s *ComplianceResultsAggregatorSuite) Test_GetReportDataResultsGeneration()
 	for tname, tcase := range cases {
 		s.Run(tname, func() {
 			ctx := context.Background()
-			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters)
+			req := getRequest(ctx, tcase.numClusters, tcase.numProfiles, tcase.numFailedClusters, tcase.numFullyFailedClusters)
+			// Fully-failed clusters (empty FailedScans) return early without calling WalkByQuery
+			walkByTimes := tcase.numClusters + tcase.numFailedClusters
 			s.checkResultsDS.EXPECT().WalkByQuery(gomock.Eq(ctx), gomock.Any(), gomock.Any()).
-				Times(tcase.numClusters + tcase.numFailedClusters).
+				Times(walkByTimes).
 				DoAndReturn(fakeWalkByResponse(
 					req.ClusterData,
 					tcase.expectedWalkByErr,
@@ -517,7 +528,7 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.ruleDS)
 }
 
-func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters int) *report.Request {
+func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters, numFullyFailedClusters int) *report.Request {
 	ret := &report.Request{
 		Ctx:          ctx,
 		ScanConfigID: scanConfigID,
@@ -525,7 +536,8 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 		Profiles:     getNames("profile", numProfiles),
 	}
 	clusterData := make(map[string]*report.ClusterData)
-	for i := 0; i < numClusters+numFailedClusters; i++ {
+	totalExtra := numFailedClusters + numFullyFailedClusters
+	for i := 0; i < numClusters+totalExtra; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
 		var profileNames []string
 		for j := 0; j < numProfiles; j++ {
@@ -559,6 +571,22 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 			clusterData[id].FailedInfo = failedInfo
 		}
 		ret.NumFailedClusters = numFailedClusters
+	}
+	// Fully-failed clusters: FailedInfo set but FailedScans empty (e.g. sensor
+	// disconnected, cluster never reported). Results aggregator should skip these
+	// entirely to avoid including stale data.
+	if numFullyFailedClusters > 0 {
+		offset := numClusters + numFailedClusters
+		for i := offset; i < offset+numFullyFailedClusters; i++ {
+			id := fmt.Sprintf("cluster-%d", i)
+			ret.ClusterIDs = append(ret.ClusterIDs, id)
+			clusterData[id].FailedInfo = &report.FailedCluster{
+				ClusterId:   id,
+				ClusterName: id,
+				Reasons:     []string{"cluster did not report any results"},
+			}
+		}
+		ret.NumFailedClusters += numFullyFailedClusters
 	}
 	ret.ClusterData = clusterData
 	return ret
@@ -597,7 +625,7 @@ func getRowFromCluster(check, clusterID string) *report.ResultRow {
 }
 
 func assertResults(t *testing.T, tcase getReportDataTestCase, res *report.Results) {
-	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters, res.Clusters)
+	assert.Equal(t, tcase.numClusters+tcase.numFailedClusters+tcase.numFullyFailedClusters, res.Clusters)
 	assert.Equal(t, tcase.numProfiles, len(res.Profiles))
 	if tcase.expectedWalkByErr != nil {
 		assert.Equal(t, 0, res.TotalPass)
