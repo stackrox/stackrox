@@ -109,14 +109,13 @@ func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, 
 			// this cluster). Exclude all results to avoid including stale data
 			// from a previous scan cycle in the report.
 			return ret, statuses, nil
-		} else {
-			allScansSet := set.NewStringSet(successfulScanNames...)
-			failedScansSet := set.NewStringSet()
-			for _, scan := range clusterData.FailedInfo.FailedScans {
-				failedScansSet.Add(scan.GetScanName())
-			}
-			successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 		}
+		allScansSet := set.NewStringSet(successfulScanNames...)
+		failedScansSet := set.NewStringSet()
+		for _, scan := range clusterData.FailedInfo.FailedScans {
+			failedScansSet.Add(scan.GetScanName())
+		}
+		successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 	}
 	scanConfigQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
