@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -66,6 +67,14 @@ type IndexReportSender interface {
 // ProtocolClient performs the request/response protocol over a stream.
 type ProtocolClient interface {
 	GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error)
+}
+
+// closeCoder is satisfied by transport errors carrying a structured close
+// code. Declared locally so VMScraper doesn't need to import a concrete
+// dialer's error type to recognize one.
+type closeCoder interface {
+	error
+	CloseCode() (code int, reason string)
 }
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
@@ -143,10 +152,75 @@ func (s *VMScraper) Stop() {
 
 func (s *VMScraper) Capabilities() []centralsensor.SensorCapability { return nil }
 func (s *VMScraper) Notify(_ common.SensorComponentEvent)           {}
-func (s *VMScraper) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+
+// Accepts reports whether this component wants to see SensorACK messages
+// for VM index reports.
+func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
+	sensorAck := msg.GetSensorAck()
+	return sensorAck != nil && sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
+}
+
+// ProcessMessage logs SensorACK/NACK messages that Central sends for VM
+// index reports pulled by this scraper.
+func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+	sensorAck := msg.GetSensorAck()
+	if sensorAck == nil {
+		return nil
+	}
+
+	switch sensorAck.GetAction() {
+	case central.SensorACK_ACK:
+		// No action needed on ACK currently.
+		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
+	case central.SensorACK_NACK:
+		s.handleNACK(sensorAck.GetResourceId())
+	default:
+		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
+	}
 	return nil
 }
-func (s *VMScraper) Accepts(_ *central.MsgToSensor) bool         { return false }
+
+// handleNACK reacts to Central rejecting a previously-sent VM index report by
+// clearing the VM's cached generation, so the next poll fetches and resends a
+// full report instead of trusting roxagent's "unchanged" response and
+// waiting for the next mandatoryRefreshAfter window.
+func (s *VMScraper) handleNACK(resourceID string) {
+	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
+	if key == "" {
+		log.Debugf("VMScraper: could not resolve VM for NACKed resource_id=%q; nothing to reset", resourceID)
+		return
+	}
+
+	concurrency.WithLock(&s.mu, func() {
+		if state, ok := s.vmState[key]; ok {
+			// Sensor and roxagent must not agree on 'unchanged' when Central NACKed;
+			// force a full report on the next poll instead.
+			state.lastGeneration = 0
+		}
+	})
+}
+
+// findKeyByVMID returns the vmState key ("namespace/name") for the currently
+// running VM with the given ID, or "" if none matches.
+func (s *VMScraper) findKeyByVMID(vmID string) string {
+	if vmID == "" {
+		return ""
+	}
+	for _, vm := range s.store.ListRunning() {
+		if string(vm.ID) == vmID {
+			return vmKey(vm)
+		}
+	}
+	return ""
+}
+
+// vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
+// (format "vmID:vsockCID"; see central/sensor/service/common.VMIndexACKResourceID).
+func vmIDFromResourceID(resourceID string) string {
+	vmID, _, _ := strings.Cut(resourceID, ":")
+	return vmID
+}
+
 func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
 
 func (s *VMScraper) run() {
@@ -236,6 +310,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	if !ok {
 		return false
 	}
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if result.Unchanged {
 		// Backward-compat fallback: against a current roxagent that honors
@@ -349,6 +424,7 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
 		return
 	}
+	var closeErr closeCoder
 	switch {
 	case errors.Is(err, vsockclient.ErrNotReady):
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)
@@ -356,13 +432,46 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	case errors.Is(err, vsockclient.ErrUnknownMethod):
 		log.Warnf("VMScraper: roxagent on %q does not support the GetReport method", key)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownMethod).Inc()
+	case errors.Is(err, vsockclient.ErrBusy):
+		log.Debugf("VMScraper: roxagent on %q rejected the request because it is already serving another connection", key)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy).Inc()
+	case errors.Is(err, vsockclient.ErrInternal):
+		log.Warnf("VMScraper: roxagent on %q reported an internal error: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusInternalError).Inc()
+	case errors.Is(err, vsockclient.ErrMalformedRequest):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as malformed: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusMalformedRequest).Inc()
+	case errors.Is(err, vsockclient.ErrRequestTooLarge):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as too large: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusRequestTooLarge).Inc()
+	case errors.Is(err, vsockclient.ErrUnknownAgentError):
+		log.Warnf("VMScraper: roxagent on %q returned an error code this Sensor version doesn't recognize (possible version mismatch): %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownAgentError).Inc()
+	case isAbnormalClose(err, &closeErr):
+		// e.g. close code 1006, which is what a TLS handshake failure on the
+		// agent's side looks like from Sensor's end.
+		code, reason := closeErr.CloseCode()
+		log.Warnf("VMScraper: roxagent on %q connection closed abnormally (websocket close code %d: %s) — check roxagent's own logs on the VM for the cause",
+			key, code, reason)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	case errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF):
 		log.Debugf("VMScraper: roxagent on %q connection closed (agent may be down or restarting): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	default:
-		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
+		log.Warnf("VMScraper: unexpected transport or framing error for %q: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	}
+}
+
+// isAbnormalClose reports whether err is a closeCoder with a nonzero code,
+// writing the match into target. Zero means no structured signal (e.g. a
+// plain io.EOF), left for the ordinary io.EOF branch to handle.
+func isAbnormalClose(err error, target *closeCoder) bool {
+	if !errors.As(err, target) {
+		return false
+	}
+	code, _ := (*target).CloseCode()
+	return code != 0
 }
 
 // vmKey returns the identifier used for vmState and activeVMs lookups.

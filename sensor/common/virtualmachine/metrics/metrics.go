@@ -129,6 +129,19 @@ var VMDiscoveredData = prometheus.NewCounterVec(
 	[]string{"detected_os", "activation_status", "dnf_metadata_status"},
 )
 
+// VMDiscoveredDataDNFStatus is a counter for individual DNF status flags observed
+// on VMs, reported by either push- or pull-mode roxagent. This avoids high-cardinality
+// label combinations by tracking one flag per sample.
+var VMDiscoveredDataDNFStatus = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_discovered_data_dnf_status_total",
+		Help:      "Total number of DNF status flags observed in VM index reports received by Sensor",
+	},
+	[]string{"dnf_status"},
+)
+
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
 // Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportAcksReceived = prometheus.NewCounterVec(
@@ -143,15 +156,24 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 
 // Pull-mode request status label values for PullRequestsTotal.
 const (
-	PullStatusSuccess       = "success"
-	PullStatusUnchanged     = "unchanged"
-	PullStatusDialError     = "dial_error"
-	PullStatusReadError     = "read_error"
-	PullStatusInvalidReport = "invalid_report"
-	PullStatusSendError     = "send_error"
-	PullStatusNotReady      = "not_ready"
-	PullStatusUnknownMethod = "unknown_method"
-	PullStatusTimeout       = "timeout"
+	PullStatusSuccess          = "success"
+	PullStatusUnchanged        = "unchanged"
+	PullStatusDialError        = "dial_error"
+	PullStatusReadError        = "read_error"
+	PullStatusInvalidReport    = "invalid_report"
+	PullStatusSendError        = "send_error"
+	PullStatusNotReady         = "not_ready"
+	PullStatusUnknownMethod    = "unknown_method"
+	PullStatusTimeout          = "timeout"
+	PullStatusBusy             = "busy"
+	PullStatusInternalError    = "internal_error"
+	PullStatusMalformedRequest = "malformed_request"
+	PullStatusRequestTooLarge  = "request_too_large"
+	// PullStatusUnknownAgentError marks a well-formed ErrorResponse whose code
+	// this Sensor version doesn't recognize (e.g. a future ErrorCode value).
+	// Kept distinct from PullStatusReadError, which is a transport failure
+	// with no parseable response at all.
+	PullStatusUnknownAgentError = "unknown_agent_error"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
@@ -266,6 +288,7 @@ func init() {
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
+		VMDiscoveredDataDNFStatus,
 		IndexReportAcksReceived,
 		// Pull-mode metrics.
 		PullDialDurationSeconds,

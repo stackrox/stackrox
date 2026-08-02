@@ -192,7 +192,7 @@ func getRoot(packageName string) (root string, valid bool, err error) {
 func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, importRoot string, allowedPackages ...*allowedPackage) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "unquoting import path %s", spec.Path.Value)
 	}
 
 	if err := checkForbidden(impPath, packageName); err != nil {
@@ -368,6 +368,13 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "sensor/common" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
+		if isTestFile {
+			// vsockclient's integration test drives a real roxagent vsockserver
+			// handler over net.Pipe() to validate the wire protocol contract.
+			// roxagent ships as a separate binary from Sensor, so this exception
+			// is scoped to test files only.
+			allowedPackages = appendPackageWithoutChildren(allowedPackages, "compliance/virtualmachines/roxagent/vsockserver")
+		}
 	}
 
 	if validImportRoot == "central" {

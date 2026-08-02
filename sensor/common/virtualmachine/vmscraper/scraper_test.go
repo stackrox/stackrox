@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/set"
@@ -61,6 +62,15 @@ type nopCloser struct{}
 func (nopCloser) Read([]byte) (int, error)  { return 0, io.EOF }
 func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
+
+// fakeCloseCoder is a minimal closeCoder for testing without a real dialer.
+type fakeCloseCoder struct {
+	code   int
+	reason string
+}
+
+func (e *fakeCloseCoder) Error() string            { return "connection closed" }
+func (e *fakeCloseCoder) CloseCode() (int, string) { return e.code, e.reason }
 
 type mockProtocolClient struct {
 	resultQueue []*vsockclient.GetReportResult
@@ -365,6 +375,72 @@ func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 	assert.Len(t, sender.sent, 2, "should forward on generation change")
 }
 
+// TestVMScraper_NACK reproduces a scenario where Central NACKs a report
+// (e.g. Scanner was still starting up). Without resetting the cached
+// generation, the next poll would see roxagent report "unchanged"
+// (report_generation didn't change) and skip resending, stranding the VM
+// until mandatoryRefreshAfter (4h) instead of retrying on the next poll
+// interval. It also verifies a NACK for an unrelated VM ID leaves the known
+// VM's state untouched instead of forcing a spurious resend.
+func TestVMScraper_NACK(t *testing.T) {
+	cases := map[string]struct {
+		nackResourceID             string
+		pollResultAfterNack        *vsockclient.GetReportResult
+		wantIfNewerThanOnRetryPoll uint32
+		wantTotalSent              int
+	}{
+		"resets generation and forces an immediate resend when NACK matches the running VM": {
+			nackResourceID:             "vm-a-id:100",
+			pollResultAfterNack:        makeReport(1),
+			wantIfNewerThanOnRetryPoll: 0, // on the second poll, the scraper should ask for a full report
+			wantTotalSent:              2,
+		},
+		"is a no-op when NACK references an unrelated VM ID": {
+			nackResourceID:             "unknown-vm-id:999",
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1, // on the second poll, the scraper should keep trusting the old generation
+			wantTotalSent:              1,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			sender := &mockSender{}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+			}
+
+			s := newTestScraper(store, sender, dialer, client)
+			s.pollOnce(context.Background())
+			require.Len(t, sender.sent, 1)
+
+			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      central.SensorACK_NACK,
+						ResourceId:  tc.nackResourceID,
+					},
+				},
+			})
+			require.NoError(t, err)
+
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{tc.pollResultAfterNack}
+			s.pollOnce(context.Background())
+
+			require.Len(t, client.calls, 1)
+			assert.Equal(t, tc.wantIfNewerThanOnRetryPoll, client.calls[0].ifNewerThan,
+				"generation the scraper requests on the poll following the NACK")
+			assert.Len(t, sender.sent, tc.wantTotalSent, "total reports handed to the sender across both polls")
+		})
+	}
+}
+
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 	vms := []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
@@ -477,6 +553,70 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
 	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
 	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
+}
+
+// TestHandleGetReportError_ClassifiesEveryErrorCode locks in the mapping
+// from each error to its metrics.PullStatus* label.
+func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
+	cases := map[string]struct {
+		err       error
+		wantLabel string
+	}{
+		"NOT_READY maps to not_ready": {
+			err:       fmt.Errorf("%w: still scanning", vsockclient.ErrNotReady),
+			wantLabel: metrics.PullStatusNotReady,
+		},
+		"UNKNOWN_METHOD maps to unknown_method": {
+			err:       fmt.Errorf("%w: no get_report", vsockclient.ErrUnknownMethod),
+			wantLabel: metrics.PullStatusUnknownMethod,
+		},
+		"BUSY maps to busy": {
+			err:       fmt.Errorf("%w: another request in flight", vsockclient.ErrBusy),
+			wantLabel: metrics.PullStatusBusy,
+		},
+		"INTERNAL maps to internal_error": {
+			err:       fmt.Errorf("%w: panic recovered", vsockclient.ErrInternal),
+			wantLabel: metrics.PullStatusInternalError,
+		},
+		"MALFORMED_REQUEST maps to malformed_request": {
+			err:       fmt.Errorf("%w: empty request_id", vsockclient.ErrMalformedRequest),
+			wantLabel: metrics.PullStatusMalformedRequest,
+		},
+		"REQUEST_TOO_LARGE maps to request_too_large": {
+			err:       fmt.Errorf("%w: payload too big", vsockclient.ErrRequestTooLarge),
+			wantLabel: metrics.PullStatusRequestTooLarge,
+		},
+		"unrecognized agent error code maps to unknown_agent_error": {
+			err:       fmt.Errorf("%w: agent error (99): ?", vsockclient.ErrUnknownAgentError),
+			wantLabel: metrics.PullStatusUnknownAgentError,
+		},
+		"abnormal websocket close maps to read_error": {
+			err:       fmt.Errorf("reading response: %w", &fakeCloseCoder{code: 1006, reason: "abnormal closure"}),
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"plain io.EOF maps to read_error": {
+			err:       io.EOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"io.ErrUnexpectedEOF maps to read_error": {
+			err:       io.ErrUnexpectedEOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"unrecognized transport/framing error falls back to read_error": {
+			err:       errors.New("unmarshaling response: unexpected EOF in the middle of a varint"),
+			wantLabel: metrics.PullStatusReadError,
+		},
+	}
+
+	s := &VMScraper{}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			before := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel))
+			s.handleGetReportError(t.Context(), "ns/vm", tc.err)
+			assert.Equal(t, before+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel)),
+				"expected %v to increment the %q status label exactly once", tc.err, tc.wantLabel)
+		})
+	}
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {

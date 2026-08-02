@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/mdlayher/vsock"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -122,11 +125,11 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	cache := &vsockserver.ReportCache{}
 	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
 
-	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
+	report, facts, err := scanWithDiagnostics(ctx, cfg.hostPath, mappingCachePath)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
+	cache.SetReport(report, facts)
 	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
 
 	handler := vsockserver.NewHandler(cache, agentVersion)
@@ -183,6 +186,30 @@ func logMappingDownloadResult(url, cachePath string) func(err error, duration ti
 	}
 }
 
+// scanWithDiagnostics runs the node indexer and surrounds it with filesystem
+// and report diagnostics logging. This mirrors the diagnostics roxagent logs
+// in push mode, so scan issues (e.g. "0 packages" or "0 repositories") can be
+// triaged from agent logs regardless of transport mode. Used for both the
+// initial scan and every periodic rescan (see newRescanner's scanFn).
+//
+// DiscoveredData is computed once here and returned as facts alongside the
+// report, rather than left for the caller to recompute via discoverFacts:
+// that would probe the same filesystem facts (DNF version, entitlement)
+// this function already probed for logFilesystemDiagnostics.
+func scanWithDiagnostics(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, map[string]string, error) {
+	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
+	d := discovery.DiscoverVMData(hostPath)
+	logFilesystemDiagnostics(hostPath, d)
+
+	report, err := scan(ctx, hostPath, mappingFilePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	logIndexReportDiagnostics(report)
+	return report, discoveredDataFacts(d), nil
+}
+
 // scan indexes the VM filesystem at hostPath, consulting the
 // repository-to-CPE mapping data cached at mappingFilePath.
 // The mapping downloader keeps mappingFilePath fresh independently.
@@ -193,17 +220,42 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 		Repo2CPEMappingFile: mappingFilePath,
 		PackageDBFilter:     "",
 	}
-	return index.NewNodeIndexer(cfg).IndexNode(ctx)
+	report, err := index.NewNodeIndexer(cfg).IndexNode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("indexing node: %w", err)
+	}
+	return report, nil
 }
 
+// discoverFacts probes hostPath for DiscoveredData and converts it to the
+// flat string map cache.SetReport expects. scanWithDiagnostics does not call
+// this: it already has DiscoveredData in hand from its own diagnostics
+// logging and converts it directly via discoveredDataFacts, so as not to
+// probe the filesystem a second time for the same facts.
 func discoverFacts(hostPath string) map[string]string {
-	d := discovery.DiscoverVMData(hostPath)
+	return discoveredDataFacts(discovery.DiscoverVMData(hostPath))
+}
+
+func discoveredDataFacts(d *v1.DiscoveredData) map[string]string {
 	return map[string]string{
 		"detected_os":         d.GetDetectedOs().String(),
 		"os_version":          d.GetOsVersion(),
 		"activation_status":   d.GetActivationStatus().String(),
 		"dnf_metadata_status": d.GetDnfMetadataStatus().String(),
+		"dnf_status":          formatDnfStatusFlags(d.GetDnfStatus()),
 	}
+}
+
+func formatDnfStatusFlags(flags []v1.DnfStatusFlag) string {
+	if len(flags) == 0 {
+		return "none"
+	}
+	names := make([]string, 0, len(flags))
+	for _, f := range flags {
+		names = append(names, f.String())
+	}
+	slices.Sort(names)
+	return strings.Join(names, ", ")
 }
 
 // selfSignedCert generates a self-signed ECDSA TLS certificate.

@@ -20,18 +20,15 @@ function setup() {
     assert_output --partial "ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm"
 }
 
-@test "create_native_service_file mounts only the required scan inputs into roxroot" {
-    run create_native_service_file \
-        /etc/os-release \
-        /etc/pki/entitlement \
-        /var/cache/dnf
+@test "create_native_serve_file generates long-running serve unit" {
+    run create_native_serve_file
 
     assert_success
     assert_output --partial "Requires=roxagent-prep.service"
-    assert_output --partial "After=network.target roxagent-prep.service"
+    assert_output --partial "Type=simple"
+    assert_output --partial "Restart=on-failure"
     assert_output --partial "BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm"
-    assert_output --partial "BindReadOnlyPaths=/etc/os-release:/tmp/roxroot/etc/os-release"
-    assert_output --partial "BindReadOnlyPaths=/etc/pki/entitlement:/tmp/roxroot/etc/pki/entitlement"
-    assert_output --partial "BindReadOnlyPaths=/var/cache/dnf:/tmp/roxroot/var/cache/dnf"
-    assert_output --partial "ExecStart=/usr/local/bin/roxagent --host-path /tmp/roxroot"
+    assert_output --partial "BindReadOnlyPaths=-/etc/os-release:/tmp/roxroot/etc/os-release"
+    assert_output --partial "ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot"
+    assert_output --partial "WantedBy=multi-user.target"
 }

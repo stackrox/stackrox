@@ -1,91 +1,105 @@
-# VM Agent
+# roxagent
 
-Runs inside VMs to scan for vulnerabilities and report back to the host via vsock.
-While not directly related to the `compliance` feature, the agent utilizes compliance
-node scanning code for package scanning in the virtual machine.
+Runs inside KubeVirt VMs to scan for vulnerabilities and serve reports to Sensor
+via VSOCK (pull mode). While co-located under `compliance/`, the agent reuses
+compliance node-scanning code for package indexing — it is not part of the
+Compliance Operator feature.
 
 ## What it does
 
-Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerability reports, and sends them to the host over vsock. Can run once or continuously in daemon mode. Requires `sudo` privileges to scan packages.
+1. Scans the VM for installed packages (`rpm`/`dnf` databases) using the same
+   Scanner V4 indexer as node scanning.
+2. Caches the scan report in memory with a generation counter.
+3. Listens on a VSOCK port for incoming connections from Sensor.
+4. When Sensor connects, serves the cached report via the `VMServiceRequest` /
+   `VMServiceResponse` framed protobuf protocol.
+5. Periodically rescans to pick up package changes.
+
+Sensor pulls reports from all running VMs on a timer and forwards them to
+Central for vulnerability matching.
 
 ## Usage
 
 ```bash
-# Single scan
-sudo ./roxagent
-
-# Daemon mode (scans every 4 hours by default)
-sudo ./roxagent --daemon
+# Start pull-mode server (production mode)
+sudo ./roxagent serve
 
 # Custom settings
-sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 2048
+sudo ./roxagent serve --port 818 --host-path / --rescan-interval 4h
 ```
 
-## Flags
+## Flags (`serve` subcommand)
 
-- `--daemon` - Run continuously (default: false).
-- `--index-interval` - Time between scans in daemon mode (default: 4h, minimum: 10m).
-- `--host-path` - Where to look for package databases (default: /).
-- `--max-initial-report-delay` - Max delay before starting to send in daemon mode (default: 20m).
-- `--port` - VSock port (default: 818).
-- `--repo-cpe-url` - URL for the repository to CPE mapping.
-- `--timeout` - VSock client timeout when sending index reports.
-- `--verbose` - Prints the index reports to stdout.
+- `--port` — VSOCK port to listen on (default: 818).
+- `--host-path` — Root filesystem path for package indexing (default: /).
+- `--repo-cpe-url` — URL for the repository-to-CPE mapping file.
+- `--rescan-interval` — Interval between periodic rescans (default: 4h).
 
 ## How it works
 
-1. Scans filesystem for `rpm`/`dnf` package databases.
-2. Pulls repo-to-CPE mappings from Red Hat. Network connection to the public Internet or to Sensor is required.
-3. Creates protobuf index report.
-4. Sends report to host via vsock.
+1. Performs an initial scan of the VM filesystem for package databases.
+2. Fetches repo-to-CPE mappings from Red Hat (requires network access).
+3. Starts a VSOCK listener with optional mTLS (KubeVirt CA).
+4. On each Sensor connection: reads a `VMServiceRequest`, dispatches by method,
+   returns the cached `VMServiceResponse` with the index report.
+5. On rescan timer: re-indexes the filesystem and atomically swaps the cached
+   report, incrementing the generation counter.
 
-The host receives these reports and forwards them to StackRox Central for vulnerability analysis.
+### TLS
 
-## Single-instance protection
+When running inside a KubeVirt VM with TLS enabled:
+- roxagent fetches the KubeVirt CA from the host (VSOCK CID 2, port 1).
+- Connections from Sensor (via virt-handler) present a client cert signed by
+  the KubeVirt CA, which roxagent validates.
+- roxagent uses a self-signed server cert (virt-handler does not validate it).
+- The CA is refreshed hourly to support rotation.
 
-- roxagent uses a file lock at `/run/lock/roxagent/roxagent.lock` to prevent overlapping scans on the same VM.
-- In single-scan mode, if another agent is already running, the new invocation exits with an error.
-- In daemon mode, if another agent is scanning, the current cycle is skipped and retried at the next interval.
-- If the lock cannot be acquired (permissions or missing directory), a warning is logged and the scan proceeds without protection.
-- The lock is shared between host-binary and Quadlet/Podman runs via a bind mount.
+If the KubeVirt CA is unavailable, roxagent falls back to plaintext VSOCK
+(RBAC on the KubeVirt subresource still gates access).
 
 ## Deployment
 
-### Using Quadlet (Recommended for RHEL VMs)
+### Native systemd service (CI / dev)
 
-For RHEL 9 VMs, use Podman Quadlet to run roxagent as a periodic systemd service.
-See [quadlet/README.md](quadlet/README.md) for detailed instructions.
+The CI script `scripts/ci/add-vms/install-agent-native.sh` builds roxagent,
+copies it into the VM via `virtctl scp`, and enables a systemd service:
 
 ```bash
-cd quadlet
-./install.sh              # Install locally
-./install.sh user@host    # Install on remote VM
+# roxagent-serve.service runs: /usr/local/bin/roxagent serve
 ```
 
-### Building from Source
+### Quadlet (RHEL VMs)
+
+See [quadlet/README.md](quadlet/README.md) for Podman Quadlet deployment.
+Note: Quadlet units may still reference the old push-mode entrypoint and need
+updating for pull mode.
+
+### Building from source
 
 ```bash
+# For the current platform
 go build -o roxagent .
 
-# For Linux VMs
-GOOS=linux GOARCH=amd64 go build -o roxagent-linux .
+# Cross-compile for Linux VMs
+GOOS=linux GOARCH=amd64 go build -o roxagent .
 ```
 
 ## Troubleshooting
 
-### Can't connect to host
+### Can't connect / dial failures from Sensor
 
-- Check if vsock is enabled in the VM.
-- Verify the port isn't in use.
-- Make sure vsock kernel modules are loaded.
+- Verify VSOCK is enabled on the VMI spec (`spec.domain.devices.autoattachVSOCK`).
+- Check that the VSOCK port isn't in use by another process inside the VM.
+- Ensure Sensor has RBAC for `virtualmachineinstances/vsock` on `subresources.kubevirt.io`.
 
-### No packages found
+### No packages found (zero-package reports)
 
-- Check `--host-path` points to the right place.
+- Check `--host-path` points to the correct root filesystem.
 - Verify `rpm`/`dnf` databases exist and are readable.
-- Use `--verbose` to examine the index report and compare with the content from `rpm`/`dnf` databases.
+- Check Sensor logs for `reportcheck` warnings.
 
-### Scan failures
+### TLS handshake failures
 
-- Check internet access for repo-to-CPE downloads.
-- Look at logs for specific errors.
+- Verify KubeVirt has TLS enabled (check virt-handler logs).
+- Check that roxagent can reach CID 2 port 1 (KubeVirt CA service).
+- Look for "Rejected plaintext connection" in roxagent logs (Sensor not using TLS).
