@@ -76,7 +76,7 @@ func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage
 	s.updater = NewUpdater(&fakeClientSet{
 		k8s:    fake.NewClientset(),
 		config: config,
-	})
+	}, nil)
 	s.updater.(*updaterImpl).getProviders = getProviders
 	s.updater.(*updaterImpl).getProviderMetadataFromOpenShift = getMetadata
 }

@@ -9,10 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,22 +45,23 @@ type ClusterMetrics interface {
 }
 
 // New returns a new cluster metrics Sensor component.
-func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface) ClusterMetrics {
-	return NewWithInterval(clusterID, k8sClient, defaultInterval)
+func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pubSubDispatcher common.PubSubDispatcher) ClusterMetrics {
+	return NewWithInterval(clusterID, k8sClient, defaultInterval, pubSubDispatcher)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.
-func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration, pubSubDispatcher common.PubSubDispatcher) ClusterMetrics {
 	ticker := time.NewTicker(pollInterval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
-		output:          make(chan *message.ExpiringMessage),
-		stopper:         concurrency.NewStopper(),
-		pollingInterval: pollInterval,
-		pollingTimeout:  defaultTimeout,
-		k8sClient:       k8sClient,
-		pollTicker:      ticker,
-		clusterID:       clusterID,
+		output:           make(chan *message.ExpiringMessage),
+		stopper:          concurrency.NewStopper(),
+		pollingInterval:  pollInterval,
+		pollingTimeout:   defaultTimeout,
+		k8sClient:        k8sClient,
+		pollTicker:       ticker,
+		clusterID:        clusterID,
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }
 
@@ -78,13 +82,37 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 
 	clusterID clusterIDPeeker
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (cm *clusterMetricsImpl) Name() string {
 	return "clustermetrics.clusterMetricsImpl"
 }
 
+func (cm *clusterMetricsImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && cm.pubSubDispatcher != nil
+}
+
 func (cm *clusterMetricsImpl) Start() error {
+	if cm.pubSubEnabled() {
+		if err := cm.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterMetricsSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			cm.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster metrics sensor online consumer")
+		}
+		if err := cm.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ClusterMetricsSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			cm.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register cluster metrics sensor offline consumer")
+		}
+	}
 	go cm.Poll(cm.pollTicker.C)
 	return nil
 }
@@ -95,8 +123,29 @@ func (cm *clusterMetricsImpl) Stop() {
 	_ = cm.stopper.Client().Stopped().Wait()
 }
 
+func (cm *clusterMetricsImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	cm.pollTicker.Reset(cm.pollingInterval)
+	return nil
+}
+
+func (cm *clusterMetricsImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	cm.pollTicker.Stop()
+	return nil
+}
+
 func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if cm.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		cm.pollTicker.Reset(cm.pollingInterval)
