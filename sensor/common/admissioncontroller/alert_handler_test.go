@@ -52,7 +52,7 @@ func (s *alertHandlerSuite) TestProcessAlert() {
 	}
 	for testName, c := range cases {
 		s.Run(testName, func() {
-			h := newAlertHandler()
+			h := newAlertHandler(nil)
 			h.Notify(c.notify)
 			admissionControlAlerts := createAlertResults(c.deploymentID, c.policyID, c.stage, c.source)
 			err := h.ProcessAlerts(admissionControlAlerts)

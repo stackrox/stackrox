@@ -187,7 +187,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
 		externalsrcs.Singleton(),
-		admissioncontroller.AlertHandlerSingleton(),
+		admissioncontroller.AlertHandlerSingleton(internalMessageDispatcher),
 		auditLogCollectionManager,
 		reprocessorHandler,
 		delegatedRegistryHandler,
@@ -305,7 +305,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if admCtrlSettingsMgr != nil {
-		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
+		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton(internalMessageDispatcher)))
 	}
 
 	s.AddAPIServices(apiServices...)
