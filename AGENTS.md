@@ -3,6 +3,7 @@ This file provides guidance when working with code in this repository.
 ## Repository Information
 
 **Upstream Repository**: https://github.com/stackrox/stackrox
+**Issue Tracker**: https://issues.redhat.com (JIRA, project key: ROX)
 
 ## Workflow
 
