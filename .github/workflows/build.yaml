@@ -1382,10 +1382,7 @@ jobs:
         env:
           IMAGE: ${{ matrix.image }}
           DEFAULT_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-        run: >-
-          .github/workflows/scripts/determine-cve-scan-image-tag.sh
-          --image "$IMAGE"
-          --default-tag "$DEFAULT_TAG"
+        run: .github/workflows/scripts/determine-cve-scan-image-tag.sh
 
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
@@ -1487,11 +1484,11 @@ jobs:
         # its own exit-0 `infra-failure` output) must not skip "Post PR
         # comment" or fail this job.
         continue-on-error: true
-        run: >-
-          .github/workflows/scripts/flatten-cve-scan-results.sh
-          --source-dir scan-results
-          --dest-dir scan-results-flat
-          --expected-images central-db,main,roxctl,scanner-v4,scanner-v4-db,stackrox-operator
+        env:
+          SOURCE_DIR: scan-results
+          DEST_DIR: scan-results-flat
+          EXPECTED_IMAGES: central-db,main,roxctl,scanner-v4,scanner-v4-db,stackrox-operator
+        run: .github/workflows/scripts/flatten-cve-scan-results.sh
 
       - name: Verify CVE fix
         id: verify
@@ -1500,10 +1497,24 @@ jobs:
         # wouldn't otherwise stop this step from running against a
         # missing or partial scan-results-flat directory.
         if: needs.resolve-cve-ids.outputs.cves != '' && steps.flatten.outcome == 'success'
-        run: >-
-          .github/workflows/scripts/run-cve-fix-verification.sh
-          --cves "$CVES"
-          --scan-dir scan-results-flat
+        env:
+          SCAN_DIR: scan-results-flat
+        # verify-cve-fix.sh exits 1 on a FAILED verdict; that's a real
+        # result, not a step failure, so its exit code is captured into the
+        # `exit-code` output instead of failing this step (see "Fail if CVE
+        # still present" below, which acts on it directly).
+        run: |
+          set +e
+          comment_body="$(.github/workflows/scripts/verify-cve-fix.sh)"
+          exit_code=$?
+          set -e
+          delimiter="$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
+          {
+            echo "comment<<${delimiter}"
+            echo "$comment_body"
+            echo "${delimiter}"
+          } >> "$GITHUB_OUTPUT"
+          echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
 
       - name: Render PR comment
         id: render-comment
@@ -1518,12 +1529,7 @@ jobs:
           CVE_EXTRACTION_FAILED: ${{ needs.resolve-cve-ids.outputs.cves == '' }}
           EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
-        run: >-
-          .github/workflows/scripts/post-cve-fix-comment.sh
-          --cve-extraction-failed "$CVE_EXTRACTION_FAILED"
-          --exit-code "$EXIT_CODE"
-          --missing-images "$MISSING_IMAGES"
-          > cve-fix-comment.md
+        run: .github/workflows/scripts/post-cve-fix-comment.sh > cve-fix-comment.md
 
       - name: Post PR comment
         # Updates the same comment in place across re-runs (matched by a

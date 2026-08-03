@@ -176,18 +176,10 @@ JIRA_CVE_ID_FIELD="customfield_10667"
 #   2. the CVE ID recorded in its "CVE ID" custom field ($JIRA_CVE_ID_FIELD),
 #      which may be empty even when line 1 is "true" (a Vulnerability
 #      issue whose CVE ID hasn't been filled in yet).
-#
 # Prints "false" and an empty second line in every other case (issue not
-# found, network/API error, or non-Vulnerability issue type): this is a
-# best-effort cross-reference against whatever JIRA key a PR title happens
-# to mention, most of which are unrelated feature/bug tickets, not
-# vulnerability trackers, so failing to resolve one is the expected common
-# case, not an error.
-#
-# Callers use line 1 (not just "is line 2 non-empty") to tell "this ROX
-# ticket isn't a vulnerability tracker at all" (silence is the right
-# response) apart from "it is a vulnerability tracker but has no CVE ID
-# set yet" (worth surfacing, since the PR is clearly meant to fix a CVE).
+# found, network/API error, or non-Vulnerability issue type) - failing to
+# resolve an arbitrary referenced JIRA key is the expected common case,
+# not an error.
 #
 # Example:
 #   get_vulnerability_info_for_issue "ROX-35673"
@@ -211,13 +203,9 @@ get_vulnerability_info_for_issue() {
         return 0
     fi
 
-    # Distinguish "field key absent from the response" from "field present
-    # but null/unset": the latter is the expected common case (a
-    # Vulnerability issue whose CVE ID hasn't been filled in yet) and stays
-    # silent, but the former usually means customfield_10667 itself is
-    # stale or wrong (e.g. renamed in a JIRA schema change), which would
-    # otherwise silently disable this whole cross-reference feature with no
-    # error anywhere - so it gets a loud warning instead.
+    # Field absent (vs. present-but-null, the normal "CVE ID not filled in
+    # yet" case) usually means JIRA_CVE_ID_FIELD itself is stale - warn
+    # instead of silently disabling this whole cross-reference feature.
     if [[ "$(jq -r --arg field "$JIRA_CVE_ID_FIELD" '.fields | has($field)' <<< "$issue")" != "true" ]]; then
         gh_log warning "JIRA issue ${ISSUE_KEY} has no ${JIRA_CVE_ID_FIELD} field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
         printf 'true\n\n'
