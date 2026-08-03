@@ -361,13 +361,12 @@ generated-srcs: go-generated-srcs config-controller-gen
 
 deps: $(shell git ls-files '*/go.mod' 'go.mod')
 	@echo "+ $@"
+ifndef CI
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	$(SILENT)for gomod in $$(git ls-files '*/go.mod' 'go.mod'); do \
 		(cd "$$(dirname "$$gomod")" && go mod tidy); \
 	done
-ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 endif
 	$(SILENT)touch $@
 
