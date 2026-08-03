@@ -124,27 +124,7 @@ func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm
 				err, strings.TrimSpace(stderr), logs)
 		}
 
-		// Transient units can take a moment to leave "activating".
-		timer := time.NewTimer(time.Second)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return fmt.Errorf("context expired after systemd-run: %w", ctx.Err())
-		case <-timer.C:
-		}
-		state, err = roxagentServeState(ctx, virt, namespace, vm)
-		if err != nil {
-			return err
-		}
-		if state != "active" && state != "activating" {
-			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
-			if isVsockUnavailableOutput(logs) {
-				return fmt.Errorf("%w: roxagent serve unit %q after systemd-run (journal: %s)",
-					ErrTerminalVSOCKUnavailable, state, logs)
-			}
-			return fmt.Errorf("roxagent serve unit %q after systemd-run (journal: %s)", state, logs)
-		}
-		virt.Logf("roxagent serve: started %s (%s)", roxagentE2EUnit, state)
+		virt.Logf("roxagent serve: systemd-run accepted %s", roxagentE2EUnit)
 		return nil
 	})
 }
@@ -187,17 +167,31 @@ func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm stri
 	}
 }
 
+func knownSystemctlActiveState(state string) bool {
+	switch state {
+	case "active", "reloading", "inactive", "failed", "activating", "deactivating", "unknown":
+		return true
+	}
+	return false
+}
+
 // roxagentServeState returns the systemctl is-active state for the e2e unit.
-// Non-zero exit for inactive/failed is expected and not treated as failure here.
+// Non-zero exit with a known ActiveState (inactive/failed/…) is expected.
+// Other remote failures are returned so callers fail fast instead of polling.
 func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
 	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 		description:            "systemctl is-active roxagent-e2e",
 		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
 	}, "sudo", "systemctl", "is-active", roxagentE2EUnit)
 	state := strings.TrimSpace(stdout)
+	stderr = strings.TrimSpace(stderr)
 	if errors.Is(err, errSSHTransport) {
-		return "", fmt.Errorf("systemctl is-active %s: %w (stderr: %s)",
-			roxagentE2EUnit, err, strings.TrimSpace(stderr))
+		return "", fmt.Errorf("systemctl is-active %s: %w (stdout: %s; stderr: %s)",
+			roxagentE2EUnit, err, state, stderr)
+	}
+	if err != nil && !knownSystemctlActiveState(state) {
+		return "", fmt.Errorf("systemctl is-active %s: %w (stdout: %s; stderr: %s)",
+			roxagentE2EUnit, err, state, stderr)
 	}
 	if state == "" {
 		return "unknown", nil
@@ -209,18 +203,21 @@ func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string)
 // VSOCK listen marker. Matching runs server-side via journalctl --grep so a
 // chatty agent cannot scroll the marker out of a fixed client-side tail.
 func roxagentServeListening(ctx context.Context, virt Virtctl, namespace, vm string) (bool, error) {
-	_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 		description:            "journalctl grep roxagent listening",
 		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
 	}, "sudo", "journalctl", "-u", roxagentE2EUnit, "-b", "--no-pager", "-q", "--grep", roxagentListenReadyMarker)
 	if err == nil {
 		return true, nil
 	}
-	if errors.Is(err, errSSHTransport) {
-		return false, fmt.Errorf("journalctl --grep %q: %w (stderr: %s)",
-			roxagentListenReadyMarker, err, strings.TrimSpace(stderr))
+	stdout = strings.TrimSpace(stdout)
+	stderr = strings.TrimSpace(stderr)
+	// journalctl --grep exits non-zero with empty stderr when there is no match.
+	// Transport failures or non-empty stderr mean a real command problem.
+	if errors.Is(err, errSSHTransport) || stderr != "" {
+		return false, fmt.Errorf("journalctl --grep %q: %w (stdout: %s; stderr: %s)",
+			roxagentListenReadyMarker, err, stdout, stderr)
 	}
-	// journalctl exits non-zero when --grep finds no matches.
 	return false, nil
 }
 
