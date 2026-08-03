@@ -117,6 +117,10 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
+	// TODO(charmik): Remove this sleep. Added to simulate a long-running report job for testing restart recovery.
+	log.Warn("Sleeping 2 minutes to simulate long-running report generation...")
+	time.Sleep(2 * time.Minute)
+
 	err = rg.generateReportAndNotify(req)
 	if err != nil {
 		rg.logAndUpsertError(err, req)
