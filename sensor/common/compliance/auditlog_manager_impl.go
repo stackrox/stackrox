@@ -4,15 +4,19 @@ import (
 	"maps"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -44,13 +48,37 @@ type auditLogCollectionManagerImpl struct {
 
 	fileStateLock  sync.RWMutex
 	connectionLock sync.RWMutex
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (a *auditLogCollectionManagerImpl) Name() string {
 	return "compliance.auditLogCollectionManagerImpl"
 }
 
+func (a *auditLogCollectionManagerImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && a.pubSubDispatcher != nil
+}
+
 func (a *auditLogCollectionManagerImpl) Start() error {
+	if a.pubSubEnabled() {
+		if err := a.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceAuditLogManagerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			a.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance audit log manager sensor online consumer")
+		}
+		if err := a.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceAuditLogManagerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			a.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance audit log manager sensor offline consumer")
+		}
+	}
 	go a.runStateSaver()
 	go a.runUpdater(a.updaterTicker.C)
 	return nil
@@ -65,8 +93,29 @@ func (a *auditLogCollectionManagerImpl) Stop() {
 	a.stopper.Client().Stop()
 }
 
+func (a *auditLogCollectionManagerImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	a.centralReady.Signal()
+	return nil
+}
+
+func (a *auditLogCollectionManagerImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	a.centralReady.Reset()
+	return nil
+}
+
 func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if a.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		a.centralReady.Signal()

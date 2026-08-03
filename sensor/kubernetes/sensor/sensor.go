@@ -123,7 +123,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
-	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
+	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID, internalMessageDispatcher)
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceMultiplexer := compliance.NewMultiplexer()
@@ -152,7 +152,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
-	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
+	complianceCommandHandler := compliance.NewCommandHandler(complianceService, internalMessageDispatcher)
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
@@ -204,7 +204,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher, internalMessageDispatcher)
 	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
 	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
 	// i.e., after nodeInventoryHandler

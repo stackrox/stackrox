@@ -15,12 +15,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -56,10 +59,16 @@ type nodeInventoryHandlerImpl struct {
 	// archCache stores an architecture per node, so that it can be used in the index report for
 	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
 	archCache map[string]string
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (c *nodeInventoryHandlerImpl) Name() string {
 	return "compliance.nodeInventoryHandlerImpl"
+}
+
+func (c *nodeInventoryHandlerImpl) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil
 }
 
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
@@ -91,6 +100,24 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
+	if c.pubSubEnabled() {
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceNodeInventoryHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			c.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance node inventory handler sensor online consumer")
+		}
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceNodeInventoryHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			c.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance node inventory handler sensor offline consumer")
+		}
+	}
 	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral = c.run()
 	return nil
@@ -103,8 +130,31 @@ func (c *nodeInventoryHandlerImpl) Stop() {
 	c.stopper.Client().Stop()
 }
 
+func (c *nodeInventoryHandlerImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.centralReady.Signal()
+	return nil
+}
+
+func (c *nodeInventoryHandlerImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	// As Compliance enters a retry loop when it is not receiving an ACK,
+	// there is no need to do anything else when entering offline mode.
+	c.centralReady.Reset()
+	return nil
+}
+
 func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if c.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		c.centralReady.Signal()
