@@ -19,26 +19,28 @@ const (
 	OutputQueueConsumer
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
+	ComplianceOperatorUpdaterSyncFinishedConsumer
 )
 
 var (
 	consumerToString = map[ConsumerID]string{
-		NoConsumers:                            "NoConsumers",
-		DefaultConsumer:                        "Default",
-		ResolverConsumer:                       "Resolver",
-		EnrichedProcessConsumer:                "EnrichedProcess",
-		FileActivityEnrichedProcessConsumer:    "FileActivityEnrichedProcess",
-		UnenrichedProcessConsumer:              "UnenrichedProcess",
-		DetectorProcessIndicatorConsumer:       "DetectorProcessIndicator",
-		DetectorNetworkFlowConsumer:            "DetectorNetworkFlow",
-		DetectorFileAccessConsumer:             "DetectorFileAccess",
-		DetectorAuditLogConsumer:               "DetectorAuditLog",
-		DetectorDeploymentConsumer:             "DetectorDeployment",
-		DetectorScanResultConsumer:             "DetectorScanResult",
-		DetectorDeployAlertOutputConsumer:      "DetectorDeployAlertOutput",
-		OutputQueueConsumer:                    "OutputQueue",
-		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
-		SensorSoftRestartConsumer:              "SensorSoftRestart",
+		NoConsumers:                                   "NoConsumers",
+		DefaultConsumer:                               "Default",
+		ResolverConsumer:                              "Resolver",
+		EnrichedProcessConsumer:                       "EnrichedProcess",
+		FileActivityEnrichedProcessConsumer:           "FileActivityEnrichedProcess",
+		UnenrichedProcessConsumer:                     "UnenrichedProcess",
+		DetectorProcessIndicatorConsumer:              "DetectorProcessIndicator",
+		DetectorNetworkFlowConsumer:                   "DetectorNetworkFlow",
+		DetectorFileAccessConsumer:                    "DetectorFileAccess",
+		DetectorAuditLogConsumer:                      "DetectorAuditLog",
+		DetectorDeploymentConsumer:                    "DetectorDeployment",
+		DetectorScanResultConsumer:                    "DetectorScanResult",
+		DetectorDeployAlertOutputConsumer:             "DetectorDeployAlertOutput",
+		OutputQueueConsumer:                           "OutputQueue",
+		NetworkFlowManagerResourceSyncConsumer:        "NetworkFlowManagerResourceSync",
+		SensorSoftRestartConsumer:                     "SensorSoftRestart",
+		ComplianceOperatorUpdaterSyncFinishedConsumer: "ComplianceOperatorUpdaterSyncFinished",
 	}
 )
 
