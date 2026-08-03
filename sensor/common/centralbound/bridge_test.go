@@ -3,7 +3,7 @@ package centralbound
 import (
 	"context"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,6 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// capturingDispatcher invokes the registered callback synchronously in the
+// caller's goroutine (no lane/dispatcher goroutine involved), so tests using
+// it can read from ResponsesC with a non-blocking `default` case instead of
+// racing a real timeout.
 type capturingDispatcher struct {
 	consumerID pubsub.ConsumerID
 	topic      pubsub.Topic
@@ -60,8 +64,8 @@ func TestBridge_ReceivesEvent(t *testing.T) {
 	select {
 	case received := <-b.ResponsesC():
 		assert.Same(t, msg, received)
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("timeout: expected message on ResponsesC")
+	default:
+		t.Fatal("expected message on ResponsesC")
 	}
 }
 
@@ -80,7 +84,7 @@ func TestBridge_SkipsExpiredEvent(t *testing.T) {
 	select {
 	case msg := <-b.ResponsesC():
 		t.Fatalf("expected no message, got %v", msg)
-	case <-time.After(50 * time.Millisecond):
+	default:
 	}
 }
 
@@ -114,65 +118,64 @@ func TestBridge_HandleEventAfterStopDoesNotPanic(t *testing.T) {
 }
 
 func TestBridge_ConcurrentPublish(t *testing.T) {
-	capturing := &capturingDispatcher{}
-	b, err := NewBridge(capturing)
-	require.NoError(t, err)
+	synctest.Test(t, func(t *testing.T) {
+		capturing := &capturingDispatcher{}
+		b, err := NewBridge(capturing)
+		require.NoError(t, err)
 
-	const goroutines = 50
-	var wg sync.WaitGroup
-	wg.Add(goroutines)
-	for range goroutines {
-		go func() {
-			defer wg.Done()
-			_ = capturing.callback(&CentralBoundEvent{
-				Msg: message.New(&central.MsgFromSensor{}),
-			})
-		}()
-	}
+		const goroutines = 50
+		var wg sync.WaitGroup
+		wg.Add(goroutines)
+		for range goroutines {
+			go func() {
+				defer wg.Done()
+				_ = capturing.callback(&CentralBoundEvent{
+					Msg: message.New(&central.MsgFromSensor{}),
+				})
+			}()
+		}
+		wg.Wait()
+		synctest.Wait()
 
-	received := 0
-	done := make(chan struct{})
-	go func() {
-		for range b.ResponsesC() {
-			received++
-			if received == goroutines {
-				close(done)
+		// defaultBufferSize (100) comfortably fits all 50 sends, so every message is
+		// already buffered on ResponsesC by now; drain it from this single goroutine.
+		received := 0
+		for {
+			select {
+			case <-b.ResponsesC():
+				received++
+			default:
+				assert.Equal(t, goroutines, received)
 				return
 			}
 		}
-	}()
-
-	wg.Wait()
-
-	select {
-	case <-done:
-		assert.Equal(t, goroutines, received)
-	case <-time.After(2 * time.Second):
-		t.Fatalf("timeout: received %d/%d messages", received, goroutines)
-	}
+	})
 }
 
 func TestBridge_RealDispatcher(t *testing.T) {
-	disp, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
-		[]pubsub.LaneConfig{
-			lane.NewBlockingLane(pubsub.CentralBoundLane),
-		},
-	))
-	require.NoError(t, err)
-	defer disp.Stop()
+	synctest.Test(t, func(t *testing.T) {
+		disp, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+			[]pubsub.LaneConfig{
+				lane.NewBlockingLane(pubsub.CentralBoundLane),
+			},
+		))
+		require.NoError(t, err)
+		defer disp.Stop()
 
-	b, err := NewBridge(disp)
-	require.NoError(t, err)
+		b, err := NewBridge(disp)
+		require.NoError(t, err)
 
-	msg := message.New(&central.MsgFromSensor{})
-	require.NoError(t, disp.Publish(&CentralBoundEvent{Msg: msg}))
+		msg := message.New(&central.MsgFromSensor{})
+		require.NoError(t, disp.Publish(&CentralBoundEvent{Msg: msg}))
+		synctest.Wait()
 
-	select {
-	case received := <-b.ResponsesC():
-		assert.Same(t, msg, received)
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("timeout: expected message on ResponsesC via real dispatcher")
-	}
+		select {
+		case received := <-b.ResponsesC():
+			assert.Same(t, msg, received)
+		default:
+			t.Fatal("expected message on ResponsesC via real dispatcher")
+		}
+	})
 }
 
 func TestBridge_Name(t *testing.T) {
