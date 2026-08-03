@@ -15,6 +15,7 @@ import (
 
 	reportgenerator "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	storage "github.com/stackrox/rox/generated/storage"
+	postgres "github.com/stackrox/rox/pkg/postgres"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -94,6 +95,18 @@ func (m *MockScheduler) Start() {
 func (mr *MockSchedulerMockRecorder) Start() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockScheduler)(nil).Start))
+}
+
+// StartWithLock mocks base method.
+func (m *MockScheduler) StartWithLock(db postgres.DB) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartWithLock", db)
+}
+
+// StartWithLock indicates an expected call of StartWithLock.
+func (mr *MockSchedulerMockRecorder) StartWithLock(db any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWithLock", reflect.TypeOf((*MockScheduler)(nil).StartWithLock), db)
 }
 
 // Stop mocks base method.
