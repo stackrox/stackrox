@@ -155,17 +155,17 @@ function ImagePage({
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
-    const { hasReadAccess, hasReadWriteAccess } = usePermissions();
+    const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // Create a scoped search filter that includes the image SHA filter plus any applied search filters.

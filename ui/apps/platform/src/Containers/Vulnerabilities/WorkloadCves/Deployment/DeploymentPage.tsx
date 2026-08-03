@@ -20,7 +20,6 @@ import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
-import usePermissions from 'hooks/usePermissions';
 import type { VulnerabilityState } from 'types/cve.proto';
 import { wrapInQuotes } from 'utils/searchUtils';
 
@@ -75,12 +74,11 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     const deploymentNotFound = metadataRequest.data && !metadataRequest.data.deployment;
 
     // Report-specific functionality
-    const { hasReadAccess } = usePermissions();
     const isViewBasedReportsEnabled =
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     // Create a scoped search filter that includes the deployment ID filter plus any applied search filters.

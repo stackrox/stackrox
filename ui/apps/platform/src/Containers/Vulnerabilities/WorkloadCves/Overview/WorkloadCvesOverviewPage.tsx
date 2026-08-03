@@ -296,10 +296,10 @@ function WorkloadCvesOverviewPage() {
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
 
     const isViewBasedReportsEnabled =
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
+        viewContext === 'User workloads' ||
+        viewContext === 'Platform' ||
+        viewContext === 'All vulnerable images' ||
+        viewContext === 'Inactive images';
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
     const showDeferralUI = hasRequestExceptionsAbility && currentVulnerabilityState === 'OBSERVED';
