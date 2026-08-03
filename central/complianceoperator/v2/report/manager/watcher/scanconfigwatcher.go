@@ -3,7 +3,6 @@ package watcher
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/pkg/errors"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -72,7 +71,6 @@ func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(env.ComplianceScanScheduleWatcherTimeout.DurationSetting())
-	stabilize := NewTimer(env.ComplianceScanConfigWatcherStabilizationDelay.DurationSetting())
 	ret := &scanConfigWatcherImpl{
 		ctx:                 watcherCtx,
 		sensorCtx:           sensorCtx,
@@ -91,7 +89,7 @@ func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *
 		},
 		scansToWait: set.NewStringSet(),
 	}
-	go ret.run(timeout, stabilize)
+	go ret.run(timeout)
 	return ret
 }
 
@@ -153,120 +151,50 @@ func (w *scanConfigWatcherImpl) scanConfigName() string {
 	return w.scanConfigResults.WatcherID
 }
 
-func (w *scanConfigWatcherImpl) run(timer Timer, stabilize Timer) {
+func (w *scanConfigWatcherImpl) run(timer Timer) {
 	defer func() {
 		w.stopped.Signal()
 		<-w.stopped.Done()
 		timer.Stop()
-		stabilize.Stop()
 	}()
-
-	pendingResults := w.stabilize(timer, stabilize)
-	if pendingResults == nil {
-		return
-	}
-	if slices.ContainsFunc(pendingResults, w.processResult) {
-		return
-	}
-	if w.checkCompletion() {
-		return
-	}
-	w.processLoop(timer)
-}
-
-// stabilize buffers incoming results until no new results arrive for the stabilization period.
-// NOT-APPLICABLE scans are deduplicated by scan name + cluster ID since the Compliance Operator
-// may recycle scan resources multiple times during initialization.
-// Returns nil if the watcher was cancelled or timed out during stabilization.
-func (w *scanConfigWatcherImpl) stabilize(timer Timer, stabilize Timer) []*ScanWatcherResults {
-	var applicable []*ScanWatcherResults
-	notApplicable := make(map[string]*ScanWatcherResults)
 	for {
 		select {
 		case <-w.ctx.Done():
-			w.handleContextDone()
-			return nil
-		case <-timer.C():
-			w.handleTimeout()
-			return nil
-		case result := <-w.scanWatcherResoutsC:
-			if IsScanNotApplicable(result.Scan) {
-				key := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetScanName())
-				notApplicable[key] = result
-			} else {
-				applicable = append(applicable, result)
-			}
-			stabilize.Reset()
-		case <-stabilize.C():
-			pending := applicable
-			for _, r := range notApplicable {
-				pending = append(pending, r)
-			}
-			log.Infof("Scan config watcher for %s stabilized with %d buffered results (%d not-applicable, %d applicable)",
-				w.scanConfigName(), len(pending), len(notApplicable), len(applicable))
-			return pending
-		}
-	}
-}
-
-func (w *scanConfigWatcherImpl) processLoop(timer Timer) {
-	for {
-		select {
-		case <-w.ctx.Done():
-			w.handleContextDone()
+			concurrency.WithLock(&w.resultsLock, func() {
+				log.Infof("Stopping scan config watcher for %s. Received %d/%d scan results (watcher id: %s)",
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
+				w.scanConfigResults.Error = ErrScanConfigContextCancelled
+				w.readyQueue.Push(w.scanConfigResults)
+			})
 			return
 		case <-timer.C():
-			w.handleTimeout()
+			concurrency.WithLock(&w.resultsLock, func() {
+				log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish. Received %d/%d scan results (watcher id: %s, pending: %v)",
+					w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
+				w.scanConfigResults.Error = ErrScanConfigTimeout
+				w.readyQueue.Push(w.scanConfigResults)
+			})
 			return
 		case result := <-w.scanWatcherResoutsC:
-			if w.processResult(result) {
+			if err := w.handleScanResults(result); err != nil {
+				log.Errorf("Unable to handle scan results %s: %v", result.Scan.GetScanName(), err)
+				concurrency.WithLock(&w.resultsLock, func() {
+					w.scanConfigResults.Error = err
+					w.readyQueue.Push(w.scanConfigResults)
+				})
 				return
 			}
 		}
-		if w.checkCompletion() {
+		if concurrency.WithLock1[bool](&w.resultsLock, func() bool {
+			if w.totalResults != 0 && w.totalResults == len(w.scanConfigResults.ScanResults) {
+				w.readyQueue.Push(w.scanConfigResults)
+				return true
+			}
+			return false
+		}) {
 			return
 		}
 	}
-}
-
-func (w *scanConfigWatcherImpl) processResult(result *ScanWatcherResults) bool {
-	if err := w.handleScanResults(result); err != nil {
-		log.Errorf("Unable to handle scan results %s: %v", result.Scan.GetScanName(), err)
-		concurrency.WithLock(&w.resultsLock, func() {
-			w.scanConfigResults.Error = err
-			w.readyQueue.Push(w.scanConfigResults)
-		})
-		return true
-	}
-	return false
-}
-
-func (w *scanConfigWatcherImpl) checkCompletion() bool {
-	return concurrency.WithLock1[bool](&w.resultsLock, func() bool {
-		if w.totalResults != 0 && w.totalResults == len(w.scanConfigResults.ScanResults) {
-			w.readyQueue.Push(w.scanConfigResults)
-			return true
-		}
-		return false
-	})
-}
-
-func (w *scanConfigWatcherImpl) handleContextDone() {
-	concurrency.WithLock(&w.resultsLock, func() {
-		log.Infof("Stopping scan config watcher for %s. Received %d/%d scan results (watcher id: %s)",
-			w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID)
-		w.scanConfigResults.Error = ErrScanConfigContextCancelled
-		w.readyQueue.Push(w.scanConfigResults)
-	})
-}
-
-func (w *scanConfigWatcherImpl) handleTimeout() {
-	concurrency.WithLock(&w.resultsLock, func() {
-		log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish. Received %d/%d scan results (watcher id: %s, pending: %v)",
-			w.scanConfigName(), len(w.scanConfigResults.ScanResults), w.totalResults, w.scanConfigResults.WatcherID, w.scansToWait.AsSlice())
-		w.scanConfigResults.Error = ErrScanConfigTimeout
-		w.readyQueue.Push(w.scanConfigResults)
-	})
 }
 
 func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) error {
