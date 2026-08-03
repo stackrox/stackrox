@@ -514,8 +514,15 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
 	// View-based history endpoints are authorized with only Image+Deployment view.
-	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
-	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
+	// The snapshot datastore requires WorkflowAdministration read, so elevate the
+	// context to that single read scope instead of granting unrestricted access.
+	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -562,9 +569,16 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
 	// View-based history endpoints are authorized with only Image+Deployment view.
-	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
-	// Results are already scoped to the requesting user via the UserID query filter above.
-	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
+	// The snapshot datastore requires WorkflowAdministration read, so elevate the
+	// context to that single read scope. Results are already scoped to the requesting
+	// user via the UserID query filter above.
+	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
