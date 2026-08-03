@@ -120,6 +120,35 @@ func (suite *RetryTestSuite) TestLimitsTries() {
 	suite.Equal(2, inBetweenCount)
 }
 
+func (suite *RetryTestSuite) TestWithContextCancelledDuringBetweenAttempts() {
+	runCount := 0
+	inBetweenCount := 0
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Cancel the context from within BetweenAttempts, simulating a ctx-aware backoff/wait
+	// that observes cancellation immediately, rather than the retried function noticing it.
+	// The retried function must not be invoked again once BetweenAttempts triggers the
+	// cancellation - runCount should stay at 2, not advance to 3.
+	err := WithRetry(func() error {
+		runCount = runCount + 1
+		return errors.New("some error")
+	},
+		Tries(99),
+		WithContext(ctx),
+		BetweenAttempts(func(previousAttempt int) {
+			inBetweenCount = inBetweenCount + 1
+			if inBetweenCount == 2 {
+				cancel()
+			}
+		}),
+	)
+
+	suite.Error(err)
+	suite.Equal(ctx.Err(), err)
+	suite.Equal(2, runCount)
+	suite.Equal(2, inBetweenCount)
+}
+
 func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 	runCount := 0
 	failCount := 0

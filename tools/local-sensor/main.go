@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"path"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,9 +23,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/prometheusutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -42,6 +46,11 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"k8s.io/apimachinery/pkg/util/validation"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+)
+
+const (
+	metricsSnapshotTimeout = 15 * time.Second
+	runLabelTimeLayout     = "2006-01-02T15.04.05Z"
 )
 
 // local-sensor is an application that allows you to run sensor on your host machine for testing and
@@ -92,6 +101,8 @@ type localSensorConfig struct {
 	PoliciesFile       string
 	FakeWorkloadFile   string
 	WithMetrics        bool
+	MetricsSnapshotOut string
+	OutputLabel        string
 	NoCPUProfile       bool
 	NoMemProfile       bool
 	PprofServer        bool
@@ -117,6 +128,8 @@ func mustGetCommandLineArgs() localSensorConfig {
 		PoliciesFile:       "",
 		FakeWorkloadFile:   "",
 		WithMetrics:        false,
+		MetricsSnapshotOut: "",
+		OutputLabel:        "",
 		NoCPUProfile:       false,
 		NoMemProfile:       false,
 		PprofServer:        false,
@@ -141,6 +154,8 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.StringVar(&sensorConfig.PoliciesFile, "with-policies", sensorConfig.PoliciesFile, " a file containing a list of policies")
 	flag.StringVar(&sensorConfig.FakeWorkloadFile, "with-fakeworkload", sensorConfig.FakeWorkloadFile, " a file containing a FakeWorkload definition")
 	flag.BoolVar(&sensorConfig.WithMetrics, "with-metrics", sensorConfig.WithMetrics, "enables the metric server")
+	flag.StringVar(&sensorConfig.MetricsSnapshotOut, "metrics-snapshot-out", sensorConfig.MetricsSnapshotOut, "file to store a pre-shutdown Prometheus metrics snapshot when metrics are enabled")
+	flag.StringVar(&sensorConfig.OutputLabel, "output-label", sensorConfig.OutputLabel, "label used in all output filenames (cpu/mem profiles, metrics snapshot); defaults to UTC timestamp")
 	flag.BoolVar(&sensorConfig.PprofServer, "with-pprof-server", sensorConfig.PprofServer, "enables the pprof server on port :6060")
 	flag.StringVar(&sensorConfig.CentralEndpoint, "connect-central", sensorConfig.CentralEndpoint, "connects to a Central instance rather than a fake Central")
 	flag.StringVar(&sensorConfig.Namespace, "namespace", sensorConfig.Namespace, "namespace where sensor is deployed (used for certificate generation when connecting to real Central)")
@@ -149,6 +164,12 @@ func mustGetCommandLineArgs() localSensorConfig {
 	flag.Parse()
 
 	sensorConfig.CentralOutput = path.Clean(sensorConfig.CentralOutput)
+	if sensorConfig.MetricsSnapshotOut != "" {
+		if !sensorConfig.WithMetrics {
+			log.Fatalf("-metrics-snapshot-out requires -with-metrics to be enabled")
+		}
+		sensorConfig.MetricsSnapshotOut = path.Clean(sensorConfig.MetricsSnapshotOut)
+	}
 
 	if sensorConfig.ReplayK8sEnabled && sensorConfig.RecordK8sEnabled {
 		log.Fatalf("cannot record and replay a trace at the same time. Use either -record or -replay flag")
@@ -181,8 +202,9 @@ func mustGetCommandLineArgs() localSensorConfig {
 	return sensorConfig
 }
 
-func writeMemoryProfile() {
-	f, err := os.Create(fmt.Sprintf("local-sensor-mem-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+func writeMemoryProfile(runLabel string) {
+	name := fmt.Sprintf("local-sensor-mem-%s.prof", runLabel)
+	f, err := os.Create(name)
 	if err != nil {
 		log.Fatal("could not create memory profile: ", err)
 	}
@@ -191,7 +213,78 @@ func writeMemoryProfile() {
 	if err := pprof.Lookup("allocs").WriteTo(f, 0); err != nil {
 		log.Fatal("could not write memory profile: ", err)
 	}
-	log.Printf("Wrote memory profile")
+	log.Printf("Wrote memory profile to %s", name)
+}
+
+func makeRunLabel(name string, now time.Time) string {
+	sanitized := sanitizeFilenameLabel(name)
+	if sanitized != "" {
+		return sanitized
+	}
+	return now.UTC().Format(runLabelTimeLayout)
+}
+
+func sanitizeFilenameLabel(label string) string {
+	label = strings.TrimSpace(label)
+	if label == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	builder.Grow(len(label))
+
+	lastWasSeparator := false
+	for _, r := range label {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			lastWasSeparator = false
+		default:
+			if builder.Len() == 0 || lastWasSeparator {
+				continue
+			}
+			builder.WriteByte('-')
+			lastWasSeparator = true
+		}
+	}
+
+	return strings.Trim(builder.String(), "-")
+}
+
+func writeMetricsSnapshot(parentCtx context.Context, filePath string) error {
+	return writeMetricsSnapshotWithExporter(parentCtx, filePath, prometheusutil.ExportText)
+}
+
+func writeMetricsSnapshotWithExporter(parentCtx context.Context, filePath string, exportMetrics func(context.Context, io.Writer) error) error {
+	f, err := os.Create(filePath)
+	if err != nil {
+		return errors.Wrapf(err, "could not create metrics snapshot %q", filePath)
+	}
+	defer utils.IgnoreError(f.Close)
+
+	snapshotCtx, cancel := context.WithTimeout(parentCtx, metricsSnapshotTimeout)
+	defer cancel()
+
+	if err := exportMetrics(snapshotCtx, f); err != nil {
+		return errors.Wrapf(err, "could not write metrics snapshot %q", filePath)
+	}
+
+	log.Printf("Wrote metrics snapshot to %s", filePath)
+	return nil
+}
+
+func logTimeLeft(stop <-chan struct{}, deadline time.Time, tickerC <-chan time.Time, now func() time.Time, logf func(string, ...any)) {
+	for {
+		select {
+		case <-stop:
+			return
+		case <-tickerC:
+			remaining := deadline.Sub(now()).Round(time.Second)
+			if remaining > 0 {
+				logf("Time left in local-sensor run: %s", remaining)
+			}
+		}
+	}
 }
 
 // stopSensorAndWorkload stops the workload manager and sensor in the correct order.
@@ -224,6 +317,18 @@ func main() {
 		log.Printf("unable to start continuous profiling: %v", err)
 	}
 	localConfig := mustGetCommandLineArgs()
+	var durationC <-chan time.Time
+	if localConfig.Duration > 0 {
+		durationDeadline := time.Now().Add(localConfig.Duration)
+		durationTimer := time.NewTimer(localConfig.Duration)
+		defer durationTimer.Stop()
+		durationC = durationTimer.C
+		durationLogStop := make(chan struct{})
+		durationLogTicker := time.NewTicker(time.Minute)
+		defer durationLogTicker.Stop()
+		defer close(durationLogStop)
+		go logTimeLeft(durationLogStop, durationDeadline, durationLogTicker.C, time.Now, log.Printf)
+	}
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
 		metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
@@ -258,8 +363,11 @@ func main() {
 		k8sClient, err = k8s.MakeOutOfClusterClient()
 		utils.CrashOnError(err)
 	}
+
+	runLabel := makeRunLabel(localConfig.OutputLabel, time.Now())
+
 	if !localConfig.NoCPUProfile {
-		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
+		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", runLabel))
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
@@ -393,35 +501,63 @@ func main() {
 	// pipe and the next log write terminates the process before graceful shutdown.
 	signal.Ignore(syscall.SIGPIPE)
 
+	// Global signal handler: first signal triggers graceful shutdown from any
+	// phase (waiting for connection, running scenario, or cleanup). Second
+	// signal force-exits. Without this, signals received outside the main
+	// select are silently buffered and dropped once the buffer fills.
+	shutdownRequested := concurrency.NewSignal()
+	go func() {
+		sig := <-sigCh
+		log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
+		shutdownRequested.Signal()
+		sig = <-sigCh
+		log.Printf("Received %s during graceful shutdown, exiting immediately", sig)
+		os.Exit(130)
+	}()
+
 	go s.Start()
 
+	durationExpired := false
 	if spyCentral != nil {
-		spyCentral.ConnectionStarted.Wait()
+		select {
+		case <-spyCentral.ConnectionStarted.Done():
+		case <-durationC:
+			durationExpired = true
+			log.Printf("Scenario duration elapsed before fake central connection started")
+		case <-shutdownRequested.Done():
+			durationExpired = true
+		}
 	}
 
-	if localConfig.FakeCollector {
+	if !durationExpired && localConfig.FakeCollector {
 		fakeCollector := collector.NewFakeCollector(collector.WithDefaultConfig())
 		if err := fakeCollector.Start(); err != nil {
 			log.Fatalln(err)
 		}
 	}
 
-	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
-	select {
-	case <-time.Tick(localConfig.Duration):
-	case <-s.Stopped().Done():
-	case sig := <-sigCh:
-		log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
-		go func() {
-			forceSig := <-sigCh
-			log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
-			os.Exit(130)
-		}()
+	if !durationExpired {
+		log.Printf("Running scenario for %.1f minutes\n", localConfig.Duration.Minutes())
+		select {
+		case <-durationC:
+		case <-s.Stopped().Done():
+		case <-shutdownRequested.Done():
+		}
+	}
+
+	if localConfig.WithMetrics {
+		metricsSnapshotOut := localConfig.MetricsSnapshotOut
+		if metricsSnapshotOut == "" {
+			metricsSnapshotOut = fmt.Sprintf("local-sensor-metrics-%s.prom", runLabel)
+		}
+		if err := writeMetricsSnapshot(ctx, metricsSnapshotOut); err != nil {
+			log.Printf("warning: %v", err)
+		}
 	}
 
 	cancelFunc()
 	if !localConfig.NoMemProfile {
-		writeMemoryProfile()
+		writeMemoryProfile(runLabel)
 	}
 	log.Printf("Stopping sensor and workload manager...")
 	stopSensorAndWorkload(workloadManager, s, processPipeline)

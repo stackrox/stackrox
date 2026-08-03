@@ -438,6 +438,7 @@ func (m *ClusterStatus) CloneVT() *ClusterStatus {
 	r.OrchestratorMetadata = m.OrchestratorMetadata.CloneVT()
 	r.UpgradeStatus = m.UpgradeStatus.CloneVT()
 	r.CertExpiryStatus = m.CertExpiryStatus.CloneVT()
+	r.SensorVersionCompatibility = m.SensorVersionCompatibility
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1417,6 +1418,9 @@ func (this *ClusterStatus) EqualVT(that *ClusterStatus) bool {
 		return false
 	}
 	if !this.CertExpiryStatus.EqualVT(that.CertExpiryStatus) {
+		return false
+	}
+	if this.SensorVersionCompatibility != that.SensorVersionCompatibility {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3298,6 +3302,11 @@ func (m *ClusterStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.SensorVersionCompatibility != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.SensorVersionCompatibility))
+		i--
+		dAtA[i] = 0x38
+	}
 	if m.CertExpiryStatus != nil {
 		size, err := m.CertExpiryStatus.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -4591,6 +4600,9 @@ func (m *ClusterStatus) SizeVT() (n int) {
 	if m.CertExpiryStatus != nil {
 		l = m.CertExpiryStatus.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.SensorVersionCompatibility != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.SensorVersionCompatibility))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8571,6 +8583,25 @@ func (m *ClusterStatus) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorVersionCompatibility", wireType)
+			}
+			m.SensorVersionCompatibility = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SensorVersionCompatibility |= SensorVersionCompatibility(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -13864,6 +13895,25 @@ func (m *ClusterStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorVersionCompatibility", wireType)
+			}
+			m.SensorVersionCompatibility = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.SensorVersionCompatibility |= SensorVersionCompatibility(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

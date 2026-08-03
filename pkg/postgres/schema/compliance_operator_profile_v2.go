@@ -26,6 +26,9 @@ var (
 				Children:  []*postgres.CreateStmts{},
 			},
 		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "complianceoperatorprofilev2_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS complianceoperatorprofilev2_sac_filter ON compliance_operator_profile_v2 USING hash (clusterid)"},
+		},
 	}
 
 	// ComplianceOperatorProfileV2Schema is the go schema for table `compliance_operator_profile_v2`.
@@ -65,7 +68,7 @@ type ComplianceOperatorProfileV2 struct {
 	ProfileVersion string                                           `gorm:"column:profileversion;type:varchar"`
 	ProductType    string                                           `gorm:"column:producttype;type:varchar"`
 	Standard       string                                           `gorm:"column:standard;type:varchar"`
-	ClusterID      string                                           `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
+	ClusterID      string                                           `gorm:"column:clusterid;type:uuid"`
 	ProfileRefID   string                                           `gorm:"column:profilerefid;type:uuid"`
 	OperatorKind   storage.ComplianceOperatorProfileV2_OperatorKind `gorm:"column:operatorkind;type:integer"`
 	Serialized     []byte                                           `gorm:"column:serialized;type:bytea"`

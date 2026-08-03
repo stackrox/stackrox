@@ -57,6 +57,11 @@ type Tracker interface {
 	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
 	// Reconfigure the tracker with the provided tracker configuration.
 	Reconfigure(*Configuration)
+	// GetPrefix returns the metric prefix.
+	GetPrefix() string
+	// Refresh the data on the next scrape request without waiting for the next
+	// gathering period.
+	Refresh()
 }
 
 // FindingErrorSequence is a sequence of pairs of findings and errors.
@@ -69,6 +74,7 @@ type gatherer[F Finding] struct {
 	http.Handler
 	lastGather time.Time
 	running    atomic.Bool
+	refreshing atomic.Bool
 	registry   metrics.CustomRegistry
 	aggregator *aggregator[F]
 	config     *Configuration
@@ -158,6 +164,10 @@ func makeTrackerBase[F Finding](metricPrefix, description string, scoped bool,
 	}
 }
 
+func (tracker *TrackerBase[F]) GetPrefix() string {
+	return tracker.metricPrefix
+}
+
 // NewConfiguration does not apply the configuration.
 func (tracker *TrackerBase[F]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.getConfiguration()
@@ -200,8 +210,17 @@ func (tracker *TrackerBase[F]) Reconfigure(cfg *Configuration) {
 		tracker.unregisterMetrics(cfg.toDelete)
 	}
 	tracker.registerMetrics(cfg, cfg.toAdd)
-	// Note: aggregators are recreated lazily in getGatherer() when config
-	// changes, to avoid race conditions with running gatherers.
+	// Aggregators are recreated and gather is forced lazily in
+	// getGatherer() when config changes, to avoid race conditions with
+	// running gatherers.
+}
+
+// Refresh marks all gatherers for re-gathering on the next scrape request.
+func (tracker *TrackerBase[F]) Refresh() {
+	tracker.gatherers.Range(func(_, gv any) bool {
+		gv.(*gatherer[F]).refreshing.Store(true)
+		return true
+	})
 }
 
 func labelsAsStrings(labels []Label) []string {
@@ -322,7 +341,7 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	defer tracker.cleanupInactiveGatherers()
 	defer gatherer.running.Store(false)
 
-	if time.Since(gatherer.lastGather) < cfg.period {
+	if !gatherer.refreshing.Swap(false) && time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	begin := time.Now()
@@ -390,10 +409,11 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		if !gr.trySetRunning() {
 			return nil
 		}
-		// Recreate aggregator if config has changed since last run.
+		// Recreate aggregator and force immediate gather if config has changed.
 		if gr.config != cfg {
 			gr.aggregator = makeAggregator(cfg.metrics, cfg.includeFilters, cfg.excludeFilters, tracker.getters)
 			gr.config = cfg
+			gr.refreshing.Store(true)
 		}
 	}
 	return gr

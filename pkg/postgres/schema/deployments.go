@@ -38,6 +38,10 @@ var (
 						Children:  []*postgres.CreateStmts{},
 					},
 				},
+				Indexes: []*postgres.IndexDefinition{
+					{Name: "deploymentscontainers_image_id", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_id ON deployments_containers USING hash (image_id)"},
+					{Name: "deploymentscontainers_image_idv2", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deploymentscontainers_image_idv2 ON deployments_containers USING btree (image_idv2)"},
+				},
 			},
 			&postgres.CreateStmts{
 				GormModel: (*DeploymentsPorts)(nil),
@@ -48,6 +52,10 @@ var (
 					},
 				},
 			},
+		},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "deployments_riskscore", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_riskscore ON deployments USING btree (riskscore)"},
+			{Name: "deployments_sac_filter", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS deployments_sac_filter ON deployments USING btree (namespace, clusterid)"},
 		},
 	}
 
@@ -109,20 +117,20 @@ type Deployments struct {
 	Name                          string                  `gorm:"column:name;type:varchar"`
 	Hash                          uint64                  `gorm:"column:hash;type:numeric"`
 	Type                          string                  `gorm:"column:type;type:varchar"`
-	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployments_sac_filter,type:btree"`
+	Namespace                     string                  `gorm:"column:namespace;type:varchar"`
 	NamespaceID                   string                  `gorm:"column:namespaceid;type:uuid"`
 	OrchestratorComponent         bool                    `gorm:"column:orchestratorcomponent;type:bool"`
 	Labels                        map[string]string       `gorm:"column:labels;type:jsonb"`
 	PodLabels                     map[string]string       `gorm:"column:podlabels;type:jsonb"`
 	Created                       *time.Time              `gorm:"column:created;type:timestamp"`
-	ClusterID                     string                  `gorm:"column:clusterid;type:uuid;index:deployments_sac_filter,type:btree"`
+	ClusterID                     string                  `gorm:"column:clusterid;type:uuid"`
 	ClusterName                   string                  `gorm:"column:clustername;type:varchar"`
 	Annotations                   map[string]string       `gorm:"column:annotations;type:jsonb"`
 	Priority                      int64                   `gorm:"column:priority;type:bigint"`
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
-	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
+	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
@@ -131,12 +139,12 @@ type Deployments struct {
 type DeploymentsContainers struct {
 	DeploymentsID                         string                `gorm:"column:deployments_id;type:uuid;primaryKey"`
 	Idx                                   int                   `gorm:"column:idx;type:integer;primaryKey"`
-	ImageID                               string                `gorm:"column:image_id;type:varchar;index:deploymentscontainers_image_id,type:hash"`
+	ImageID                               string                `gorm:"column:image_id;type:varchar"`
 	ImageNameRegistry                     string                `gorm:"column:image_name_registry;type:varchar"`
 	ImageNameRemote                       string                `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string                `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string                `gorm:"column:image_name_fullname;type:varchar"`
-	ImageIDV2                             string                `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
+	ImageIDV2                             string                `gorm:"column:image_idv2;type:varchar"`
 	SecurityContextPrivileged             bool                  `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray       `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray       `gorm:"column:securitycontext_addcapabilities;type:text[]"`

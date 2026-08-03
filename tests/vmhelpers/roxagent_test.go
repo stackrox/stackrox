@@ -1,4 +1,4 @@
-//go:build test
+//go:build test && !test_e2e && !test_e2e_vm
 
 package vmhelpers
 

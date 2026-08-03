@@ -5,11 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
-
-	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
 )
 
 func mustReadValues(t *testing.T, s string) chartutil.Values {

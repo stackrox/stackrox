@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -100,7 +101,7 @@ type VMScanningSuite struct {
 	cleanupCtx context.Context
 	cancel     func()
 
-	cfg           *vmScanConfig
+	cfg           *vmhelpers.VMScanConfig
 	restCfg       *rest.Config
 	k8sClient     kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -112,7 +113,7 @@ type VMScanningSuite struct {
 	virtctl vmhelpers.Virtctl
 
 	// vmSpecs is the provisioning blueprint for each VM.
-	vmSpecs []vmSpec
+	vmSpecs []vmhelpers.VMSpec
 	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
 	vms []VMHandle
 	// scannerV4Checked is set after the one-time Scanner V4 matcher initialization check.
@@ -179,7 +180,7 @@ func (s *VMScanningSuite) SetupSuite() {
 		HeartbeatInterval: defaultVirtctlHeartbeatInterval,
 	}
 
-	s.vmSpecs = s.cfg.vmSpecs()
+	s.vmSpecs = s.cfg.VMSpecs()
 	s.logf("VM scanning setup: provision VMs (%d specs)", len(s.vmSpecs))
 	s.provisionVMs(s.vmSpecs)
 	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
@@ -384,7 +385,7 @@ func formatContainerNames(containers []coreV1.Container) string {
 	return strings.Join(names, ", ")
 }
 
-func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
+func (s *VMScanningSuite) provisionVMs(specs []vmhelpers.VMSpec) {
 	ctx := s.ctx
 
 	s.logf("provision VMs: creating namespace %q", s.namespace)
@@ -478,20 +479,29 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	}
 	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
 
-	sa, err := s.waitForDefaultServiceAccount(ctx)
-	require.NoError(s.T(), err, "get default service account in namespace %q", s.namespace)
-	hasRef := false
-	for _, ref := range sa.ImagePullSecrets {
-		if ref.Name == vmImagePullSecretName {
-			hasRef = true
-			break
+	// Wait for the default SA to exist before attempting the update.
+	_, err = s.waitForDefaultServiceAccount(ctx)
+	require.NoError(s.T(), err, "wait for default service account in namespace %q", s.namespace)
+
+	// The SA controller may still be mutating the freshly-created default SA
+	// (e.g. patching token secrets), so a single Get+Update can hit an
+	// optimistic concurrency conflict. Retry exactly like the DaemonSet
+	// update in ensureComplianceMetricsEnv.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		sa, getErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
-	}
-	if !hasRef {
+		for _, ref := range sa.ImagePullSecrets {
+			if ref.Name == vmImagePullSecretName {
+				return nil
+			}
+		}
 		sa.ImagePullSecrets = append(sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
-		_, err = s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
-		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
-	}
+		_, updateErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
+		return updateErr
+	})
+	require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
 	s.logf("provision VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
 }
 
@@ -633,8 +643,8 @@ func (s *VMScanningSuite) vmRequestForVM(vm VMHandle) (vmhelpers.VMRequest, erro
 	return vmhelpers.VMRequest{}, fmt.Errorf("no spec found for VM %s/%s", vm.Namespace, vm.Name)
 }
 
-// vmSpecToRequest converts a vmSpec into a VMRequest using suite-level defaults.
-func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
+// vmSpecToRequest converts a VMSpec into a VMRequest using suite-level defaults.
+func (s *VMScanningSuite) vmSpecToRequest(sp vmhelpers.VMSpec) vmhelpers.VMRequest {
 	return vmhelpers.VMRequest{
 		Name:         sp.Name,
 		Namespace:    s.namespace,

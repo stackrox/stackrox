@@ -116,19 +116,19 @@ func fakeWalkByResponse(
 				}
 			}
 		}
-		for i := 0; i < numPassedChecksPerCluster; i++ {
+		for i := range numPassedChecksPerCluster {
 			_ = fn(&storage.ComplianceOperatorCheckResultV2{
 				CheckName: fmt.Sprintf("pass-check-%d", i),
 				Status:    storage.ComplianceOperatorCheckResultV2_PASS,
 			})
 		}
-		for i := 0; i < numFailedChecksPerCluster; i++ {
+		for i := range numFailedChecksPerCluster {
 			_ = fn(&storage.ComplianceOperatorCheckResultV2{
 				CheckName: fmt.Sprintf("fail-check-%d", i),
 				Status:    storage.ComplianceOperatorCheckResultV2_FAIL,
 			})
 		}
-		for i := 0; i < numMixedChecksPerCluster; i++ {
+		for i := range numMixedChecksPerCluster {
 			_ = fn(&storage.ComplianceOperatorCheckResultV2{
 				CheckName: fmt.Sprintf("mixed-check-%d", i),
 				Status:    storage.ComplianceOperatorCheckResultV2_INCONSISTENT,
@@ -528,7 +528,7 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 	for i := 0; i < numClusters+numFailedClusters; i++ {
 		id := fmt.Sprintf("cluster-%d", i)
 		var profileNames []string
-		for j := 0; j < numProfiles; j++ {
+		for j := range numProfiles {
 			profileNames = append(profileNames, fmt.Sprintf("profile-%d", j))
 		}
 		clusterData[id] = &report.ClusterData{
@@ -566,7 +566,7 @@ func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters
 
 func getNames(prefix string, num int) []string {
 	ret := make([]string, 0, 2)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		ret = append(ret, fmt.Sprintf("%s-%d", prefix, i))
 	}
 	return ret

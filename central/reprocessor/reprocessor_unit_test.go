@@ -573,7 +573,7 @@ func TestReprocessImageV2(t *testing.T) {
 
 func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
-	imgs := []*storage.Image{}
+	imgs := make([]*storage.Image, 0, (imageReprocessorSemaphoreSize+1)*2)
 	for _, cluster := range []string{"a", "b"} { // two clusters
 		// Create at least one more image than max semaphore size to ensure skip logic is executed.
 		for i := range imageReprocessorSemaphoreSize + 1 {
@@ -581,7 +581,7 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		}
 	}
 
-	results := []search.Result{}
+	results := make([]search.Result, 0, len(imgs))
 	for _, img := range imgs {
 		results = append(results, search.Result{
 			ID: img.GetId(),
@@ -657,7 +657,7 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 
 func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
-	imgs := []*storage.ImageV2{}
+	imgs := make([]*storage.ImageV2, 0, (imageReprocessorSemaphoreSize+1)*2)
 	for _, cluster := range []string{"a", "b"} { // two clusters
 		// Create at least one more image than max semaphore size to ensure skip logic is executed.
 		for i := range imageReprocessorSemaphoreSize + 1 {
@@ -665,7 +665,7 @@ func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		}
 	}
 
-	containerImageViews := []*views.ContainerImageView{}
+	containerImageViews := make([]*views.ContainerImageView, 0, len(imgs))
 	for _, img := range imgs {
 		containerImageViews = append(containerImageViews, &views.ContainerImageView{
 			ImageIDV2:         img.GetId(),
@@ -877,8 +877,8 @@ func TestReprocessImagesAndResyncDeployments_WithCapability(t *testing.T) {
 		imageDS := mockImageDataStore.NewMockDataStore(ctrl)
 		riskManager := riskManagerMocks.NewMockManager(ctrl)
 
-		imgs := []*storage.Image{}
-		results := []search.Result{}
+		imgs := make([]*storage.Image, 0, imageReprocessorSemaphoreSize+1)
+		results := make([]search.Result, 0, imageReprocessorSemaphoreSize+1)
 		for i := range imageReprocessorSemaphoreSize + 1 {
 			img := &storage.Image{Id: fmt.Sprintf("img%d-a", i)}
 			imgs = append(imgs, img)

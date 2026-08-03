@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -36,7 +38,7 @@ func (s *virtualMachineServiceSuite) SetupTest() {
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler(s.store))
+	svc := NewService(NewHandler(s.store), nil)
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 
@@ -133,4 +135,57 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhen
 		s.Require().NotNil(resp)
 		s.Require().Error(err)
 	})
+}
+
+func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForActivelyScrapedVM() {
+	ctx := context.Background()
+
+	var sendCalled bool
+	mockHandler := mocks.NewMockHandler(s.ctrl)
+	mockHandler.EXPECT().Send(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, _ *v1.IndexReport) error {
+			sendCalled = true
+			return nil
+		},
+	)
+
+	svc := &serviceImpl{
+		handler: mockHandler,
+		// Mark VM with CID 100 as actively scraped via pull mode.
+		pullChecker: &fakePullChecker{scraped: map[string]bool{"100": true}},
+	}
+
+	suppressedBefore := testutil.ToFloat64(metrics.IndexReportsSuppressed)
+
+	// CID 100 has both push and pull active simultaneously. When both modes
+	// coexist, pull takes precedence and the push report must be suppressed
+	// to avoid sending duplicate data to Central.
+	// (The pull path forwarding is tested separately in scraper_test.go.)
+	resp, err := svc.UpsertVirtualMachineIndexReport(ctx, &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{VsockCid: "100"},
+	})
+	s.Require().NoError(err)
+	s.Assert().True(resp.GetSuccess())
+	s.Assert().False(sendCalled, "Send must NOT be called when pull is active for this VM")
+	s.Assert().Equal(suppressedBefore+1, testutil.ToFloat64(metrics.IndexReportsSuppressed),
+		"suppressing a push report must increment IndexReportsSuppressed")
+
+	// CID 200 uses push only (not being pulled). Its push report must be
+	// forwarded to Central as usual.
+	resp, err = svc.UpsertVirtualMachineIndexReport(ctx, &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{VsockCid: "200"},
+	})
+	s.Require().NoError(err)
+	s.Assert().True(resp.GetSuccess())
+	s.Assert().True(sendCalled, "Send MUST be called when push is the only mode for this VM")
+	s.Assert().Equal(suppressedBefore+1, testutil.ToFloat64(metrics.IndexReportsSuppressed),
+		"a forwarded (non-suppressed) push report must NOT increment IndexReportsSuppressed")
+}
+
+type fakePullChecker struct {
+	scraped map[string]bool
+}
+
+func (f *fakePullChecker) IsActivelyScraped(key string) bool {
+	return f.scraped[key]
 }

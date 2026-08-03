@@ -26,7 +26,7 @@ func GetDiscoveredCluster() *discoveredclusters.DiscoveredCluster {
 // GetManyDiscoveredClusters returns the given number of discovered clusters.
 func GetManyDiscoveredClusters(num int) []*discoveredclusters.DiscoveredCluster {
 	res := make([]*discoveredclusters.DiscoveredCluster, 0, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		discoveredCluster := GetDiscoveredCluster()
 		discoveredCluster.ID = fmt.Sprintf("my-cluster-%02d", i)
 		discoveredCluster.Name = fmt.Sprintf("my-cluster-%02d", i)

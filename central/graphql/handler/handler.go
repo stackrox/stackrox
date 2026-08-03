@@ -23,6 +23,7 @@ var (
 
 	queryTracerEnabled    = env.PostgresQueryTracer.BooleanSetting()
 	graphQLQueryThreshold = env.PostgresQueryTracerGraphQLThreshold.DurationSetting()
+	graphQLQueryMaxDepth  = env.GraphQLQueryMaxDepth.IntegerSetting()
 )
 
 type logger struct {
@@ -94,7 +95,10 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Handler returns an HTTP handler for the graphql api endpoint
 func Handler() http.Handler {
-	opts := []graphql.SchemaOpt{graphql.Logger(&logger{})}
+	opts := []graphql.SchemaOpt{
+		graphql.Logger(&logger{}),
+		graphql.MaxDepth(graphQLQueryMaxDepth),
+	}
 	s := resolvers.Schema()
 	ourSchema, err := graphql.ParseSchema(s, resolvers.New(), opts...)
 	if err != nil {

@@ -9,16 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/tools/generate-helpers/pg-table-bindings/multitest/postgres"
 	"github.com/stretchr/testify/assert"

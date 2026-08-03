@@ -141,12 +141,10 @@ export function verifyPolicyDetails(policyName: string, expectations: PolicyDeta
     }
 
     if (expectations.filters) {
-        /* TODO: uncomment this once backend persistence is implemented
         cy.contains('h2', 'Policy filters');
         cy.contains('dt', 'Container types')
             .next('dd')
             .should('contain', expectations.filters.containerTypes);
-        */
     }
 }
 

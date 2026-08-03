@@ -52,7 +52,7 @@ spec:
         - name: name
           value: slack-webhook-notification
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:3350566fdd5838366bb0c480c14270cea87f1f3ddf5765964405c6111c02893f
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:02842e9c752056c47a409f69ed462cfd38cbd6b15facb796564a610b549222ea
         - name: kind
           value: task
         resolver: bundles
@@ -66,7 +66,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6e02b9f3317312678fb4addc95b558cfac92020ecea8c516585a21e2809be33f
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:3a1038af58f89ce3ea352ee8063b12d81ad6fb33c6bd19704aaa6971b80279c2
         - name: kind
           value: task
         resolver: bundles
@@ -117,7 +117,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2@sha256:89da85c1508b3a2b7ad884c1215b9fd3a7d9e28c2335aca6750948d129707035
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.5@sha256:510daad5648d37936b9b2c599a35c8e59b7389de8e1a4e58f6c6d079957d730d
         - name: kind
           value: task
         resolver: bundles
@@ -146,7 +146,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.10@sha256:21a2f7c0b1b623bb77e6f07f7a1b5e36a72c1e6896adb5977527a9180daa99d7
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.10.7@sha256:f07fccbe8d952ba2e9e5f3b8b8bfcda2cc8037d5153cf19da7d5ed0bb8b431a8
         - name: kind
           value: task
         resolver: bundles

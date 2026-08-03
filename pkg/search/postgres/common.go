@@ -216,9 +216,10 @@ func (q *query) getPortionBeforeFromClause() string {
 	case COUNT:
 		countOn := "*"
 		if q.DistinctAppliedOnPrimaryKeySelect() {
-			var primaryKeyPaths []string
 			// Always select the primary keys for count.
-			for _, pk := range q.Schema.PrimaryKeys() {
+			primaryKeys := q.Schema.PrimaryKeys()
+			primaryKeyPaths := make([]string, 0, len(primaryKeys))
+			for _, pk := range primaryKeys {
 				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
 			}
 			countOn = fmt.Sprintf("distinct(%s)", strings.Join(primaryKeyPaths, ", "))
@@ -913,7 +914,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 		var outputSlice []interface{}
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
-		for i := 0; i < numPrimaryKeys; i++ {
+		for i := range numPrimaryKeys {
 			bufferToScanRowInto[i] = pointers.String("")
 		}
 	}
@@ -945,7 +946,7 @@ func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schem
 				idParts = append(idParts, elem.(string))
 			}
 		} else {
-			for i := 0; i < numPrimaryKeys; i++ {
+			for i := range numPrimaryKeys {
 				idParts = append(idParts, valueFromStringPtrInterface(bufferToScanRowInto[i]))
 			}
 		}
@@ -1343,7 +1344,7 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 		var outputSlice []interface{}
 		bufferToScanRowInto[0] = &outputSlice
 	} else {
-		for i := 0; i < numPrimaryKeys; i++ {
+		for i := range numPrimaryKeys {
 			bufferToScanRowInto[i] = pointers.String("")
 		}
 	}
@@ -1366,7 +1367,7 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 					idParts = append(idParts, elem.(string))
 				}
 			} else {
-				for i := 0; i < numPrimaryKeys; i++ {
+				for i := range numPrimaryKeys {
 					idParts = append(idParts, valueFromStringPtrInterface(bufferToScanRowInto[i]))
 				}
 			}

@@ -68,9 +68,9 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 		unifiedDetector:           &fakeUnifiedDetector{},
 		output:                    make(chan *message.ExpiringMessage, 1000),
 		auditEventsChan:           make(chan *sensor.AuditEvents),
-		deploymentAlertOutputChan: make(chan outputResult),
+		deploymentAlertOutputChan: make(chan *detectorEvents.DeployAlertOutputEvent),
 		deploymentProcessingMap:   make(map[string]int64),
-		enricher:                  newEnricher(&fakeClusterIDPeekWaiter{}, nil, serviceAccountStore, nil, nil),
+		enricher:                  newEnricher(&fakeClusterIDPeekWaiter{}, nil, serviceAccountStore, nil, nil, nil),
 		deploymentStore:           deploymentStore,
 		nodeStore:                 nodeStore,
 		networkPolicyStore:        networkPolicyStore,
@@ -122,11 +122,14 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 						),
 					),
 				),
+				lane.NewBlockingLane(pubsub.DetectorScanResultLane),
+				lane.NewBlockingLane(pubsub.DetectorDeployAlertOutputLane),
 			},
 		))
 		require.NoError(tb, err)
 		tb.Cleanup(dispatcher.Stop)
 		d.pubSubDispatcher = dispatcher
+		d.enricher.pubSubDispatcher = dispatcher
 	}
 
 	return d, deploymentStore, networkPolicyStore, nodeStore

@@ -791,7 +791,7 @@ func (s *authServiceAccessControlTestSuite) addRoles() {
 		},
 	}))
 
-	for _, role := range testRoles.AsSlice() {
+	for role := range testRoles.All() {
 		s.Require().NoError(s.roleDS.AddRole(s.accessCtx, &storage.Role{
 			Name:            role,
 			Description:     "test role",

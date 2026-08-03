@@ -22,6 +22,116 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type AclTag int32
+
+const (
+	AclTag_ACL_TAG_UNSPECIFIED AclTag = 0
+	AclTag_ACL_TAG_USER_OBJ    AclTag = 1
+	AclTag_ACL_TAG_USER        AclTag = 2
+	AclTag_ACL_TAG_GROUP_OBJ   AclTag = 3
+	AclTag_ACL_TAG_GROUP       AclTag = 4
+	AclTag_ACL_TAG_MASK        AclTag = 5
+	AclTag_ACL_TAG_OTHER       AclTag = 6
+)
+
+// Enum value maps for AclTag.
+var (
+	AclTag_name = map[int32]string{
+		0: "ACL_TAG_UNSPECIFIED",
+		1: "ACL_TAG_USER_OBJ",
+		2: "ACL_TAG_USER",
+		3: "ACL_TAG_GROUP_OBJ",
+		4: "ACL_TAG_GROUP",
+		5: "ACL_TAG_MASK",
+		6: "ACL_TAG_OTHER",
+	}
+	AclTag_value = map[string]int32{
+		"ACL_TAG_UNSPECIFIED": 0,
+		"ACL_TAG_USER_OBJ":    1,
+		"ACL_TAG_USER":        2,
+		"ACL_TAG_GROUP_OBJ":   3,
+		"ACL_TAG_GROUP":       4,
+		"ACL_TAG_MASK":        5,
+		"ACL_TAG_OTHER":       6,
+	}
+)
+
+func (x AclTag) Enum() *AclTag {
+	p := new(AclTag)
+	*p = x
+	return p
+}
+
+func (x AclTag) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AclTag) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_sfa_proto_enumTypes[0].Descriptor()
+}
+
+func (AclTag) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_sfa_proto_enumTypes[0]
+}
+
+func (x AclTag) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AclTag.Descriptor instead.
+func (AclTag) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{0}
+}
+
+type AclType int32
+
+const (
+	AclType_ACL_TYPE_UNSPECIFIED AclType = 0
+	AclType_ACL_TYPE_ACCESS      AclType = 1
+	AclType_ACL_TYPE_DEFAULT     AclType = 2
+)
+
+// Enum value maps for AclType.
+var (
+	AclType_name = map[int32]string{
+		0: "ACL_TYPE_UNSPECIFIED",
+		1: "ACL_TYPE_ACCESS",
+		2: "ACL_TYPE_DEFAULT",
+	}
+	AclType_value = map[string]int32{
+		"ACL_TYPE_UNSPECIFIED": 0,
+		"ACL_TYPE_ACCESS":      1,
+		"ACL_TYPE_DEFAULT":     2,
+	}
+)
+
+func (x AclType) Enum() *AclType {
+	p := new(AclType)
+	*p = x
+	return p
+}
+
+func (x AclType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AclType) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_sensor_sfa_proto_enumTypes[1].Descriptor()
+}
+
+func (AclType) Type() protoreflect.EnumType {
+	return &file_internalapi_sensor_sfa_proto_enumTypes[1]
+}
+
+func (x AclType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AclType.Descriptor instead.
+func (AclType) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{1}
+}
+
 type FileActivityBase struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
@@ -482,6 +592,129 @@ func (x *FileXattrChange) GetXattrName() string {
 	return ""
 }
 
+type AclEntry struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Tag   AclTag                 `protobuf:"varint,1,opt,name=tag,proto3,enum=sensor.AclTag" json:"tag,omitempty"`
+	Perm  uint32                 `protobuf:"varint,2,opt,name=perm,proto3" json:"perm,omitempty"`
+	// The uid or gid for ACL_TAG_USER / ACL_TAG_GROUP entries.
+	// Set to 0xFFFFFFFF when not applicable.
+	Id            uint32 `protobuf:"varint,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AclEntry) Reset() {
+	*x = AclEntry{}
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AclEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AclEntry) ProtoMessage() {}
+
+func (x *AclEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AclEntry.ProtoReflect.Descriptor instead.
+func (*AclEntry) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *AclEntry) GetTag() AclTag {
+	if x != nil {
+		return x.Tag
+	}
+	return AclTag_ACL_TAG_UNSPECIFIED
+}
+
+func (x *AclEntry) GetPerm() uint32 {
+	if x != nil {
+		return x.Perm
+	}
+	return 0
+}
+
+func (x *AclEntry) GetId() uint32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type FileAclChange struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Activity *FileActivityBase      `protobuf:"bytes,1,opt,name=activity,proto3" json:"activity,omitempty"`
+	AclType  AclType                `protobuf:"varint,2,opt,name=acl_type,json=aclType,proto3,enum=sensor.AclType" json:"acl_type,omitempty"`
+	// The ACL entries being set. Empty when the ACL is being removed.
+	Entries       []*AclEntry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileAclChange) Reset() {
+	*x = FileAclChange{}
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileAclChange) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileAclChange) ProtoMessage() {}
+
+func (x *FileAclChange) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileAclChange.ProtoReflect.Descriptor instead.
+func (*FileAclChange) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *FileAclChange) GetActivity() *FileActivityBase {
+	if x != nil {
+		return x.Activity
+	}
+	return nil
+}
+
+func (x *FileAclChange) GetAclType() AclType {
+	if x != nil {
+		return x.AclType
+	}
+	return AclType_ACL_TYPE_UNSPECIFIED
+}
+
+func (x *FileAclChange) GetEntries() []*AclEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
 type FileActivity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -497,6 +730,7 @@ type FileActivity struct {
 	//	*FileActivity_Write
 	//	*FileActivity_XattrSet
 	//	*FileActivity_XattrRemove
+	//	*FileActivity_Acl
 	File isFileActivity_File `protobuf_oneof:"file"`
 	// The hostname/name of the node where the file activity occurred
 	Hostname      string `protobuf:"bytes,10,opt,name=hostname,proto3" json:"hostname,omitempty"`
@@ -506,7 +740,7 @@ type FileActivity struct {
 
 func (x *FileActivity) Reset() {
 	*x = FileActivity{}
-	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +752,7 @@ func (x *FileActivity) String() string {
 func (*FileActivity) ProtoMessage() {}
 
 func (x *FileActivity) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_sfa_proto_msgTypes[9]
+	mi := &file_internalapi_sensor_sfa_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +765,7 @@ func (x *FileActivity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FileActivity.ProtoReflect.Descriptor instead.
 func (*FileActivity) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{9}
+	return file_internalapi_sensor_sfa_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FileActivity) GetTimestamp() *timestamppb.Timestamp {
@@ -636,6 +870,15 @@ func (x *FileActivity) GetXattrRemove() *FileXattrChange {
 	return nil
 }
 
+func (x *FileActivity) GetAcl() *FileAclChange {
+	if x != nil {
+		if x, ok := x.File.(*FileActivity_Acl); ok {
+			return x.Acl
+		}
+	}
+	return nil
+}
+
 func (x *FileActivity) GetHostname() string {
 	if x != nil {
 		return x.Hostname
@@ -683,6 +926,10 @@ type FileActivity_XattrRemove struct {
 	XattrRemove *FileXattrChange `protobuf:"bytes,12,opt,name=xattr_remove,json=xattrRemove,proto3,oneof"`
 }
 
+type FileActivity_Acl struct {
+	Acl *FileAclChange `protobuf:"bytes,13,opt,name=acl,proto3,oneof"`
+}
+
 func (*FileActivity_Creation) isFileActivity_File() {}
 
 func (*FileActivity_Unlink) isFileActivity_File() {}
@@ -700,6 +947,8 @@ func (*FileActivity_Write) isFileActivity_File() {}
 func (*FileActivity_XattrSet) isFileActivity_File() {}
 
 func (*FileActivity_XattrRemove) isFileActivity_File() {}
+
+func (*FileActivity_Acl) isFileActivity_File() {}
 
 var File_internalapi_sensor_sfa_proto protoreflect.FileDescriptor
 
@@ -734,7 +983,15 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\x0fFileXattrChange\x124\n" +
 	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\x12\x1d\n" +
 	"\n" +
-	"xattr_name\x18\x02 \x01(\tR\txattrName\"\xf3\x04\n" +
+	"xattr_name\x18\x02 \x01(\tR\txattrName\"P\n" +
+	"\bAclEntry\x12 \n" +
+	"\x03tag\x18\x01 \x01(\x0e2\x0e.sensor.AclTagR\x03tag\x12\x12\n" +
+	"\x04perm\x18\x02 \x01(\rR\x04perm\x12\x0e\n" +
+	"\x02id\x18\x03 \x01(\rR\x02id\"\x9d\x01\n" +
+	"\rFileAclChange\x124\n" +
+	"\bactivity\x18\x01 \x01(\v2\x18.sensor.FileActivityBaseR\bactivity\x12*\n" +
+	"\bacl_type\x18\x02 \x01(\x0e2\x0f.sensor.AclTypeR\aaclType\x12*\n" +
+	"\aentries\x18\x03 \x03(\v2\x10.sensor.AclEntryR\aentries\"\x9e\x05\n" +
 	"\fFileActivity\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12/\n" +
 	"\aprocess\x18\x02 \x01(\v2\x15.sensor.ProcessSignalR\aprocess\x122\n" +
@@ -748,10 +1005,23 @@ const file_internalapi_sensor_sfa_proto_rawDesc = "" +
 	"\x04open\x18\b \x01(\v2\x10.sensor.FileOpenH\x00R\x04open\x12)\n" +
 	"\x05write\x18\t \x01(\v2\x11.sensor.FileWriteH\x00R\x05write\x126\n" +
 	"\txattr_set\x18\v \x01(\v2\x17.sensor.FileXattrChangeH\x00R\bxattrSet\x12<\n" +
-	"\fxattr_remove\x18\f \x01(\v2\x17.sensor.FileXattrChangeH\x00R\vxattrRemove\x12\x1a\n" +
+	"\fxattr_remove\x18\f \x01(\v2\x17.sensor.FileXattrChangeH\x00R\vxattrRemove\x12)\n" +
+	"\x03acl\x18\r \x01(\v2\x15.sensor.FileAclChangeH\x00R\x03acl\x12\x1a\n" +
 	"\bhostname\x18\n" +
 	" \x01(\tR\bhostnameB\x06\n" +
-	"\x04fileB Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
+	"\x04file*\x98\x01\n" +
+	"\x06AclTag\x12\x17\n" +
+	"\x13ACL_TAG_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10ACL_TAG_USER_OBJ\x10\x01\x12\x10\n" +
+	"\fACL_TAG_USER\x10\x02\x12\x15\n" +
+	"\x11ACL_TAG_GROUP_OBJ\x10\x03\x12\x11\n" +
+	"\rACL_TAG_GROUP\x10\x04\x12\x10\n" +
+	"\fACL_TAG_MASK\x10\x05\x12\x11\n" +
+	"\rACL_TAG_OTHER\x10\x06*N\n" +
+	"\aAclType\x12\x18\n" +
+	"\x14ACL_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fACL_TYPE_ACCESS\x10\x01\x12\x14\n" +
+	"\x10ACL_TYPE_DEFAULT\x10\x02B Z\x1b./internalapi/sensor;sensor\xf8\x01\x01b\x06proto3"
 
 var (
 	file_internalapi_sensor_sfa_proto_rawDescOnce sync.Once
@@ -765,47 +1035,57 @@ func file_internalapi_sensor_sfa_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_sfa_proto_rawDescData
 }
 
-var file_internalapi_sensor_sfa_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_internalapi_sensor_sfa_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_internalapi_sensor_sfa_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_sensor_sfa_proto_goTypes = []any{
-	(*FileActivityBase)(nil),      // 0: sensor.FileActivityBase
-	(*FileCreation)(nil),          // 1: sensor.FileCreation
-	(*FileUnlink)(nil),            // 2: sensor.FileUnlink
-	(*FileRename)(nil),            // 3: sensor.FileRename
-	(*FilePermissionChange)(nil),  // 4: sensor.FilePermissionChange
-	(*FileOwnershipChange)(nil),   // 5: sensor.FileOwnershipChange
-	(*FileWrite)(nil),             // 6: sensor.FileWrite
-	(*FileOpen)(nil),              // 7: sensor.FileOpen
-	(*FileXattrChange)(nil),       // 8: sensor.FileXattrChange
-	(*FileActivity)(nil),          // 9: sensor.FileActivity
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*ProcessSignal)(nil),         // 11: sensor.ProcessSignal
+	(AclTag)(0),                   // 0: sensor.AclTag
+	(AclType)(0),                  // 1: sensor.AclType
+	(*FileActivityBase)(nil),      // 2: sensor.FileActivityBase
+	(*FileCreation)(nil),          // 3: sensor.FileCreation
+	(*FileUnlink)(nil),            // 4: sensor.FileUnlink
+	(*FileRename)(nil),            // 5: sensor.FileRename
+	(*FilePermissionChange)(nil),  // 6: sensor.FilePermissionChange
+	(*FileOwnershipChange)(nil),   // 7: sensor.FileOwnershipChange
+	(*FileWrite)(nil),             // 8: sensor.FileWrite
+	(*FileOpen)(nil),              // 9: sensor.FileOpen
+	(*FileXattrChange)(nil),       // 10: sensor.FileXattrChange
+	(*AclEntry)(nil),              // 11: sensor.AclEntry
+	(*FileAclChange)(nil),         // 12: sensor.FileAclChange
+	(*FileActivity)(nil),          // 13: sensor.FileActivity
+	(*timestamppb.Timestamp)(nil), // 14: google.protobuf.Timestamp
+	(*ProcessSignal)(nil),         // 15: sensor.ProcessSignal
 }
 var file_internalapi_sensor_sfa_proto_depIdxs = []int32{
-	0,  // 0: sensor.FileCreation.activity:type_name -> sensor.FileActivityBase
-	0,  // 1: sensor.FileUnlink.activity:type_name -> sensor.FileActivityBase
-	0,  // 2: sensor.FileRename.old:type_name -> sensor.FileActivityBase
-	0,  // 3: sensor.FileRename.new:type_name -> sensor.FileActivityBase
-	0,  // 4: sensor.FilePermissionChange.activity:type_name -> sensor.FileActivityBase
-	0,  // 5: sensor.FileOwnershipChange.activity:type_name -> sensor.FileActivityBase
-	0,  // 6: sensor.FileWrite.activity:type_name -> sensor.FileActivityBase
-	0,  // 7: sensor.FileOpen.activity:type_name -> sensor.FileActivityBase
-	0,  // 8: sensor.FileXattrChange.activity:type_name -> sensor.FileActivityBase
-	10, // 9: sensor.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
-	11, // 10: sensor.FileActivity.process:type_name -> sensor.ProcessSignal
-	1,  // 11: sensor.FileActivity.creation:type_name -> sensor.FileCreation
-	2,  // 12: sensor.FileActivity.unlink:type_name -> sensor.FileUnlink
-	3,  // 13: sensor.FileActivity.rename:type_name -> sensor.FileRename
-	4,  // 14: sensor.FileActivity.permission:type_name -> sensor.FilePermissionChange
-	5,  // 15: sensor.FileActivity.ownership:type_name -> sensor.FileOwnershipChange
-	7,  // 16: sensor.FileActivity.open:type_name -> sensor.FileOpen
-	6,  // 17: sensor.FileActivity.write:type_name -> sensor.FileWrite
-	8,  // 18: sensor.FileActivity.xattr_set:type_name -> sensor.FileXattrChange
-	8,  // 19: sensor.FileActivity.xattr_remove:type_name -> sensor.FileXattrChange
-	20, // [20:20] is the sub-list for method output_type
-	20, // [20:20] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	2,  // 0: sensor.FileCreation.activity:type_name -> sensor.FileActivityBase
+	2,  // 1: sensor.FileUnlink.activity:type_name -> sensor.FileActivityBase
+	2,  // 2: sensor.FileRename.old:type_name -> sensor.FileActivityBase
+	2,  // 3: sensor.FileRename.new:type_name -> sensor.FileActivityBase
+	2,  // 4: sensor.FilePermissionChange.activity:type_name -> sensor.FileActivityBase
+	2,  // 5: sensor.FileOwnershipChange.activity:type_name -> sensor.FileActivityBase
+	2,  // 6: sensor.FileWrite.activity:type_name -> sensor.FileActivityBase
+	2,  // 7: sensor.FileOpen.activity:type_name -> sensor.FileActivityBase
+	2,  // 8: sensor.FileXattrChange.activity:type_name -> sensor.FileActivityBase
+	0,  // 9: sensor.AclEntry.tag:type_name -> sensor.AclTag
+	2,  // 10: sensor.FileAclChange.activity:type_name -> sensor.FileActivityBase
+	1,  // 11: sensor.FileAclChange.acl_type:type_name -> sensor.AclType
+	11, // 12: sensor.FileAclChange.entries:type_name -> sensor.AclEntry
+	14, // 13: sensor.FileActivity.timestamp:type_name -> google.protobuf.Timestamp
+	15, // 14: sensor.FileActivity.process:type_name -> sensor.ProcessSignal
+	3,  // 15: sensor.FileActivity.creation:type_name -> sensor.FileCreation
+	4,  // 16: sensor.FileActivity.unlink:type_name -> sensor.FileUnlink
+	5,  // 17: sensor.FileActivity.rename:type_name -> sensor.FileRename
+	6,  // 18: sensor.FileActivity.permission:type_name -> sensor.FilePermissionChange
+	7,  // 19: sensor.FileActivity.ownership:type_name -> sensor.FileOwnershipChange
+	9,  // 20: sensor.FileActivity.open:type_name -> sensor.FileOpen
+	8,  // 21: sensor.FileActivity.write:type_name -> sensor.FileWrite
+	10, // 22: sensor.FileActivity.xattr_set:type_name -> sensor.FileXattrChange
+	10, // 23: sensor.FileActivity.xattr_remove:type_name -> sensor.FileXattrChange
+	12, // 24: sensor.FileActivity.acl:type_name -> sensor.FileAclChange
+	25, // [25:25] is the sub-list for method output_type
+	25, // [25:25] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_sfa_proto_init() }
@@ -814,7 +1094,7 @@ func file_internalapi_sensor_sfa_proto_init() {
 		return
 	}
 	file_internalapi_sensor_collector_proto_init()
-	file_internalapi_sensor_sfa_proto_msgTypes[9].OneofWrappers = []any{
+	file_internalapi_sensor_sfa_proto_msgTypes[11].OneofWrappers = []any{
 		(*FileActivity_Creation)(nil),
 		(*FileActivity_Unlink)(nil),
 		(*FileActivity_Rename)(nil),
@@ -824,19 +1104,21 @@ func file_internalapi_sensor_sfa_proto_init() {
 		(*FileActivity_Write)(nil),
 		(*FileActivity_XattrSet)(nil),
 		(*FileActivity_XattrRemove)(nil),
+		(*FileActivity_Acl)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_sfa_proto_rawDesc), len(file_internalapi_sensor_sfa_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   10,
+			NumEnums:      2,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_internalapi_sensor_sfa_proto_goTypes,
 		DependencyIndexes: file_internalapi_sensor_sfa_proto_depIdxs,
+		EnumInfos:         file_internalapi_sensor_sfa_proto_enumTypes,
 		MessageInfos:      file_internalapi_sensor_sfa_proto_msgTypes,
 	}.Build()
 	File_internalapi_sensor_sfa_proto = out.File

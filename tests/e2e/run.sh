@@ -15,8 +15,12 @@ source "$ROOT/scripts/ci/sensor-wait.sh"
 source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
+# shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
+source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
 test_e2e() {
+    local output_dir="${1:-/tmp/e2e-test-logs}"
+
     info "Starting e2e tests"
 
     require_environment "KUBECONFIG"
@@ -40,6 +44,10 @@ test_e2e() {
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
     deploy_stackrox
+
+    # Background streamers are not explicitly stopped. They die when the CI
+    # runner terminates, same as the port-forward processes in setup_proxy_tests.
+    start_continuous_log_streaming "$output_dir"
 
     rm -f FAIL
 
@@ -74,7 +82,7 @@ test_e2e() {
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
+    collect_and_check_stackrox_logs "$output_dir" "initial_tests"
 
     # Give some time for previous tests to finish up
     wait_for_api
@@ -89,8 +97,12 @@ test_e2e() {
     restore_4_6_postgres_backup
 
     wait_for_api
+    trap cleanup_workload_identities EXIT
+    setup_workload_identities
     info "E2E external backup tests"
     make -C tests external-backup-tests || touch FAIL
+    cleanup_workload_identities
+    trap - EXIT
     store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
     [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }

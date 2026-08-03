@@ -159,6 +159,58 @@ func (x *CountSecretsResponse) GetCount() int32 {
 	return 0
 }
 
+type ListSecretsExtendedRequest struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Query                *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	IncludeRelationships bool                   `protobuf:"varint,2,opt,name=include_relationships,json=includeRelationships,proto3" json:"include_relationships,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ListSecretsExtendedRequest) Reset() {
+	*x = ListSecretsExtendedRequest{}
+	mi := &file_api_v1_secret_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSecretsExtendedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSecretsExtendedRequest) ProtoMessage() {}
+
+func (x *ListSecretsExtendedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_secret_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSecretsExtendedRequest.ProtoReflect.Descriptor instead.
+func (*ListSecretsExtendedRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_secret_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ListSecretsExtendedRequest) GetQuery() *RawQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
+func (x *ListSecretsExtendedRequest) GetIncludeRelationships() bool {
+	if x != nil {
+		return x.IncludeRelationships
+	}
+	return false
+}
+
 var File_api_v1_secret_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_secret_service_proto_rawDesc = "" +
@@ -170,11 +222,15 @@ const file_api_v1_secret_service_proto_rawDesc = "" +
 	"\x13ListSecretsResponse\x12-\n" +
 	"\asecrets\x18\x01 \x03(\v2\x13.storage.ListSecretR\asecrets\",\n" +
 	"\x14CountSecretsResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count2\xf6\x01\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"u\n" +
+	"\x1aListSecretsExtendedRequest\x12\"\n" +
+	"\x05query\x18\x01 \x01(\v2\f.v1.RawQueryR\x05query\x123\n" +
+	"\x15include_relationships\x18\x02 \x01(\bR\x14includeRelationships2\xe3\x02\n" +
 	"\rSecretService\x12H\n" +
 	"\tGetSecret\x12\x10.v1.ResourceByID\x1a\x0f.storage.Secret\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/secrets/{id}\x12P\n" +
 	"\fCountSecrets\x12\f.v1.RawQuery\x1a\x18.v1.CountSecretsResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/secretscount\x12I\n" +
-	"\vListSecrets\x12\f.v1.RawQuery\x1a\x17.v1.ListSecretsResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\v/v1/secretsB'\n" +
+	"\vListSecrets\x12\f.v1.RawQuery\x1a\x17.v1.ListSecretsResponse\"\x13\x82\xd3\xe4\x93\x02\r\x12\v/v1/secrets\x12k\n" +
+	"\x13ListSecretsExtended\x12\x1e.v1.ListSecretsExtendedRequest\x1a\x17.v1.ListSecretsResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/secretsextendedB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
 
 var (
@@ -189,30 +245,34 @@ func file_api_v1_secret_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_secret_service_proto_rawDescData
 }
 
-var file_api_v1_secret_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_api_v1_secret_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_api_v1_secret_service_proto_goTypes = []any{
-	(*SecretList)(nil),           // 0: v1.SecretList
-	(*ListSecretsResponse)(nil),  // 1: v1.ListSecretsResponse
-	(*CountSecretsResponse)(nil), // 2: v1.CountSecretsResponse
-	(*storage.Secret)(nil),       // 3: storage.Secret
-	(*storage.ListSecret)(nil),   // 4: storage.ListSecret
-	(*ResourceByID)(nil),         // 5: v1.ResourceByID
-	(*RawQuery)(nil),             // 6: v1.RawQuery
+	(*SecretList)(nil),                 // 0: v1.SecretList
+	(*ListSecretsResponse)(nil),        // 1: v1.ListSecretsResponse
+	(*CountSecretsResponse)(nil),       // 2: v1.CountSecretsResponse
+	(*ListSecretsExtendedRequest)(nil), // 3: v1.ListSecretsExtendedRequest
+	(*storage.Secret)(nil),             // 4: storage.Secret
+	(*storage.ListSecret)(nil),         // 5: storage.ListSecret
+	(*RawQuery)(nil),                   // 6: v1.RawQuery
+	(*ResourceByID)(nil),               // 7: v1.ResourceByID
 }
 var file_api_v1_secret_service_proto_depIdxs = []int32{
-	3, // 0: v1.SecretList.secrets:type_name -> storage.Secret
-	4, // 1: v1.ListSecretsResponse.secrets:type_name -> storage.ListSecret
-	5, // 2: v1.SecretService.GetSecret:input_type -> v1.ResourceByID
-	6, // 3: v1.SecretService.CountSecrets:input_type -> v1.RawQuery
-	6, // 4: v1.SecretService.ListSecrets:input_type -> v1.RawQuery
-	3, // 5: v1.SecretService.GetSecret:output_type -> storage.Secret
-	2, // 6: v1.SecretService.CountSecrets:output_type -> v1.CountSecretsResponse
-	1, // 7: v1.SecretService.ListSecrets:output_type -> v1.ListSecretsResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 0: v1.SecretList.secrets:type_name -> storage.Secret
+	5, // 1: v1.ListSecretsResponse.secrets:type_name -> storage.ListSecret
+	6, // 2: v1.ListSecretsExtendedRequest.query:type_name -> v1.RawQuery
+	7, // 3: v1.SecretService.GetSecret:input_type -> v1.ResourceByID
+	6, // 4: v1.SecretService.CountSecrets:input_type -> v1.RawQuery
+	6, // 5: v1.SecretService.ListSecrets:input_type -> v1.RawQuery
+	3, // 6: v1.SecretService.ListSecretsExtended:input_type -> v1.ListSecretsExtendedRequest
+	4, // 7: v1.SecretService.GetSecret:output_type -> storage.Secret
+	2, // 8: v1.SecretService.CountSecrets:output_type -> v1.CountSecretsResponse
+	1, // 9: v1.SecretService.ListSecrets:output_type -> v1.ListSecretsResponse
+	1, // 10: v1.SecretService.ListSecretsExtended:output_type -> v1.ListSecretsResponse
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_secret_service_proto_init() }
@@ -228,7 +288,7 @@ func file_api_v1_secret_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_secret_service_proto_rawDesc), len(file_api_v1_secret_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

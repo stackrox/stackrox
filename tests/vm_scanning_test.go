@@ -23,7 +23,18 @@ func (s *VMScanningSuite) TestScanPipeline() {
 
 		s.T().Run(vm.Name, func(t *testing.T) {
 			var first *v2.VirtualMachine
+			var metricsBefore pipelineMetricsSnapshot
+			metricsChecksEnabled := true
 			roxagentOK := false
+
+			// Capture the shared cumulative metrics before the two roxagent runs so
+			// the final pipeline assertion can check this VM's expected deltas.
+			if ok := t.Run("MetricsBaseline", func(t *testing.T) {
+				metricsBefore = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
+			}); !ok {
+				t.Log("skipping PipelineMetrics: baseline metric scrape failed")
+				metricsChecksEnabled = false
+			}
 
 			t.Run("RunRoxagent", func(t *testing.T) {
 				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
@@ -99,7 +110,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			}
 
 			t.Run("PipelineMetrics", func(t *testing.T) {
-				s.assertPipelineMetrics(s.ctx, t, vm.NodeName)
+				if !metricsChecksEnabled {
+					t.Skip("metric prerequisite scrape failed earlier in this VM scenario")
+				}
+				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore)
 			})
 
 			t.Run("ConsistencyCheck", func(t *testing.T) {

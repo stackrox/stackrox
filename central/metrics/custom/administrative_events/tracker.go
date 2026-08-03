@@ -4,13 +4,14 @@ import (
 	"context"
 
 	adminEventDS "github.com/stackrox/rox/central/administration/events/datastore"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func New(ds adminEventDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeGlobalTrackerBase(
-		"admin_event",
+		metrics.AdminEvents,
 		"administrative events",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {

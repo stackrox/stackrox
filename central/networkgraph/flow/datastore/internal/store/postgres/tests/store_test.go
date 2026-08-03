@@ -127,7 +127,7 @@ func (s *NetworkflowStoreSuite) TestStore() {
 
 	var networkFlows []*storage.NetworkFlow
 	flowCount := 100
-	for i := 0; i < flowCount; i++ {
+	for range flowCount {
 		networkFlow := &storage.NetworkFlow{}
 		s.NoError(testutils.FullInit(networkFlow, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
 		networkFlows = append(networkFlows, networkFlow)

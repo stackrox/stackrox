@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:8bca01ace56d684c43f59d9c60c8e9516ee30c46e7d7357c2f9b526369d3fddf AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26@sha256:c1488dc4364e229cb6963b4e0b088e3e93ef377bf92463d68b7b7e2ab1166f8f AS builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -17,10 +17,10 @@ ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:fdf68a4f5f88cca14ae906bbec6e0fbbffe92b5b91e73e0862c961234d63b986 AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b1e86b97028b8fcfb6d85f997c39e6b6b67496163ef8d80d243220a4918e8bef AS ubi-micro-base
 
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:37a15896602263cb998cd3c21919efb433adf9dbd3a7c961da5d8e3083a0db82 AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:5bc32620d0cbdfd788723448efa1c0c04e9859c0e33f9d5545329a4550edc7ab AS package_installer
 
 # Copy ubi-micro base to /out/ to preserve its rpmdb
 COPY --from=ubi-micro-base / /out/

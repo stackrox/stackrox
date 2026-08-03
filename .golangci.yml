@@ -172,11 +172,7 @@ linters:
     modernize:
       disable:
         - any
-        - minmax
         - newexpr
-        - rangeint
-        - reflecttypefor
-        - slicescontains
   exclusions:
     generated: lax
     rules:

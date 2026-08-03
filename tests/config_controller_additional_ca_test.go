@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -124,7 +125,7 @@ func (s *ConfigControllerCASuite) TestConfigControllerConnectsThroughProxyWithAd
 		map[string]string{"app": "config-controller"},
 		configControllerContainer,
 		"show successful initialization",
-		containsLineMatching(regexp.MustCompile(`(Starting manager|Reconciler started|successfully connected)`)),
+		logmatchers.ContainsLineMatching(regexp.MustCompile(`(Starting manager|Reconciler started|successfully connected)`)),
 	)
 
 	// Verify config-controller is healthy (readiness probe passes).

@@ -5,6 +5,7 @@ package imagecve
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -1061,14 +1062,8 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 
 				// Add CVE ID (V2 format) from database object
 				id := vuln.GetId()
-				var found bool
-				for _, seenID := range val.GetCVEIDs() {
-					if seenID == id {
-						found = true
-						break
-					}
-				}
-				if !found {
+
+				if !slices.Contains(val.GetCVEIDs(), id) {
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
@@ -1171,14 +1166,7 @@ func compileExpectedAffectedImageIDs(images []testImage, filter *filterImpl, les
 		}
 
 		for _, component := range image.GetScan().GetComponents() {
-			var vulnFilterPassed bool
-			for _, vuln := range component.GetVulns() {
-				if filter.matchVuln(vuln) {
-					vulnFilterPassed = true
-					break
-				}
-			}
-			if vulnFilterPassed {
+			if slices.ContainsFunc(component.GetVulns(), filter.matchVuln) {
 				affectedImages = append(affectedImages, image)
 				break
 			}

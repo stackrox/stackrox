@@ -915,7 +915,7 @@ func TestTokenProvider_Coalescing(t *testing.T) {
 		startWg.Add(numGoroutines)
 
 		// Launch concurrent requests for the same scope
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			wg.Add(1)
 			go func(idx int) {
 				defer wg.Done()
@@ -934,7 +934,7 @@ func TestTokenProvider_Coalescing(t *testing.T) {
 			"expected exactly 1 RPC call for %d concurrent requests", numGoroutines)
 
 		// Verify all goroutines got the same token
-		for i := 0; i < numGoroutines; i++ {
+		for i := range numGoroutines {
 			require.NoError(t, errs[i])
 			assert.Equal(t, "coalesced-token", tokens[i])
 		}
