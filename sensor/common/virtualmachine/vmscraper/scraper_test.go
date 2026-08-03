@@ -153,6 +153,12 @@ func makeReportWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
 	}
 }
 
+func makeReportWithEpochAndFacts(gen, epoch uint32, facts map[string]string) *vsockclient.GetReportResult {
+	result := makeReportWithEpoch(gen, epoch)
+	result.Meta.Facts = facts
+	return result
+}
+
 func unchangedResultWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
 	return &vsockclient.GetReportResult{
 		Unchanged: true,
@@ -297,6 +303,40 @@ func TestVMScraper_ForwardsOnEpochMismatch(t *testing.T) {
 	assert.Equal(t, uint32(0), client.calls[1].ifNewerThan, "second call forces full report")
 	assert.Equal(t, uint32(0), client.calls[1].knownEpoch, "second (forced) call doesn't need to send an epoch")
 	assert.Len(t, sender.sent, 2, "should forward despite matching generation, because epoch changed")
+}
+
+// TestVMScraper_RecordsFactsFromFallbackResponse ensures the full report
+// fetched on the epoch-mismatch retry (see TestVMScraper_ForwardsOnEpochMismatch)
+// has its facts logged and counted, not just the initial "unchanged" response
+// that triggered the retry.
+func TestVMScraper_RecordsFactsFromFallbackResponse(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(5, 100)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{
+		unchangedResultWithEpoch(5, 200),
+		makeReportWithEpochAndFacts(5, 200, map[string]string{
+			"detected_os":       "RHEL",
+			"activation_status": "ACTIVE",
+		}),
+	}
+
+	before := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", ""))
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 2, "epoch mismatch should force a second call for the full report")
+	assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "")),
+		"facts carried on the fallback response should be recorded, not just those on the initial unchanged response")
 }
 
 // TestVMScraper_TrustsUnchangedWhenEpochZero ensures backward compatibility
@@ -548,6 +588,38 @@ func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
 			s.handleGetReportError(t.Context(), "ns/vm", tc.err)
 			assert.Equal(t, before+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel)),
 				"expected %v to increment the %q status label exactly once", tc.err, tc.wantLabel)
+		})
+	}
+}
+
+// TestIsAbnormalClose locks in which close codes route to the "abnormal
+// closure" log/metric path versus the ordinary EOF path.
+func TestIsAbnormalClose(t *testing.T) {
+	cases := map[string]struct {
+		err  error
+		want bool
+	}{
+		"normal closure (1000) is not abnormal": {
+			err:  &fakeCloseCoder{code: closeCodeNormalClosure, reason: "bye"},
+			want: false,
+		},
+		"zero code (no structured signal) is not abnormal": {
+			err:  &fakeCloseCoder{code: 0},
+			want: false,
+		},
+		"abnormal closure (1006) is abnormal": {
+			err:  &fakeCloseCoder{code: 1006, reason: "abnormal closure"},
+			want: true,
+		},
+		"a plain io.EOF is not a closeCoder at all": {
+			err:  io.EOF,
+			want: false,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			var target closeCoder
+			assert.Equal(t, tc.want, isAbnormalClose(tc.err, &target))
 		})
 	}
 }

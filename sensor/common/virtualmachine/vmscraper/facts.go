@@ -4,7 +4,23 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+)
+
+// knownDnfStatusFlags whitelists the DnfStatusFlag names roxagent can report
+// (see v1.DnfStatusFlag in internalapi/virtualmachine/v1/index_report.proto).
+// Facts arrive here as a flat string rather than the typed enum, so this
+// mirrors those names by hand. Any fragment outside this set - a malformed
+// value, or one from a newer agent this Sensor doesn't recognize yet -
+// collapses into the bounded "unknown" label instead of minting a new
+// Prometheus child metric per arbitrary string.
+var knownDnfStatusFlags = set.NewStringSet(
+	"DNF_REPO_CONFIG_FOUND",
+	"DNF_V4_CACHE_FOUND",
+	"DNF_V5_CACHE_FOUND",
+	"DNF_V4_HISTORY_DB_FOUND",
+	"DNF_V5_HISTORY_DB_FOUND",
 )
 
 // logAndRecordDiscoveredFacts logs and records metrics for the VM facts
@@ -45,6 +61,9 @@ func recordDnfStatusMetrics(dnfStatus string) {
 	for name := range strings.SplitSeq(dnfStatus, ", ") {
 		if name == "" {
 			continue
+		}
+		if !knownDnfStatusFlags.Contains(name) {
+			name = "unknown"
 		}
 		metrics.VMDiscoveredDataDNFStatus.WithLabelValues(name).Inc()
 	}

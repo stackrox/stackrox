@@ -244,7 +244,6 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	if !ok {
 		return false
 	}
-	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if result.Unchanged {
 		// Backward-compat fallback: against a current roxagent that honors
@@ -311,9 +310,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 // dialAndGetReport dials the VM and issues a single GetReport request,
 // recording dial/read latency metrics and classifying dial failures
 // (timeout vs. other) consistently regardless of which call site invokes
-// it. scrapeVM calls this twice on the epoch-mismatch fallback path (see
-// the Unchanged branch above), so keeping the timing and error-handling
-// logic in one place ensures both calls are measured the same way.
+// it. It also logs and records the discovered facts carried on every
+// successful response.
 //
 // Because each call observes PullDialDurationSeconds and
 // PullReadDurationSeconds, that fallback path produces two histogram
@@ -346,6 +344,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 		s.handleGetReportError(ctx, key, err)
 		return nil, false
 	}
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 	return result, true
 }
 
@@ -397,15 +396,22 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	}
 }
 
-// isAbnormalClose reports whether err is a closeCoder with a nonzero code,
-// writing the match into target. Zero means no structured signal (e.g. a
-// plain io.EOF), left for the ordinary io.EOF branch to handle.
+// closeCodeNormalClosure is the RFC 6455 status code (1000) for a graceful
+// websocket close. Declared to keep vmscraper decoupled from the transport
+// package.
+const closeCodeNormalClosure = 1000
+
+// isAbnormalClose reports whether err is a closeCoder carrying a close code
+// that signals something other than a graceful shutdown, writing the match
+// into target. Zero means no structured signal at all (e.g. a plain
+// io.EOF), and closeCodeNormalClosure means an expected close; both are
+// left for the ordinary io.EOF branch to handle.
 func isAbnormalClose(err error, target *closeCoder) bool {
 	if !errors.As(err, target) {
 		return false
 	}
 	code, _ := (*target).CloseCode()
-	return code != 0
+	return code != 0 && code != closeCodeNormalClosure
 }
 
 // vmKey returns the identifier used for vmState and activeVMs lookups.

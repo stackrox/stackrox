@@ -40,4 +40,13 @@ func TestLogAndRecordDiscoveredFacts(t *testing.T) {
 		logAndRecordDiscoveredFacts("ns/vm-2", map[string]string{"dnf_status": "none"})
 		assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredDataDNFStatus.WithLabelValues("none")))
 	})
+
+	t.Run("unrecognized dnf_status fragments collapse into the unknown label", func(t *testing.T) {
+		before := testutil.ToFloat64(metrics.VMDiscoveredDataDNFStatus.WithLabelValues("unknown"))
+		logAndRecordDiscoveredFacts("ns/vm-3", map[string]string{
+			"dnf_status": "DNF_REPO_CONFIG_FOUND, SOME_FUTURE_FLAG, garbage",
+		})
+		assert.Equal(t, before+2, testutil.ToFloat64(metrics.VMDiscoveredDataDNFStatus.WithLabelValues("unknown")),
+			"both unrecognized fragments should be bucketed under unknown, leaving the recognized one on its own label")
+	})
 }
