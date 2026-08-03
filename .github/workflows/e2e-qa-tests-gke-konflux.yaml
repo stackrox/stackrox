@@ -1,4 +1,4 @@
-name: qa-e2e-tests-gke-konflux
+name: e2e-qa-tests-gke-konflux
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: _qa-e2e-tests
+name: e2e-qa-tests
 
 on:
   workflow_call:

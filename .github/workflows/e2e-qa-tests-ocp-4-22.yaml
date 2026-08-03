@@ -1,4 +1,4 @@
-name: qa-e2e-tests-ocp-4-22
+name: e2e-qa-tests-ocp-4-22
 
 on:
   workflow_call:
