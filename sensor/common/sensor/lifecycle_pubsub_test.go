@@ -2,9 +2,11 @@ package sensor
 
 import (
 	"testing"
-	"time"
+	"testing/synctest"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	roxsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -25,79 +27,75 @@ func (f *fakeNotifiable) Notify(e common.SensorComponentEvent) {
 func newLifecycleTestDispatcher(t *testing.T) common.PubSubDispatcher {
 	t.Helper()
 	disp, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
-		lane.NewBlockingLane(pubsub.SensorOnlineLane),
+		lane.NewBlockingLane(pubsub.CentralReachableLane),
 		lane.NewBlockingLane(pubsub.SensorOfflineLane),
-		lane.NewBlockingLane(pubsub.SyncFinishedLane),
+		lane.NewBlockingLane(pubsub.HandshakeSyncFinishedLane),
 	}))
 	require.NoError(t, err)
 	t.Cleanup(disp.Stop)
 	return disp
 }
 
-func TestNotifyAllComponents_DualPublish(t *testing.T) {
-	cases := map[string]struct {
-		notification common.SensorComponentEvent
-		topic        pubsub.Topic
-		laneID       pubsub.LaneID
-		wantEvent    pubsub.Event
-	}{
-		"CentralReachable publishes SensorOnlineEvent": {
-			notification: common.SensorComponentEventCentralReachable,
-			topic:        pubsub.SensorOnlineTopic,
-			laneID:       pubsub.SensorOnlineLane,
-			wantEvent:    &events.SensorOnlineEvent{},
-		},
-		"OfflineMode publishes SensorOfflineEvent": {
-			notification: common.SensorComponentEventOfflineMode,
-			topic:        pubsub.SensorOfflineTopic,
-			laneID:       pubsub.SensorOfflineLane,
-			wantEvent:    &events.SensorOfflineEvent{},
-		},
-		"SyncFinished publishes SyncFinishedEvent": {
-			notification: common.SensorComponentEventSyncFinished,
-			topic:        pubsub.SyncFinishedTopic,
-			laneID:       pubsub.SyncFinishedLane,
-			wantEvent:    &events.SyncFinishedEvent{},
-		},
-	}
+// TestNotifyAllOnSignal_DualPublish verifies that, once `signal` fires, notifyAllOnSignal
+// dual-publishes both lifecycle events to PubSub and drives the legacy Notify path in the
+// documented order (CentralReachable fully delivered before HandshakeSyncFinished).
+func TestNotifyAllOnSignal_DualPublish(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
-
-			dispatcher := newLifecycleTestDispatcher(t)
-			received := make(chan pubsub.Event, 1)
-			require.NoError(t, dispatcher.RegisterConsumerToLane(pubsub.DefaultConsumer, tc.topic, tc.laneID, func(e pubsub.Event) error {
-				received <- e
+		dispatcher := newLifecycleTestDispatcher(t)
+		reachable := make(chan pubsub.Event, 1)
+		syncFinished := make(chan pubsub.Event, 1)
+		require.NoError(t, dispatcher.RegisterConsumerToLane(pubsub.DefaultConsumer,
+			pubsub.CentralReachableTopic, pubsub.CentralReachableLane, func(e pubsub.Event) error {
+				reachable <- e
+				return nil
+			}))
+		require.NoError(t, dispatcher.RegisterConsumerToLane(pubsub.DefaultConsumer,
+			pubsub.HandshakeSyncFinishedTopic, pubsub.HandshakeSyncFinishedLane, func(e pubsub.Event) error {
+				syncFinished <- e
 				return nil
 			}))
 
-			notifiable := &fakeNotifiable{}
-			s := &Sensor{
-				pubSubDispatcher: dispatcher,
-				notifyList:       []common.Notifiable{notifiable},
-			}
+		notifiable := &fakeNotifiable{}
+		s := &Sensor{
+			pubSubDispatcher: dispatcher,
+			notifyList:       []common.Notifiable{notifiable},
+			currentStateMtx:  &roxsync.Mutex{},
+			stoppedSig:       concurrency.NewErrorSignal(),
+		}
+		fakeCC := &fakeCentralComm{stopped: concurrency.NewErrorSignal()}
+		signal := concurrency.NewSignal()
 
-			s.notifyAllComponents(tc.notification)
+		go s.notifyAllOnSignal(&signal, fakeCC)
+		synctest.Wait()
 
-			select {
-			case e := <-received:
-				assert.IsType(t, tc.wantEvent, e)
-			case <-time.After(5 * time.Second):
-				t.Fatal("timed out waiting for published PubSub event")
-			}
-			assert.Equal(t, []common.SensorComponentEvent{tc.notification}, notifiable.received,
-				"legacy Notify path must still fire alongside the PubSub publish (dual-path)")
-		})
-	}
+		signal.Signal()
+		synctest.Wait()
+
+		select {
+		case e := <-reachable:
+			assert.IsType(t, &events.CentralReachableEvent{}, e)
+		default:
+			t.Fatal("CentralReachableEvent was not published")
+		}
+		select {
+		case e := <-syncFinished:
+			assert.IsType(t, &events.HandshakeSyncFinishedEvent{}, e)
+		default:
+			t.Fatal("HandshakeSyncFinishedEvent was not published")
+		}
+		assert.Equal(t, []common.SensorComponentEvent{
+			common.SensorComponentEventCentralReachable,
+			common.SensorComponentEventSyncFinished,
+		}, notifiable.received, "legacy Notify path must fire CentralReachable before SyncFinished")
+	})
 }
 
 func TestNotifyAllComponents_LegacyOnlyWhenPubSubDisabled(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
 
 	notifiable := &fakeNotifiable{}
-	// pubSubDispatcher is intentionally left nil: if notifyAllComponents attempted
-	// a publish with the flag disabled, this would panic.
 	s := &Sensor{
 		notifyList: []common.Notifiable{notifiable},
 	}
@@ -116,20 +114,46 @@ func TestNotifyAllComponents_LegacyOnlyWhenPubSubDisabled(t *testing.T) {
 	}, notifiable.received)
 }
 
-func TestNotifyAllComponents_NoPubSubTopicForCentralReachableHTTP(t *testing.T) {
-	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+// TestOfflineTransition_DedupesPublish verifies that publishLifecycleEvent is only invoked
+// once per real state transition: repeated s.changeState(OfflineMode) calls while already
+// offline must not re-publish, mirroring changeStateNoLock's existing dedup for legacy Notify.
+func TestOfflineTransition_DedupesPublish(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 
-	dispatcher := newLifecycleTestDispatcher(t)
-	notifiable := &fakeNotifiable{}
-	s := &Sensor{
-		pubSubDispatcher: dispatcher,
-		notifyList:       []common.Notifiable{notifiable},
-	}
+		dispatcher := newLifecycleTestDispatcher(t)
+		var mu roxsync.Mutex
+		publishCount := 0
+		require.NoError(t, dispatcher.RegisterConsumerToLane(pubsub.DefaultConsumer,
+			pubsub.SensorOfflineTopic, pubsub.SensorOfflineLane, func(e pubsub.Event) error {
+				mu.Lock()
+				defer mu.Unlock()
+				publishCount++
+				return nil
+			}))
 
-	// CentralReachableHTTP has no PubSub topic; publishLifecycleEvent must no-op
-	// rather than error or panic trying to publish an unmapped event.
-	assert.NotPanics(t, func() {
-		s.notifyAllComponents(common.SensorComponentEventCentralReachableHTTP)
+		notifiable := &fakeNotifiable{}
+		s := &Sensor{
+			pubSubDispatcher: dispatcher,
+			notifyList:       []common.Notifiable{notifiable},
+			currentStateMtx:  &roxsync.Mutex{},
+		}
+
+		goOffline := func() {
+			if s.changeState(common.SensorComponentEventOfflineMode) {
+				s.publishLifecycleEvent(&events.SensorOfflineEvent{})
+			}
+		}
+
+		goOffline()
+		synctest.Wait()
+		goOffline()
+		synctest.Wait()
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Equal(t, 1, publishCount, "must not re-publish on a repeated no-op transition")
+		assert.Equal(t, []common.SensorComponentEvent{common.SensorComponentEventOfflineMode}, notifiable.received,
+			"legacy Notify must also fire exactly once")
 	})
-	assert.Equal(t, []common.SensorComponentEvent{common.SensorComponentEventCentralReachableHTTP}, notifiable.received)
 }

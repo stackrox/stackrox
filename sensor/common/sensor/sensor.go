@@ -426,53 +426,46 @@ func (s *Sensor) Stop() {
 	log.Info("Sensor shutdown complete")
 }
 
-func (s *Sensor) changeState(state common.SensorComponentEvent) {
+// changeState returns true if `state` differs from the current state, i.e. if it actually
+// triggered a legacy Notify dispatch. Callers that also need to dual-publish to PubSub use
+// this to avoid re-publishing on repeated no-op transitions (e.g. repeated failed reconnects
+// while already offline).
+func (s *Sensor) changeState(state common.SensorComponentEvent) bool {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
-	s.changeStateNoLock(state)
+	return s.changeStateNoLock(state)
 }
 
-func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) {
-	if s.currentState != state {
-		log.Infof("Updating Sensor State to: %s", state)
-		s.currentState = state
-		s.notifyAllComponents(s.currentState)
+func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) bool {
+	if s.currentState == state {
+		return false
 	}
+	log.Infof("Updating Sensor State to: %s", state)
+	s.currentState = state
+	s.notifyAllComponents(s.currentState)
+	return true
 }
 
 // notifyAllComponents sends each notification one-by-one to all components.
-// While the Notify migration (ROX-35642) is in progress, it also dual-publishes
-// the corresponding lifecycle event to PubSub. The legacy Notify path and the
-// PubSub path are independent producers off of Sensor core; PubSub must never
-// be wired to trigger Notify or vice versa.
 func (s *Sensor) notifyAllComponents(notifications ...common.SensorComponentEvent) {
 	for _, notification := range notifications {
-		if features.SensorInternalPubSub.Enabled() {
-			s.publishLifecycleEvent(notification)
-		}
 		for _, component := range s.notifyList {
 			component.Notify(notification)
 		}
 	}
 }
 
-// publishLifecycleEvent dual-publishes `notification` to PubSub, if a topic exists for it.
-// SensorComponentEventCentralReachableHTTP has no PubSub topic: it is internal to Sensor
-// core and never had non-empty Notify subscribers.
-func (s *Sensor) publishLifecycleEvent(notification common.SensorComponentEvent) {
-	var event pubsub.Event
-	switch notification {
-	case common.SensorComponentEventCentralReachable:
-		event = &events.SensorOnlineEvent{}
-	case common.SensorComponentEventOfflineMode:
-		event = &events.SensorOfflineEvent{}
-	case common.SensorComponentEventSyncFinished:
-		event = &events.SyncFinishedEvent{}
-	default:
+// publishLifecycleEvent publishes `event` to PubSub, if the migration flag is enabled.
+// This is a producer-facing helper: while the Notify migration (ROX-35642) is in progress,
+// PubSub producers call this directly with the concrete event they want to publish. The
+// legacy Notify path and the PubSub path are independent producers off of Sensor core;
+// PubSub must never be wired to trigger Notify or vice versa.
+func (s *Sensor) publishLifecycleEvent(event pubsub.Event) {
+	if !features.SensorInternalPubSub.Enabled() {
 		return
 	}
 	if err := s.pubSubDispatcher.Publish(event); err != nil {
-		log.Warnf("Failed to publish %s to PubSub: %v", notification, err)
+		log.Warnf("Failed to publish %s to PubSub: %v", event.Topic(), err)
 	}
 }
 
@@ -484,20 +477,24 @@ func wrapOrNewError(err error, message string) error {
 }
 
 func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
-	// SensorComponentEventSyncFinished is the first event that guarantees that the gRPC connection was successful
-	// at least once, because data has been exchanged over gRPC. This is sufficient condition for going online.
-	// The order of events is preserved, so first all components receive EventCentralReachable and when that is done,
-	// all will get EventSyncFinished.
-	s.notifyAllOnSignal(syncDone, centralCommunication, common.SensorComponentEventCentralReachable, common.SensorComponentEventSyncFinished)
+	// HandshakeSyncFinishedEvent/SensorComponentEventSyncFinished is the first event that guarantees that
+	// the gRPC connection was successful at least once, because data has been exchanged over gRPC. This is
+	// sufficient condition for going online. The order of events is preserved, so first all components
+	// receive CentralReachable and when that is done, all will get HandshakeSyncFinished.
+	s.notifyAllOnSignal(syncDone, centralCommunication)
 }
 
-// notifyAllOnSignal sends `notification` to all components when `signal` is raised
-func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunication CentralCommunication, notifications ...common.SensorComponentEvent) {
+// notifyAllOnSignal notifies all components, via both the legacy Notify path and PubSub, that Sensor is
+// central-reachable and has finished its initial handshake sync, once `signal` is raised.
+func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunication CentralCommunication) {
 	select {
 	case <-signal.Done():
 		s.currentStateMtx.Lock()
 		defer s.currentStateMtx.Unlock()
-		s.notifyAllComponents(notifications...)
+		s.publishLifecycleEvent(&events.CentralReachableEvent{})
+		s.notifyAllComponents(common.SensorComponentEventCentralReachable)
+		s.publishLifecycleEvent(&events.HandshakeSyncFinishedEvent{})
+		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
 	case <-centralCommunication.Stopped().WaitC():
 		return
 	case <-s.stoppedSig.WaitC():
@@ -580,7 +577,9 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, ex
 			}
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
-			s.changeState(common.SensorComponentEventOfflineMode)
+			if s.changeState(common.SensorComponentEventOfflineMode) {
+				s.publishLifecycleEvent(&events.SensorOfflineEvent{})
+			}
 			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.

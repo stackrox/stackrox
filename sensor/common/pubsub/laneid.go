@@ -18,9 +18,9 @@ const (
 	ResolvedResourceEventLane
 	SoftRestartLane
 	ResourceSyncFinishedLane
-	SensorOnlineLane
+	CentralReachableLane
 	SensorOfflineLane
-	SyncFinishedLane
+	HandshakeSyncFinishedLane
 )
 
 var (
@@ -40,9 +40,9 @@ var (
 		ResolvedResourceEventLane:      "ResolvedResourceEvent",
 		SoftRestartLane:                "SoftRestart",
 		ResourceSyncFinishedLane:       "ResourceSyncFinished",
-		SensorOnlineLane:               "SensorOnline",
+		CentralReachableLane:           "CentralReachable",
 		SensorOfflineLane:              "SensorOffline",
-		SyncFinishedLane:               "SyncFinished",
+		HandshakeSyncFinishedLane:      "HandshakeSyncFinished",
 	}
 )
 
