@@ -52,6 +52,29 @@ jobs:
         import os
         import subprocess
         from types import SimpleNamespace
+        from dataclasses import dataclass
+
+        @dataclass
+        class Job:
+            name: str
+            require_pr_label: bool = False
+            def should_run(self, input):
+                if input.is_fork == 'true':
+                    return False
+                if input.event_name != 'pull_request':
+                    return True
+                if input.ui_only_change == 'true':
+                    # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
+                    # As we add more E2E test workflows, we may want to make this more flexible.
+                    return False
+                if self.name in input.pr_labels:
+                    return True
+                if self.require_pr_label:
+                    return False
+                if input.is_draft != 'true':
+                    return True
+                return False
+
 
         input = SimpleNamespace(**{
             key.removeprefix('input__'): val
@@ -67,22 +90,8 @@ jobs:
                 ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
                 check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
             all_labels = p.stdout.strip().splitlines()
+        input.pr_labels = all_labels
         print(f'all_labels = {", ".join(all_labels)}')
-
-        def should_run(job):
-            if input.is_fork == 'true':
-                return False
-            if input.event_name != 'pull_request':
-                return True
-            if input.ui_only_change == 'true':
-                # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
-                # As we add more E2E test workflows, we may want to make this more flexible.
-                return False
-            if input.is_draft != 'true':
-                return True
-            if job in all_labels:
-                return True
-            return False
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
             def write(job, val):
@@ -90,15 +99,17 @@ jobs:
                 print(line)
                 file.write(line + '\n')
 
-            jobs = { job: should_run(job) for job in [
-                    'e2e-byodb-tests',
-                    'e2e-db-backup-restore-test',
-                    'e2e-gke-upgrade-tests',
-                    'e2e-nongroovy-tests',
-                    'e2e-qa-tests-gke',
-                    'e2e-qa-tests-gke-konflux',
-                    'e2e-qa-tests-ocp-4-22',
-                ]}
+            jobs_registry = [
+                Job(name='e2e-byodb-tests'),
+                Job(name='e2e-db-backup-restore-test'),
+                Job(name='e2e-gke-upgrade-tests'),
+                Job(name='e2e-nongroovy-tests'),
+                Job(name='e2e-qa-tests-gke', require_pr_label=True),
+                Job(name='e2e-qa-tests-gke-konflux', require_pr_label=True),
+                Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
+            ]
+
+            jobs = { job.name: job.should_run(input) for job in jobs_registry }
 
             write('jobs', json.dumps(jobs))
 
