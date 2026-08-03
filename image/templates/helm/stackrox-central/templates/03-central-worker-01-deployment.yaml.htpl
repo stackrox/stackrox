@@ -23,7 +23,6 @@ spec:
       namespace: {{ ._rox._namespace | quote }}
       labels:
         app: central-worker
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central-worker") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central-worker") | nindent 8 }}
