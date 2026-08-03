@@ -107,7 +107,7 @@ space := $(null) $(null)
 comma := ,
 
 .PHONY: all
-all: style test image
+all: deps style test image
 
 #####################################################################
 ###### Binaries we depend on (need to be defined on top) ############
@@ -155,13 +155,13 @@ style-slim: \
 GOLANGCILINT_FLAGS := --verbose --print-resources-usage
 
 .PHONY: golangci-lint-cache-status
-golangci-lint-cache-status: $(GOLANGCILINT_BIN)
+golangci-lint-cache-status: $(GOLANGCILINT_BIN) deps
 	@echo '+ $@'
 	@echo "Checking golangci-lint cache status"
 	$(GOLANGCILINT_BIN) cache status
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN)
+golangci-lint: $(GOLANGCILINT_BIN) deps
 ifdef CI
 	@echo '+ $@'
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
@@ -180,7 +180,7 @@ else
 endif
 
 .PHONY: proto-style
-proto-style: $(BUF_BIN)
+proto-style: $(BUF_BIN) deps
 	@echo "+ $@"
 	$(BUF_BIN) format --exit-code --diff -w
 
@@ -234,7 +234,7 @@ config-controller-build-nodeps:
 	$(GOBUILD) config-controller
 
 .PHONY: fast-central
-fast-central:
+fast-central: deps
 	@echo "+ $@"
 	docker run $(DOCKER_OPTS) -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	$(SILENT)$(BASE_DIR)/scripts/k8s/kill-pod.sh central
@@ -337,7 +337,7 @@ clean-easyjson-srcs:
 	$(SILENT)find . -name '*_easyjson.go' -exec rm {} \;
 
 .PHONY: go-generated-srcs
-go-generated-srcs: clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
+go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
 	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x $(GENERATE_PATH)
 
@@ -359,18 +359,17 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
-.PHONY: deps
-deps:
+deps: $(shell git ls-files '*/go.mod' 'go.mod')
 	@echo "+ $@"
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	$(SILENT)for gomod in $$(git ls-files '*/go.mod' 'go.mod'); do \
-		dir=$$(dirname "$$gomod"); \
-		(cd "$$dir" && go mod tidy); \
+		(cd "$$(dirname "$$gomod")" && go mod tidy); \
 	done
 ifdef CI
 	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
 endif
+	$(SILENT)touch $@
 
 .PHONY: clean-deps
 clean-deps:
@@ -392,7 +391,7 @@ ifeq ($(UNAME_S),Darwin)
 endif
 
 .PHONY: build-prep
-build-prep:
+build-prep: deps
 	mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
 .PHONY: roxctl-build
