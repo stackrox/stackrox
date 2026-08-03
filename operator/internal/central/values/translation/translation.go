@@ -443,7 +443,7 @@ func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.
 	if c.Affinity != nil {
 		affinityMap, err := toStringInterfaceMap(c.Affinity)
 		if err != nil {
-			cv.SetError(err)
+			cv.SetError(errors.Wrap(err, "translating centralWorker affinity"))
 		} else {
 			cv.SetMap("affinity", affinityMap)
 		}
