@@ -32,6 +32,32 @@ import (
 
 const (
 	rhelVexUpdaterName = "rhel-vex"
+
+	// rhcosFixedInVersionCEL rewrites RHCOS dotted-quad OCI FixedInVersion
+	// tags (OCP 4.19+) to RHEL-style so they match node /etc/os-release VERSION.
+	// Example: 4.19.9.6.202506252250-0 → 9.6.20250625-0
+	// Compact (416.94.…), pre-4.19 dotted-quad, and already-RHEL-style tags are left alone.
+	// Matches legacy rhcos* names and OCI ose-rhel-coreos-* parent affects.
+	//
+	// Candidate is stock fixed_in (tag=) when present, else PURL version, so
+	// Claircore soft-extract + CEL can recover OCI rows that lack tag=.
+	rhcosFixedInVersionCEL = `
+type == "oci" && (name.startsWith("rhcos") || name.startsWith("ose-rhel-coreos"))
+  ? cel.bind(cand, fixed_in != "" ? fixed_in : version,
+      cand == "" ? fixed_in :
+      cel.bind(base, cand.split("-")[0],
+        cel.bind(rel, cand.size() > base.size() ? cand.substring(base.size()) : "",
+          cel.bind(parts, base.split("."),
+            parts.size() >= 5
+            && parts[0].matches("^[0-9]+$")
+            && parts[1].matches("^[0-9]+$")
+            && (int(parts[0]) > 4 || (int(parts[0]) == 4 && int(parts[1]) >= 19))
+              ? parts[2] + "." + parts[3] + "." +
+                (parts[4].size() > 8 ? parts[4].substring(0, 8) : parts[4]) +
+                rel
+              : cand))))
+  : fixed_in
+`
 )
 
 var (
@@ -201,48 +227,51 @@ func rhelVexOpts() []updates.ManagerOption {
 	return []updates.ManagerOption{
 		updates.WithEnabled([]string{rhelVexUpdaterName}),
 		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
-			rhelVexUpdaterName: func(i any) error {
-				ctx := log.With(context.Background(), "updater", rhelVexUpdaterName)
-				// Validate during factory configuration so invalid input fails manager
-				// initialization; updater configuration errors only skip the updater.
-				ignoreKernel := false
-				if value := os.Getenv("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES"); value != "" {
-					var err error
-					ignoreKernel, err = strconv.ParseBool(value)
-					if err != nil {
-						return fmt.Errorf("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: %w", err)
-					}
-				}
-
-				// The factory passes the download timeout to the updater; UpdaterConfig
-				// has no timeout field. Kernel exclusion is set on UpdaterConfig because
-				// the manager configures the updater after construction, overwriting any
-				// kernel-exclusion value inherited from the factory.
-				switch cfg := i.(type) {
-				case *vex.FactoryConfig:
-					var timeout *claircore.Duration
-					if value := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT"); value != "" {
-						parsedTimeout, err := time.ParseDuration(value)
-						if err != nil {
-							slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
-						} else {
-							duration := claircore.Duration(parsedTimeout)
-							timeout = &duration
-							slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
-						}
-					}
-					if timeout != nil {
-						cfg.CompressedFileTimeout = *timeout
-					}
-				case *vex.UpdaterConfig:
-					cfg.IgnoreKernelPackages = ignoreKernel
-				default:
-					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
-				}
-				return nil
-			},
+			rhelVexUpdaterName: rhelVexConfig,
 		}),
 	}
+}
+
+// rhelVexConfig is called for both the Factory and the Updater.
+// Factory settings (timeout, FixedInVersion CEL) are applied here; Claircore
+// copies them onto the Updater in Factory.UpdaterSet. Kernel exclusion is set
+// on UpdaterConfig because the manager configures the updater after
+// construction, overwriting any value inherited from the factory.
+func rhelVexConfig(i any) error {
+	ctx := log.With(context.Background(), "updater", rhelVexUpdaterName)
+	// Validate during factory configuration so invalid input fails manager
+	// initialization; updater configuration errors only skip the updater.
+	ignoreKernel := false
+	if value := os.Getenv("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES"); value != "" {
+		var err error
+		ignoreKernel, err = strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("STACKROX_RHEL_VEX_IGNORE_KERNEL_PACKAGES: %w", err)
+		}
+	}
+
+	switch cfg := i.(type) {
+	case *vex.FactoryConfig:
+		if value := os.Getenv("STACKROX_RHEL_VEX_URL"); value != "" {
+			cfg.URL = value
+			slog.InfoContext(ctx, "using VEX base URL override", "url", value)
+		}
+		if value := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT"); value != "" {
+			parsedTimeout, err := time.ParseDuration(value)
+			if err != nil {
+				slog.WarnContext(ctx, "using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration", "reason", err)
+			} else {
+				cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
+				slog.InfoContext(ctx, "using compressed file timeout", "timeout", parsedTimeout.String())
+			}
+		}
+		cfg.FixedInVersionCEL = rhcosFixedInVersionCEL
+	case *vex.UpdaterConfig:
+		cfg.IgnoreKernelPackages = ignoreKernel
+	default:
+		return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
+	}
+	return nil
 }
 
 // TODO(ROX-26672): remove this.
