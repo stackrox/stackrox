@@ -1452,6 +1452,7 @@ jobs:
       needs.resolve-cve-ids.result == 'success' &&
       needs.resolve-cve-ids.outputs.applicable == 'true'
     permissions:
+      contents: read
       pull-requests: write
     env:
       CVES: ${{ needs.resolve-cve-ids.outputs.cves }}
