@@ -11,8 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common"
 	mockDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	mockReprocessor "github.com/stackrox/rox/sensor/common/reprocessor/mocks"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -57,6 +57,7 @@ func (s *eventPipelineSuite) SetupTest() {
 	s.listener = mockComponent.NewMockContextListener(s.mockCtrl)
 	s.outputQueue = mockComponent.NewMockOutputQueue(s.mockCtrl)
 	s.pubsub = mockComponent.NewMockPubSubDispatcher(s.mockCtrl)
+	s.pubsub.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 	offlineMode := atomic.Bool{}
 	offlineMode.Store(true)
@@ -79,11 +80,11 @@ func (s *eventPipelineSuite) write() {
 }
 
 func (s *eventPipelineSuite) online() {
-	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
+	s.Require().NoError(s.pipeline.handleSensorOnlineEvent(&events.SensorOnlineEvent{}))
 }
 
 func (s *eventPipelineSuite) offline() {
-	s.pipeline.Notify(common.SensorComponentEventOfflineMode)
+	s.Require().NoError(s.pipeline.handleSensorOfflineEvent(&events.SensorOfflineEvent{}))
 }
 
 func (s *eventPipelineSuite) readSuccess() {
@@ -110,7 +111,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.listener.EXPECT().Stop().AnyTimes()
 
 	s.Require().NoError(s.pipeline.Start())
-	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
+	s.online()
 
 	testCases := map[string][]func(){
 		"Base case: Start, WA, WB, RA, RB, Disconnect":       {s.online, s.write, s.write, s.readSuccess, s.readSuccess, s.offline},
@@ -144,7 +145,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 	s.listener.EXPECT().Stop().Times(2)
 
 	s.Require().NoError(s.pipeline.Start())
-	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
+	s.online()
 
 	outputC <- message.NewExpiring(s.pipeline.context, nil)
 	outputC <- message.NewExpiring(s.pipeline.context, nil)
@@ -154,8 +155,8 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 	s.Require().True(more, "should have more messages in ResponsesC")
 	s.Assert().False(msgA.IsExpired(), "context should not be expired")
 
-	s.pipeline.Notify(common.SensorComponentEventOfflineMode)
-	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
+	s.offline()
+	s.online()
 
 	// Read message B
 	msgB, more := <-s.pipeline.ResponsesC()

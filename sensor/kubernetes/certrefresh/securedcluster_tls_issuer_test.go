@@ -897,7 +897,7 @@ func newSecuredClusterTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) *tlsIssuerImpl {
-	tlsIssuer := NewSecuredClusterTLSIssuer(k8sClient, sensorNamespace, sensorPodName)
+	tlsIssuer := NewSecuredClusterTLSIssuer(k8sClient, sensorNamespace, sensorPodName, nil)
 	require.IsType(t, &tlsIssuerImpl{}, tlsIssuer)
 	return tlsIssuer.(*tlsIssuerImpl)
 }

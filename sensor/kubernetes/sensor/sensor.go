@@ -151,7 +151,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
-	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
+	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors(), internalMessageDispatcher)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	// Create Process Pipeline
@@ -198,7 +198,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines(), internalMessageDispatcher)
 		components = append(components, virtualMachineHandler)
 		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 	}
@@ -249,7 +249,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName, internalMessageDispatcher))
 	}
 
 	s, err := sensor.NewSensor(

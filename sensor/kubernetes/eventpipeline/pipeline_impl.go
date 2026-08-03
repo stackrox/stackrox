@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
@@ -25,10 +26,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type pubSubPublisher interface {
-	Publish(pubsubDispatcher.Event) error
-}
-
 type eventPipeline struct {
 	output      component.OutputQueue
 	resolver    component.Resolver
@@ -36,7 +33,7 @@ type eventPipeline struct {
 	detector    detector.Detector
 	reprocessor reprocessor.Handler
 
-	pubsubDispatcher pubSubPublisher
+	pubsubDispatcher component.PubSubDispatcher
 
 	offlineMode *atomic.Bool
 
@@ -50,6 +47,10 @@ type eventPipeline struct {
 
 func (p *eventPipeline) Name() string {
 	return "eventpipeline.eventPipeline"
+}
+
+func (p *eventPipeline) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && p.pubsubDispatcher != nil
 }
 
 // Capabilities implements common.SensorComponent
@@ -107,6 +108,25 @@ func (p *eventPipeline) createNewContext() {
 
 // Start implements common.SensorComponent
 func (p *eventPipeline) Start() error {
+	if p.pubSubEnabled() {
+		if err := p.pubsubDispatcher.RegisterConsumerToLane(
+			pubsubDispatcher.EventPipelineSensorOnlineConsumer,
+			pubsubDispatcher.SensorOnlineTopic,
+			pubsubDispatcher.SensorOnlineLane,
+			p.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register event pipeline sensor online consumer")
+		}
+		if err := p.pubsubDispatcher.RegisterConsumerToLane(
+			pubsubDispatcher.EventPipelineSensorOfflineConsumer,
+			pubsubDispatcher.SensorOfflineTopic,
+			pubsubDispatcher.SensorOfflineLane,
+			p.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register event pipeline sensor offline consumer")
+		}
+	}
+
 	// The order is important here, we need to start the components
 	// that receive messages from other components first
 	if err := p.output.Start(); err != nil {
@@ -136,8 +156,43 @@ func (p *eventPipeline) Stop() {
 	p.stopper.Client().Stop()
 }
 
+func (p *eventPipeline) handleSensorOnlineEvent(event pubsubDispatcher.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	// Start listening to events if not yet listening
+	if p.offlineMode.CompareAndSwap(true, false) {
+		log.Info("Connection established: Starting Kubernetes listener")
+		// Stopping the listener here will allow Sensor to maintain the stores populated while offline.
+		// This is needed to capture runtime events in offline mode.
+		p.listener.Stop()
+		// TODO(ROX-18613): use contextProvider to provide context for listener
+		p.createNewContext()
+		if err := p.listener.StartWithContext(p.context); err != nil {
+			log.Fatalf("Failed to start listener component. Sensor cannot run without listening to Kubernetes events: %s", err)
+		}
+	}
+	return nil
+}
+
+func (p *eventPipeline) handleSensorOfflineEvent(event pubsubDispatcher.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	// Cancel the current context of the listeners.
+	if p.offlineMode.CompareAndSwap(false, true) {
+		p.stopCurrentContext()
+	}
+	return nil
+}
+
 func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "Event Pipeline"))
+	if p.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening

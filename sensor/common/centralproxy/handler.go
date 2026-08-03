@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,6 +20,8 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
+	"github.com/stackrox/rox/sensor/common/events"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
@@ -50,10 +53,32 @@ type Handler struct {
 	authorizer       *k8sAuthorizer
 	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
+
+	pubSubDispatcher common.PubSubDispatcher
+}
+
+func (h *Handler) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && h.pubSubDispatcher != nil
+}
+
+func (h *Handler) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(true)
+	return nil
+}
+
+func (h *Handler) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*events.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	h.centralReachable.Store(false)
+	return nil
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
-func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, clusterIDGetter clusterIDGetter) (*Handler, error) {
+func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, clusterIDGetter clusterIDGetter, pubSubDispatcher common.PubSubDispatcher) (*Handler, error) {
 	centralBaseURL, err := url.Parse(
 		urlfmt.FormatURL(centralEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
 	)
@@ -90,12 +115,32 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "creating kubernetes client")
 	}
 
-	return &Handler{
-		clusterIDGetter: clusterIDGetter,
-		authorizer:      newK8sAuthorizer(k8sClient),
-		transport:       transport,
-		proxy:           proxy,
-	}, nil
+	h := &Handler{
+		clusterIDGetter:  clusterIDGetter,
+		authorizer:       newK8sAuthorizer(k8sClient),
+		transport:        transport,
+		proxy:            proxy,
+		pubSubDispatcher: pubSubDispatcher,
+	}
+	if h.pubSubEnabled() {
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.CentralProxyHandlerSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			h.handleSensorOnlineEvent,
+		); err != nil {
+			return nil, errors.Wrap(err, "failed to register central proxy handler sensor online consumer")
+		}
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.CentralProxyHandlerSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			h.handleSensorOfflineEvent,
+		); err != nil {
+			return nil, errors.Wrap(err, "failed to register central proxy handler sensor offline consumer")
+		}
+	}
+	return h, nil
 }
 
 // SetCentralGRPCClient implements common.CentralGRPCConnAware.
@@ -107,6 +152,12 @@ func (h *Handler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
 // Notify reacts to sensor going into online/offline mode.
 func (h *Handler) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "Central proxy handler"))
+	if h.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in
+		// NewProxyHandler().
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		h.centralReachable.Store(true)
