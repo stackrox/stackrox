@@ -489,11 +489,14 @@ func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunicati
 func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunication CentralCommunication) {
 	select {
 	case <-signal.Done():
+		// Publish before acquiring currentStateMtx: Publish on a blocking lane can block on a
+		// slow/stuck consumer, and holding the mutex across that would delay a concurrent
+		// changeState (e.g. offline transition) waiting on the same lock.
+		s.publishLifecycleEvent(&events.CentralReachableEvent{})
+		s.publishLifecycleEvent(&events.HandshakeSyncFinishedEvent{})
 		s.currentStateMtx.Lock()
 		defer s.currentStateMtx.Unlock()
-		s.publishLifecycleEvent(&events.CentralReachableEvent{})
 		s.notifyAllComponents(common.SensorComponentEventCentralReachable)
-		s.publishLifecycleEvent(&events.HandshakeSyncFinishedEvent{})
 		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
 	case <-centralCommunication.Stopped().WaitC():
 		return
