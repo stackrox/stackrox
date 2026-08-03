@@ -20,9 +20,9 @@ on:
 
 jobs:
   run:
-    if: inputs.should-run
     uses: ./.github/workflows/e2e-qa-tests.yaml
     with:
+      should-run: ${{ inputs.should-run }}
       tag: ${{ inputs.tag }}
       ci-job-name: ocp-4-22-qa-e2e-tests
       ci-job-short-name: ocp422-qa-e2e

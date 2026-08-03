@@ -3,6 +3,10 @@ name: e2e-qa-tests
 on:
   workflow_call:
     inputs:
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        required: true
+        type: boolean
       tag:
         description: "Image tag to test."
         required: true
