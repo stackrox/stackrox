@@ -58,21 +58,30 @@ jobs:
         class Job:
             name: str
             require_pr_label: bool = False
+            require_konflux_build: bool = False
             def should_run(self, input):
                 if input.is_fork == 'true':
                     return False
+
                 if input.event_name != 'pull_request':
                     return True
+                elif self.name in input.pr_labels:
+                    return True
+
+                # We are in a PR context, job is not explicitly listed among the PR labels.
+
+                if self.require_konflux_build and 'konflux-build' not in input.pr_labels:
+                    return False
+
                 if input.ui_only_change == 'true':
                     # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
                     # As we add more E2E test workflows, we may want to make this more flexible.
                     return False
-                if self.name in input.pr_labels:
-                    return True
                 if self.require_pr_label:
                     return False
                 if input.is_draft != 'true':
                     return True
+
                 return False
 
 
@@ -105,7 +114,7 @@ jobs:
                 Job(name='e2e-gke-upgrade-tests'),
                 Job(name='e2e-nongroovy-tests'),
                 Job(name='e2e-qa-tests-gke', require_pr_label=True),
-                Job(name='e2e-qa-tests-gke-konflux', require_pr_label=True),
+                Job(name='e2e-qa-tests-gke-konflux', require_pr_label=True, require_konflux_build=True),
                 Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
             ]
 
