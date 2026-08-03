@@ -31,7 +31,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
 	s.Equal(time.Second, nonZeroPurgerCycle())
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, nil, WithManager(m))
 	s.NoError(purger.Start())
 	// Enable the ticker after going online - send the same signal that activates the manager
 	purger.Notify(common.SensorComponentEventResourceSyncFinished)
@@ -50,7 +50,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, nil, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "purger is disabled")
 
@@ -73,7 +73,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	defer mockCtrl.Finish()
 	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 	// Don't set manager to explicitly simulate disconnected purger
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(s.T(), purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, nil, WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "not bound to a network flow manager")
 	select {
@@ -124,7 +124,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
 			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, nil, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)

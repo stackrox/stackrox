@@ -182,7 +182,7 @@ func NewManager(
 			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
 		maxAgeSetting = 4 * time.Hour
 	}
-	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr))
+	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, pubSubDispatcher, WithManager(mgr))
 
 	enricherTicker.Stop()
 	mgr.sensorUpdates = make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.NetworkFlowBufferSize))

@@ -8,10 +8,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/events"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 type PurgerOption func(purger *NetworkFlowPurger)
@@ -43,6 +46,8 @@ type NetworkFlowPurger struct {
 	stopper concurrency.Stopper
 	// purgingDone is signaled on each finished purging action
 	purgingDone concurrency.Signal
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 // NewNetworkFlowPurger implements Sensor Component and is tightly bound to the networkFlowManager.
@@ -50,23 +55,42 @@ type NetworkFlowPurger struct {
 // is done by using the `WithPurger` option when constructing the manager: `manager.NewManager(..., manager.WithPurger(purger))`.
 // The purger is designed to always consume the messages from `purgerTickerC` - even if the binding to networkFlowManager
 // fails or the purger is explicitly disabled using env var.
-func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opts ...PurgerOption) *NetworkFlowPurger {
+func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, pubSubDispatcher common.PubSubDispatcher, opts ...PurgerOption) *NetworkFlowPurger {
 	purgerTicker := time.NewTicker(nonZeroPurgerCycle())
 	defer purgerTicker.Stop()
 
 	p := &NetworkFlowPurger{
-		clusterEntities: clusterEntities,
-		manager:         nil,
-		purgerTicker:    purgerTicker,
-		purgerTickerC:   purgerTicker.C,
-		maxAge:          maxAge,
-		stopper:         concurrency.NewStopper(),
-		purgingDone:     concurrency.NewSignal(),
+		clusterEntities:  clusterEntities,
+		manager:          nil,
+		purgerTicker:     purgerTicker,
+		purgerTickerC:    purgerTicker.C,
+		maxAge:           maxAge,
+		stopper:          concurrency.NewStopper(),
+		purgingDone:      concurrency.NewSignal(),
+		pubSubDispatcher: pubSubDispatcher,
 	}
 	for _, o := range opts {
 		o(p)
 	}
 	return p
+}
+
+func (p *NetworkFlowPurger) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil
+}
+
+func (p *NetworkFlowPurger) handleResourceSyncFinishedEvent(event pubsub.Event) error {
+	evt, ok := event.(*events.ResourceSyncFinishedEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if evt.IsExpired() {
+		return nil
+	}
+	d := nonZeroPurgerCycle()
+	p.purgerTicker.Reset(d)
+	log.Debugf("NetworkFlowPurger will execute in %s", d.String())
+	return nil
 }
 
 func (p *NetworkFlowPurger) Start() error {
@@ -77,6 +101,17 @@ func (p *NetworkFlowPurger) Start() error {
 	if env.EnrichmentPurgerTickerCycle.DurationSetting() == 0 {
 		p.stopper.Flow().ReportStopped() // to ensure that Stop doesn't block
 		return errors.New("network flow purger is disabled")
+	}
+
+	if p.pubSubEnabled() {
+		if err := p.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.NetworkFlowPurgerResourceSyncFinishedConsumer,
+			pubsub.ResourceSyncFinishedTopic,
+			pubsub.ResourceSyncFinishedLane,
+			p.handleResourceSyncFinishedEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register network flow purger resource sync finished consumer")
+		}
 	}
 
 	// Allow starting the purger without a manager. This is done to prevent blocking of the entire component when
@@ -114,6 +149,11 @@ func (p *NetworkFlowPurger) Notify(e common.SensorComponentEvent) {
 	// Purger could start earlier than this, but we stick to the `SensorComponentEventResourceSyncFinished` as it also
 	// enables the networkFlowManager.
 	case common.SensorComponentEventResourceSyncFinished:
+		if p.pubSubEnabled() {
+			// Handled by handleResourceSyncFinishedEvent via the
+			// ResourceSyncFinished PubSub subscription registered in Start().
+			return
+		}
 		d := nonZeroPurgerCycle()
 		p.purgerTicker.Reset(d)
 		log.Debugf("NetworkFlowPurger will execute in %s", d.String())
