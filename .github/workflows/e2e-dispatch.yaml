@@ -160,7 +160,7 @@ jobs:
         echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
     - name: Determine Konflux image tag suffix
       id: konflux-suffix
-      # Mirrors the logic in konflux-tasks/determine-image-tag-task.yaml.
+      # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
       run: |
         branch="${GITHUB_HEAD_REF:-${GITHUB_REF}}"
         if grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${branch}"; then
