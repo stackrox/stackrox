@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -421,9 +420,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+							Enforcement:   new(platform.PolicyEnforcementEnabled),
 							Bypass:        platform.BypassBreakGlassAnnotation.Pointer(),
-							FailurePolicy: ptr.To(platform.FailurePolicyFail),
+							FailurePolicy: new(platform.FailurePolicyFail),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
@@ -1456,11 +1455,11 @@ func TestDeploymentDefaults(t *testing.T) {
 				Spec: platform.SecuredClusterSpec{
 					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Customize: &platform.CustomizeSpec{
 						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+							PinToNodes: new(platform.PinToNodesInfraRole),
 						},
 					},
 				},
@@ -1473,7 +1472,7 @@ func TestDeploymentDefaults(t *testing.T) {
 				Spec: platform.SecuredClusterSpec{
 					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Customize: &platform.CustomizeSpec{
 						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
@@ -1493,7 +1492,7 @@ func TestDeploymentDefaults(t *testing.T) {
 				Spec: platform.SecuredClusterSpec{
 					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Sensor: &platform.SensorComponentSpec{
 						DeploymentSpec: platform.DeploymentSpec{

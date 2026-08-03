@@ -7,13 +7,12 @@ import (
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
-	"k8s.io/utils/ptr"
 )
 
 var staticDefaults = platform.SecuredClusterSpec{
 	AdmissionControl: &platform.AdmissionControlComponentSpec{
-		Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-		FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+		Bypass:        new(platform.BypassBreakGlassAnnotation),
+		FailurePolicy: new(platform.FailurePolicyIgnore),
 		Replicas:      new(int32(3)),
 	},
 	PerNode: &platform.PerNodeSpec{
@@ -35,7 +34,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 		ScannerComponent: platform.LocalScannerComponentAutoSense.Pointer(),
 		Analyzer: &platform.ScannerAnalyzerComponent{
 			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				AutoScaling: new(platform.ScannerAutoScalingEnabled),
 				Replicas:    new(int32(3)),
 				MinReplicas: new(int32(2)),
 				MaxReplicas: new(int32(5)),
@@ -46,7 +45,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 		// ScannerComponent field is set using a dedicated defaulting flow.
 		Indexer: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				AutoScaling: new(platform.ScannerAutoScalingEnabled),
 				Replicas:    new(int32(3)),
 				MinReplicas: new(int32(2)),
 				MaxReplicas: new(int32(5)),
@@ -66,11 +65,11 @@ var staticDefaults = platform.SecuredClusterSpec{
 		},
 	},
 	Network: &platform.GlobalNetworkSpec{
-		Policies: ptr.To(platform.NetworkPoliciesEnabled),
+		Policies: new(platform.NetworkPoliciesEnabled),
 	},
 	Customize: &platform.CustomizeSpec{
 		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-			PinToNodes: ptr.To(platform.PinToNodesNone),
+			PinToNodes: new(platform.PinToNodesNone),
 		},
 	},
 	ProcessIndicators: &platform.ProcessIndicatorsSpec{

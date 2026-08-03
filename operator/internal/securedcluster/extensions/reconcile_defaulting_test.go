@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -82,10 +81,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -94,7 +93,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"install: explicit enforcement disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforcement: ptr.To(platform.PolicyEnforcementDisabled),
+					Enforcement: new(platform.PolicyEnforcementDisabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -102,8 +101,8 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
 				Enforcement:   nil,
 			},
@@ -114,7 +113,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"install: explicit enforcement enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforcement: ptr.To(platform.PolicyEnforcementEnabled),
+					Enforcement: new(platform.PolicyEnforcementEnabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -122,8 +121,8 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
 				Enforcement:   nil,
 			},
@@ -141,10 +140,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -160,10 +159,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
+				Enforcement:   new(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
@@ -181,10 +180,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
+				Enforcement:   new(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
@@ -202,10 +201,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -223,10 +222,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
 				Replicas:      new(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",

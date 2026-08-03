@@ -7,12 +7,11 @@ import (
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
-	"k8s.io/utils/ptr"
 )
 
 var staticDefaults = platform.CentralSpec{
 	Central: &platform.CentralComponentSpec{
-		RolloutStrategy: ptr.To(platform.RolloutStrategyRecreate),
+		RolloutStrategy: new(platform.RolloutStrategyRecreate),
 		NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 			Enabled: new(false),
 		},
@@ -45,7 +44,7 @@ var staticDefaults = platform.CentralSpec{
 	Scanner: &platform.ScannerComponentSpec{
 		Analyzer: &platform.ScannerAnalyzerComponent{
 			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				AutoScaling: new(platform.ScannerAutoScalingEnabled),
 				Replicas:    new(int32(3)),
 				MinReplicas: new(int32(2)),
 				MaxReplicas: new(int32(5)),
@@ -56,7 +55,7 @@ var staticDefaults = platform.CentralSpec{
 		// ScannerComponent field is set using a dedicated defaulting flow.
 		Indexer: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				AutoScaling: new(platform.ScannerAutoScalingEnabled),
 				Replicas:    new(int32(3)),
 				MinReplicas: new(int32(2)),
 				MaxReplicas: new(int32(5)),
@@ -64,7 +63,7 @@ var staticDefaults = platform.CentralSpec{
 		},
 		Matcher: &platform.ScannerV4Component{
 			Scaling: &platform.ScannerComponentScaling{
-				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				AutoScaling: new(platform.ScannerAutoScalingEnabled),
 				Replicas:    new(int32(3)),
 				MinReplicas: new(int32(2)),
 				MaxReplicas: new(int32(5)),
@@ -87,14 +86,14 @@ var staticDefaults = platform.CentralSpec{
 		},
 	},
 	Network: &platform.GlobalNetworkSpec{
-		Policies: ptr.To(platform.NetworkPoliciesEnabled),
+		Policies: new(platform.NetworkPoliciesEnabled),
 	},
 	ConfigAsCode: &platform.ConfigAsCodeSpec{
-		ComponentPolicy: ptr.To(platform.ConfigAsCodeComponentEnabled),
+		ComponentPolicy: new(platform.ConfigAsCodeComponentEnabled),
 	},
 	Customize: &platform.CustomizeSpec{
 		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-			PinToNodes: ptr.To(platform.PinToNodesNone),
+			PinToNodes: new(platform.PinToNodesNone),
 		},
 	},
 }
