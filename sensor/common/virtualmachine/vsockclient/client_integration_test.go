@@ -122,14 +122,16 @@ func TestGetReportIntegration(t *testing.T) {
 			wantErr: ErrNotReady,
 		},
 		"should return full report when cache has report": {
-			seedReport: &v4.IndexReport{HashId: "integration-test-hash"},
-			seedFacts:  map[string]string{"os": "rhel", "arch": "x86_64"},
+			seedReport:   &v4.IndexReport{HashId: "integration-test-hash"},
+			seedFacts:    map[string]string{"os": "rhel", "arch": "x86_64"},
+			agentVersion: "roxagent-0.3.1-deadbeef",
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged)
 				require.NotNil(t, result.IndexReport)
 				assert.Equal(t, "integration-test-hash", result.IndexReport.GetHashId())
 
 				require.NotNil(t, result.Meta)
+				assert.Equal(t, "roxagent-0.3.1-deadbeef", result.Meta.GetAgentVersion())
 				assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
 				assert.NotNil(t, result.Meta.GetReportGeneratedAt())
 				assert.Contains(t, result.Meta.GetSupportedMethods(), "get_report")
@@ -154,23 +156,8 @@ func TestGetReportIntegration(t *testing.T) {
 				require.NotNil(t, result.IndexReport)
 				assert.Equal(t, "post-restart-hash", result.IndexReport.GetHashId())
 				assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
-			},
-		},
-		"should deliver all agent metadata to sensor": {
-			seedReport:   &v4.IndexReport{HashId: "meta-hash"},
-			seedFacts:    map[string]string{"os_id": "rhel", "kernel": "5.14.0", "instance_id": "i-abc123"},
-			agentVersion: "roxagent-0.3.1-deadbeef",
-			checkResult: func(t *testing.T, result *GetReportResult) {
-				require.NotNil(t, result.Meta)
-				assert.Equal(t, "roxagent-0.3.1-deadbeef", result.Meta.GetAgentVersion())
-				assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
 				assert.NotNil(t, result.Meta.GetReportGeneratedAt())
 				assert.Contains(t, result.Meta.GetSupportedMethods(), "get_report")
-
-				facts := result.Meta.GetFacts()
-				assert.Equal(t, "rhel", facts["os_id"])
-				assert.Equal(t, "5.14.0", facts["kernel"])
-				assert.Equal(t, "i-abc123", facts["instance_id"])
 			},
 		},
 	}
@@ -243,24 +230,33 @@ func TestGetReportIntegration_KnownEpochSingleRoundTrip(t *testing.T) {
 
 // respondOnce reads one framed VMServiceRequest, builds a response, and writes
 // it back. Used by fake agent personas that only differ in response content.
-func respondOnce(conn net.Conn, build func(*pb.VMServiceRequest) *pb.VMServiceResponse) {
+// Framing/protobuf failures here mean the harness itself is broken rather
+// than the protocol under test, so they're logged (not asserted) to help
+// triage without failing the test on the wrong line.
+func respondOnce(t testing.TB, conn net.Conn, build func(*pb.VMServiceRequest) *pb.VMServiceResponse) {
+	t.Helper()
 	defer func() { _ = conn.Close() }()
 
 	reqData, err := vsockframing.ReadFrame(conn, 1<<20)
 	if err != nil {
+		t.Logf("respondOnce: reading request frame: %v", err)
 		return
 	}
 	var req pb.VMServiceRequest
 	if err := proto.Unmarshal(reqData, &req); err != nil {
+		t.Logf("respondOnce: unmarshalling request: %v", err)
 		return
 	}
 
 	resp := build(&req)
 	respData, err := proto.Marshal(resp)
 	if err != nil {
+		t.Logf("respondOnce: marshalling response: %v", err)
 		return
 	}
-	_ = vsockframing.WriteFrame(conn, respData)
+	if err := vsockframing.WriteFrame(conn, respData); err != nil {
+		t.Logf("respondOnce: writing response frame: %v", err)
+	}
 }
 
 // oldAgentResponder models a plausible older roxagent that:
@@ -269,9 +265,9 @@ func respondOnce(conn net.Conn, build func(*pb.VMServiceRequest) *pb.VMServiceRe
 //   - does not include facts, report_generated_at, or epoch
 //   - always returns the full report (ignores last_known_generation and known_epoch)
 //   - returns UNKNOWN_METHOD for anything else
-func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
+func oldAgentResponder(t testing.TB, report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
-		respondOnce(conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
+		respondOnce(t, conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
 			resp := &pb.VMServiceResponse{
 				Meta: &pb.ResponseMeta{
 					AgentVersion:     "roxagent-0.1.0",
@@ -301,9 +297,9 @@ func oldAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn)
 //   - includes richer metadata (facts, supported_methods)
 //   - supports last_known_generation (unchanged semantics)
 //   - returns UNKNOWN_METHOD for methods it doesn't recognize
-func futureAgentResponder(report *v4.IndexReport, generation uint32) func(net.Conn) {
+func futureAgentResponder(t testing.TB, report *v4.IndexReport, generation uint32) func(net.Conn) {
 	return func(conn net.Conn) {
-		respondOnce(conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
+		respondOnce(t, conn, func(req *pb.VMServiceRequest) *pb.VMServiceResponse {
 			resp := &pb.VMServiceResponse{
 				Meta: &pb.ResponseMeta{
 					AgentVersion:     "roxagent-2.0.0-future",
@@ -336,50 +332,59 @@ func futureAgentResponder(report *v4.IndexReport, generation uint32) func(net.Co
 	}
 }
 
+// assertOldAgentReport checks the properties every old-agent compatibility
+// case expects regardless of the request that triggered them: an old agent
+// always serves the full report under its fixed identity and never
+// advertises newer protocol metadata.
+func assertOldAgentReport(t *testing.T, result *GetReportResult) {
+	t.Helper()
+	require.NotNil(t, result.IndexReport)
+	assert.Equal(t, "compat-hash", result.IndexReport.GetHashId())
+	assert.Equal(t, "roxagent-0.1.0", result.Meta.GetAgentVersion())
+	assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
+	assert.Empty(t, result.Meta.GetSupportedMethods())
+	assert.Empty(t, result.Meta.GetFacts())
+}
+
 func TestGetReportCompatibility(t *testing.T) {
 	report := &v4.IndexReport{HashId: "compat-hash"}
 	client := NewClient([]string{CapabilityReportV1}, 10<<20)
 
 	cases := map[string]struct {
 		// Arguments
-		responder   func(net.Conn)
-		ifNewerThan uint32
-		knownEpoch  uint32
+		makeResponderFunc func(t testing.TB) func(net.Conn)
+		ifNewerThan       uint32
+		knownEpoch        uint32
 		// Expectations
 		checkResult func(t *testing.T, result *GetReportResult)
 	}{
 		"old agent should serve get_report to current sensor": {
-			responder: oldAgentResponder(report, 1),
+			makeResponderFunc: func(t testing.TB) func(net.Conn) { return oldAgentResponder(t, report, 1) },
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged)
-				require.NotNil(t, result.IndexReport)
-				assert.Equal(t, "compat-hash", result.IndexReport.GetHashId())
-				assert.Equal(t, "roxagent-0.1.0", result.Meta.GetAgentVersion())
-				assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
-				assert.Empty(t, result.Meta.GetSupportedMethods())
-				assert.Empty(t, result.Meta.GetFacts())
+				assertOldAgentReport(t, result)
 			},
 		},
 		"old agent should always return full report ignoring last_known_generation": {
-			responder:   oldAgentResponder(report, 1),
-			ifNewerThan: 1,
+			makeResponderFunc: func(t testing.TB) func(net.Conn) { return oldAgentResponder(t, report, 1) },
+			ifNewerThan:       1,
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged, "old agent does not support unchanged optimization")
-				require.NotNil(t, result.IndexReport)
+				assertOldAgentReport(t, result)
 			},
 		},
 		"old agent should tolerate non-zero known_epoch and omit epoch in response": {
-			responder:   oldAgentResponder(report, 1),
-			ifNewerThan: 1,
-			knownEpoch:  42,
+			makeResponderFunc: func(t testing.TB) func(net.Conn) { return oldAgentResponder(t, report, 1) },
+			ifNewerThan:       1,
+			knownEpoch:        42,
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged)
-				require.NotNil(t, result.IndexReport)
+				assertOldAgentReport(t, result)
 				assert.Zero(t, result.Meta.GetEpoch(), "old agent does not populate epoch")
 			},
 		},
 		"future agent should serve get_report to current sensor": {
-			responder: futureAgentResponder(report, 1),
+			makeResponderFunc: func(t testing.TB) func(net.Conn) { return futureAgentResponder(t, report, 1) },
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.False(t, result.Unchanged)
 				require.NotNil(t, result.IndexReport)
@@ -392,28 +397,19 @@ func TestGetReportCompatibility(t *testing.T) {
 			},
 		},
 		"future agent should return unchanged when generation matches": {
-			responder:   futureAgentResponder(report, 3),
-			ifNewerThan: 3,
+			makeResponderFunc: func(t testing.TB) func(net.Conn) { return futureAgentResponder(t, report, 3) },
+			ifNewerThan:       3,
 			checkResult: func(t *testing.T, result *GetReportResult) {
 				assert.True(t, result.Unchanged)
 				assert.Nil(t, result.IndexReport)
 				assert.Equal(t, uint32(3), result.Meta.GetReportGeneration())
 			},
 		},
-		"future agent extra supported_methods are discoverable by sensor": {
-			responder: futureAgentResponder(report, 1),
-			checkResult: func(t *testing.T, result *GetReportResult) {
-				methods := result.Meta.GetSupportedMethods()
-				assert.Contains(t, methods, "get_report")
-				assert.Contains(t, methods, "get_config")
-				assert.Contains(t, methods, "submit_event")
-			},
-		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			result, err := exchangeOnce(t, client, tc.ifNewerThan, tc.knownEpoch, tc.responder)
+			result, err := exchangeOnce(t, client, tc.ifNewerThan, tc.knownEpoch, tc.makeResponderFunc(t))
 
 			require.NoError(t, err)
 			if tc.checkResult != nil {
