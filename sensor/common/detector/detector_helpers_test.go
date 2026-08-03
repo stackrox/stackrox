@@ -16,6 +16,7 @@ import (
 	detectorEvents "github.com/stackrox/rox/sensor/common/detector/events"
 	networkBaselineEval "github.com/stackrox/rox/sensor/common/detector/networkbaseline"
 	"github.com/stackrox/rox/sensor/common/detector/queue"
+	sensorEvents "github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
@@ -124,6 +125,8 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 				),
 				lane.NewBlockingLane(pubsub.DetectorScanResultLane),
 				lane.NewBlockingLane(pubsub.DetectorDeployAlertOutputLane),
+				lane.NewBlockingLane(pubsub.SensorOnlineLane),
+				lane.NewBlockingLane(pubsub.SensorOfflineLane),
 			},
 		))
 		require.NoError(tb, err)
@@ -133,6 +136,18 @@ func createTestDetectorWithBufferSize(tb testing.TB, pubSubEnabled bool, bufferS
 	}
 
 	return d, deploymentStore, networkPolicyStore, nodeStore
+}
+
+// goOnline transitions d to "online" mode using whichever mechanism is
+// active: a real SensorOnlineEvent publish when pubSubEnabled, legacy Notify
+// otherwise. This lets test bodies stay agnostic to the migration.
+func goOnline(tb testing.TB, d *detectorImpl) {
+	tb.Helper()
+	if d.pubSubEnabled() {
+		require.NoError(tb, d.pubSubDispatcher.Publish(&sensorEvents.SensorOnlineEvent{}))
+		return
+	}
+	d.Notify(common.SensorComponentEventCentralReachable)
 }
 
 const benchBufferSize = 20000

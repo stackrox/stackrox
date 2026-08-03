@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/queue"
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
+	sensorEvents "github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/filesystem"
 	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
@@ -276,6 +277,22 @@ func (d *detectorImpl) Start() error {
 		); err != nil {
 			return errors.Wrap(err, "failed to register detector deploy alert output consumer")
 		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorSensorOnlineConsumer,
+			pubsub.SensorOnlineTopic,
+			pubsub.SensorOnlineLane,
+			d.handleSensorOnlineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector sensor online consumer")
+		}
+		if err := d.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.DetectorSensorOfflineConsumer,
+			pubsub.SensorOfflineTopic,
+			pubsub.SensorOfflineLane,
+			d.handleSensorOfflineEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register detector sensor offline consumer")
+		}
 	}
 
 	if !d.pubSubEnabled() {
@@ -406,24 +423,41 @@ func (d *detectorImpl) Stop() {
 
 func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
+	if d.pubSubEnabled() {
+		// Online/offline transitions are handled by the SensorOnlineEvent/
+		// SensorOfflineEvent PubSub subscription registered in Start() (see
+		// handleSensorOnlineEvent/handleSensorOfflineEvent), which keeps
+		// runtimeRunning ordered with the other PubSub consumers on this
+		// dispatcher. Driving it from here too raced the PubSub-driven
+		// indicator processing and silently dropped events (ROX-35620).
+		return
+	}
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		if d.pubSubEnabled() {
-			d.runtimeRunning.Signal()
-		} else {
-			d.indicatorsQueue.Resume()
-			d.networkFlowsQueue.Resume()
-			d.fileAccessQueue.Resume()
-		}
+		d.indicatorsQueue.Resume()
+		d.networkFlowsQueue.Resume()
+		d.fileAccessQueue.Resume()
 	case common.SensorComponentEventOfflineMode:
-		if d.pubSubEnabled() {
-			d.runtimeRunning.Reset()
-		} else {
-			d.indicatorsQueue.Pause()
-			d.networkFlowsQueue.Pause()
-			d.fileAccessQueue.Pause()
-		}
+		d.indicatorsQueue.Pause()
+		d.networkFlowsQueue.Pause()
+		d.fileAccessQueue.Pause()
 	}
+}
+
+func (d *detectorImpl) handleSensorOnlineEvent(event pubsub.Event) error {
+	if _, ok := event.(*sensorEvents.SensorOnlineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.runtimeRunning.Signal()
+	return nil
+}
+
+func (d *detectorImpl) handleSensorOfflineEvent(event pubsub.Event) error {
+	if _, ok := event.(*sensorEvents.SensorOfflineEvent); !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	d.runtimeRunning.Reset()
+	return nil
 }
 
 func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {

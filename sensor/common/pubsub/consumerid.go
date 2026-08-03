@@ -16,6 +16,8 @@ const (
 	DetectorDeploymentConsumer
 	DetectorScanResultConsumer
 	DetectorDeployAlertOutputConsumer
+	DetectorSensorOnlineConsumer
+	DetectorSensorOfflineConsumer
 	OutputQueueConsumer
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
@@ -36,6 +38,8 @@ var (
 		DetectorDeploymentConsumer:             "DetectorDeployment",
 		DetectorScanResultConsumer:             "DetectorScanResult",
 		DetectorDeployAlertOutputConsumer:      "DetectorDeployAlertOutput",
+		DetectorSensorOnlineConsumer:           "DetectorSensorOnline",
+		DetectorSensorOfflineConsumer:          "DetectorSensorOffline",
 		OutputQueueConsumer:                    "OutputQueue",
 		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
 		SensorSoftRestartConsumer:              "SensorSoftRestart",

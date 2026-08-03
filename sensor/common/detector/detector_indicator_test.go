@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common"
 	mockStore "github.com/stackrox/rox/sensor/common/store/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,7 +87,7 @@ func TestIndicatorPipeline(t *testing.T) {
 					require.NoError(t, d.Start())
 					defer d.Stop()
 
-					d.Notify(common.SensorComponentEventCentralReachable)
+					goOnline(t, d)
 
 					d.ProcessIndicator(context.Background(), tc.indicator)
 					synctest.Wait()
@@ -153,7 +152,7 @@ func TestIndicatorPipelineOfflineBlocks(t *testing.T) {
 				}
 
 				// Go online — buffered event should be processed
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 				synctest.Wait()
 
 				select {
@@ -214,7 +213,7 @@ func TestIndicatorPipelineDropsWhenFull(t *testing.T) {
 				}
 
 				// Go online
-				d.Notify(common.SensorComponentEventCentralReachable)
+				goOnline(t, d)
 				synctest.Wait()
 
 				// Drain and count.
