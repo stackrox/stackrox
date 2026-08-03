@@ -360,6 +360,8 @@ config-controller-gen:
 generated-srcs: go-generated-srcs config-controller-gen
 
 ifdef CI
+# In CI, go.mod/go.sum must be committed — not auto-updated.
+# go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
 deps:
 	@true
 else
