@@ -222,9 +222,6 @@ jobs:
 
   e2e-qa-tests-gke:
     needs: [ wait-for-images, should-dispatch ]
-    if: >-
-      github.event_name != 'pull_request' ||
-      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke')
     uses: ./.github/workflows/e2e-qa-tests-gke.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -236,9 +233,6 @@ jobs:
 
   e2e-qa-tests-ocp-4-22:
     needs: [ wait-for-images, should-dispatch ]
-    if: >-
-      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-ocp-4-22') &&
-      github.event_name == 'pull_request'
     uses: ./.github/workflows/e2e-qa-tests-ocp-4-22.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
@@ -250,9 +244,6 @@ jobs:
 
   e2e-qa-tests-gke-konflux:
     needs: [ wait-for-images, should-dispatch ]
-    if: >-
-      github.event_name != 'pull_request' ||
-      contains(github.event.pull_request.labels.*.name, 'e2e-qa-tests-gke-konflux')
     uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}${{ needs.wait-for-images.outputs.konflux_suffix }}
