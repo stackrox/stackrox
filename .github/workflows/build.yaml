@@ -1368,8 +1368,10 @@ jobs:
 
       - name: Determine image tag to scan
         id: determine-tag
-        # stackrox-operator is pushed under a different tag than the rest of
-        # the matrix (see determine-cve-scan-image-tag.sh); this resolves
+        # stackrox-operator publishes under a rewritten tag
+        # (operator/Makefile's `tag` target turns the ".x" dev-version
+        # segment into ".0", e.g. 4.12.x-427-gabc -> 4.12.0-427-gabc); every
+        # other image keeps the default build tag unchanged. This resolves
         # the actual tag to poll for so that leg doesn't hit the
         # wait-for-image timeout below looking for a tag that was never
         # pushed.
@@ -1382,7 +1384,12 @@ jobs:
         env:
           IMAGE: ${{ matrix.image }}
           DEFAULT_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
-        run: .github/workflows/scripts/determine-cve-scan-image-tag.sh
+        run: |
+          tag="$DEFAULT_TAG"
+          if [[ "$IMAGE" == "stackrox-operator" ]]; then
+            tag="$(BUILD_TAG="$DEFAULT_TAG" make --quiet --no-print-directory -C operator tag)"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
@@ -1490,46 +1497,36 @@ jobs:
           EXPECTED_IMAGES: central-db,main,roxctl,scanner-v4,scanner-v4-db,stackrox-operator
         run: .github/workflows/scripts/flatten-cve-scan-results.sh
 
-      - name: Verify CVE fix
+      - name: Verify CVE fix and render PR comment
         id: verify
-        # Requires flatten's own outcome (not just its `infra-failure`
-        # output) since continue-on-error above means a flatten crash
-        # wouldn't otherwise stop this step from running against a
-        # missing or partial scan-results-flat directory.
-        if: needs.resolve-cve-ids.outputs.cves != '' && steps.flatten.outcome == 'success'
+        # always(): this comment is the only feedback this job gives, so it
+        # must render even if "Download all scan artifacts" or "Flatten
+        # scan results" above failed or were skipped, not just when they
+        # succeeded. verify-cve-fix.sh itself handles an empty CVES (no
+        # resolved CVE ID), or an empty/partial scan-results-flat directory
+        # (a flatten crash or missing images), as their own non-blocking
+        # "NOT APPLICABLE"/"COULD NOT RUN" verdicts.
+        if: always()
+        continue-on-error: true
         env:
           SCAN_DIR: scan-results-flat
+          MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
         # verify-cve-fix.sh exits 1 on a FAILED verdict; that's a real
         # result, not a step failure, so its exit code is captured into the
         # `exit-code` output instead of failing this step (see "Fail if CVE
-        # still present" below, which acts on it directly).
+        # still present" below, which acts on it directly). A non-0/1 exit
+        # (e.g. an unhandled bug) falls back to a generic message instead of
+        # posting empty or partial output.
         run: |
           set +e
           comment_body="$(.github/workflows/scripts/verify-cve-fix.sh)"
           exit_code=$?
           set -e
-          delimiter="$(dd if=/dev/urandom bs=15 count=1 status=none | base64)"
-          {
-            echo "comment<<${delimiter}"
-            echo "$comment_body"
-            echo "${delimiter}"
-          } >> "$GITHUB_OUTPUT"
+          if [[ -z "$comment_body" ]]; then
+            comment_body="**CVE Fix Verification: COULD NOT RUN** :warning: The verification script exited unexpectedly (exit code ${exit_code}) without producing a result. Please verify manually that your CVE fix is effective before merging this PR."
+          fi
+          printf '%s\n' "$comment_body" > cve-fix-comment.md
           echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
-
-      - name: Render PR comment
-        id: render-comment
-        # always(): this comment is the only feedback this job gives, so
-        # it must render even if "Download all scan artifacts", "Flatten
-        # scan results", or "Verify CVE fix" above failed or were skipped
-        # - not just when they all succeeded.
-        if: always()
-        continue-on-error: true
-        env:
-          COMMENT_BODY: ${{ steps.verify.outputs.comment }}
-          CVE_EXTRACTION_FAILED: ${{ needs.resolve-cve-ids.outputs.cves == '' }}
-          EXIT_CODE: ${{ steps.verify.outputs.exit-code || '0' }}
-          MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
-        run: .github/workflows/scripts/post-cve-fix-comment.sh > cve-fix-comment.md
 
       - name: Post PR comment
         # Updates the same comment in place across re-runs (matched by a
@@ -1545,7 +1542,7 @@ jobs:
         # the same pull_request events. message-id instead finds (or
         # creates) only the one comment carrying this specific hidden
         # marker, so the two features can never clobber each other.
-        if: always() && steps.render-comment.outcome == 'success'
+        if: always() && steps.verify.outcome == 'success'
         continue-on-error: true
         uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
         with:
