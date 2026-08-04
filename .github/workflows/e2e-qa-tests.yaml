@@ -222,16 +222,16 @@ jobs:
       # gcloud container clusters create is synchronous, so the cluster is
       # already RUNNING at this point. wait_for_cluster provides additional
       # guarantees by polling until all kube-system pods are ready.
-      - name: Wait for direct-gke cluster to stabilize
-        if: inputs.cluster-provisioning-method == 'direct-gke'
-        run: |
-          source scripts/ci/gke.sh
-          wait_for_cluster
-
-      - name: Verify kubectl access
+      - name: Wait for cluster to stabilize
+        timeout-minutes: 5
+        env:
+          CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
         run: |
           kubectl cluster-info
           kubectl get nodes
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == "direct-gke" ]]; then
+            scripts/ci/gke.sh wait_for_cluster
+          fi
 
       - name: Create artifact directory
         run: mkdir -p "$ARTIFACT_DIR"
