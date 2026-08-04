@@ -165,57 +165,6 @@ get_issue() {
 }
 export -f get_issue
 
-# JIRA custom field ID for the "CVE ID" field on Vulnerability-type issues.
-# If get_vulnerability_info_for_issue below starts silently returning empty
-# CVE IDs for issues that clearly have one set, check whether this field was
-# recreated (and thus got a new ID) in the JIRA project schema.
-JIRA_CVE_ID_FIELD="customfield_10667"
-
-# Given a JIRA issue key, performs a single fetch and prints two lines:
-#   1. "true" or "false" - whether the issue's type is "Vulnerability".
-#   2. the CVE ID recorded in its "CVE ID" custom field ($JIRA_CVE_ID_FIELD),
-#      which may be empty even when line 1 is "true" (a Vulnerability
-#      issue whose CVE ID hasn't been filled in yet).
-# Prints "false" and an empty second line in every other case (issue not
-# found, network/API error, or non-Vulnerability issue type) - failing to
-# resolve an arbitrary referenced JIRA key is the expected common case,
-# not an error.
-#
-# Example:
-#   get_vulnerability_info_for_issue "ROX-35673"
-#     # => "true"
-#     #    "CVE-2026-39822"
-#   get_vulnerability_info_for_issue "ROX-12345"   # not a Vulnerability issue
-#     # => "false"
-#     #    ""
-get_vulnerability_info_for_issue() {
-    local ISSUE_KEY="$1"
-
-    local issue
-    if ! issue="$(get_issue "$ISSUE_KEY" 2>/dev/null)"; then
-        gh_log warning "Could not fetch JIRA issue ${ISSUE_KEY}; skipping CVE cross-reference for it." >&2
-        printf 'false\n\n'
-        return 0
-    fi
-
-    if [[ "$(jq -r '.fields.issuetype.name // empty' <<< "$issue")" != "Vulnerability" ]]; then
-        printf 'false\n\n'
-        return 0
-    fi
-
-    # Field absent (vs. present-but-null, the normal "CVE ID not filled in
-    # yet" case) usually means JIRA_CVE_ID_FIELD itself is stale - warn
-    # instead of silently disabling this whole cross-reference feature.
-    if [[ "$(jq -r --arg field "$JIRA_CVE_ID_FIELD" '.fields | has($field)' <<< "$issue")" != "true" ]]; then
-        gh_log warning "JIRA issue ${ISSUE_KEY} has no ${JIRA_CVE_ID_FIELD} field at all; the CVE ID custom field ID may be stale - check the JIRA project schema." >&2
-        printf 'true\n\n'
-        return 0
-    fi
-
-    printf 'true\n%s\n' "$(jq -r --arg field "$JIRA_CVE_ID_FIELD" '.fields[$field] // empty' <<< "$issue")"
-}
-export -f get_vulnerability_info_for_issue
-
 # Adds COMMENT to a JIRA issue with ISSUE_KEY.
 #
 # Example:
