@@ -108,10 +108,19 @@ func checksForCommit(ctx context.Context, client *github.Client, lastCommit stri
 }
 
 func checkToState(check *github.CheckRun) jobState {
-	if check.GetConclusion() == "failure" {
+	// "timed_out" means the check never reached a verdict, same as a
+	// Statuses API "error". "error" is folded into jobFailure alongside
+	// "failure" so retestable checks (e.g. "e2e-...") still trigger a retry.
+	//
+	// "cancelled" is mapped to jobOK: because `retest_comment.yml` only
+	// reruns GitHub Actions runs with status=failure, so issuing "/retest"
+	// for a cancelled run wouldn't trigger anything anyway.
+	switch check.GetConclusion() {
+	case "failure", "timed_out":
 		return jobFailure
+	default:
+		return jobOK
 	}
-	return jobOK
 }
 
 type Status struct {

@@ -3,44 +3,76 @@ package main
 import (
 	"testing"
 
+	"github.com/google/go-github/v60/github"
 	"github.com/stretchr/testify/assert"
 )
 
-// Test_parseJobState checks how parseJobState maps the Statuses API's raw
-// state strings (success/pending/failure/error, plus any other value it
-// might report) onto jobState.
-func Test_parseJobState(t *testing.T) {
+// Test_jobStateMapping checks how parseJobState and checkToState each map
+// their own API's raw value — a Statuses API state, or a Checks API
+// conclusion — onto the shared jobState type.
+func Test_jobStateMapping(t *testing.T) {
 	tests := map[string]struct {
 		raw       string
+		fromCheck bool
 		wantState jobState
 	}{
-		"success maps to ok": {
+		"status: success maps to ok": {
 			raw:       "success",
 			wantState: jobOK,
 		},
-		"pending maps to pending": {
+		"status: pending maps to pending": {
 			raw:       "pending",
 			wantState: jobPending,
 		},
-		"failure maps to failure": {
+		"status: failure maps to failure": {
 			raw:       "failure",
 			wantState: jobFailure,
 		},
-		"error maps to failure, since it also warrants a retest": {
+		"status: error maps to failure, since it also warrants a retest": {
 			raw:       "error",
 			wantState: jobFailure,
 		},
-		"unknown state falls back to ok": {
+		"status: unknown state falls back to ok": {
 			raw:       "something-unexpected",
 			wantState: jobOK,
 		},
-		"empty string falls back to ok": {
+		"status: empty string falls back to ok": {
 			raw:       "",
+			wantState: jobOK,
+		},
+		"check: success maps to ok": {
+			raw:       "success",
+			fromCheck: true,
+			wantState: jobOK,
+		},
+		"check: failure maps to failure": {
+			raw:       "failure",
+			fromCheck: true,
+			wantState: jobFailure,
+		},
+		"check: timed_out maps to failure, since it also warrants a retest": {
+			raw:       "timed_out",
+			fromCheck: true,
+			wantState: jobFailure,
+		},
+		"check: neutral falls back to ok": {
+			raw:       "neutral",
+			fromCheck: true,
+			wantState: jobOK,
+		},
+		"check: cancelled falls back to ok": {
+			raw:       "cancelled",
+			fromCheck: true,
 			wantState: jobOK,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			if tt.fromCheck {
+				check := &github.CheckRun{Conclusion: github.String(tt.raw)}
+				assert.Equal(t, tt.wantState, checkToState(check))
+				return
+			}
 			assert.Equal(t, tt.wantState, parseJobState(tt.raw))
 		})
 	}
