@@ -21,7 +21,11 @@ function DeploymentOverview({
 }: DeploymentOverviewProps): ReactElement {
     const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
     return (
-        <DescriptionList isCompact isHorizontal>
+        <DescriptionList
+            isCompact
+            isHorizontal
+            horizontalTermWidthModifier={{ default: '18ch' }}
+        >
             <DescriptionListItem
                 term="Deployment ID"
                 desc={
