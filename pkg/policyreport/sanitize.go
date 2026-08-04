@@ -1,6 +1,9 @@
 package policyreport
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // maxProducerStringLength bounds any single producer-supplied string field
 // (message, category, reported source, property values, ...). Long enough
@@ -27,7 +30,11 @@ func sanitizeProducerString(raw string) string {
 	sanitized := b.String()
 
 	if len(sanitized) > maxProducerStringLength {
-		return sanitized[:maxProducerStringLength]
+		truncated := sanitized[:maxProducerStringLength]
+		for !utf8.ValidString(truncated) {
+			truncated = truncated[:len(truncated)-1]
+		}
+		return truncated
 	}
 	return sanitized
 }
