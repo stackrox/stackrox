@@ -1025,7 +1025,7 @@ func initializeFieldMetadata() FieldMetadata {
 
 	if features.PolicyReports.Enabled() {
 		f.registerFieldMetadataRegex(fieldnames.SecurityEventSource,
-			querybuilders.ForFieldLabel(augmentedobjs.SecurityEventSourceCustomTag), nil,
+			querybuilders.ForFieldLabelRegex(augmentedobjs.SecurityEventSourceCustomTag), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				return stringValueRegex
 			},

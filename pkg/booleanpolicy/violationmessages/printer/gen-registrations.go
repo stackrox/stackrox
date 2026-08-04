@@ -44,6 +44,7 @@ const (
 	ResourceKey                     = "resource"
 	RuntimeClassKey                 = "runtimeClass"
 	SeccompProfileTypeKey           = "seccompProfileType"
+	SecurityEventKey                = "securityEvent"
 	ServiceAccountKey               = "serviceAccount"
 	VolumeKey                       = "volume"
 )
@@ -90,6 +91,7 @@ func init() {
 	registerFunc(ResourceKey, resourcePrinter)
 	registerFunc(RuntimeClassKey, runtimeClassPrinter)
 	registerFunc(SeccompProfileTypeKey, seccompProfileTypePrinter)
+	registerFunc(SecurityEventKey, securityEventPrinter)
 	registerFunc(ServiceAccountKey, serviceAccountPrinter)
 	registerFunc(VolumeKey, volumePrinter)
 }
