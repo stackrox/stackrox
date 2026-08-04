@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"maps"
@@ -187,12 +186,10 @@ func decideRetest(userComments, allComments []string, checks, statuses map[strin
 	}
 	allSkipReasons = append(allSkipReasons, jobSkips...)
 
-	retestSkipReason := skipRetestReason(statuses, userComments, checks)
-	if retestSkipReason != nil {
-		allSkipReasons = append(allSkipReasons, skipReason{message: retestSkipReason.Error()})
-	}
+	retestSkipReasons := skipRetestReason(statuses, userComments, checks)
+	allSkipReasons = append(allSkipReasons, retestSkipReasons...)
 
-	newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestSkipReason == nil)
+	newComments, testSkips := commentsToCreate(statuses, jobsToRetest, len(retestSkipReasons) == 0)
 	allSkipReasons = append(allSkipReasons, testSkips...)
 
 	return retestDecision{
@@ -278,9 +275,11 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, []s
 
 const retestComment = "/retest"
 
-// skipRetestReason reports why a "/retest" comment should not be issued.
-// It returns nil when a retest is warranted, and a human-readable reason otherwise.
-func skipRetestReason(statuses map[string]jobState, comments []string, checks map[string]jobState) error {
+// skipRetestReason reports why a PR-level "/retest" comment should not be
+// issued. It returns nil when a retest is warranted, and a single-element
+// skipReason otherwise — a slice, rather than an error, so callers can fold
+// it straight into a skipReason accumulator via append.
+func skipRetestReason(statuses map[string]jobState, comments []string, checks map[string]jobState) []skipReason {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -288,7 +287,7 @@ func skipRetestReason(statuses map[string]jobState, comments []string, checks ma
 		}
 	}
 	if retested > 3 {
-		return fmt.Errorf("PR has already been retested %d times", retested)
+		return []skipReason{{message: fmt.Sprintf("PR has already been retested %d times", retested)}}
 	}
 
 	for name, state := range checks {
@@ -302,5 +301,5 @@ func skipRetestReason(statuses map[string]jobState, comments []string, checks ma
 			return nil
 		}
 	}
-	return errors.New("no failing status or retestable check found")
+	return []skipReason{{message: "no failing status or retestable check found"}}
 }

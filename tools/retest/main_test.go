@@ -361,9 +361,9 @@ func Test_skipRetestReason(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotReason := skipRetestReason(tt.statuses, tt.comments, tt.checks)
 			if tt.wantSkipReasonMsg == "" {
-				assert.NoError(t, gotReason)
+				assert.Nil(t, gotReason)
 			} else {
-				assert.EqualError(t, gotReason, tt.wantSkipReasonMsg)
+				assert.Equal(t, []skipReason{{message: tt.wantSkipReasonMsg}}, gotReason)
 			}
 		})
 	}
