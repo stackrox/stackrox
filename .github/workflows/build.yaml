@@ -1283,11 +1283,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # Cheap, title-substring-only gate - kept intentionally broad (it'll
-    # also match plenty of non-vulnerability "ROX-" titled PRs) since the
-    # real filtering happens inside extract-cve-ids.sh via the JIRA
-    # cross-reference; this only exists to avoid running that lookup at all
-    # on PRs with clearly no CVE-related signal in the title.
+    # Broad pre-filter; extract-cve-ids.sh's JIRA cross-reference does the
+    # real filtering.
     if: >-
       github.event_name == 'pull_request' &&
       !github.event.pull_request.head.repo.fork &&
@@ -1310,20 +1307,14 @@ jobs:
 
       - name: Extract CVE IDs from PR title
         id: extract-cves
-        # continue-on-error: the job-level `if:` above only checks for the
-        # literal substrings "CVE-"/"ROX-", not a well-formed CVE-YYYY-NNNN
-        # id or a ROX ticket that actually resolves to one via JIRA. This
-        # lets that case fall through with an empty `cves` output (checked
-        # by verify-cve-fix-scan/verify-cve-fix below) instead of failing
-        # this job outright.
+        # continue-on-error: the gate above is substring-only; a non-zero
+        # exit here just means no CVE resolved, not a failure.
         continue-on-error: true
         run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
 
   verify-cve-fix-scan:
-    # Shows the root build-tag even for stackrox-operator, whose actual
-    # scanned tag differs (see "Determine image tag to scan" step below):
-    # job-level `name:` can't reference `steps.*.outputs`, only
-    # github/needs/strategy/matrix, so it can't reflect the resolved tag.
+    # job `name:` can't reference `steps.*.outputs`; shows the root tag even
+    # though stackrox-operator scans under a different one (see below).
     name: "CVE scan: ${{ matrix.image }}:${{ needs.define-job-matrix.outputs.build-tag }}"
     runs-on: ubuntu-latest
     needs:
@@ -1333,12 +1324,8 @@ jobs:
       - push-scanner-manifests
       - push-operator-manifests
       - build-and-push-db
-    # Runs only when resolve-cve-ids actually resolved at least one CVE ID
-    # (directly from the title, or via a linked ROX ticket's JIRA
-    # "Vulnerability" record), not merely on raw title substrings. A
-    # resolve-cve-ids job that was itself skipped (no "CVE-"/"ROX-" in the
-    # title at all) implicitly skips this job too, since jobs whose `needs`
-    # includes a skipped job are skipped by default.
+    # Gates on resolve-cve-ids's actual result (a resolved CVE ID), not the
+    # raw title substrings from its own gate.
     if: >-
       github.event_name == 'pull_request' &&
       !github.event.pull_request.head.repo.fork &&
@@ -1368,18 +1355,11 @@ jobs:
 
       - name: Determine image tag to scan
         id: determine-tag
-        # stackrox-operator publishes under a rewritten tag
-        # (operator/Makefile's `tag` target turns the ".x" dev-version
-        # segment into ".0", e.g. 4.12.x-427-gabc -> 4.12.0-427-gabc); every
-        # other image keeps the default build tag unchanged. This resolves
-        # the actual tag to poll for so that leg doesn't hit the
-        # wait-for-image timeout below looking for a tag that was never
-        # pushed.
+        # stackrox-operator's tag differs (operator/Makefile rewrites .x ->
+        # .0); resolving it avoids polling a tag that was never pushed.
         #
-        # continue-on-error: a failure here (e.g. `make -C operator tag`
-        # erroring) degrades into the same "missing scan result" path that
-        # flatten-cve-scan-results.sh already handles below, instead of
-        # hard-failing this matrix leg.
+        # continue-on-error: falls into flatten-cve-scan-results.sh's
+        # "missing scan result" handling instead of hard-failing this leg.
         continue-on-error: true
         env:
           IMAGE: ${{ matrix.image }}
@@ -1394,17 +1374,11 @@ jobs:
       - name: Scan image vulnerabilities
         uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
         id: scan-image
-        # Skip (instead of polling a nonexistent tag for the full
-        # wait-limit below) when tag determination failed - otherwise this
-        # leg would burn up to 30 minutes waiting for an image that was
-        # never going to appear before falling into the same "missing scan
-        # result" degradation path.
+        # Skips a 30-minute wait for a tag that was never determined.
         if: steps.determine-tag.outcome == 'success'
-        # The composite action fails on ANY fixable CRITICAL/IMPORTANT CVE in
-        # the image, not just the CVE(s) this PR is verifying. The scan
-        # result artifact is still produced (uploaded via if: always() below)
-        # and is what verify-cve-fix.sh actually checks, so a red X here must
-        # not fail this job / block the PR on unrelated pre-existing CVEs.
+        # Fails on ANY CVE in the image, not just this PR's target; the
+        # real check is verify-cve-fix.sh against the uploaded artifact, so
+        # this must not block the PR.
         continue-on-error: true
         with:
           image: rhacs-eng/${{ matrix.image }}
@@ -1415,12 +1389,9 @@ jobs:
           central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Upload scan result artifact
-        # Skip (instead of erroring) when the scan step failed before it got
-        # far enough to set result-path (e.g. a wait-for-image timeout) -
-        # continue-on-error above means that failure wouldn't otherwise stop
-        # this step, and actions/upload-artifact hard-errors on an empty
-        # required `path` input. verify-cve-fix's own missing-image check
-        # still catches and reports this case non-blockingly.
+        # Skips when scan-image never set result-path (e.g. a timeout) -
+        # upload-artifact errors on an empty path. verify-cve-fix still
+        # reports this as a missing image.
         if: always() && steps.scan-image.outputs.result-path != ''
         uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -1434,21 +1405,10 @@ jobs:
       - define-job-matrix
       - resolve-cve-ids
       - verify-cve-fix-scan
-    # Runs when resolve-cve-ids ran (result == 'success') AND actually found
-    # a genuine CVE signal (outputs.applicable == 'true') - either the title
-    # itself mentioned "CVE-", or a referenced ROX ticket resolved via JIRA
-    # to a Vulnerability issue - even if that signal still didn't resolve
-    # into a usable CVE ID (e.g. a malformed CVE-YYYY-NNNN, or a
-    # Vulnerability ticket with no CVE ID field set yet): that "signal but
-    # no resolution" case still needs to post the explanatory NOT
-    # APPLICABLE comment below. Deliberately NOT the same as "cves == ''":
-    # most PRs in this repo reference an ordinary ROX-NNNNN ticket that
-    # simply isn't a vulnerability tracker at all, and that expected common
-    # case must stay completely silent rather than post NOT APPLICABLE on
-    # nearly every PR in the repo. If resolve-cve-ids was itself skipped (no
-    # "CVE-"/"ROX-" in the title at all), this job is skipped too - always()
-    # only bypasses the default success-of-needs gate, it doesn't force a
-    # run when a needed job never ran.
+    # Gates on a genuine CVE signal (applicable), not a resolved CVE ID
+    # (cves != ''): a Vulnerability-typed ticket with no CVE ID set yet
+    # must still get the NOT APPLICABLE comment, but an ordinary ROX- PR
+    # must stay silent.
     if: >-
       always() &&
       github.event_name == 'pull_request' &&
@@ -1470,12 +1430,9 @@ jobs:
 
       - name: Download all scan artifacts
         if: needs.resolve-cve-ids.outputs.cves != ''
-        # continue-on-error: a download failure here degrades into the same
-        # "missing scan result" path that flatten-cve-scan-results.sh
-        # already handles below (it'll find nothing to flatten and report
-        # every image as missing), instead of skipping every step after
-        # it - including "Post PR comment" - and hard-failing this job on
-        # an infra hiccup.
+        # continue-on-error: a failure here just means nothing to flatten
+        # below; flatten-cve-scan-results.sh already reports that as
+        # missing images.
         continue-on-error: true
         uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -1485,11 +1442,8 @@ jobs:
       - name: Flatten scan results
         id: flatten
         if: needs.resolve-cve-ids.outputs.cves != ''
-        # continue-on-error: same rationale as "Download all scan
-        # artifacts" above - an unexpected crash here (not just the
-        # anticipated missing-images case the script already handles via
-        # its own exit-0 `infra-failure` output) must not skip "Post PR
-        # comment" or fail this job.
+        # continue-on-error: same as above - a crash here must not skip
+        # the render/comment steps below.
         continue-on-error: true
         env:
           SOURCE_DIR: scan-results
@@ -1499,24 +1453,18 @@ jobs:
 
       - name: Verify CVE fix and render PR comment
         id: verify
-        # always(): this comment is the only feedback this job gives, so it
-        # must render even if "Download all scan artifacts" or "Flatten
-        # scan results" above failed or were skipped, not just when they
-        # succeeded. verify-cve-fix.sh itself handles an empty CVES (no
-        # resolved CVE ID), or an empty/partial scan-results-flat directory
-        # (a flatten crash or missing images), as their own non-blocking
-        # "NOT APPLICABLE"/"COULD NOT RUN" verdicts.
+        # always(): must render even if earlier steps failed - this
+        # comment is the job's only output. verify-cve-fix.sh itself turns
+        # missing CVES/scan-dir input into NOT APPLICABLE / COULD NOT RUN.
         if: always()
         continue-on-error: true
         env:
           SCAN_DIR: scan-results-flat
           MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
-        # verify-cve-fix.sh exits 1 on a FAILED verdict; that's a real
-        # result, not a step failure, so its exit code is captured into the
-        # `exit-code` output instead of failing this step (see "Fail if CVE
-        # still present" below, which acts on it directly). A non-0/1 exit
-        # (e.g. an unhandled bug) falls back to a generic message instead of
-        # posting empty or partial output.
+        # Exit 1 is a real FAILED verdict, not a step failure - captured as
+        # an output for "Fail if CVE still present" below instead of
+        # failing this step. Empty output (a crash) falls back to a
+        # generic message.
         run: |
           set +e
           comment_body="$(.github/workflows/scripts/verify-cve-fix.sh)"
@@ -1529,19 +1477,10 @@ jobs:
           echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
 
       - name: Post PR comment
-        # Updates the same comment in place across re-runs (matched by a
-        # fixed message-id, not by "last comment posted by this identity")
-        # instead of piling up a new comment on every push. This is the
-        # same pattern performance-tests.yml already uses for its own
-        # add-pr-comment step, and deliberately avoids the failure mode of
-        # `gh pr comment --edit-last`: that command would blindly edit
-        # whatever comment this job's identity (the default GITHUB_TOKEN,
-        # i.e. github-actions[bot]) posted most recently on the PR -
-        # including a comment from an unrelated job like
-        # performance-tests.yml's, which posts as that same identity on
-        # the same pull_request events. message-id instead finds (or
-        # creates) only the one comment carrying this specific hidden
-        # marker, so the two features can never clobber each other.
+        # message-id updates the same comment across re-runs instead of
+        # piling up new ones. Unlike `--edit-last`, it can't clobber
+        # performance-tests.yml's comment, which posts as the same bot
+        # identity.
         if: always() && steps.verify.outcome == 'success'
         continue-on-error: true
         uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
