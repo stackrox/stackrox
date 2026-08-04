@@ -363,13 +363,17 @@ ifdef CI
 # In CI, go.mod/go.sum must be committed — not auto-updated.
 # go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
 deps:
-	@true
+	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)"
 else
 deps: $(shell git ls-files '*/go.mod' 'go.mod')
 	@echo "+ $@"
-	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)for gomod in $$(git ls-files '*/go.mod' 'go.mod'); do \
+	$(SILENT)GOMOCK_REFLECT_DIRS=$$(find . -type d -name 'gomock_reflect_*'); \
+	if [ -n "$$GOMOCK_REFLECT_DIRS" ]; then \
+		echo "Found leftover gomock directories. Please remove them and rerun make deps!"; \
+		echo "$$GOMOCK_REFLECT_DIRS"; \
+		exit 1; \
+	fi
+	$(SILENT)for gomod in $^; do \
 		(cd "$$(dirname "$$gomod")" && go mod tidy) || exit 1; \
 	done
 	$(SILENT)touch $@
