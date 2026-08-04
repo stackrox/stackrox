@@ -223,6 +223,120 @@ func (suite *ClusterServiceTestSuite) TestGetClustersWithRetentionInfoMap() {
 	}
 }
 
+func (suite *ClusterServiceTestSuite) TestGetClustersSkewFiltering() {
+	allClusters := []*storage.Cluster{
+		{
+			Id: "matched-1",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED,
+			},
+		},
+		{
+			Id: "matched-2",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED,
+			},
+		},
+		{
+			Id: "compatible-behind",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND,
+			},
+		},
+		{
+			Id: "compatible-ahead",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD,
+			},
+		},
+		{
+			Id: "incompatible-behind",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND,
+			},
+		},
+		{
+			Id: "incompatible-ahead",
+			Status: &storage.ClusterStatus{
+				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD,
+			},
+		},
+	}
+
+	tests := map[string]struct {
+		filterValue string
+		expectedIDs []string
+	}{
+		"filter by matched returns multiple": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED.String(),
+			expectedIDs: []string{"matched-1", "matched-2"},
+		},
+		"filter by compatible behind": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND.String(),
+			expectedIDs: []string{"compatible-behind"},
+		},
+		"filter by compatible ahead": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD.String(),
+			expectedIDs: []string{"compatible-ahead"},
+		},
+		"filter by incompatible behind": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND.String(),
+			expectedIDs: []string{"incompatible-behind"},
+		},
+		"filter by incompatible ahead": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD.String(),
+			expectedIDs: []string{"incompatible-ahead"},
+		},
+		"filter by unknown returns empty": {
+			filterValue: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN.String(),
+			expectedIDs: nil,
+		},
+	}
+
+	for name, tt := range tests {
+		suite.Run(name, func() {
+			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
+			suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(allClusters, nil)
+			suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
+
+			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+
+			query := search.NewQueryBuilder().AddStrings(
+				search.SensorVersionCompatibility, tt.filterValue,
+			).Query()
+
+			results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{Query: query})
+			suite.NoError(err)
+			suite.Require().Len(results.GetClusters(), len(tt.expectedIDs))
+
+			gotIDs := make([]string, len(results.GetClusters()))
+			for i, c := range results.GetClusters() {
+				gotIDs[i] = c.GetId()
+			}
+			suite.ElementsMatch(tt.expectedIDs, gotIDs)
+		})
+	}
+}
+
+func (suite *ClusterServiceTestSuite) TestGetClustersNoSkewFilterReturnsAll() {
+	clusters := []*storage.Cluster{
+		{Id: "cluster-1"},
+		{Id: "cluster-2"},
+	}
+
+	ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
+	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
+	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
+
+	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+
+	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{
+		Query: search.EmptyQuery().String(),
+	})
+	suite.NoError(err)
+	suite.Len(results.GetClusters(), 2)
+}
+
 func daysAgo(days int) time.Time {
 	return time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 }

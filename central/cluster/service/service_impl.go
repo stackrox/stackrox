@@ -20,9 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"google.golang.org/grpc"
 )
@@ -41,6 +43,18 @@ var (
 			v1.ClustersService_DeleteCluster_FullMethodName,
 		},
 	}))
+
+	// skewOptionsMap contains only the SensorVersionCompatibility field. It is
+	// computed at runtime in the datastore layer and has no DB column
+	// (storage/cluster.proto sql:"-"), so it can't be pushed down to the DB.
+	// It is used to split an incoming query into a DB-safe part and a part
+	// that must be evaluated in memory against the already-populated field.
+	skewOptionsMap = search.NewOptionsMap(v1.SearchCategory_CLUSTERS).Add(
+		search.SensorVersionCompatibility,
+		schema.ClustersSchema.OptionsMap.MustGet(search.SensorVersionCompatibility.String()),
+	)
+
+	clusterPredicateFactory = predicate.NewFactory("cluster", (*storage.Cluster)(nil))
 )
 
 // ClusterService is the struct that manages the cluster API
@@ -174,15 +188,39 @@ func (s *serviceImpl) getClusterRetentionInfo(ctx context.Context, cluster *stor
 
 // GetClusters returns the currently defined clusters.
 func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersRequest) (*v1.ClustersList, error) {
-	q, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	fullQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
 	}
 
-	clusters, err := s.datastore.SearchRawClusters(ctx, q)
+	// Split the query: dbQuery contains everything the DB can filter on;
+	// skewQuery contains only the SensorVersionCompatibility field, which
+	// is computed at runtime and has no DB column.
+	dbQuery, _ := search.InverseFilterQueryWithMap(fullQuery, skewOptionsMap)
+	skewQuery, _ := search.FilterQueryWithMap(fullQuery, skewOptionsMap)
+
+	clusters, err := s.datastore.SearchRawClusters(ctx, dbQuery)
 	if err != nil {
 		return nil, err
 	}
+
+	if skewQuery != nil {
+		pred, err := clusterPredicateFactory.GeneratePredicate(skewQuery)
+		if err != nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
+		}
+		var filtered []*storage.Cluster
+		for _, cluster := range clusters {
+			if pred.Matches(cluster) {
+				filtered = append(filtered, cluster)
+			}
+		}
+		clusters = filtered
+	}
+
+	// If we want to add pagination in the future it will have to be done
+	// in memory at this point, after both DB-side and in-memory filters
+	// have been applied.
 
 	clusterIDToRetentionInfoMap, err := s.getClusterIDToRetentionInfoMap(ctx, clusters)
 	if err != nil {
