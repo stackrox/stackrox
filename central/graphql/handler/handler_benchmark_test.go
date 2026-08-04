@@ -207,8 +207,14 @@ func prepareGraphQLCall(
 func consumeResponse(b *testing.B, resp *http.Response) {
 	defer func() { assert.NoError(b, resp.Body.Close()) }()
 	assert.Equal(b, http.StatusOK, resp.StatusCode)
-	_, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.NoError(b, err)
+	var result struct {
+		Errors []json.RawMessage `json:"errors"`
+	}
+	if assert.NoError(b, json.Unmarshal(body, &result)) {
+		assert.Empty(b, result.Errors, "GraphQL response contained errors")
+	}
 }
 
 func getGraphQLBenchmark(
