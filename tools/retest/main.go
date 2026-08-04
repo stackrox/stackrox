@@ -176,6 +176,8 @@ type retestDecision struct {
 // Keeping it pure (no GitHub I/O, no logging) means the whole per-PR
 // decision pipeline can be unit tested with plain data.
 func decideRetest(userComments, allComments []string, checks, statuses map[string]jobState) retestDecision {
+	var allSkipReasons []skipReason
+
 	jobsToRetest, jobSkips, err := jobsToRetestFromComments(userComments, allComments)
 	if err != nil {
 		return retestDecision{
@@ -183,18 +185,19 @@ func decideRetest(userComments, allComments []string, checks, statuses map[strin
 			alreadyReported: slices.Contains(userComments, err.Error()),
 		}
 	}
+	allSkipReasons = append(allSkipReasons, jobSkips...)
 
-	retestReason := skipRetestReason(statuses, userComments, checks)
-	skipped := jobSkips
-	if retestReason != nil {
-		skipped = append(skipped, skipReason{message: retestReason.Error()})
+	retestSkipReason := skipRetestReason(statuses, userComments, checks)
+	if retestSkipReason != nil {
+		allSkipReasons = append(allSkipReasons, skipReason{message: retestSkipReason.Error()})
 	}
-	newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestReason == nil)
-	skipped = append(skipped, testSkips...)
+
+	newComments, testSkips := commentsToCreate(statuses, jobsToRetest, retestSkipReason == nil)
+	allSkipReasons = append(allSkipReasons, testSkips...)
 
 	return retestDecision{
 		jobsToRetest: jobsToRetest,
-		skipped:      skipped,
+		skipped:      allSkipReasons,
 		comment:      strings.Join(newComments, "\n"),
 	}
 }
