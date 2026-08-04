@@ -70,7 +70,10 @@ securedCluster:
   resourceProfile: ci
 EOF
 
-        if pr_has_label test-konflux-images; then
+        if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+            info "Environment contains USE_KONFLUX_IMAGES=true, will be using Konflux-built images for deploying StackRox"
+            patch_yaml "$config_file" ".roxie.konfluxImages = true"
+        elif pr_has_label test-konflux-images; then
             info "PR label 'test-konflux-images' detected, will be using Konflux-built images for deploying StackRox"
             patch_yaml "$config_file" ".roxie.konfluxImages = true"
         fi
