@@ -7,6 +7,7 @@ import (
 	"io"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -444,7 +445,6 @@ func TestVMScraper_NACK(t *testing.T) {
 // gateSender blocks the Nth Send (1-based) until release is closed.
 type gateSender struct {
 	blockAt int
-	entered chan struct{}
 	release chan struct{}
 	mu      sync.Mutex
 	n       int
@@ -458,7 +458,6 @@ func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 	g.sent = append(g.sent, report)
 	g.mu.Unlock()
 	if n == g.blockAt {
-		close(g.entered)
 		<-g.release
 	}
 	return nil
@@ -467,56 +466,51 @@ func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 // TestVMScraper_InFlightSendCanOverwriteNACKReset exercises a known race involving
 // an unusually slow execution of `commitVMState` and a quick NACK from Central.
 func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
-	vmA := makeVM("ns1", "vm-a", 100)
-	vmA.ID = "vm-a-id"
-	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
-	client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}}
-	s := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+	synctest.Test(t, func(t *testing.T) {
+		vmA := makeVM("ns1", "vm-a", 100)
+		vmA.ID = "vm-a-id"
+		store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+		client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}}
+		s := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
 
-	s.pollOnce(t.Context())
-	require.Equal(t, uint32(1), s.vmState["ns1/vm-a"].lastGeneration)
-
-	gate := &gateSender{
-		blockAt: 1,
-		entered: make(chan struct{}),
-		release: make(chan struct{}),
-	}
-	s.sender = gate
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{makeReport(2)}
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
 		s.pollOnce(t.Context())
-	}()
+		require.Equal(t, uint32(1), s.vmState["ns1/vm-a"].lastGeneration)
 
-	select {
-	case <-gate.entered:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for in-flight Send")
-	}
+		gate := &gateSender{
+			blockAt: 1,
+			release: make(chan struct{}),
+		}
+		s.sender = gate
+		client.reset()
+		client.resultQueue = []*vsockclient.GetReportResult{makeReport(2)}
 
-	require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{
-			SensorAck: &central.SensorACK{
-				MessageType: central.SensorACK_VM_INDEX_REPORT,
-				Action:      central.SensorACK_NACK,
-				ResourceId:  "vm-a-id:100",
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			s.pollOnce(t.Context())
+		}()
+
+		// Block until the scrape goroutine is durably blocked inside Send,
+		// i.e. the report has been handed off but not yet committed.
+		synctest.Wait()
+
+		require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+			Msg: &central.MsgToSensor_SensorAck{
+				SensorAck: &central.SensorACK{
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					Action:      central.SensorACK_NACK,
+					ResourceId:  "vm-a-id:100",
+				},
 			},
-		},
-	}))
-	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
-		"NACK applies immediately while the send it targets is still in flight")
+		}))
+		assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
+			"NACK applies immediately while the send it targets is still in flight")
 
-	close(gate.release)
-	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for pollOnce to finish")
-	}
-	assert.Equal(t, uint32(2), s.vmState["ns1/vm-a"].lastGeneration,
-		"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
+		close(gate.release)
+		<-done
+		assert.Equal(t, uint32(2), s.vmState["ns1/vm-a"].lastGeneration,
+			"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
+	})
 }
 
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
