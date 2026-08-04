@@ -1,14 +1,9 @@
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { riskWorkloadsBasePath } from 'routePaths';
 
-import type { AdministrationEvent } from 'services/AdministrationEventsService';
-
 import AdministrationEventDescription from './AdministrationEventDescription';
 
-function makeEvent(
-    resource: AdministrationEvent['resource'],
-    overrides?: Partial<AdministrationEvent>
-): AdministrationEvent {
+function makeEvent(resource, overrides) {
     return {
         id: 'test-event-id',
         type: 'ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE',
