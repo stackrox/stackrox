@@ -19,10 +19,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dblock"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
@@ -81,9 +81,9 @@ type scheduler struct {
 	// NOTE: Lock only one mutex at a time. Do not lock another mutex when one is already held.
 	//      If you need to lock another mutex, you must free the locked one first.
 
-	cron                 *cron.Cron
-	concurrencySema      *semaphore.Weighted
-	advisoryLockRelease  func()
+	cron                *cron.Cron
+	concurrencySema     *semaphore.Weighted
+	advisoryLockRelease func()
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
