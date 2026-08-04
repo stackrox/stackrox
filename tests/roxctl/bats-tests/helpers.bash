@@ -57,7 +57,7 @@ roxctl-development-cmd() {
     _uname="$(luname)"
     _goarch="$(go env GOARCH)"
     mkdir -p "$tmp_roxctl"
-    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='' 2>&3
+    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='' >&3 2>&3
     mv "bin/${_uname}_${_goarch}/roxctl" "${tmp_roxctl}/roxctl-dev"
   fi
   echo "${tmp_roxctl}/roxctl-dev"
@@ -74,7 +74,7 @@ roxctl-release-cmd() {
     _uname="$(luname)"
     _goarch="$(go env GOARCH)"
     mkdir -p "$tmp_roxctl"
-    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='release' 2>&3
+    make -s "roxctl_${_uname}-${_goarch}" GOTAGS='release' >&3 2>&3
     mv "bin/${_uname}_${_goarch}/roxctl" "${tmp_roxctl}/roxctl-release"
   fi
   echo "${tmp_roxctl}/roxctl-release"
