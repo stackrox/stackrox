@@ -363,7 +363,7 @@ ifdef CI
 # In CI, go.mod/go.sum must be committed — not auto-updated.
 # go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
 deps:
-	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)"
+	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)" >&2
 else
 deps: $(shell git ls-files '*/go.mod' 'go.mod')
 	@echo "+ $@"
