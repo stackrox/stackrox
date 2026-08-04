@@ -64,6 +64,9 @@ func ClassifyVersion(self, remote productstreams.XYVersion) Compatibility {
 // including self. The list contains 2*n+1 elements when all steps succeed,
 // or fewer if the backward walk cannot go far enough.
 func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstreams.XYVersion {
+	if n < 0 {
+		n = 0
+	}
 	backward := make([]productstreams.XYVersion, 0, n)
 	cur := self
 	for range n {
@@ -94,6 +97,9 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 // Classify determines the compatibility of remote relative to self with
 // a custom skew tolerance n.
 func Classify(self, remote productstreams.XYVersion, n int) Compatibility {
+	if n < 0 {
+		n = 0
+	}
 	cmp := self.Compare(remote)
 	if cmp == 0 {
 		return Matched

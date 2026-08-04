@@ -91,6 +91,15 @@ func TestCompatibleVersionRange(t *testing.T) {
 				xy(5, 2), xy(5, 3), xy(5, 4),
 			},
 		},
+		"past bump point 4.12": {
+			self: xy(4, 12),
+			n:    3,
+			want: []productstreams.XYVersion{
+				xy(4, 9), xy(4, 10), xy(4, 11),
+				xy(4, 12),
+				xy(5, 0), xy(5, 1), xy(5, 2),
+			},
+		},
 		"truncated backward near earliest known": {
 			self: xy(3, 73),
 			n:    3,
@@ -103,6 +112,11 @@ func TestCompatibleVersionRange(t *testing.T) {
 		"n=0 returns only self": {
 			self: xy(4, 5),
 			n:    0,
+			want: []productstreams.XYVersion{xy(4, 5)},
+		},
+		"negative n returns only self": {
+			self: xy(4, 5),
+			n:    -1,
 			want: []productstreams.XYVersion{xy(4, 5)},
 		},
 		"n=1": {
@@ -217,6 +231,10 @@ func TestClassify(t *testing.T) {
 		},
 		"custom n=1 incompatible": {
 			self: xy(4, 5), remote: xy(4, 7), n: 1,
+			want: IncompatibleAhead,
+		},
+		"negative n treats any non-self as incompatible": {
+			self: xy(4, 5), remote: xy(4, 6), n: -1,
 			want: IncompatibleAhead,
 		},
 	}

@@ -165,7 +165,7 @@ func OverrideBumpsForTesting(t interface {
 // (e.g., {4,11} -> {5,0}). Otherwise, it is simply {v.X, v.Y+1}.
 func GetNextYStream(v XYVersion) XYVersion {
 	for _, b := range parsedBumps {
-		if b.From == v {
+		if v.X == b.From.X && v.Y >= b.From.Y {
 			return b.To
 		}
 	}
