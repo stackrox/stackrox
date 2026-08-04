@@ -112,6 +112,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return nil
 	}
 
+	// SECURITY_EVENT alerts are deployment-scoped and handled the same as deployment events.
+
 	// Treat all other alerts, even if they don't have a listed deployment as a "non-resource" alert for backwards compatibility
 	if err := s.lifecycleManager.HandleDeploymentAlerts(alertResults.GetDeploymentId(), alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
 		return errors.Wrap(err, "error handling alerts")

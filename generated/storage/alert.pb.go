@@ -198,6 +198,7 @@ const (
 	Alert_Violation_NETWORK_FLOW   Alert_Violation_Type = 2
 	Alert_Violation_NETWORK_POLICY Alert_Violation_Type = 3
 	Alert_Violation_FILE_ACCESS    Alert_Violation_Type = 4
+	Alert_Violation_SECURITY_EVENT Alert_Violation_Type = 5
 )
 
 // Enum value maps for Alert_Violation_Type.
@@ -208,6 +209,7 @@ var (
 		2: "NETWORK_FLOW",
 		3: "NETWORK_POLICY",
 		4: "FILE_ACCESS",
+		5: "SECURITY_EVENT",
 	}
 	Alert_Violation_Type_value = map[string]int32{
 		"GENERIC":        0,
@@ -215,6 +217,7 @@ var (
 		"NETWORK_FLOW":   2,
 		"NETWORK_POLICY": 3,
 		"FILE_ACCESS":    4,
+		"SECURITY_EVENT": 5,
 	}
 )
 
@@ -1953,7 +1956,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x96\x1c\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xaa\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -2034,7 +2037,7 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x1a\xad\b\n" +
+	"\fcluster_name\x18\x04 \x01(\tR\vclusterName\x1a\xc1\b\n" +
 	"\tViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12P\n" +
 	"\x0fkey_value_attrs\x18\x04 \x01(\v2&.storage.Alert.Violation.KeyValueAttrsH\x00R\rkeyValueAttrs\x12V\n" +
@@ -2058,13 +2061,14 @@ const file_storage_alert_proto_rawDesc = "" +
 	"entityType\x121\n" +
 	"\x14deployment_namespace\x18\x03 \x01(\tR\x13deploymentNamespace\x12'\n" +
 	"\x0fdeployment_type\x18\x05 \x01(\tR\x0edeploymentType\x12\x12\n" +
-	"\x04port\x18\x06 \x01(\x05R\x04port\"Y\n" +
+	"\x04port\x18\x06 \x01(\x05R\x04port\"m\n" +
 	"\x04Type\x12\v\n" +
 	"\aGENERIC\x10\x00\x12\r\n" +
 	"\tK8S_EVENT\x10\x01\x12\x10\n" +
 	"\fNETWORK_FLOW\x10\x02\x12\x12\n" +
 	"\x0eNETWORK_POLICY\x10\x03\x12\x0f\n" +
-	"\vFILE_ACCESS\x10\x04B\x13\n" +
+	"\vFILE_ACCESS\x10\x04\x12\x12\n" +
+	"\x0eSECURITY_EVENT\x10\x05B\x13\n" +
 	"\x11MessageAttributesJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\x1ae\n" +
 	"\x10ProcessViolation\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x127\n" +

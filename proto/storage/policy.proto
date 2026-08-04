@@ -93,6 +93,7 @@ enum EventSource {
   DEPLOYMENT_EVENT = 1;
   AUDIT_LOG_EVENT = 2;
   NODE_EVENT = 3;
+  SECURITY_EVENT = 4;
 }
 
 message PolicySection {

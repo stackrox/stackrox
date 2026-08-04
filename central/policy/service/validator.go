@@ -192,6 +192,10 @@ func (s *policyValidator) validateEventSource(policy *storage.Policy) error {
 		return err
 	}
 
+	if err := s.validateSecurityEventPolicy(policy); err != nil {
+		return err
+	}
+
 	// TODO(@khushboo): ROX-7252: Modify this validation once migration to account for new policy field event source is in
 	return nil
 }
@@ -453,6 +457,10 @@ func (s *policyValidator) isNodeEventPolicy(policy *storage.Policy) bool {
 	return policy.GetEventSource() == storage.EventSource_NODE_EVENT
 }
 
+func (s *policyValidator) isSecurityEventPolicy(policy *storage.Policy) bool {
+	return policy.GetEventSource() == storage.EventSource_SECURITY_EVENT
+}
+
 func (s *policyValidator) validateEnforcement(policy *storage.Policy) error {
 	if len(policy.GetEnforcementActions()) > 0 {
 		for _, section := range policy.GetPolicySections() {
@@ -494,6 +502,22 @@ func (s *policyValidator) validateNodeEventPolicy(policy *storage.Policy) error 
 	return nil
 }
 
+func (s *policyValidator) validateSecurityEventPolicy(policy *storage.Policy) error {
+	if !s.isSecurityEventPolicy(policy) {
+		return nil
+	}
+
+	if !features.PolicyReports.Enabled() {
+		return fmt.Errorf("%s is disabled, Security event policies are unavailable", features.PolicyReports.EnvVar())
+	}
+
+	if len(policy.GetEnforcementActions()) != 0 {
+		return errors.New("enforcement actions are not applicable for security event policies")
+	}
+
+	return nil
+}
+
 func (s *policyValidator) eventSourceError() error {
 	eventSources := []string{
 		"deployment", "audit event",
@@ -501,6 +525,10 @@ func (s *policyValidator) eventSourceError() error {
 
 	if features.SensitiveFileActivity.Enabled() {
 		eventSources = append(eventSources, "node")
+	}
+
+	if features.PolicyReports.Enabled() {
+		eventSources = append(eventSources, "security event")
 	}
 
 	return fmt.Errorf("event source must be %s for runtime policies", strings.Join(eventSources, " or "))

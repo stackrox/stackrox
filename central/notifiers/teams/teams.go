@@ -201,7 +201,7 @@ func (t *teams) getViolationSection(alert *storage.Alert) (section, error) {
 			text := fmt.Sprintf("Message : %s", v.GetMessage())
 			facts = append(facts, fact{Name: "Description", Value: text})
 		}
-		if v.GetType() == storage.Alert_Violation_K8S_EVENT {
+		if v.GetType() == storage.Alert_Violation_K8S_EVENT || v.GetType() == storage.Alert_Violation_SECURITY_EVENT {
 			for _, attr := range v.GetKeyValueAttrs().GetAttrs() {
 				facts = append(facts, fact{Name: attr.GetKey(), Value: attr.GetValue()})
 			}

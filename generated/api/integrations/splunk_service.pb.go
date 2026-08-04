@@ -30,12 +30,13 @@ const (
 type SplunkViolation_ViolationInfo_ViolationType int32
 
 const (
-	SplunkViolation_ViolationInfo_UNKNOWN       SplunkViolation_ViolationInfo_ViolationType = 0
-	SplunkViolation_ViolationInfo_GENERIC       SplunkViolation_ViolationInfo_ViolationType = 1
-	SplunkViolation_ViolationInfo_K8S_EVENT     SplunkViolation_ViolationInfo_ViolationType = 2
-	SplunkViolation_ViolationInfo_PROCESS_EVENT SplunkViolation_ViolationInfo_ViolationType = 3
-	SplunkViolation_ViolationInfo_NETWORK_FLOW  SplunkViolation_ViolationInfo_ViolationType = 4
-	SplunkViolation_ViolationInfo_FILE_ACCESS   SplunkViolation_ViolationInfo_ViolationType = 5
+	SplunkViolation_ViolationInfo_UNKNOWN        SplunkViolation_ViolationInfo_ViolationType = 0
+	SplunkViolation_ViolationInfo_GENERIC        SplunkViolation_ViolationInfo_ViolationType = 1
+	SplunkViolation_ViolationInfo_K8S_EVENT      SplunkViolation_ViolationInfo_ViolationType = 2
+	SplunkViolation_ViolationInfo_PROCESS_EVENT  SplunkViolation_ViolationInfo_ViolationType = 3
+	SplunkViolation_ViolationInfo_NETWORK_FLOW   SplunkViolation_ViolationInfo_ViolationType = 4
+	SplunkViolation_ViolationInfo_FILE_ACCESS    SplunkViolation_ViolationInfo_ViolationType = 5
+	SplunkViolation_ViolationInfo_SECURITY_EVENT SplunkViolation_ViolationInfo_ViolationType = 6
 )
 
 // Enum value maps for SplunkViolation_ViolationInfo_ViolationType.
@@ -47,14 +48,16 @@ var (
 		3: "PROCESS_EVENT",
 		4: "NETWORK_FLOW",
 		5: "FILE_ACCESS",
+		6: "SECURITY_EVENT",
 	}
 	SplunkViolation_ViolationInfo_ViolationType_value = map[string]int32{
-		"UNKNOWN":       0,
-		"GENERIC":       1,
-		"K8S_EVENT":     2,
-		"PROCESS_EVENT": 3,
-		"NETWORK_FLOW":  4,
-		"FILE_ACCESS":   5,
+		"UNKNOWN":        0,
+		"GENERIC":        1,
+		"K8S_EVENT":      2,
+		"PROCESS_EVENT":  3,
+		"NETWORK_FLOW":   4,
+		"FILE_ACCESS":    5,
+		"SECURITY_EVENT": 6,
 	}
 )
 
@@ -1030,7 +1033,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\n" +
 	"violations\x18\x01 \x03(\v2\x1d.integrations.SplunkViolationR\n" +
 	"violations\x12%\n" +
-	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\x9a\x1f\n" +
+	"\x0enew_checkpoint\x18\x06 \x01(\tR\rnewCheckpoint\"\xaf\x1f\n" +
 	"\x0fSplunkViolation\x12R\n" +
 	"\x0eviolation_info\x18\x01 \x01(\v2+.integrations.SplunkViolation.ViolationInfoR\rviolationInfo\x12F\n" +
 	"\n" +
@@ -1042,7 +1045,7 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\vpolicy_info\x18\x05 \x01(\v2(.integrations.SplunkViolation.PolicyInfoR\n" +
 	"policyInfo\x12T\n" +
 	"\x11network_flow_info\x18\x06 \x01(\v2(.storage.Alert.Violation.NetworkFlowInfoR\x0fnetworkFlowInfo\x12V\n" +
-	"\x10file_access_info\x18\a \x01(\v2,.integrations.SplunkViolation.FileAccessInfoR\x0efileAccessInfo\x1a\xb3\x05\n" +
+	"\x10file_access_info\x18\a \x01(\v2,.integrations.SplunkViolation.FileAccessInfoR\x0efileAccessInfo\x1a\xc8\x05\n" +
 	"\rViolationInfo\x12!\n" +
 	"\fviolation_id\x18\x01 \x01(\tR\vviolationId\x12+\n" +
 	"\x11violation_message\x18\x02 \x01(\tR\x10violationMessage\x12u\n" +
@@ -1053,14 +1056,15 @@ const file_api_integrations_splunk_service_proto_rawDesc = "" +
 	"\apod_uid\x18g \x01(\tR\x06podUid\x12%\n" +
 	"\x0econtainer_name\x18h \x01(\tR\rcontainerName\x12L\n" +
 	"\x14container_start_time\x18i \x01(\v2\x1a.google.protobuf.TimestampR\x12containerStartTime\x12!\n" +
-	"\fcontainer_id\x18j \x01(\tR\vcontainerId\"n\n" +
+	"\fcontainer_id\x18j \x01(\tR\vcontainerId\"\x82\x01\n" +
 	"\rViolationType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aGENERIC\x10\x01\x12\r\n" +
 	"\tK8S_EVENT\x10\x02\x12\x11\n" +
 	"\rPROCESS_EVENT\x10\x03\x12\x10\n" +
 	"\fNETWORK_FLOW\x10\x04\x12\x0f\n" +
-	"\vFILE_ACCESS\x10\x05\x1a\xbc\x01\n" +
+	"\vFILE_ACCESS\x10\x05\x12\x12\n" +
+	"\x0eSECURITY_EVENT\x10\x06\x1a\xbc\x01\n" +
 	"\tAlertInfo\x12\x19\n" +
 	"\balert_id\x18\x01 \x01(\tR\aalertId\x12@\n" +
 	"\x0flifecycle_stage\x18\x02 \x01(\x0e2\x17.storage.LifecycleStageR\x0elifecycleStage\x12L\n" +

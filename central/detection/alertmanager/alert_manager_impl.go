@@ -249,6 +249,10 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_NETWORK_FLOW)
 }
 
+func mergeSecurityEventViolations(old, new *storage.Alert) bool {
+	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_SECURITY_EVENT)
+}
+
 func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
 	// Extract FILE_ACCESS violations from both alerts
 	newViolations := sliceutils.Filter(newAlert.GetViolations(), func(v *storage.Alert_Violation) bool {
@@ -306,7 +310,8 @@ func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
 	newAlertHasNewNetworkFlowViolations := mergeNetworkFlowViolations(old, newAlert)
 	newAlertHasNewFileAccessViolations := mergeFileAccessViolations(old, newAlert)
-	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations || newAlertHasNewFileAccessViolations
+	newAlertHasNewSecurityEventViolations := mergeSecurityEventViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations || newAlertHasNewFileAccessViolations || newAlertHasNewSecurityEventViolations
 }
 
 // Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
