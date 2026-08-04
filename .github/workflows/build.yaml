@@ -1312,7 +1312,7 @@ jobs:
         continue-on-error: true
         run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
 
-  verify-cve-fix-scan:
+  scan-cve-fix:
     # job `name:` can't reference `steps.*.outputs`; shows the root tag even
     # though stackrox-operator scans under a different one (see below).
     name: "CVE scan: ${{ matrix.image }}:${{ needs.define-job-matrix.outputs.build-tag }}"
@@ -1404,7 +1404,7 @@ jobs:
     needs:
       - define-job-matrix
       - resolve-cve-ids
-      - verify-cve-fix-scan
+      - scan-cve-fix
     # Gates on a genuine CVE signal (applicable), not a resolved CVE ID
     # (cves != ''): a Vulnerability-typed ticket with no CVE ID set yet
     # must still get the NOT APPLICABLE comment, but an ordinary ROX- PR
