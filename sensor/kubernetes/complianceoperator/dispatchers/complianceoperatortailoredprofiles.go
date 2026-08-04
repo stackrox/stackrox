@@ -65,14 +65,27 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	}
 
 	// The compliance operator sets ComplianceScan.Spec.Profile to the tailored profile's
-	// k8s name (not its XCCDF Status.ID) when the tailored profile contains custom rules
-	// (annotation compliance.openshift.io/tailored-profile-contains-custom-rules=true, see
-	// https://github.com/ComplianceAsCode/compliance-operator/blob/197c942793f0f0ef81ca39e4e9082271218b8b42/pkg/controller/scansettingbinding/scansettingbinding_controller.go#L555-L563
-	// for details). We must use the same value as ProfileId so that BuildProfileRefID
-	// produces matching UUIDs on both the profile and the scan sides.
-	profileID := tailoredProfile.Status.ID
-	if tailoredProfile.GetAnnotations()[v1alpha1.CustomRuleProfileAnnotation] == "true" {
+	// k8s name (not its XCCDF Status.ID) for any CEL-based tailored profile
+	// (annotation compliance.openshift.io/scanner-type=CEL). This covers:
+	//   - TPs with CustomRules (also have CustomRuleProfileAnnotation=true)
+	//   - TPs with CEL-typed rules but no CustomRules (ScannerTypeAnnotation only)
+	//   - TPs extending a CEL base profile (inherit ScannerTypeAnnotation from base)
+	// See https://github.com/ComplianceAsCode/compliance-operator/pull/19214 for the
+	// original CustomRuleProfileAnnotation-based fix and the PR that introduced the
+	// broader ScannerTypeAnnotation check in CO's scansettingbinding controller.
+	// We must use the same value as ProfileId so that BuildProfileRefID produces
+	// matching UUIDs on both the profile and the scan sides.
+	var profileID string
+	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; scannerType {
+	case string(v1alpha1.ScannerTypeCEL):
 		profileID = tailoredProfile.GetName()
+	case string(v1alpha1.ScannerTypeOpenSCAP), "":
+		profileID = tailoredProfile.Status.ID
+	default:
+		profileID = tailoredProfile.Status.ID
+		log.Warnf("Tailored profile %s has unrecognised scanner-type annotation %q: using XCCDF ID %q as ProfileId; "+
+			"if compliance coverage shows 0 results, this scanner type may need handling here",
+			tailoredProfile.GetName(), scannerType, profileID)
 	}
 
 	protoProfile := &storage.ComplianceOperatorProfile{

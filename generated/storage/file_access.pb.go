@@ -144,6 +144,8 @@ const (
 	FileAccess_OWNERSHIP_CHANGE  FileAccess_Operation = 4
 	FileAccess_OPEN              FileAccess_Operation = 5
 	FileAccess_ACL_CHANGE        FileAccess_Operation = 6
+	FileAccess_XATTR_SET         FileAccess_Operation = 7
+	FileAccess_XATTR_REMOVE      FileAccess_Operation = 8
 )
 
 // Enum value maps for FileAccess_Operation.
@@ -156,6 +158,8 @@ var (
 		4: "OWNERSHIP_CHANGE",
 		5: "OPEN",
 		6: "ACL_CHANGE",
+		7: "XATTR_SET",
+		8: "XATTR_REMOVE",
 	}
 	FileAccess_Operation_value = map[string]int32{
 		"CREATE":            0,
@@ -165,6 +169,8 @@ var (
 		"OWNERSHIP_CHANGE":  4,
 		"OPEN":              5,
 		"ACL_CHANGE":        6,
+		"XATTR_SET":         7,
+		"XATTR_REMOVE":      8,
 	}
 )
 
@@ -363,8 +369,10 @@ type FileAccess_FileMetadata struct {
 	Username string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
 	Group    string                 `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
 	// ACL-specific fields, populated only for ACL_CHANGE operations.
-	AclType       AclType     `protobuf:"varint,6,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
-	AclEntries    []*AclEntry `protobuf:"bytes,7,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
+	AclType    AclType     `protobuf:"varint,6,opt,name=acl_type,json=aclType,proto3,enum=storage.AclType" json:"acl_type,omitempty"`
+	AclEntries []*AclEntry `protobuf:"bytes,7,rep,name=acl_entries,json=aclEntries,proto3" json:"acl_entries,omitempty"`
+	// The extended attribute name, populated for XATTR_SET and XATTR_REMOVE operations.
+	XattrName     string `protobuf:"bytes,8,opt,name=xattr_name,json=xattrName,proto3" json:"xattr_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -446,6 +454,13 @@ func (x *FileAccess_FileMetadata) GetAclEntries() []*AclEntry {
 		return x.AclEntries
 	}
 	return nil
+}
+
+func (x *FileAccess_FileMetadata) GetXattrName() string {
+	if x != nil {
+		return x.XattrName
+	}
+	return ""
 }
 
 type FileAccess_File struct {
@@ -532,7 +547,7 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x11ACL_TAG_GROUP_OBJ\x10\x03\x12\x11\n" +
 	"\rACL_TAG_GROUP\x10\x04\x12\x10\n" +
 	"\fACL_TAG_MASK\x10\x05\x12\x11\n" +
-	"\rACL_TAG_OTHER\x10\x06\"\x8d\x06\n" +
+	"\rACL_TAG_OTHER\x10\x06\"\xce\x06\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
@@ -540,7 +555,7 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x05moved\x18\x03 \x01(\v2\x18.storage.FileAccess.FileR\x05moved\x128\n" +
 	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x123\n" +
 	"\aprocess\x18\x05 \x01(\v2\x19.storage.ProcessIndicatorR\aprocess\x12\x1a\n" +
-	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a\xd9\x01\n" +
+	"\bhostname\x18\x06 \x01(\tR\bhostname\x1a\xf8\x01\n" +
 	"\fFileMetadata\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\rR\x03uid\x12\x10\n" +
 	"\x03gid\x18\x02 \x01(\rR\x03gid\x12\x12\n" +
@@ -549,12 +564,14 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x05group\x18\x05 \x01(\tR\x05group\x12+\n" +
 	"\bacl_type\x18\x06 \x01(\x0e2\x10.storage.AclTypeR\aaclType\x122\n" +
 	"\vacl_entries\x18\a \x03(\v2\x11.storage.AclEntryR\n" +
-	"aclEntries\x1a\x84\x01\n" +
+	"aclEntries\x12\x1d\n" +
+	"\n" +
+	"xattr_name\x18\b \x01(\tR\txattrName\x1a\x84\x01\n" +
 	"\x04File\x12%\n" +
 	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
 	"\vactual_path\x18\x02 \x01(\tR\n" +
 	"actualPath\x124\n" +
-	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"v\n" +
+	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"\x97\x01\n" +
 	"\tOperation\x12\n" +
 	"\n" +
 	"\x06CREATE\x10\x00\x12\n" +
@@ -566,7 +583,9 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x10OWNERSHIP_CHANGE\x10\x04\x12\b\n" +
 	"\x04OPEN\x10\x05\x12\x0e\n" +
 	"\n" +
-	"ACL_CHANGE\x10\x06*N\n" +
+	"ACL_CHANGE\x10\x06\x12\r\n" +
+	"\tXATTR_SET\x10\a\x12\x10\n" +
+	"\fXATTR_REMOVE\x10\b*N\n" +
 	"\aAclType\x12\x18\n" +
 	"\x14ACL_TYPE_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fACL_TYPE_ACCESS\x10\x01\x12\x14\n" +

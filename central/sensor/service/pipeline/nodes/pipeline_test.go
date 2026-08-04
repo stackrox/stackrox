@@ -10,8 +10,10 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -91,6 +93,27 @@ func Test_pipelineImpl_Run(t *testing.T) {
 						DoAndReturn(func(node *storage.Node) error {
 							assert.Equal(t, node.GetClusterName(), "test cluster name")
 							assert.Equal(t, node.GetClusterId(), a.clusterID)
+							return nil
+						}).Times(1),
+				)
+			},
+		},
+		{
+			name: "when LegacyScanner is disabled and node is non-RHCOS then set UNSUPPORTED note",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				testutils.MustUpdateFeature(t, features.LegacyScanner, false)
+				a.msg = createMsg("Ubuntu 22.04.3 LTS")
+				a.clusterID = "test cluster id"
+				gomock.InOrder(
+					m.clusterStore.EXPECT().
+						GetClusterName(gomock.Any(), gomock.Eq(a.clusterID)).
+						Times(1).
+						Return("test cluster name", true, nil),
+					m.nodeDatastore.EXPECT().
+						UpsertNode(gomock.Any(), gomock.Any()).
+						DoAndReturn(func(_ context.Context, node *storage.Node) error {
+							assert.Contains(t, node.GetScan().GetNotes(), storage.NodeScan_UNSUPPORTED)
+							assert.NotNil(t, node.GetScan().GetScanTime())
 							return nil
 						}).Times(1),
 				)

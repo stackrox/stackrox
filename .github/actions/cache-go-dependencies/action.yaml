@@ -129,28 +129,21 @@ runs:
         # blob hash instead: same content always hashes to the same mtime
         # (cache hit), different content to a different one (correctly
         # invalidates). Reads the git index (git ls-files -s), so no
-        # history walk is needed -- works on any checkout depth. (An
-        # earlier version used each file's actual last-commit timestamp
-        # instead, which is more self-documenting, but needs full commit
-        # history: a shallow checkout has no parent for its boundary
-        # commit, so an unshallow is required, and even a blobless one
-        # still has to lazily fetch a tree per historical commit to
-        # compute the diff -- confirmed to take 45+ seconds and counting
-        # against this repo's ~23,600-commit history, so it was dropped
-        # rather than chase a further fix.)
+        # history walk is needed -- works on any checkout depth.
         #
         # Spreads the hash across one year of seconds from 2001-01-01 --
-        # 31,536,000 distinct values. Adversarial stress-testing
-        # (989,910-trial single-byte mutation sweep of a real file,
-        # 500,000 random same-size substitutions) found zero collisions at
-        # this size, and mining this repo's 53 most same-size-edit-prone
-        # files' full history (up to 114 commits each) found zero actual
-        # self-collisions.
+        # 31,536,000 distinct values. A stale hit needs BOTH an unchanged
+        # size (filename is fixed -- it's the same file -- already ruling
+        # out most edits) AND the new content's blob hash landing in the
+        # same 1-in-31.5M slot as the old one. No real same-size content
+        # change in this repo's history has ever landed in the same slot,
+        # including the motivating golang-jwt v4->v5 change itself (same
+        # length, different slot).
         #
         # Symlinks (mode 120000) and directories have no usable blob hash
         # for this: a symlink's blob hash is its target path string, not
         # file content, and utime() on a symlink path dereferences to the
-        # target anyway, so both get the old fixed constant instead -- set
+        # target anyway, so both get a fixed constant instead -- set
         # first, so a symlink that happens to point at a tracked regular
         # file doesn't clobber that file's content-derived mtime set
         # afterward.

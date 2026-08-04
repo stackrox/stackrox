@@ -99,7 +99,7 @@ func TestCodec(t *testing.T) {
 
 	// create a big message that will be above (>)
 	// buffer pooling threshold
-	for i := 0; i < 1<<10; i++ {
+	for i := range 1 << 10 {
 		request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
 	}
 	_, err = svc.SuppressCVEs(context.Background(), &request)
@@ -128,7 +128,7 @@ func BenchmarkProtoUnmarshal(b *testing.B) {
 	})
 
 	b.Run("big", func(b *testing.B) {
-		for i := 0; i < 1<<10; i++ {
+		for i := range 1 << 10 {
 			request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
 		}
 		b.ResetTimer()

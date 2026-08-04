@@ -1,7 +1,9 @@
 import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
-import type { ScanComponent } from 'types/scanComponent.proto';
+import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
+import { applyRegexSearchModifiers } from 'utils/searchUtils';
+
 import { buildNestedRawQueryParams } from './ComplianceCommon';
 
 // Legacy API (v2/virtualmachines)
@@ -136,6 +138,90 @@ export type ListVMCVEAffectedVMsResponse = {
     totalCount: number;
 };
 
+export type VMCVEByVMRow = {
+    cve: string;
+    severity: VulnerabilitySeverity;
+    isFixable: boolean;
+    cvss: number;
+    nvdCvss: number;
+    epssProbability: number;
+    affectedComponentCount: number;
+    publishedOn?: string;
+    summary: string;
+    link: string;
+    advisory?: { name: string; link: string };
+};
+
+export type ListVMCVEsByVMResponse = {
+    cves: VMCVEByVMRow[];
+    totalCount: number;
+};
+
+export type VMComponentScanStatus =
+    | 'NOT_SCANNED'
+    | 'SCAN_PENDING'
+    | 'CPE_MISSING'
+    | 'REPO_UNKNOWN'
+    | 'SCANNED';
+
+export type VMComponentRow = {
+    id: string;
+    name: string;
+    version: string;
+    source: SourceType;
+    scanStatus: VMComponentScanStatus;
+    lastScanned?: string;
+    cveCount: number;
+};
+
+export type ListVMComponentsResponse = {
+    components: VMComponentRow[];
+    totalCount: number;
+};
+
+export type VirtualMachineV2State = 'VM_STATE_UNKNOWN' | 'VM_STATE_STOPPED' | 'VM_STATE_RUNNING';
+
+export type VMScanNote =
+    | 'VM_SCAN_NOTE_UNSET'
+    | 'VM_SCAN_NOTE_OS_UNKNOWN'
+    | 'VM_SCAN_NOTE_OS_UNSUPPORTED';
+
+export type VMNote =
+    | 'VM_NOTE_MISSING_METADATA'
+    | 'VM_NOTE_MISSING_SCAN_DATA'
+    | 'VM_NOTE_MISSING_SIGNATURE'
+    | 'VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA'
+    | 'VM_NOTE_MISSING_SCANNER'
+    | 'VM_NOTE_SCAN_FAILED';
+
+export type AgentStatus = 'AGENT_STATUS_UNKNOWN' | 'AGENT_STATUS_ACTIVE';
+
+export type VMScanInfo = {
+    scanId: string;
+    scanOs: string;
+    scanTime?: string;
+    topCvss: number;
+    scanNotes: VMScanNote[];
+};
+
+export type VMDetail = {
+    id: string;
+    name: string;
+    namespace: string;
+    clusterId: string;
+    clusterName: string;
+    guestOs: string;
+    state: VirtualMachineV2State;
+    lastUpdated?: string;
+    facts: Record<string, string>;
+    annotations: Record<string, string>;
+    labels: Record<string, string>;
+    vsockCid: number;
+    notes: VMNote[];
+    latestScan?: VMScanInfo;
+    agentStatus: AgentStatus;
+};
+
 export function listVMs({
     sortOption,
     page,
@@ -169,4 +255,38 @@ export function listVMCVEAffectedVMs(
     return axios
         .get<ListVMCVEAffectedVMsResponse>(`/v2/virtualmachines/cves/${cveId}/vms?${params}`)
         .then((response) => response.data);
+}
+
+export function listVMCVEsByVM(
+    vmId: string,
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
+): Promise<ListVMCVEsByVMResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
+    return axios
+        .get<ListVMCVEsByVMResponse>(`/v2/virtualmachines/${vmId}/cves?${params}`)
+        .then((response) => response.data);
+}
+
+export function listVMComponents(
+    vmId: string,
+    { searchFilter, page, perPage, sortOption }: SearchQueryOptions
+): Promise<ListVMComponentsResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+        sortOption,
+    });
+    return axios
+        .get<ListVMComponentsResponse>(`/v2/virtualmachines/${vmId}/components?${params}`)
+        .then((response) => response.data);
+}
+
+export function getVM(vmId: string): Promise<VMDetail> {
+    return axios.get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`).then((response) => response.data);
 }

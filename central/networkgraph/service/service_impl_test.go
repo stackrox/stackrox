@@ -926,7 +926,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.Require().NoError(err)
 
 	var flowStrings []string
-	var nodeIDs []string
+	nodeIDs := make([]string, 0, len(graph.GetNodes()))
 	for _, node := range graph.GetNodes() {
 		nodeIDs = append(nodeIDs, node.GetEntity().GetId())
 		for succIdx := range node.GetOutEdges() {
@@ -970,7 +970,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.Require().NoError(err)
 
 	var flowStringsSecondPass []string
-	var nodeIDsSecondPass []string
+	nodeIDsSecondPass := make([]string, 0, len(graph.GetNodes()))
 	for _, node := range graph.GetNodes() {
 		nodeIDsSecondPass = append(nodeIDsSecondPass, node.GetEntity().GetId())
 		for succIdx := range node.GetOutEdges() {

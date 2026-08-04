@@ -308,7 +308,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	// We need to call this 3 times, only then the error will be propagated to the mockHealthDS.
-	for i := 0; i < consecutiveReconciliationErrorThreshold; i++ {
+	for range consecutiveReconciliationErrorThreshold {
 		m.reconcileTransformedMessages(map[string]protoMessagesByType{
 			"test-handler-1": {
 				types.PermissionSetType: []protocompat.Message{
