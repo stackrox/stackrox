@@ -227,10 +227,14 @@ jobs:
         with:
           roxctl-release: latest
 
+      - name: Retrieving roxie version from repository
+        id: roxie-version
+        run: echo "version=$(cat ROXIE_VERSION)" >> "$GITHUB_OUTPUT"
+
       - name: Install roxie
-        run: |
-          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/roxie https://github.com/stackrox/roxie/releases/download/v0.4.5/roxie-linux-amd64
-          chmod +x /usr/local/bin/roxie
+        uses: stackrox/actions/roxie/install-cli@v1
+        with:
+          version: "v${{ steps.roxie-version.outputs.version }}"
 
       - name: Install oc
         if: inputs.infra-flavor == 'openshift-4'
