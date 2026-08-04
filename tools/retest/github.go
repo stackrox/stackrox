@@ -99,13 +99,16 @@ func checksForCommit(ctx context.Context, client *github.Client, lastCommit stri
 
 	result := map[string]jobState{}
 	for _, check := range checks.CheckRuns {
-		state := jobOK
-		if check.GetConclusion() == "failure" {
-			state = jobFailure
-		}
-		result[check.GetName()] = state
+		result[check.GetName()] = checkToState(check)
 	}
 	return result, nil
+}
+
+func checkToState(check *github.CheckRun) jobState {
+	if check.GetConclusion() == "failure" {
+		return jobFailure
+	}
+	return jobOK
 }
 
 type Status struct {
