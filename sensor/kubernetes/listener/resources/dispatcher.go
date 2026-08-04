@@ -75,6 +75,7 @@ func NewDispatcherRegistry(
 	traceWriter io.Writer,
 	storeProvider *StoreProvider,
 	k8sAPI kubernetes.Interface,
+	policyReportDetectFunc policyReportDispatcher.DetectFunc,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -118,7 +119,7 @@ func NewDispatcherRegistry(
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 
-		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments(), nil),
+		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments(), policyReportDetectFunc),
 	}
 }
 

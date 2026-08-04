@@ -58,7 +58,7 @@ func New(clusterID clusterIDWaiter,
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to initialize the event pipeline")
 	}
-	resourceListener, err := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub, pubSubDispatcher)
+	resourceListener, err := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub, pubSubDispatcher, detector.ProcessSecurityEvent)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to initialize the event pipeline")
 	}

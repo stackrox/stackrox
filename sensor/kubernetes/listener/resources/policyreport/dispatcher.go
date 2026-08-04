@@ -14,8 +14,8 @@ import (
 
 var log = logging.LoggerForModule()
 
-// DetectFunc is a callback that runs security event detection for a given source.
-type DetectFunc func(source string)
+// DetectFunc is a callback that runs security event detection for a canonicalized event.
+type DetectFunc func(event *policyreport.SecurityEvent)
 
 // Dispatcher processes PolicyReport CRD events, canonicalizes them into
 // SecurityEvents, resolves Pod subjects to ACS deployments, and runs
@@ -75,8 +75,8 @@ func (d *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	}
 
 	if d.detectFunc != nil {
-		for _, event := range events {
-			d.detectFunc(string(event.Source))
+		for i := range events {
+			d.detectFunc(&events[i])
 		}
 	}
 

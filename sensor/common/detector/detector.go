@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/policyreport"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	queueScaler "github.com/stackrox/rox/pkg/sensor/queue"
@@ -74,7 +75,7 @@ type Detector interface {
 	ProcessReprocessDeployments(msg *central.ReprocessDeployments) error
 	ProcessUpdatedImage(image *storage.Image) error
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
-	ProcessSecurityEvent(source string)
+	ProcessSecurityEvent(event *policyreport.SecurityEvent)
 }
 
 // New returns a new detector
@@ -637,10 +638,70 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 	}
 }
 
-func (d *detectorImpl) ProcessSecurityEvent(source string) {
-	alerts := d.unifiedDetector.DetectSecurityEvent(source)
+func (d *detectorImpl) ProcessSecurityEvent(event *policyreport.SecurityEvent) {
+	go d.detectAndAlertForSecurityEvent(event)
+}
+
+func (d *detectorImpl) detectAndAlertForSecurityEvent(event *policyreport.SecurityEvent) {
+	alerts := d.unifiedDetector.DetectSecurityEvent(string(event.Source))
 	detectorMetrics.SecurityEventAlertsGenerated.Add(float64(len(alerts)))
-	log.Debugf("Security event detection for source %q produced %d alerts (dry-run)", source, len(alerts))
+	if len(alerts) == 0 {
+		return
+	}
+
+	deploymentID := event.ResolvedEntity.ID
+	if deploymentID == "" {
+		log.Debugf("Security event from source %q has no resolved deployment, skipping alert", event.Source)
+		return
+	}
+
+	for _, alert := range alerts {
+		enrichSecurityEventViolations(alert, event)
+	}
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     deploymentID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_AlertResults{
+					AlertResults: &central.AlertResults{
+						DeploymentId: deploymentID,
+						Alerts:       alerts,
+						Stage:        storage.LifecycleStage_RUNTIME,
+						Source:       central.AlertResults_SECURITY_EVENT,
+					},
+				},
+			},
+		},
+	}
+
+	select {
+	case <-d.alertStopSig.Done():
+	case d.output <- message.New(msg):
+	}
+}
+
+func enrichSecurityEventViolations(alert *storage.Alert, event *policyreport.SecurityEvent) {
+	attrs := []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{
+		{Key: "Source", Value: string(event.Source)},
+		{Key: "Reported Policy", Value: event.Details.ReportedPolicy},
+		{Key: "Reported Rule", Value: event.Details.ReportedRule},
+		{Key: "Severity", Value: string(event.Details.ReportedSeverity)},
+		{Key: "Result", Value: string(event.Details.Result)},
+		{Key: "Message", Value: event.Details.Message},
+	}
+
+	violation := &storage.Alert_Violation{
+		Message: event.Details.Message,
+		Type:    storage.Alert_Violation_SECURITY_EVENT,
+		MessageAttributes: &storage.Alert_Violation_KeyValueAttrs_{
+			KeyValueAttrs: &storage.Alert_Violation_KeyValueAttrs{
+				Attrs: attrs,
+			},
+		},
+	}
+	alert.Violations = []*storage.Alert_Violation{violation}
 }
 
 func (d *detectorImpl) handleAuditLogEvent(event pubsub.Event) error {

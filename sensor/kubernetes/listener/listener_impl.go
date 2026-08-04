@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	policyReportDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/policyreport"
 )
 
 const (
@@ -59,6 +60,7 @@ type listenerImpl struct {
 	sifLock                   sync.Mutex
 	sharedInformersToShutdown []stoppable
 	clusterID                 clusterIDWaiter
+	policyReportDetectFunc    policyReportDispatcher.DetectFunc
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
