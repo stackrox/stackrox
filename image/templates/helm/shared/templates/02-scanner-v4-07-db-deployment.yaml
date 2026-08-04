@@ -23,7 +23,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-v4-db
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-db") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-v4-db") | nindent 8 }}

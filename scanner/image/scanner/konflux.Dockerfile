@@ -18,7 +18,7 @@ RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-script
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:b1e86b97028b8fcfb6d85f997c39e6b6b67496163ef8d80d243220a4918e8bef AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:5bc32620d0cbdfd788723448efa1c0c04e9859c0e33f9d5545329a4550edc7ab AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:aecc1f893388841178ce0276e2f7b087e63e1e4521ec86a96d9c9416c6d419fa AS package_installer
 
 COPY --from=ubi-micro-base / /out/
 

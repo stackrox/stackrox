@@ -75,9 +75,17 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	// broader ScannerTypeAnnotation check in CO's scansettingbinding controller.
 	// We must use the same value as ProfileId so that BuildProfileRefID produces
 	// matching UUIDs on both the profile and the scan sides.
-	profileID := tailoredProfile.Status.ID
-	if tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation] == string(v1alpha1.ScannerTypeCEL) {
+	var profileID string
+	switch scannerType := tailoredProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation]; scannerType {
+	case string(v1alpha1.ScannerTypeCEL):
 		profileID = tailoredProfile.GetName()
+	case string(v1alpha1.ScannerTypeOpenSCAP), "":
+		profileID = tailoredProfile.Status.ID
+	default:
+		profileID = tailoredProfile.Status.ID
+		log.Warnf("Tailored profile %s has unrecognised scanner-type annotation %q: using XCCDF ID %q as ProfileId; "+
+			"if compliance coverage shows 0 results, this scanner type may need handling here",
+			tailoredProfile.GetName(), scannerType, profileID)
 	}
 
 	protoProfile := &storage.ComplianceOperatorProfile{
