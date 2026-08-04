@@ -6,11 +6,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v88/github"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIntegration(t *testing.T) {
@@ -198,10 +198,9 @@ func TestIntegration(t *testing.T) {
 	server = httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	client := github.NewClient(server.Client())
-	parse, err := url.Parse(server.URL + "/")
-	assert.NoError(t, err)
-	client.BaseURL = parse
+	baseURL := server.URL + "/"
+	client, err := github.NewClient(github.WithHTTPClient(server.Client()), github.WithURLs(&baseURL, nil))
+	require.NoError(t, err)
 
 	err = run(context.Background(), client)
 	assert.NoError(t, err)
@@ -221,12 +220,11 @@ func TestGetStatuses(t *testing.T) {
 	server = httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
 
-	client := github.NewClient(server.Client())
-	baseUrl, err := url.Parse(server.URL + "/")
-	assert.NoError(t, err)
-	client.BaseURL = baseUrl
+	baseURL2 := server.URL + "/"
+	client, err := github.NewClient(github.WithHTTPClient(server.Client()), github.WithURLs(&baseURL2, nil))
+	require.NoError(t, err)
 
-	statuses, err := statusesForPR(context.Background(), client, baseUrl.String())
+	statuses, err := statusesForPR(context.Background(), client, baseURL2)
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{"gke-upgrade-tests": "success"}, statuses)
 }
