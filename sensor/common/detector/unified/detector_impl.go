@@ -87,3 +87,12 @@ func (d *detectorImpl) DetectFileAccessForDeployment(enhancedDeployment booleanp
 	}
 	return alerts
 }
+
+func (d *detectorImpl) DetectSecurityEvent(source string) []*storage.Alert {
+	alerts, err := d.runtimeDetector.DetectForSecurityEvent(context.Background(), source)
+	if err != nil {
+		log.Errorf("Error evaluating runtime policies for security event from source %q: %v", source, err)
+		return nil
+	}
+	return alerts
+}

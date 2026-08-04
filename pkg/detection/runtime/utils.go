@@ -127,6 +127,19 @@ func constructResourceRuntimeAlert(
 	}
 }
 
+func constructSecurityEventAlert(
+	policy *storage.Policy,
+	violations []*storage.Alert_Violation,
+) *storage.Alert {
+	return &storage.Alert{
+		Id:             uuid.NewV4().String(),
+		Policy:         policy.CloneVT(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Violations:     violations,
+		Time:           protocompat.TimestampNow(),
+	}
+}
+
 func constructNodeRuntimeAlert(policy *storage.Policy, node *storage.Node, violations []*storage.Alert_Violation) *storage.Alert {
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),

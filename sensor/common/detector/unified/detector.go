@@ -26,6 +26,7 @@ type Detector interface {
 	DetectAuditLogEvents(auditEvent *sensor.AuditEvents) []*storage.Alert
 	DetectNodeFileAccess(node *storage.Node, access *storage.FileAccess) []*storage.Alert
 	DetectFileAccessForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, fileAccess *storage.FileAccess) []*storage.Alert
+	DetectSecurityEvent(source string) []*storage.Alert
 }
 
 // NewDetector returns a new detector.

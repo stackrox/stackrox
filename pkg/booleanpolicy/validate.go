@@ -46,6 +46,9 @@ var (
 		storage.EventSource_NODE_EVENT: set.NewStringSet(
 			fieldnames.FilePath,
 		),
+		storage.EventSource_SECURITY_EVENT: set.NewStringSet(
+			fieldnames.SecurityEventSource,
+		),
 	}
 )
 

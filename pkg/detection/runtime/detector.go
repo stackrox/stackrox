@@ -21,6 +21,7 @@ type Detector interface {
 	DetectForAuditEvents(ctx context.Context, auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForNodeAndFileAccess(ctx context.Context, node *storage.Node, access *storage.FileAccess) ([]*storage.Alert, error)
 	DetectForDeploymentAndFileAccess(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) ([]*storage.Alert, error)
+	DetectForSecurityEvent(ctx context.Context, source string) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.
@@ -111,6 +112,38 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(ctx context.Context, node *sto
 			}
 		}
 
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return alerts, nil
+}
+
+func (d *detectorImpl) DetectForSecurityEvent(ctx context.Context, source string) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
+
+	input := &detection.SecurityEventInput{Source: source}
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+		if !compiled.AppliesTo(ctx, input) {
+			return nil
+		}
+
+		violation, err := compiled.MatchAgainstSecurityEvent(&cacheReceptacle, source)
+		if err != nil {
+			return errors.Wrapf(err, "evaluating violations for policy %q; security event source %s",
+				compiled.Policy().GetName(), source)
+		}
+		if len(violation.AlertViolations) == 0 {
+			return nil
+		}
+
+		alert := constructSecurityEventAlert(compiled.Policy(), violation.AlertViolations)
+		alerts = append(alerts, alert)
 		return nil
 	})
 	if err != nil {

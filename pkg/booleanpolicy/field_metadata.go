@@ -69,6 +69,8 @@ const (
 	KubeEvent = "kubeEvent"
 	// FileAccess for a file-based runtime event
 	FileAccess = "fileAccess"
+	// SecurityEvent for a security event from an external report
+	SecurityEvent = "securityEvent"
 )
 
 type valueValidatorFunc func(config *validateConfiguration, value string) (bool, error)
@@ -108,6 +110,10 @@ func (m *metadataAndQB) IsAuditLogEventField() bool {
 
 func (m *metadataAndQB) IsFileEventField() bool {
 	return m.IsOfType(FileAccess)
+}
+
+func (m *metadataAndQB) IsSecurityEventField() bool {
+	return m.IsOfType(SecurityEvent)
 }
 
 func (m *metadataAndQB) IsFromEventSource(eventSource storage.EventSource) bool {
@@ -1014,6 +1020,17 @@ func initializeFieldMetadata() FieldMetadata {
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 			[]RuntimeFieldType{FileAccess},
+		)
+	}
+
+	if features.PolicyReports.Enabled() {
+		f.registerFieldMetadataRegex(fieldnames.SecurityEventSource,
+			querybuilders.ForFieldLabel(augmentedobjs.SecurityEventSourceCustomTag), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				return stringValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_SECURITY_EVENT},
+			[]RuntimeFieldType{SecurityEvent},
 		)
 	}
 

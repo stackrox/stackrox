@@ -14,22 +14,26 @@ import (
 
 var log = logging.LoggerForModule()
 
+// DetectFunc is a callback that runs security event detection for a given source.
+type DetectFunc func(source string)
+
 // Dispatcher processes PolicyReport CRD events, canonicalizes them into
-// SecurityEvents, resolves Pod subjects to ACS deployments, and records
-// dry-run metrics. It does not forward events to Central — that wiring
-// comes in a later PR once the protobuf contract and detector path exist.
+// SecurityEvents, resolves Pod subjects to ACS deployments, and runs
+// detection against the security event policy set (dry-run).
 type Dispatcher struct {
 	clusterID       string
 	hierarchy       references.ParentHierarchy
 	deploymentStore store.DeploymentStore
+	detectFunc      DetectFunc
 }
 
 // NewDispatcher creates a PolicyReport dispatcher.
-func NewDispatcher(clusterID string, hierarchy references.ParentHierarchy, deploymentStore store.DeploymentStore) *Dispatcher {
+func NewDispatcher(clusterID string, hierarchy references.ParentHierarchy, deploymentStore store.DeploymentStore, detectFunc DetectFunc) *Dispatcher {
 	return &Dispatcher{
 		clusterID:       clusterID,
 		hierarchy:       hierarchy,
 		deploymentStore: deploymentStore,
+		detectFunc:      detectFunc,
 	}
 }
 
@@ -70,7 +74,12 @@ func (d *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 			len(events), u.GetNamespace(), u.GetName())
 	}
 
-	// No forwarding to Central yet — dry-run metrics only.
+	if d.detectFunc != nil {
+		for _, event := range events {
+			d.detectFunc(string(event.Source))
+		}
+	}
+
 	return nil
 }
 

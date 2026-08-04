@@ -66,4 +66,6 @@ var (
 
 	NodeMeta = pathutil.NewAugmentedObjMeta((*NodeDetails)(nil)).
 			AddAugmentedObjectAt([]string{fileAccessKey}, FileAccessMeta)
+
+	SecurityEventMeta = pathutil.NewAugmentedObjMeta((*securityEventDetails)(nil))
 )

@@ -28,7 +28,8 @@ const (
 	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
 	FileAccessPathCustomTag            = "File Path"
 
-	RuntimeClassCustomTag = "Runtime Class"
+	RuntimeClassCustomTag        = "Runtime Class"
+	SecurityEventSourceCustomTag = "Security Event Source"
 )
 
 type dockerfileLine struct {
@@ -100,4 +101,8 @@ type NodeDetails struct {
 // (effective or actual)
 type fileAccessPath struct {
 	Path []string `search:"File Path"`
+}
+
+type securityEventDetails struct {
+	Source string `search:"Security Event Source"`
 }

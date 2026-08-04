@@ -16,6 +16,7 @@ type FieldMetadataValidationSuite struct {
 func TestAllFieldsMetadata(t *testing.T) {
 	t.Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
 	t.Setenv(features.SensitiveFileActivity.EnvVar(), "true")
+	t.Setenv(features.PolicyReports.EnvVar(), "true")
 	ResetFieldMetadataSingleton(t)
 	suite.Run(t, new(FieldMetadataValidationSuite))
 }

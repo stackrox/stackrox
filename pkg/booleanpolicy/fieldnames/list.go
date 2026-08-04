@@ -73,6 +73,7 @@ var (
 	RequiredLabel                  = newFieldName("Required Label")
 	RuntimeClass                   = newFieldName("Runtime Class")
 	SeccompProfileType             = newFieldName("Seccomp Profile Type")
+	SecurityEventSource            = newFieldName("Security Event Source")
 	ServiceAccount                 = newFieldName("Service Account")
 	Severity                       = newFieldName("Severity")
 	SourceIPAddress                = newFieldName("Source IP Address")
