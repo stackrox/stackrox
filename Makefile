@@ -370,7 +370,7 @@ deps: $(shell git ls-files '*/go.mod' 'go.mod')
 	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
 	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
 	$(SILENT)for gomod in $$(git ls-files '*/go.mod' 'go.mod'); do \
-		(cd "$$(dirname "$$gomod")" && go mod tidy); \
+		(cd "$$(dirname "$$gomod")" && go mod tidy) || exit 1; \
 	done
 	$(SILENT)touch $@
 endif
