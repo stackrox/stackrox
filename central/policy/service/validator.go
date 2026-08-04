@@ -547,5 +547,8 @@ func (s *policyValidator) validateEvaluationFilter(policy *storage.Policy) error
 	if s.isNodeEventPolicy(policy) {
 		return errors.New("container type filters in the evaluation filter are not applicable to node event policies")
 	}
+	if s.isSecurityEventPolicy(policy) {
+		return errors.New("container type filters in the evaluation filter are not applicable to security event policies")
+	}
 	return nil
 }
