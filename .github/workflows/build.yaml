@@ -1333,10 +1333,10 @@ jobs:
       - push-scanner-manifests
       - push-operator-manifests
       - build-and-push-db
-    # No longer checks the raw title text: this now runs only when
-    # resolve-cve-ids actually resolved at least one CVE ID (directly from
-    # the title, or via a linked ROX ticket's JIRA "Vulnerability" record).
-    # A resolve-cve-ids job that was itself skipped (no "CVE-"/"ROX-" in the
+    # Runs only when resolve-cve-ids actually resolved at least one CVE ID
+    # (directly from the title, or via a linked ROX ticket's JIRA
+    # "Vulnerability" record), not merely on raw title substrings. A
+    # resolve-cve-ids job that was itself skipped (no "CVE-"/"ROX-" in the
     # title at all) implicitly skips this job too, since jobs whose `needs`
     # includes a skipped job are skipped by default.
     if: >-
