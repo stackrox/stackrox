@@ -20,10 +20,6 @@ on:
         required: false
         type: string
       cluster-provisioning-method:
-        # direct-gke: cluster is created synchronously inside the qa-e2e-tests job.
-        # infra: cluster creation is triggered asynchronously in a separate job
-        #   (cluster-pre-test) so it overlaps with the early setup steps of qa-e2e-tests,
-        #   which then waits for the cluster to be ready before running tests.
         description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
         type: string
         default: "direct-gke"
@@ -74,9 +70,22 @@ defaults:
     shell: bash
 
 jobs:
-  validate-inputs:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    runs-on: ubuntu-slim
+  qa-e2e-tests:
+    if: ${{ !cancelled() && !failure() && (github.event_name == 'workflow_dispatch' || inputs.should-run) }}
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      ARTIFACT_DIR: ./junit-reports/
+      USE_LOCAL_ROXCTL: "true"
+      ROX_RISK_REPROCESSING_INTERVAL: 15s
+      ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
+      AWS_S3_BACKUP_TEST_BUCKET_REGION: us-east-2
+      PYTHONUNBUFFERED: "1"
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
       - name: Validate cluster-provisioning-method
         run: |
@@ -85,14 +94,8 @@ jobs:
             *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
           esac
 
-  cluster-pre-test:
-    needs: [validate-inputs]
-    if: (github.event_name == 'workflow_dispatch' || inputs.should-run) && inputs.cluster-provisioning-method == 'infra'
-    runs-on: ubuntu-slim
-    outputs:
-      cluster-name: ${{ steps.cluster-name.outputs.name }}
-    steps:
       - name: Compute cluster name
+        if: inputs.cluster-provisioning-method == 'infra'
         id: cluster-name
         env:
           CI_JOB_NAME: ${{ inputs.ci-job-name }}
@@ -115,6 +118,7 @@ jobs:
           echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
       - name: Prepare infra args
+        if: inputs.cluster-provisioning-method == 'infra'
         id: prepare-infra-args
         env:
           INFRA_ARGS: ${{ inputs.infra-args }}
@@ -123,6 +127,7 @@ jobs:
           echo "args=$args" >> "$GITHUB_OUTPUT"
 
       - name: Trigger cluster creation via infra
+        if: inputs.cluster-provisioning-method == 'infra'
         uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -132,28 +137,6 @@ jobs:
           args: ${{ steps.prepare-infra-args.outputs.args }}
           wait: false
 
-  qa-e2e-tests:
-    # cluster-pre-test is skipped for direct-gke provisioning. A skipped
-    # dependency is neither a failure nor a cancellation, so the condition
-    # below lets this job proceed when cluster-pre-test was skipped (direct-gke)
-    # or succeeded (infra), but blocks it on failure or cancellation.
-    needs: [validate-inputs, cluster-pre-test]
-    if: ${{ !cancelled() && !failure() && (github.event_name == 'workflow_dispatch' || inputs.should-run) }}
-    runs-on: ubuntu-latest
-    env:
-      MAIN_IMAGE_TAG: ${{ inputs.tag }}
-      BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: ${{ inputs.ci-job-name }}
-      ARTIFACT_DIR: ./junit-reports/
-      USE_LOCAL_ROXCTL: "true"
-      ROX_RISK_REPROCESSING_INTERVAL: 15s
-      ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
-      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-      QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-      AWS_S3_BACKUP_TEST_BUCKET_REGION: us-east-2
-      PYTHONUNBUFFERED: "1"
-    timeout-minutes: ${{ inputs.job-timeout-minutes }}
-    steps:
       - name: Checkout repo
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
         with:
@@ -165,13 +148,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      # CLUSTER_NAME is set by one of two paths depending on provisioning method:
-      # - infra: from cluster-pre-test output (here)
-      # - direct-gke: from gke.sh's ci_export inside provision_gke_cluster (below)
-      - name: Set cluster name (infra)
-        if: inputs.cluster-provisioning-method == 'infra'
-        run: echo "CLUSTER_NAME=${{ needs.cluster-pre-test.outputs.cluster-name }}" >> "$GITHUB_ENV"
-
       - name: Set up Cloud SDK
         if: |
           inputs.cluster-provisioning-method == 'direct-gke' ||
@@ -180,6 +156,8 @@ jobs:
         with:
           install_components: "gke-gcloud-auth-plugin,beta"
 
+      # In the direct-gke provisioning case, this step also exports CLUSTER_NAME
+      # into the environments.
       - name: Create cluster via direct-gke
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: 20
@@ -430,8 +408,4 @@ jobs:
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
         run: |
-          if [[ "${{ needs.cluster-pre-test.result }}" == "success" ]]; then
-            infractl delete "${CLUSTER_NAME}"
-          else
-            echo "cluster-pre-test job did not succeed; nothing to delete"
-          fi
+          infractl delete "${CLUSTER_NAME}"
