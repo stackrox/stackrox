@@ -156,7 +156,7 @@ func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
 // ProcessMessage handles SensorACK/NACK for pull-mode VM index reports.
 func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	sensorAck := msg.GetSensorAck()
-	if sensorAck == nil {
+	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
 		return nil
 	}
 

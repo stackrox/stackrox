@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -381,25 +382,57 @@ func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 // generation, the next poll would see roxagent report "unchanged"
 // (report_generation didn't change) and skip resending, stranding the VM
 // until mandatoryRefreshAfter (4h) instead of retrying on the next poll
-// interval. It also verifies a NACK for an unrelated VM ID leaves the known
-// VM's state untouched instead of forcing a spurious resend.
+// interval. It also verifies that a NACK is a no-op when it doesn't resolve
+// to a currently-running, known VM (unrelated VM ID, malformed resource ID,
+// or a VM that stopped running), and that an ACK never touches the cached
+// generation.
 func TestVMScraper_NACK(t *testing.T) {
 	cases := map[string]struct {
+		ackAction                  central.SensorACK_Action
 		nackResourceID             string
+		vmRunning                  bool
 		pollResultAfterNack        *vsockclient.GetReportResult
 		wantIfNewerThanOnRetryPoll uint32
 		wantTotalSent              int
 	}{
 		"resets generation and forces an immediate resend when NACK matches the running VM": {
+			ackAction:                  central.SensorACK_NACK,
 			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  true,
 			pollResultAfterNack:        makeReport(1),
 			wantIfNewerThanOnRetryPoll: 0, // on the second poll, the scraper should ask for a full report
 			wantTotalSent:              2,
 		},
 		"is a no-op when NACK references an unrelated VM ID": {
+			ackAction:                  central.SensorACK_NACK,
 			nackResourceID:             "unknown-vm-id:999",
+			vmRunning:                  true,
 			pollResultAfterNack:        unchangedResult(),
 			wantIfNewerThanOnRetryPoll: 1, // on the second poll, the scraper should keep trusting the old generation
+			wantTotalSent:              1,
+		},
+		"is a no-op when the resource ID has no vsockCID suffix": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "vm-a-id-with-no-colon",
+			vmRunning:                  true,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
+			wantTotalSent:              1,
+		},
+		"is a no-op when the NACKed VM is no longer running": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  false,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
+			wantTotalSent:              1,
+		},
+		"is a no-op for an ACK": {
+			ackAction:                  central.SensorACK_ACK,
+			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  true,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
 			wantTotalSent:              1,
 		},
 	}
@@ -419,11 +452,15 @@ func TestVMScraper_NACK(t *testing.T) {
 			s.pollOnce(context.Background())
 			require.Len(t, sender.sent, 1)
 
+			// Flip Running only after the first poll, so the VM is scraped normally
+			// once before the ACK/NACK under test is delivered.
+			vmA.Running = tc.vmRunning
+
 			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
 				Msg: &central.MsgToSensor_SensorAck{
 					SensorAck: &central.SensorACK{
 						MessageType: central.SensorACK_VM_INDEX_REPORT,
-						Action:      central.SensorACK_NACK,
+						Action:      tc.ackAction,
 						ResourceId:  tc.nackResourceID,
 					},
 				},
@@ -474,7 +511,7 @@ func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
 		s := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
 
 		s.pollOnce(t.Context())
-		require.Equal(t, uint32(1), s.vmState["ns1/vm-a"].lastGeneration)
+		require.Equal(t, uint32(1), cachedGeneration(t, s, "ns1/vm-a"))
 
 		gate := &gateSender{
 			blockAt: 1,
@@ -503,12 +540,12 @@ func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
 				},
 			},
 		}))
-		assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
+		assert.Equal(t, uint32(0), cachedGeneration(t, s, "ns1/vm-a"),
 			"NACK applies immediately while the send it targets is still in flight")
 
 		close(gate.release)
 		<-done
-		assert.Equal(t, uint32(2), s.vmState["ns1/vm-a"].lastGeneration,
+		assert.Equal(t, uint32(2), cachedGeneration(t, s, "ns1/vm-a"),
 			"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
 	})
 }
@@ -625,6 +662,17 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
 	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
 	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
+}
+
+// cachedGeneration reads a VM's cached generation under s.mu, so the read is
+// race-safe regardless of what locking handleNACK or commitVMState use internally.
+func cachedGeneration(t *testing.T, s *VMScraper, key string) uint32 {
+	t.Helper()
+	return concurrency.WithLock1(&s.mu, func() uint32 {
+		st, ok := s.vmState[key]
+		require.True(t, ok, "no cached state for %q", key)
+		return st.lastGeneration
+	})
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
