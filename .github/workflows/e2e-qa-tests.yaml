@@ -27,18 +27,6 @@ on:
         description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
         type: string
         default: "direct-gke"
-      gke-machine-type:
-        description: "Specify machine type for direct GKE provisioning"
-        type: string
-        default: "e2-standard-8"
-      gke-num-nodes:
-        description: "Specify number of nodes for direct GKE provisioning"
-        type: number
-        default: 3
-      gke-spot:
-        description: "Specify whether spot instances shall be used"
-        type: boolean
-        default: true
       extra-env-vars:
         description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
         required: false
@@ -196,9 +184,9 @@ jobs:
         if: inputs.cluster-provisioning-method == 'direct-gke'
         timeout-minutes: 20
         env:
-          MACHINE_TYPE: "${{ inputs.gke-machine-type }}"
-          NUM_NODES: "${{ inputs.gke-num-nodes }}"
-          GKE_SPOT: "${{ inputs.gke-spot }}"
+          MACHINE_TYPE: "e2-standard-8"
+          NUM_NODES: "3"
+          GKE_SPOT: "true"
         run: |
           source scripts/ci/gke.sh
           provision_gke_cluster "${{ inputs.ci-job-short-name || inputs.ci-job-name }}"
