@@ -33,6 +33,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-35006: Go runtime upgraded to 1.26. Unbracketed IPv6 addresses (e.g. `2001:db8::1`) are no longer accepted; use bracketed format instead (e.g. `[2001:db8::1]:443`).
 - ROX-34804: The machine access configuration for `config-controller` now validates the audience (`aud` claim) of the service account token. The expected audience is `central.stackrox.io`. When users have added their own role bindings to this machine access configuration, the audience check is not enforced by default to keep backwards compatibility. It is recommended to set the expected audience to `central.stackrox.io` after ensuring that all exchange tokens are being created with this audience claim.
 
+- ROX-34535: Fixes an issue where if ScannerV2 is disabled or unavailable on initial startup the central deployment leaks GRPC connections until the scanner becomes available.
+
 ## [4.11.0]
 
 ### Added Features
