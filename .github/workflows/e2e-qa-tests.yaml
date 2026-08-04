@@ -239,7 +239,7 @@ jobs:
         run: |
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
-          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
       # gcloud container clusters create is synchronous, so the cluster is
       # already RUNNING at this point. wait_for_cluster provides additional
