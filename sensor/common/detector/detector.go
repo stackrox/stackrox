@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	alertconvert "github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
@@ -655,7 +656,11 @@ func (d *detectorImpl) detectAndAlertForSecurityEvent(event *policyreport.Securi
 		return
 	}
 
+	deployment := d.deploymentStore.GetSnapshot(deploymentID)
 	for _, alert := range alerts {
+		if deployment != nil {
+			alert.Entity = alertconvert.ToAlertDeployment(deployment)
+		}
 		enrichSecurityEventViolations(alert, event)
 	}
 
