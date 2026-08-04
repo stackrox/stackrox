@@ -1,6 +1,15 @@
 package env
 
-import "time"
+import (
+	"math"
+	"time"
+)
+
+// maxPullResponseSizeKB is the largest KB value that doesn't overflow
+// uint32 once converted to bytes. VirtualMachinesPullMaxResponseSizeKB
+// feeds vsockclient.NewClient, which narrows the byte count to uint32 for
+// the wire protocol's frame-length field.
+const maxPullResponseSizeKB = math.MaxUint32 / 1024
 
 var (
 	// VirtualMachinesMaxConcurrentVsockConnections defines the maximum number of vsock connections handled in parallel.
@@ -71,4 +80,33 @@ var (
 	// VMIndexReportRelayCacheTTL is how long a cached VM index report payload may be kept before it is evicted
 	// from the relay's retransmission cache.
 	VMIndexReportRelayCacheTTL = registerDurationSetting("ROX_VM_INDEX_REPORT_RELAY_CACHE_TTL", 4*time.Hour)
+
+	// VirtualMachinesScraperConcurrency defines the maximum number of VMs scraped
+	// concurrently in a single poll cycle. Higher values reduce cycle wall-clock
+	// time but increase network fan-out.
+	VirtualMachinesScraperConcurrency = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY", 20).
+						WithMinimum(1)
+
+	// VirtualMachinesPullMaxResponseSizeKB defines the maximum response size (in KB) that the
+	// pull-mode scraper accepts from a VM agent. Default 16384 KB (16 MiB) matches the push-mode
+	// limit (ROX_VIRTUAL_MACHINES_VSOCK_CONN_MAX_SIZE_KB). Capped at maxPullResponseSizeKB so an
+	// operator-configured value can never overflow the uint32 byte count vsockclient.NewClient
+	// expects; a value above the cap falls back to the default instead.
+	VirtualMachinesPullMaxResponseSizeKB = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB", 16384).
+						WithMinimum(1).WithMaximum(maxPullResponseSizeKB)
+
+	// VirtualMachinesScraperPollInterval defines how often the pull-mode scraper
+	// polls VMs for new reports.
+	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 5*time.Minute)
+
+	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
+	// and pulling a report in a single scrape cycle.
+	VirtualMachinesScraperPerVMTimeout = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_PER_VM_TIMEOUT", 30*time.Second)
+
+	// VirtualMachinesScraperMandatoryRefreshInterval defines the maximum age of a VM's last forwarded
+	// report before the scraper requests a full report regardless of whether roxagent reports it as
+	// unchanged. This bounds how long a report can go unevaluated against newly published Scanner V4
+	// vulnerability definitions, mirroring ROX_REPROCESSING_INTERVAL and ROX_NODE_SCANNING_INTERVAL's
+	// role for image and node scanning.
+	VirtualMachinesScraperMandatoryRefreshInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_MANDATORY_REFRESH_INTERVAL", 4*time.Hour)
 )

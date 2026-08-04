@@ -56,7 +56,7 @@ func collectAndQuery(service v1.PolicyServiceClient, jobChan chan string) func()
 func submitJobs(service v1.PolicyServiceClient, jobChan chan string, policies []*storage.Policy) func() error {
 	return func() error {
 		wg := concurrency.NewWaitGroup(0)
-		for idx := 0; idx < len(policies); idx++ {
+		for idx := range policies {
 			asyncWithWaitGroup(submitDryRunJob(service, policies[idx], jobChan), &wg)
 		}
 

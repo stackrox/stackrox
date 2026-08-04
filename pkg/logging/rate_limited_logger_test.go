@@ -132,7 +132,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsErrorLBurst() {
 	var variadicArgs []interface{}
 	variadicArgs = append(variadicArgs, prefix, resolvedErrorMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", variadicArgs).Times(1)
-	for i := 0; i < 3*testBurstSize; i++ {
+	for range 3 * testBurstSize {
 		s.rlLogger.ErrorL(limiter, templateWithFields, "error", 2)
 	}
 
@@ -149,7 +149,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsWarnLBurst() {
 	var variadicArgs []interface{}
 	variadicArgs = append(variadicArgs, prefix, resolvedWarnMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", variadicArgs).Times(1)
-	for i := 0; i < 3*testBurstSize; i++ {
+	for range 3 * testBurstSize {
 		s.rlLogger.WarnL(limiter, templateWithFields, "warn", 2)
 	}
 
@@ -166,7 +166,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsInfoLBurst() {
 	var variadicArgs []interface{}
 	variadicArgs = append(variadicArgs, prefix, resolvedInfoMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", variadicArgs).Times(1)
-	for i := 0; i < 3*testBurstSize; i++ {
+	for range 3 * testBurstSize {
 		s.rlLogger.InfoL(limiter, templateWithFields, "info", 2)
 	}
 
@@ -183,7 +183,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsDebugLBurst() {
 	var variadicArgs []interface{}
 	variadicArgs = append(variadicArgs, prefix, resolvedDebugMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", variadicArgs).Times(1)
-	for i := 0; i < 3*testBurstSize; i++ {
+	for range 3 * testBurstSize {
 		s.rlLogger.DebugL(limiter, templateWithFields, "debug", 2)
 	}
 
@@ -201,13 +201,13 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsSameLimiterDifferen
 
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, template1, "").Times(1)
 
-	for i := 0; i < 2*testBurstSize; i++ {
+	for range 2 * testBurstSize {
 		logInfo(template1)
 	}
 
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, template2, "").Times(1)
 
-	for i := 0; i < 2*testBurstSize; i++ {
+	for range 2 * testBurstSize {
 		logInfo(template2)
 	}
 
@@ -226,7 +226,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix1, evictionTemplate, "").Times(1)
 
-	for i := 0; i < 2*testBurstSize; i++ {
+	for range 2 * testBurstSize {
 		logInfo(evictionTemplate)
 	}
 
@@ -234,7 +234,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix1, evictionTemplate, evictionSuffix).Times(1)
 
 	fillerTemplate := "There are now %d fillers in cache"
-	for i := 0; i < cacheSize; i++ {
+	for i := range cacheSize {
 		expected := fmt.Sprintf(fillerTemplate, i+1)
 		s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", prefix2, expected, "").Times(1)
 		logDebug(fillerTemplate, i+1)

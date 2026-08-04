@@ -210,6 +210,8 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
+virtualMachines:
+  enabled: null # bool
 crs:
   file: null # string
 consolePlugin:

@@ -63,7 +63,7 @@ func ComplianceV2SpecificCheckResult(incoming []*storage.ComplianceOperatorCheck
 
 // ComplianceV2ProfileResults converts the counts to the v2 stats
 func ComplianceV2ProfileResults(resultCounts []*datastore.ResourceResultsByProfile, controlResults []*compRule.ControlResult) []*v2.ComplianceCheckResultStatusCount {
-	var profileResults []*v2.ComplianceCheckResultStatusCount
+	profileResults := make([]*v2.ComplianceCheckResultStatusCount, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
 		controls := GetControls(resultCount.RuleName, controlResults)

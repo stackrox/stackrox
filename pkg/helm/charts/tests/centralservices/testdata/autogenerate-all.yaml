@@ -18,6 +18,8 @@ central:
       enabled: true
   db:
     enabled: true
+centralWorker:
+  enabled: true
 monitoring:
   openshift:
     enabled: true

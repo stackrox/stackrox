@@ -215,8 +215,8 @@ func (m *managerImpl) Stop() {
 }
 
 func (m *managerImpl) generateReportNoLock(req *reportRequest) {
-	clusterIds := []string{}
-	profiles := []string{}
+	clusterIds := make([]string, 0, len(req.scanConfig.GetClusters()))
+	profiles := make([]string, 0, len(req.scanConfig.GetProfiles()))
 	for _, cluster := range req.scanConfig.GetClusters() {
 		clusterIds = append(clusterIds, cluster.GetClusterId())
 	}
@@ -608,9 +608,6 @@ func (m *managerImpl) handleReadyScanConfig() {
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 		})
-		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
-			log.Errorf("unable to delete old CheckResults: %v", err)
-		}
 		m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 	}
 }

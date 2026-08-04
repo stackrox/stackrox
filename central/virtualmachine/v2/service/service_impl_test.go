@@ -513,9 +513,10 @@ func TestGetVMCVEDetail(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		request       *v2.GetVMCVEDetailRequest
-		setupMock     func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
-		expectedError string
+		request        *v2.GetVMCVEDetailRequest
+		setupMock      func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView)
+		expectedError  string
+		expectedResult *v2.VMCVEDetail
 	}{
 		"empty cve_id": {
 			request: &v2.GetVMCVEDetailRequest{
@@ -550,6 +551,49 @@ func TestGetVMCVEDetail(t *testing.T) {
 				}, nil, nil)
 			},
 		},
+		"successful detail with query": {
+			request: &v2.GetVMCVEDetailRequest{
+				CveId: "CVE-2024-1234",
+				Query: &v2.RawQuery{Query: "Severity:CRITICAL_VULNERABILITY_SEVERITY"},
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{
+					CriticalSeverityCount: 2,
+				}, nil)
+				mockView.EXPECT().GetVMIDs(ctx, gomock.Any()).Return([]string{"vm-1"}, nil)
+				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(5, nil)
+				mockVM.EXPECT().GetManyVirtualMachines(ctx, []string{"vm-1"}).Return([]*storage.VirtualMachineV2{
+					{Id: "vm-1", GuestOs: "rhel-9"},
+				}, nil, nil)
+			},
+			expectedResult: &v2.VMCVEDetail{
+				AffectedVmCount:      1,
+				TotalVmCount:         5,
+				AffectedGuestOsCount: 1,
+				VmSeverityCounts: storagetov2.SeverityCountsToProto(&commonViews.ResourceCountByImageCVESeverity{
+					CriticalSeverityCount: 2,
+				}),
+			},
+		},
+		"query filters out all results but CVE detail still loads": {
+			request: &v2.GetVMCVEDetailRequest{
+				CveId: "CVE-2024-1234",
+				Query: &v2.RawQuery{Query: "Severity:CRITICAL_VULNERABILITY_SEVERITY"},
+			},
+			setupMock: func(mockVM *vmDSMocks.MockDataStore, mockCVE *cveDSMocks.MockDataStore, mockComp *componentDSMocks.MockDataStore, mockScan *scanDSMocks.MockDataStore, mockView *cveViewMocks.MockCveView) {
+				mockCVE.EXPECT().SearchRawVMCVEs(ctx, gomock.Any()).Return([]*storage.VirtualMachineCVEV2{cve1}, nil)
+				mockView.EXPECT().CountBySeverity(ctx, gomock.Any()).Return(&commonViews.ResourceCountByImageCVESeverity{}, nil)
+				mockView.EXPECT().GetVMIDs(ctx, gomock.Any()).Return(nil, nil)
+				mockVM.EXPECT().CountVirtualMachines(ctx, gomock.Any()).Return(5, nil)
+			},
+			expectedResult: &v2.VMCVEDetail{
+				AffectedVmCount:      0,
+				TotalVmCount:         5,
+				AffectedGuestOsCount: 0,
+				VmSeverityCounts:     storagetov2.SeverityCountsToProto(&commonViews.ResourceCountByImageCVESeverity{}),
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -581,7 +625,14 @@ func TestGetVMCVEDetail(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
-				assert.NotNil(t, result)
+				require.NotNil(t, result)
+				assert.Equal(t, "CVE-2024-1234", result.GetCve())
+				if tt.expectedResult != nil {
+					assert.Equal(t, tt.expectedResult.GetAffectedVmCount(), result.GetAffectedVmCount())
+					assert.Equal(t, tt.expectedResult.GetTotalVmCount(), result.GetTotalVmCount())
+					assert.Equal(t, tt.expectedResult.GetAffectedGuestOsCount(), result.GetAffectedGuestOsCount())
+					protoassert.Equal(t, tt.expectedResult.GetVmSeverityCounts(), result.GetVmSeverityCounts())
+				}
 			}
 		})
 	}

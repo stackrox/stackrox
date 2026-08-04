@@ -181,7 +181,7 @@ func (suite *NetworkBaselineDataStoreTestSuite) TestSAC() {
 	// Test Delete Multiple
 	{
 		nbs := fixtures.GetSACTestNetworkBaseline()
-		var ids []string
+		ids := make([]string, 0, len(nbs))
 		for _, nb := range nbs {
 			ids = append(ids, nb.GetDeploymentId())
 		}

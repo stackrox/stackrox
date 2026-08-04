@@ -25,7 +25,7 @@ func getRandom(arr []string) string {
 
 func randomLabels(num int64, arrLabels, arrValues []string) map[string]string {
 	m := make(map[string]string)
-	for i := int64(0); i < num; i++ {
+	for range num {
 		m[getRandom(arrLabels)] = getRandom(arrValues)
 	}
 	return m
@@ -33,7 +33,7 @@ func randomLabels(num int64, arrLabels, arrValues []string) map[string]string {
 
 func generateSetOfAllLabels(num int) []string {
 	arr := make([]string, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		arr[i] = fmt.Sprintf("L%d", i)
 	}
 	return arr
@@ -41,14 +41,14 @@ func generateSetOfAllLabels(num int) []string {
 
 func generateSetOfAllValues(num int) []string {
 	arr := make([]string, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		arr[i] = fmt.Sprintf("V%d", i)
 	}
 	return arr
 }
 
 func populateStore(s store.NetworkPolicyStore, num, numLabels int64, allLabels, allValues []string) {
-	for i := int64(0); i < num; i++ {
+	for range num {
 		np := newNPDummy(uuid.NewV4().String(), getRandom(namespaces), randomLabels(numLabels, allLabels, allValues))
 		s.Upsert(np)
 	}

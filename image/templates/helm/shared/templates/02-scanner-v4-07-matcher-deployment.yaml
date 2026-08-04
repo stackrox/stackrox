@@ -25,7 +25,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-v4-matcher
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner-v4-matcher") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}

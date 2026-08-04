@@ -60,7 +60,7 @@ func dumpTypeMethods(t testing.TB, typ reflect.Type, typeName string, verbose bo
 			numIn := methodType.NumIn()
 			if numIn > 0 {
 				t.Logf("    Inputs (%d):", numIn)
-				for j := 0; j < numIn; j++ {
+				for j := range numIn {
 					t.Logf("      [%d] %s", j, methodType.In(j).String())
 				}
 			}
@@ -69,7 +69,7 @@ func dumpTypeMethods(t testing.TB, typ reflect.Type, typeName string, verbose bo
 			numOut := methodType.NumOut()
 			if numOut > 0 {
 				t.Logf("    Outputs (%d):", numOut)
-				for j := 0; j < numOut; j++ {
+				for j := range numOut {
 					t.Logf("      [%d] %s", j, methodType.Out(j).String())
 				}
 			}

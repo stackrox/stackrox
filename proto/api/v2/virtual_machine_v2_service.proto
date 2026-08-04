@@ -260,6 +260,7 @@ message VMCVEDetail {
 
 message GetVMCVEDetailRequest {
   string cve_id = 1;
+  RawQuery query = 2;
 }
 
 // ─── Endpoint 10: ListVMCVEAffectedVMs ───

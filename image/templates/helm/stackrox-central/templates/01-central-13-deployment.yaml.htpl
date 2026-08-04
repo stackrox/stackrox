@@ -23,7 +23,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}
@@ -147,6 +146,13 @@ spec:
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4
           value: "true"
+        {{- end }}
+        {{- if ._rox._legacyScannerEnabled }}
+        - name: ROX_LEGACY_SCANNER
+          value: "true"
+        {{- else }}
+        - name: ROX_LEGACY_SCANNER
+          value: "false"
         {{- end }}
         [<- end >]
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}

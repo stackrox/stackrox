@@ -1,0 +1,26 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+
+tests:
+- name: "virtual machine VSOCK RBAC and env var are absent by default"
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. == null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == null)
+
+- name: "virtual machine VSOCK RBAC and env var are created when enabled"
+  set:
+    virtualMachines.enabled: true
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. != null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. != null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == "true")
+
+- name: "virtual machine VSOCK RBAC and env var are absent when explicitly disabled"
+  set:
+    virtualMachines.enabled: false
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. == null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == null)

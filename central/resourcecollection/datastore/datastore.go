@@ -60,7 +60,7 @@ var (
 
 // GetSupportedFieldLabels returns a list of the supported search.FieldLabel values for resolving deployments for a collection
 func GetSupportedFieldLabels() []pkgSearch.FieldLabel {
-	var ret []pkgSearch.FieldLabel
+	ret := make([]pkgSearch.FieldLabel, 0, len(supportedFieldNames))
 	for _, label := range supportedFieldNames {
 		ret = append(ret, label.fieldLabel)
 	}
