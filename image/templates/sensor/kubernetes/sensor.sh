@@ -97,6 +97,10 @@ if [[ -f "$DIR/sensor-compliance-rbac.yaml" ]]; then
     echo "Creating sensor compliance RBAC roles..."
     ${KUBE_COMMAND} apply -f "$DIR/sensor-compliance-rbac.yaml"
 fi
+if [[ -f "$DIR/sensor-lightspeed-rbac.yaml" ]]; then
+    echo "Creating sensor Lightspeed RBAC roles..."
+    ${KUBE_COMMAND} apply -f "$DIR/sensor-lightspeed-rbac.yaml"
+fi
 echo "Creating sensor network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
 

@@ -80,6 +80,7 @@ type GetLightspeedConfigResponse struct {
 	IsReady        bool                   `protobuf:"varint,2,opt,name=is_ready,json=isReady,proto3" json:"is_ready,omitempty"`
 	HasQueryAccess bool                   `protobuf:"varint,3,opt,name=has_query_access,json=hasQueryAccess,proto3" json:"has_query_access,omitempty"`
 	StatusError    string                 `protobuf:"bytes,4,opt,name=status_error,json=statusError,proto3" json:"status_error,omitempty"`
+	IsAutoDetected bool                   `protobuf:"varint,5,opt,name=is_auto_detected,json=isAutoDetected,proto3" json:"is_auto_detected,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -142,6 +143,13 @@ func (x *GetLightspeedConfigResponse) GetStatusError() string {
 	return ""
 }
 
+func (x *GetLightspeedConfigResponse) GetIsAutoDetected() bool {
+	if x != nil {
+		return x.IsAutoDetected
+	}
+	return false
+}
+
 var File_api_v1_lightspeed_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_lightspeed_service_proto_rawDesc = "" +
@@ -150,12 +158,13 @@ const file_api_v1_lightspeed_service_proto_rawDesc = "" +
 	"\x1aConfigureLightspeedRequest\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\x12\n" +
-	"\x04host\x18\x02 \x01(\tR\x04host\"\x99\x01\n" +
+	"\x04host\x18\x02 \x01(\tR\x04host\"\xc3\x01\n" +
 	"\x1bGetLightspeedConfigResponse\x12\x12\n" +
 	"\x04host\x18\x01 \x01(\tR\x04host\x12\x19\n" +
 	"\bis_ready\x18\x02 \x01(\bR\aisReady\x12(\n" +
 	"\x10has_query_access\x18\x03 \x01(\bR\x0ehasQueryAccess\x12!\n" +
-	"\fstatus_error\x18\x04 \x01(\tR\vstatusError2\x84\x02\n" +
+	"\fstatus_error\x18\x04 \x01(\tR\vstatusError\x12(\n" +
+	"\x10is_auto_detected\x18\x05 \x01(\bR\x0eisAutoDetected2\x84\x02\n" +
 	"\x11LightspeedService\x12x\n" +
 	"\x13ConfigureLightspeed\x12\x1e.v1.ConfigureLightspeedRequest\x1a\t.v1.Empty\"6\x82\xd3\xe4\x93\x020:\x01*\x1a+/v1/clusters/{cluster_id}/lightspeed-config\x12u\n" +
 	"\x13GetLightspeedConfig\x12\x10.v1.ResourceByID\x1a\x1f.v1.GetLightspeedConfigResponse\"+\x82\xd3\xe4\x93\x02%\x12#/v1/clusters/{id}/lightspeed-configB'\n" +

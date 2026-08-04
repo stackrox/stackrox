@@ -302,14 +302,14 @@ func (s *serviceImpl) GetDeploymentRiskSummary(ctx context.Context, request *v1.
 
 	clusterID := riskResp.GetDeployment().GetClusterId()
 
-	host, info := s.lightspeedStore.Get(clusterID)
-	if host == "" {
+	_, info := s.lightspeedStore.Get(clusterID)
+	if info == nil || (!info.GetIsReady() && !info.GetIsAutoDetected()) {
 		return nil, errox.InvalidArgs.New("Lightspeed is not configured for this cluster")
 	}
-	if info != nil && !info.GetIsReady() {
+	if !info.GetIsReady() {
 		return nil, errox.ResourceExhausted.Newf("Lightspeed is not ready: %s", info.GetStatusError())
 	}
-	if info != nil && !info.GetHasQueryAccess() {
+	if !info.GetHasQueryAccess() {
 		return nil, errox.NotAuthorized.Newf("Sensor lacks Lightspeed access: %s", info.GetStatusError())
 	}
 

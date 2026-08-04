@@ -50,12 +50,22 @@ Sensor already has an auto-mounted service account token and can reach
 cluster-local services. This follows the existing `DeploymentEnhancement`
 pattern where Central sends requests to Sensor for cluster-local operations.
 
-## Why user-configured host instead of auto-detection?
+## Auto-detection via OLSConfig CRD
 
-Lightspeed deployment names and namespaces can be customized by the operator
-configuration (`OLSConfig` CR). Rather than guessing deployment names, we let
-the user provide the service URL. Sensor validates it using Lightspeed's
-`/readiness` and `/authorized` endpoints.
+Sensor auto-detects Lightspeed by checking for the `OLSConfig` CRD
+(`ols.openshift.io/v1alpha1`). On each health-check tick:
+1. Discovery API: does `ols.openshift.io/v1alpha1` exist?
+2. Dynamic client: any `OLSConfig` CRs? (name is not assumed — could be
+   anything, not just "cluster")
+3. Typed client: find services with label
+   `app.kubernetes.io/part-of=openshift-lightspeed`
+4. Construct the URL from the service's name, namespace, and first port
+
+Manual host configuration from Central takes precedence. When
+`LightspeedConfig{host: ""}` is sent, auto-detection resumes.
+
+The `LightspeedInfo` message includes `is_auto_detected: true` when the host
+was discovered via the CRD rather than configured manually.
 
 ## Authentication
 

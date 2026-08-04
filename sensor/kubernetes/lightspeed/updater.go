@@ -12,9 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	sensorUtils "github.com/stackrox/rox/sensor/utils"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -27,8 +33,15 @@ var (
 	log = logging.LoggerForModule()
 )
 
+var olsConfigGVR = schema.GroupVersionResource{
+	Group:    "ols.openshift.io",
+	Version:  "v1alpha1",
+	Resource: "olsconfigs",
+}
+
 // NewUpdater returns a sensor component that periodically checks Lightspeed endpoint health.
-func NewUpdater(updateInterval time.Duration) *updaterImpl {
+// It auto-detects Lightspeed via the OLSConfig CRD when no manual host is configured.
+func NewUpdater(k8sClient kubernetes.Interface, dynamicClient dynamic.Interface, updateInterval time.Duration) *updaterImpl {
 	if updateInterval == 0 {
 		updateInterval = defaultInterval
 	}
@@ -36,6 +49,8 @@ func NewUpdater(updateInterval time.Duration) *updaterImpl {
 	updateTicker.Stop()
 
 	return &updaterImpl{
+		k8sClient:      k8sClient,
+		dynamicClient:  dynamicClient,
 		updateInterval: updateInterval,
 		response:       make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
@@ -52,14 +67,18 @@ func NewUpdater(updateInterval time.Duration) *updaterImpl {
 }
 
 type updaterImpl struct {
+	k8sClient      kubernetes.Interface
+	dynamicClient  dynamic.Interface
 	updateTicker   *time.Ticker
 	updateInterval time.Duration
 	response       chan *message.ExpiringMessage
 	stopSig        concurrency.Signal
 	httpClient     *http.Client
 
-	mutex sync.RWMutex
-	host  string
+	mutex                 sync.RWMutex
+	manualHost            string // set by Central via ProcessMessage
+	autoHost              string // set by OLSConfig CRD auto-detection
+	namespaceLabelApplied bool
 }
 
 func (u *updaterImpl) Name() string {
@@ -102,20 +121,44 @@ func (u *updaterImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor
 	}
 
 	u.mutex.Lock()
-	u.host = config.GetHost()
+	u.manualHost = config.GetHost()
 	u.mutex.Unlock()
 
-	log.Infof("Lightspeed config updated: host=%s", config.GetHost())
+	log.Infof("Lightspeed manual config updated: host=%s", config.GetHost())
 	return nil
 }
 
+// GetHost returns the effective host: manual config takes precedence over auto-detected.
 func (u *updaterImpl) GetHost() string {
 	u.mutex.RLock()
 	defer u.mutex.RUnlock()
-	return u.host
+	if u.manualHost != "" {
+		return u.manualHost
+	}
+	return u.autoHost
+}
+
+func (u *updaterImpl) isAutoDetected() bool {
+	u.mutex.RLock()
+	defer u.mutex.RUnlock()
+	return u.manualHost == "" && u.autoHost != ""
+}
+
+func (u *updaterImpl) setAutoHost(host string) {
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+	if u.autoHost != host {
+		if host != "" {
+			log.Infof("Auto-detected Lightspeed service: %s", host)
+		} else if u.autoHost != "" {
+			log.Info("Lightspeed service no longer detected")
+		}
+		u.autoHost = host
+	}
 }
 
 func (u *updaterImpl) run(tickerC <-chan time.Time) {
+	u.detectLightspeedHost()
 	if responseSent := u.checkHealthAndSendResponse(); !responseSent {
 		return
 	}
@@ -123,6 +166,7 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 	for {
 		select {
 		case <-tickerC:
+			u.detectLightspeedHost()
 			if responseSent := u.checkHealthAndSendResponse(); !responseSent {
 				return
 			}
@@ -130,6 +174,88 @@ func (u *updaterImpl) run(tickerC <-chan time.Time) {
 			return
 		}
 	}
+}
+
+func (u *updaterImpl) detectLightspeedHost() {
+	ctx := concurrency.AsContext(&u.stopSig)
+
+	hasAPI, err := sensorUtils.HasAPI(u.k8sClient, "ols.openshift.io/v1alpha1", "OLSConfig")
+	if err != nil {
+		log.Debugf("Failed to check for OLSConfig API: %v", err)
+		u.setAutoHost("")
+		return
+	}
+	if !hasAPI {
+		u.setAutoHost("")
+		return
+	}
+
+	list, err := u.dynamicClient.Resource(olsConfigGVR).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Debugf("Failed to list OLSConfig CRs: %v", err)
+		u.setAutoHost("")
+		return
+	}
+	if len(list.Items) == 0 {
+		u.setAutoHost("")
+		return
+	}
+
+	services, err := u.k8sClient.CoreV1().Services("").List(ctx, metav1.ListOptions{
+		LabelSelector: "app.kubernetes.io/part-of=openshift-lightspeed",
+	})
+	if err != nil || len(services.Items) == 0 {
+		log.Debugf("OLSConfig exists but no Lightspeed service found: %v", err)
+		u.setAutoHost("")
+		return
+	}
+
+	svc := services.Items[0]
+	if len(svc.Spec.Ports) == 0 {
+		log.Warn("Lightspeed service found but has no ports")
+		u.setAutoHost("")
+		return
+	}
+
+	host := fmt.Sprintf("https://%s.%s.svc:%d", svc.Name, svc.Namespace, svc.Spec.Ports[0].Port)
+	u.setAutoHost(host)
+	u.ensureNamespaceLabel(ctx)
+}
+
+const ingressPolicyLabel = "network.openshift.io/policy-group"
+
+func (u *updaterImpl) ensureNamespaceLabel(ctx context.Context) {
+	if u.namespaceLabelApplied {
+		return
+	}
+
+	ns := pods.GetPodNamespace()
+	if ns == "" {
+		return
+	}
+
+	nsObj, err := u.k8sClient.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		log.Debugf("Failed to get namespace %s: %v", ns, err)
+		return
+	}
+
+	if nsObj.Labels[ingressPolicyLabel] == "ingress" {
+		u.namespaceLabelApplied = true
+		return
+	}
+
+	if nsObj.Labels == nil {
+		nsObj.Labels = make(map[string]string)
+	}
+	nsObj.Labels[ingressPolicyLabel] = "ingress"
+
+	if _, err := u.k8sClient.CoreV1().Namespaces().Update(ctx, nsObj, metav1.UpdateOptions{}); err != nil {
+		log.Warnf("Failed to label namespace %s for Lightspeed network access: %v", ns, err)
+		return
+	}
+	log.Infof("Labeled namespace %s with %s=ingress for Lightspeed network access", ns, ingressPolicyLabel)
+	u.namespaceLabelApplied = true
 }
 
 func (u *updaterImpl) checkHealthAndSendResponse() bool {
@@ -154,6 +280,7 @@ func (u *updaterImpl) checkHealthAndSendResponse() bool {
 
 func (u *updaterImpl) getLightspeedInfo() *central.LightspeedInfo {
 	host := u.GetHost()
+	autoDetected := u.isAutoDetected()
 	if host == "" {
 		return &central.LightspeedInfo{
 			Host:           "",
@@ -163,7 +290,8 @@ func (u *updaterImpl) getLightspeedInfo() *central.LightspeedInfo {
 	}
 
 	info := &central.LightspeedInfo{
-		Host: host,
+		Host:           host,
+		IsAutoDetected: autoDetected,
 	}
 
 	// Check readiness endpoint

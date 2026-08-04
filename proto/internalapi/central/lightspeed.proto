@@ -17,6 +17,7 @@ message LightspeedInfo {
   bool is_ready = 2;
   bool has_query_access = 3;
   string status_error = 4;
+  bool is_auto_detected = 5;
 }
 
 // LightspeedQueryRequest is sent from Central to Sensor to query Lightspeed.
