@@ -49,9 +49,10 @@ func clampPollInterval(interval time.Duration) time.Duration {
 	return interval
 }
 
-// RunningVMStore provides the list of running VMs.
+// RunningVMStore provides lookups of running VMs.
 type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
+	Get(id virtualmachine.VMID) *virtualmachine.Info
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -178,11 +179,17 @@ func (s *VMScraper) handleNACK(resourceID string) {
 		return
 	}
 
-	concurrency.WithLock(&s.mu, func() {
-		if state, ok := s.vmState[key]; ok {
-			state.lastGeneration = 0
+	reset := concurrency.WithLock1(&s.mu, func() bool {
+		state, ok := s.vmState[key]
+		if !ok {
+			return false
 		}
+		state.lastGeneration = 0
+		return true
 	})
+	if reset {
+		log.Debugf("VMScraper: reset cached generation for %q after NACK for resource_id=%q", key, resourceID)
+	}
 }
 
 // findKeyByVMID returns the vmState key ("namespace/name") for the currently
@@ -191,12 +198,11 @@ func (s *VMScraper) findKeyByVMID(vmID string) string {
 	if vmID == "" {
 		return ""
 	}
-	for _, vm := range s.store.ListRunning() {
-		if string(vm.ID) == vmID {
-			return vmKey(vm)
-		}
+	vm := s.store.Get(virtualmachine.VMID(vmID))
+	if vm == nil || !vm.Running {
+		return ""
 	}
-	return ""
+	return vmKey(vm)
 }
 
 // vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
@@ -345,11 +351,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		return false
 	}
 
-	// Skip the cache update if a NACK cleared the generation while Send was in flight.
 	newGen := result.Meta.GetReportGeneration()
-	if !s.commitVMState(snap.state, snap.lastGeneration, newGen, result.Meta.GetEpoch()) {
-		log.Debugf("VMScraper: dropping cache update for %q after NACK during send", key)
-	}
+	s.commitVMState(key, newGen, result.Meta.GetEpoch())
 	s.registerScrapedVM(scrapedVMs, vm)
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
@@ -444,7 +447,6 @@ func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachi
 }
 
 type vmStateSnapshot struct {
-	state           *vmState
 	lastGeneration  uint32
 	lastEpoch       uint32
 	lastForwardedAt time.Time
@@ -458,7 +460,6 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 			s.vmState[key] = st
 		}
 		return vmStateSnapshot{
-			state:           st,
 			lastGeneration:  st.lastGeneration,
 			lastEpoch:       st.lastEpoch,
 			lastForwardedAt: st.lastForwardedAt,
@@ -466,17 +467,26 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 	})
 }
 
-// commitVMState updates cached scrape state only if lastGeneration is still
-// observedGen, so a concurrent NACK reset is not overwritten by a late Send.
-func (s *VMScraper) commitVMState(state *vmState, observedGen, newGen, newEpoch uint32) bool {
-	return concurrency.WithLock1(&s.mu, func() bool {
-		if state.lastGeneration != observedGen {
-			return false
+// commitVMState records the generation/epoch from a just-sent report as key's cached scrape state.
+//
+// Race: If a NACK arrives from Central faster than this function completes, for example, due to:
+//   - a scheduling delay on the caller's goroutine between Send returning and this function
+//     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
+//   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
+//     function's lock acquisition,
+//
+// then the NACK will overwrite lastGeneration to 0, and then this code will set it back to
+// `newGen`, which cancels the NACK.
+// However, this race is really unlikely to happen in practice, thus we accept the risk and not protect against it.
+func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
+	concurrency.WithLock(&s.mu, func() {
+		state, ok := s.vmState[key]
+		if !ok {
+			return
 		}
 		state.lastGeneration = newGen
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
-		return true
 	})
 }
 

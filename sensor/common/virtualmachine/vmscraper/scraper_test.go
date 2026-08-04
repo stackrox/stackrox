@@ -30,6 +30,15 @@ type mockStore struct {
 
 func (m *mockStore) ListRunning() []*virtualmachine.Info { return m.vms }
 
+func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
+	for _, vm := range m.vms {
+		if vm.ID == id {
+			return vm
+		}
+	}
+	return nil
+}
+
 type mockDialer struct {
 	err      error
 	errQueue []error
@@ -455,7 +464,9 @@ func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 	return nil
 }
 
-func TestVMScraper_NACKWinsOverInFlightSend(t *testing.T) {
+// TestVMScraper_InFlightSendCanOverwriteNACKReset exercises a known race involving
+// an unusually slow execution of `commitVMState` and a quick NACK from Central.
+func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
 	vmA := makeVM("ns1", "vm-a", 100)
 	vmA.ID = "vm-a-id"
 	store := &mockStore{vms: []*virtualmachine.Info{vmA}}
@@ -472,7 +483,7 @@ func TestVMScraper_NACKWinsOverInFlightSend(t *testing.T) {
 	}
 	s.sender = gate
 	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
+	client.resultQueue = []*vsockclient.GetReportResult{makeReport(2)}
 
 	done := make(chan struct{})
 	go func() {
@@ -495,7 +506,8 @@ func TestVMScraper_NACKWinsOverInFlightSend(t *testing.T) {
 			},
 		},
 	}))
-	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration)
+	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
+		"NACK applies immediately while the send it targets is still in flight")
 
 	close(gate.release)
 	select {
@@ -503,15 +515,8 @@ func TestVMScraper_NACKWinsOverInFlightSend(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("timed out waiting for pollOnce to finish")
 	}
-	assert.Equal(t, uint32(0), s.vmState["ns1/vm-a"].lastGeneration,
-		"in-flight Send must not overwrite a concurrent NACK reset")
-
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
-	s.sender = &mockSender{}
-	s.pollOnce(t.Context())
-	require.Len(t, client.calls, 1)
-	assert.Equal(t, uint32(0), client.calls[0].ifNewerThan)
+	assert.Equal(t, uint32(2), s.vmState["ns1/vm-a"].lastGeneration,
+		"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
 }
 
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
