@@ -10,15 +10,11 @@ var (
 	groupVersion         = schema.GroupVersion{Group: "wgpolicyk8s.io", Version: "v1alpha2"}
 	requiredAPIResources []k8sapi.APIResource
 
+	// PolicyReport is the only resource we currently watch. ClusterPolicyReport
+	// support will be added in a follow-up when cluster-scoped reports are needed.
 	PolicyReport = registerAPIResource(v1.APIResource{
 		Name:    "policyreports",
 		Kind:    "PolicyReport",
-		Group:   groupVersion.Group,
-		Version: groupVersion.Version,
-	})
-	ClusterPolicyReport = registerAPIResource(v1.APIResource{
-		Name:    "clusterpolicyreports",
-		Kind:    "ClusterPolicyReport",
 		Group:   groupVersion.Group,
 		Version: groupVersion.Version,
 	})
