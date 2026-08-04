@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"regexp"
 	"slices"
@@ -144,12 +145,7 @@ func processPR(ctx context.Context, client *github.Client, user *github.User, pr
 // within a PR that otherwise gets processed.
 func failingCheck(checks map[string]jobState) string {
 	skippableCheckPrefixes := slices.Concat(allowedCheckFailurePrefixes, retestableCheckPrefixes)
-	names := make([]string, 0, len(checks))
-	for name := range checks {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	for _, name := range names {
+	for _, name := range slices.Sorted(maps.Keys(checks)) {
 		if checks[name] != jobFailure || hasAnyPrefix(name, skippableCheckPrefixes) {
 			continue
 		}
