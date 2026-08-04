@@ -86,7 +86,7 @@ jobs:
 
   update:
     needs: recheck
-    if: needs.recheck.result == 'skipped' || needs.recheck.outputs.result == 'run'
+    if: always() && (needs.recheck.result == 'skipped' || needs.recheck.outputs.result == 'run')
     runs-on: ubuntu-latest
     concurrency:
       group: scanner-updater-export-${{ inputs.object }}
