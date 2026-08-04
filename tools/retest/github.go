@@ -69,14 +69,17 @@ func splitMultilineComment(comment string) []string {
 
 // jobState normalizes a job's outcome regardless of which GitHub API it
 // came from: the Statuses API (Prow jobs, reported as free-form strings
-// such as "success"/"failure"/"pending") and the Checks API (GitHub Actions,
-// reported as a pass/fail conclusion) each have their own raw
-// representation. Decision logic in main.go only ever needs to ask "is this
-// job failing?" or "is this job still pending?", so both sources are
+// such as "success"/"failure"/"pending"/"error") and the Checks API
+// (GitHub Actions, reported as a pass/fail conclusion) each have their own
+// raw representation. Decision logic in main.go only ever needs to ask "is
+// this job failing?" or "is this job still pending?", so both sources are
 // translated into this one type at the point they're fetched, instead of
 // letting two different truthiness conventions leak into the rest of the
-// file. The zero value, jobOK, covers every other raw state (success,
-// error, cancelled, or simply "no news") since none of those get special
+// file. A status of "error" (the job didn't reach a verdict, e.g. due to
+// infra trouble) is folded into jobFailure alongside "failure" (the job
+// reached a verdict and it was negative), since both warrant a retest the
+// same way. The zero value, jobOK, covers every other raw state (success,
+// cancelled, or simply "no news") since none of those get special
 // treatment today.
 type jobState int
 
@@ -143,7 +146,7 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) (map[
 
 func parseJobState(raw string) jobState {
 	switch raw {
-	case "failure":
+	case "failure", "error":
 		return jobFailure
 	case "pending":
 		return jobPending
