@@ -19,11 +19,9 @@ var (
 
 var errSensorMappingNotReady = errors.New("no repo-to-CPE mapping available yet")
 
-// SensorUpdater is the MappingProvider/MappingUpdater/ScanBusyGate for an
-// agent whose mapping is pushed in over VSOCK via SyncRepoCPEMapping. It
-// defers applying a new mapping into active while busy is set, so an
-// in-flight VM-disk scan (and the GetReport response for it) never
-// observes the active mapping change mid-flight.
+// SensorUpdater applies repo-to-CPE mappings pushed in over VSOCK via
+// SyncRepoCPEMapping, deferring the apply while busy is set so an
+// in-flight scan's GetReport response never sees a mid-flight change.
 type SensorUpdater struct {
 	active     []byte
 	activeHash string
@@ -34,11 +32,9 @@ type SensorUpdater struct {
 	mu         sync.Mutex
 }
 
-// NewSensorUpdater seeds active from cachePath if it holds a validated
-// mapping, else from bundledPath if non-empty and validated, else stays
-// empty until the first Update. onChange must already be non-nil by the
-// time any bootstrap content is found, so construct dependents (e.g. the
-// rescanner) before calling this.
+// NewSensorUpdater seeds active from cachePath, else bundledPath, else
+// stays empty until the first Update. Construct onChange's dependents
+// (e.g. the rescanner) first, since it may fire during this call.
 func NewSensorUpdater(cachePath, bundledPath string, onChange func()) *SensorUpdater {
 	u := &SensorUpdater{cachePath: cachePath, onChange: onChange}
 	if u.bootstrapFrom(cachePath) || u.bootstrapFrom(bundledPath) {
@@ -117,11 +113,9 @@ func (u *SensorUpdater) Path() (string, error) {
 	return cachePath, nil
 }
 
-// Update validates content and either applies it to active immediately or,
-// if a scan is in flight (busy), stages it as pending for
-// MarkScanIdleAndApplyPending to promote later. updated is false only when
-// content is invalid or already equal to the current active/pending
-// content; a validation error never touches state.
+// Update applies content to active immediately, or stages it as pending
+// for MarkScanIdleAndApplyPending to promote later if a scan is in
+// flight (busy), so it never mutates active out from under that scan.
 func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 	if err := repositorytocpe.ValidateMapping(content); err != nil {
 		return false, err
@@ -176,10 +170,9 @@ func (u *SensorUpdater) applyLocked(content []byte, hash string) {
 	u.activeHash = hash
 }
 
-// persistAndNotify writes content to cachePath in the background - a scan
-// or another Update must never block on disk I/O - then synchronously
-// fires onChange so the caller's later reads already see the new active
-// mapping.
+// persistAndNotify writes content to cachePath in the background, then
+// synchronously fires onChange so the caller's later reads already see
+// the new active mapping.
 func (u *SensorUpdater) persistAndNotify(content []byte) {
 	cachePath := u.cachePath
 	go func() {
