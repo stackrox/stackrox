@@ -83,7 +83,6 @@ jobs:
       ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL: 30s
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
-      AWS_S3_BACKUP_TEST_BUCKET_REGION: us-east-2
       PYTHONUNBUFFERED: "1"
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
