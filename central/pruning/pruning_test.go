@@ -18,7 +18,6 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	imageCVEV2Datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -578,7 +577,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.postgres = s.pool
 
 			// Add images, deployments, and pods into the datastores
@@ -803,7 +802,7 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 			gc := newGarbageCollector(nil, nil, nil, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.postgres = s.pool
 
 			for _, dep := range c.deployments {
@@ -1047,7 +1046,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1174,7 +1173,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1352,7 +1351,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -2878,204 +2877,6 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
 	_, ok, err = roleStore.GetAccessScope(pruningCtx, expiredAS.GetId())
 	s.NoError(err)
 	s.True(ok, "expired access scope should still exist when pruning is disabled")
-}
-
-func (s *PruningTestSuite) TestIsTimestampMigrated() {
-	now := time.Now()
-	earlier := now.Add(-time.Hour)
-	later := now.Add(time.Hour)
-
-	cases := map[string]struct {
-		v1       *time.Time
-		v2       *time.Time
-		expected bool
-	}{
-		"both nil": {
-			v1: nil, v2: nil, expected: true,
-		},
-		"v1 nil v2 set": {
-			v1: nil, v2: &now, expected: true,
-		},
-		"v1 set v2 nil": {
-			v1: &now, v2: nil, expected: false,
-		},
-		"v2 equal to v1": {
-			v1: &now, v2: &now, expected: true,
-		},
-		"v2 earlier than v1": {
-			v1: &now, v2: &earlier, expected: true,
-		},
-		"v2 later than v1": {
-			v1: &now, v2: &later, expected: false,
-		},
-	}
-	for name, tc := range cases {
-		s.Run(name, func() {
-			s.Assert().Equal(tc.expected, isTimestampMigrated(tc.v1, tc.v2))
-		})
-	}
-}
-
-func (s *PruningTestSuite) TestBuildV2CVEMap() {
-	v2ID1 := "v2-image-1"
-	v2ID2 := "v2-image-2"
-	cve1 := "CVE-2024-0001"
-	cve2 := "CVE-2024-0002"
-
-	views := []*imageCVEV2Datastore.CVETimeView{
-		{ImageIDV2: &v2ID1, CVE: &cve1},
-		{ImageIDV2: &v2ID1, CVE: &cve2},
-		{ImageIDV2: &v2ID2, CVE: &cve1},
-	}
-
-	result := buildV2CVEMap(views)
-	s.Assert().Len(result, 2)
-	s.Assert().Len(result[v2ID1], 2)
-	s.Assert().Len(result[v2ID2], 1)
-}
-
-func (s *PruningTestSuite) TestFindPruneableCVEs() {
-	now := time.Now()
-	later := now.Add(time.Hour)
-
-	digest := "sha256:abc"
-	v2ID := "v2-id-1"
-	cveID := "row-id-1"
-	cveName := "CVE-2024-0001"
-
-	digestToV2IDs := map[string][]string{
-		digest: {v2ID},
-	}
-
-	cases := map[string]struct {
-		v1CVEs     []*imageCVEV2Datastore.CVETimeView
-		v2CVEMap   map[string]map[string]*imageCVEV2Datastore.CVETimeView
-		wantPruned int
-	}{
-		"fully migrated": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
-			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
-				v2ID: {
-					cveName: {ImageIDV2: &v2ID, CVE: &cveName, FirstImageOccurrence: &now},
-				},
-			},
-			wantPruned: 1,
-		},
-		"not migrated - first_image_occurrence later in V2": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
-			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
-				v2ID: {
-					cveName: {ImageIDV2: &v2ID, CVE: &cveName, FirstImageOccurrence: &later},
-				},
-			},
-			wantPruned: 0,
-		},
-		"CVE missing in V2": {
-			v1CVEs: []*imageCVEV2Datastore.CVETimeView{
-				{ID: &cveID, ImageID: &digest, CVE: &cveName, FirstImageOccurrence: &now},
-			},
-			v2CVEMap: map[string]map[string]*imageCVEV2Datastore.CVETimeView{
-				v2ID: {},
-			},
-			wantPruned: 0,
-		},
-	}
-	for name, tc := range cases {
-		s.Run(name, func() {
-			pruneableIDs, affectedDigests := findPruneableCVEs(tc.v1CVEs, digestToV2IDs, tc.v2CVEMap)
-			s.Assert().Len(pruneableIDs, tc.wantPruned)
-			if tc.wantPruned > 0 {
-				s.Assert().Contains(affectedDigests, digest)
-			} else {
-				s.Assert().Empty(affectedDigests)
-			}
-		})
-	}
-}
-
-func (s *PruningTestSuite) TestPruneImageV1CVEBatch() {
-	if !features.FlattenImageData.Enabled() {
-		s.T().Skip("Skipping: FlattenImageData not enabled")
-	}
-
-	// Insert two V1 images (flag off) to create V1 CVE rows (imageid=digest, imageidv2=NULL).
-	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
-	v1ImageDS := imageDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	v1Image := fixtures.GetImageSherlockHolmes1()
-	require.NoError(s.T(), v1ImageDS.UpsertImage(s.ctx, v1Image))
-	v1Digest := v1Image.GetId()
-
-	// Second V1 image has no V2 twin, so its CVEs should NOT be pruned.
-	v1ImageNoTwin := fixtures.GetImageDoctorJekyll2()
-	require.NoError(s.T(), v1ImageDS.UpsertImage(s.ctx, v1ImageNoTwin))
-	v1DigestNoTwin := v1ImageNoTwin.GetId()
-
-	// Re-enable the flag and insert a V2 twin only for the first image.
-	s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
-	v2ImageDS := imageV2Datastore.GetTestPostgresDataStore(s.T(), s.pool)
-	v2Image := fixtures.GetImageSherlockHolmes1()
-	v2ImageV2 := utils.ConvertToV2(v2Image)
-	require.NoError(s.T(), v2ImageDS.UpsertImage(s.ctx, v2ImageV2))
-
-	cveDS := imageCVEV2Datastore.GetTestPostgresDataStore(s.T(), s.pool)
-
-	countV1CVEs := func(digest string) int {
-		var count int
-		err := s.pool.QueryRow(s.ctx,
-			"SELECT COUNT(*) FROM image_cves_v2 WHERE imageid = $1 AND imageidv2 IS NULL", digest,
-		).Scan(&count)
-		require.NoError(s.T(), err)
-		return count
-	}
-
-	v1CountBefore := countV1CVEs(v1Digest)
-	v1NoTwinCountBefore := countV1CVEs(v1DigestNoTwin)
-	require.Greater(s.T(), v1CountBefore, 0, "V1 CVE rows should exist before pruning")
-	require.Greater(s.T(), v1NoTwinCountBefore, 0, "V1 CVE rows should exist before pruning")
-
-	var v2CVECountBefore int
-	err := s.pool.QueryRow(s.ctx,
-		"SELECT COUNT(*) FROM image_cves_v2 WHERE imageidv2 = $1", v2ImageV2.GetId(),
-	).Scan(&v2CVECountBefore)
-	require.NoError(s.T(), err)
-	require.Greater(s.T(), v2CVECountBefore, 0)
-
-	gc := newGarbageCollector(nil, nil, v1ImageDS, v2ImageDS, nil, nil, nil,
-		nil, nil, nil, nil, nil,
-		nil, nil, nil, nil, nil, nil, nil,
-		nil, nil, nil, cveDS).(*garbageCollectorImpl)
-	gc.postgres = s.pool
-
-	pruned, err := gc.pruneImageV1CVEBatch()
-	require.NoError(s.T(), err)
-	s.Assert().Greater(pruned, 0, "should prune at least one V1 CVE row")
-
-	s.Assert().Equal(0, countV1CVEs(v1Digest), "all V1 CVE rows should be pruned for migrated image")
-	s.Assert().Equal(v1NoTwinCountBefore, countV1CVEs(v1DigestNoTwin), "V1 CVE rows should be preserved for image without V2 twin")
-
-	var v2CVECountAfter int
-	err = s.pool.QueryRow(s.ctx,
-		"SELECT COUNT(*) FROM image_cves_v2 WHERE imageidv2 = $1", v2ImageV2.GetId(),
-	).Scan(&v2CVECountAfter)
-	require.NoError(s.T(), err)
-	s.Assert().Equal(v2CVECountBefore, v2CVECountAfter, "V2 CVE rows should be preserved")
-
-	// Verify scan hash was nulled on the pruned V1 image.
-	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
-	v1ImageAfter, exists, err := v1ImageDS.GetImageMetadata(s.ctx, v1Digest)
-	require.NoError(s.T(), err)
-	require.True(s.T(), exists)
-	s.Assert().Nil(v1ImageAfter.GetScan().GetHashoneof(), "scan hash should be nil after pruning")
-
-	// Verify scan hash is still set on the unpruned V1 image.
-	v1ImageNoTwinAfter, exists, err := v1ImageDS.GetImageMetadata(s.ctx, v1DigestNoTwin)
-	require.NoError(s.T(), err)
-	require.True(s.T(), exists)
-	s.Assert().NotNil(v1ImageNoTwinAfter.GetScan().GetHashoneof(), "scan hash should remain set for unpruned image")
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {

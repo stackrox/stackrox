@@ -802,66 +802,6 @@ func (s *storeImpl) deleteImageComponents(ctx context.Context, tx *postgres.Tx, 
 	return nil
 }
 
-// NullImageScanHashes nulls the scan hash for the given image IDs so that rollback
-// reprocessing will rewrite components/CVEs instead of deduplicating on the hash.
-func (s *storeImpl) NullImageScanHashes(ctx context.Context, ids []string) error {
-	if len(ids) == 0 {
-		return nil
-	}
-
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "NullImageScanHashes")
-
-	return pgutils.Retry(ctx, func() error {
-		rows, err := s.db.Query(ctx, "SELECT id, serialized FROM "+imagesTable+" WHERE id = ANY($1)", ids)
-		if err != nil {
-			return errors.Wrap(err, "querying images for scan hash nulling")
-		}
-		defer rows.Close()
-
-		type imageUpdate struct {
-			id         string
-			serialized []byte
-		}
-		var updates []imageUpdate
-
-		for rows.Next() {
-			var id string
-			var data []byte
-			if err := rows.Scan(&id, &data); err != nil {
-				return errors.Wrap(err, "scanning image row")
-			}
-
-			var image storage.Image
-			if err := image.UnmarshalVTUnsafe(data); err != nil {
-				return errors.Wrapf(err, "unmarshaling image %s", id)
-			}
-
-			if image.GetScan() == nil || image.GetScan().GetHashoneof() == nil {
-				continue
-			}
-
-			image.Scan.Hashoneof = nil
-			newData, err := image.MarshalVT()
-			if err != nil {
-				return errors.Wrapf(err, "marshaling image %s", id)
-			}
-
-			updates = append(updates, imageUpdate{id: id, serialized: newData})
-		}
-		if err := rows.Err(); err != nil {
-			return errors.Wrap(err, "iterating image rows")
-		}
-
-		for _, u := range updates {
-			if _, err := s.db.Exec(ctx, "UPDATE "+imagesTable+" SET serialized = $1 WHERE id = $2", u.serialized, u.id); err != nil {
-				return errors.Wrapf(err, "updating serialized for image %s", u.id)
-			}
-		}
-
-		return nil
-	})
-}
-
 // GetByIDs returns the objects specified by the IDs or the index in the missing indices slice
 func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")

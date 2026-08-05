@@ -185,20 +185,6 @@ func (mr *MockDataStoreMockRecorder) ListImage(ctx, sha any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListImage", reflect.TypeOf((*MockDataStore)(nil).ListImage), ctx, sha)
 }
 
-// NullImageScanHashes mocks base method.
-func (m *MockDataStore) NullImageScanHashes(ctx context.Context, ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NullImageScanHashes", ctx, ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// NullImageScanHashes indicates an expected call of NullImageScanHashes.
-func (mr *MockDataStoreMockRecorder) NullImageScanHashes(ctx, ids any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NullImageScanHashes", reflect.TypeOf((*MockDataStore)(nil).NullImageScanHashes), ctx, ids)
-}
-
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

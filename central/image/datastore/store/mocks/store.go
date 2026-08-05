@@ -165,20 +165,6 @@ func (mr *MockStoreMockRecorder) GetManyImageMetadata(ctx, id any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyImageMetadata", reflect.TypeOf((*MockStore)(nil).GetManyImageMetadata), ctx, id)
 }
 
-// NullImageScanHashes mocks base method.
-func (m *MockStore) NullImageScanHashes(ctx context.Context, ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NullImageScanHashes", ctx, ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// NullImageScanHashes indicates an expected call of NullImageScanHashes.
-func (mr *MockStoreMockRecorder) NullImageScanHashes(ctx, ids any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NullImageScanHashes", reflect.TypeOf((*MockStore)(nil).NullImageScanHashes), ctx, ids)
-}
-
 // Search mocks base method.
 func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

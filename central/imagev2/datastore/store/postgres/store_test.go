@@ -448,28 +448,6 @@ func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
 	}
 }
 
-func (s *ImagesV2StoreSuite) TestGetImageIDsForDigests() {
-	img1 := getTestImageV2("registry.io/repo:tag1", "sha256:digest1")
-	img2 := getTestImageV2("registry.io/repo:tag2", "sha256:digest1")
-	img3 := getTestImageV2("registry.io/other:tag1", "sha256:digest2")
-
-	s.Require().NoError(s.store.Upsert(s.ctx, img1))
-	s.Require().NoError(s.store.Upsert(s.ctx, img2))
-	s.Require().NoError(s.store.Upsert(s.ctx, img3))
-
-	result, err := s.store.GetImageIDsForDigests(s.ctx, []string{"sha256:digest1", "sha256:digest2"})
-	s.Require().NoError(err)
-	s.Assert().Len(result, 2)
-	s.Assert().ElementsMatch([]string{img1.GetId(), img2.GetId()}, result["sha256:digest1"])
-	s.Assert().ElementsMatch([]string{img3.GetId()}, result["sha256:digest2"])
-}
-
-func (s *ImagesV2StoreSuite) TestGetImageIDsForDigests_NoMatch() {
-	result, err := s.store.GetImageIDsForDigests(s.ctx, []string{"sha256:nonexistent"})
-	s.Require().NoError(err)
-	s.Assert().Empty(result)
-}
-
 func getTestImageV2(name, sha string) *storage.ImageV2 {
 	return &storage.ImageV2{
 		Id:     uuid.NewV5FromNonUUIDs(name, sha).String(),
