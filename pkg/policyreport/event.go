@@ -18,6 +18,9 @@ type Source string
 // SourceKyverno is the canonical source value for Kyverno-produced reports.
 const SourceKyverno Source = "Kyverno"
 
+// SourceFIO is the canonical source value for File Integrity Operator findings.
+const SourceFIO Source = "File Integrity Operator"
+
 // EventType identifies which typed payload a SecurityEvent carries.
 type EventType string
 
@@ -72,6 +75,7 @@ type EntityType string
 const (
 	EntityTypeUnknown    EntityType = ""
 	EntityTypeDeployment EntityType = "Deployment"
+	EntityTypeNode       EntityType = "Node"
 )
 
 // ReportRef identifies the producer report object a SecurityEvent was

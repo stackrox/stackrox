@@ -291,6 +291,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForPolicyReports() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForPolicyReports", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForPolicyReports))
 }
 
+// ForFileIntegrityNodeStatuses mocks base method.
+func (m *MockDispatcherRegistry) ForFileIntegrityNodeStatuses() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForFileIntegrityNodeStatuses")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForFileIntegrityNodeStatuses indicates an expected call of ForFileIntegrityNodeStatuses.
+func (mr *MockDispatcherRegistryMockRecorder) ForFileIntegrityNodeStatuses() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForFileIntegrityNodeStatuses", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForFileIntegrityNodeStatuses))
+}
+
 // ForNodes mocks base method.
 func (m *MockDispatcherRegistry) ForNodes() resources.Dispatcher {
 	m.ctrl.T.Helper()
