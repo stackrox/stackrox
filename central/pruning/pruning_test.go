@@ -3084,11 +3084,9 @@ func (s *PruningTestSuite) TestPruneImageV1BatchCursor() {
 	ctx := sac.WithAllAccess(context.Background())
 	images, imagesV2, depDS, watchedDS := s.generateImageV1PruningDataStructures()
 
-	var v1Images []*storage.Image
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		img := newV1ImageWithCVEs(uuid.NewV4().String(), 0)
 		s.Require().NoError(images.UpsertImage(ctx, img))
-		v1Images = append(v1Images, img)
 	}
 
 	gc := &garbageCollectorImpl{
