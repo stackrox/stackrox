@@ -11,12 +11,14 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-const maxRequestSize = 1 << 20 // 1 MiB
+// maxRequestSize must fit a synced repo-to-CPE mapping (up to MaxMappingBytes) plus envelope headroom, not just a GetReport request.
+const maxRequestSize = repositorytocpe.MaxMappingBytes + 1<<20
 
 // reportSnapshot is an immutable point-in-time view of the cached report state.
 type reportSnapshot struct {
@@ -78,6 +80,8 @@ func cloneFacts(in map[string]string) map[string]string {
 type Handler struct {
 	cache        *ReportCache
 	agentVersion string
+	provider     MappingProvider
+	updater      MappingUpdater
 	// epoch is seeded once per process lifetime and never persisted to VM
 	// disk. It lets Sensor (and this handler itself, via GetReportRequest's
 	// known_epoch) distinguish "this agent restarted" from "this agent's
@@ -87,9 +91,10 @@ type Handler struct {
 	epoch uint32
 }
 
-// NewHandler creates a protocol handler.
-func NewHandler(cache *ReportCache, agentVersion string) *Handler {
-	return &Handler{cache: cache, agentVersion: agentVersion, epoch: newEpoch()}
+// NewHandler creates a protocol handler. updater is nil for URL-managed
+// agents, so SyncRepoCPEMapping is rejected with MAPPING_NOT_SENSOR_MANAGED.
+func NewHandler(cache *ReportCache, agentVersion string, provider MappingProvider, updater MappingUpdater) *Handler {
+	return &Handler{cache: cache, agentVersion: agentVersion, provider: provider, updater: updater, epoch: newEpoch()}
 }
 
 // newEpoch derives a process-lifetime epoch value. Time-derived rather than
@@ -141,6 +146,12 @@ func (h *Handler) HandleConn(conn net.Conn) {
 	}
 	if err := vsockframing.WriteFrame(conn, respData); err != nil {
 		log.Errorf("Writing response frame: %v", err)
+		return
+	}
+	// Only now that the report for whatever scan may have been in flight has
+	// actually gone out is it safe to promote a Sync that arrived mid-scan.
+	if gate, ok := h.provider.(ScanBusyGate); ok {
+		gate.MarkScanIdleAndApplyPending()
 	}
 }
 
@@ -148,12 +159,19 @@ func (h *Handler) dispatch(req *pb.VMServiceRequest) *pb.VMServiceResponse {
 	switch req.GetMethod().(type) {
 	case *pb.VMServiceRequest_GetReport:
 		return h.handleGetReport(req.GetGetReport())
+	case *pb.VMServiceRequest_SyncRepoCpeMapping:
+		return h.handleSyncRepoCPEMapping(req.GetSyncRepoCpeMapping())
 	default:
 		return h.errorResponse(pb.ErrorCode_ERROR_CODE_UNKNOWN_METHOD, "unknown or unset method")
 	}
 }
 
 func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceResponse {
+	if !h.provider.Ready() {
+		log.Info("GetReport: no repo-to-CPE mapping available yet")
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED, "repository-to-CPE mapping not yet available")
+	}
+
 	snap := h.cache.snap.Load()
 	if snap == nil || snap.report == nil {
 		log.Info("GetReport: not ready (initial scan in progress)")
@@ -200,17 +218,39 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 		facts = cloneFacts(snap.facts)
 		gen = snap.generation
 	}
+	updatePath := h.provider.UpdatePath()
 	meta := &pb.ResponseMeta{
-		AgentVersion:     h.agentVersion,
-		ReportGeneration: gen,
-		SupportedMethods: []string{"get_report"},
-		Facts:            facts,
-		Epoch:            h.epoch,
+		AgentVersion:             h.agentVersion,
+		ReportGeneration:         gen,
+		SupportedMethods:         []string{"get_report", "sync_repo_cpe_mapping"},
+		Facts:                    facts,
+		Epoch:                    h.epoch,
+		RepoCpeMappingHash:       proto.String(h.provider.Hash()),
+		RepoCpeMappingUpdatePath: updatePath.Enum(),
 	}
 	if snap != nil && !snap.generatedAt.IsZero() {
 		meta.ReportGeneratedAt = timestamppb.New(snap.generatedAt)
 	}
 	return &pb.VMServiceResponse{Meta: meta}
+}
+
+// handleSyncRepoCPEMapping applies a Sensor-pushed mapping. URL-managed
+// agents (updater == nil) reject Sync outright; Update keeps the last-good
+// mapping on a validation failure, so an err here never leaves the agent
+// without a usable mapping.
+func (h *Handler) handleSyncRepoCPEMapping(req *pb.SyncRepoCPEMappingRequest) *pb.VMServiceResponse {
+	if h.updater == nil {
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED, "agent is URL-managed and does not accept pushed mappings")
+	}
+	updated, err := h.updater.Update(req.GetMapping())
+	if err != nil {
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_INTERNAL, fmt.Sprintf("invalid repository-to-CPE mapping: %v", err))
+	}
+	resp := h.newResponseFromSnap(h.cache.snap.Load())
+	resp.Result = &pb.VMServiceResponse_SyncRepoCpeMapping{
+		SyncRepoCpeMapping: &pb.SyncRepoCPEMappingResponse{Updated: updated},
+	}
+	return resp
 }
 
 func (h *Handler) errorResponse(code pb.ErrorCode, msg string) *pb.VMServiceResponse {
