@@ -228,11 +228,13 @@ jobs:
     - name: Compute build tag
       id: build-tag
       run: |
-        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+        # Critical difference to upstream images:
+        # For Konflux-built images we need to use the semver-compatible "operator tag" for all images.
+        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C operator --quiet --no-print-directory tag)"}"
         echo "IMAGE_TAG=${IMAGE_TAG}" | tee -a "$GITHUB_ENV"
         echo "tag=${IMAGE_TAG}" | tee -a "$GITHUB_OUTPUT"
 
-        OPERATOR_IMAGE_TAG="$(BUILD_TAG="${IMAGE_TAG}" make -C operator --quiet --no-print-directory tag)"
+        OPERATOR_IMAGE_TAG="${IMAGE_TAG}"
         echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
         echo "operator_image_tag=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_OUTPUT"
 
