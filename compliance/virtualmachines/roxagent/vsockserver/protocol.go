@@ -236,8 +236,7 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 
 // handleSyncRepoCPEMapping applies a Sensor-pushed mapping. URL-managed
 // agents (updater == nil) reject Sync outright; Update keeps the last-good
-// mapping on a validation failure, so an err here never leaves the agent
-// without a usable mapping.
+// mapping on a validation failure.
 func (h *Handler) handleSyncRepoCPEMapping(req *pb.SyncRepoCPEMappingRequest) *pb.VMServiceResponse {
 	if h.updater == nil {
 		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED, "agent is URL-managed and does not accept pushed mappings")
