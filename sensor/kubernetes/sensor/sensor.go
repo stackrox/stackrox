@@ -129,7 +129,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
-	complianceMultiplexer := compliance.NewMultiplexer()
+	complianceMultiplexer := compliance.NewMultiplexer(internalMessageDispatcher)
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC(), internalMessageDispatcher)
 
@@ -216,8 +216,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
-	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
-	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher, internalMessageDispatcher)
+	if !(features.SensorInternalPubSub.Enabled() && internalMessageDispatcher != nil) {
+		// When PubSub is active, nodeInventoryHandler's ACKs reach complianceMultiplexer via its
+		// PubSub subscription instead of this legacy ComplianceC() channel.
+		complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
+	}
 	// complianceMultiplexer must start after all components that implement common.ComplianceComponent
 	// i.e., after nodeInventoryHandler
 	components = append(components, nodeInventoryHandler, complianceMultiplexer)

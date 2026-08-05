@@ -260,16 +260,29 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			}
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:
-			s.nodeInventories <- t.NodeInventory
+			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
+				if err := s.pubSubDispatcher.Publish(&NodeInventoryEvent{Inventory: t.NodeInventory}); err != nil {
+					logging.GetRateLimitedLogger().ErrorL("node-inventory-publish", "Failed to publish node inventory event: %v", err)
+				}
+			} else {
+				s.nodeInventories <- t.NodeInventory
+			}
 		case *sensor.MsgFromCompliance_IndexReport:
 			log.Infof("Received index report from %q with %d packages (%d deprecated)",
 				msg.GetNode(),
 				len(msg.GetIndexReport().GetContents().GetPackages()),
 				len(msg.GetIndexReport().GetContents().GetPackagesDEPRECATED()),
 			)
-			s.indexReportWraps <- &index.IndexReportWrap{
+			indexReportWrap := &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,
+			}
+			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
+				if err := s.pubSubDispatcher.Publish(&IndexReportWrapEvent{Wrap: indexReportWrap}); err != nil {
+					logging.GetRateLimitedLogger().ErrorL("index-report-publish", "Failed to publish index report event: %v", err)
+				}
+			} else {
+				s.indexReportWraps <- indexReportWrap
 			}
 		}
 	}
