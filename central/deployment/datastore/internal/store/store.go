@@ -30,4 +30,6 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
+
+	GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error)
 }

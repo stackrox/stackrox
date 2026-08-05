@@ -1045,7 +1045,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
@@ -1172,7 +1172,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
@@ -1350,7 +1350,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
 				nil, nil, nil, config, nil,
-				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
@@ -2915,4 +2915,170 @@ func resourceWithAccess(access storage.Access, resource permissions.ResourceMeta
 		Access:   access,
 		Resource: resource,
 	}
+}
+
+func (s *PruningTestSuite) generateImageV1PruningDataStructures() (imageDatastore.DataStore, imageV2Datastore.DataStore, deploymentDatastore.DataStore) {
+	ctrl := gomock.NewController(s.T())
+
+	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
+	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	mockFilter := filterMocks.NewMockFilter(ctrl)
+	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
+	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
+	mockFilter.EXPECT().Delete(gomock.Any()).AnyTimes()
+
+	mockBaselineDataStore := processBaselineDatastoreMocks.NewMockDataStore(ctrl)
+	mockBaselineDataStore.EXPECT().RemoveProcessBaselinesByDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+	mockNetworkFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(ctrl)
+	mockFlowStore := networkFlowDatastoreMocks.NewMockFlowDataStore(ctrl)
+	mockNetworkFlows.EXPECT().GetFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(mockFlowStore, nil)
+	mockFlowStore.EXPECT().RemoveFlowsForDeployment(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+
+	images := imageDatastore.NewWithPostgres(
+		imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
+		mockRiskDatastore,
+		ranking.ImageRanker(),
+		ranking.ComponentRanker(),
+	)
+	imagesV2 := imageV2Datastore.NewWithPostgres(
+		imageV2Postgres.New(s.pool, true, concurrency.NewKeyFence()),
+		mockRiskDatastore,
+		ranking.ImageRanker(),
+		ranking.ComponentRanker(),
+	)
+	deployments, err := deploymentDatastore.New(s.pool, nil, nil, mockBaselineDataStore, mockNetworkFlows, mockRiskDatastore, nil, mockFilter,
+		ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(),
+		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
+	s.Require().NoError(err)
+
+	return images, imagesV2, deployments
+}
+
+func newV1ImageWithCVEs(id string, cves int32) *storage.Image {
+	digest := types.NewDigest(id).Digest()
+	return &storage.Image{
+		Id:            digest,
+		LastUpdated:   protoconv.ConvertTimeToTimestamp(time.Now()),
+		Name:          &storage.ImageName{FullName: "test/" + id + ":latest"},
+		SetCves:       &storage.Image_Cves{Cves: cves},
+		SetComponents: &storage.Image_Components{Components: cves},
+	}
+}
+
+func (s *PruningTestSuite) TestPruneImageV1Batch() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("V1 image pruning only runs when FlattenImageData is enabled")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	images, imagesV2, depDS := s.generateImageV1PruningDataStructures()
+
+	// Create V1 images covering all pruning scenarios.
+	image1 := newV1ImageWithCVEs("img-no-cves", 0)
+	image2 := newV1ImageWithCVEs("img-enriched", 5)
+	image3 := newV1ImageWithCVEs("img-not-enriched", 3)
+	image4 := newV1ImageWithCVEs("img-no-twin", 2)
+	image5 := newV1ImageWithCVEs("img-missing-v2", 4)
+
+	v1Images := []*storage.Image{image1, image2, image3, image4, image5}
+	for _, img := range v1Images {
+		s.Require().NoError(images.UpsertImage(ctx, img))
+	}
+
+	// Create V2 images: one enriched, one not enriched.
+	v2IDImg2 := utils.NewImageV2ID(image2.GetName(), image2.GetId())
+	v2IDImg3 := utils.NewImageV2ID(image3.GetName(), image3.GetId())
+	v2IDImg5 := utils.NewImageV2ID(image5.GetName(), image5.GetId())
+
+	s.Require().NoError(imagesV2.UpsertImage(ctx, &storage.ImageV2{
+		Id: v2IDImg2, Digest: image2.GetId(),
+		Name:      image2.GetName(),
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 5},
+	}))
+	s.Require().NoError(imagesV2.UpsertImage(ctx, &storage.ImageV2{
+		Id: v2IDImg3, Digest: image3.GetId(),
+		Name:      image3.GetName(),
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 0},
+	}))
+
+	// Create deployment referencing image2 (enriched in images_v2), image3 (not enriched in images_v2), and image5 (missing from images_v2).
+	dep := &storage.Deployment{
+		Id: fixtureconsts.Deployment1,
+		Containers: []*storage.Container{
+			{Image: &storage.ContainerImage{Id: image2.GetId(), IdV2: v2IDImg2, Name: image2.GetName()}},
+			{Image: &storage.ContainerImage{Id: image3.GetId(), IdV2: v2IDImg3, Name: image3.GetName()}},
+			{Image: &storage.ContainerImage{Id: image5.GetId(), IdV2: v2IDImg5, Name: image5.GetName()}},
+		},
+	}
+	s.Require().NoError(depDS.UpsertDeployment(ctx, dep))
+
+	gc := &garbageCollectorImpl{
+		images:      images,
+		imagesV2:    imagesV2,
+		deployments: depDS,
+		postgres:    s.pool,
+	}
+
+	lastPrunedV1ImageID = ""
+	gc.pruneImageV1Batch()
+
+	remaining, err := images.SearchListImages(ctx, search.EmptyQuery())
+	s.Require().NoError(err)
+
+	var remainingIDs []string
+	for _, img := range remaining {
+		remainingIDs = append(remainingIDs, img.GetId())
+	}
+
+	// image1 (0 CVEs): deleted
+	// image2 (V2 twin enriched): deleted
+	// image3 (V2 twin not enriched): kept
+	// image4 (no V2 twin, not deployed): deleted
+	// image5 (V2 ID in deployment but missing from images_v2): kept
+	s.Assert().ElementsMatch([]string{image3.GetId(), image5.GetId()}, remainingIDs)
+
+	// Cleanup
+	_ = images.DeleteImages(ctx, image3.GetId(), image5.GetId())
+	_ = imagesV2.DeleteImages(ctx, v2IDImg2, v2IDImg3)
+	_ = depDS.RemoveDeployment(ctx, "", dep.GetId())
+}
+
+func (s *PruningTestSuite) TestPruneImageV1BatchCursor() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("V1 image pruning only runs when FlattenImageData is enabled")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+	images, imagesV2, depDS := s.generateImageV1PruningDataStructures()
+
+	var v1Images []*storage.Image
+	for i := 0; i < 3; i++ {
+		img := newV1ImageWithCVEs(uuid.NewV4().String(), 0)
+		s.Require().NoError(images.UpsertImage(ctx, img))
+		v1Images = append(v1Images, img)
+	}
+
+	gc := &garbageCollectorImpl{
+		images:      images,
+		imagesV2:    imagesV2,
+		deployments: depDS,
+		postgres:    s.pool,
+	}
+
+	// With batch size = 2, first batch processes 2, cursor advances.
+	s.T().Setenv("ROX_V1_IMAGE_PRUNE_BATCH_SIZE", "2")
+
+	lastPrunedV1ImageID = ""
+	gc.pruneImageV1Batch()
+	s.Assert().NotEmpty(lastPrunedV1ImageID, "cursor should advance after full batch")
+
+	// Second batch processes remaining 1, cursor resets.
+	gc.pruneImageV1Batch()
+	s.Assert().Empty(lastPrunedV1ImageID, "cursor should reset when batch < batchSize")
+
+	remaining, err := images.SearchListImages(ctx, search.EmptyQuery())
+	s.Require().NoError(err)
+	s.Assert().Empty(remaining, "all 0-CVE images should be pruned")
 }

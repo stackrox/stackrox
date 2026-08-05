@@ -90,7 +90,7 @@ func setupBenchmarkTest(b *testing.B, pool postgres.DB) (
 	gc := newGarbageCollector(nil, nil, nil, imagesV2, nil, deployments, pods,
 		nil, nil, nil, mockConfigDS, nil,
 		nil, nil, nil, nil, nil, nil, nil,
-		nil, nil, nil, nil).(*garbageCollectorImpl)
+		nil, nil, nil).(*garbageCollectorImpl)
 	gc.postgres = pool
 
 	return imagesV2, deployments, pods, gc
