@@ -1,5 +1,6 @@
 import { Grid, GridItem } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { Cluster } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
@@ -7,6 +8,7 @@ import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterHealthPanel from './Components/ClusterHealthPanel';
 import ClusterMetadata from './Components/ClusterMetadata';
 import CredentialExpiration from './Components/CredentialExpiration';
+import SensorCompatibilitySummary from './Components/SensorCompatibilitySummary';
 import SensorUpgradePanel from './Components/SensorUpgradePanel';
 import type { CertExpiryStatus } from './clusterTypes';
 
@@ -21,6 +23,9 @@ export function ClusterSummaryGrid({
     clusterRetentionInfo,
     clusterInfo,
 }: ClusterSummaryGridProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
+
     return (
         <Grid hasGutter>
             {clusterInfo.status && (
@@ -32,11 +37,21 @@ export function ClusterSummaryGrid({
             )}
             {clusterInfo.status && (
                 <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                    <SensorUpgradePanel
-                        centralVersion={centralVersion}
-                        sensorVersion={clusterInfo.status?.sensorVersion}
-                        upgradeStatus={clusterInfo.status?.upgradeStatus}
-                    />
+                    {isSensorCompatStatusEnabled ? (
+                        <ClusterHealthPanel header="Sensor compatibility status">
+                            <SensorCompatibilitySummary
+                                compatibility={clusterInfo.status?.sensorVersionCompatibility}
+                                sensorVersion={clusterInfo.status?.sensorVersion}
+                                centralVersion={centralVersion}
+                            />
+                        </ClusterHealthPanel>
+                    ) : (
+                        <SensorUpgradePanel
+                            centralVersion={centralVersion}
+                            sensorVersion={clusterInfo.status?.sensorVersion}
+                            upgradeStatus={clusterInfo.status?.upgradeStatus}
+                        />
+                    )}
                 </GridItem>
             )}
             {clusterInfo.status && (
