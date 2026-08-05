@@ -240,7 +240,7 @@ add_a_maintenance_exclusion() {
         --add-maintenance-exclusion-name leave-these-clusters-alone \
         --add-maintenance-exclusion-start "${from_now}" \
         --add-maintenance-exclusion-end "${plus_five}" \
-        --add-maintenance-exclusion-scope no_upgrades
+        --add-maintenance-exclusion-scope no_minor_or_node_upgrades
 }
 
 wait_for_cluster() {
