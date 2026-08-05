@@ -18,6 +18,9 @@ type Source string
 // SourceKyverno is the canonical source value for Kyverno-produced reports.
 const SourceKyverno Source = "Kyverno"
 
+// SourceGatekeeper is the canonical source value for Gatekeeper-produced reports.
+const SourceGatekeeper Source = "Gatekeeper"
+
 // SourceFIO is the canonical source value for File Integrity Operator findings.
 const SourceFIO Source = "File Integrity Operator"
 

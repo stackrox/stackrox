@@ -172,15 +172,13 @@ func isKnownOutcome(o PolicyResultOutcome) bool {
 	}
 }
 
-// normalizeSource maps a report result's own `source` string to a canonical
-// Source. This adapter is registered specifically for Kyverno-shaped
-// wgpolicyk8s.io/v1alpha2 reports, so its own adapter identity (Kyverno) is
-// always the fallback, per security-event-plan.md's source-normalization
-// precedence ("explicit report result source, then ... adapter identity") —
-// the original string is preserved separately in PolicyResult.OriginalSource
-// for diagnostics regardless of what this returns.
-func normalizeSource(_ string) Source {
-	return SourceKyverno
+func normalizeSource(raw string) Source {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "gatekeeper":
+		return SourceGatekeeper
+	default:
+		return SourceKyverno
+	}
 }
 
 func normalizeSeverity(raw string) Severity {
