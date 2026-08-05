@@ -102,12 +102,8 @@ func (r *rescanner) Run(ctx context.Context) {
 	}
 }
 
-// scanOnce attempts one rescan, skipping it (returning nil, without calling
-// scanFn) if provider has no mapping ready yet. While a scan that does run
-// is in flight, provider is marked busy (when it implements ScanBusyGate)
-// so a concurrent Sync defers instead of racing the scan; that busy state
-// is cleared here on failure, but on success it is left for the Handler to
-// clear once the resulting report has actually been sent over VSOCK.
+// scanOnce clears the busy gate itself only on failure; a successful scan
+// leaves that to the Handler, once the report has gone out over VSOCK.
 func (r *rescanner) scanOnce(ctx context.Context) error {
 	if !r.provider.Ready() {
 		log.Info("Skipping rescan: repository-to-CPE mapping not yet available")

@@ -104,16 +104,9 @@ func (c serveConfig) validate() error {
 	return nil
 }
 
-// newRescannerAndProvider builds the rescanner and the mapping provider it
-// scans against: the URL-backed provider when repoCPEURL is set, the
-// Sensor-backed one (also usable as updater) otherwise. The rescanner is
-// constructed first, with a nil provider, so its OnMappingChanged callback
-// - passed to the provider's constructor below - has a live receiver even
-// if the provider invokes it synchronously during bootstrap (e.g. a valid
-// mapping already cached from a previous run); OnMappingChanged only
-// touches the rescanner's wake channel, never its provider field, so this
-// is safe regardless of ordering. urlUpdater is non-nil only in the
-// URL-backed case, for the caller to Start/Stop its download loop.
+// newRescannerAndProvider builds the rescanner and its mapping provider.
+// OnMappingChanged only touches the wake channel, so passing it to the
+// provider's constructor before provider is assigned below is safe.
 func newRescannerAndProvider(cache *vsockserver.ReportCache, cfg serveConfig) (vmRescanner *rescanner, provider vsockserver.MappingProvider, updater vsockserver.MappingUpdater, urlUpdater *vsockserver.URLUpdater) {
 	vmRescanner = newRescanner(cache, cfg.hostPath, nil, cfg.rescanInterval)
 
