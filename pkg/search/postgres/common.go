@@ -37,9 +37,8 @@ var (
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
 
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
+	cursorBatchSize      = env.ReportBatchSize.IntegerSetting()
 )
-
-const cursorBatchSize = 100
 
 type cursorSession struct {
 	id string
@@ -1288,7 +1287,7 @@ func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Con
 			}
 		}
 
-		if rowsAffected != cursorBatchSize {
+		if rowsAffected != int64(cursorBatchSize) {
 			return ctx.Err()
 		}
 	}

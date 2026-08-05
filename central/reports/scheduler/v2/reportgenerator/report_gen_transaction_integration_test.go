@@ -19,6 +19,36 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+// CSV column indices matching csvHeader in csv_gen.go.
+const (
+	colCluster      = 0
+	colNamespace    = 1
+	colDeployment   = 2
+	colImage        = 3
+	colComponent    = 4
+	colCompVersion  = 5
+	colCVE          = 6
+	colFixable      = 7
+	colFixedBy      = 8
+	colSeverity     = 9
+	colCVSS         = 10
+	colNVDCVSS      = 11
+	colEPSS         = 12
+	colDiscoveredAt = 13
+	colReference    = 14
+	colAdvName      = 15
+	colAdvLink      = 16
+)
+
+// collectColumn extracts a single column from all rows.
+func collectColumn(rows [][]string, col int) []string {
+	out := make([]string, len(rows))
+	for i, row := range rows {
+		out[i] = row[col]
+	}
+	return out
+}
+
 // setupTransactionDeps creates a multi-connection pool and the datastores
 // required by generateReportTransaction. The returned reportGeneratorImpl
 // is a shallow copy of s.reportGenerator with db, blobStore, and

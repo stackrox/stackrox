@@ -3,11 +3,8 @@
 package reportgenerator
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"runtime"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -30,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -95,14 +91,8 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 		watchedImageDatastore, collectionQueryResolver, nil, blobStore, clusterDatastore,
 		nsDatastore, resolver.ImageCVEV2DataStore, schema)
 
-	// pgtest limits all pools to pool_max_conns=1, which deadlocks the streaming path.
-	// generateReportStreamingDownload requires three simultaneous connections:
-	//   1. cursor transaction (rg.db) — held for the entire stream
-	//   2. blob store Upsert (blobStore) — one long-lived txn wrapping the large-object write
-	//   3. imageCVE2Datastore.GetBatch — called from the goroutine every refLinkBatchSize rows
-	//      while the blob store txn (2) already holds the only testDB.DB connection
-	// Replace rg.db and rg.blobStore with a shared pool that allows enough simultaneous
-	// connections so none of the three block each other.
+	// pgtest limits all pools to pool_max_conns=1 which is too restrictive for
+	// report generation. Use a shared pool with enough connections.
 	multiConnCfg := testDB.DB.Config().Copy()
 	multiConnCfg.Config.MaxConns = 4
 	multiConnPool, err := postgres.New(context.Background(), multiConnCfg)
@@ -156,9 +146,8 @@ func setupMemoryBench(b *testing.B, numNamespacesPerCluster, numDeploymentsPerNa
 		storage.VulnerabilityReportFilters_WATCHED,
 	}
 	snap := testReportSnapshot(collection.GetId(), storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
-	// generateReportStreamingDownload calls updateReportStatus, which upserts the snapshot into
-	// report_snapshots. That table has a FK to report_configurations, so the parent config row
-	// must exist before the first update. Seed it with the ID the fixture already uses.
+	// updateReportStatus upserts the snapshot into report_snapshots. That table has a FK to
+	// report_configurations, so the parent config row must exist first.
 	reportConfigStore := reportConfigDS.GetTestPostgresDataStore(b, testDB.DB)
 	_, err = reportConfigStore.AddReportConfiguration(ctx, &storage.ReportConfiguration{
 		Id:   snap.GetReportConfigurationId(),
@@ -229,21 +218,21 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 	})
 }
 
-// BenchmarkMemory_Streaming measures peak heap allocation for the new streaming path:
-// cursor -> CSV -> ZIP -> io.Pipe -> blob store, without accumulating the full dataset.
-func BenchmarkMemory_Streaming(b *testing.B) {
+// BenchmarkMemory_Transaction measures peak heap allocation for the transactional streaming
+// path: cursor reads, CVE lookups, CSV/ZIP generation, and blob store writes all within a
+// single database transaction using constant memory.
+func BenchmarkMemory_Transaction(b *testing.B) {
 	s := setupMemoryBench(b, 10, 50, 500)
-	// Set notification method to DOWNLOAD so generateReportStreamingDownload is used.
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 
-	b.Run("generateReportStreamingDownload", func(b *testing.B) {
+	b.Run("generateReportTransaction", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
+			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -256,7 +245,7 @@ func BenchmarkMemory_Streaming(b *testing.B) {
 	})
 }
 
-// BenchmarkMemoryComparison runs both paths side-by-side for easy comparison.
+// BenchmarkMemoryComparison runs InMemory and Transaction paths side-by-side for easy comparison.
 // Use: go test -tags sql_integration -bench BenchmarkMemoryComparison -benchtime 3x -v
 func BenchmarkMemoryComparison(b *testing.B) {
 	s := setupMemoryBench(b, 10, 50, 500)
@@ -283,14 +272,14 @@ func BenchmarkMemoryComparison(b *testing.B) {
 	})
 
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-	b.Run("Streaming", func(b *testing.B) {
+	b.Run("Transaction", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
+			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -304,7 +293,7 @@ func BenchmarkMemoryComparison(b *testing.B) {
 }
 
 // BenchmarkMemoryPeakTracking provides finer-grained peak memory tracking by sampling
-// heap allocations during the streaming pipeline using a finalizer-based approach.
+// heap allocations using a finalizer-based approach.
 // This gives the most accurate picture since runtime.ReadMemStats is a stop-the-world snapshot.
 func BenchmarkMemoryPeakTracking(b *testing.B) {
 	s := setupMemoryBench(b, 10, 50, 500)
@@ -345,14 +334,14 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 	})
 
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-	b.Run("Streaming_Peak", func(b *testing.B) {
+	b.Run("Transaction_Peak", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			baseline := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
+			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -371,41 +360,15 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 func BenchmarkMemoryAtScale(b *testing.B) {
 	s := setupMemoryBench(b, 20, 100, 1000)
 
-	b.Run("InMemory", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-			forceGC()
-			before := heapAllocBytes()
-
-			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
-			require.NoError(b, err)
-
-			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
-			require.NoError(b, err)
-
-			after := heapAllocBytes()
-			b.ReportMetric(float64(after-before), "heap-delta-bytes")
-			b.ReportMetric(float64(len(reportData.CVEResponses)), "rows")
-
-			var buf bytes.Buffer
-			_, _, err = s.rg.blobStore.Get(reportGenCtx, "", &buf)
-			_ = err
-
-			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
-			require.NoError(b, err)
-		}
-	})
-
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-	b.Run("Streaming", func(b *testing.B) {
+	b.Run("Transaction", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
 			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 			forceGC()
 			before := heapAllocBytes()
 
-			err := s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
+			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
 				ReportSnapshot: s.snap,
 				Collection:     s.collection,
 				DataStartTime:  time.Time{},
@@ -416,119 +379,4 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
 		}
 	})
-}
-
-// BenchmarkConcurrentStreamingConnections runs 5 streaming report jobs concurrently and
-// measures database connection pool usage. With streaming, each job holds simultaneously:
-//   - 1 long-lived connection: cursor transaction reading data from postgres
-//   - 1 long-lived connection: blob store transaction writing the report
-//   - 1 short-lived connection: CVE reference link lookups (acquired/released per batch)
-//
-// Two pool configurations are tested:
-//   - adequate_pool: 3*numJobs + 5 connections — comfortable headroom, no contention expected
-//   - tight_pool: exactly 3*numJobs connections — validates minimum required pool size
-//
-// Use: go test -tags sql_integration -bench BenchmarkConcurrentStreamingConnections -benchtime 1x -v
-func BenchmarkConcurrentStreamingConnections(b *testing.B) {
-	const numJobs = 5
-	const connsPerJob = 3 // 2 long (cursor tx + blob store tx) + 1 short (CVE lookup)
-
-	for name, tc := range map[string]struct {
-		maxConns int32
-	}{
-		"adequate_pool": {maxConns: int32(numJobs*connsPerJob + 5)},
-		"tight_pool":    {maxConns: int32(numJobs * connsPerJob)},
-	} {
-		b.Run(name, func(b *testing.B) {
-			s := setupMemoryBench(b, 10, 50, 500)
-
-			// Replace the pool from setupMemoryBench (MaxConns=4) with one sized for
-			// concurrent jobs. All jobs share this single pool so stats reflect total usage.
-			poolCfg := s.testDB.DB.Config().Copy()
-			poolCfg.Config.MaxConns = tc.maxConns
-			pool, err := postgres.New(context.Background(), poolCfg)
-			require.NoError(b, err)
-			b.Cleanup(func() { pool.Close() })
-			s.rg.db = pool
-			s.rg.blobStore = blobDS.NewTestDatastore(b, pool)
-
-			// Each snapshot needs its own report config (FK constraint) and unique
-			// ReportId to avoid blob path collisions between concurrent jobs.
-			reportConfigStore := reportConfigDS.GetTestPostgresDataStore(b, s.testDB.DB)
-			snaps := make([]*storage.ReportSnapshot, numJobs)
-			for i := range numJobs {
-				imageTypes := []storage.VulnerabilityReportFilters_ImageType{
-					storage.VulnerabilityReportFilters_DEPLOYED,
-					storage.VulnerabilityReportFilters_WATCHED,
-				}
-				snap := testReportSnapshot(s.collection.GetId(), storage.VulnerabilityReportFilters_BOTH, allSeverities(), imageTypes, nil)
-				configID := uuid.NewV4().String()
-				snap.ReportConfigurationId = configID
-				snap.ReportId = uuid.NewV4().String()
-				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-				_, err := reportConfigStore.AddReportConfiguration(s.ctx, &storage.ReportConfiguration{
-					Id:   configID,
-					Name: fmt.Sprintf("bench-concurrent-%d", i),
-					Type: storage.ReportConfiguration_VULNERABILITY,
-				})
-				require.NoError(b, err)
-				snaps[i] = snap
-			}
-
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				// Capture baseline cumulative stats so we report per-iteration deltas.
-				initialStat := pool.Stat()
-				var peakAcquired, peakTotal atomic.Int32
-
-				// Sample pool stats periodically to capture peak concurrent connection usage.
-				stopSampler := make(chan struct{})
-				go func() {
-					ticker := time.NewTicker(time.Millisecond)
-					defer ticker.Stop()
-					for {
-						select {
-						case <-stopSampler:
-							return
-						case <-ticker.C:
-							stat := pool.Stat()
-							if cur := stat.AcquiredConns(); cur > peakAcquired.Load() {
-								peakAcquired.Store(cur)
-							}
-							if cur := stat.TotalConns(); cur > peakTotal.Load() {
-								peakTotal.Store(cur)
-							}
-						}
-					}
-				}()
-
-				var wg sync.WaitGroup
-				errs := make([]error, numJobs)
-				for j := range numJobs {
-					wg.Go(func() {
-						iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-						errs[j] = s.rg.generateReportStreamingDownload(iterCtx, &ReportRequest{
-							ReportSnapshot: snaps[j],
-							Collection:     s.collection,
-							DataStartTime:  time.Time{},
-						})
-					})
-				}
-				wg.Wait()
-				close(stopSampler)
-
-				for j, e := range errs {
-					require.NoError(b, e, "job %d failed", j)
-				}
-
-				finalStat := pool.Stat()
-				b.ReportMetric(float64(peakAcquired.Load()), "peak-acquired-conns")
-				b.ReportMetric(float64(peakTotal.Load()), "peak-total-conns")
-				b.ReportMetric(float64(tc.maxConns), "max-pool-conns")
-				b.ReportMetric(float64(finalStat.AcquireCount()-initialStat.AcquireCount()), "iter-acquires")
-				b.ReportMetric(float64(finalStat.EmptyAcquireCount()-initialStat.EmptyAcquireCount()), "iter-empty-acquires")
-				b.ReportMetric(float64((finalStat.AcquireDuration() - initialStat.AcquireDuration()).Milliseconds()), "iter-acquire-wait-ms")
-			}
-		})
-	}
 }
