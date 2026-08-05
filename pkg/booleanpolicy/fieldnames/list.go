@@ -13,6 +13,7 @@ var (
 	AutomountServiceAccountToken   = newFieldName("Automount Service Account Token")
 	CVE                            = newFieldName("CVE")
 	CVSS                           = newFieldName("CVSS")
+	CisaKev                        = newFieldName("CISA KEV")
 	ContainerCPULimit              = newFieldName("Container CPU Limit")
 	ContainerCPURequest            = newFieldName("Container CPU Request")
 	ContainerMemLimit              = newFieldName("Container Memory Limit")
