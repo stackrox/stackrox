@@ -365,7 +365,7 @@ ifdef CI
 deps:
 	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)" >&2
 else
-deps: $(shell git ls-files '*/go.mod' 'go.mod')
+deps: go.mod
 	@echo "+ $@"
 	$(SILENT)GOMOCK_REFLECT_DIRS=$$(find . -type d -name 'gomock_reflect_*'); \
 	if [ -n "$$GOMOCK_REFLECT_DIRS" ]; then \
@@ -373,9 +373,7 @@ deps: $(shell git ls-files '*/go.mod' 'go.mod')
 		echo "$$GOMOCK_REFLECT_DIRS"; \
 		exit 1; \
 	fi
-	$(SILENT)for gomod in $^; do \
-		(cd "$$(dirname "$$gomod")" && go mod tidy) || exit 1; \
-	done
+	$(SILENT)go mod tidy
 	$(SILENT)touch $@
 endif
 

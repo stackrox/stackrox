@@ -7,9 +7,7 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 export SHELLOPTS
 
-for gomod in $(git ls-files '*/go.mod' 'go.mod'); do
-    (cd "$(dirname "$gomod")" && go mod tidy) || exit 1
-done
+go mod tidy
 
 FAIL_FLAG="/tmp/fail"
 
