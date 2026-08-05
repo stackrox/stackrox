@@ -56,6 +56,7 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
+	watchedImageDatastore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -577,7 +578,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.postgres = s.pool
 
 			// Add images, deployments, and pods into the datastores
@@ -802,7 +803,7 @@ func (s *PruningTestSuite) TestImagePruningSameDigestDifferentName() {
 			gc := newGarbageCollector(nil, nil, nil, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.postgres = s.pool
 
 			for _, dep := range c.deployments {
@@ -1046,7 +1047,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1173,7 +1174,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1351,7 +1352,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
 				nil, nil, nil, config, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -2917,7 +2918,7 @@ func resourceWithAccess(access storage.Access, resource permissions.ResourceMeta
 	}
 }
 
-func (s *PruningTestSuite) generateImageV1PruningDataStructures() (imageDatastore.DataStore, imageV2Datastore.DataStore, deploymentDatastore.DataStore) {
+func (s *PruningTestSuite) generateImageV1PruningDataStructures() (imageDatastore.DataStore, imageV2Datastore.DataStore, deploymentDatastore.DataStore, watchedImageDatastore.DataStore) {
 	ctrl := gomock.NewController(s.T())
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
@@ -2953,15 +2954,19 @@ func (s *PruningTestSuite) generateImageV1PruningDataStructures() (imageDatastor
 		platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	s.Require().NoError(err)
 
-	return images, imagesV2, deployments
+	watchedImages := watchedImageDatastore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	return images, imagesV2, deployments, watchedImages
 }
 
 func newV1ImageWithCVEs(id string, cves int32) *storage.Image {
 	digest := types.NewDigest(id).Digest()
+	name := &storage.ImageName{FullName: "test/" + id + ":latest"}
 	return &storage.Image{
 		Id:            digest,
 		LastUpdated:   protoconv.ConvertTimeToTimestamp(time.Now()),
-		Name:          &storage.ImageName{FullName: "test/" + id + ":latest"},
+		Name:          name,
+		Names:         []*storage.ImageName{name},
 		SetCves:       &storage.Image_Cves{Cves: cves},
 		SetComponents: &storage.Image_Components{Components: cves},
 	}
@@ -2973,7 +2978,7 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	}
 
 	ctx := sac.WithAllAccess(context.Background())
-	images, imagesV2, depDS := s.generateImageV1PruningDataStructures()
+	images, imagesV2, depDS, watchedDS := s.generateImageV1PruningDataStructures()
 
 	// Create V1 images covering all pruning scenarios.
 	image1 := newV1ImageWithCVEs("img-no-cves", 0)
@@ -2981,8 +2986,11 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	image3 := newV1ImageWithCVEs("img-not-enriched", 3)
 	image4 := newV1ImageWithCVEs("img-no-twin", 2)
 	image5 := newV1ImageWithCVEs("img-missing-v2", 4)
+	image6 := newV1ImageWithCVEs("img-watched-enriched", 6)
+	image7 := newV1ImageWithCVEs("img-watched-not-enriched", 7)
+	image8 := newV1ImageWithCVEs("img-watched-no-v2", 8)
 
-	v1Images := []*storage.Image{image1, image2, image3, image4, image5}
+	v1Images := []*storage.Image{image1, image2, image3, image4, image5, image6, image7, image8}
 	for _, img := range v1Images {
 		s.Require().NoError(images.UpsertImage(ctx, img))
 	}
@@ -2991,6 +2999,8 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	v2IDImg2 := utils.NewImageV2ID(image2.GetName(), image2.GetId())
 	v2IDImg3 := utils.NewImageV2ID(image3.GetName(), image3.GetId())
 	v2IDImg5 := utils.NewImageV2ID(image5.GetName(), image5.GetId())
+	v2IDImg6 := utils.NewImageV2ID(image6.GetName(), image6.GetId())
+	v2IDImg7 := utils.NewImageV2ID(image7.GetName(), image7.GetId())
 
 	s.Require().NoError(imagesV2.UpsertImage(ctx, &storage.ImageV2{
 		Id: v2IDImg2, Digest: image2.GetId(),
@@ -3002,8 +3012,25 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 		Name:      image3.GetName(),
 		ScanStats: &storage.ImageV2_ScanStats{CveCount: 0},
 	}))
+	// Watched image6: V2 twin enriched.
+	s.Require().NoError(imagesV2.UpsertImage(ctx, &storage.ImageV2{
+		Id: v2IDImg6, Digest: image6.GetId(),
+		Name:      image6.GetName(),
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 6},
+	}))
+	// Watched image7: V2 twin not enriched.
+	s.Require().NoError(imagesV2.UpsertImage(ctx, &storage.ImageV2{
+		Id: v2IDImg7, Digest: image7.GetId(),
+		Name:      image7.GetName(),
+		ScanStats: &storage.ImageV2_ScanStats{CveCount: 0},
+	}))
 
-	// Create deployment referencing image2 (enriched in images_v2), image3 (not enriched in images_v2), and image5 (missing from images_v2).
+	// Watch image6, image7, and image8 (none are deployed).
+	s.Require().NoError(watchedDS.UpsertWatchedImage(ctx, image6.GetName().GetFullName()))
+	s.Require().NoError(watchedDS.UpsertWatchedImage(ctx, image7.GetName().GetFullName()))
+	s.Require().NoError(watchedDS.UpsertWatchedImage(ctx, image8.GetName().GetFullName()))
+
+	// Create deployment referencing image2 (enriched), image3 (not enriched), and image5 (missing from images_v2).
 	dep := &storage.Deployment{
 		Id: fixtureconsts.Deployment1,
 		Containers: []*storage.Container{
@@ -3015,10 +3042,11 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	s.Require().NoError(depDS.UpsertDeployment(ctx, dep))
 
 	gc := &garbageCollectorImpl{
-		images:      images,
-		imagesV2:    imagesV2,
-		deployments: depDS,
-		postgres:    s.pool,
+		images:        images,
+		imagesV2:      imagesV2,
+		deployments:   depDS,
+		watchedImages: watchedDS,
+		postgres:      s.pool,
 	}
 
 	lastPrunedV1ImageID = ""
@@ -3033,15 +3061,18 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	}
 
 	// image1 (0 CVEs): deleted
-	// image2 (V2 twin enriched): deleted
-	// image3 (V2 twin not enriched): kept
-	// image4 (no V2 twin, not deployed): deleted
-	// image5 (V2 ID in deployment but missing from images_v2): kept
-	s.Assert().ElementsMatch([]string{image3.GetId(), image5.GetId()}, remainingIDs)
+	// image2 (deployed, V2 twin enriched): deleted
+	// image3 (deployed, V2 twin not enriched): kept
+	// image4 (not deployed, not watched): deleted
+	// image5 (deployed, V2 missing from images_v2): kept
+	// image6 (not deployed, watched, V2 twin enriched): deleted
+	// image7 (not deployed, watched, V2 twin not enriched): kept
+	// image8 (not deployed, watched, V2 missing): kept
+	s.Assert().ElementsMatch([]string{image3.GetId(), image5.GetId(), image7.GetId(), image8.GetId()}, remainingIDs)
 
 	// Cleanup
-	_ = images.DeleteImages(ctx, image3.GetId(), image5.GetId())
-	_ = imagesV2.DeleteImages(ctx, v2IDImg2, v2IDImg3)
+	_ = images.DeleteImages(ctx, image3.GetId(), image5.GetId(), image7.GetId(), image8.GetId())
+	_ = imagesV2.DeleteImages(ctx, v2IDImg2, v2IDImg3, v2IDImg6, v2IDImg7)
 	_ = depDS.RemoveDeployment(ctx, "", dep.GetId())
 }
 
@@ -3051,7 +3082,7 @@ func (s *PruningTestSuite) TestPruneImageV1BatchCursor() {
 	}
 
 	ctx := sac.WithAllAccess(context.Background())
-	images, imagesV2, depDS := s.generateImageV1PruningDataStructures()
+	images, imagesV2, depDS, watchedDS := s.generateImageV1PruningDataStructures()
 
 	var v1Images []*storage.Image
 	for i := 0; i < 3; i++ {
@@ -3061,10 +3092,11 @@ func (s *PruningTestSuite) TestPruneImageV1BatchCursor() {
 	}
 
 	gc := &garbageCollectorImpl{
-		images:      images,
-		imagesV2:    imagesV2,
-		deployments: depDS,
-		postgres:    s.pool,
+		images:        images,
+		imagesV2:      imagesV2,
+		deployments:   depDS,
+		watchedImages: watchedDS,
+		postgres:      s.pool,
 	}
 
 	// With batch size = 2, first batch processes 2, cursor advances.
