@@ -52,12 +52,9 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
 
-	// Performance improvements to narrow aggregations performed.
-	// When unified CVE view is enabled, severity counts are replaced with
-	// MAX(severity), allowing a single-phase query with ORDER BY + LIMIT.
 	var cveIDsToFilter []string
 	var err error
-	if !features.VulnMgmtUnifiedCVEView.Enabled() && (cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0) {
+	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			log.Error(err)

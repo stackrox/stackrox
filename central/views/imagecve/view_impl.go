@@ -88,10 +88,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	var cveIDsToFilter []string
 	var err error
-	// When SkipGetImagesBySeverity is set, severity counts are not included
-	// and the two-phase query is unnecessary since MAX(severity) sort works
-	// in a single pass.
-	if !options.SkipGetImagesBySeverity && (cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0) {
+	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			return nil, err
