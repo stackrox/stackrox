@@ -89,7 +89,7 @@ var staticDefaults = platform.CentralSpec{
 		Policies: new(platform.NetworkPoliciesEnabled),
 	},
 	CentralWorker: &platform.CentralWorkerSpec{
-		Enabled: ptr.To(false),
+		Enabled: new(false),
 	},
 	ConfigAsCode: &platform.ConfigAsCodeSpec{
 		ComponentPolicy: new(platform.ConfigAsCodeComponentEnabled),
