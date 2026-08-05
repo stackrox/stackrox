@@ -70,12 +70,12 @@ COPY --from=ubi-micro-base / /out/
 RUN dnf module enable -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
-        --releasever=8 \
+        --releasever=9 \
         postgresql:${PG_VERSION} && \
     dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
-        --releasever=8 \
+        --releasever=9 \
         --setopt=install_weak_deps=0 \
         --nodocs \
         ca-certificates \
