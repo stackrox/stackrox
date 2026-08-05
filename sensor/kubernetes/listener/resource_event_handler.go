@@ -445,15 +445,7 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
-	if shouldTrackPolicyReports {
-		log.Info("Syncing policy reports")
-		handle(k.context, informerPolicyReports, policyReportInformer, dispatchers.ForPolicyReports(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
-	}
-
-	if shouldTrackFIO {
-		log.Info("Syncing file integrity node statuses")
-		handle(k.context, informerFileIntegrityNodeStatuses, fioInformer, dispatchers.ForFileIntegrityNodeStatuses(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
-	}
+	// PolicyReports are deferred to after pods sync — see below.
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
@@ -529,6 +521,8 @@ func (k *listenerImpl) handleAllEvents() {
 
 	log.Info("Successfully synced network policies, nodes, services, jobs, replica sets, and replication controllers")
 
+	// FIO is deferred to after pods sync — see below.
+
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
@@ -568,6 +562,25 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	log.Info("Successfully synced pods")
+
+	// SecurityEvent informers (PolicyReport, FIO) are deferred to after pods
+	// sync so that the parent hierarchy and node store are fully populated
+	// when initial-sync events are processed by the detector.
+	seWaitGroup := &concurrency.WaitGroup{}
+	if shouldTrackPolicyReports {
+		log.Info("Syncing policy reports")
+		handle(k.context, informerPolicyReports, policyReportInformer, dispatchers.ForPolicyReports(), k.pubSubDispatcher, k.outputQueue, &syncingResources, seWaitGroup, stopSignal, &eventLock, informerTracker)
+	}
+	if shouldTrackFIO {
+		log.Info("Syncing file integrity node statuses")
+		handle(k.context, informerFileIntegrityNodeStatuses, fioInformer, dispatchers.ForFileIntegrityNodeStatuses(), k.pubSubDispatcher, k.outputQueue, &syncingResources, seWaitGroup, stopSignal, &eventLock, informerTracker)
+	}
+	if shouldTrackPolicyReports || shouldTrackFIO {
+		if !startAndWait(stopSignal, seWaitGroup, sif, crdSharedInformerFactory) {
+			return
+		}
+		log.Info("Successfully synced security event informers")
+	}
 
 	// Set the flag that all objects present at start up have been consumed.
 	syncingResources.Set(false)
