@@ -71,7 +71,7 @@ defaults:
 
 jobs:
   qa-e2e-tests:
-    if: ${{ !cancelled() && !failure() && (github.event_name == 'workflow_dispatch' || inputs.should-run) }}
+    if: inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
