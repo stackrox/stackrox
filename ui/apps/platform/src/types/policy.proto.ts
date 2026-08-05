@@ -28,6 +28,7 @@ export const policyEventSources = [
     'DEPLOYMENT_EVENT',
     'AUDIT_LOG_EVENT',
     'NODE_EVENT',
+    'SECURITY_EVENT',
 ] as const;
 
 export type PolicyEventSource = (typeof policyEventSources)[number];

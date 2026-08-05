@@ -399,6 +399,8 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		_, err = booleanpolicy.BuildAuditLogEventMatcher(policy, booleanpolicy.ValidateSourceIsAuditLogEvents())
 	} else if s.isNodeEventPolicy(policy) {
 		_, err = booleanpolicy.BuildNodeEventMatcher(policy, options...)
+	} else if s.isSecurityEventPolicy(policy) {
+		_, err = booleanpolicy.BuildSecurityEventMatcher(policy, options...)
 	} else {
 		if booleanpolicy.ContainsOneOf(policy, booleanpolicy.FileAccess) {
 			// FileAccesses are handled slightly differently and can't use the default

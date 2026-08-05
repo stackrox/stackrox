@@ -50,6 +50,10 @@ function getEventSourceHelperText(eventSource: PolicyEventSource) {
         return 'Event sources that evaluate node level activity.';
     }
 
+    if (eventSource === 'SECURITY_EVENT') {
+        return 'Alert on policy violations reported by external security tools via PolicyReports.';
+    }
+
     return '';
 }
 
@@ -130,6 +134,15 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             scope: [],
             excludedImageNames: [],
             excludedDeploymentScopes: [],
+            enforcementActions: [],
+        });
+    }
+
+    function onChangeSecurityEventSource() {
+        setValues({
+            ...values,
+            eventSource: 'SECURITY_EVENT',
+            policySections: cloneDeep(initialPolicy.policySections),
             enforcementActions: [],
         });
     }
@@ -331,6 +344,16 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                     id="policy-event-source-node"
                                     name="eventSource"
                                     onChange={onChangeNodeEventSource}
+                                    isDisabled={!isRuntime || hasActiveViolations}
+                                />
+                            )}
+                            {isFeatureFlagEnabled('ROX_POLICY_REPORTS') && (
+                                <Radio
+                                    label="Security event"
+                                    isChecked={values.eventSource === 'SECURITY_EVENT'}
+                                    id="policy-event-source-security-event"
+                                    name="eventSource"
+                                    onChange={onChangeSecurityEventSource}
                                     isDisabled={!isRuntime || hasActiveViolations}
                                 />
                             )}
