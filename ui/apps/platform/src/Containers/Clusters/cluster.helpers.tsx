@@ -201,7 +201,7 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
-const sensorCompatibilityMap = {
+export const sensorCompatibilityMap = {
     SENSOR_VERSION_COMPATIBILITY_MATCHED: {
         displayValue: 'Matched',
         Icon: CheckCircleIcon,
