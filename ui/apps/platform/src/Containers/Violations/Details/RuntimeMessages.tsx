@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import type { ProcessViolation, Violation } from 'types/alert.proto';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
+import SecurityEventCard from './SecurityEventCard';
 import TimestampedEventCard from './TimestampedEventCard';
 import ProcessCardContent from './ProcessCardContent';
 import FileAccessCard from './FileAccessCard';
@@ -47,6 +48,15 @@ function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps)
                     key={`${fileAccess.timestamp}-${fileAccess.operation}-${fileAccess.file.actualPath}`}
                     fileAccess={fileAccess}
                     message={message}
+                />
+            );
+        } else if (violation.type === 'SECURITY_EVENT') {
+            const { keyValueAttrs } = violation;
+            plainViolations.push(
+                <SecurityEventCard
+                    key={`${time}-${message}`}
+                    message={message}
+                    keyValueAttrs={keyValueAttrs}
                 />
             );
         }
