@@ -11,7 +11,6 @@ import (
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
-	imageCVEV2Datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -77,7 +76,8 @@ var (
 	pruningCtx                = sac.WithAllAccess(context.Background())
 	lastClusterPruneTime      time.Time
 	lastLogImbuePruneTime     time.Time
-	lastV1CVEPruneTime        time.Time
+	lastV1ImagePruneTime      time.Time
+	lastPrunedV1ImageID       string
 	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
 	prunedPLOPsWithoutPodUIDs = false
 
@@ -129,7 +129,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	blobStore blobDatastore.Datastore,
 	nodeCVEStore nodeCVEDS.DataStore,
 	roleStore roleDataStore.DataStore,
-	imageCVEs imageCVEV2Datastore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -156,7 +155,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		blobStore:       blobStore,
 		nodeCVEStore:    nodeCVEStore,
 		roleStore:       roleStore,
-		imageCVEs:       imageCVEs,
 	}
 }
 
@@ -186,7 +184,6 @@ type garbageCollectorImpl struct {
 	blobStore       blobDatastore.Datastore
 	nodeCVEStore    nodeCVEDS.DataStore
 	roleStore       roleDataStore.DataStore
-	imageCVEs       imageCVEV2Datastore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -235,7 +232,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 		g.pruneOrphanedNodeCVEs()
 	}
 	if features.FlattenImageData.Enabled() {
-		g.pruneImageV1CVEs()
+		g.pruneImageV1s()
 	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
@@ -246,7 +243,7 @@ func (g *garbageCollectorImpl) runGC() {
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
-	lastV1CVEPruneTime = time.Now().Add(-env.V1CVEPruneInterval.DurationSetting())
+	lastV1ImagePruneTime = time.Now().Add(-env.V1ImagePruneInterval.DurationSetting())
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -258,6 +255,10 @@ func (g *garbageCollectorImpl) runGC() {
 			return
 		}
 	}
+}
+
+func (g *garbageCollectorImpl) pruneImageV1s() {
+	// TODO: implement V1 image pruning
 }
 
 // Remove vulnerability requests that have expired and past the retention period.
@@ -1257,145 +1258,6 @@ func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
 		log.Infof("[Expired objects pruning] Removed %d roles, %d permission sets, %d access scopes",
 			expiredRoleCount, expiredPSCount, expiredASCount)
 	}
-}
-
-func (g *garbageCollectorImpl) pruneImageV1CVEs() {
-	defer metrics.SetPruningDuration(time.Now(), "ImageV1CVEs")
-
-	v1CVEPruneInterval := env.V1CVEPruneInterval.DurationSetting()
-	if lastV1CVEPruneTime.Add(v1CVEPruneInterval).After(time.Now()) {
-		return
-	}
-	defer func() {
-		lastV1CVEPruneTime = time.Now()
-	}()
-
-	pruned, err := g.pruneImageV1CVEBatch()
-	if err != nil {
-		log.Errorf("[V1 CVE Pruning] Error pruning batch: %v", err)
-		return
-	}
-	log.Infof("[V1 CVE Pruning] Pruned %d V1 CVE rows", pruned)
-}
-
-func (g *garbageCollectorImpl) pruneImageV1CVEBatch() (int, error) {
-	batchSize := env.V1CVEPruneBatchSize.IntegerSetting()
-
-	v1CVEs, err := g.imageCVEs.GetImageV1CVETimes(pruningCtx, batchSize)
-	if err != nil {
-		return 0, errors.Wrap(err, "fetching V1 CVE rows")
-	}
-	if len(v1CVEs) == 0 {
-		log.Info("[V1 CVE Pruning] No V1 CVE rows to prune")
-		return 0, nil
-	}
-
-	digestSet := set.NewStringSet()
-	for _, cve := range v1CVEs {
-		digestSet.Add(cve.GetImageID())
-	}
-	digests := digestSet.AsSlice()
-
-	digestToV2IDs, err := g.imagesV2.GetImageIDsForDigests(pruningCtx, digests)
-	if err != nil {
-		return 0, errors.Wrap(err, "fetching V2 image IDs by digest")
-	}
-
-	var allV2IDs []string
-	for _, ids := range digestToV2IDs {
-		allV2IDs = append(allV2IDs, ids...)
-	}
-
-	v2CVEs, err := g.imageCVEs.GetImageV2CVETimes(pruningCtx, allV2IDs)
-	if err != nil {
-		return 0, errors.Wrap(err, "fetching V2 CVE timestamps")
-	}
-	v2CVEMap := buildV2CVEMap(v2CVEs)
-
-	pruneableIDs, affectedDigests := findPruneableCVEs(v1CVEs, digestToV2IDs, v2CVEMap)
-	if len(pruneableIDs) == 0 {
-		return 0, nil
-	}
-
-	if err := postgres.DeleteImageCVEsByIDs(pruningCtx, g.postgres, pruneableIDs); err != nil {
-		return 0, errors.Wrap(err, "deleting V1 CVE rows")
-	}
-
-	if err := g.images.NullImageScanHashes(pruningCtx, affectedDigests); err != nil {
-		log.Errorf("[V1 CVE Pruning] Error nulling scan hashes: %v", err)
-	}
-
-	if err := postgres.DeleteOrphanedV1Components(pruningCtx, g.postgres, affectedDigests); err != nil {
-		log.Errorf("[V1 CVE Pruning] Error deleting orphaned components: %v", err)
-	}
-
-	return len(pruneableIDs), nil
-}
-
-func buildV2CVEMap(v2CVEs []*imageCVEV2Datastore.CVETimeView) map[string]map[string]*imageCVEV2Datastore.CVETimeView {
-	result := make(map[string]map[string]*imageCVEV2Datastore.CVETimeView)
-	for _, cve := range v2CVEs {
-		imageID := cve.GetImageIDV2()
-		if imageID == "" {
-			continue
-		}
-		if result[imageID] == nil {
-			result[imageID] = make(map[string]*imageCVEV2Datastore.CVETimeView)
-		}
-		result[imageID][cve.GetCVE()] = cve
-	}
-	return result
-}
-
-func findPruneableCVEs(
-	v1CVEs []*imageCVEV2Datastore.CVETimeView,
-	digestToV2IDs map[string][]string,
-	v2CVEMap map[string]map[string]*imageCVEV2Datastore.CVETimeView,
-) (pruneableIDs []string, affectedDigests []string) {
-	affectedSet := set.NewStringSet()
-
-	for _, v1CVE := range v1CVEs {
-		digest := v1CVE.GetImageID()
-		v2IDs := digestToV2IDs[digest]
-		if len(v2IDs) == 0 {
-			continue
-		}
-
-		migrated := true
-		for _, v2ID := range v2IDs {
-			v2CVEsByCVE := v2CVEMap[v2ID]
-			v2CVE, exists := v2CVEsByCVE[v1CVE.GetCVE()]
-			if !exists {
-				migrated = false
-				break
-			}
-			if !isTimestampMigrated(v1CVE.GetFirstImageOccurrence(), v2CVE.GetFirstImageOccurrence()) {
-				migrated = false
-				break
-			}
-		}
-
-		if migrated {
-			pruneableIDs = append(pruneableIDs, v1CVE.GetID())
-			affectedSet.Add(digest)
-		}
-	}
-
-	return pruneableIDs, affectedSet.AsSlice()
-}
-
-// isTimestampMigrated checks whether a V1 timestamp has been migrated to V2.
-//   - V1 is nil: trivially migrated (nothing to preserve)
-//   - V2 is nil but V1 is non-nil: NOT migrated
-//   - Both non-nil: V2 must be <= V1 (V2 took the earlier or equal value)
-func isTimestampMigrated(v1ts, v2ts *time.Time) bool {
-	if v1ts == nil {
-		return true
-	}
-	if v2ts == nil {
-		return false
-	}
-	return !v2ts.After(*v1ts)
 }
 
 func (g *garbageCollectorImpl) Stop() {

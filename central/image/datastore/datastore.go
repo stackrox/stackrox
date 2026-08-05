@@ -35,7 +35,6 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
-	NullImageScanHashes(ctx context.Context, ids []string) error
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.

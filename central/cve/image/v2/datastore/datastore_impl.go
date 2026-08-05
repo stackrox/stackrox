@@ -8,15 +8,11 @@ import (
 	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/postgres"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 type datastoreImpl struct {
 	storage store.Store
-	db      postgres.DB
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
@@ -94,53 +90,6 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return cves, nil
-}
-
-func (ds *datastoreImpl) GetImageV1CVETimes(ctx context.Context, limit int) ([]*CVETimeView, error) {
-	if limit <= 0 {
-		return nil, nil
-	}
-	q := pkgSearch.NewQueryBuilder().
-		AddNullField(pkgSearch.CVEImageIDV2).
-		ProtoQuery()
-	q.Selects = cveTimeViewSelects()
-	q.Pagination = pkgSearch.NewPagination().
-		Limit(int32(limit)).
-		Proto()
-
-	var results []*CVETimeView
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimeView) error {
-		results = append(results, row)
-		return nil
-	})
-	return results, err
-}
-
-func (ds *datastoreImpl) GetImageV2CVETimes(ctx context.Context, imageIDs []string) ([]*CVETimeView, error) {
-	if len(imageIDs) == 0 {
-		return nil, nil
-	}
-	q := pkgSearch.NewQueryBuilder().
-		AddExactMatches(pkgSearch.CVEImageIDV2, imageIDs...).
-		ProtoQuery()
-	q.Selects = cveTimeViewSelects()
-
-	var results []*CVETimeView
-	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.ImageCvesV2Schema, q, func(row *CVETimeView) error {
-		results = append(results, row)
-		return nil
-	})
-	return results, err
-}
-
-func cveTimeViewSelects() []*v1.QuerySelect {
-	return []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.CVEID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVEImageID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVEImageIDV2).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.CVE).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.FirstImageOccurrenceTimestamp).Proto(),
-	}
 }
 
 type ImageCVESearchResultConverter struct{}
