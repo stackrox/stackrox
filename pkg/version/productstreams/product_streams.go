@@ -111,40 +111,16 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	return result, nil
 }
 
-// NaiveDistance returns the distance between v and other using bumps only
-// to cross major boundaries and linear Y arithmetic within the target
-// major. This handles phantom versions (past a bump point that was
-// delayed or cancelled) by ignoring bumps within the target major.
-// Returns -1 if the target major cannot be reached.
-func (v XYVersion) NaiveDistance(other XYVersion) int {
-	lo, hi := v, other
-	if other.Compare(v) < 0 {
-		lo, hi = other, v
+// GetBumpPointFor returns the bump point for v's major if v is a phantom
+// version (past the bump point). For example, if the bump is 4.11→5.0 and
+// v is 4.14, it returns (4.11, true). If v is at or before the bump point,
+// or no bump exists for v's major, it returns (XYVersion{}, false).
+func GetBumpPointFor(v XYVersion) (XYVersion, bool) {
+	b, ok := findBumpFrom(v.X)
+	if ok && v.Y > b.From.Y {
+		return b.From, true
 	}
-
-	dist := 0
-	cur := lo
-
-	for cur.X < hi.X {
-		bump, ok := findBumpFrom(cur.X)
-		// If no bump exists for this major, the target major is unreachable.
-		// If bump.From.Y < cur.Y, we are past the bump point (e.g. 4.12
-		// when the bump is 4.11→5.0). This is a phantom version: the bump
-		// was scheduled but delayed/cancelled, so versions like 4.12 were
-		// released instead. Since we're already past the bump point, we
-		// cannot cross to the next major via the bump and return -1.
-		if !ok || bump.From.Y < cur.Y {
-			return -1
-		}
-		dist += bump.From.Y - cur.Y + 1
-		cur = bump.To
-	}
-
-	d := hi.Y - cur.Y
-	if d < 0 {
-		d = -d
-	}
-	return dist + d
+	return XYVersion{}, false
 }
 
 func findBumpFrom(major int) (parsedBump, bool) {

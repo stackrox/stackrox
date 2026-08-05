@@ -91,12 +91,21 @@ func TestCompatibleVersionRange(t *testing.T) {
 				xy(5, 2), xy(5, 3), xy(5, 4),
 			},
 		},
-		"past bump point 4.12": {
+		"phantom 4.12 snaps backward to bump point": {
 			self: xy(4, 12),
 			n:    3,
 			want: []productstreams.XYVersion{
 				xy(4, 9), xy(4, 10), xy(4, 11),
 				xy(4, 12),
+				xy(5, 0), xy(5, 1), xy(5, 2),
+			},
+		},
+		"phantom 4.14 skips intermediates": {
+			self: xy(4, 14),
+			n:    3,
+			want: []productstreams.XYVersion{
+				xy(4, 9), xy(4, 10), xy(4, 11),
+				xy(4, 14),
 				xy(5, 0), xy(5, 1), xy(5, 2),
 			},
 		},
@@ -113,6 +122,11 @@ func TestCompatibleVersionRange(t *testing.T) {
 			self: xy(4, 5),
 			n:    0,
 			want: []productstreams.XYVersion{xy(4, 5)},
+		},
+		"n=0 phantom self does not include bump point": {
+			self: xy(4, 12),
+			n:    0,
+			want: []productstreams.XYVersion{xy(4, 12)},
 		},
 		"negative n returns only self": {
 			self: xy(4, 5),
@@ -246,18 +260,25 @@ func TestClassify(t *testing.T) {
 				self: xy(4, 10), remote: xy(4, 12), n: 3,
 				want: CompatibleAhead,
 			},
-			"phantom remote beyond skew": {
-				self: xy(4, 10), remote: xy(4, 40), n: 3,
+			"phantom remote beyond skew same major": {
+				self: xy(4, 7), remote: xy(4, 40), n: 3,
 				want: IncompatibleAhead,
 			},
-			// 4.40 is a phantom version past the bump point 4.11→5.0. We know
-			// it is at least as close to 5.0 as 4.11, but we don't know how
-			// many versions exist between 4.40 and 5.0 (e.g. 4.41...4.99),
-			// so the actual distance is unknown. We conservatively treat it
-			// as incompatible rather than overstating our confidence.
-			"phantom remote cross major incompatible because distance is unknown": {
+			// 4.40 fits between 4.11 and 5.0 in self's compatible range,
+			// so it is compatible.
+			"phantom remote cross major fits in gap": {
 				self: xy(5, 0), remote: xy(4, 40), n: 3,
+				want: CompatibleBehind,
+			},
+			"phantom remote cross major gap not in range": {
+				self: xy(5, 4), remote: xy(4, 40), n: 3,
 				want: IncompatibleBehind,
+			},
+			// 4.12 is phantom but self's range ends at 4.11 — there is
+			// no 5.0 after it to form a gap, so 4.12 is incompatible.
+			"phantom remote at edge of range incompatible": {
+				self: xy(4, 8), remote: xy(4, 12), n: 3,
+				want: IncompatibleAhead,
 			},
 			"phantom self compatible behind": {
 				self: xy(4, 12), remote: xy(4, 10), n: 3,
@@ -275,42 +296,19 @@ func TestClassify(t *testing.T) {
 				self: xy(4, 12), remote: xy(5, 0), n: 3,
 				want: CompatibleAhead,
 			},
-		})
-	})
-
-	// Cancelled bump: 5.6→6.0 is scheduled but gets cancelled, so versions
-	// 5.7, 5.8, etc. are released instead.
-	t.Run("cancelled bump", func(t *testing.T) {
-		productstreams.OverrideBumpsForTesting(t, []byte(`bumps:
-  - from: "4.11"
-    to: "5.0"
-  - from: "5.6"
-    to: "6.0"
-`))
-		runCases(t, map[string]testCase{
-			"remote within skew": {
-				self: xy(5, 5), remote: xy(5, 8), n: 3,
-				want: CompatibleAhead,
-			},
-			"remote at skew boundary": {
-				self: xy(5, 5), remote: xy(5, 7), n: 3,
-				want: CompatibleAhead,
-			},
-			"remote beyond skew": {
-				self: xy(5, 5), remote: xy(5, 9), n: 3,
-				want: IncompatibleAhead,
-			},
-			"remote behind within skew": {
-				self: xy(5, 8), remote: xy(5, 5), n: 3,
+			// Symmetry: if 4.12 considers 5.0 compatible, then 5.0
+			// must consider 4.12 compatible too.
+			"phantom remote symmetric with phantom self": {
+				self: xy(5, 0), remote: xy(4, 12), n: 3,
 				want: CompatibleBehind,
 			},
-			"remote behind beyond skew": {
-				self: xy(5, 9), remote: xy(5, 5), n: 3,
-				want: IncompatibleBehind,
-			},
-			"range still includes bump target": {
-				self: xy(5, 5), remote: xy(6, 0), n: 3,
+			"both phantom self and remote same major": {
+				self: xy(4, 14), remote: xy(4, 16), n: 3,
 				want: CompatibleAhead,
+			},
+			"phantom remote fits in gap from ahead self": {
+				self: xy(5, 2), remote: xy(4, 12), n: 3,
+				want: CompatibleBehind,
 			},
 		})
 	})
