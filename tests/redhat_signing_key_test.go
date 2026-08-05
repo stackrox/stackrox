@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	appsV1 "k8s.io/api/apps/v1"
@@ -139,28 +141,27 @@ func (s *RedHatSigningKeySuite) waitForIntegrationKeys(ctx context.Context, expe
 
 func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 	t := s.T()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	resp, err := s.listIntegrations(ctx)
-	s.Require().NoError(err, "listing signature integrations")
-
 	var matched int
-	for _, si := range resp.GetIntegrations() {
-		if si.GetId() != redHatIntegrationID {
-			continue
+	s.Require().EventuallyWithT(func(c *assert.CollectT) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		resp, err := s.listIntegrations(ctx)
+		require.NoError(c, err, "listing signature integrations")
+		for _, si := range resp.GetIntegrations() {
+			if si.GetId() != redHatIntegrationID {
+				continue
+			}
+			matched = len(si.GetCosign().GetPublicKeys())
+			assert.Equal(c, "Red Hat", si.GetName())
+			assert.GreaterOrEqual(c, matched, 1, "expected at least one cosign public key")
+			for _, pk := range si.GetCosign().GetPublicKeys() {
+				assert.NotEmpty(c, pk.GetName(), "key name must not be empty")
+				assert.NotEmpty(c, pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
+			}
+			break
 		}
-		matched = len(si.GetCosign().GetPublicKeys())
-		s.Assert().Equal("Red Hat", si.GetName())
-		s.Assert().GreaterOrEqual(matched, 1,
-			"expected at least one cosign public key")
-		for _, pk := range si.GetCosign().GetPublicKeys() {
-			s.Assert().NotEmpty(pk.GetName(), "key name must not be empty")
-			s.Assert().NotEmpty(pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
-		}
-		break
-	}
-	s.Require().NotZero(matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+		assert.NotZero(c, matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+	}, 30*time.Second, 5*time.Second, "waiting for default Red Hat integration")
 	t.Logf("Red Hat integration found with %d key(s)", matched)
 }
 
