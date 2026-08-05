@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	fioDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/fio"
 	policyReportDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/policyreport"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -53,6 +54,7 @@ type DispatcherRegistry interface {
 	ForVirtualMachineInstances() Dispatcher
 
 	ForPolicyReports() Dispatcher
+	ForFileIntegrityNodeStatuses() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -76,6 +78,7 @@ func NewDispatcherRegistry(
 	storeProvider *StoreProvider,
 	k8sAPI kubernetes.Interface,
 	policyReportDetectFunc policyReportDispatcher.DetectFunc,
+	fioDetectFunc fioDispatcher.DetectFunc,
 ) DispatcherRegistry {
 	serviceStore := storeProvider.serviceStore
 	rbacUpdater := storeProvider.rbacStore
@@ -120,6 +123,7 @@ func NewDispatcherRegistry(
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 
 		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments(), policyReportDetectFunc),
+		fioDispatcher:          fioDispatcher.NewDispatcher(clusterID, fioDetectFunc),
 	}
 }
 
@@ -152,6 +156,7 @@ type registryImpl struct {
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
 
 	policyReportDispatcher *policyReportDispatcher.Dispatcher
+	fioDispatcher          *fioDispatcher.Dispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -360,4 +365,8 @@ func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
 
 func (d *registryImpl) ForPolicyReports() Dispatcher {
 	return wrapDispatcher(d.policyReportDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForFileIntegrityNodeStatuses() Dispatcher {
+	return wrapDispatcher(d.fioDispatcher, d.traceWriter)
 }

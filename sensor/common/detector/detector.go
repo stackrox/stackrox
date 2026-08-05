@@ -650,32 +650,61 @@ func (d *detectorImpl) detectAndAlertForSecurityEvent(event *policyreport.Securi
 		return
 	}
 
-	deploymentID := event.ResolvedEntity.ID
-	if deploymentID == "" {
-		log.Debugf("Security event from source %q has no resolved deployment, skipping alert", event.Source)
+	entityID := event.ResolvedEntity.ID
+	if entityID == "" {
+		log.Debugf("Security event from source %q has no resolved entity, skipping alert", event.Source)
 		return
 	}
 
-	deployment := d.deploymentStore.GetSnapshot(deploymentID)
 	for _, alert := range alerts {
-		if deployment != nil {
-			alert.Entity = alertconvert.ToAlertDeployment(deployment)
-		}
 		enrichSecurityEventViolations(alert, event)
+	}
+
+	var alertResults *central.AlertResults
+	switch event.ResolvedEntity.Type {
+	case policyreport.EntityTypeNode:
+		node := d.nodeStore.GetNode(entityID)
+		if node == nil {
+			log.Warnf("Node %q not found in store for security event from source %q, skipping alert", entityID, event.Source)
+			return
+		}
+		for _, alert := range alerts {
+			alert.Entity = &storage.Alert_Node_{
+				Node: &storage.Alert_Node{
+					Id:          node.GetId(),
+					Name:        node.GetName(),
+					ClusterId:   node.GetClusterId(),
+					ClusterName: node.GetClusterName(),
+				},
+			}
+		}
+		alertResults = &central.AlertResults{
+			Alerts: alerts,
+			Stage:  storage.LifecycleStage_RUNTIME,
+			Source: central.AlertResults_SECURITY_EVENT,
+		}
+	default:
+		deployment := d.deploymentStore.GetSnapshot(entityID)
+		for _, alert := range alerts {
+			if deployment != nil {
+				alert.Entity = alertconvert.ToAlertDeployment(deployment)
+			}
+		}
+		alertResults = &central.AlertResults{
+			DeploymentId: entityID,
+			Alerts:       alerts,
+			Stage:        storage.LifecycleStage_RUNTIME,
+			Source:       central.AlertResults_SECURITY_EVENT,
+		}
 	}
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id:     deploymentID,
+				Id:     entityID,
 				Action: central.ResourceAction_CREATE_RESOURCE,
 				Resource: &central.SensorEvent_AlertResults{
-					AlertResults: &central.AlertResults{
-						DeploymentId: deploymentID,
-						Alerts:       alerts,
-						Stage:        storage.LifecycleStage_RUNTIME,
-						Source:       central.AlertResults_SECURITY_EVENT,
-					},
+					AlertResults: alertResults,
 				},
 			},
 		},
