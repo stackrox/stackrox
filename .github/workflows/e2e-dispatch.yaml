@@ -247,9 +247,12 @@ jobs:
         echo "operator_image_prefix=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_OUTPUT"
 
         # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
-        branch="${GITHUB_HEAD_REF:-${GITHUB_REF}}"
+        source_branch="${GITHUB_HEAD_REF:-}"
+        target_branch="${GITHUB_BASE_REF:-${GITHUB_REF}}"
         IMAGE_SUFFIX=""
-        if ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${branch}"; then
+        if [[ "${source_branch}" == *konflux-release-like* ]]; then
+          echo "Source branch contains 'konflux-release-like', suppressing suffix."
+        elif ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${target_branch}"; then
           IMAGE_SUFFIX="-fast"
         fi
         echo "IMAGE_SUFFIX=${IMAGE_SUFFIX}" | tee -a "$GITHUB_ENV"
