@@ -18,7 +18,7 @@ packages:
 - tar
 moduleEnable:
 # final stage in image/rhel/konflux.Dockerfile
-- postgresql:15
+- postgresql:16
 contentOrigin:
   repofiles: [ "rpms.rhel.repo" ]
 context:
