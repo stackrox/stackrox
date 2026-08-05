@@ -84,7 +84,9 @@ export function fetchCVEList({
     appendSortParams(params, sortOption);
 
     return axios
-        .get<CVEListResponse>(`/api/v2/vulnmgmt/cves?${params.toString()}`)
+        .get<CVEListResponse>(`/api/v2/vulnmgmt/cves?${params.toString()}`, {
+            timeout: 180000,
+        })
         .then((response) => response.data);
 }
 
