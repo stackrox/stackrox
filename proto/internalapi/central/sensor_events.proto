@@ -43,6 +43,7 @@ message AlertResults {
     DEPLOYMENT_EVENT = 0;
     AUDIT_EVENT = 1;
     NODE_EVENT = 2;
+    SECURITY_EVENT = 3;
   }
   // Only relevant if source == DEPLOYMENT.
   string deployment_id = 1;

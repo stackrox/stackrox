@@ -217,7 +217,8 @@
         "K8S_EVENT",
         "NETWORK_FLOW",
         "NETWORK_POLICY",
-        "FILE_ACCESS"
+        "FILE_ACCESS",
+        "SECURITY_EVENT"
       ],
       "default": "GENERIC"
     },
@@ -1021,7 +1022,8 @@
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
         "AUDIT_LOG_EVENT",
-        "NODE_EVENT"
+        "NODE_EVENT",
+        "SECURITY_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },

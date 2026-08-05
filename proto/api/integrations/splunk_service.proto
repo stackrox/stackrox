@@ -49,6 +49,7 @@ message SplunkViolation {
       PROCESS_EVENT = 3;
       NETWORK_FLOW = 4;
       FILE_ACCESS = 5;
+      SECURITY_EVENT = 6;
     }
     ViolationType violation_type = 4;
 

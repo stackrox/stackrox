@@ -409,6 +409,8 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
 	case storage.Alert_Violation_FILE_ACCESS:
 		typ = integrations.SplunkViolation_ViolationInfo_FILE_ACCESS
+	case storage.Alert_Violation_SECURITY_EVENT:
+		typ = integrations.SplunkViolation_ViolationInfo_SECURITY_EVENT
 	}
 
 	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)

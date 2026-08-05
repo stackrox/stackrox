@@ -67,6 +67,7 @@ message Alert {
       NETWORK_FLOW = 2;
       NETWORK_POLICY = 3;
       FILE_ACCESS = 4;
+      SECURITY_EVENT = 5;
     }
     message KeyValueAttrs {
       message KeyValueAttr {
