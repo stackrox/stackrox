@@ -103,7 +103,8 @@ export type Violation =
     | GenericViolation
     | K8sEventViolation
     | NetworkFlowViolation
-    | FileAccessViolation;
+    | FileAccessViolation
+    | SecurityEventViolation;
 
 export type GenericViolation = {
     type: 'GENERIC';
@@ -143,6 +144,16 @@ export type FileAccessViolation = {
     fileAccess: FileAccess;
 } & BaseViolation;
 
+export type SecurityEventViolation = {
+    type: 'SECURITY_EVENT';
+    keyValueAttrs: {
+        attrs: {
+            key: string;
+            value: string;
+        }[];
+    };
+} & BaseViolation;
+
 type BaseViolation = {
     type: ViolationType;
     message: string;
@@ -157,7 +168,8 @@ export type ViolationType =
     | 'K8S_EVENT'
     | 'NETWORK_FLOW'
     | 'NETWORK_POLICY'
-    | 'FILE_ACCESS';
+    | 'FILE_ACCESS'
+    | 'SECURITY_EVENT';
 
 export type ProcessViolation = {
     message: string;
