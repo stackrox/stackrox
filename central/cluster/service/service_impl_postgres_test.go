@@ -130,4 +130,21 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 		names := []string{resp.GetClusters()[0].GetName(), resp.GetClusters()[1].GetName()}
 		require.ElementsMatch(t, []string{"a-matched", "b-matched"}, names)
 	})
+
+	t.Run("no filter returns all clusters", func(t *testing.T) {
+		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{
+			Query: search.EmptyQuery().String(),
+		})
+		require.NoError(t, err)
+		require.Len(t, resp.GetClusters(), 6)
+	})
+
+	t.Run("db filter only without skew filter", func(t *testing.T) {
+		query := fmt.Sprintf("%s:%s", search.ClusterLabel, "major=1")
+
+		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
+		require.NoError(t, err)
+		require.Len(t, resp.GetClusters(), 1)
+		require.Equal(t, "e-incompatible-behind", resp.GetClusters()[0].GetName())
+	})
 }

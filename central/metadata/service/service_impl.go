@@ -212,6 +212,8 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 			for _, xy := range versioncompatibility.CompatibleVersions(centralXY) {
 				metadata.CompatibleSensorVersions = append(metadata.CompatibleSensorVersions, xy.String())
 			}
+		} else {
+			log.Debugf("Failed to parse central version for compatible sensor versions: %v", err)
 		}
 	}
 	return metadata, nil

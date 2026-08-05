@@ -295,11 +295,9 @@ func (suite *ClusterServiceTestSuite) TestGetClustersSkewFiltering() {
 
 	for name, tt := range tests {
 		suite.Run(name, func() {
-			ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
 			suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(allClusters, nil)
-			suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
 
-			clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+			clusterService := New(suite.dataStore, nil, nil, nil)
 
 			query := search.NewQueryBuilder().AddStrings(
 				search.SensorVersionCompatibility, tt.filterValue,
@@ -324,11 +322,9 @@ func (suite *ClusterServiceTestSuite) TestGetClustersNoSkewFilterReturnsAll() {
 		{Id: "cluster-2"},
 	}
 
-	ps := probeSourcesMocks.NewMockProbeSources(suite.mockCtrl)
 	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
-	suite.sysConfigDatastore.EXPECT().GetPrivateConfig(gomock.Any()).AnyTimes().Return(&storage.PrivateConfig{}, nil)
 
-	clusterService := New(suite.dataStore, nil, ps, suite.sysConfigDatastore)
+	clusterService := New(suite.dataStore, nil, nil, nil)
 
 	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{
 		Query: search.EmptyQuery().String(),
