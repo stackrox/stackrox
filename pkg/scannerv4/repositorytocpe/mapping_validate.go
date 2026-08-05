@@ -2,6 +2,7 @@ package repositorytocpe
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
@@ -20,7 +21,7 @@ func ValidateMapping(content []byte) error {
 		return fmt.Errorf("decode mapping: %w", err)
 	}
 	if m.Data == nil {
-		return fmt.Errorf("mapping missing data object")
+		return errors.New("mapping missing data object")
 	}
 	return nil
 }
