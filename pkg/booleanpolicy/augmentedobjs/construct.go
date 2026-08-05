@@ -188,6 +188,11 @@ func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj 
 	return obj
 }
 
+// ConstructSecurityEvent constructs an augmented security event.
+func ConstructSecurityEvent(source string) *pathutil.AugmentedObj {
+	return pathutil.NewAugmentedObj(&securityEventDetails{Source: source})
+}
+
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,

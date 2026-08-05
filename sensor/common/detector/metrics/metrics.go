@@ -252,6 +252,14 @@ var (
 		Help:      "A counter of the total number of file accesses that were dropped if the detector buffer was full",
 	})
 
+	// SecurityEventAlertsGenerated counts alerts generated from security event detection.
+	SecurityEventAlertsGenerated = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "policyreport_alerts_generated_total",
+		Help:      "Total number of alerts generated from security event (PolicyReport) detection",
+	})
+
 	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -569,6 +577,7 @@ func init() {
 		DetectorFileAccessDroppedCount,
 		FileAccessEventsReceived,
 		FileAccessCriteriaMatchDuration,
+		SecurityEventAlertsGenerated,
 		scannerConfigurationInfo,
 		imageIndexingRouteInfo,
 	)

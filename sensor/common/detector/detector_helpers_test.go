@@ -190,6 +190,9 @@ func (f *fakeUnifiedDetector) DetectNodeFileAccess(_ *storage.Node, _ *storage.F
 func (f *fakeUnifiedDetector) DetectFileAccessForDeployment(_ booleanpolicy.EnhancedDeployment, _ *storage.FileAccess) []*storage.Alert {
 	return f.alerts
 }
+func (f *fakeUnifiedDetector) DetectSecurityEvent(_ string) []*storage.Alert {
+	return f.alerts
+}
 
 type fakeEnforcer struct{}
 

@@ -18,6 +18,7 @@ var (
 	networkFlowFactory          = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
 	nodeEvalFactory             = evaluator.MustCreateNewFactory(augmentedobjs.NodeMeta)
 	fileAccessFactory           = evaluator.MustCreateNewFactory(augmentedobjs.FileAccessMeta)
+	securityEventFactory        = evaluator.MustCreateNewFactory(augmentedobjs.SecurityEventMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -94,6 +95,11 @@ type DeploymentWithFileAccessMatcher interface {
 	MatchDeploymentWithFileAccess(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, fileAccess *storage.FileAccess) (Violations, error)
 }
 
+// A SecurityEventMatcher matches security events against a policy.
+type SecurityEventMatcher interface {
+	MatchSecurityEvent(cache *CacheReceptacle, source string) (Violations, error)
+}
+
 type sectionAndEvaluator struct {
 	section   *storage.PolicySection
 	evaluator evaluator.Evaluator
@@ -149,6 +155,19 @@ func BuildAuditLogEventMatcher(p *storage.Policy, options ...ValidateOption) (Au
 		return nil, err
 	}
 	return &auditLogEventMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
+	}, nil
+}
+
+// BuildSecurityEventMatcher builds a SecurityEventMatcher.
+func BuildSecurityEventMatcher(p *storage.Policy, options ...ValidateOption) (SecurityEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&securityEventFactory, p, storage.LifecycleStage_RUNTIME, options...)
+	if err != nil {
+		return nil, err
+	}
+	return &securityEventMatcherImpl{
 		matcherImpl: matcherImpl{
 			evaluators: sectionsAndEvals,
 		},

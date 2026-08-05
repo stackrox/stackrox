@@ -1,0 +1,33 @@
+{
+  "id": "93e95232-ad83-424c-9014-8d9ce8187b2d",
+  "name": "Reported Policy Violation",
+  "description": "Alert on policy violations reported by external security tools (e.g. Kyverno PolicyReports).",
+  "rationale": "External policy engines can report policy violations via the Kubernetes PolicyReport API. This default policy matches all such reports so they appear as ACS violations.",
+  "remediation": "Review the reported violation details and remediate according to the originating policy engine's guidance.",
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "SECURITY_EVENT",
+  "severity": "MEDIUM_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Security Event Source",
+          "values": [
+            {
+              "value": ".*"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

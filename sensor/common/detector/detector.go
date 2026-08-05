@@ -74,6 +74,7 @@ type Detector interface {
 	ProcessReprocessDeployments(msg *central.ReprocessDeployments) error
 	ProcessUpdatedImage(image *storage.Image) error
 	ProcessFileAccess(ctx context.Context, access *storage.FileAccess)
+	ProcessSecurityEvent(source string)
 }
 
 // New returns a new detector
@@ -634,6 +635,12 @@ func (d *detectorImpl) runAuditLogEventDetector() {
 			d.detectAndAlertForAuditLog(auditEvents)
 		}
 	}
+}
+
+func (d *detectorImpl) ProcessSecurityEvent(source string) {
+	alerts := d.unifiedDetector.DetectSecurityEvent(source)
+	detectorMetrics.SecurityEventAlertsGenerated.Add(float64(len(alerts)))
+	log.Debugf("Security event detection for source %q produced %d alerts (dry-run)", source, len(alerts))
 }
 
 func (d *detectorImpl) handleAuditLogEvent(event pubsub.Event) error {

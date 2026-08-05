@@ -100,6 +100,20 @@ func (m *auditLogEventMatcherImpl) MatchAuditLogEvent(cache *CacheReceptacle, ev
 	return *violations, nil
 }
 
+type securityEventMatcherImpl struct {
+	matcherImpl
+}
+
+func (m *securityEventMatcherImpl) MatchSecurityEvent(cache *CacheReceptacle, source string) (Violations, error) {
+	violations, err := m.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructSecurityEvent(source), nil
+	}, nil, nil, nil, nil, nil)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+	return *violations, nil
+}
+
 func (m *kubeEventMatcherImpl) checkWhetherKubeEventMatches(cache *CacheReceptacle, event *storage.KubernetesEvent) (bool, error) {
 	var augmentedEvent *pathutil.AugmentedObj
 	if cache != nil && cache.augmentedKubeEvent != nil {

@@ -72,7 +72,7 @@ func newTestDispatcher(hierarchy *fakeHierarchy, deployStore *fakeDeploymentStor
 	if deployStore == nil {
 		deployStore = &fakeDeploymentStore{deployments: map[string]*storage.Deployment{}}
 	}
-	return NewDispatcher("test-cluster", hierarchy, deployStore)
+	return NewDispatcher("test-cluster", hierarchy, deployStore, nil)
 }
 
 func TestProcessEvent_FeatureDisabled(t *testing.T) {

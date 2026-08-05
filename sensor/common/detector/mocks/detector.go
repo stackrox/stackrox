@@ -176,6 +176,18 @@ func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessPolicySync", reflect.TypeOf((*MockDetector)(nil).ProcessPolicySync), ctx, sync)
 }
 
+// ProcessSecurityEvent mocks base method.
+func (m *MockDetector) ProcessSecurityEvent(source string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ProcessSecurityEvent", source)
+}
+
+// ProcessSecurityEvent indicates an expected call of ProcessSecurityEvent.
+func (mr *MockDetectorMockRecorder) ProcessSecurityEvent(source any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessSecurityEvent", reflect.TypeOf((*MockDetector)(nil).ProcessSecurityEvent), source)
+}
+
 // ProcessReprocessDeployments mocks base method.
 func (m *MockDetector) ProcessReprocessDeployments(msg *central.ReprocessDeployments) error {
 	m.ctrl.T.Helper()

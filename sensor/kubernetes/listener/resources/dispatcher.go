@@ -118,7 +118,7 @@ func NewDispatcherRegistry(
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 
-		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments()),
+		policyReportDispatcher: policyReportDispatcher.NewDispatcher(clusterID, hierarchy, storeProvider.Deployments(), nil),
 	}
 }
 

@@ -30,6 +30,7 @@ type CompiledPolicy interface {
 	MatchAgainstDeploymentAndNetworkFlow(cacheReceptable *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (booleanpolicy.Violations, error)
 	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) (booleanpolicy.Violations, error)
+	MatchAgainstSecurityEvent(cacheReceptacle *booleanpolicy.CacheReceptacle, source string) (booleanpolicy.Violations, error)
 
 	RequiresImageEnrichment() bool
 
@@ -76,6 +77,8 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 		case storage.EventSource_NODE_EVENT:
 			// TODO(ROX-31891): support scopes and exclusions for node events
 			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
+		case storage.EventSource_SECURITY_EVENT:
+			compiled.predicates = append(compiled.predicates, &securityEventPredicate{})
 		case storage.EventSource_AUDIT_LOG_EVENT:
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
 			fallthrough
@@ -115,7 +118,8 @@ func (cp *compiledPolicy) noMatchersSet() bool {
 		cp.kubeEventsMatcher == nil &&
 		cp.deploymentWithNetworkFlowMatcher == nil &&
 		cp.deploymentWithFileAccessMatcher == nil &&
-		cp.nodeMatcher == nil
+		cp.nodeMatcher == nil &&
+		cp.securityEventMatcher == nil
 }
 
 func (cp *compiledPolicy) setBuildTimeMatchers(policy *storage.Policy) error {
@@ -147,6 +151,11 @@ func (cp *compiledPolicy) setRuntimeMatchers(policy *storage.Policy) error {
 		err := cp.setNodeEventMatcher(policy)
 		if err != nil {
 			return errors.Wrapf(err, "building node event matcher for policy %q", policy.GetName())
+		}
+	case storage.EventSource_SECURITY_EVENT:
+		err := cp.setSecurityEventMatcher(policy)
+		if err != nil {
+			return errors.Wrapf(err, "building security event matcher for policy %q", policy.GetName())
 		}
 	case storage.EventSource_DEPLOYMENT_EVENT:
 		err := cp.setProcessEventMatcher(policy)
@@ -261,6 +270,20 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 	return nil
 }
 
+func (cp *compiledPolicy) setSecurityEventMatcher(policy *storage.Policy) error {
+	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.SecurityEvent)
+	})
+	if len(filtered.GetPolicySections()) > 0 {
+		securityEventMatcher, err := booleanpolicy.BuildSecurityEventMatcher(filtered)
+		if err != nil {
+			return err
+		}
+		cp.securityEventMatcher = securityEventMatcher
+	}
+	return nil
+}
+
 func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 	var numMatchers int
 	if cp.deploymentWithProcessMatcher != nil {
@@ -281,6 +304,9 @@ func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 	if cp.nodeMatcher != nil {
 		numMatchers++
 	}
+	if cp.securityEventMatcher != nil {
+		numMatchers++
+	}
 
 	return numMatchers == 1
 }
@@ -299,6 +325,7 @@ type compiledPolicy struct {
 	imageMatcher                     booleanpolicy.ImageMatcher
 	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
 	nodeMatcher                      booleanpolicy.NodeEventMatcher
+	securityEventMatcher             booleanpolicy.SecurityEventMatcher
 
 	hasProcessSection       bool
 	hasKubeEventsSection    bool
@@ -449,6 +476,16 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndFileAccess(cache *booleanpoli
 	return cp.deploymentWithFileAccessMatcher.MatchDeploymentWithFileAccess(cache, enhancedDeployment, fileAccess)
 }
 
+func (cp *compiledPolicy) MatchAgainstSecurityEvent(
+	cache *booleanpolicy.CacheReceptacle,
+	source string,
+) (booleanpolicy.Violations, error) {
+	if cp.securityEventMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against security event", cp.Policy().GetName())
+	}
+	return cp.securityEventMatcher.MatchSecurityEvent(cache, source)
+}
+
 // Policy returns the policy that was compiled.
 func (cp *compiledPolicy) Policy() *storage.Policy {
 	return cp.policy
@@ -585,4 +622,17 @@ type fileAccessPredicate struct{}
 func (cp *fileAccessPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
 	_, isFileAccess := input.(*storage.FileAccess)
 	return isFileAccess
+}
+
+// SecurityEventInput is the input type for security event predicate matching.
+type SecurityEventInput struct {
+	Source string
+}
+
+// Predicate for security events.
+type securityEventPredicate struct{}
+
+func (cp *securityEventPredicate) AppliesTo(_ context.Context, input interface{}) bool {
+	_, ok := input.(*SecurityEventInput)
+	return ok
 }
