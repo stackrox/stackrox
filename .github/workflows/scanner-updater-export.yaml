@@ -82,7 +82,9 @@ jobs:
 
     - name: Fail on recheck error
       if: steps.check.outputs.result == 'error'
-      run: exit 1
+      run: |
+        echo "::error::freshness recheck failed for ${{ inputs.source }} (object: ${{ inputs.object }})"
+        exit 1
 
   update:
     needs: recheck
@@ -162,7 +164,7 @@ jobs:
         set -eu
         src="bundles/${UPDATER_SOURCE}.json.zst"
         if [[ ! -f "$src" ]]; then
-            echo >&2 "ERROR: expected output file not found: $src"
+            echo "::error::expected output file not found: $src"
             exit 1
         fi
 

@@ -24,7 +24,7 @@ config="${SOURCE_CONFIG:?SOURCE_CONFIG is required}"
 
 for cmd in yq jq; do
     if ! command -v "$cmd" &>/dev/null; then
-        echo >&2 "ERROR: $cmd is required but not found"
+        echo "::error::$cmd is required but not found"
         exit 1
     fi
 done
@@ -59,7 +59,7 @@ prefix=$(yq '.storage.prefix' "$config")
                   --arg object "$object" \
                   '{source: $source, ref: $ref, object: $object}'
           else
-              echo >&2 "ERROR: ${object}: freshness check failed"
+              echo "::error::${object}: freshness check failed"
               jq -n --arg msg "${object}: freshness check failed" '{error: $msg}'
               continue
           fi
