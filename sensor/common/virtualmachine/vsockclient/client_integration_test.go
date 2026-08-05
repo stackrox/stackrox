@@ -18,19 +18,22 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// readyMappingProvider is Ready so GetReport reaches the cache path these
-// tests cover (empty cache → NOT_READY, seeded cache → report).
-type readyMappingProvider struct{}
-
-func (readyMappingProvider) Ready() bool  { return true }
-func (readyMappingProvider) Hash() string { return "" }
-func (readyMappingProvider) UpdatePath() pb.RepoCPEMappingUpdatePath {
-	return pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR
+// fakeMappingProvider is a MappingProvider test double whose Ready/Hash/
+// UpdatePath are directly settable; Bytes/Path are unused by the Handler
+// and always error.
+type fakeMappingProvider struct {
+	ready      bool
+	hash       string
+	updatePath pb.RepoCPEMappingUpdatePath
 }
-func (readyMappingProvider) Bytes() ([]byte, error) { return nil, errors.New("not implemented") }
-func (readyMappingProvider) Path() (string, error)  { return "", errors.New("not implemented") }
 
-var _ roxagentvsock.MappingProvider = readyMappingProvider{}
+func (f *fakeMappingProvider) Ready() bool                             { return f.ready }
+func (f *fakeMappingProvider) Hash() string                            { return f.hash }
+func (f *fakeMappingProvider) UpdatePath() pb.RepoCPEMappingUpdatePath { return f.updatePath }
+func (f *fakeMappingProvider) Bytes() ([]byte, error)                  { return nil, errors.New("not implemented") }
+func (f *fakeMappingProvider) Path() (string, error)                   { return "", errors.New("not implemented") }
+
+var _ roxagentvsock.MappingProvider = (*fakeMappingProvider)(nil)
 
 // exchangeTimeout bounds a single client/handler exchange. Under synctest the
 // fake clock advances this duration instantly once every goroutine is durably
@@ -76,7 +79,7 @@ func newProtocolHarness(t *testing.T, opts protocolHarnessOptions) *protocolHarn
 	return &protocolHarness{
 		client:  NewClient(opts.capabilities, opts.maxResponseSize),
 		cache:   cache,
-		handler: roxagentvsock.NewHandler(cache, opts.agentVersion, readyMappingProvider{}, nil),
+		handler: roxagentvsock.NewHandler(cache, opts.agentVersion, &fakeMappingProvider{ready: true}, nil),
 	}
 }
 

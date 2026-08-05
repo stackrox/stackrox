@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -74,6 +75,13 @@ type IndexReportSender interface {
 // ProtocolClient performs the request/response protocol over a stream.
 type ProtocolClient interface {
 	GetReport(ctx context.Context, stream io.ReadWriteCloser, lastKnownToken string) (*vsockclient.GetReportResult, error)
+	SyncRepoCPEMapping(ctx context.Context, stream io.ReadWriteCloser, mapping []byte) (updated bool, meta *pb.ResponseMeta, err error)
+}
+
+// Repo2CPEFetcher supplies Sensor's cached repo-to-CPE mapping so maybeSync
+// can tell whether a VM's agent needs a pushed update.
+type Repo2CPEFetcher interface {
+	FetchRepo2CPE(ctx context.Context) (mapping []byte, hash string, ok bool)
 }
 
 // closeCoder is satisfied by transport errors carrying a structured close
@@ -114,6 +122,7 @@ type VMScraper struct {
 	lastReconcile   time.Time
 	inFlight        set.StringSet
 	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
+	fetcher         Repo2CPEFetcher
 }
 
 type vmState struct {
@@ -152,6 +161,22 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		now:          time.Now,
 		randFloat64:  rand.Float64,
 	}
+}
+
+// SetRepo2CPEFetcher wires the source maybeSync reads to decide whether a
+// VM's agent needs a pushed repo-to-CPE mapping. Nil-safe: if never called
+// (e.g. Sensor could not build the scanner definitions handler), maybeSync
+// stays a no-op.
+func (s *VMScraper) SetRepo2CPEFetcher(f Repo2CPEFetcher) {
+	concurrency.WithLock(&s.mu, func() {
+		s.fetcher = f
+	})
+}
+
+func (s *VMScraper) repo2CPEFetcher() Repo2CPEFetcher {
+	return concurrency.WithLock1(&s.mu, func() Repo2CPEFetcher {
+		return s.fetcher
+	})
 }
 
 func (s *VMScraper) Name() string { return "virtualmachine.vmscraper" }
@@ -602,9 +627,25 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 	result, err := s.client.GetReport(ctx, stream, lastKnownToken)
 	metrics.PullReadDurationSeconds.Observe(s.now().Sub(readStart).Seconds())
 	if err != nil {
+		// MAPPING_REQUIRED is the only error whose Meta still needs
+		// inspecting: a VM with no mapping at all has nothing to report
+		// except this error, and it's the only way Sensor learns to push one.
+		if errors.Is(err, vsockclient.ErrMappingRequired) {
+			s.maybeSync(ctx, vm, key, port, resultMeta(result))
+		}
 		return nil, s.handleGetReportError(ctx, key, err)
 	}
+	s.maybeSync(ctx, vm, key, port, result.Meta)
 	return result, scrapeOK
+}
+
+// resultMeta returns result.Meta, tolerating a nil result: ProtocolClient
+// implementations are not required to populate a result on every error.
+func resultMeta(result *vsockclient.GetReportResult) *pb.ResponseMeta {
+	if result == nil {
+		return nil
+	}
+	return result.Meta
 }
 
 func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err error) scrapeOutcome {
@@ -685,6 +726,65 @@ func isAbnormalClose(err error, target *closeCoder) bool {
 	}
 	code, _ := (*target).CloseCode()
 	return code != 0 && code != closeCodeNormalClosure
+}
+
+// maybeSync inspects meta from a completed GetReport exchange (success,
+// Unchanged, or a MAPPING_REQUIRED error) and pushes a fresh mapping when
+// the agent is Sensor-managed and its reported hash is stale. A URL-managed
+// agent with a stale hash is only logged and counted, since Sensor doesn't own it.
+func (s *VMScraper) maybeSync(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, meta *pb.ResponseMeta) {
+	updatePath := meta.GetRepoCpeMappingUpdatePath()
+	if updatePath == pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED {
+		return
+	}
+	fetcher := s.repo2CPEFetcher()
+	if fetcher == nil {
+		return
+	}
+	mapping, sensorHash, ok := fetcher.FetchRepo2CPE(ctx)
+	if !ok || sensorHash == meta.GetRepoCpeMappingHash() {
+		return
+	}
+
+	switch updatePath {
+	case pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR:
+		s.syncRepoCPEMapping(ctx, vm, key, port, mapping)
+	case pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL:
+		log.Warnf("VMScraper: roxagent on %q reports a URL-managed repo-to-CPE mapping (hash=%s) that differs from Sensor's own cache (hash=%s)",
+			key, meta.GetRepoCpeMappingHash(), sensorHash)
+		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncURLHashMismatch).Inc()
+	}
+}
+
+// syncRepoCPEMapping pushes mapping to the VM over a second, short-lived
+// VSOCK connection — GetReport's one-request-per-connection contract means
+// the push cannot ride the same connection as the report exchange.
+func (s *VMScraper) syncRepoCPEMapping(ctx context.Context, vm *virtualmachine.Info, key string, port uint32, mapping []byte) {
+	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
+	if err != nil {
+		log.Warnf("VMScraper: dialing roxagent on %q for repo-to-CPE mapping sync failed: %v", key, err)
+		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError).Inc()
+		return
+	}
+	defer func() { _ = stream.Close() }()
+
+	updated, _, err := s.client.SyncRepoCPEMapping(ctx, stream, mapping)
+	if err != nil {
+		// NOT_SENSOR_MANAGED should never happen here: maybeSync only takes
+		// the SENSOR path for agents it believes accept a push. Counting it
+		// (without retrying) turns a gating bug into a visible signal.
+		if errors.Is(err, vsockclient.ErrMappingNotSensorManaged) {
+			log.Warnf("VMScraper: roxagent on %q rejected repo-to-CPE mapping sync as not Sensor-managed", key)
+			metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncNotManaged).Inc()
+			return
+		}
+		log.Warnf("VMScraper: repo-to-CPE mapping sync to %q failed: %v", key, err)
+		metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError).Inc()
+		return
+	}
+
+	log.Infof("VMScraper: synced repo-to-CPE mapping to %q (updated=%t)", key, updated)
+	metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncSuccess).Inc()
 }
 
 type vmStateSnapshot struct {
