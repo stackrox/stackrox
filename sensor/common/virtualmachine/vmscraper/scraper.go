@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -48,9 +49,10 @@ func clampPollInterval(interval time.Duration) time.Duration {
 	return interval
 }
 
-// RunningVMStore provides the list of running VMs.
+// RunningVMStore provides lookups of running VMs.
 type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
+	Get(id virtualmachine.VMID) *virtualmachine.Info
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -143,10 +145,73 @@ func (s *VMScraper) Stop() {
 
 func (s *VMScraper) Capabilities() []centralsensor.SensorCapability { return nil }
 func (s *VMScraper) Notify(_ common.SensorComponentEvent)           {}
-func (s *VMScraper) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+
+// Accepts reports whether this component wants to see SensorACK messages
+// for VM index reports.
+func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
+	sensorAck := msg.GetSensorAck()
+	return sensorAck != nil && sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
+}
+
+// ProcessMessage handles SensorACK/NACK for pull-mode VM index reports.
+func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+	sensorAck := msg.GetSensorAck()
+	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
+		return nil
+	}
+
+	switch sensorAck.GetAction() {
+	case central.SensorACK_ACK:
+		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
+	case central.SensorACK_NACK:
+		s.handleNACK(sensorAck.GetResourceId())
+	default:
+		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
+	}
 	return nil
 }
-func (s *VMScraper) Accepts(_ *central.MsgToSensor) bool         { return false }
+
+// handleNACK clears the cached generation so the next poll resends a full report.
+func (s *VMScraper) handleNACK(resourceID string) {
+	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
+	if key == "" {
+		log.Debugf("VMScraper: could not resolve VM for NACKed resource_id=%q; nothing to reset", resourceID)
+		return
+	}
+
+	reset := concurrency.WithLock1(&s.mu, func() bool {
+		state, ok := s.vmState[key]
+		if !ok {
+			return false
+		}
+		state.lastGeneration = 0
+		return true
+	})
+	if reset {
+		log.Debugf("VMScraper: reset cached generation for %q after NACK for resource_id=%q", key, resourceID)
+	}
+}
+
+// findKeyByVMID returns the vmState key ("namespace/name") for the currently
+// running VM with the given ID, or "" if none matches.
+func (s *VMScraper) findKeyByVMID(vmID string) string {
+	if vmID == "" {
+		return ""
+	}
+	vm := s.store.Get(virtualmachine.VMID(vmID))
+	if vm == nil || !vm.Running {
+		return ""
+	}
+	return vmKey(vm)
+}
+
+// vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
+// (format "vmID:vsockCID"; see central/sensor/service/common.VMIndexACKResourceID).
+func vmIDFromResourceID(resourceID string) string {
+	vmID, _, _ := strings.Cut(resourceID, ":")
+	return vmID
+}
+
 func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
 
 func (s *VMScraper) run() {
@@ -209,7 +274,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrapedVMs set.StringSet) bool {
 	key := vmKey(vm)
-	state := s.getOrCreateState(key)
+	snap := s.snapshotVMState(key)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
@@ -221,8 +286,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	// can make before dialing at all, so request the full report on this
 	// first (and only) round trip instead of asking "anything newer?" and
 	// re-dialing once told no.
-	ifNewerThan, knownEpoch := state.lastGeneration, state.lastEpoch
-	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > s.mandatoryRefreshAfter
+	ifNewerThan, knownEpoch := snap.lastGeneration, snap.lastEpoch
+	mandatoryRefreshDue := s.now().Sub(snap.lastForwardedAt) > s.mandatoryRefreshAfter
 	if mandatoryRefreshDue {
 		ifNewerThan, knownEpoch = 0, 0
 	}
@@ -252,15 +317,15 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		// current roxagent can only report Unchanged for a reason other
 		// than the mandatory refresh — i.e. an epoch mismatch below.
 		epoch := result.Meta.GetEpoch()
-		epochMismatch := epoch != 0 && epoch != state.lastEpoch
+		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
 		if !epochMismatch {
 			s.registerScrapedVM(scrapedVMs, vm)
-			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
+			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
 		}
 		log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
-			key, state.lastEpoch, epoch, state.lastGeneration)
+			key, snap.lastEpoch, epoch, snap.lastGeneration)
 		result, ok = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
 		if !ok {
 			return false
@@ -286,13 +351,12 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		return false
 	}
 
-	state.lastGeneration = result.Meta.GetReportGeneration()
-	state.lastEpoch = result.Meta.GetEpoch()
-	state.lastForwardedAt = s.now()
+	newGen := result.Meta.GetReportGeneration()
+	s.commitVMState(key, newGen, result.Meta.GetEpoch())
 	s.registerScrapedVM(scrapedVMs, vm)
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
-		key, state.lastGeneration, len(result.IndexReport.GetContents().GetPackages()), reportSize,
+		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
 		time.Since(totalStart).Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
@@ -382,18 +446,47 @@ func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachi
 	})
 }
 
-// getOrCreateState returns the vmState for key, creating it if absent.
-// The returned pointer is mutated outside the lock — this is safe because
-// each VM key is processed by exactly one goroutine per poll cycle
-// (the VM list contains unique entries, and errgroup assigns one goroutine each).
-func (s *VMScraper) getOrCreateState(key string) *vmState {
-	return concurrency.WithLock1(&s.mu, func() *vmState {
+type vmStateSnapshot struct {
+	lastGeneration  uint32
+	lastEpoch       uint32
+	lastForwardedAt time.Time
+}
+
+func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
+	return concurrency.WithLock1(&s.mu, func() vmStateSnapshot {
 		st, ok := s.vmState[key]
 		if !ok {
 			st = &vmState{}
 			s.vmState[key] = st
 		}
-		return st
+		return vmStateSnapshot{
+			lastGeneration:  st.lastGeneration,
+			lastEpoch:       st.lastEpoch,
+			lastForwardedAt: st.lastForwardedAt,
+		}
+	})
+}
+
+// commitVMState records the generation/epoch from a just-sent report as key's cached scrape state.
+//
+// Race: If a NACK arrives from Central faster than this function completes, for example, due to:
+//   - a scheduling delay on the caller's goroutine between Send returning and this function
+//     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
+//   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
+//     function's lock acquisition,
+//
+// then the NACK will overwrite lastGeneration to 0, and then this code will set it back to
+// `newGen`, which cancels the NACK.
+// However, this race is really unlikely to happen in practice, thus we accept the risk and not protect against it.
+func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
+	concurrency.WithLock(&s.mu, func() {
+		state, ok := s.vmState[key]
+		if !ok {
+			return
+		}
+		state.lastGeneration = newGen
+		state.lastEpoch = newEpoch
+		state.lastForwardedAt = s.now()
 	})
 }
 
