@@ -371,91 +371,6 @@ func (rg *reportGeneratorImpl) buildReportQueries(ctx context.Context, req *Repo
 	return queries, nil
 }
 
-// generateReportStreamingDownload streams report data directly through CSV -> ZIP -> blob store
-// via io.Pipe, avoiding accumulation of the full dataset in memory.
-func (rg *reportGeneratorImpl) generateReportStreamingDownload(ctx context.Context, req *ReportRequest) error {
-	queries, err := rg.buildReportQueries(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	snap := req.ReportSnapshot
-	pr, pw := io.Pipe()
-	// Always close the reader so the writer goroutine is unblocked if blobStore.Upsert
-	// returns early (e.g. on a DB error) before draining the pipe.
-	defer func() {
-		if err := pr.Close(); err != nil {
-			log.Errorf("Error closing report pipe reader: %v", err)
-		}
-	}()
-	refLinksCache := make(map[string]string)
-	var writerErr error
-	rowCount := 0
-
-	go func() {
-		defer func() {
-			if writerErr != nil {
-				pw.CloseWithError(writerErr)
-			} else {
-				if err := pw.Close(); err != nil {
-					log.Errorf("Error closing pipe writer: %v", err)
-				}
-			}
-		}()
-
-		zipWriter := zip.NewWriter(pw)
-		zipEntry, err := zipWriter.Create(csvReportName(snap.GetName()))
-		if err != nil {
-			writerErr = errors.Wrap(err, "creating zip entry")
-			return
-		}
-		csvW := csv.NewWriter(zipEntry)
-		csvW.UseCRLF = true
-		if err := csvW.Write(formatCol()); err != nil {
-			writerErr = errors.Wrap(err, "writing CSV header")
-			return
-		}
-
-		for _, qs := range queries {
-			if err := rg.streamQueryToCSV(ctx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
-				writerErr = err
-				return
-			}
-		}
-
-		csvW.Flush()
-		if err := csvW.Error(); err != nil {
-			writerErr = errors.Wrap(err, "flushing CSV writer")
-			return
-		}
-		if err := zipWriter.Close(); err != nil {
-			writerErr = errors.Wrap(err, "closing zip writer")
-			return
-		}
-	}()
-
-	parentDir := snap.GetReportConfigurationId()
-	if snap.GetVulnReportFilters() == nil {
-		parentDir = "view-based-report"
-	}
-	blobPath := common.GetReportBlobPath(parentDir, snap.GetReportId())
-	blob := &storage.Blob{
-		Name:         blobPath,
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       -1,
-	}
-	if err := rg.blobStore.Upsert(reportGenCtx, blob, pr); err != nil {
-		return errors.Wrap(err, "error streaming report to blob store")
-	}
-
-	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
-	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
-		return errors.Wrap(err, "Error changing report status to GENERATED")
-	}
-	return nil
-}
-
 // generateReportTransaction runs all report operations — cursor reads, CVE
 // lookups, CSV/ZIP generation, and blob store write — within a single database
 // transaction. The writeFn callback writes directly to a PostgreSQL large
@@ -475,9 +390,12 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	if err != nil {
 		return errors.Wrap(err, "starting report transaction")
 	}
+	committed := false
 	defer func() {
-		if err := tx.Commit(context.Background()); err != nil {
-			log.Errorf("failed to commit report transaction: %v", err)
+		if !committed {
+			if rbErr := tx.Rollback(context.Background()); rbErr != nil {
+				log.Errorf("failed to rollback report transaction: %v", rbErr)
+			}
 		}
 	}()
 	txCtx := postgres.ContextWithTx(ctx, tx)
@@ -525,6 +443,11 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		return errors.Wrap(err, "error streaming report to blob store")
 	}
 
+	if err := tx.Commit(context.Background()); err != nil {
+		return errors.Wrap(err, "committing report transaction")
+	}
+	committed = true
+
 	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
 	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
@@ -532,7 +455,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	return nil
 }
 
-const refLinkBatchSize = 100
+var refLinkBatchSize = env.ReportBatchSize.IntegerSetting()
 
 // streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
 // to the provided csv.Writer. CVE reference links are resolved incrementally in batches and cached.
