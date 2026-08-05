@@ -684,6 +684,28 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'CISA KEV',
+        name: 'CISA KEV',
+        shortName: 'CISA KEV',
+        longName: 'CISA Known Exploited Vulnerabilities catalog',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'radioGroup',
+        radioButtons: [
+            {
+                text: 'CVE is in CISA KEV catalog (known exploited)',
+                value: true,
+            },
+            {
+                text: 'CVE is not in CISA KEV catalog',
+                value: false,
+            },
+        ],
+        defaultValue: true,
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+        featureFlagDependency: ['ROX_CISA_KEV'],
+    },
+    {
         label: 'Fixed by',
         name: 'Fixed By',
         shortName: 'Fixed by',
