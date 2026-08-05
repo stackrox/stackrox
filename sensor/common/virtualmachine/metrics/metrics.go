@@ -117,6 +117,21 @@ const (
 	PullStatusUnknownMethod = "unknown_method"
 	PullStatusTimeout       = "timeout"
 	PullStatusBusy          = "busy"
+	// PullStatusMappingRequired marks a GetReport error response the agent
+	// sends because it has no repo-to-CPE mapping yet.
+	PullStatusMappingRequired = "mapping_required"
+	// PullStatusSyncSuccess marks a repo-to-CPE mapping sync the agent
+	// accepted (Updated is informational only; both true and false count here).
+	PullStatusSyncSuccess = "sync_success"
+	// PullStatusSyncError marks a repo-to-CPE mapping sync that failed to
+	// dial or was rejected for a reason other than not-Sensor-managed.
+	PullStatusSyncError = "sync_error"
+	// PullStatusSyncNotManaged marks a sync rejected because the agent is
+	// URL-managed; Sensor's own gate should prevent this, so it signals a bug.
+	PullStatusSyncNotManaged = "sync_not_managed"
+	// PullStatusURLHashMismatch marks a URL-managed agent whose reported
+	// mapping hash differs from Sensor's own cache; Sensor never dials for this.
+	PullStatusURLHashMismatch = "url_hash_mismatch"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.

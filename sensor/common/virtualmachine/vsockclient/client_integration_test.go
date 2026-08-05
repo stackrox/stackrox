@@ -2,6 +2,7 @@ package vsockclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"testing"
@@ -16,6 +17,23 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+// fakeMappingProvider is a minimal roxagentvsock.MappingProvider double.
+// Ready defaults to true so report-only test cases exercise NOT_READY on an
+// empty cache instead of MAPPING_REQUIRED.
+type fakeMappingProvider struct {
+	ready      bool
+	hash       string
+	updatePath pb.RepoCPEMappingUpdatePath
+}
+
+func (f *fakeMappingProvider) Ready() bool                             { return f.ready }
+func (f *fakeMappingProvider) Hash() string                            { return f.hash }
+func (f *fakeMappingProvider) UpdatePath() pb.RepoCPEMappingUpdatePath { return f.updatePath }
+func (f *fakeMappingProvider) Bytes() ([]byte, error)                  { return nil, errors.New("not implemented") }
+func (f *fakeMappingProvider) Path() (string, error)                   { return "", errors.New("not implemented") }
+
+var _ roxagentvsock.MappingProvider = (*fakeMappingProvider)(nil)
 
 // exchangeTimeout bounds a single client/handler exchange. Under synctest the
 // fake clock advances this duration instantly once every goroutine is durably
@@ -61,7 +79,7 @@ func newProtocolHarness(t *testing.T, opts protocolHarnessOptions) *protocolHarn
 	return &protocolHarness{
 		client:  NewClient(opts.capabilities, opts.maxResponseSize),
 		cache:   cache,
-		handler: roxagentvsock.NewHandler(cache, opts.agentVersion),
+		handler: roxagentvsock.NewHandler(cache, opts.agentVersion, &fakeMappingProvider{ready: true}, nil),
 	}
 }
 
