@@ -189,6 +189,10 @@ func TestGetNextYStream(t *testing.T) {
 			input: XYVersion{X: 4, Y: 10},
 			want:  XYVersion{X: 4, Y: 11},
 		},
+		"phantom version past bump point jumps to next major": {
+			input: XYVersion{X: 4, Y: 12},
+			want:  XYVersion{X: 5, Y: 0},
+		},
 	}
 
 	for name, tt := range tests {
@@ -233,13 +237,17 @@ func TestParseXYFromVersionString(t *testing.T) {
 			input: "3.0.49.x-1-ga0897a21ee",
 			want:  XYVersion{X: 3, Y: 49},
 		},
+		"five components rejected": {
+			input:   "1.2.3.4.5",
+			wantErr: "expected major.minor",
+		},
 		"single component": {
 			input:   "4",
-			wantErr: "expected at least major.minor format",
+			wantErr: "expected major.minor",
 		},
 		"empty string": {
 			input:   "",
-			wantErr: "expected at least major.minor format",
+			wantErr: "expected major.minor",
 		},
 		"non-numeric major": {
 			input:   "abc.11",
@@ -284,10 +292,10 @@ func TestNaiveDistance(t *testing.T) {
 		"cross major via bump": {
 			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 1}, want: 3,
 		},
-		"phantom version past bump in target major": {
+		"cross major from bump point": {
 			a: XYVersion{X: 4, Y: 11}, b: XYVersion{X: 5, Y: 2}, want: 3,
 		},
-		"phantom version far past bump": {
+		"cross major to far ahead version": {
 			a: XYVersion{X: 4, Y: 10}, b: XYVersion{X: 5, Y: 40}, want: 42,
 		},
 		"same major ignores bump": {

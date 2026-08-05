@@ -127,6 +127,12 @@ func (v XYVersion) NaiveDistance(other XYVersion) int {
 
 	for cur.X < hi.X {
 		bump, ok := findBumpFrom(cur.X)
+		// If no bump exists for this major, the target major is unreachable.
+		// If bump.From.Y < cur.Y, we are past the bump point (e.g. 4.12
+		// when the bump is 4.11→5.0). This is a phantom version: the bump
+		// was scheduled but delayed/cancelled, so versions like 4.12 were
+		// released instead. Since we're already past the bump point, we
+		// cannot cross to the next major via the bump and return -1.
 		if !ok || bump.From.Y < cur.Y {
 			return -1
 		}
@@ -161,8 +167,12 @@ func OverrideBumpsForTesting(t interface {
 }
 
 // GetNextYStream returns the next Y-stream version for a given major.minor.
-// If v matches a bump's From field, the next version is the bump's To
-// (e.g., {4,11} -> {5,0}). Otherwise, it is simply {v.X, v.Y+1}.
+// If v is at or past a bump's From field (v.Y >= bump.From.Y within the same
+// major), the next version is the bump's To (e.g. {4,11} -> {5,0}). This
+// means phantom versions past the bump point (e.g. 4.12 when the bump is
+// 4.11→5.0) also jump to the next major, since they shouldn't exist and
+// the bump is the ceiling for that major.
+// Otherwise, the next version is simply {v.X, v.Y+1}.
 func GetNextYStream(v XYVersion) XYVersion {
 	for _, b := range parsedBumps {
 		if v.X == b.From.X && v.Y >= b.From.Y {
@@ -179,8 +189,8 @@ func GetNextYStream(v XYVersion) XYVersion {
 func ParseXYFromVersionString(version string) (XYVersion, error) {
 	before, _, _ := strings.Cut(version, "-")
 	parts := strings.Split(before, ".")
-	switch {
-	case len(parts) == 4:
+	switch len(parts) {
+	case 4:
 		major, err := strconv.Atoi(parts[0])
 		if err != nil {
 			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
@@ -190,7 +200,7 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 			return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[2], version, err)
 		}
 		return XYVersion{X: major, Y: minor}, nil
-	case len(parts) >= 2:
+	case 2, 3:
 		major, err := strconv.Atoi(parts[0])
 		if err != nil {
 			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
@@ -201,7 +211,7 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 		}
 		return XYVersion{X: major, Y: minor}, nil
 	default:
-		return XYVersion{}, fmt.Errorf("expected at least major.minor format, got %q", version)
+		return XYVersion{}, fmt.Errorf("expected major.minor[.patch[.build]] format, got %q", version)
 	}
 }
 

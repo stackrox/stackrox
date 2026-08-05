@@ -3,8 +3,11 @@ package versioncompatibility
 import (
 	"slices"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 )
+
+var log = logging.LoggerForModule()
 
 // DefaultSkew is the number of minor version steps for the supported
 // version compatibility range (N +/- DefaultSkew).
@@ -72,6 +75,7 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 	for range n {
 		prev, err := productstreams.GetPreviousYStream(cur)
 		if err != nil {
+			log.Errorf("Failed to compute previous Y-stream for %s: %v", cur, err)
 			break
 		}
 		backward = append(backward, prev)
