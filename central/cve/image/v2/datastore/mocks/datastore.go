@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -103,36 +102,6 @@ func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.I
 func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
-}
-
-// GetImageV1CVETimes mocks base method.
-func (m *MockDataStore) GetImageV1CVETimes(ctx context.Context, limit int) ([]*datastore.CVETimeView, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageV1CVETimes", ctx, limit)
-	ret0, _ := ret[0].([]*datastore.CVETimeView)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImageV1CVETimes indicates an expected call of GetImageV1CVETimes.
-func (mr *MockDataStoreMockRecorder) GetImageV1CVETimes(ctx, limit any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageV1CVETimes", reflect.TypeOf((*MockDataStore)(nil).GetImageV1CVETimes), ctx, limit)
-}
-
-// GetImageV2CVETimes mocks base method.
-func (m *MockDataStore) GetImageV2CVETimes(ctx context.Context, imageIDs []string) ([]*datastore.CVETimeView, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageV2CVETimes", ctx, imageIDs)
-	ret0, _ := ret[0].([]*datastore.CVETimeView)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImageV2CVETimes indicates an expected call of GetImageV2CVETimes.
-func (mr *MockDataStoreMockRecorder) GetImageV2CVETimes(ctx, imageIDs any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageV2CVETimes", reflect.TypeOf((*MockDataStore)(nil).GetImageV2CVETimes), ctx, imageIDs)
 }
 
 // Search mocks base method.

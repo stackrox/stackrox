@@ -119,21 +119,6 @@ func (mr *MockStoreMockRecorder) GetByIDs(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDs", reflect.TypeOf((*MockStore)(nil).GetByIDs), ctx, ids)
 }
 
-// GetImageIDsForDigests mocks base method.
-func (m *MockStore) GetImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImageIDsForDigests", ctx, digests)
-	ret0, _ := ret[0].(map[string][]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetImageIDsForDigests indicates an expected call of GetImageIDsForDigests.
-func (mr *MockStoreMockRecorder) GetImageIDsForDigests(ctx, digests any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIDsForDigests", reflect.TypeOf((*MockStore)(nil).GetImageIDsForDigests), ctx, digests)
-}
-
 // GetImageMetadata mocks base method.
 func (m *MockStore) GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	m.ctrl.T.Helper()

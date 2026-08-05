@@ -380,10 +380,6 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 	}
 }
 
-func (ds *datastoreImpl) GetImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
-	return ds.storage.GetImageIDsForDigests(ctx, digests)
-}
-
 // ImageSearchResultConverter implements search.SearchResultConverter for image search results.
 // This enables single-pass query construction for SearchResult protos.
 type ImageSearchResultConverter struct{}
