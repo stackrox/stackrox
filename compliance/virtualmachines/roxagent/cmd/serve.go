@@ -66,7 +66,8 @@ func ServeCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.Flags().Uint32Var(&cfg.port, "port", 818, "VSOCK port to listen on")
 	cmd.Flags().StringVar(&cfg.hostPath, "host-path", "/", "Root filesystem path for indexing")
-	cmd.Flags().StringVar(&cfg.repoCPEURL, "repo-cpe-url", repoToCPEMappingURL, "Repository to CPE mapping URL")
+	cmd.Flags().StringVar(&cfg.repoCPEURL, "repo-cpe-url", "",
+		"Repository to CPE mapping URL. Empty (default) means Sensor pushes the mapping over VSOCK instead.")
 	cmd.Flags().DurationVar(&cfg.rescanInterval, "rescan-interval", 4*time.Hour,
 		fmt.Sprintf("Interval between rescans (range %v-%v)", minRescanInterval, maxRescanInterval))
 	cmd.Flags().DurationVar(&cfg.caFetchTimeout, "ca-fetch-timeout", 10*time.Second,
@@ -103,33 +104,40 @@ func (c serveConfig) validate() error {
 	return nil
 }
 
+// newRescannerAndProvider builds the rescanner and the mapping provider it
+// scans against: the URL-backed provider when repoCPEURL is set, the
+// Sensor-backed one (also usable as updater) otherwise. The rescanner is
+// constructed first, with a nil provider, so its OnMappingChanged callback
+// - passed to the provider's constructor below - has a live receiver even
+// if the provider invokes it synchronously during bootstrap (e.g. a valid
+// mapping already cached from a previous run); OnMappingChanged only
+// touches the rescanner's wake channel, never its provider field, so this
+// is safe regardless of ordering. urlUpdater is non-nil only in the
+// URL-backed case, for the caller to Start/Stop its download loop.
+func newRescannerAndProvider(cache *vsockserver.ReportCache, cfg serveConfig) (vmRescanner *rescanner, provider vsockserver.MappingProvider, updater vsockserver.MappingUpdater, urlUpdater *vsockserver.URLUpdater) {
+	vmRescanner = newRescanner(cache, cfg.hostPath, nil, cfg.rescanInterval)
+
+	if cfg.repoCPEURL != "" {
+		urlUpdater = vsockserver.NewURLUpdater(cfg.repoCPEURL, mappingCachePath, vmRescanner.OnMappingChanged)
+		provider = urlUpdater
+	} else {
+		sensorUpdater := vsockserver.NewSensorUpdater(mappingCachePath, "", vmRescanner.OnMappingChanged)
+		provider, updater = sensorUpdater, sensorUpdater
+	}
+	vmRescanner.provider = provider
+
+	return vmRescanner, provider, updater, urlUpdater
+}
+
 func runServe(ctx context.Context, cfg serveConfig) error {
 	if err := cfg.validate(); err != nil {
 		return err
 	}
 
-	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself, so this initial fetch is mandatory.
-	// If it fails, startup fails rather than running a scan against no data.
-	// Start(ctx, true) blocks until that fetch completes, then keeps
-	// refreshing the file in the background.
-	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
-		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
-	if err := mappingDownloader.Start(ctx, true); err != nil {
-		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
-	}
-
 	cache := &vsockserver.ReportCache{}
-	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
+	vmRescanner, provider, updater, urlUpdater := newRescannerAndProvider(cache, cfg)
 
-	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
-	if err != nil {
-		return fmt.Errorf("initial scan: %w", err)
-	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
-	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
-
-	handler := vsockserver.NewHandler(cache, agentVersion)
+	handler := vsockserver.NewHandler(cache, agentVersion, provider, updater)
 
 	// TLS is mandatory: sensor always dials with TLS, so a plaintext agent is
 	// unreachable. The KubeVirt CA (served by virt-handler on CID 2, port 1)
@@ -154,6 +162,12 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	}
 	log.Infof("Listening on VSOCK port %d (pull mode)", cfg.port)
 
+	if urlUpdater != nil {
+		if err := urlUpdater.Start(ctx); err != nil {
+			return fmt.Errorf("starting repository-to-CPE mapping downloader: %w", err)
+		}
+	}
+
 	var wg sync.WaitGroup
 	wg.Go(func() { srv.Serve(ctx, ln) })
 	wg.Go(func() { vmRescanner.Run(ctx) })
@@ -161,31 +175,18 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	<-ctx.Done()
 	// Wait for Serve's graceful drain (in-flight connections) and the
 	// rescan loop to finish before returning, so the process doesn't exit
-	// mid-drain or mid-scan. mappingDownloader.Stop waits for its own
-	// background refresh loop the same way, once ctx is already done.
+	// mid-drain or mid-scan. urlUpdater.Stop waits for its own background
+	// refresh loop the same way, once ctx is already done.
 	wg.Wait()
-	mappingDownloader.Stop()
-	return nil
-}
-
-// logMappingDownloadResult logs a repository-to-CPE mapping download outcome and status of the local mapping file.
-func logMappingDownloadResult(url, cachePath string) func(err error, duration time.Duration) {
-	return func(err error, duration time.Duration) {
-		if err == nil {
-			log.Infof("Repository-to-CPE mapping file downloaded from %s in %s", url, duration)
-			return
-		}
-		if _, statErr := os.Stat(cachePath); statErr == nil {
-			log.Warnf("Repository-to-CPE mapping download failed after %s, scans keep using the previously cached file: %v", duration, err)
-			return
-		}
-		log.Errorf("Repository-to-CPE mapping download failed after %s, no cached file available: %v", duration, err)
+	if urlUpdater != nil {
+		urlUpdater.Stop()
 	}
+	return nil
 }
 
 // scan indexes the VM filesystem at hostPath, consulting the
 // repository-to-CPE mapping data cached at mappingFilePath.
-// The mapping downloader keeps mappingFilePath fresh independently.
+// The mapping provider keeps mappingFilePath fresh independently.
 func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error) {
 	cfg := index.NodeIndexerConfig{
 		HostPath:            hostPath,
