@@ -25,7 +25,7 @@ set -euo pipefail
 # failing command's code (usually 1), making it indistinguishable from the
 # intentional "not fresh" exit. The trap guarantees that exit 1 can only come
 # from our explicit exit 1 calls.
-trap 'echo >&2 "ERROR: unexpected failure at line $LINENO"; exit 2' ERR
+trap 'echo "::error::unexpected failure in check-freshness.sh at line $LINENO"; exit 2' ERR
 
 object="${GCS_OBJECT:?GCS_OBJECT is required}"
 updater="${UPDATER_SOURCE:?UPDATER_SOURCE is required}"
@@ -45,7 +45,7 @@ duration_to_seconds() {
         elif [[ "$remaining" =~ ^([0-9]+)s(.*)$ ]]; then
             total=$(( total + BASH_REMATCH[1] )); remaining="${BASH_REMATCH[2]}"
         else
-            echo >&2 "ERROR: cannot parse duration: $remaining"; exit 2
+            echo "::error::cannot parse duration: $remaining"; exit 2
         fi
     done
     echo "$total"
@@ -80,7 +80,7 @@ case "$http_code" in
         exit 1
         ;;
     *)
-        echo >&2 "ERROR: ${object}: GCS returned HTTP $http_code"
+        echo "::error::${object}: GCS returned HTTP $http_code"
         exit 2
         ;;
 esac

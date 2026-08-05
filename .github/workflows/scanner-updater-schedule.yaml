@@ -68,6 +68,7 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
+        echo "::error::vulnerability updater scheduling errors: ${ERRORS}"
         curl -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Vulnerability updater scheduling errors: ${ERRORS}. <${RUN_URL}|View logs>\"}" \
           "$SLACK_WEBHOOK"
