@@ -101,5 +101,6 @@ func TestProfileDispatcher_CELProfileID_V2(t *testing.T) {
 	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
 	require.NotNil(t, v2Profile)
 	assert.Equal(t, "ocp4virt-cis-vm-extension", v2Profile.GetProfileId())
-	assert.Equal(t, central.ComplianceOperatorProfileV2_PROFILE, v2Profile.GetOperatorKind())
+	// Note: OperatorKind assertion omitted here — release-4.9 predates the OperatorKind field on
+	// ComplianceOperatorProfileV2 (added in #19159 / ROX-31229), which was not backported.
 }
