@@ -476,13 +476,23 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 		return nil, status.Errorf(codes.NotFound, "CVE %q not found", request.GetCveId())
 	}
 	cve := cves[0]
-	severityCounts, err := s.cveView.CountBySeverity(ctx, cveFilter)
+
+	viewFilter := cveFilter.CloneVT()
+	if request.GetQuery().GetQuery() != "" {
+		additionalQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing input query")
+		}
+		viewFilter = search.ConjunctionQuery(viewFilter, additionalQuery)
+	}
+
+	severityCounts, err := s.cveView.CountBySeverity(ctx, viewFilter)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get affected VM count.
-	affectedVMIDs, err := s.cveView.GetVMIDs(ctx, cveFilter.CloneVT())
+	affectedVMIDs, err := s.cveView.GetVMIDs(ctx, viewFilter)
 	if err != nil {
 		return nil, err
 	}

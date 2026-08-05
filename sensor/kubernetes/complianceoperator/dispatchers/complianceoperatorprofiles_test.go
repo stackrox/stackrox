@@ -74,6 +74,62 @@ func TestProfileDispatcher_CELProfileID(t *testing.T) {
 	assert.Equal(t, "ocp4virt-cis-vm-extension", v1Profile.GetProfileId())
 }
 
+// TestProfileDispatcher_FallbackCases verifies the fallback ProfileId paths added for
+// observability: no annotation, an unrecognised scanner type, and a missing XCCDF ID. In every
+// case the dispatcher still emits a valid event (never drops it) and logs a Warn.
+func TestProfileDispatcher_FallbackCases(t *testing.T) {
+	tests := map[string]struct {
+		scannerType   string
+		xccdfID       string
+		name          string
+		wantProfileID string
+	}{
+		"no annotation falls back to XCCDF ID (CO < 1.9)": {
+			scannerType:   "",
+			xccdfID:       "xccdf_org.ssgproject.content_profile_cis",
+			name:          "ocp4-cis",
+			wantProfileID: "xccdf_org.ssgproject.content_profile_cis",
+		},
+		"unrecognised scanner type falls back to XCCDF ID": {
+			scannerType:   "WASM", // hypothetical future type
+			xccdfID:       "xccdf_org.ssgproject.content_profile_future",
+			name:          "future-profile",
+			wantProfileID: "xccdf_org.ssgproject.content_profile_future",
+		},
+		"no XCCDF ID and no annotation yields empty ProfileId": {
+			scannerType:   "",
+			xccdfID:       "",
+			name:          "incomplete-profile",
+			wantProfileID: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			profile := &v1alpha1.Profile{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: tc.name,
+					UID:  "some-uid",
+					Annotations: map[string]string{
+						v1alpha1.ScannerTypeAnnotation: tc.scannerType,
+					},
+				},
+				ProfilePayload: v1alpha1.ProfilePayload{
+					ID: tc.xccdfID,
+				},
+			}
+
+			dispatcher := NewProfileDispatcher()
+			event := dispatcher.ProcessEvent(profileToUnstructured(t, profile), nil, central.ResourceAction_CREATE_RESOURCE)
+
+			require.NotNil(t, event)
+			require.NotEmpty(t, event.ForwardMessages)
+			v1Profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+			assert.Equal(t, tc.wantProfileID, v1Profile.GetProfileId())
+		})
+	}
+}
+
 // TestProfileDispatcher_CELProfileID_V2 verifies the V2 event also carries the k8s name as ProfileId.
 func TestProfileDispatcher_CELProfileID_V2(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})

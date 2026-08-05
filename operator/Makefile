@@ -255,7 +255,9 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.29
+# Dynamically derived from the k8s.io/api dependency version in go.mod (v0.X.Y -> 1.X),
+# since not all patch versions are re-published.
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f '{{.Version}}' k8s.io/api | sed 's/^v0\.\([0-9]*\).*/1.\1/')
 
 .PHONY: test
 test: manifests generate fmt vet  ## Run go unit tests

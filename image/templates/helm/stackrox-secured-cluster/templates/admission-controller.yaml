@@ -21,7 +21,6 @@ spec:
       namespace: {{ ._rox._namespace }}
       labels:
         app: admission-control
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}

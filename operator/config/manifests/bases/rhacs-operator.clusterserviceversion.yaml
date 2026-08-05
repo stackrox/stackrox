@@ -125,6 +125,11 @@ spec:
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
       - description: |-
+          If set to true, pruning and reporting jobs run in a separate Deployment.
+          The default is: false.
+        displayName: Enabled
+        path: centralWorker.enabled
+      - description: |-
           If you want to deploy the Config as Code component, set this to "Enabled"
           The default is: Enabled.
         displayName: Config as Code component
@@ -301,6 +306,11 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure
+          tolerations and affinity settings here.
+        displayName: Affinity
+        path: centralWorker.affinity
       - description: Custom annotations to set on all managed objects.
         displayName: Annotations
         path: customize.annotations
@@ -403,6 +413,9 @@ spec:
           Defaults to the Central certificate authority.
         displayName: Destination CA Certificate
         path: central.exposure.route.reencrypt.tls.destinationCACertificate
+      - description: Configures the priority class name for the central-worker deployment.
+        displayName: Priority Class Name
+        path: centralWorker.priorityClassName
       - description: |-
           Default tolerations applied to all Deployment-based components. Use this when your target
           nodes have custom taints that pods must tolerate.
@@ -589,6 +602,13 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
+          Central Worker configuration. When enabled, pruning and reporting jobs run in a
+          separate Deployment instead of inside Central.
+        displayName: Central Worker
+        path: centralWorker
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
           Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
         displayName: Host path
@@ -619,6 +639,13 @@ spec:
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: central.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
+        displayName: Resources
+        path: centralWorker.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: |-
@@ -677,6 +704,11 @@ spec:
           If you want this component to only run on specific nodes, you can configure a node selector here.
           This setting overrides spec.customize.deploymentDefaults.nodeSelector.
         displayName: Node Selector
+        path: centralWorker.nodeSelector
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure a node selector here.
+          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
+        displayName: Node Selector
         path: configAsCode.nodeSelector
       - description: |-
           If you want this component to only run on specific nodes, you can configure a node selector here.
@@ -715,6 +747,13 @@ spec:
           This setting overrides spec.customize.deploymentDefaults.tolerations.
         displayName: Tolerations
         path: central.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: |-
+          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+          This setting overrides spec.customize.deploymentDefaults.tolerations.
+        displayName: Tolerations
+        path: centralWorker.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
       - description: |-
@@ -767,6 +806,10 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: central.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: centralWorker.hostAliases
       - description: HostAliases allows configuring additional hostnames to resolve
           in the pod's hosts file.
         displayName: Host Aliases
