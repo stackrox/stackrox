@@ -335,7 +335,7 @@ export function formatBuildDate(orchestratorMetadata) {
         : 'Not available';
 }
 
-export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
+export function formatCloudProvider(providerMetadata: ClusterProviderMetadata | undefined) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
