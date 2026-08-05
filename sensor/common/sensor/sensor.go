@@ -93,6 +93,10 @@ type Sensor struct {
 	reconcile  atomic.Bool
 
 	clusterID clusterIDPeekSetter
+
+	// scannerDefsHandler is kept regardless of whether the HTTP route is
+	// registered, so VM-only clusters can inject it into vmscraper.
+	scannerDefsHandler *scannerdefinitions.Handler
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -235,16 +239,23 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
-	// Enable endpoint to retrieve vulnerability definitions if local image scanning or Node Indexing is enabled.
-	// Node Indexing requires access to the repo to cpe mapping file hosted by central.
-	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
-		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint, centralCertificates)
+	// Construct the scanner definitions handler if local image scanning, Node Indexing, or VM
+	// scanning is enabled: all three need access to the repo-to-CPE mapping file hosted by
+	// central, whether through the HTTP route below or, for VM scanning, via FetchRepo2CPE.
+	if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() || features.VirtualMachines.Enabled() {
+		handler, err := scannerdefinitions.NewDefinitionsHandler(s.centralEndpoint, centralCertificates)
 		if err != nil {
-			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
-		}
-		customRoutes = append(customRoutes, *route)
+			utils.Should(errors.Wrap(err, "Failed to create scanner definitions handler"))
+		} else {
+			s.scannerDefsHandler = handler
+			s.AddNotifiable(handler)
 
-		s.AddNotifiable(scannerclient.ResetNotifiable())
+			// The HTTP route itself is only needed by Scanner/Collector/node-index callers.
+			if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
+				customRoutes = append(customRoutes, s.newScannerDefinitionsRoute(handler))
+				s.AddNotifiable(scannerclient.ResetNotifiable())
+			}
+		}
 	}
 
 	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
@@ -318,19 +329,14 @@ func (s *Sensor) Start() {
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
-// definitions retrieved from Central.
-func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCertificates []*x509.Certificate) (*routes.CustomRoute, error) {
-	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating scanner definitions handler")
-	}
-	s.AddNotifiable(handler)
+// definitions retrieved from Central via handler.
+func (s *Sensor) newScannerDefinitionsRoute(handler *scannerdefinitions.Handler) routes.CustomRoute {
 	// We rely on central to handle content encoding negotiation.
-	return &routes.CustomRoute{
+	return routes.CustomRoute{
 		Route:         scannerDefinitionsRoute,
 		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
-	}, nil
+	}
 }
 
 func (s *Sensor) registerSoftRestartHandler() {
