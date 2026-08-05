@@ -1744,3 +1744,16 @@ export const nodeEventDescriptor: Descriptor[] = [
     },
     ...processActivityDescriptors,
 ];
+
+export const securityEventDescriptor: Descriptor[] = [
+    {
+        label: 'Security event source',
+        name: 'Security Event Source',
+        shortName: 'Security event source',
+        category: policyCriteriaCategories.SECURITY_EVENT,
+        type: 'text',
+        placeholder: 'e.g. Kyverno',
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+];

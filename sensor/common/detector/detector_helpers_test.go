@@ -191,7 +191,7 @@ func (f *fakeUnifiedDetector) DetectFileAccessForDeployment(_ booleanpolicy.Enha
 	return f.alerts
 }
 func (f *fakeUnifiedDetector) DetectSecurityEvent(_ string) []*storage.Alert {
-	return f.alerts
+	return nil
 }
 
 type fakeEnforcer struct{}

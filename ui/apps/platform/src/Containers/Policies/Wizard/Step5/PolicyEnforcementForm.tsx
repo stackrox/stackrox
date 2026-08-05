@@ -52,6 +52,7 @@ function PolicyEnforcementForm() {
     const hasRuntime = values.lifecycleStages.includes('RUNTIME');
     const hasAuditLog = values.eventSource === 'AUDIT_LOG_EVENT';
     const hasNodeEvent = values.eventSource === 'NODE_EVENT';
+    const hasSecurityEvent = values.eventSource === 'SECURITY_EVENT';
 
     let responseMethodHelperText = showEnforcement
         ? 'Inform and enforce will execute enforcement behavior at the stages you select.'
@@ -63,8 +64,11 @@ function PolicyEnforcementForm() {
     if (hasNodeEvent) {
         responseMethodHelperText = 'Enforcement is not available for node event sources.';
     }
+    if (hasSecurityEvent) {
+        responseMethodHelperText = 'Enforcement is not available for security event sources.';
+    }
 
-    const isEnforcementDisabled = hasAuditLog || hasNodeEvent;
+    const isEnforcementDisabled = hasAuditLog || hasNodeEvent || hasSecurityEvent;
 
     return (
         <Form>

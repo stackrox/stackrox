@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	policyReportDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/policyreport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,22 +38,24 @@ func New(clusterID clusterIDWaiter,
 	storeProvider *resources.StoreProvider,
 	pubSub *internalmessage.MessageSubscriber,
 	pubSubDispatcher pubSubPublisher,
+	policyReportDetectFunc policyReportDispatcher.DetectFunc,
 ) (component.ContextListener, error) {
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
 		return nil, errors.Errorf("unable to initialize the listener. %q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
 	}
 	k := &listenerImpl{
-		client:             client,
-		stopSig:            concurrency.NewSignal(),
-		configHandler:      configHandler,
-		credentialsManager: createCredentialsManager(client, nodeName),
-		traceWriter:        traceWriter,
-		outputQueue:        queue,
-		storeProvider:      storeProvider,
-		mayCreateHandlers:  concurrency.NewSignal(),
-		pubSub:             pubSub,
-		pubSubDispatcher:   pubSubDispatcher,
-		clusterID:          clusterID,
+		client:                 client,
+		stopSig:                concurrency.NewSignal(),
+		configHandler:          configHandler,
+		credentialsManager:     createCredentialsManager(client, nodeName),
+		traceWriter:            traceWriter,
+		outputQueue:            queue,
+		storeProvider:          storeProvider,
+		mayCreateHandlers:      concurrency.NewSignal(),
+		pubSub:                 pubSub,
+		pubSubDispatcher:       pubSubDispatcher,
+		clusterID:              clusterID,
+		policyReportDetectFunc: policyReportDetectFunc,
 	}
 	k.mayCreateHandlers.Signal()
 	return k, nil

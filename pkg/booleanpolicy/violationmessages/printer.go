@@ -73,6 +73,7 @@ var (
 		fieldnames.RequiredLabel:                  {{required: set.NewStringSet(search.DeploymentLabel.String()), printerFuncKey: printer.RequiredLabelKey}},
 		fieldnames.RuntimeClass:                   {{required: set.NewStringSet(augmentedobjs.RuntimeClassCustomTag), printerFuncKey: printer.RuntimeClassKey}},
 		fieldnames.SeccompProfileType:             {{required: set.NewStringSet(search.SeccompProfileType.String()), printerFuncKey: printer.SeccompProfileTypeKey}},
+		fieldnames.SecurityEventSource:            {{required: set.NewStringSet(augmentedobjs.SecurityEventSourceCustomTag), printerFuncKey: printer.SecurityEventKey}},
 		fieldnames.ServiceAccount:                 {{required: set.NewStringSet(search.ServiceAccountName.String()), printerFuncKey: printer.ServiceAccountKey}},
 		fieldnames.Severity:                       {{required: set.NewStringSet(search.Severity.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.UnscannedImage:                 {{required: set.NewStringSet(augmentedobjs.ImageScanCustomTag), printerFuncKey: printer.ImageScanKey}},

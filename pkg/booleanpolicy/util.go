@@ -41,7 +41,7 @@ func SectionContainsEventSource(section *storage.PolicySection, eventSource stor
 func ContainsRuntimeFields(policy *storage.Policy) bool {
 	return ContainsOneOf(policy, AuditLogEvent) || ContainsOneOf(policy, Process) ||
 		ContainsOneOf(policy, KubeEvent) || ContainsOneOf(policy, NetworkFlow) ||
-		ContainsOneOf(policy, FileAccess)
+		ContainsOneOf(policy, FileAccess) || ContainsOneOf(policy, SecurityEvent)
 }
 
 // ContainsDeployTimeFields returns whether the policy contains deploy-time specific fields.
@@ -139,10 +139,11 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	}
 
 	var runtimeFieldTypeMap = map[RuntimeFieldType]RuntimeFieldType{
-		Process:     Process,
-		FileAccess:  Process, // FileAccess events contain process information
-		NetworkFlow: NetworkFlow,
-		KubeEvent:   KubeEvent,
+		Process:       Process,
+		FileAccess:    Process, // FileAccess events contain process information
+		NetworkFlow:   NetworkFlow,
+		KubeEvent:     KubeEvent,
+		SecurityEvent: SecurityEvent,
 	}
 
 	groupsSeen := set.NewStringSet()

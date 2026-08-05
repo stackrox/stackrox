@@ -16,6 +16,7 @@ import (
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
+	policyreport "github.com/stackrox/rox/pkg/policyreport"
 	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
@@ -177,15 +178,15 @@ func (mr *MockDetectorMockRecorder) ProcessPolicySync(ctx, sync any) *gomock.Cal
 }
 
 // ProcessSecurityEvent mocks base method.
-func (m *MockDetector) ProcessSecurityEvent(source string) {
+func (m *MockDetector) ProcessSecurityEvent(event *policyreport.SecurityEvent) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ProcessSecurityEvent", source)
+	m.ctrl.Call(m, "ProcessSecurityEvent", event)
 }
 
 // ProcessSecurityEvent indicates an expected call of ProcessSecurityEvent.
-func (mr *MockDetectorMockRecorder) ProcessSecurityEvent(source any) *gomock.Call {
+func (mr *MockDetectorMockRecorder) ProcessSecurityEvent(event any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessSecurityEvent", reflect.TypeOf((*MockDetector)(nil).ProcessSecurityEvent), source)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessSecurityEvent", reflect.TypeOf((*MockDetector)(nil).ProcessSecurityEvent), event)
 }
 
 // ProcessReprocessDeployments mocks base method.

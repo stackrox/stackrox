@@ -34,6 +34,7 @@ import {
     imageSigningCriteriaName,
     nodeEventDescriptor,
     policyCriteriaDescriptors,
+    securityEventDescriptor,
 } from './Wizard/Step3/policyCriteriaDescriptors';
 import type { Descriptor } from './Wizard/Step3/policyCriteriaDescriptors';
 
@@ -721,6 +722,7 @@ const eventSourceToDescriptorsMap: Readonly<Record<PolicyEventSource, Descriptor
     DEPLOYMENT_EVENT: policyCriteriaDescriptors,
     AUDIT_LOG_EVENT: auditLogDescriptor,
     NODE_EVENT: nodeEventDescriptor,
+    SECURITY_EVENT: securityEventDescriptor,
 };
 
 export function getPolicyDescriptors(

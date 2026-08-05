@@ -58,6 +58,7 @@ export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freez
     DEPLOYMENT_EVENT: 'Deployment',
     AUDIT_LOG_EVENT: 'Audit log',
     NODE_EVENT: 'Node',
+    SECURITY_EVENT: 'Security event',
 });
 
 export const accessControl = Object.freeze({
@@ -154,6 +155,7 @@ export const policyCriteriaCategories = Object.freeze({
     RESOURCE_OPERATION: 'Resource operation (Required)',
     RESOURCE_ATTRIBUTES: 'Resource attributes',
     FILE_ACTIVITY: 'File activity',
+    SECURITY_EVENT: 'Security event',
 });
 
 export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
