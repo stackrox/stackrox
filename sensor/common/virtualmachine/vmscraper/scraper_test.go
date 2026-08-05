@@ -62,6 +62,15 @@ func (nopCloser) Read([]byte) (int, error)  { return 0, io.EOF }
 func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
 
+// fakeCloseCoder is a minimal closeCoder for testing without a real dialer.
+type fakeCloseCoder struct {
+	code   int
+	reason string
+}
+
+func (e *fakeCloseCoder) Error() string            { return "connection closed" }
+func (e *fakeCloseCoder) CloseCode() (int, string) { return e.code, e.reason }
+
 type mockProtocolClient struct {
 	resultQueue []*vsockclient.GetReportResult
 	errQueue    []error
@@ -142,6 +151,12 @@ func makeReportWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
 			Epoch:            epoch,
 		},
 	}
+}
+
+func makeReportWithEpochAndFacts(gen, epoch uint32, facts map[string]string) *vsockclient.GetReportResult {
+	result := makeReportWithEpoch(gen, epoch)
+	result.Meta.Facts = facts
+	return result
 }
 
 func unchangedResultWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
@@ -288,6 +303,40 @@ func TestVMScraper_ForwardsOnEpochMismatch(t *testing.T) {
 	assert.Equal(t, uint32(0), client.calls[1].ifNewerThan, "second call forces full report")
 	assert.Equal(t, uint32(0), client.calls[1].knownEpoch, "second (forced) call doesn't need to send an epoch")
 	assert.Len(t, sender.sent, 2, "should forward despite matching generation, because epoch changed")
+}
+
+// TestVMScraper_RecordsFactsFromFallbackResponse ensures the full report
+// fetched on the epoch-mismatch retry (see TestVMScraper_ForwardsOnEpochMismatch)
+// has its facts logged and counted, not just the initial "unchanged" response
+// that triggered the retry.
+func TestVMScraper_RecordsFactsFromFallbackResponse(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReportWithEpoch(5, 100)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{
+		unchangedResultWithEpoch(5, 200),
+		makeReportWithEpochAndFacts(5, 200, map[string]string{
+			"detected_os":       "RHEL",
+			"activation_status": "ACTIVE",
+		}),
+	}
+
+	before := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", ""))
+	s.pollOnce(context.Background())
+
+	require.Len(t, client.calls, 2, "epoch mismatch should force a second call for the full report")
+	assert.Equal(t, before+1, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "")),
+		"facts carried on the fallback response should be recorded, not just those on the initial unchanged response")
 }
 
 // TestVMScraper_TrustsUnchangedWhenEpochZero ensures backward compatibility
@@ -477,6 +526,102 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
 	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
 	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
+}
+
+// TestHandleGetReportError_ClassifiesEveryErrorCode locks in the mapping
+// from each error to its metrics.PullStatus* label.
+func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
+	cases := map[string]struct {
+		err       error
+		wantLabel string
+	}{
+		"NOT_READY maps to not_ready": {
+			err:       fmt.Errorf("%w: still scanning", vsockclient.ErrNotReady),
+			wantLabel: metrics.PullStatusNotReady,
+		},
+		"UNKNOWN_METHOD maps to unknown_method": {
+			err:       fmt.Errorf("%w: no get_report", vsockclient.ErrUnknownMethod),
+			wantLabel: metrics.PullStatusUnknownMethod,
+		},
+		"BUSY maps to busy": {
+			err:       fmt.Errorf("%w: another request in flight", vsockclient.ErrBusy),
+			wantLabel: metrics.PullStatusBusy,
+		},
+		"INTERNAL maps to internal_error": {
+			err:       fmt.Errorf("%w: panic recovered", vsockclient.ErrInternal),
+			wantLabel: metrics.PullStatusInternalError,
+		},
+		"MALFORMED_REQUEST maps to malformed_request": {
+			err:       fmt.Errorf("%w: empty request_id", vsockclient.ErrMalformedRequest),
+			wantLabel: metrics.PullStatusMalformedRequest,
+		},
+		"REQUEST_TOO_LARGE maps to request_too_large": {
+			err:       fmt.Errorf("%w: payload too big", vsockclient.ErrRequestTooLarge),
+			wantLabel: metrics.PullStatusRequestTooLarge,
+		},
+		"unrecognized agent error code maps to unknown_agent_error": {
+			err:       fmt.Errorf("%w: agent error (99): ?", vsockclient.ErrUnknownAgentError),
+			wantLabel: metrics.PullStatusUnknownAgentError,
+		},
+		"abnormal websocket close maps to read_error": {
+			err:       fmt.Errorf("reading response: %w", &fakeCloseCoder{code: 1006, reason: "abnormal closure"}),
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"plain io.EOF maps to read_error": {
+			err:       io.EOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"io.ErrUnexpectedEOF maps to read_error": {
+			err:       io.ErrUnexpectedEOF,
+			wantLabel: metrics.PullStatusReadError,
+		},
+		"unrecognized transport/framing error falls back to read_error": {
+			err:       errors.New("unmarshaling response: unexpected EOF in the middle of a varint"),
+			wantLabel: metrics.PullStatusReadError,
+		},
+	}
+
+	s := &VMScraper{}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			before := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel))
+			s.handleGetReportError(t.Context(), "ns/vm", tc.err)
+			assert.Equal(t, before+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(tc.wantLabel)),
+				"expected %v to increment the %q status label exactly once", tc.err, tc.wantLabel)
+		})
+	}
+}
+
+// TestIsAbnormalClose locks in which close codes route to the "abnormal
+// closure" log/metric path versus the ordinary EOF path.
+func TestIsAbnormalClose(t *testing.T) {
+	cases := map[string]struct {
+		err  error
+		want bool
+	}{
+		"normal closure (1000) is not abnormal": {
+			err:  &fakeCloseCoder{code: closeCodeNormalClosure, reason: "bye"},
+			want: false,
+		},
+		"zero code (no structured signal) is not abnormal": {
+			err:  &fakeCloseCoder{code: 0},
+			want: false,
+		},
+		"abnormal closure (1006) is abnormal": {
+			err:  &fakeCloseCoder{code: 1006, reason: "abnormal closure"},
+			want: true,
+		},
+		"a plain io.EOF is not a closeCoder at all": {
+			err:  io.EOF,
+			want: false,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			var target closeCoder
+			assert.Equal(t, tc.want, isAbnormalClose(tc.err, &target))
+		})
+	}
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {

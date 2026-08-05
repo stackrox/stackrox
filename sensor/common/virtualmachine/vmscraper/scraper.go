@@ -68,6 +68,14 @@ type ProtocolClient interface {
 	GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error)
 }
 
+// closeCoder is satisfied by transport errors carrying a structured close
+// code. Declared locally so VMScraper doesn't need to import a concrete
+// dialer's error type to recognize one.
+type closeCoder interface {
+	error
+	CloseCode() (code int, reason string)
+}
+
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
 	store                 RunningVMStore
@@ -302,9 +310,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 // dialAndGetReport dials the VM and issues a single GetReport request,
 // recording dial/read latency metrics and classifying dial failures
 // (timeout vs. other) consistently regardless of which call site invokes
-// it. scrapeVM calls this twice on the epoch-mismatch fallback path (see
-// the Unchanged branch above), so keeping the timing and error-handling
-// logic in one place ensures both calls are measured the same way.
+// it. It also logs and records the discovered facts carried on every
+// successful response.
 //
 // Because each call observes PullDialDurationSeconds and
 // PullReadDurationSeconds, that fallback path produces two histogram
@@ -337,6 +344,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 		s.handleGetReportError(ctx, key, err)
 		return nil, false
 	}
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 	return result, true
 }
 
@@ -349,6 +357,7 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
 		return
 	}
+	var closeErr closeCoder
 	switch {
 	case errors.Is(err, vsockclient.ErrNotReady):
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)
@@ -356,13 +365,53 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	case errors.Is(err, vsockclient.ErrUnknownMethod):
 		log.Warnf("VMScraper: roxagent on %q does not support the GetReport method", key)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownMethod).Inc()
+	case errors.Is(err, vsockclient.ErrBusy):
+		log.Debugf("VMScraper: roxagent on %q rejected the request because it is already serving another connection", key)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy).Inc()
+	case errors.Is(err, vsockclient.ErrInternal):
+		log.Warnf("VMScraper: roxagent on %q reported an internal error: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusInternalError).Inc()
+	case errors.Is(err, vsockclient.ErrMalformedRequest):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as malformed: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusMalformedRequest).Inc()
+	case errors.Is(err, vsockclient.ErrRequestTooLarge):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as too large: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusRequestTooLarge).Inc()
+	case errors.Is(err, vsockclient.ErrUnknownAgentError):
+		log.Warnf("VMScraper: roxagent on %q returned an error code this Sensor version doesn't recognize (possible version mismatch): %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownAgentError).Inc()
+	case isAbnormalClose(err, &closeErr):
+		// e.g. close code 1006, which is what a TLS handshake failure on the
+		// agent's side looks like from Sensor's end.
+		code, reason := closeErr.CloseCode()
+		log.Warnf("VMScraper: roxagent on %q connection closed abnormally (websocket close code %d: %s) — check roxagent's own logs on the VM for the cause",
+			key, code, reason)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	case errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF):
 		log.Debugf("VMScraper: roxagent on %q connection closed (agent may be down or restarting): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	default:
-		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
+		log.Warnf("VMScraper: unexpected transport or framing error for %q: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	}
+}
+
+// closeCodeNormalClosure is the RFC 6455 status code (1000) for a graceful
+// websocket close. Declared to keep vmscraper decoupled from the transport
+// package.
+const closeCodeNormalClosure = 1000
+
+// isAbnormalClose reports whether err is a closeCoder carrying a close code
+// that signals something other than a graceful shutdown, writing the match
+// into target. Zero means no structured signal at all (e.g. a plain
+// io.EOF), and closeCodeNormalClosure means an expected close; both are
+// left for the ordinary io.EOF branch to handle.
+func isAbnormalClose(err error, target *closeCoder) bool {
+	if !errors.As(err, target) {
+		return false
+	}
+	code, _ := (*target).CloseCode()
+	return code != 0 && code != closeCodeNormalClosure
 }
 
 // vmKey returns the identifier used for vmState and activeVMs lookups.
