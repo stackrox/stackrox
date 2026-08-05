@@ -33,6 +33,7 @@ import (
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
+	watchedImageDatastore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -40,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -129,6 +131,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	blobStore blobDatastore.Datastore,
 	nodeCVEStore nodeCVEDS.DataStore,
 	roleStore roleDataStore.DataStore,
+	watchedImages watchedImageDatastore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -155,6 +158,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		blobStore:       blobStore,
 		nodeCVEStore:    nodeCVEStore,
 		roleStore:       roleStore,
+		watchedImages:   watchedImages,
 	}
 }
 
@@ -184,6 +188,7 @@ type garbageCollectorImpl struct {
 	blobStore       blobDatastore.Datastore
 	nodeCVEStore    nodeCVEDS.DataStore
 	roleStore       roleDataStore.DataStore
+	watchedImages   watchedImageDatastore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -282,7 +287,11 @@ func (g *garbageCollectorImpl) pruneImageV1Batch() {
 				Limit(int32(batchSize)),
 		).ProtoQuery()
 
-	v1Images, err := g.images.SearchListImages(pruningCtx, q)
+	var v1Images []*storage.Image
+	err := g.images.WalkMetadataByQuery(pruningCtx, q, func(img *storage.Image) error {
+		v1Images = append(v1Images, img)
+		return nil
+	})
 	if err != nil {
 		log.Errorf("[Pruning] Error fetching V1 images: %v", err)
 		return
@@ -309,21 +318,26 @@ func (g *garbageCollectorImpl) pruneImageV1Batch() {
 	}
 }
 
-func (g *garbageCollectorImpl) filterV1ImageIDsToPrune(v1Images []*storage.ListImage) []string {
+func (g *garbageCollectorImpl) filterV1ImageIDsToPrune(v1Images []*storage.Image) []string {
 	var deleteIDs []string
-	var digestsWithCVEs []string
+	var imagesWithCVEs []*storage.Image
 
 	for _, img := range v1Images {
 		// V1 images with 0 CVEs have no scan data worth preserving, safe to delete.
 		if img.GetCves() == 0 {
 			deleteIDs = append(deleteIDs, img.GetId())
 		} else {
-			digestsWithCVEs = append(digestsWithCVEs, img.GetId())
+			imagesWithCVEs = append(imagesWithCVEs, img)
 		}
 	}
 
-	if len(digestsWithCVEs) == 0 {
+	if len(imagesWithCVEs) == 0 {
 		return deleteIDs
+	}
+
+	var digestsWithCVEs []string
+	for _, img := range imagesWithCVEs {
+		digestsWithCVEs = append(digestsWithCVEs, img.GetId())
 	}
 
 	digestToV2IDs, err := g.deployments.GetV2ImageIDsForDigests(pruningCtx, digestsWithCVEs)
@@ -332,16 +346,35 @@ func (g *garbageCollectorImpl) filterV1ImageIDsToPrune(v1Images []*storage.ListI
 		return deleteIDs
 	}
 
+	watchedNames, err := g.getWatchedNameSet()
+	if err != nil {
+		log.Errorf("[Pruning] Error fetching watched images: %v", err)
+		return deleteIDs
+	}
+
+	for _, img := range imagesWithCVEs {
+		digest := img.GetId()
+		v2IDs := digestToV2IDs[digest]
+
+		if len(v2IDs) == 0 {
+			watchedV2IDs := g.watchedV2IDsForImage(img, watchedNames)
+			if len(watchedV2IDs) == 0 {
+				deleteIDs = append(deleteIDs, digest)
+				continue
+			}
+			digestToV2IDs[digest] = watchedV2IDs
+		}
+	}
+
 	v2ImageMap := g.buildV2ImageMap(digestToV2IDs)
 	if v2ImageMap == nil {
 		return deleteIDs
 	}
 
-	for _, digest := range digestsWithCVEs {
+	for _, img := range imagesWithCVEs {
+		digest := img.GetId()
 		v2IDs := digestToV2IDs[digest]
-		// Not deployed anywhere — safe to prune.
 		if len(v2IDs) == 0 {
-			deleteIDs = append(deleteIDs, digest)
 			continue
 		}
 		if g.allV2TwinsEnriched(v2IDs, v2ImageMap) {
@@ -350,6 +383,31 @@ func (g *garbageCollectorImpl) filterV1ImageIDsToPrune(v1Images []*storage.ListI
 	}
 
 	return deleteIDs
+}
+
+func (g *garbageCollectorImpl) getWatchedNameSet() (set.StringSet, error) {
+	if g.watchedImages == nil {
+		return set.NewStringSet(), nil
+	}
+	watched, err := g.watchedImages.GetAllWatchedImages(pruningCtx)
+	if err != nil {
+		return nil, err
+	}
+	names := set.NewStringSet()
+	for _, w := range watched {
+		names.Add(w.GetName())
+	}
+	return names, nil
+}
+
+func (g *garbageCollectorImpl) watchedV2IDsForImage(img *storage.Image, watchedNames set.StringSet) []string {
+	var v2IDs []string
+	for _, name := range img.GetNames() {
+		if watchedNames.Contains(name.GetFullName()) {
+			v2IDs = append(v2IDs, imageUtils.NewImageV2ID(name, img.GetId()))
+		}
+	}
+	return v2IDs
 }
 
 func (g *garbageCollectorImpl) buildV2ImageMap(digestToV2IDs map[string][]string) map[string]*storage.ImageV2 {
