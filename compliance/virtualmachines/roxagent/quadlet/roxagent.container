@@ -1,15 +1,15 @@
 [Unit]
-Description=StackRox VM Agent Container
+Description=StackRox VM Agent Container (pull mode)
 # Copy RPM database before starting (SQLite WAL requires writable access)
 Requires=roxagent-prep.service
 After=roxagent-prep.service
 
 [Container]
-# Replace with your StackRox main image tag
-Image=quay.io/stackrox-io/main:4.11.x-798-g8a5ad6ed58
+# TODO: Replace with your target StackRox main image tag before deploying.
+Image=quay.io/stackrox-io/main:latest
 # Pull when SHA is different (Default is "always")
 Pull=newer
-Exec=--host-path /host
+Exec=serve --host-path /host
 Network=host
 
 # Privileged for vsock access
@@ -30,13 +30,10 @@ Volume=/etc/distro.repos.d:/host/etc/distro.repos.d:ro
 # DNF cache and state for repo-to-package mapping
 Volume=/var/cache/dnf:/host/var/cache/dnf:ro
 Volume=/var/lib/dnf:/host/var/lib/dnf:ro
-# Single-instance lock shared between host and container roxagent runs
-Volume=/run/lock/roxagent:/run/lock/roxagent:rw
 
 [Service]
-Type=oneshot
-# First start can take longer on slow VMs
-TimeoutStartSec=600
+Restart=on-failure
+RestartSec=10s
 
 [Install]
-WantedBy=
+WantedBy=multi-user.target
