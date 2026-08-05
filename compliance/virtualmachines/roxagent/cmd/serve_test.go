@@ -3,7 +3,11 @@ package cmd
 import (
 	"context"
 	"crypto/x509"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -11,13 +15,19 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // validMappingJSON is the minimal content repositorytocpe.ValidateMapping accepts.
-const validMappingJSON = `{"data":{}}`
+// otherValidMappingJSON is a distinct valid payload for tests that need two
+// different hashes (e.g. deferred-apply across a simulated scan).
+const (
+	validMappingJSON      = `{"data":{}}`
+	otherValidMappingJSON = `{"data":{"rhel-9-server-rpms":{"cpes":["cpe:/o:redhat:enterprise_linux:9"]}}}`
+)
 
 // waitTimeout/waitTick bound assert.Eventually polling for background
 // effects of a real (non-fake-clock) mapping update, e.g. onChange firing.
@@ -81,9 +91,17 @@ func TestNewRescannerAndProvider_NoMappingStaysIdle(t *testing.T) {
 	for name, repoCPEURL := range map[string]string{"Sensor-managed": "", "URL-managed": "https://example.invalid/repo-to-cpe.json"} {
 		t.Run(name, func(t *testing.T) {
 			withMappingCachePath(t)
-			_, provider, _, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{repoCPEURL: repoCPEURL})
+			vmRescanner, provider, _, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{repoCPEURL: repoCPEURL})
 
 			assert.False(t, provider.Ready(), "no cached mapping file must leave the provider not-Ready, not erroring")
+
+			var scanCalls int
+			vmRescanner.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+				scanCalls++
+				return &v4.IndexReport{}, nil
+			}
+			require.NoError(t, vmRescanner.scanOnce(t.Context()))
+			assert.Zero(t, scanCalls, "a not-Ready provider must never trigger a disk scan")
 		})
 	}
 }
@@ -108,7 +126,7 @@ func TestNewRescannerAndProvider_CallbackWiredAfterConstruction(t *testing.T) {
 // forget cache-persistence goroutine is real background I/O outside the
 // rescanner's own fake-clock-driven loop.
 func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
-	withMappingCachePath(t)
+	cachePath := withMappingCachePath(t)
 	vmRescanner, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
 	require.False(t, provider.Ready())
 	require.NotNil(t, updater, "Sensor path must produce a non-nil updater")
@@ -136,6 +154,159 @@ func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
 	assert.Eventually(t, func() bool {
 		return concurrency.WithLock1(&mu, func() int { return calls }) == 1
 	}, waitTimeout, waitTick, "a Sync-style mapping update should kick an immediate scan attempt")
+
+	// SensorUpdater.Update persists to disk via a fire-and-forget goroutine
+	// (see vsockserver.SensorUpdater.persistAndNotify), so the on-disk
+	// content lands independently of, and possibly after, the scan kick
+	// asserted above.
+	assert.Eventually(t, func() bool {
+		content, err := os.ReadFile(cachePath)
+		return err == nil && string(content) == validMappingJSON
+	}, waitTimeout, waitTick, "a synced mapping should also land in the on-disk cache")
+}
+
+// TestNewRescannerAndProvider_URLNeverSucceeds_StaysNotSensorManaged covers
+// a configured --repo-cpe-url that never produces a usable mapping: the
+// update path must stay URL, with no fallback to Sensor, even once the
+// downloader has actually attempted and failed a fetch. Log-level (ERROR
+// vs WARN) is not asserted here: the codebase has no lightweight log-
+// capture convention (see report), and URLUpdater.onDownloadComplete only
+// ever logs WARN today regardless of whether a mapping was ever
+// successfully fetched — see the task report for this gap.
+func TestNewRescannerAndProvider_URLNeverSucceeds_StaysNotSensorManaged(t *testing.T) {
+	withMappingCachePath(t)
+
+	var requests atomic.Int64
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	_, provider, updater, urlUpdater := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{repoCPEURL: srv.URL})
+	require.Nil(t, updater)
+	require.NotNil(t, urlUpdater)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	require.NoError(t, urlUpdater.Start(ctx))
+	defer func() {
+		cancel()
+		urlUpdater.Stop()
+	}()
+
+	assert.Eventually(t, func() bool { return requests.Load() > 0 }, waitTimeout, waitTick,
+		"the downloader should have attempted at least one fetch against the configured URL")
+
+	assert.False(t, provider.Ready(), "a URL that never succeeds must never make the provider Ready")
+	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL, provider.UpdatePath(),
+		"a failing URL must not fall back to Sensor management")
+}
+
+// TestNewRescannerAndProvider_RestartSwitchesUpdatePath simulates an
+// operator adding or removing --repo-cpe-url between two agent restarts
+// that share the same on-disk mappingCachePath. Per the design, the
+// update path is re-derived purely from cfg.repoCPEURL on every restart,
+// never persisted; this table only pins that re-derivation, not whether
+// the previous updater's cached bytes get re-read (see report: cmd wires
+// both updaters to the same mappingCachePath file, so unlike the design's
+// "own cache file" wording, content bootstrapped by one updater is in
+// fact visible to the other after a switch).
+func TestNewRescannerAndProvider_RestartSwitchesUpdatePath(t *testing.T) {
+	tests := map[string]struct {
+		firstURL  string
+		secondURL string
+		wantFirst pb.RepoCPEMappingUpdatePath
+		wantAfter pb.RepoCPEMappingUpdatePath
+	}{
+		"adding --repo-cpe-url switches Sensor-managed to URL-managed": {
+			firstURL:  "",
+			secondURL: "https://example.invalid/repo-to-cpe.json",
+			wantFirst: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR,
+			wantAfter: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL,
+		},
+		"removing --repo-cpe-url switches URL-managed to Sensor-managed": {
+			firstURL:  "https://example.invalid/repo-to-cpe.json",
+			secondURL: "",
+			wantFirst: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL,
+			wantAfter: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			withMappingCachePath(t)
+
+			_, firstProvider, _, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{repoCPEURL: tt.firstURL})
+			require.Equal(t, tt.wantFirst, firstProvider.UpdatePath())
+
+			_, secondProvider, _, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{repoCPEURL: tt.secondURL})
+			assert.Equal(t, tt.wantAfter, secondProvider.UpdatePath(),
+				"a fresh restart must re-derive the update path from the current --repo-cpe-url, not remember the prior one")
+		})
+	}
+}
+
+// TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies covers
+// the cmd-level wiring for deferred apply: SensorUpdater's own deferred-
+// apply logic is unit-tested in vsockserver/sensor_updater_test.go, so this
+// only checks that newRescannerAndProvider's returned updater/provider
+// pair exposes that behavior end-to-end through the ScanBusyGate interface.
+func TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies(t *testing.T) {
+	cachePath := withMappingCachePath(t)
+	require.NoError(t, os.WriteFile(cachePath, []byte(validMappingJSON), 0o600))
+
+	_, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
+	require.True(t, provider.Ready(), "a pre-seeded Sensor cache must bootstrap the provider Ready")
+	require.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), provider.Hash())
+
+	gate, ok := updater.(vsockserver.ScanBusyGate)
+	require.True(t, ok, "the Sensor updater must implement ScanBusyGate")
+	gate.MarkScanBusy()
+
+	updated, err := updater.Update([]byte(otherValidMappingJSON))
+	require.NoError(t, err)
+	require.True(t, updated)
+
+	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), provider.Hash(),
+		"the active mapping must stay the bootstrapped content while a scan is in flight")
+
+	gate.MarkScanIdleAndApplyPending()
+
+	assert.Equal(t, repositorytocpe.HashMapping([]byte(otherValidMappingJSON)), provider.Hash(),
+		"the pending mapping should apply once the scan is marked idle")
+
+	// MarkScanIdleAndApplyPending's persist is also fire-and-forget; wait
+	// for it so the background write can't still be touching cachePath's
+	// directory when t.TempDir() cleans it up.
+	assert.Eventually(t, func() bool {
+		content, err := os.ReadFile(cachePath)
+		return err == nil && string(content) == otherValidMappingJSON
+	}, waitTimeout, waitTick, "the applied mapping should also land in the on-disk cache")
+}
+
+// TestNewRescannerAndProvider_SensorUpdate_InvalidContentKeepsLastGood
+// covers the cmd-level wiring only; SensorUpdater's own validation
+// behavior is unit-tested in vsockserver/sensor_updater_test.go.
+func TestNewRescannerAndProvider_SensorUpdate_InvalidContentKeepsLastGood(t *testing.T) {
+	cachePath := withMappingCachePath(t)
+	_, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
+
+	updated, err := updater.Update([]byte(validMappingJSON))
+	require.NoError(t, err)
+	require.True(t, updated)
+	wantHash := provider.Hash()
+	// Drain the first Update's fire-and-forget persist before the test ends,
+	// so its background write can't still be touching cachePath's directory
+	// when t.TempDir() cleans it up.
+	assert.Eventually(t, func() bool {
+		content, err := os.ReadFile(cachePath)
+		return err == nil && string(content) == validMappingJSON
+	}, waitTimeout, waitTick, "the initial valid mapping should land in the on-disk cache")
+
+	updated, err = updater.Update([]byte(`{not valid json`))
+	assert.Error(t, err)
+	assert.False(t, updated)
+	assert.Equal(t, wantHash, provider.Hash(), "invalid content must not replace the last-known-good mapping")
 }
 
 // validServeConfig returns a serveConfig that passes validate(), so each
