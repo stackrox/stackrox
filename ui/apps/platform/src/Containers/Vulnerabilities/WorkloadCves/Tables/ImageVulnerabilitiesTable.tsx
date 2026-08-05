@@ -131,6 +131,9 @@ export const imageVulnerabilitiesFragment = gql`
             epss {
                 epssProbability
             }
+            exploit {
+                knownRansomwareCampaignUse
+            }
         }
         discoveredAtImage
         publishedOn
@@ -279,10 +282,6 @@ function ImageVulnerabilitiesTable({
                             isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
-                            // Add in imageVulnerabilitiesFragment following epss:
-                            // exploit {
-                            //     knownRansomwareCampaignUse
-                            // }
                             labels.push(<KnownExploitLabel key="exploit" isCompact />);
                             if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                 labels.push(

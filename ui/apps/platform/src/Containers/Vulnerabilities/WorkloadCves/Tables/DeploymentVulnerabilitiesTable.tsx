@@ -87,6 +87,9 @@ export const deploymentWithVulnerabilitiesFragment = gql`
                 epss {
                     epssProbability
                 }
+                exploit {
+                    knownRansomwareCampaignUse
+                }
             }
             operatingSystem
             publishedOn
@@ -189,10 +192,6 @@ function DeploymentVulnerabilitiesTable({
                             isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
-                            // Add in deploymentWithVulnerabilitiesFragment following epss:
-                            // exploit {
-                            //     knownRansomwareCampaignUse
-                            // }
                             labels.push(<KnownExploitLabel key="exploit" isCompact />);
                             if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
                                 labels.push(
