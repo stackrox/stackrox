@@ -27,9 +27,7 @@ var _ MappingProvider = (*URLUpdater)(nil)
 var errURLMappingNotReady = errors.New("no repo-to-CPE mapping available yet")
 
 // URLUpdater is the MappingProvider for an agent configured with a
-// mapping URL. It only implements MappingProvider: Handler keeps its
-// updater reference nil for URL-backed agents, since this mapping source
-// never accepts a Sensor-pushed Update.
+// mapping URL; this mapping source never accepts a Sensor-pushed Update.
 type URLUpdater struct {
 	downloader *filedownloader.Downloader
 	cachePath  string
@@ -127,11 +125,9 @@ func (u *URLUpdater) Path() (string, error) {
 	return u.cachePath, nil
 }
 
-// onDownloadComplete is filedownloader's OnComplete callback. On a failed
-// fetch it only logs, keeping the last-good active mapping (if any). On a
-// successful fetch it re-reads cachePath (the callback carries no bytes)
-// and validates before promoting it to active, so a since-corrupted file
-// can never replace a good in-memory mapping.
+// onDownloadComplete is filedownloader's OnComplete callback: it logs and
+// keeps the last-good mapping on failure, or re-validates before promoting
+// on success, so a corrupted file can never replace a good mapping.
 func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	if err != nil {
 		log.Warnf("Downloading repo-to-CPE mapping: %v", err)
