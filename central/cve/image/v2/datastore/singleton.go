@@ -13,8 +13,7 @@ var (
 )
 
 func initialize() {
-	pool := globaldb.GetPostgres()
-	storage := pgStore.New(pool)
+	storage := pgStore.New(globaldb.GetPostgres())
 
 	ds = New(storage)
 }
