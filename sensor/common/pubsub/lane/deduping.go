@@ -123,6 +123,7 @@ func (c *DedupingConfig[K]) NewLane() pubsub.Lane {
 		panic("dedupKeyFunc is required for deduplicating lane")
 	}
 	lane.ch = safe.NewChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
+	lane.wg.Add(2)
 	go lane.run()
 	go lane.dequeueToChannel()
 	return lane
@@ -133,6 +134,10 @@ type dedupingLane[K comparable] struct {
 	size    int
 	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
+	// wg tracks completion of the run() and dequeueToChannel() goroutines. The
+	// stopper's Stopped() signal is shared by both goroutines and latches on the
+	// first ReportStopped() call, so it cannot be used to wait for both to exit.
+	wg sync.WaitGroup
 
 	// Dedup state
 	dedupLock    sync.Mutex
@@ -228,6 +233,7 @@ func (l *dedupingLane[K]) updateSizeMetric() {
 // dequeueToChannel pulls events from the dedup queue and writes them to the channel.
 // This goroutine ensures that only merged/latest events reach the channel.
 func (l *dedupingLane[K]) dequeueToChannel() {
+	defer l.wg.Done()
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		// Wait for signal or stop
@@ -284,6 +290,7 @@ func (l *dedupingLane[K]) dequeueToChannel() {
 }
 
 func (l *dedupingLane[K]) run() {
+	defer l.wg.Done()
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		// Priority 1: Check if stop requested
@@ -378,6 +385,6 @@ func (l *dedupingLane[K]) Stop() {
 	l.stopper.Client().Stop()
 	// Wait for both run() and dequeueToChannel() goroutines to fully exit.
 	// The channel will be closed automatically when the stop request signal triggers.
-	<-l.stopper.Client().Stopped().Done()
+	l.wg.Wait()
 	l.Lane.Stop()
 }
