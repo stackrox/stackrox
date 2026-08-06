@@ -233,6 +233,30 @@ func TestSensorUpdater_UpdateWhileBusy_SameAsPending_NoOp(t *testing.T) {
 	assert.False(t, updated, "re-staging identical pending content must be a no-op")
 }
 
+// TestSensorUpdater_UpdateWhileBusy_RevertToActive_ClearsStalePending covers
+// a revert push landing after a newer one was already staged: Sensor pushes
+// are ordered, so the newest push (matching active) must win, not the
+// earlier, now-stale pending content.
+func TestSensorUpdater_UpdateWhileBusy_RevertToActive_ClearsStalePending(t *testing.T) {
+	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
+	_, err := u.Update([]byte(validMappingJSON))
+	require.NoError(t, err)
+	u.MarkScanBusy()
+
+	updated, err := u.Update([]byte(otherValidMappingJSON))
+	require.NoError(t, err)
+	require.True(t, updated)
+
+	updated, err = u.Update([]byte(validMappingJSON))
+	require.NoError(t, err)
+	assert.False(t, updated, "reverting to the already-active content is not itself an update")
+
+	u.MarkScanIdleAndApplyPending()
+
+	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash(),
+		"the newest push (matching active) must win over the stale pending mapping")
+}
+
 func TestSensorUpdater_MarkScanIdleAndApplyPending_NoPending_NoOp(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
 	counter := &onChangeCounter{}
