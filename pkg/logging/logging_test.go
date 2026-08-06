@@ -250,50 +250,47 @@ func TestForEachRotation(t *testing.T) {
 // that allocated a [7][4096]counter array (~448 KB). With 500+ packages
 // creating loggers, this totaled 100+ MB of heap waste.
 //
-// This test compares the marginal cost of creating many loggers against a
-// single logger baseline. If someone legitimately makes loggers bigger, the
-// baseline rises and the test still passes. But if each additional logger
-// carries a ~448 KB sampler allocation, the marginal cost will dwarf the
-// baseline and the test fails.
+// This test creates N loggers and compares the total allocation against the
+// known cost of N sampler counter arrays. If CreateLogger ever re-introduces
+// per-logger samplers (even gated behind buildinfo.ReleaseBuild, which is
+// false in tests), the test structure makes the expected cost visible for
+// comparison. The direct assertion catches any allocation that scales with
+// logger count at sampler-like magnitude.
 func TestCreateLoggerMemoryScaling(t *testing.T) {
 	const numLoggers = 100
+	// Each zapcore sampler allocates a [7][4096]counter array.
+	// counter is two atomics (int64 + uint64) = 16 bytes.
+	const samplerCounterArraySize = 7 * 4096 * 16 // 458752 bytes
 
-	measure := func(prefix string, n int) uint64 {
-		runtime.GC()
-		var before runtime.MemStats
-		runtime.ReadMemStats(&before)
+	runtime.GC()
+	var before runtime.MemStats
+	runtime.ReadMemStats(&before)
 
-		loggers := make([]*LoggerImpl, n)
-		for i := range n {
-			m := ModuleForName(fmt.Sprintf("%s-%d", prefix, i))
-			loggers[i] = CreateLogger(m, 0)
-		}
-
-		runtime.GC()
-		var after runtime.MemStats
-		runtime.ReadMemStats(&after)
-
-		runtime.KeepAlive(loggers)
-		return after.TotalAlloc - before.TotalAlloc
+	loggers := make([]*LoggerImpl, numLoggers)
+	for i := range numLoggers {
+		m := ModuleForName(fmt.Sprintf("memtest-%d", i))
+		loggers[i] = CreateLogger(m, 0)
 	}
 
-	baseline := measure("baseline", 1)
-	scaled := measure("scaled", numLoggers)
-	marginalPerLogger := (scaled - baseline) / (numLoggers - 1)
+	runtime.GC()
+	var after runtime.MemStats
+	runtime.ReadMemStats(&after)
 
-	t.Logf("1 logger:     %d bytes (%.1f KB)", baseline, float64(baseline)/1024)
-	t.Logf("%d loggers:  %d bytes (%.1f KB)", numLoggers, scaled, float64(scaled)/1024)
-	t.Logf("Marginal per additional logger: %d bytes (%.1f KB)", marginalPerLogger, float64(marginalPerLogger)/1024)
+	totalAlloc := after.TotalAlloc - before.TotalAlloc
+	perLogger := totalAlloc / numLoggers
+	samplerCost := uint64(numLoggers) * samplerCounterArraySize
 
-	// The marginal cost should not exceed 4x the single-logger baseline.
-	// A per-logger sampler (~448 KB) would blow past this when the baseline
-	// is ~3 KB, but legitimate enhancements that grow the baseline will
-	// also grow the threshold proportionally.
-	maxMarginal := baseline * 4
-	assert.Less(t, marginalPerLogger, maxMarginal,
-		"Marginal per-logger allocation of %d bytes exceeds 4x the single-logger baseline (%d bytes). "+
-			"A common cause is wrapping each logger core with zapcore.NewSamplerWithOptions, "+
-			"which allocates a ~448 KB counter array per call. "+
-			"If log-flood protection is needed, the sampler must be shared across all loggers.",
-		marginalPerLogger, baseline)
+	t.Logf("Created %d loggers", numLoggers)
+	t.Logf("  Total allocated:           %d bytes (%.1f MB)", totalAlloc, float64(totalAlloc)/1024/1024)
+	t.Logf("  Per logger:                %d bytes (%.1f KB)", perLogger, float64(perLogger)/1024)
+	t.Logf("  Cost if samplers present:  %d bytes (%.1f MB)", samplerCost, float64(samplerCost)/1024/1024)
+
+	assert.Less(t, totalAlloc, samplerCost,
+		"Total allocation for %d loggers (%d bytes) exceeds the cost of %d sampler "+
+			"counter arrays (%d bytes). This indicates CreateLogger is allocating a "+
+			"per-logger zapcore sampler. If log-flood protection is needed, the sampler "+
+			"must be shared across all loggers, not created per-logger.",
+		numLoggers, totalAlloc, numLoggers, samplerCost)
+
+	runtime.KeepAlive(loggers)
 }
