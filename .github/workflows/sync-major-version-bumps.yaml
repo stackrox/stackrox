@@ -6,6 +6,9 @@ on:
       - master
     paths:
       - pkg/version/productstreams/major_version_bumps.yaml
+  pull_request:
+    paths:
+      - .github/workflows/sync-major-version-bumps.yaml
   schedule:
     - cron: '0 8 * * 1' # Weekly Monday 8am UTC safety net
   workflow_dispatch:
@@ -99,7 +102,7 @@ jobs:
 
       - name: Create Pull Request
         id: cpr
-        if: ${{ steps.check.outputs.changed == 'true' && inputs.dry-run != 'true' }}
+        if: ${{ steps.check.outputs.changed == 'true' && github.event_name != 'pull_request' && inputs.dry-run != 'true' }}
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # ratchet:peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -120,7 +123,7 @@ jobs:
           draft: false
 
       - name: Enable Pull Request Automerge
-        if: steps.cpr.outputs.pull-request-operation == 'created'
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' }}
         uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d # ratchet:peter-evans/enable-pull-request-automerge@v3
         with:
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
