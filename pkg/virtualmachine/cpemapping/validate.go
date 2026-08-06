@@ -6,18 +6,24 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 )
 
 // MaxMappingBytes is the accepted size cap for repository-to-CPE JSON (5 MiB).
 const MaxMappingBytes = 5 * 1024 * 1024
+
+// mappingShape is the minimal JSON structure used for validation only.
+// The canonical type lives in pkg/scannerv4/repositorytocpe; this avoids
+// coupling the VM-scanning package to that scanner-owned module.
+type mappingShape struct {
+	Data map[string]json.RawMessage `json:"data"`
+}
 
 // ValidateMapping rejects oversize or undecodable repository-to-CPE JSON.
 func ValidateMapping(content []byte) error {
 	if len(content) > MaxMappingBytes {
 		return fmt.Errorf("mapping size %d exceeds %d bytes", len(content), MaxMappingBytes)
 	}
-	var m repositorytocpe.MappingFile
+	var m mappingShape
 	if err := json.Unmarshal(content, &m); err != nil {
 		return fmt.Errorf("decode mapping: %w", err)
 	}
