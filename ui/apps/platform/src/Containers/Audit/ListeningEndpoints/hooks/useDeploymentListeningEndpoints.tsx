@@ -4,8 +4,10 @@ import { getListeningEndpointsForDeployment } from 'services/ProcessListeningOnP
 import useRestQuery from 'hooks/useRestQuery';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 
+export const DEFAULT_ENDPOINTS_PER_PAGE = 20;
+
 /**
- * Returns a paginated list of deployments with their listening endpoints.
+ * Returns a paginated list of deployments with the first page of their listening endpoints.
  */
 export function useDeploymentListeningEndpoints(
     searchFilter: SearchFilter,
@@ -17,10 +19,14 @@ export function useDeploymentListeningEndpoints(
         return listDeployments(searchFilter, sortOption, page, perPage).then((res) => {
             return Promise.all(
                 res.map((deployment) => {
-                    const { request } = getListeningEndpointsForDeployment(deployment.id);
-                    return request.then((listeningEndpoints) => ({
+                    const { request } = getListeningEndpointsForDeployment(deployment.id, {
+                        offset: 0,
+                        limit: DEFAULT_ENDPOINTS_PER_PAGE,
+                    });
+                    return request.then((response) => ({
                         ...deployment,
-                        listeningEndpoints,
+                        listeningEndpoints: response.listeningEndpoints,
+                        totalListeningEndpoints: response.totalListeningEndpoints,
                     }));
                 })
             );
