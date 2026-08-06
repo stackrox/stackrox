@@ -2,6 +2,7 @@ package vsockserver
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -104,8 +105,8 @@ func TestURLUpdater_SuccessfulDownload_AppliesNewContent(t *testing.T) {
 	require.False(t, u.Ready())
 
 	// Simulate what filedownloader's atomic write already did before
-	// invoking onComplete: the new content is on disk at cachePath.
-	writeFile(t, cachePath, validMappingJSON)
+	// invoking onComplete: the new content is on disk at stagingPath.
+	writeFile(t, u.stagingPath, validMappingJSON)
 	u.onDownloadComplete(nil, 0)
 
 	require.True(t, u.Ready())
@@ -114,6 +115,10 @@ func TestURLUpdater_SuccessfulDownload_AppliesNewContent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, validMappingJSON, string(b))
 	assert.Equal(t, 1, counter.count)
+
+	onDisk, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, validMappingJSON, string(onDisk), "a validated download must be promoted to cachePath")
 }
 
 func TestURLUpdater_SuccessfulDownload_InvalidContentKeepsLastGood(t *testing.T) {
@@ -124,10 +129,31 @@ func TestURLUpdater_SuccessfulDownload_InvalidContentKeepsLastGood(t *testing.T)
 	u := NewURLUpdater(dummyMappingURL, cachePath, counter.fn)
 	require.Equal(t, 1, counter.count)
 
-	writeFile(t, cachePath, invalidMappingJSON)
+	writeFile(t, u.stagingPath, invalidMappingJSON)
 	u.onDownloadComplete(nil, 0)
 
 	assert.True(t, u.Ready())
 	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count, "onChange must not fire when the refreshed content fails validation")
+}
+
+// TestURLUpdater_SuccessfulDownload_InvalidContentDoesNotCorruptCache covers
+// what TestURLUpdater_SuccessfulDownload_InvalidContentKeepsLastGood only
+// checks in memory: an invalid refresh must leave the persisted cachePath
+// itself untouched, since a restart bootstraps from that file, not memory.
+func TestURLUpdater_SuccessfulDownload_InvalidContentDoesNotCorruptCache(t *testing.T) {
+	dir := t.TempDir()
+	cachePath := filepath.Join(dir, "cache.json")
+	writeFile(t, cachePath, validMappingJSON)
+	u := NewURLUpdater(dummyMappingURL, cachePath, func() {})
+
+	writeFile(t, u.stagingPath, invalidMappingJSON)
+	u.onDownloadComplete(nil, 0)
+
+	onDisk, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, validMappingJSON, string(onDisk), "an invalid refresh must not overwrite the persisted last-good cache")
+
+	restarted := NewURLUpdater(dummyMappingURL, cachePath, func() {})
+	assert.True(t, restarted.Ready(), "a restart must still bootstrap from the untouched cache")
 }
