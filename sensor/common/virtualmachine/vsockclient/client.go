@@ -99,11 +99,6 @@ func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNew
 		return nil, fmt.Errorf("marshaling request: %w", err)
 	}
 	if err := vsockframing.WriteFrame(stream, reqData); err != nil {
-		// The agent may have already sent a response and closed before
-		// this write landed; salvage it instead of discarding it.
-		if salvaged := salvageAfterWriteFailure(stream, c.maxResponseSize); salvaged != nil {
-			return nil, salvaged
-		}
 		return nil, wrapStreamErr(ctx, "sending request", err)
 	}
 
@@ -132,24 +127,6 @@ func (c *Client) GetReport(ctx context.Context, stream io.ReadWriteCloser, ifNew
 	default:
 		return nil, fmt.Errorf("unexpected response type: %T", resp.GetResult())
 	}
-}
-
-// salvageAfterWriteFailure attempts one bounded read after a failed write,
-// returning the mapped error for a usable error response, or nil if
-// nothing could be salvaged.
-func salvageAfterWriteFailure(stream io.Reader, maxResponseSize int) error {
-	respData, err := vsockframing.ReadFrame(stream, uint32(maxResponseSize))
-	if err != nil {
-		return nil
-	}
-	var resp pb.VMServiceResponse
-	if err := proto.Unmarshal(respData, &resp); err != nil {
-		return nil
-	}
-	if e, ok := resp.GetResult().(*pb.VMServiceResponse_Error); ok {
-		return errorFromResponse(e.Error)
-	}
-	return nil
 }
 
 func wrapStreamErr(ctx context.Context, op string, err error) error {

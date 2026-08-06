@@ -32,11 +32,9 @@ const (
 	// availability/DoS trade-off involved in changing it.
 	DefaultConnDeadline = 30 * time.Second
 
-	// DefaultRejectAbsorbTimeout bounds how long rejectConn waits to absorb a
-	// racing peer's request before closing, independent of the much longer
-	// connDeadline. This applies when the client sends a request immediately
-	// after opening the connection without waiting for the potential busy response.
-	DefaultRejectAbsorbTimeout = 2 * time.Second
+	// rejectAbsorbTimeout bounds how long rejectConn waits to absorb a racing
+	// peer's request before closing.
+	rejectAbsorbTimeout = 2 * time.Second
 )
 
 // Server listens on a VSOCK port and dispatches connections to the Handler.
@@ -44,12 +42,11 @@ const (
 // plaintext listener is unreachable. The nil path is retained only for
 // testing convenience.
 type Server struct {
-	handler             *Handler
-	tlsCfg              *tls.Config
-	sem                 *semaphore.Weighted // enforces at most one concurrent HandleConn
-	wg                  sync.WaitGroup
-	connDeadline        time.Duration
-	rejectAbsorbTimeout time.Duration
+	handler      *Handler
+	tlsCfg       *tls.Config
+	sem          *semaphore.Weighted // enforces at most one concurrent HandleConn
+	wg           sync.WaitGroup
+	connDeadline time.Duration
 }
 
 // ServerOption configures optional Server parameters.
@@ -66,20 +63,13 @@ func WithConnDeadline(d time.Duration) ServerOption {
 	return func(s *Server) { s.connDeadline = d }
 }
 
-// WithRejectAbsorbTimeout overrides how long rejectConn waits to absorb a
-// racing peer's request before closing (default 2s).
-func WithRejectAbsorbTimeout(d time.Duration) ServerOption {
-	return func(s *Server) { s.rejectAbsorbTimeout = d }
-}
-
 // NewServer creates a VSOCK server. tlsCfg should be non-nil in production.
 func NewServer(handler *Handler, tlsCfg *tls.Config, opts ...ServerOption) *Server {
 	s := &Server{
-		handler:             handler,
-		tlsCfg:              tlsCfg,
-		sem:                 semaphore.NewWeighted(maxConcurrentConns),
-		connDeadline:        DefaultConnDeadline,
-		rejectAbsorbTimeout: DefaultRejectAbsorbTimeout,
+		handler:      handler,
+		tlsCfg:       tlsCfg,
+		sem:          semaphore.NewWeighted(maxConcurrentConns),
+		connDeadline: DefaultConnDeadline,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -135,8 +125,7 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 		// may ever block on, or a single stalled/malicious peer could
 		// prevent every subsequent connection (including the legitimate
 		// one) from ever being accepted.
-		connDeadline := time.Now().Add(s.connDeadline)
-		_ = conn.SetDeadline(connDeadline)
+		_ = conn.SetDeadline(time.Now().Add(s.connDeadline))
 
 		// TryAcquire is non-blocking, so deciding here - synchronously, in
 		// accept order - keeps "first accepted wins the slot" deterministic,
@@ -149,7 +138,7 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 				s.serveConn(ctx, conn)
 			})
 		} else {
-			s.wg.Go(func() { s.rejectConn(ctx, conn, connDeadline) })
+			s.wg.Go(func() { s.rejectConn(ctx, conn) })
 		}
 	}
 }
@@ -169,10 +158,9 @@ func (s *Server) serveConn(ctx context.Context, conn net.Conn) {
 // socket outright) costs a little CPU but lets Sensor tell "agent is busy,
 // retry me" apart from an unexplained connection drop.
 //
-// deadline is the connection's overall deadline from Serve. rejectConn
-// absorbs one framed request after writing the busy response and before
-// closing, so a racing peer's write never sees a reset instead of it.
-func (s *Server) rejectConn(ctx context.Context, conn net.Conn, deadline time.Time) {
+// After writing BUSY, rejectConn absorbs one framed request before closing
+// so a racing peer's write never sees a reset instead of the busy reply.
+func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
 	log.Warnf("Rejecting connection from %s: another request is in flight", conn.RemoteAddr())
 	if !completeHandshake(ctx, conn) {
 		return
@@ -180,17 +168,11 @@ func (s *Server) rejectConn(ctx context.Context, conn net.Conn, deadline time.Ti
 	defer func() { _ = conn.Close() }()
 	s.handler.writeError(conn, pb.ErrorCode_ERROR_CODE_BUSY, "agent is already serving another request; retry after a backoff")
 
-	absorbDeadline := time.Now().Add(s.rejectAbsorbTimeout)
-	if absorbDeadline.After(deadline) {
-		absorbDeadline = deadline
-	}
-	_ = conn.SetReadDeadline(absorbDeadline)
-	// The outcome never affects control flow - a timeout/EOF here just
-	// means the peer never wrote (or wrote late).
+	_ = conn.SetReadDeadline(time.Now().Add(rejectAbsorbTimeout))
+	// Outcome never affects control flow: timeout/EOF means the peer never
+	// wrote (or wrote late).
 	if _, err := vsockframing.ReadFrame(conn, maxRequestSize); err != nil {
-		log.Infof("No request absorbed from rejected peer %s before closing: %v", conn.RemoteAddr(), err)
-	} else {
-		log.Infof("Absorbed request from rejected peer %s before closing", conn.RemoteAddr())
+		log.Debugf("No request absorbed from rejected peer %s before closing: %v", conn.RemoteAddr(), err)
 	}
 }
 

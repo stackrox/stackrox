@@ -36,13 +36,15 @@ func TestServeAcceptLoop(t *testing.T) {
 	// Second connection: should be rejected (semaphore full) with a BUSY response.
 	conn2, err := net.Dial("tcp", ln.Addr().String())
 	require.NoError(t, err)
-	defer func() { _ = conn2.Close() }()
 	busyData, err := vsockframing.ReadFrame(conn2, 1<<20)
 	require.NoError(t, err, "rejected connection should still receive a framed response before closing")
 	var busyResp pb.VMServiceResponse
 	require.NoError(t, proto.Unmarshal(busyData, &busyResp))
 	require.NotNil(t, busyResp.GetError())
 	assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, busyResp.GetError().GetCode())
+	// Close after reading BUSY so rejectConn's absorb-read gets EOF instead of
+	// waiting out rejectAbsorbTimeout before Serve can drain.
+	_ = conn2.Close()
 
 	// Complete first connection: send a request and read NOT_READY response.
 	req, _ := proto.Marshal(&pb.VMServiceRequest{Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}}})
@@ -61,26 +63,22 @@ func TestServeAcceptLoop(t *testing.T) {
 
 func TestRejectConn(t *testing.T) {
 	cases := map[string]struct {
-		writeRequest  bool
-		absorbTimeout time.Duration
+		writeRequest bool
 	}{
 		"client sends a request before rejectConn closes should still let the client read the busy reply": {
 			writeRequest: true,
 		},
-		"client never sends a request should let rejectConn close promptly": {
-			writeRequest:  false,
-			absorbTimeout: 50 * time.Millisecond,
+		// synctest advances fake time through rejectAbsorbTimeout when the
+		// peer stays quiet, so this does not burn wall-clock seconds.
+		"client never sends a request should let rejectConn close after absorb timeout": {
+			writeRequest: false,
 		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
 				handler := NewHandler(&ReportCache{}, "test")
-				var opts []ServerOption
-				if tc.absorbTimeout > 0 {
-					opts = append(opts, WithRejectAbsorbTimeout(tc.absorbTimeout))
-				}
-				srv := NewServer(handler, nil, opts...)
+				srv := NewServer(handler, nil)
 
 				serverConn, clientConn := net.Pipe()
 				defer func() { _ = clientConn.Close() }()
@@ -88,7 +86,7 @@ func TestRejectConn(t *testing.T) {
 				serverDone := make(chan struct{})
 				go func() {
 					defer close(serverDone)
-					srv.rejectConn(context.Background(), serverConn, time.Now().Add(30*time.Second))
+					srv.rejectConn(context.Background(), serverConn)
 				}()
 
 				// The write runs on its own goroutine, independent of the read below,
@@ -167,7 +165,6 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	}
 	clientConn, err := dialer.DialContext(ctx, "tcp", ln.Addr().String())
 	require.NoError(t, err, "second peer should be accepted promptly; accept loop may be blocked")
-	defer func() { _ = clientConn.Close() }()
 
 	require.NoError(t, clientConn.SetDeadline(time.Now().Add(5*time.Second)))
 	respData, err := vsockframing.ReadFrame(clientConn, 1<<20)
@@ -176,4 +173,7 @@ func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing
 	require.NoError(t, proto.Unmarshal(respData, &resp))
 	require.NotNil(t, resp.GetError())
 	assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, resp.GetError().GetCode())
+	// Close after reading BUSY so rejectConn's absorb-read gets EOF instead of
+	// waiting out rejectAbsorbTimeout before Serve can drain.
+	_ = clientConn.Close()
 }
