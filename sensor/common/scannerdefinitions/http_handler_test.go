@@ -2,14 +2,20 @@ package scannerdefinitions
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestServeHTTP_Responses(t *testing.T) {
@@ -120,4 +126,189 @@ func TestServeHTTP_Responses(t *testing.T) {
 			}
 		})
 	}
+}
+
+// newTestCentralClient spins up a real httptest.Server and returns a client
+// whose transport rewrites relative URLs to point at it, mirroring how the
+// production Central transport fills in scheme/host for requests built with
+// only a path (see newRepo2CPERequest).
+func newTestCentralClient(t *testing.T, handler http.HandlerFunc) *http.Client {
+	t.Helper()
+	server := httptest.NewServer(handler)
+	t.Cleanup(server.Close)
+
+	base, err := url.Parse(server.URL)
+	require.NoError(t, err)
+
+	client := server.Client()
+	client.Transport = httputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		req = req.Clone(req.Context())
+		req.URL.Scheme = base.Scheme
+		req.URL.Host = base.Host
+		return http.DefaultTransport.RoundTrip(req)
+	})
+	return client
+}
+
+func TestAttemptRepo2CPERefresh(t *testing.T) {
+	const mappingV1 = `{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`
+	const mappingV2 = `{"data":{"bar":{"cpes":["cpe:/o:bar"]}}}`
+	hashV1 := repositorytocpe.HashMapping([]byte(mappingV1))
+	hashV2 := repositorytocpe.HashMapping([]byte(mappingV2))
+
+	tests := map[string]struct {
+		seedCache     repo2CPECache
+		serverHandler http.HandlerFunc
+		networkErr    bool
+		wantOK        bool
+		wantMapping   string
+		wantHash      string
+	}{
+		"first fetch succeeds and populates an empty cache": {
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, repo2CPEFileParam, r.URL.Query().Get("file"))
+				w.Header().Set(etagHeader, `"v1"`)
+				_, _ = w.Write([]byte(mappingV1))
+			},
+			wantOK:      true,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"304 with matching validators keeps the cached mapping": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1, etag: `"v1"`},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, `"v1"`, r.Header.Get(ifNoneMatchHeader))
+				w.WriteHeader(http.StatusNotModified)
+			},
+			wantOK:      true,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"200 with a same-hash body is treated as unchanged": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte(mappingV1))
+			},
+			wantOK:      true,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"200 with a different hash replaces the cached mapping": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				_, _ = w.Write([]byte(mappingV2))
+			},
+			wantOK:      true,
+			wantMapping: mappingV2,
+			wantHash:    hashV2,
+		},
+		"an unexpected status leaves the cache untouched": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusInternalServerError)
+			},
+			wantOK:      false,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"a network error leaves the cache untouched": {
+			seedCache:   repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			networkErr:  true,
+			wantOK:      false,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+		"an oversized response leaves the cache untouched": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write(bytes.Repeat([]byte("a"), repositorytocpe.MaxMappingBytes+1))
+			},
+			wantOK:      false,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			h := &Handler{cache: tt.seedCache}
+			if tt.networkErr {
+				h.centralClient = &http.Client{
+					Transport: httputil.RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
+						return nil, errors.New("connection refused")
+					}),
+				}
+			} else {
+				h.centralClient = newTestCentralClient(t, tt.serverHandler)
+			}
+
+			ok := h.attemptRepo2CPERefresh(context.Background())
+
+			assert.Equal(t, tt.wantOK, ok)
+			assert.Equal(t, tt.wantMapping, string(h.cache.mapping))
+			assert.Equal(t, tt.wantHash, h.cache.hash)
+			assert.False(t, h.cache.lastAttempt.IsZero(), "lastAttempt should be recorded regardless of outcome")
+			if tt.wantOK {
+				assert.False(t, h.cache.lastSuccess.IsZero())
+			} else {
+				assert.True(t, h.cache.lastSuccess.IsZero())
+			}
+		})
+	}
+}
+
+// TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache calls the
+// refresh helper directly (no timers/sleeps) to verify a failed attempt
+// keeps serving the last good mapping and a later success can recover.
+func TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache(t *testing.T) {
+	const mapping = `{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`
+	hash := repositorytocpe.HashMapping([]byte(mapping))
+
+	var fail atomic.Bool
+	h := &Handler{centralClient: newTestCentralClient(t, func(w http.ResponseWriter, _ *http.Request) {
+		if fail.Load() {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, _ = w.Write([]byte(mapping))
+	})}
+
+	require.True(t, h.attemptRepo2CPERefresh(context.Background()))
+	assert.Equal(t, hash, h.cache.hash)
+
+	fail.Store(true)
+	require.False(t, h.attemptRepo2CPERefresh(context.Background()))
+	assert.Equal(t, hash, h.cache.hash, "a failed refresh must not drop the last good mapping")
+
+	fail.Store(false)
+	require.True(t, h.attemptRepo2CPERefresh(context.Background()))
+	assert.Equal(t, hash, h.cache.hash)
+}
+
+func TestFetchRepo2CPE(t *testing.T) {
+	mapping := []byte(`{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`)
+	hash := repositorytocpe.HashMapping(mapping)
+
+	t.Run("never fetched returns ok=false", func(t *testing.T) {
+		h := &Handler{centralClient: &http.Client{}}
+		h.centralReachable.Store(false)
+
+		gotMapping, gotHash, ok := h.FetchRepo2CPE(context.Background())
+
+		assert.False(t, ok)
+		assert.Nil(t, gotMapping)
+		assert.Empty(t, gotHash)
+	})
+
+	t.Run("offline serves the last cached mapping with ok=true", func(t *testing.T) {
+		h := &Handler{centralClient: &http.Client{}}
+		h.cache = repo2CPECache{mapping: mapping, hash: hash, lastSuccess: time.Now()}
+		h.centralReachable.Store(false)
+
+		gotMapping, gotHash, ok := h.FetchRepo2CPE(context.Background())
+
+		assert.True(t, ok)
+		assert.Equal(t, mapping, gotMapping)
+		assert.Equal(t, hash, gotHash)
+	})
 }
