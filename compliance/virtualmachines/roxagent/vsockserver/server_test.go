@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -58,6 +59,68 @@ func TestServeAcceptLoop(t *testing.T) {
 	<-serveDone
 }
 
+func TestRejectConn(t *testing.T) {
+	cases := map[string]struct {
+		writeRequest  bool
+		absorbTimeout time.Duration
+	}{
+		"client sends a request before rejectConn closes should still let the client read the busy reply": {
+			writeRequest: true,
+		},
+		"client never sends a request should let rejectConn close promptly": {
+			writeRequest:  false,
+			absorbTimeout: 50 * time.Millisecond,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				handler := NewHandler(&ReportCache{}, "test")
+				var opts []ServerOption
+				if tc.absorbTimeout > 0 {
+					opts = append(opts, WithRejectAbsorbTimeout(tc.absorbTimeout))
+				}
+				srv := NewServer(handler, nil, opts...)
+
+				serverConn, clientConn := net.Pipe()
+				defer func() { _ = clientConn.Close() }()
+
+				serverDone := make(chan struct{})
+				go func() {
+					defer close(serverDone)
+					srv.rejectConn(context.Background(), serverConn, time.Now().Add(30*time.Second))
+				}()
+
+				// The write runs on its own goroutine, independent of the read below,
+				// the same way a real full-duplex connection's two directions would.
+				writeErrCh := make(chan error, 1)
+				if tc.writeRequest {
+					go func() {
+						req, err := proto.Marshal(&pb.VMServiceRequest{Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}}})
+						if err != nil {
+							writeErrCh <- err
+							return
+						}
+						writeErrCh <- vsockframing.WriteFrame(clientConn, req)
+					}()
+				}
+
+				respData, err := vsockframing.ReadFrame(clientConn, 1<<20)
+				require.NoError(t, err)
+				var resp pb.VMServiceResponse
+				require.NoError(t, proto.Unmarshal(respData, &resp))
+				assert.Equal(t, pb.ErrorCode_ERROR_CODE_BUSY, resp.GetError().GetCode())
+
+				synctest.Wait()
+				<-serverDone
+				if tc.writeRequest {
+					require.NoError(t, <-writeErrCh)
+				}
+			})
+		})
+	}
+}
+
 // TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections is a
 // regression test for a bug where the TLS handshake ran inline in Serve's
 // accept loop: a peer that connects and never completes (or never starts)
@@ -71,8 +134,6 @@ func TestServeAcceptLoop(t *testing.T) {
 // the second peer always takes the rejectConn path and receives
 // ERROR_CODE_BUSY. That is enough to prove Accept() kept running: a blocked
 // accept loop would never handshake the second peer or write BUSY.
-// The client must only ReadFrame here - writing a request races rejectConn's
-// close-after-BUSY and flakes with broken pipe on Linux.
 func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing.T) {
 	handler := NewHandler(&ReportCache{}, "test")
 	srv := NewServer(handler, &tls.Config{Certificates: []tls.Certificate{testServerCert(t)}})

@@ -8,39 +8,48 @@ import (
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/vsockframing"
 	"golang.org/x/sync/semaphore"
 )
 
-// maxConcurrentConns is the number of connections handled simultaneously.
-// intentional simplification: set to 1 because the agent serves a single
-// Sensor poller; raising this would require a request queue instead of
-// the current reject-and-retry approach.
-const maxConcurrentConns = 1
-
-// Backoff bounds for retrying transient (non-context) Accept() errors.
 const (
+	// maxConcurrentConns is the number of connections handled simultaneously.
+	// intentional simplification: set to 1 because the agent serves a single
+	// Sensor poller; raising this would require a request queue instead of
+	// the current reject-and-retry approach.
+	maxConcurrentConns = 1
+
+	// minAcceptRetryDelay and maxAcceptRetryDelay bound backoff for retrying
+	// transient (non-context) Accept() errors.
 	minAcceptRetryDelay = 5 * time.Millisecond
 	maxAcceptRetryDelay = 1 * time.Second
-)
 
-// DefaultConnDeadline bounds the entire lifetime of one accepted connection -
-// TLS handshake plus request/response - so a stalled or malicious peer
-// can hold at most one goroutine and one semaphore slot for this long,
-// never more, and never blocks Serve's accept loop itself (see below).
-// Overridable via WithConnDeadline; see that option's doc for the
-// availability/DoS trade-off involved in changing it.
-const DefaultConnDeadline = 30 * time.Second
+	// DefaultConnDeadline bounds the entire lifetime of one accepted connection -
+	// TLS handshake plus request/response - so a stalled or malicious peer
+	// can hold at most one goroutine and one semaphore slot for this long,
+	// never more, and never blocks Serve's accept loop itself (see below).
+	// Overridable via WithConnDeadline; see that option's doc for the
+	// availability/DoS trade-off involved in changing it.
+	DefaultConnDeadline = 30 * time.Second
+
+	// DefaultRejectAbsorbTimeout bounds how long rejectConn waits to absorb a
+	// racing peer's request before closing, independent of the much longer
+	// connDeadline. This applies when the client sends a request immediately
+	// after opening the connection without waiting for the potential busy response.
+	DefaultRejectAbsorbTimeout = 2 * time.Second
+)
 
 // Server listens on a VSOCK port and dispatches connections to the Handler.
 // tlsCfg must be non-nil in production: sensor always dials TLS, so a
 // plaintext listener is unreachable. The nil path is retained only for
 // testing convenience.
 type Server struct {
-	handler      *Handler
-	tlsCfg       *tls.Config
-	sem          *semaphore.Weighted // enforces at most one concurrent HandleConn
-	wg           sync.WaitGroup
-	connDeadline time.Duration
+	handler             *Handler
+	tlsCfg              *tls.Config
+	sem                 *semaphore.Weighted // enforces at most one concurrent HandleConn
+	wg                  sync.WaitGroup
+	connDeadline        time.Duration
+	rejectAbsorbTimeout time.Duration
 }
 
 // ServerOption configures optional Server parameters.
@@ -57,13 +66,20 @@ func WithConnDeadline(d time.Duration) ServerOption {
 	return func(s *Server) { s.connDeadline = d }
 }
 
+// WithRejectAbsorbTimeout overrides how long rejectConn waits to absorb a
+// racing peer's request before closing (default 2s).
+func WithRejectAbsorbTimeout(d time.Duration) ServerOption {
+	return func(s *Server) { s.rejectAbsorbTimeout = d }
+}
+
 // NewServer creates a VSOCK server. tlsCfg should be non-nil in production.
 func NewServer(handler *Handler, tlsCfg *tls.Config, opts ...ServerOption) *Server {
 	s := &Server{
-		handler:      handler,
-		tlsCfg:       tlsCfg,
-		sem:          semaphore.NewWeighted(maxConcurrentConns),
-		connDeadline: DefaultConnDeadline,
+		handler:             handler,
+		tlsCfg:              tlsCfg,
+		sem:                 semaphore.NewWeighted(maxConcurrentConns),
+		connDeadline:        DefaultConnDeadline,
+		rejectAbsorbTimeout: DefaultRejectAbsorbTimeout,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -119,7 +135,8 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 		// may ever block on, or a single stalled/malicious peer could
 		// prevent every subsequent connection (including the legitimate
 		// one) from ever being accepted.
-		_ = conn.SetDeadline(time.Now().Add(s.connDeadline))
+		connDeadline := time.Now().Add(s.connDeadline)
+		_ = conn.SetDeadline(connDeadline)
 
 		// TryAcquire is non-blocking, so deciding here - synchronously, in
 		// accept order - keeps "first accepted wins the slot" deterministic,
@@ -132,7 +149,7 @@ func (s *Server) Serve(ctx context.Context, ln net.Listener) {
 				s.serveConn(ctx, conn)
 			})
 		} else {
-			s.wg.Go(func() { s.rejectConn(ctx, conn) })
+			s.wg.Go(func() { s.rejectConn(ctx, conn, connDeadline) })
 		}
 	}
 }
@@ -151,13 +168,30 @@ func (s *Server) serveConn(ctx context.Context, conn net.Conn) {
 // in-flight-connection slot. Handshaking here (rather than closing the raw
 // socket outright) costs a little CPU but lets Sensor tell "agent is busy,
 // retry me" apart from an unexplained connection drop.
-func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
+//
+// deadline is the connection's overall deadline from Serve. rejectConn
+// absorbs one framed request after writing the busy response and before
+// closing, so a racing peer's write never sees a reset instead of it.
+func (s *Server) rejectConn(ctx context.Context, conn net.Conn, deadline time.Time) {
 	log.Warnf("Rejecting connection from %s: another request is in flight", conn.RemoteAddr())
 	if !completeHandshake(ctx, conn) {
 		return
 	}
 	defer func() { _ = conn.Close() }()
 	s.handler.writeError(conn, pb.ErrorCode_ERROR_CODE_BUSY, "agent is already serving another request; retry after a backoff")
+
+	absorbDeadline := time.Now().Add(s.rejectAbsorbTimeout)
+	if absorbDeadline.After(deadline) {
+		absorbDeadline = deadline
+	}
+	_ = conn.SetReadDeadline(absorbDeadline)
+	// The outcome never affects control flow - a timeout/EOF here just
+	// means the peer never wrote (or wrote late).
+	if _, err := vsockframing.ReadFrame(conn, maxRequestSize); err != nil {
+		log.Infof("No request absorbed from rejected peer %s before closing: %v", conn.RemoteAddr(), err)
+	} else {
+		log.Infof("Absorbed request from rejected peer %s before closing", conn.RemoteAddr())
+	}
 }
 
 // completeHandshake finishes the TLS handshake on conn, if it is a TLS
