@@ -159,7 +159,7 @@ jobs:
       # into the environments.
       - name: Create cluster via direct-gke
         if: inputs.cluster-provisioning-method == 'direct-gke'
-        timeout-minutes: 20
+        timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
         env:
           MACHINE_TYPE: "e2-standard-8"
           NUM_NODES: "3"
