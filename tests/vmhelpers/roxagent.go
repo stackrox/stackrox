@@ -74,21 +74,27 @@ func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm st
 //
 // repo2cpeURL is passed as --repo-cpe-url (serve does not read ROXAGENT_REPO2CPE_URL).
 func EnsureRoxagentServing(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
-	if err := startRoxagentServeIfNeeded(ctx, virt, namespace, vm, repo2cpeURL); err != nil {
+	invocationID, err := startRoxagentServeIfNeeded(ctx, virt, namespace, vm, repo2cpeURL)
+	if err != nil {
 		return err
 	}
-	return waitRoxagentListening(ctx, virt, namespace, vm)
+	return waitRoxagentListening(ctx, virt, namespace, vm, invocationID)
 }
 
-func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "start roxagent serve", func(ctx context.Context) error {
+// startRoxagentServeIfNeeded starts the e2e unit if it isn't already active/activating,
+// and returns its current InvocationID so waitRoxagentListening can scope its journal
+// query to exactly this activation.
+func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) (string, error) {
+	var invocationID string
+	err := retryOnSSHTransport(ctx, virt.Logf, "start roxagent serve", func(ctx context.Context) error {
 		state, err := roxagentServeState(ctx, virt, namespace, vm)
 		if err != nil {
 			return err
 		}
 		if state == "active" || state == "activating" {
 			virt.Logf("roxagent serve: %s already %s", roxagentE2EUnit, state)
-			return nil
+			invocationID, err = roxagentInvocationID(ctx, virt, namespace, vm)
+			return err
 		}
 
 		// systemd-run refuses to reuse a unit name that still exists (failed or
@@ -125,11 +131,15 @@ func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm
 		}
 
 		virt.Logf("roxagent serve: systemd-run accepted %s", roxagentE2EUnit)
-		return nil
+		invocationID, err = roxagentInvocationID(ctx, virt, namespace, vm)
+		return err
 	})
+	return invocationID, err
 }
 
-func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm string) error {
+// waitRoxagentListening polls until the unit identified by invocationID is both active
+// and reports the VSOCK listen marker in its journal.
+func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm, invocationID string) error {
 	for {
 		state, err := roxagentServeState(ctx, virt, namespace, vm)
 		if err != nil {
@@ -147,7 +157,7 @@ func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm stri
 			return fmt.Errorf("roxagent serve unit %q (journal: %s)", state, logs)
 		}
 
-		listening, err := roxagentServeListening(ctx, virt, namespace, vm)
+		listening, err := roxagentServeListening(ctx, virt, namespace, vm, invocationID)
 		if err != nil {
 			return err
 		}
@@ -167,31 +177,30 @@ func waitRoxagentListening(ctx context.Context, virt Virtctl, namespace, vm stri
 	}
 }
 
-func knownSystemctlActiveState(state string) bool {
-	switch state {
-	case "active", "reloading", "inactive", "failed", "activating", "deactivating", "unknown":
-		return true
+// systemctlShowProperty runs `systemctl show -p <property> --value <unit>` on the guest and
+// returns the property's trimmed value. Unlike `is-active`/`is-enabled`, `show` always exits 0
+// for any unit systemd knows about — loaded or not, active or not — so a non-zero exit here
+// reliably means a genuine remote-command problem, not an expected state value. That makes it
+// the preferred way to read any systemd unit property from the guest; add new lookups (like
+// roxagentServeState and roxagentInvocationID below) on top of it rather than parsing the
+// output or exit code of state-specific subcommands such as `is-active`.
+func systemctlShowProperty(ctx context.Context, virt Virtctl, namespace, vm, unit, property string) (string, error) {
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            fmt.Sprintf("systemctl show -p %s %s", property, unit),
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "systemctl", "show", "-p", property, "--value", unit)
+	if err != nil {
+		return "", fmt.Errorf("systemctl show -p %s %s: %w (stdout: %s; stderr: %s)",
+			property, unit, err, strings.TrimSpace(stdout), strings.TrimSpace(stderr))
 	}
-	return false
+	return strings.TrimSpace(stdout), nil
 }
 
-// roxagentServeState returns the systemctl is-active state for the e2e unit.
-// Non-zero exit with a known ActiveState (inactive/failed/…) is expected.
-// Other remote failures are returned so callers fail fast instead of polling.
+// roxagentServeState returns the e2e unit's ActiveState (active/inactive/failed/activating/…).
 func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
-	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-		description:            "systemctl is-active roxagent-e2e",
-		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-	}, "sudo", "systemctl", "is-active", roxagentE2EUnit)
-	state := strings.TrimSpace(stdout)
-	stderr = strings.TrimSpace(stderr)
-	if errors.Is(err, errSSHTransport) {
-		return "", fmt.Errorf("systemctl is-active %s: %w (stdout: %s; stderr: %s)",
-			roxagentE2EUnit, err, state, stderr)
-	}
-	if err != nil && !knownSystemctlActiveState(state) {
-		return "", fmt.Errorf("systemctl is-active %s: %w (stdout: %s; stderr: %s)",
-			roxagentE2EUnit, err, state, stderr)
+	state, err := systemctlShowProperty(ctx, virt, namespace, vm, roxagentE2EUnit, "ActiveState")
+	if err != nil {
+		return "", err
 	}
 	if state == "" {
 		return "unknown", nil
@@ -199,26 +208,29 @@ func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string)
 	return state, nil
 }
 
-// roxagentServeListening reports whether the e2e unit journal contains the
-// VSOCK listen marker. Matching runs server-side via journalctl --grep so a
-// chatty agent cannot scroll the marker out of a fixed client-side tail.
-func roxagentServeListening(ctx context.Context, virt Virtctl, namespace, vm string) (bool, error) {
+// roxagentInvocationID returns the e2e unit's current InvocationID, a per-activation UUID.
+// Filtering journalctl on it (instead of `-u <unit> -b`) scopes a query to exactly this run,
+// so a stale marker line from an earlier activation of the same reused transient unit name
+// (stopped/failed, then restarted by startRoxagentServeIfNeeded) can't produce a false positive.
+func roxagentInvocationID(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
+	return systemctlShowProperty(ctx, virt, namespace, vm, roxagentE2EUnit, "InvocationID")
+}
+
+// roxagentServeListening reports whether the journal for the activation identified by
+// invocationID contains the VSOCK listen marker. A plain dump exits 0 regardless of whether
+// the marker is present, so a non-zero exit here always means a genuine SSH or remote-command
+// problem rather than "not listening yet". The dump is unbounded (no `-n` tail) so a chatty
+// agent cannot scroll the marker out of a fixed window between polls.
+func roxagentServeListening(ctx context.Context, virt Virtctl, namespace, vm, invocationID string) (bool, error) {
 	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-		description:            "journalctl grep roxagent listening",
+		description:            "journalctl roxagent listening check",
 		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-	}, "sudo", "journalctl", "-u", roxagentE2EUnit, "-b", "--no-pager", "-q", "--grep", roxagentListenReadyMarker)
-	if err == nil {
-		return true, nil
+	}, "sudo", "journalctl", "_SYSTEMD_INVOCATION_ID="+invocationID, "--no-pager", "-o", "cat")
+	if err != nil {
+		return false, fmt.Errorf("journalctl _SYSTEMD_INVOCATION_ID=%s: %w (stdout: %s; stderr: %s)",
+			invocationID, err, strings.TrimSpace(stdout), strings.TrimSpace(stderr))
 	}
-	stdout = strings.TrimSpace(stdout)
-	stderr = strings.TrimSpace(stderr)
-	// journalctl --grep exits non-zero with empty stderr when there is no match.
-	// Transport failures or non-empty stderr mean a real command problem.
-	if errors.Is(err, errSSHTransport) || stderr != "" {
-		return false, fmt.Errorf("journalctl --grep %q: %w (stdout: %s; stderr: %s)",
-			roxagentListenReadyMarker, err, stdout, stderr)
-	}
-	return false, nil
+	return strings.Contains(stdout, roxagentListenReadyMarker), nil
 }
 
 // fetchRoxagentServeJournal returns a short recent journal dump for error messages.
