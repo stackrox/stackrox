@@ -139,6 +139,7 @@ func (h *Handler) HandleConn(conn net.Conn) {
 	}
 
 	resp := h.dispatch(&req)
+	_, isGetReport := resp.GetResult().(*pb.VMServiceResponse_GetReport)
 	respData, err := proto.Marshal(resp)
 	if err != nil {
 		log.Errorf("Marshalling response: %v", err)
@@ -149,8 +150,9 @@ func (h *Handler) HandleConn(conn net.Conn) {
 		return
 	}
 	// Only now that the report for whatever scan may have been in flight has
-	// actually gone out is it safe to promote a Sync that arrived mid-scan.
-	if gate, ok := h.provider.(ScanBusyGate); ok {
+	// actually gone out is it safe to promote a Sync that arrived mid-scan;
+	// a Sync/error/other response must not clear busy early.
+	if gate, ok := h.provider.(ScanBusyGate); ok && isGetReport {
 		gate.MarkScanIdleAndApplyPending()
 	}
 }
@@ -243,7 +245,7 @@ func (h *Handler) handleSyncRepoCPEMapping(req *pb.SyncRepoCPEMappingRequest) *p
 	}
 	updated, err := h.updater.Update(req.GetMapping())
 	if err != nil {
-		return h.errorResponse(pb.ErrorCode_ERROR_CODE_INTERNAL, fmt.Sprintf("invalid repository-to-CPE mapping: %v", err))
+		return h.errorResponse(pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST, fmt.Sprintf("invalid repository-to-CPE mapping: %v", err))
 	}
 	resp := h.newResponseFromSnap(h.cache.snap.Load())
 	resp.Result = &pb.VMServiceResponse_SyncRepoCpeMapping{
