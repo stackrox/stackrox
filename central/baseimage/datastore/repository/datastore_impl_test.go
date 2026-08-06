@@ -96,10 +96,6 @@ func newRepository(path, tagPattern string) *storage.BaseImageRepository {
 	}
 }
 
-func ptr(s string) *string {
-	return &s
-}
-
 func (s *BaseImageRepositoryDatastoreTestSuite) TestBaseImageRepositoryDatastore() {
 	ctx := s.imgAdminCtx
 
@@ -210,7 +206,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestUserCtxOperationsDenied() {
 	_, err = s.datastore.UpdateStatus(s.normalUserCtx, "non-existent-id", StatusUpdate{Status: storage.BaseImageRepository_READY})
 	s.Error(err, "UpdateStatus should fail for user context without permissions")
 
-	_, err = s.datastore.UpdateConfiguration(s.normalUserCtx, "non-existent-id", ConfigUpdate{TagPattern: ptr("v*")})
+	_, err = s.datastore.UpdateConfiguration(s.normalUserCtx, "non-existent-id", ConfigUpdate{TagPattern: new("v*")})
 	s.Error(err, "UpdateConfiguration should fail for user context without permissions")
 }
 
@@ -321,7 +317,7 @@ func (s *BaseImageRepositoryDatastoreTestSuite) TestUpsertRepository_InsertsProv
 }
 
 func (s *BaseImageRepositoryDatastoreTestSuite) TestUpdateConfiguration_NotFound() {
-	updated, err := s.datastore.UpdateConfiguration(s.imgAdminCtx, uuid.NewV4().String(), ConfigUpdate{TagPattern: ptr("v*")})
+	updated, err := s.datastore.UpdateConfiguration(s.imgAdminCtx, uuid.NewV4().String(), ConfigUpdate{TagPattern: new("v*")})
 
 	s.Nil(updated)
 	s.ErrorIs(err, errox.NotFound)
