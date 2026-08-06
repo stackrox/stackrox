@@ -218,6 +218,15 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 			wantMapping: mappingV1,
 			wantHash:    hashV1,
 		},
+		"an oversized response leaves the cache untouched": {
+			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
+			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write(bytes.Repeat([]byte("a"), repositorytocpe.MaxMappingBytes+1))
+			},
+			wantOK:      false,
+			wantMapping: mappingV1,
+			wantHash:    hashV1,
+		},
 	}
 
 	for name, tt := range tests {
