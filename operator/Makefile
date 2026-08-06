@@ -545,7 +545,7 @@ bundle-build: bundle.Dockerfile bundle-post-process bundle-validate ## Build the
 	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
-bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
+bundle-test: operator-sdk bundle-post-process bundle-validate ## Run scorecard tests against bundle files.
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
