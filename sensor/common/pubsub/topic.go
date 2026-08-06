@@ -18,6 +18,7 @@ const (
 	ResolvedResourceEventTopic
 	SoftRestartTopic
 	ResourceSyncFinishedTopic
+	AuditLogManagerTopic
 )
 
 var (
@@ -37,6 +38,7 @@ var (
 		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
 		SoftRestartTopic:                "SoftRestart",
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
+		AuditLogManagerTopic:            "AuditLogManager",
 	}
 )
 
