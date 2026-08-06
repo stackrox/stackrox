@@ -19,6 +19,7 @@ import (
 	imagecve "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -283,4 +284,19 @@ func (m *MockCveView) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, e
 func (mr *MockCveViewMockRecorder) GetImageIDs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageIDs", reflect.TypeOf((*MockCveView)(nil).GetImageIDs), ctx, q)
+}
+
+// TopSeverityBatch mocks base method.
+func (m *MockCveView) TopSeverityBatch(ctx context.Context, entityIDs []string, entityType search.FieldLabel, q *v1.Query) (map[string]storage.VulnerabilitySeverity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TopSeverityBatch", ctx, entityIDs, entityType, q)
+	ret0, _ := ret[0].(map[string]storage.VulnerabilitySeverity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TopSeverityBatch indicates an expected call of TopSeverityBatch.
+func (mr *MockCveViewMockRecorder) TopSeverityBatch(ctx, entityIDs, entityType, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TopSeverityBatch", reflect.TypeOf((*MockCveView)(nil).TopSeverityBatch), ctx, entityIDs, entityType, q)
 }

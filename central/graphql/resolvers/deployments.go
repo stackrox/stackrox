@@ -41,6 +41,7 @@ func init() {
 			"imageComponents(query: String, pagination: Pagination): [ImageComponent!]!",
 			"imageCount(query: String): Int!",
 			"imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!",
+			"topImageCVESeverity(query: String): String!",
 			"images(query: String, pagination: Pagination): [Image!]!",
 			"imageVulnerabilityCount(query: String): Int!",
 			"imageVulnerabilityCounter(query: String): VulnerabilityCounter!",
@@ -561,6 +562,26 @@ func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context,
 	}
 	val, err := resolver.root.ImageCVEView.CountBySeverity(resolver.withDeploymentScopeContext(ctx), query)
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
+}
+
+func (resolver *deploymentResolver) TopImageCVESeverity(ctx context.Context, q RawQuery) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "TopImageCVESeverity")
+
+	if err := readImages(ctx); err != nil {
+		return "", err
+	}
+	query, err := q.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+	result, err := resolver.root.ImageCVEView.TopSeverityBatch(ctx, []string{resolver.data.GetId()}, search.DeploymentID, query)
+	if err != nil {
+		return "", err
+	}
+	if sev, ok := result[resolver.data.GetId()]; ok {
+		return sev.String(), nil
+	}
+	return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY.String(), nil
 }
 
 func (resolver *deploymentResolver) withDeploymentScopeContext(ctx context.Context) context.Context {

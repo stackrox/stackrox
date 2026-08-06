@@ -4,10 +4,12 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
 	imagev2common "github.com/stackrox/rox/central/imagev2/common"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -116,6 +118,46 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (v *imageCVECoreViewImpl) TopSeverityBatch(ctx context.Context, entityIDs []string, entityType search.FieldLabel, q *v1.Query) (map[string]storage.VulnerabilitySeverity, error) {
+	if len(entityIDs) == 0 {
+		return nil, nil
+	}
+	filtered := imagev2common.WithRowsFromImageV2Only(q.CloneVT())
+	cloned := search.ConjunctionQuery(filtered,
+		search.NewQueryBuilder().AddExactMatches(entityType, entityIDs...).ProtoQuery(),
+	)
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(entityType).Proto(),
+		search.NewQuerySelect(search.Severity).AggrFunc(aggregatefunc.Max).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{Fields: []string{entityType.String()}}
+	cloned.Pagination = nil
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	result := make(map[string]storage.VulnerabilitySeverity, len(entityIDs))
+	var err error
+	switch entityType {
+	case search.ImageID:
+		err = pgSearch.RunSelectRequestForSchemaFn[imageSeverityResult](queryCtx, v.db, v.schema, cloned, func(r *imageSeverityResult) error {
+			result[r.EntityID] = r.TopSeverity
+			return nil
+		})
+	case search.DeploymentID:
+		err = pgSearch.RunSelectRequestForSchemaFn[deploymentSeverityResult](queryCtx, v.db, v.schema, cloned, func(r *deploymentSeverityResult) error {
+			result[r.EntityID] = r.TopSeverity
+			return nil
+		})
+	default:
+		return nil, errors.Errorf("unsupported entity type for TopSeverityBatch: %s", entityType)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
