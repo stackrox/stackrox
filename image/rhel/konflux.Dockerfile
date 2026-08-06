@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.26@sha256:aa2429f5dcf086b4edb2251f0cea19d54c60638aaedc03a1384d26ec3754cebc AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.26@sha256:31601f42c7215a246c10896274e7fd0c423bca0b4fc3e9892562c3dcce808280 AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
@@ -37,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:148f9b515d897c0dba3e7bdb821c8bba3e0c3df946bf082ece9b4f453411e7ab as ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22@sha256:4c269ae74789f65e26bbb3ce345dba31e53dad3a74f0619774ac4e43dd754752 as ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:3f0da3cf28b0514a7a52d79f8cd23a2c52f96660015fc0a32024c8732360079a
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:cb964eb2bf491814a681bc9887c83d32d6d4eac7b491c5c8c7fe641a5c586a09
 
 ARG PG_VERSION
 
