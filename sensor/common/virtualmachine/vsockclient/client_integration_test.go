@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"path/filepath"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -12,6 +13,7 @@ import (
 	roxagentvsock "github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -224,6 +226,69 @@ func TestGetReportIntegration_TokenRoundTrip(t *testing.T) {
 		assert.Equal(t, "token-test-hash", result.IndexReport.GetHashId())
 		assert.Equal(t, token, result.Meta.GetReportToken())
 	})
+}
+
+// syncOnce mirrors exchangeOnce for a single SyncRepoCPEMapping exchange.
+func syncOnce(t *testing.T, client *Client, mapping []byte, responder func(net.Conn)) (bool, *pb.ResponseMeta, error) {
+	t.Helper()
+
+	var updated bool
+	var meta *pb.ResponseMeta
+	var err error
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(t.Context(), exchangeTimeout)
+		defer cancel()
+
+		clientConn, agentConn := net.Pipe()
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			responder(agentConn)
+		}()
+
+		updated, meta, err = client.SyncRepoCPEMapping(ctx, clientConn, mapping)
+		_ = clientConn.Close()
+		select {
+		case <-done:
+		case <-ctx.Done():
+			if err == nil {
+				err = fmt.Errorf("waiting for responder: %w", ctx.Err())
+			}
+		}
+	})
+	return updated, meta, err
+}
+
+// TestSyncRepoCPEMappingIntegration_FullRoundTrip drives a real Client and
+// Handler through GetReport (MAPPING_REQUIRED) -> SyncRepoCPEMapping ->
+// GetReport again; every seam here is otherwise only unit-tested against fakes.
+func TestSyncRepoCPEMappingIntegration_FullRoundTrip(t *testing.T) {
+	mapping := []byte(`{"data":{"rhel-9-server-rpms":{"cpes":["cpe:/o:redhat:enterprise_linux:9"]}}}`)
+	updater := roxagentvsock.NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", nil)
+	cache := &roxagentvsock.ReportCache{}
+	handler := roxagentvsock.NewHandler(cache, "test-agent", updater, updater)
+	client := NewClient([]string{CapabilityReportV1}, 10<<20)
+
+	first, err := exchangeOnce(t, client, 0, 0, handler.HandleConn)
+	require.ErrorIs(t, err, ErrMappingRequired, "no bootstrapped mapping must surface as MAPPING_REQUIRED")
+	require.NotNil(t, first.Meta)
+	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR, first.Meta.GetRepoCpeMappingUpdatePath())
+	assert.Empty(t, first.Meta.GetRepoCpeMappingHash())
+
+	updated, syncMeta, err := syncOnce(t, client, mapping, handler.HandleConn)
+	require.NoError(t, err)
+	assert.True(t, updated)
+	wantHash := repositorytocpe.HashMapping(mapping)
+	assert.Equal(t, wantHash, syncMeta.GetRepoCpeMappingHash())
+
+	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil)
+
+	second, err := exchangeOnce(t, client, 0, 0, handler.HandleConn)
+	require.NoError(t, err)
+	require.NotNil(t, second.IndexReport)
+	assert.Equal(t, "sync-integration-hash", second.IndexReport.GetHashId())
+	assert.Equal(t, wantHash, second.Meta.GetRepoCpeMappingHash(), "the follow-up GetReport must reflect the mapping pushed via Sync")
 }
 
 // --- Compatibility persona helpers ---
