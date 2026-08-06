@@ -106,7 +106,7 @@ func (s *storeImpl) insertIntoNodes(
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(cloned.GetId()),
 		cloned.GetName(),
@@ -192,7 +192,7 @@ func getPartsAsSlice(parts *common.NodeParts) *nodePartsAsSlice {
 
 func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Taint, nodeID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(nodeID),
 		idx,
@@ -211,7 +211,7 @@ func insertIntoNodesTaints(ctx context.Context, tx *postgres.Tx, obj *storage.Ta
 }
 
 func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponent) error {
-	inputRows := [][]interface{}{}
+	inputRows := [][]any{}
 	var err error
 	var deletes []string
 	copyCols := []string{
@@ -231,7 +231,7 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
@@ -269,7 +269,7 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 }
 
 func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string, objs ...*storage.NodeComponentEdge) error {
-	inputRows := [][]interface{}{}
+	inputRows := [][]any{}
 	var err error
 	copyCols := []string{
 		"id",
@@ -290,7 +290,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			pgutils.NilOrUUID(obj.GetNodeId()),
 			obj.GetNodeComponentId(),
@@ -347,7 +347,7 @@ func insertIntoNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, o
 }
 
 func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
-	inputRows := [][]interface{}{}
+	inputRows := [][]any{}
 
 	var err error
 
@@ -376,7 +376,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.Nod
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
@@ -418,7 +418,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.Nod
 }
 
 func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.NodeComponentCVEEdge) error {
-	inputRows := [][]interface{}{}
+	inputRows := [][]any{}
 	var err error
 	deletes := set.NewStringSet()
 	copyCols := []string{
@@ -436,7 +436,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			obj.GetIsFixable(),
 			obj.GetFixedBy(),

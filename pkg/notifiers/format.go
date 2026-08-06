@@ -228,14 +228,14 @@ func FormatNetworkPolicyYAML(yaml string, clusterName string, funcMap template.F
 
 // isViolationKeyValue returns try if src is of type **storage.Alert_Violation_KeyValueAttrs_
 // Used to validate if a one-of is of type KeyValueAttrs within a template
-func isViolationKeyValue(src interface{}) bool {
+func isViolationKeyValue(src any) bool {
 	return reflect.TypeOf(src) == reflect.TypeFor[*storage.Alert_Violation_KeyValueAttrs_]()
 }
 
 // isFileAccess returns true if src is of type **storage.Alert_Violation_FileAccess
 // and that the underlying FileAccess is non-nil
 // Used to validate if a one-of is the right type within a template
-func isFileAccess(src interface{}) bool {
+func isFileAccess(src any) bool {
 	fa, ok := src.(*storage.Alert_Violation_FileAccess)
 	if !ok {
 		return false
@@ -244,7 +244,7 @@ func isFileAccess(src interface{}) bool {
 }
 
 // stringify converts a list of interfaces into a space separated string of their string representations
-func stringify(inter ...interface{}) string {
+func stringify(inter ...any) string {
 	result := make([]string, 0, len(inter))
 	for _, in := range inter {
 		str := fmt.Sprintf("%v", in)

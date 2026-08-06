@@ -10,7 +10,7 @@ import (
 type FieldPath []reflect.StructField
 
 // visitFields calls the input function on all paths to a field in the input toWalk type.
-func visitFields(toWalk interface{}, visitField func(fieldPath FieldPath) bool) {
+func visitFields(toWalk any, visitField func(fieldPath FieldPath) bool) {
 	visitChildrenRec(nil, reflect.TypeOf(toWalk), []reflect.StructField{}, visitField)
 }
 

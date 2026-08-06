@@ -15,7 +15,7 @@ func TestGetEventTypeWithoutPrefix(t *testing.T) {
 	var nilStruct any = nil
 
 	tests := map[string]struct {
-		input    interface{}
+		input    any
 		expected string
 	}{
 		"should return UnknownEventType for nil input": {

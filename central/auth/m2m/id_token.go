@@ -16,7 +16,7 @@ func IssuerFromRawIDToken(rawIDToken string) (string, error) {
 	// This will be handled in a latter part, when the metadata from the provider will be used to verify the signature.
 	// This does not pose a security threat, since this is only used to optimize fetching of the correct TokenExchanger.
 	// The TokenExchanger will do the final validation of the token including it's signature.
-	_, err := jwt.ParseWithClaims(rawIDToken, standardClaims, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(rawIDToken, standardClaims, func(token *jwt.Token) (any, error) {
 		return nil, nil
 	}, jwt.WithoutClaimsValidation())
 

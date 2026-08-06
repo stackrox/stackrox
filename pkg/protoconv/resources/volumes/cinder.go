@@ -19,7 +19,7 @@ func (h *cinder) Type() string {
 	return cinderType
 }
 
-func createCinder(i interface{}) VolumeSource {
+func createCinder(i any) VolumeSource {
 	cinderVolume, ok := i.(*v1.CinderVolumeSource)
 	if !ok {
 		return &Unimplemented{}

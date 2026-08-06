@@ -36,7 +36,7 @@ type mountSettingsWatch struct {
 	outC chan<- *sensor.AdmissionControlSettings
 }
 
-func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
+func (m *mountSettingsWatch) OnChange(dir string) (any, error) {
 	configPath := filepath.Join(dir, admissioncontrol.ConfigGZDataKey)
 	deployTimePoliciesPath := filepath.Join(dir, admissioncontrol.DeployTimePoliciesGZDataKey)
 	runTimePoliciesPath := filepath.Join(dir, admissioncontrol.RunTimePoliciesGZDataKey)
@@ -125,7 +125,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}, nil
 }
 
-func (m *mountSettingsWatch) OnStableUpdate(val interface{}, err error) {
+func (m *mountSettingsWatch) OnStableUpdate(val any, err error) {
 	if err != nil {
 		log.Errorf("Failed to update admission controller settings from config mount: %v", err)
 		return

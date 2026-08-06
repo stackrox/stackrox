@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func anyToError(x interface{}) error {
+func anyToError(x any) error {
 	if x == nil {
 		return errors.New("nil panic reason")
 	}
@@ -19,7 +19,7 @@ func anyToError(x interface{}) error {
 	return errors.Errorf("%v", x)
 }
 
-func panicHandler(p interface{}) error {
+func panicHandler(p any) error {
 	err := anyToError(p)
 	utils.Should(errors.Errorf("Caught panic in gRPC call. Reason: %v. Stack trace:\n%s", err, string(debug.Stack())))
 	return err

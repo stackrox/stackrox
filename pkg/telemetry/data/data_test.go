@@ -26,7 +26,7 @@ func validateJSONFieldNames(t *testing.T, val reflect.Value) {
 			validateJSONFieldNames(t, val.Index(i))
 		}
 	case reflect.Map:
-		m, ok := val.Interface().(map[string]interface{})
+		m, ok := val.Interface().(map[string]any)
 		assert.True(t, ok)
 		for mKey, mVal := range m {
 			validateFieldName(t, mKey)
@@ -42,7 +42,7 @@ func TestJSONSerialization_FieldsHaveValidNames(t *testing.T) {
 	jsonBytes, err := json.Marshal(&d)
 	require.NoError(t, err)
 
-	var generic map[string]interface{}
+	var generic map[string]any
 	require.NoError(t, json.Unmarshal(jsonBytes, &generic))
 
 	validateJSONFieldNames(t, reflect.ValueOf(generic))

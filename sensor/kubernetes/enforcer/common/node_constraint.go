@@ -9,7 +9,7 @@ import (
 
 // ApplyNodeConstraintToObj modifies some input type (Assuming it has a spec field) and updates it to have an
 // unsatisfiable node constraint, preventing it from being scheduled.
-func ApplyNodeConstraintToObj(obj interface{}, alertID string) (err error) {
+func ApplyNodeConstraintToObj(obj any, alertID string) (err error) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	if !objValue.IsValid() || objValue.Kind() != reflect.Struct {
 		return errors.New("input must have Spec field")

@@ -11,7 +11,7 @@ import (
 type dataLoaderContextKey struct{}
 
 // GetLoader returns the loader for the specified type from the context if it is available.
-func GetLoader(ctx context.Context, loaderType reflect.Type) (interface{}, error) {
+func GetLoader(ctx context.Context, loaderType reflect.Type) (any, error) {
 	key := dataLoaderContextKey{}
 	reg := ctx.Value(key)
 	if reg == nil {
@@ -44,16 +44,16 @@ func WithLoaderContext(ctx context.Context) context.Context {
 // Object that holds all of the loaders in use on a context.
 func newLoaderContext() *loaderContext {
 	return &loaderContext{
-		loaders: make(map[reflect.Type]interface{}),
+		loaders: make(map[reflect.Type]any),
 	}
 }
 
 type loaderContext struct {
 	lock    sync.RWMutex
-	loaders map[reflect.Type]interface{}
+	loaders map[reflect.Type]any
 }
 
-func (lc *loaderContext) getLoader(lt reflect.Type) (interface{}, error) {
+func (lc *loaderContext) getLoader(lt reflect.Type) (any, error) {
 	loader := lc.readLoader(lt)
 	if loader != nil {
 		return loader, nil
@@ -61,7 +61,7 @@ func (lc *loaderContext) getLoader(lt reflect.Type) (interface{}, error) {
 	return lc.createLoader(lt)
 }
 
-func (lc *loaderContext) readLoader(lt reflect.Type) interface{} {
+func (lc *loaderContext) readLoader(lt reflect.Type) any {
 	lc.lock.RLock()
 	defer lc.lock.RUnlock()
 
@@ -72,7 +72,7 @@ func (lc *loaderContext) readLoader(lt reflect.Type) interface{} {
 	return loader
 }
 
-func (lc *loaderContext) createLoader(lt reflect.Type) (interface{}, error) {
+func (lc *loaderContext) createLoader(lt reflect.Type) (any, error) {
 	lc.lock.Lock()
 	defer lc.lock.Unlock()
 

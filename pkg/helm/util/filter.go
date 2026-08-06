@@ -39,7 +39,7 @@ func (i fakeFileInfo) IsDir() bool {
 	return strings.HasSuffix(string(i), "/")
 }
 
-func (i fakeFileInfo) Sys() interface{} {
+func (i fakeFileInfo) Sys() any {
 	return nil
 }
 

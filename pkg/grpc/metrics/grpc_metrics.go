@@ -11,7 +11,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type GRPCMetrics interface {
-	UnaryMonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error)
+	UnaryMonitoringInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error)
 	GetMetrics() (map[string]map[codes.Code]int64, map[string]map[string]int64)
 }
 

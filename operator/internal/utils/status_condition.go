@@ -28,14 +28,14 @@ func updateStatusCondition(uSt *unstructured.Unstructured, conditionType string,
 		return false
 	}
 
-	conds, ok := condsObj.([]interface{})
+	conds, ok := condsObj.([]any)
 	if !ok && condsObj != nil {
 		return false // unexpected: conditions found, but is not a slice and not nil
 	}
 
 	found := false
 	for i, cond := range conds {
-		condObj, _ := cond.(map[string]interface{})
+		condObj, _ := cond.(map[string]any)
 		if condObj == nil {
 			continue
 		}
@@ -70,7 +70,7 @@ func updateStatusCondition(uSt *unstructured.Unstructured, conditionType string,
 	}
 
 	if uSt.Object == nil {
-		uSt.Object = make(map[string]interface{})
+		uSt.Object = make(map[string]any)
 	}
 
 	if err := unstructured.SetNestedSlice(uSt.Object, conds, "conditions"); err != nil {

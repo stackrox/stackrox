@@ -21,7 +21,7 @@ func newRegistryMirrorDispatcher(mirrorStore registrymirror.Store) *registryMirr
 }
 
 // ProcessEvent processes registry mirroring related resource events and returns the sensor events to emit in response.
-func (r *registryMirrorDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (r *registryMirrorDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	switch v := obj.(type) {
 	case *operatorV1Alpha1.ImageContentSourcePolicy:
 		return r.handleImageContentSourcePolicy(v, action)

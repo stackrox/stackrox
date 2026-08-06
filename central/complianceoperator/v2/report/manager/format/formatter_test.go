@@ -390,7 +390,7 @@ type emptyValueMatcher struct {
 	error string
 }
 
-func (m *emptyValueMatcher) Matches(target interface{}) bool {
+func (m *emptyValueMatcher) Matches(target any) bool {
 	record, ok := target.(csv.Value)
 	if !ok {
 		m.error = "target is not of type csv.Value"

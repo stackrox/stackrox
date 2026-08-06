@@ -341,10 +341,10 @@ func validateCollapseBy(scopes []*storage.ComplianceAggregation_AggregationKey, 
 }
 
 type complianceDomainKeyResolver struct {
-	wrapped interface{}
+	wrapped any
 }
 
-func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, domain *storage.ComplianceDomain, key *storage.ComplianceAggregation_AggregationKey) interface{} {
+func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, domain *storage.ComplianceDomain, key *storage.ComplianceAggregation_AggregationKey) any {
 	switch key.GetScope() {
 	case storage.ComplianceAggregation_CLUSTER:
 		if domain.GetCluster() != nil {

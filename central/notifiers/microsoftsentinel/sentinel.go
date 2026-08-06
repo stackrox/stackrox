@@ -287,7 +287,7 @@ func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	}
 
 	// Wrap object in a slice because Sentinel expects it.
-	logsToSend := []map[string]interface{}{
+	logsToSend := []map[string]any{
 		{"msg": logToSendObj},
 	}
 

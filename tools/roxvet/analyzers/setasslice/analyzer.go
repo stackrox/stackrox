@@ -23,7 +23,7 @@ var Analyzer = &analysis.Analyzer{
 
 const setPkgPath = "github.com/stackrox/rox/pkg/set"
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	inspectResult := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	nodeFilter := []ast.Node{(*ast.RangeStmt)(nil)}
 	inspectResult.Preorder(nodeFilter, func(n ast.Node) {

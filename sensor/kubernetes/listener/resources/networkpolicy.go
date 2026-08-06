@@ -25,7 +25,7 @@ func newNetworkPolicyDispatcher(networkPolicyStore store.NetworkPolicyStore, dep
 }
 
 // ProcessEvent processes a network policy resource event and returns the sensor events to generate.
-func (h *networkPolicyDispatcher) ProcessEvent(obj, old interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (h *networkPolicyDispatcher) ProcessEvent(obj, old any, action central.ResourceAction) *component.ResourceEvent {
 	np := obj.(*networkingV1.NetworkPolicy)
 
 	roxNetpol := networkPolicyConversion.KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()

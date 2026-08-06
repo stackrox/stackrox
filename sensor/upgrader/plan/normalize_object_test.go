@@ -296,25 +296,25 @@ func TestNormalizeAdmissionController(t *testing.T) {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			webhook := fromYAML(t, c.yaml)
 			normalizeObject(webhook)
-			webhooks := webhook.Object["webhooks"].([]interface{})
+			webhooks := webhook.Object["webhooks"].([]any)
 			assert.Len(t, webhooks, 1)
-			firstWebhook := webhooks[0].(map[string]interface{})
+			firstWebhook := webhooks[0].(map[string]any)
 			keys := make([]string, 0, len(firstWebhook))
 			for k := range firstWebhook {
 				keys = append(keys, k)
 			}
 			assert.ElementsMatch(t, c.expectedKeys, keys, "%+v != %+v", c.expectedKeys, keys)
 
-			assert.NotContains(t, firstWebhook["rules"].([]interface{})[0].(map[string]interface{}), "scope")
+			assert.NotContains(t, firstWebhook["rules"].([]any)[0].(map[string]any), "scope")
 		})
 	}
 
 	webhook := fromYAML(t, admissionWebhookYAMLWithDifferentRuleScopes)
 	normalizeObject(webhook)
-	rules := webhook.Object["webhooks"].([]interface{})[0].(map[string]interface{})["rules"].([]interface{})
+	rules := webhook.Object["webhooks"].([]any)[0].(map[string]any)["rules"].([]any)
 	expectedScopes := []string{"Cluster", "*", "Namespaced"}
 	for i, r := range rules {
-		scope := r.(map[string]interface{})["scope"]
+		scope := r.(map[string]any)["scope"]
 		if expectedScopes[i] == "*" {
 			assert.Nil(t, scope)
 		} else {

@@ -23,7 +23,7 @@ type queryTracerKey struct{}
 type QueryEvent struct {
 	query        string
 	rowsAccessed *int
-	args         []interface{}
+	args         []any
 	duration     time.Duration
 	stack        []byte
 }
@@ -42,7 +42,7 @@ type queryTracer struct {
 }
 
 // AddEvent adds a Postgres query to the tracer
-func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface{}) *QueryEvent {
+func (qt *queryTracer) AddEvent(start time.Time, query string, args ...any) *QueryEvent {
 	qt.lock.Lock()
 	defer qt.lock.Unlock()
 
@@ -57,7 +57,7 @@ func (qt *queryTracer) AddEvent(start time.Time, query string, args ...interface
 }
 
 // LogTracef is a wrapper around LogTrace that provides formatting
-func LogTracef(ctx context.Context, logger logging.Logger, contextString string, args ...interface{}) {
+func LogTracef(ctx context.Context, logger logging.Logger, contextString string, args ...any) {
 	LogTrace(ctx, logger, fmt.Sprintf(contextString, args...))
 }
 
@@ -101,7 +101,7 @@ func GetTracerFromContext(ctx context.Context) *queryTracer {
 }
 
 // AddTracedQuery adds a query into the tracer
-func AddTracedQuery(ctx context.Context, start time.Time, sql string, args ...interface{}) *QueryEvent {
+func AddTracedQuery(ctx context.Context, start time.Time, sql string, args ...any) *QueryEvent {
 	tracer := GetTracerFromContext(ctx)
 	if tracer == nil {
 		return nil

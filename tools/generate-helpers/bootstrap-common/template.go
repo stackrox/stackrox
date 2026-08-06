@@ -14,7 +14,7 @@ func NewTemplate(tpl string) func(name string) *template.Template {
 }
 
 // RenderFile executes a template with the given data and writes the result to filePath.
-func RenderFile(templateMap map[string]interface{}, temp func(s string) *template.Template, filePath string) error {
+func RenderFile(templateMap map[string]any, temp func(s string) *template.Template, filePath string) error {
 	buf := bytes.NewBuffer(nil)
 	if err := temp(filePath).Execute(buf, templateMap); err != nil {
 		return err

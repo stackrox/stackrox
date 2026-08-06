@@ -61,7 +61,7 @@ func (s *PolicyHandlerTestSuite) TearDownTest() {
 }
 
 // Helper to simulate HTTP POST request
-func (s *PolicyHandlerTestSuite) performRequest(body interface{}) *httptest.ResponseRecorder {
+func (s *PolicyHandlerTestSuite) performRequest(body any) *httptest.ResponseRecorder {
 	var reqBody []byte
 	if body != nil {
 		var err error
@@ -245,7 +245,7 @@ func (s *PolicyHandlerTestSuite) verifyResponse(resp *httptest.ResponseRecorder,
 
 	respBody, err := io.ReadAll(resp.Body)
 	s.NoError(err)
-	var bodyJson map[string]interface{}
+	var bodyJson map[string]any
 	s.NoError(json.Unmarshal(respBody, &bodyJson))
 
 	if expectedErrorMsg != "" {

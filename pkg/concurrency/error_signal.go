@@ -208,12 +208,12 @@ func (s *ErrorSignal) SignalWithErrorWrap(err error, message string) bool {
 }
 
 // SignalWithErrorWrapf is a wrapper around SignalWithError and errors.Wrapf.
-func (s *ErrorSignal) SignalWithErrorWrapf(err error, format string, args ...interface{}) bool {
+func (s *ErrorSignal) SignalWithErrorWrapf(err error, format string, args ...any) bool {
 	return s.SignalWithError(errors.Wrapf(err, format, args...))
 }
 
 // SignalWithErrorf is a wrapper around SignalWithError and fmt.Errorf.
-func (s *ErrorSignal) SignalWithErrorf(format string, args ...interface{}) bool {
+func (s *ErrorSignal) SignalWithErrorf(format string, args ...any) bool {
 	return s.SignalWithError(fmt.Errorf(format, args...))
 }
 

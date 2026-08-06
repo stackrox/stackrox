@@ -22,7 +22,7 @@ func TestNoLint(t *testing.T) {
 	test := &analysis.Analyzer{
 		Name: name,
 		Doc:  "dummy analyzer just to get Pass object",
-		Run: func(p *analysis.Pass) (interface{}, error) {
+		Run: func(p *analysis.Pass) (any, error) {
 			return nil, nil
 		},
 	}

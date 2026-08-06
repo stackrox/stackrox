@@ -75,7 +75,7 @@ func (u UUID) Value() (driver.Value, error) {
 // Scan implements the sql.Scanner interface.
 // A 16-byte slice is handled by UnmarshalBinary, while
 // a longer byte slice or a string is handled by UnmarshalText.
-func (u *UUID) Scan(src interface{}) error {
+func (u *UUID) Scan(src any) error {
 	return u.uuid.Scan(src)
 }
 

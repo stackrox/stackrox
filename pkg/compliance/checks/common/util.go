@@ -7,7 +7,7 @@ import (
 )
 
 // Failf returns "fail" evidence from the given template.
-func Failf(msg string, args ...interface{}) *storage.ComplianceResultValue_Evidence {
+func Failf(msg string, args ...any) *storage.ComplianceResultValue_Evidence {
 	return Fail(fmt.Sprintf(msg, args...))
 }
 
@@ -17,7 +17,7 @@ func Fail(msg string) *storage.ComplianceResultValue_Evidence {
 }
 
 // FailListf returns a single-element list of "fail" evidence from the given template as a convenience
-func FailListf(msg string, args ...interface{}) []*storage.ComplianceResultValue_Evidence {
+func FailListf(msg string, args ...any) []*storage.ComplianceResultValue_Evidence {
 	return FailList(fmt.Sprintf(msg, args...))
 }
 
@@ -27,7 +27,7 @@ func FailList(msg string) []*storage.ComplianceResultValue_Evidence {
 }
 
 // Passf returns "pass" evidence from the given template.
-func Passf(msg string, args ...interface{}) *storage.ComplianceResultValue_Evidence {
+func Passf(msg string, args ...any) *storage.ComplianceResultValue_Evidence {
 	return Pass(fmt.Sprintf(msg, args...))
 }
 
@@ -37,7 +37,7 @@ func Pass(msg string) *storage.ComplianceResultValue_Evidence {
 }
 
 // PassListf returns a single-element list of "pass" evidence from the given template as a convenience
-func PassListf(msg string, args ...interface{}) []*storage.ComplianceResultValue_Evidence {
+func PassListf(msg string, args ...any) []*storage.ComplianceResultValue_Evidence {
 	return PassList(fmt.Sprintf(msg, args...))
 }
 
@@ -47,7 +47,7 @@ func PassList(msg string) []*storage.ComplianceResultValue_Evidence {
 }
 
 // Notef returns "note" evidence from the given template.
-func Notef(msg string, args ...interface{}) *storage.ComplianceResultValue_Evidence {
+func Notef(msg string, args ...any) *storage.ComplianceResultValue_Evidence {
 	return Note(fmt.Sprintf(msg, args...))
 }
 
@@ -57,7 +57,7 @@ func Note(msg string) *storage.ComplianceResultValue_Evidence {
 }
 
 // NoteListf returns a single-element list of "note" evidence from the given template as a convenience
-func NoteListf(msg string, args ...interface{}) []*storage.ComplianceResultValue_Evidence {
+func NoteListf(msg string, args ...any) []*storage.ComplianceResultValue_Evidence {
 	return NoteList(fmt.Sprintf(msg, args...))
 }
 

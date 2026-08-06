@@ -30,10 +30,10 @@ var (
 
 // CustomResource represents the structure for a SecurityPolicy Kubernetes Custom Resource.
 type CustomResource struct {
-	APIVersion         string                 `yaml:"apiVersion"`
-	Kind               string                 `yaml:"kind"`
-	Metadata           map[string]interface{} `yaml:"metadata,omitempty"`
-	SecurityPolicySpec *Policy                `yaml:"spec"`
+	APIVersion         string         `yaml:"apiVersion"`
+	Kind               string         `yaml:"kind"`
+	Metadata           map[string]any `yaml:"metadata,omitempty"`
+	SecurityPolicySpec *Policy        `yaml:"spec"`
 }
 
 // WriteCustomResource write custom resource in YAML text to a writer

@@ -18,7 +18,7 @@ func (p *simplePathHolder) GetValues() []string {
 	return []string{fmt.Sprintf("Val%v", p.GetPath())}
 }
 
-func pathAndValuesFromSteps(t *testing.T, steps ...interface{}) PathAndValueHolder {
+func pathAndValuesFromSteps(t *testing.T, steps ...any) PathAndValueHolder {
 	return (*simplePathHolder)(PathFromSteps(t, steps...))
 }
 

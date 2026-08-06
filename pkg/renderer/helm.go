@@ -26,7 +26,7 @@ func removeNilEntries(values chartutil.Values) {
 			delete(values, k)
 			continue
 		}
-		if vMap, ok := v.(map[string]interface{}); ok {
+		if vMap, ok := v.(map[string]any); ok {
 			removeNilEntries(vMap)
 		}
 	}

@@ -57,7 +57,7 @@ func TestRequiredStringMap(t *testing.T) {
 	}
 }
 
-func executeAndAssertResult(t *testing.T, data interface{}, expectedResult string) {
+func executeAndAssertResult(t *testing.T, data any, expectedResult string) {
 	result, err := templates.ExecuteToString(testTemplate, data)
 	require.NoError(t, err)
 	assert.Equal(t, expectedResult, result)
@@ -66,7 +66,7 @@ func executeAndAssertResult(t *testing.T, data interface{}, expectedResult strin
 func TestRequiredError(t *testing.T) {
 	cases := map[string]struct {
 		tpl                    *template.Template
-		data                   interface{}
+		data                   any
 		expectedErrorFragments []string
 	}{
 		"default message and struct": {

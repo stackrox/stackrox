@@ -32,7 +32,7 @@ type AuthMachineToMachineConfig struct {
 type AuthMachineToMachineConfigType storage.AuthMachineToMachineConfig_Type
 
 // MarshalYAML transforms AuthMachineToMachineConfigType to YAML format.
-func (t AuthMachineToMachineConfigType) MarshalYAML() (interface{}, error) {
+func (t AuthMachineToMachineConfigType) MarshalYAML() (any, error) {
 	protoType := storage.AuthMachineToMachineConfig_Type(t)
 	return protoType.String(), nil
 }

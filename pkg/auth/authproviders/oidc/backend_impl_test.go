@@ -106,7 +106,7 @@ func (m mockOAuth2Token) GetRefreshToken() string {
 	return "mock-refresh-token"
 }
 
-func (m mockOAuth2Token) GetExtra(string) interface{} {
+func (m mockOAuth2Token) GetExtra(string) any {
 	return m.idToken
 }
 
@@ -1046,13 +1046,13 @@ type mockOIDCUserInfo struct {
 	claims claims
 }
 
-func (m mockOIDCUserInfo) Claims(v interface{}) error {
+func (m mockOIDCUserInfo) Claims(v any) error {
 	switch u := v.(type) {
 	case *userInfoType:
 		u.UID = m.claims.uid
 		u.Name = m.claims.name
 		u.EMail = m.claims.email
-	case map[string]interface{}, *map[string]interface{}:
+	case map[string]any, *map[string]any:
 		return nil
 	default:
 		return errors.Errorf("unsupported type %T", v)
@@ -1094,13 +1094,13 @@ func (m mockOIDCToken) GetNonce() string {
 	return m.nonce
 }
 
-func (m mockOIDCToken) Claims(v interface{}) error {
+func (m mockOIDCToken) Claims(v any) error {
 	switch u := v.(type) {
 	case *userInfoType:
 		u.UID = m.uid
 		u.Name = m.name
 		u.EMail = m.email
-	case map[string]interface{}, *map[string]interface{}:
+	case map[string]any, *map[string]any:
 		return nil
 	default:
 		return errors.Errorf("unsupported type %T", v)

@@ -60,7 +60,7 @@ func assertPermissionLevel(permissionLevel storage.PermissionLevel) helper.Asser
 }
 
 func assertBindingHasRoleID(roleID string) helper.AssertFuncAny {
-	return func(obj interface{}) error {
+	return func(obj any) error {
 		evt, ok := obj.(*central.SensorEvent)
 		if !ok {
 			return errors.Errorf("not an event")

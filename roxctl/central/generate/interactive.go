@@ -172,11 +172,11 @@ func getPassword(fd int) (passwd string, err error) {
 	return strings.TrimSuffix(passwd, "\n"), nil
 }
 
-func printlnToStderr(t string, args ...interface{}) {
+func printlnToStderr(t string, args ...any) {
 	printToStderr(t+"\n", args...)
 }
 
-func printToStderr(t string, args ...interface{}) {
+func printToStderr(t string, args ...any) {
 	str := fmt.Sprintf(t, args...)
 	if str != "" {
 		r, n := utf8.DecodeRuneInString(str)

@@ -77,7 +77,7 @@ func TestUnaryServerInterceptor_Success(t *testing.T) {
 	updater := ContextUpdater(func(ctx context.Context) (context.Context, error) {
 		return context.WithValue(ctx, key1, "value1"), nil
 	})
-	handler := grpc.UnaryHandler(func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := grpc.UnaryHandler(func(ctx context.Context, req any) (any, error) {
 		a.Equal("value1", getValue(ctx, key1))
 		return "resp", nil
 	})
@@ -93,7 +93,7 @@ func TestUnaryServerInterceptor_FailUpdater(t *testing.T) {
 	updater := ContextUpdater(func(ctx context.Context) (context.Context, error) {
 		return nil, updaterErr
 	})
-	handler := grpc.UnaryHandler(func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := grpc.UnaryHandler(func(ctx context.Context, req any) (any, error) {
 		a.FailNow("handler should not be called")
 		return nil, nil
 	})
@@ -108,7 +108,7 @@ func TestUnaryServerInterceptor_FailHandler(t *testing.T) {
 	updater := ContextUpdater(func(ctx context.Context) (context.Context, error) {
 		return context.WithValue(ctx, key1, "value1"), nil
 	})
-	handler := grpc.UnaryHandler(func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := grpc.UnaryHandler(func(ctx context.Context, req any) (any, error) {
 		a.Equal("value1", getValue(ctx, key1))
 		return nil, handlerErr
 	})
@@ -131,7 +131,7 @@ func TestStreamServerInterceptor_Success(t *testing.T) {
 		return context.WithValue(ctx, key1, "value1"), nil
 	})
 	handlerCalled := false
-	handler := grpc.StreamHandler(func(srv interface{}, ss grpc.ServerStream) error {
+	handler := grpc.StreamHandler(func(srv any, ss grpc.ServerStream) error {
 		a.Equal("value1", getValue(ss.Context(), key1))
 		handlerCalled = true
 		return nil
@@ -148,7 +148,7 @@ func TestStreamServerInterceptor_FailUpdater(t *testing.T) {
 	updater := ContextUpdater(func(ctx context.Context) (context.Context, error) {
 		return nil, updaterErr
 	})
-	handler := grpc.StreamHandler(func(srv interface{}, ss grpc.ServerStream) error {
+	handler := grpc.StreamHandler(func(srv any, ss grpc.ServerStream) error {
 		a.FailNow("handler should not be called")
 		return nil
 	})
@@ -163,7 +163,7 @@ func TestStreamServerInterceptor_FailHandler(t *testing.T) {
 		return context.WithValue(ctx, key1, "value1"), nil
 	})
 	handlerErr := errors.New("handler error")
-	handler := grpc.StreamHandler(func(srv interface{}, ss grpc.ServerStream) error {
+	handler := grpc.StreamHandler(func(srv any, ss grpc.ServerStream) error {
 		a.Equal("value1", getValue(ss.Context(), key1))
 		return handlerErr
 	})

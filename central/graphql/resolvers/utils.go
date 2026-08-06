@@ -336,7 +336,7 @@ func FilterFieldFromRawQuery(rq RawQuery, label search.FieldLabel) RawQuery {
 // from handler. You may need to cast it back to your desired type.
 // This is required because currently audit logs are only automatically added for GRPC calls and not GraphQL.
 // However, mutating calls should also log. This is a workaround for this limitation.
-func (resolver *Resolver) processWithAuditLog(ctx context.Context, req interface{}, method string, handler func() (interface{}, error)) (interface{}, error) {
+func (resolver *Resolver) processWithAuditLog(ctx context.Context, req any, method string, handler func() (any, error)) (any, error) {
 	resp, err := handler()
 	if resolver.AuditLogger != nil {
 		go resolver.AuditLogger.SendAuditMessage(ctx, req, method, interceptor.AuthStatus{}, err)

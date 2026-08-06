@@ -24,7 +24,7 @@ type predMatcher struct {
 
 // PredMatcher returns a gomock matcher that applies the given checker (which must be a unary function with a bool return
 // value) to its argument.
-func PredMatcher(desc string, checker interface{}) gomock.Matcher {
+func PredMatcher(desc string, checker any) gomock.Matcher {
 	ty := reflect.TypeOf(checker)
 
 	if ty.Kind() != reflect.Func {
@@ -55,7 +55,7 @@ func (p predMatcher) String() string {
 	return p.desc
 }
 
-func (p predMatcher) Matches(x interface{}) bool {
+func (p predMatcher) Matches(x any) bool {
 	v := reflect.ValueOf(x)
 	if !v.Type().AssignableTo(p.inTy) {
 		return false
@@ -87,7 +87,7 @@ func (m stringTestMatcher) String() string {
 	return m.desc
 }
 
-func (m stringTestMatcher) Matches(x interface{}) bool {
+func (m stringTestMatcher) Matches(x any) bool {
 	v := reflect.ValueOf(x)
 	if v.Kind() == reflect.String {
 		return m.testFunc(v.String())
@@ -100,7 +100,7 @@ func (m stringTestMatcher) Matches(x interface{}) bool {
 
 type failureRecorder bool
 
-func (r *failureRecorder) Errorf(_ string, _ ...interface{}) {
+func (r *failureRecorder) Errorf(_ string, _ ...any) {
 	*r = true
 }
 
@@ -110,7 +110,7 @@ type assertionMatcher struct {
 }
 
 // AssertionMatcher returns a matcher using a function from the `assert` package for checking.
-func AssertionMatcher(assertFn interface{}, args ...interface{}) gomock.Matcher {
+func AssertionMatcher(assertFn any, args ...any) gomock.Matcher {
 	assertFnVal := reflect.ValueOf(assertFn)
 	if assertFnVal.Kind() != reflect.Func {
 		panic("AssertionMatcher requires a function argument")
@@ -163,7 +163,7 @@ func (m *assertionMatcher) String() string {
 	return fmt.Sprintf("%s(%s)", funcName, strings.Join(argStrings, ", "))
 }
 
-func (m *assertionMatcher) Matches(x interface{}) bool {
+func (m *assertionMatcher) Matches(x any) bool {
 	var failed failureRecorder
 	args := make([]reflect.Value, 0, len(m.staticArgs)+2)
 	args = append(args, reflect.ValueOf(&failed))

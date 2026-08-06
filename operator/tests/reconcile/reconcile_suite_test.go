@@ -87,8 +87,8 @@ func BuildTestCRD(gvk schema.GroupVersionKind) apiextv1.CustomResourceDefinition
 
 // BuildTestCR builds test CR
 func BuildTestCR(gvk schema.GroupVersionKind) *unstructured.Unstructured {
-	obj := &unstructured.Unstructured{Object: map[string]interface{}{
-		"spec": map[string]interface{}{"replicas": 2},
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"spec": map[string]any{"replicas": 2},
 	}}
 	obj.SetName("test")
 	obj.SetNamespace("default")
