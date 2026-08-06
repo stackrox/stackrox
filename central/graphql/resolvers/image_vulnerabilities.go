@@ -193,6 +193,22 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return nil, err
 	}
 
+	if resolver.vulnReqStore != nil {
+		cveNames := make([]string, len(cveResolvers))
+		for i, r := range cveResolvers {
+			cveNames[i] = r.data.GetCveBaseInfo().GetCve()
+		}
+		exceptionCounts, batchErr := batchExceptionCounts(ctx, resolver.vulnReqStore, cveNames)
+		if batchErr != nil {
+			log.Warnf("batch exception count failed, falling back to per-CVE: %v", batchErr)
+		} else {
+			for _, r := range cveResolvers {
+				r.preloadedExceptionCount = exceptionCounts[r.data.GetCveBaseInfo().GetCve()]
+				r.hasPreloadedExceptionCount = true
+			}
+		}
+	}
+
 	// cast as return type
 	ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
 	for _, res := range cveResolvers {
@@ -622,6 +638,10 @@ func (resolver *imageCVEV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery)
 
 func (resolver *imageCVEV2Resolver) ExceptionCount(ctx context.Context, args struct{ RequestStatus *[]*string }) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ExceptionCount")
+
+	if resolver.hasPreloadedExceptionCount {
+		return resolver.preloadedExceptionCount, nil
+	}
 
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
