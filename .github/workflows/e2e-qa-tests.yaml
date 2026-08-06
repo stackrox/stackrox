@@ -15,9 +15,9 @@ on:
         description: "Unique job name, e.g. gke-qa-e2e-tests"
         required: true
         type: string
-      ci-job-short-name:
-        description: "Short job name (ideally at most 20 characters long), used as prefix in length limited cluster names"
-        required: false
+      cluster-name-prefix:
+        description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
+        required: true
         type: string
       cluster-provisioning-method:
         description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
@@ -84,35 +84,35 @@ jobs:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
       PYTHONUNBUFFERED: "1"
+      CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
+      CLUSTER_NAME_PREFIX_MAX: "20"
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
-      - name: Validate cluster-provisioning-method
+      - name: Validate workflow input
         run: |
           case "${{ inputs.cluster-provisioning-method }}" in
             direct-gke|infra) ;;
             *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
           esac
 
-      - name: Compute cluster name
+          if [[ ${#CLUSTER_NAME_PREFIX} -gt $CLUSTER_NAME_PREFIX_MAX ]]; then
+            echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+            exit 1
+          fi
+
+      - name: Compute cluster name for infra-provisioned cluster
         if: inputs.cluster-provisioning-method == 'infra'
         id: cluster-name
-        env:
-          CI_JOB_NAME: ${{ inputs.ci-job-name }}
-          CI_JOB_SHORT_NAME: ${{ inputs.ci-job-short-name }}
         # infractl enforces a 28-char limit for cluster names.
         run: |
           cluster_name_max=28
-          prefix_length=20
 
-          prefix=${CI_JOB_SHORT_NAME:-$CI_JOB_NAME}
-          prefix=${prefix:0:$prefix_length}
-
-          hash_length=$((cluster_name_max - 1 - prefix_length))
+          hash_length=$(( $cluster_name_max - 1 - $CLUSTER_NAME_PREFIX_MAX ))
           hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
           hash=$(echo "$hash_input" | sha256sum)
           hash_truncated=${hash:0:$hash_length}
 
-          cluster_name="${prefix}-${hash_truncated}"
+          cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
           echo "name=${cluster_name}" >> "$GITHUB_OUTPUT"
           echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
@@ -166,7 +166,7 @@ jobs:
           GKE_SPOT: "true"
         run: |
           source scripts/ci/gke.sh
-          provision_gke_cluster "${{ inputs.ci-job-short-name || inputs.ci-job-name }}"
+          provision_gke_cluster "$CLUSTER_NAME_PREFIX"
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Docker login to Quay.io

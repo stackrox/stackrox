@@ -25,7 +25,7 @@ jobs:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
       ci-job-name: gke-qa-e2e-tests-konflux
-      ci-job-short-name: gke-qa-e2e-konflux
+      cluster-name-prefix: e2e-qa-gke-konflux
       cluster-provisioning-method: direct-gke
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
