@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
@@ -20,15 +21,15 @@ const (
 // the VM filesystem and publishing results to cache, independent of how the
 // cached report is served over VSOCK. Kept separate from Server/CARefresher
 // wiring in runServe so its retry/backoff policy is easier to reason about
-// and test on its own. Scanning does not make a network call; the downloader
-// built by newMappingDownloader keeps the mapping file fresh independently,
-// on its own schedule, so only the schedule for the next rescan attempt is
-// retried here, not the scan itself.
+// and test on its own. Scanning does not make a network call; provider
+// keeps the mapping file fresh independently, on its own schedule, so only
+// the schedule for the next rescan attempt is retried here, not the scan
+// itself.
 type rescanner struct {
-	cache           *vsockserver.ReportCache
-	hostPath        string
-	mappingFilePath string
-	interval        time.Duration
+	cache    *vsockserver.ReportCache
+	hostPath string
+	provider vsockserver.MappingProvider
+	interval time.Duration
 
 	// scanFn defaults to the package scan function; tests override it to
 	// inject failures. factsFn defaults to the package discoverFacts
@@ -41,17 +42,33 @@ type rescanner struct {
 	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
 	factsFn  func(hostPath string) map[string]string
 	newDelay func(d time.Duration) <-chan time.Time
+
+	// wake lets OnMappingChanged nudge Run into scanning immediately
+	// instead of waiting out the rest of the current interval. Buffered
+	// so a callback that fires while Run is mid-scan is not lost.
+	wake chan struct{}
 }
 
-func newRescanner(cache *vsockserver.ReportCache, hostPath, mappingFilePath string, interval time.Duration) *rescanner {
+func newRescanner(cache *vsockserver.ReportCache, hostPath string, provider vsockserver.MappingProvider, interval time.Duration) *rescanner {
 	return &rescanner{
-		cache:           cache,
-		hostPath:        hostPath,
-		mappingFilePath: mappingFilePath,
-		interval:        interval,
-		scanFn:          scan,
-		factsFn:         discoverFacts,
-		newDelay:        time.After,
+		cache:    cache,
+		hostPath: hostPath,
+		provider: provider,
+		interval: interval,
+		scanFn:   scan,
+		factsFn:  discoverFacts,
+		newDelay: time.After,
+		wake:     make(chan struct{}, 1),
+	}
+}
+
+// OnMappingChanged is the updater's onChange callback: it schedules an
+// immediate scan attempt by waking Run's loop, coalescing with any
+// already-pending wake so a burst of changes only triggers one extra scan.
+func (r *rescanner) OnMappingChanged() {
+	select {
+	case r.wake <- struct{}{}:
+	default:
 	}
 }
 
@@ -67,22 +84,57 @@ func (r *rescanner) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case <-r.wake:
+			if err := r.scanOnce(ctx); err != nil {
+				log.Errorf("Rescan triggered by mapping change failed: %v", err)
+			}
 		case <-delay:
-			log.Info("Starting rescan")
-			report, err := r.scanFn(ctx, r.hostPath, r.mappingFilePath)
-			if err != nil {
+			if err := r.scanOnce(ctx); err != nil {
 				retryIn := min(backoff, r.interval)
 				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
 				backoff = min(backoff*2, rescanRetryMaxBackoff)
 				delay = r.newDelay(retryIn)
 				continue
 			}
-			r.cache.SetReport(report, r.factsFn(r.hostPath))
-			log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
 			backoff = rescanRetryBaseBackoff
 			delay = r.newDelay(r.interval)
 		}
 	}
+}
+
+// scanOnce clears the busy gate itself only on failure; a successful scan
+// leaves that to the Handler, once the report has gone out over VSOCK.
+func (r *rescanner) scanOnce(ctx context.Context) error {
+	if !r.provider.Ready() {
+		log.Info("Skipping rescan: repository-to-CPE mapping not yet available")
+		return nil
+	}
+
+	gate, hasGate := r.provider.(vsockserver.ScanBusyGate)
+	if hasGate {
+		gate.MarkScanBusy()
+	}
+
+	path, err := r.provider.Path()
+	if err != nil {
+		if hasGate {
+			gate.MarkScanIdleAndApplyPending()
+		}
+		return fmt.Errorf("resolving mapping file path: %w", err)
+	}
+
+	log.Info("Starting rescan")
+	report, err := r.scanFn(ctx, r.hostPath, path)
+	if err != nil {
+		if hasGate {
+			gate.MarkScanIdleAndApplyPending()
+		}
+		return err
+	}
+
+	r.cache.SetReport(report, r.factsFn(r.hostPath))
+	log.Infof("Rescan complete, report updated. Num packages: %d", len(report.GetContents().GetPackages()))
+	return nil
 }
 
 // runAsync starts Run in a goroutine and returns a channel that is closed
