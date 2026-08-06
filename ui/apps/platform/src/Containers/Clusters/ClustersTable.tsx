@@ -14,6 +14,7 @@ import {
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useMetadata from 'hooks/useMetadata';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import type { TableUIState } from 'utils/getTableUIState';
@@ -26,6 +27,7 @@ import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorCompatibility from './Components/SensorCompatibility';
+import SensorCompatibilityPanel from './Components/SensorCompatibilityPanel';
 import SensorUpgrade from './Components/SensorUpgrade';
 import SensorUpgradePanel from './Components/SensorUpgradePanel';
 
@@ -62,6 +64,8 @@ function ClustersTable({
 }: ClustersTableProps): ReactElement {
     const [expanded, setExpanded] = useState<ExpansionMap>({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const metadata = useMetadata();
+    const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
     const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
     const sensorColumnLabel = isSensorCompatStatusEnabled
         ? 'Sensor compatibility status'
@@ -256,12 +260,27 @@ function ClustersTable({
                                             <Tr isExpanded>
                                                 <Td colSpan={colSpan}>
                                                     <ExpandableRowContent>
-                                                        {isSensorCompatStatusEnabled ? null : (
+                                                        {isSensorCompatStatusEnabled ? (
+                                                            <SensorCompatibilityPanel
+                                                                compatibility={
+                                                                    clusterInfo.status
+                                                                        ?.sensorVersionCompatibility
+                                                                }
+                                                                compatibleVersions={
+                                                                    compatibleVersions
+                                                                }
+                                                                sensorVersion={
+                                                                    clusterInfo.status
+                                                                        ?.sensorVersion
+                                                                }
+                                                                centralVersion={centralVersion}
+                                                            />
+                                                        ) : (
                                                             <SensorUpgradePanel
                                                                 centralVersion={centralVersion}
                                                                 sensorVersion={
                                                                     clusterInfo.status
-                                                                        ?.sensorVersion
+                                                                        ?.sensorVersion ?? ''
                                                                 }
                                                                 upgradeStatus={
                                                                     clusterInfo.status

@@ -23,7 +23,7 @@ export type SensorUpgradePanelProps = {
     };
     centralVersion: string;
     sensorVersion: string;
-    upgradeStatus: SensorUpgradeStatus;
+    upgradeStatus?: SensorUpgradeStatus;
 };
 
 function SensorUpgradePanel({
@@ -32,7 +32,10 @@ function SensorUpgradePanel({
     upgradeStatus,
     actionProps,
 }: SensorUpgradePanelProps) {
-    const { upgradabilityStatusReason, mostRecentProcess } = upgradeStatus;
+    const { upgradabilityStatusReason, mostRecentProcess } = upgradeStatus ?? {
+        upgradabilityStatusReason: '',
+        mostRecentProcess: undefined,
+    };
 
     const upgradeState = findUpgradeState(upgradeStatus);
 
