@@ -1,4 +1,4 @@
-package repositorytocpe
+package cpemapping
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/cespare/xxhash/v2"
+	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 )
 
 // MaxMappingBytes is the accepted size cap for repository-to-CPE JSON (5 MiB).
@@ -16,7 +17,7 @@ func ValidateMapping(content []byte) error {
 	if len(content) > MaxMappingBytes {
 		return fmt.Errorf("mapping size %d exceeds %d bytes", len(content), MaxMappingBytes)
 	}
-	var m MappingFile
+	var m repositorytocpe.MappingFile
 	if err := json.Unmarshal(content, &m); err != nil {
 		return fmt.Errorf("decode mapping: %w", err)
 	}
