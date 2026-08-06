@@ -44,9 +44,20 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	// useful for the deduping from sensor.
 	uid := string(complianceProfile.UID)
 
+	// Profiles using the CEL scanner (annotation compliance.openshift.io/scanner-type=CEL) have no
+	// XCCDF profile ID, so the compliance operator sets ComplianceScan.Spec.Profile to the profile's
+	// k8s object name instead. We must use the same value as ProfileId here so that BuildProfileRefID
+	// produces matching UUIDs on both the profile and the scan sides. The same pattern was applied to
+	// CEL-based tailored profiles in https://github.com/stackrox/stackrox/pull/19214 — see
+	// complianceoperatortailoredprofiles.go.
+	profileID := complianceProfile.ID
+	if complianceProfile.GetAnnotations()[v1alpha1.ScannerTypeAnnotation] == string(v1alpha1.ScannerTypeCEL) {
+		profileID = complianceProfile.Name
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
 		Id:          uid,
-		ProfileId:   complianceProfile.ID,
+		ProfileId:   profileID,
 		Name:        complianceProfile.Name,
 		Labels:      complianceProfile.Labels,
 		Annotations: complianceProfile.Annotations,
@@ -71,7 +82,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		protoProfile := &central.ComplianceOperatorProfileV2{
 			Id:             uid,
-			ProfileId:      complianceProfile.ID,
+			ProfileId:      profileID,
 			Name:           complianceProfile.Name,
 			ProfileVersion: complianceProfile.Version,
 			Labels:         complianceProfile.Labels,
