@@ -44,6 +44,8 @@ jobs:
       ROX_DEPLOY_SENSOR_WITH_CRS: "true"
       SENSOR_HELM_MANAGED: "true"
       SCANNER_V4_DB_STORAGE_CLASS: faster
+      STORAGE: pvc
+      STORAGE_CLASS: faster
       ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 120
