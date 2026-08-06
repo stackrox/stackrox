@@ -109,8 +109,8 @@ jobs:
 
           hash_length=$(( $cluster_name_max - 1 - $CLUSTER_NAME_PREFIX_MAX ))
           hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
-          hash=$(echo "$hash_input" | sha256sum)
-          hash_truncated=${hash:0:$hash_length}
+          hash="$(echo "$hash_input" | sha256sum)"
+          hash_truncated="${hash:0:$hash_length}"
 
           cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
           echo "name=${cluster_name}" >> "$GITHUB_OUTPUT"
