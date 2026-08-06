@@ -3,6 +3,7 @@ package vsockserver
 import (
 	"errors"
 	"net"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -34,19 +35,25 @@ var _ MappingProvider = (*fakeMappingProvider)(nil)
 // fakeGatedProvider adds ScanBusyGate call tracking on top of
 // fakeMappingProvider, mirroring SensorUpdater (gated) as opposed to
 // URLUpdater (ungated) so tests can verify HandleConn only invokes the
-// gate for providers that implement it.
+// gate for providers that implement it. Counters are atomic since
+// HandleConn runs in its own goroutine, concurrently with assertions.
 type fakeGatedProvider struct {
 	fakeMappingProvider
-	busyCalls int
-	idleCalls int
+	busyCalls atomic.Int32
+	idleCalls atomic.Int32
 }
 
-func (f *fakeGatedProvider) MarkScanBusy()                { f.busyCalls++ }
-func (f *fakeGatedProvider) MarkScanIdleAndApplyPending() { f.idleCalls++ }
+func (f *fakeGatedProvider) MarkScanBusy()                { f.busyCalls.Add(1) }
+func (f *fakeGatedProvider) MarkScanIdleAndApplyPending() { f.idleCalls.Add(1) }
+
+// Update lets fakeGatedProvider double as a MappingUpdater, so a test can
+// exercise SyncRepoCPEMapping against the same instance it gates.
+func (f *fakeGatedProvider) Update(_ []byte) (bool, error) { return true, nil }
 
 var (
 	_ MappingProvider = (*fakeGatedProvider)(nil)
 	_ ScanBusyGate    = (*fakeGatedProvider)(nil)
+	_ MappingUpdater  = (*fakeGatedProvider)(nil)
 )
 
 // fakeMappingUpdater is a MappingUpdater test double that returns a fixed
@@ -323,9 +330,9 @@ func TestHandleRequest_SyncRepoCPEMapping(t *testing.T) {
 			updater:     &fakeMappingUpdater{updated: false},
 			wantUpdated: false,
 		},
-		"oversize or otherwise invalid content is rejected as internal error": {
+		"oversize or otherwise invalid content is rejected as malformed": {
 			updater:  &fakeMappingUpdater{err: errors.New("mapping size exceeds cap")},
-			wantCode: pb.ErrorCode_ERROR_CODE_INTERNAL,
+			wantCode: pb.ErrorCode_ERROR_CODE_MALFORMED_REQUEST,
 		},
 	}
 
@@ -390,8 +397,59 @@ func TestHandleConn_MarksProviderIdleAfterEveryResponse(t *testing.T) {
 
 	// HandleConn's post-write call happens after the client has already read
 	// the response (see sendAndReceive), so it may not have run yet here.
-	assert.Eventually(t, func() bool { return provider.idleCalls == 1 }, time.Second, time.Millisecond,
+	assert.Eventually(t, func() bool { return provider.idleCalls.Load() == 1 }, time.Second, time.Millisecond,
 		"idle-and-apply-pending must fire exactly once, after the response is sent")
+}
+
+// TestHandleConn_SyncMidScan_StaysBusyUntilReportSent covers what the
+// "every response" version of the test above couldn't: a Sync arriving
+// while a scan is in flight must not clear busy on its own response -
+// only the GetReport that finally delivers that scan's report may do so.
+func TestHandleConn_SyncMidScan_StaysBusyUntilReportSent(t *testing.T) {
+	cache := &ReportCache{}
+	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
+	provider := &fakeGatedProvider{fakeMappingProvider: fakeMappingProvider{ready: true}}
+	handler := NewHandler(cache, "test-1.0.0", provider, provider)
+	provider.MarkScanBusy()
+
+	syncReq := &pb.VMServiceRequest{
+		Meta:   &pb.RequestMeta{RequestId: "req-sync-mid-scan"},
+		Method: &pb.VMServiceRequest_SyncRepoCpeMapping{SyncRepoCpeMapping: &pb.SyncRepoCPEMappingRequest{Mapping: []byte("content")}},
+	}
+	handleConnAndWait(t, handler, syncReq)
+	assert.Equal(t, int32(0), provider.idleCalls.Load(), "a Sync response must not clear busy while a scan may still be in flight")
+
+	getReportReq := &pb.VMServiceRequest{
+		Meta:   &pb.RequestMeta{RequestId: "req-get-report"},
+		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}},
+	}
+	handleConnAndWait(t, handler, getReportReq)
+	assert.Equal(t, int32(1), provider.idleCalls.Load(), "the GetReport response must clear busy")
+}
+
+// handleConnAndWait is sendAndReceive plus a wait for HandleConn to fully
+// return, so a ScanBusyGate assertion right after can't race its post-write call.
+func handleConnAndWait(t *testing.T, handler *Handler, req *pb.VMServiceRequest) *pb.VMServiceResponse {
+	t.Helper()
+	clientConn, serverConn := net.Pipe()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		handler.HandleConn(serverConn)
+	}()
+
+	reqData, err := proto.Marshal(req)
+	require.NoError(t, err)
+	require.NoError(t, vsockframing.WriteFrame(clientConn, reqData))
+
+	respData, err := vsockframing.ReadFrame(clientConn, 10<<20)
+	require.NoError(t, err)
+	_ = clientConn.Close()
+	<-done
+
+	var resp pb.VMServiceResponse
+	require.NoError(t, proto.Unmarshal(respData, &resp))
+	return &resp
 }
 
 // TestHandleConn_UngatedProviderNeverPanics covers a URL-managed agent's
