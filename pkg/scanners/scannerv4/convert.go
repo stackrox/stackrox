@@ -34,6 +34,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
 		filterNotAffectedVulnerabilities(report, layerSHAToIndex)
 	}
+	if features.ScannerV4SuppressOSVWithRedHatVEX.Enabled() {
+		filterOSVSupersededByRedHatVEX(report, layerSHAToIndex)
+	}
 
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
@@ -548,6 +551,15 @@ func getPackageLayerSHA(report *v4.VulnerabilityReport, pkgID string) (string, b
 	return env.GetIntroducedIn(), true
 }
 
+func getPackageLayerIndex(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32, pkgID string) (int32, bool) {
+	layerSHA, ok := getPackageLayerSHA(report, pkgID)
+	if !ok {
+		return 0, false
+	}
+	layerIdx, ok := layerSHAToIndex[layerSHA]
+	return layerIdx, ok
+}
+
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
 // A package is covered if it was introduced at or below the AncestryPackage's layer
@@ -557,58 +569,42 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 		return
 	}
 
-	// Find AncestryPackage entries and collect their boundaries with aliases.
-	type boundary struct {
-		layerIndex      int32
-		notAffectedKeys set.StringSet
-	}
-	var boundaries []boundary
-
+	// Find AncestryPackage entries. A package at or below that layer is
+	// covered by any lower layer index too, so only the highest is kept.
+	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageNotVulnerable() {
 		pkg := report.GetContents().GetPackages()[pkgID]
 		if pkg == nil || pkg.GetKind() != "ancestry" {
 			continue
 		}
 
-		layerSHA, ok := getPackageLayerSHA(report, pkgID)
-		if !ok {
-			continue
-		}
-		layerIdx, ok := layerSHAToIndex[layerSHA]
+		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
 		}
 
-		aliasKeys := set.NewStringSet()
 		for _, vulnID := range vulnIDs.GetValues() {
 			vuln := report.GetVulnerabilities()[vulnID]
 			if vuln == nil {
 				continue
 			}
 			for _, alias := range vuln.GetAliases() {
-				aliasKeys.Add(aliasKey(alias))
+				key := aliasKey(alias)
+				if cur, ok := aliasKeyToLayerIndex[key]; !ok || layerIdx > cur {
+					aliasKeyToLayerIndex[key] = layerIdx
+				}
 			}
-		}
-
-		if aliasKeys.Cardinality() > 0 {
-			boundaries = append(boundaries, boundary{
-				layerIndex:      layerIdx,
-				notAffectedKeys: aliasKeys,
-			})
 		}
 	}
 
-	if len(boundaries) == 0 {
+	if len(aliasKeyToLayerIndex) == 0 {
 		return
 	}
 
-	// Filter PackageVulnerabilities based on boundaries.
+	// Remove PackageVulnerabilities entries covered by a same-or-lower-layer
+	// not-affected assertion.
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
-		pkgLayerSHA, ok := getPackageLayerSHA(report, pkgID)
-		if !ok {
-			continue
-		}
-		pkgLayerIdx, ok := layerSHAToIndex[pkgLayerSHA]
+		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
 		}
@@ -621,24 +617,95 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 				continue
 			}
 
-			suppressed := false
-			for _, b := range boundaries {
-				if pkgLayerIdx > b.layerIndex {
-					continue
-				}
-				for _, alias := range vuln.GetAliases() {
-					if b.notAffectedKeys.Contains(aliasKey(alias)) {
-						suppressed = true
-						break
-					}
-				}
-				if suppressed {
+			removed := false
+			for _, alias := range vuln.GetAliases() {
+				if layerIdx, ok := aliasKeyToLayerIndex[aliasKey(alias)]; ok && pkgLayerIdx <= layerIdx {
+					removed = true
 					break
 				}
 			}
 
-			if suppressed {
+			if removed {
 				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+			} else {
+				filtered = append(filtered, vulnID)
+			}
+		}
+
+		if len(filtered) == 0 {
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+		} else {
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+		}
+	}
+}
+
+// filterOSVSupersededByRedHatVEX removes osv/*-sourced vulnerabilities from
+// PackageVulnerabilities when a rhel-vex updater vulnerability shares a
+// CVE alias at or above the OSV package's layer.
+func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
+	const (
+		osvUpdaterPrefix     = "osv/"
+		redHatVEXUpdaterName = "rhel-vex"
+	)
+
+	if len(report.GetPackageVulnerabilities()) == 0 {
+		return
+	}
+
+	// Find packages with an affirmative rhel-vex vulnerability. An OSV
+	// package at or below that layer is covered by any lower layer index
+	// too, so only the highest is kept.
+	aliasKeyToLayerIndex := make(map[string]int32)
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok {
+			continue
+		}
+
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln.GetUpdater() != redHatVEXUpdaterName {
+				continue
+			}
+			for _, alias := range vuln.GetAliases() {
+				key := aliasKey(alias)
+				if cur, ok := aliasKeyToLayerIndex[key]; !ok || layerIdx > cur {
+					aliasKeyToLayerIndex[key] = layerIdx
+				}
+			}
+		}
+	}
+
+	if len(aliasKeyToLayerIndex) == 0 {
+		return
+	}
+
+	// Remove osv/* vulnerabilities covered by a same-or-lower-layer rhel-vex vulnerability.
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok {
+			continue
+		}
+
+		var filtered []string
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil || !strings.HasPrefix(vuln.GetUpdater(), osvUpdaterPrefix) {
+				filtered = append(filtered, vulnID)
+				continue
+			}
+
+			removed := false
+			for _, alias := range vuln.GetAliases() {
+				if layerIdx, ok := aliasKeyToLayerIndex[aliasKey(alias)]; ok && pkgLayerIdx <= layerIdx {
+					removed = true
+					break
+				}
+			}
+
+			if removed {
+				log.Debugf("Suppressing OSV vuln %q for package %q in favor of Red Hat VEX", vuln.GetName(), pkgID)
 			} else {
 				filtered = append(filtered, vulnID)
 			}
