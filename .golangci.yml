@@ -190,6 +190,9 @@ linters:
           - forbidigo
         path: roxctl/central/generate/interactive.go
       - linters:
+          - prealloc
+        path-except: ^(central|sensor|pkg)/
+      - linters:
           - forbidigo
           - wrapcheck
         path: _test\.go
