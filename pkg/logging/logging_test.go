@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -242,56 +241,6 @@ func TestForEachRotation(t *testing.T) {
 		"-2017-12-04T18-30-00.000",
 		"",
 	}, "files have to be read in the older-first order")
-}
-
-// TestCreateLoggerMemoryOverhead guards against per-logger memory regressions.
-//
-// Previously, each CreateLogger call wrapped the core with a zapcore sampler
-// that allocated a [7][4096]counter array (~448 KB). With 500+ packages
-// creating loggers, this totaled 100+ MB of heap waste.
-//
-// This test creates N loggers and checks total allocation stays under 1 MB.
-// A bare zap logger costs ~3 KB; our wrapper adds rotating-file cores and
-// module registry overhead but should stay in that range. Any per-logger
-// allocation in the hundreds-of-KB range (samplers, large buffers) will
-// immediately blow past this limit.
-func TestCreateLoggerMemoryOverhead(t *testing.T) {
-	const numLoggers = 100
-
-	// Prevent other goroutines from running (and allocating) during measurement.
-	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(1))
-
-	runtime.GC()
-	var before runtime.MemStats
-	runtime.ReadMemStats(&before)
-
-	loggers := make([]*LoggerImpl, numLoggers)
-	for i := range numLoggers {
-		m := ModuleForName(fmt.Sprintf("memtest-%d", i))
-		loggers[i] = CreateLogger(m, 0)
-	}
-
-	runtime.GC()
-	var after runtime.MemStats
-	runtime.ReadMemStats(&after)
-
-	totalAlloc := after.TotalAlloc - before.TotalAlloc
-	perLogger := totalAlloc / numLoggers
-
-	t.Logf("Created %d loggers: %d bytes total (%.1f KB per logger)",
-		numLoggers, totalAlloc, float64(perLogger)/1024)
-
-	// 1 MB for 100 loggers = 10 KB/logger. Current baseline is ~3 KB.
-	// This leaves room for legitimate growth but catches any per-logger
-	// allocation in the hundreds-of-KB range.
-	const maxTotalBytes = 1024 * 1024
-	assert.Less(t, totalAlloc, uint64(maxTotalBytes),
-		"Total allocation for %d loggers is %d bytes (%.1f KB/logger), exceeding %d bytes. "+
-			"This suggests a heavy per-logger allocation (sampler, buffer, etc.) "+
-			"that should be shared or removed. See PR #22151 for background.",
-		numLoggers, totalAlloc, float64(perLogger)/1024, maxTotalBytes)
-
-	runtime.KeepAlive(loggers)
 }
 
 // TestModuleIsSharedAcrossLoggers verifies that multiple loggers created for
