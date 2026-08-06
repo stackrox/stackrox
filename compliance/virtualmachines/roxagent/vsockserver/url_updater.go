@@ -21,6 +21,11 @@ const (
 	urlMappingFetchRetryWaitMin = 5 * time.Second
 	urlMappingClientTimeout     = 2 * time.Minute
 	urlMappingRefreshInterval   = time.Hour
+	// urlMappingStagingSuffix names the path the downloader writes to.
+	// onDownloadComplete only promotes a staged download to cachePath
+	// once it passes validation, so a bad fetch can never corrupt the
+	// persisted last-good mapping.
+	urlMappingStagingSuffix = ".download"
 )
 
 var _ MappingProvider = (*URLUpdater)(nil)
@@ -30,12 +35,13 @@ var errURLMappingNotReady = errors.New("no repo-to-CPE mapping available yet")
 // URLUpdater is the MappingProvider for an agent configured with a
 // mapping URL; this mapping source never accepts a Sensor-pushed Update.
 type URLUpdater struct {
-	downloader *filedownloader.Downloader
-	cachePath  string
-	active     []byte
-	activeHash string
-	onChange   func()
-	mu         sync.Mutex
+	downloader  *filedownloader.Downloader
+	cachePath   string
+	stagingPath string
+	active      []byte
+	activeHash  string
+	onChange    func()
+	mu          sync.Mutex
 }
 
 // NewURLUpdater seeds active from cachePath if it holds a validated
@@ -43,11 +49,11 @@ type URLUpdater struct {
 // stays empty until the first successful fetch. There is no bundled-file
 // fallback: a URL-backed agent has exactly one mapping source.
 func NewURLUpdater(url, cachePath string, onChange func()) *URLUpdater {
-	u := &URLUpdater{cachePath: cachePath, onChange: onChange}
+	u := &URLUpdater{cachePath: cachePath, stagingPath: cachePath + urlMappingStagingSuffix, onChange: onChange}
 	if u.bootstrap() && onChange != nil {
 		onChange()
 	}
-	u.downloader = filedownloader.New(url, cachePath, urlMappingRefreshInterval,
+	u.downloader = filedownloader.New(url, u.stagingPath, urlMappingRefreshInterval,
 		filedownloader.WithRequestTimeout(urlMappingClientTimeout),
 		filedownloader.WithRetryMax(urlMappingFetchRetryMax),
 		filedownloader.WithRetryWaitMin(urlMappingFetchRetryWaitMin),
@@ -114,8 +120,8 @@ func (u *URLUpdater) Bytes() ([]byte, error) {
 	return out, nil
 }
 
-// Path returns cachePath, which the downloader already keeps in sync with
-// the active mapping via its own atomic writes.
+// Path returns cachePath, which onDownloadComplete keeps in sync with the
+// active mapping by only promoting validated downloads into it.
 func (u *URLUpdater) Path() (string, error) {
 	ready := concurrency.WithLock1(&u.mu, func() bool {
 		return len(u.active) > 0
@@ -127,16 +133,17 @@ func (u *URLUpdater) Path() (string, error) {
 }
 
 // onDownloadComplete is filedownloader's OnComplete callback: it logs and
-// keeps the last-good mapping on failure, or re-validates before promoting
-// on success, so a corrupted file can never replace a good mapping.
+// keeps the last-good mapping on failure, and validates the download
+// staged at stagingPath before promoting it to cachePath on success, so
+// an invalid fetch can never replace the persisted last-good mapping.
 func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	if err != nil {
 		log.Warnf("Downloading repo-to-CPE mapping: %v", err)
 		return
 	}
-	content, err := os.ReadFile(u.cachePath)
+	content, err := os.ReadFile(u.stagingPath)
 	if err != nil {
-		log.Warnf("Reading downloaded repo-to-CPE mapping at %q: %v", u.cachePath, err)
+		log.Warnf("Reading downloaded repo-to-CPE mapping at %q: %v", u.stagingPath, err)
 		return
 	}
 	if err := repositorytocpe.ValidateMapping(content); err != nil {
@@ -151,8 +158,13 @@ func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 		u.activeHash = hash
 		return unchanged
 	})
-
-	if !unchanged && u.onChange != nil {
+	if unchanged {
+		return
+	}
+	if err := filedownloader.AtomicWriteFile(u.cachePath, content); err != nil {
+		log.Warnf("Persisting repo-to-CPE mapping cache to %q: %v", u.cachePath, err)
+	}
+	if u.onChange != nil {
 		u.onChange()
 	}
 }
