@@ -7,6 +7,7 @@ import (
 	"time"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/filedownloader"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
@@ -116,9 +117,9 @@ func (u *URLUpdater) Bytes() ([]byte, error) {
 // Path returns cachePath, which the downloader already keeps in sync with
 // the active mapping via its own atomic writes.
 func (u *URLUpdater) Path() (string, error) {
-	u.mu.Lock()
-	ready := len(u.active) > 0
-	u.mu.Unlock()
+	ready := concurrency.WithLock1(&u.mu, func() bool {
+		return len(u.active) > 0
+	})
 	if !ready {
 		return "", errURLMappingNotReady
 	}
@@ -144,11 +145,12 @@ func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	}
 	hash := repositorytocpe.HashMapping(content)
 
-	u.mu.Lock()
-	unchanged := hash == u.activeHash
-	u.active = content
-	u.activeHash = hash
-	u.mu.Unlock()
+	unchanged := concurrency.WithLock1(&u.mu, func() bool {
+		unchanged := hash == u.activeHash
+		u.active = content
+		u.activeHash = hash
+		return unchanged
+	})
 
 	if !unchanged && u.onChange != nil {
 		u.onChange()
