@@ -1,4 +1,4 @@
-package repositorytocpe
+package cpemapping
 
 import (
 	"bytes"
