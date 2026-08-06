@@ -52,11 +52,10 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
 
-	// Performance improvements to narrow aggregations performed
-	var cveIDsToFilter []string
+	var cvesToFilter []string
 	var err error
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
-		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
+		cvesToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			log.Error(err)
 			return nil, err
@@ -73,7 +72,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	defer cancel()
 
 	var ret []CveFlat
-	err = pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cveIDsToFilter, options), func(r *imageCVEFlatResponse) error {
+	err = pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cvesToFilter, options), func(r *imageCVEFlatResponse) error {
 		// For each record, sort the IDs so that result looks consistent.
 		sort.SliceStable(r.CVEIDs, func(i, j int) bool {
 			return r.CVEIDs[i] < r.CVEIDs[j]
@@ -91,7 +90,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
+		search.NewQuerySelect(search.CVE).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
@@ -100,10 +99,10 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	return cloned
 }
 
-func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
+func withSelectCVEFlatResponseQuery(q *v1.Query, cvesToFilter []string, options views.ReadOptions) *v1.Query {
 	cloned := q.CloneVT()
-	if len(cveIDsToFilter) > 0 {
-		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
+	if len(cvesToFilter) > 0 {
+		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddExactMatches(search.CVE, cvesToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()
 	}
 
@@ -145,17 +144,18 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	return cloned
 }
 
+type cveNameResponse struct {
+	CVE string `db:"cve"`
+}
+
 func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var cveIDsToFilter []string
+	var cvesToFilter []string
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
-	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
-	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
-	err := pgSearch.RunSelectRequestForSchemaFn[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *imageCVEFlatResponse) error {
-		cveIDsToFilter = append(cveIDsToFilter, r.CVEIDs...)
+	err := pgSearch.RunSelectRequestForSchemaFn[cveNameResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q), func(r *cveNameResponse) error {
+		cvesToFilter = append(cvesToFilter, r.CVE)
 		return nil
 	})
 	if err != nil {
@@ -163,5 +163,5 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 		return nil, err
 	}
 
-	return cveIDsToFilter, nil
+	return cvesToFilter, nil
 }

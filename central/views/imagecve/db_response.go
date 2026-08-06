@@ -4,28 +4,31 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 )
 
 type imageCVECoreResponse struct {
-	CVE                                string     `db:"cve"`
-	CVEIDs                             []string   `db:"cve_id"`
-	ImagesWithCriticalSeverity         int        `db:"critical_severity_count"`
-	FixableImagesWithCriticalSeverity  int        `db:"fixable_critical_severity_count"`
-	ImagesWithImportantSeverity        int        `db:"important_severity_count"`
-	FixableImagesWithImportantSeverity int        `db:"fixable_important_severity_count"`
-	ImagesWithModerateSeverity         int        `db:"moderate_severity_count"`
-	FixableImagesWithModerateSeverity  int        `db:"fixable_moderate_severity_count"`
-	ImagesWithLowSeverity              int        `db:"low_severity_count"`
-	FixableImagesWithLowSeverity       int        `db:"fixable_low_severity_count"`
-	ImagesWithUnknownSeverity          int        `db:"unknown_severity_count"`
-	FixableImagesWithUnknownSeverity   int        `db:"fixable_unknown_severity_count"`
-	TopCVSS                            *float32   `db:"cvss_max"`
-	AffectedImageCount                 int        `db:"image_sha_count"`
-	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
-	Published                          *time.Time `db:"cve_published_on_min"`
-	TopNVDCVSS                         *float32   `db:"nvd_cvss_max"`
-	AffectedImageCountV2               int        `db:"image_id_count"`
+	CVE                                string                         `db:"cve"`
+	CVEIDs                             []string                       `db:"cve_id"`
+	ImagesWithCriticalSeverity         int                            `db:"critical_severity_count"`
+	FixableImagesWithCriticalSeverity  int                            `db:"fixable_critical_severity_count"`
+	ImagesWithImportantSeverity        int                            `db:"important_severity_count"`
+	FixableImagesWithImportantSeverity int                            `db:"fixable_important_severity_count"`
+	ImagesWithModerateSeverity         int                            `db:"moderate_severity_count"`
+	FixableImagesWithModerateSeverity  int                            `db:"fixable_moderate_severity_count"`
+	ImagesWithLowSeverity              int                            `db:"low_severity_count"`
+	FixableImagesWithLowSeverity       int                            `db:"fixable_low_severity_count"`
+	ImagesWithUnknownSeverity          int                            `db:"unknown_severity_count"`
+	FixableImagesWithUnknownSeverity   int                            `db:"fixable_unknown_severity_count"`
+	TopSeverity                        *storage.VulnerabilitySeverity `db:"severity_max"`
+	EpssProbability                    *float32                       `db:"epss_probability_max"`
+	TopCVSS                            *float32                       `db:"cvss_max"`
+	AffectedImageCount                 int                            `db:"image_sha_count"`
+	FirstDiscoveredInSystem            *time.Time                     `db:"cve_created_time_min"`
+	Published                          *time.Time                     `db:"cve_published_on_min"`
+	TopNVDCVSS                         *float32                       `db:"nvd_cvss_max"`
+	AffectedImageCountV2               int                            `db:"image_id_count"`
 }
 
 func (c *imageCVECoreResponse) GetCVE() string {
@@ -78,6 +81,20 @@ func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
 
 func (c *imageCVECoreResponse) GetPublishDate() *time.Time {
 	return c.Published
+}
+
+func (c *imageCVECoreResponse) GetTopSeverity() storage.VulnerabilitySeverity {
+	if c.TopSeverity == nil {
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
+	return *c.TopSeverity
+}
+
+func (c *imageCVECoreResponse) GetEPSSProbability() float32 {
+	if c.EpssProbability == nil {
+		return 0.0
+	}
+	return *c.EpssProbability
 }
 
 type imageResponse struct {
