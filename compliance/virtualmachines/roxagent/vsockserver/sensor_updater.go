@@ -6,6 +6,7 @@ import (
 	"os"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/filedownloader"
 	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
@@ -100,10 +101,9 @@ func (u *SensorUpdater) Bytes() ([]byte, error) {
 // callers always get a file whose content matches Bytes() even if the
 // fire-and-forget persistence from the last apply has not landed yet.
 func (u *SensorUpdater) Path() (string, error) {
-	u.mu.Lock()
-	active := u.active
-	cachePath := u.cachePath
-	u.mu.Unlock()
+	active, cachePath := concurrency.WithLock2(&u.mu, func() ([]byte, string) {
+		return u.active, u.cachePath
+	})
 	if len(active) == 0 {
 		return "", errSensorMappingNotReady
 	}
@@ -122,19 +122,24 @@ func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 	}
 	hash := repositorytocpe.HashMapping(content)
 
-	u.mu.Lock()
-	if hash == u.activeHash || bytes.Equal(content, u.pending) {
-		u.mu.Unlock()
+	updated, deferred := concurrency.WithLock2(&u.mu, func() (bool, bool) {
+		if hash == u.activeHash || bytes.Equal(content, u.pending) {
+			return false, false
+		}
+		if u.busy {
+			u.pending = content
+			return true, true
+		}
+		u.applyLocked(content, hash)
+		return true, false
+	})
+	if !updated {
 		return false, nil
 	}
-	if u.busy {
-		u.pending = content
-		u.mu.Unlock()
+	if deferred {
 		log.Infof("SyncRepoCPEMapping: deferring apply of mapping (hash=%s) until the in-flight scan finishes", hash)
 		return true, nil
 	}
-	u.applyLocked(content, hash)
-	u.mu.Unlock()
 	u.persistAndNotify(content)
 	return true, nil
 }
@@ -151,17 +156,19 @@ func (u *SensorUpdater) MarkScanBusy() {
 // while busy, promotes it to active now that the scan (and its GetReport
 // response) has finished.
 func (u *SensorUpdater) MarkScanIdleAndApplyPending() {
-	u.mu.Lock()
-	u.busy = false
-	pending := u.pending
-	if pending == nil {
-		u.mu.Unlock()
-		return
+	pending := concurrency.WithLock1(&u.mu, func() []byte {
+		u.busy = false
+		pending := u.pending
+		if pending == nil {
+			return nil
+		}
+		u.pending = nil
+		u.applyLocked(pending, repositorytocpe.HashMapping(pending))
+		return pending
+	})
+	if pending != nil {
+		u.persistAndNotify(pending)
 	}
-	u.pending = nil
-	u.applyLocked(pending, repositorytocpe.HashMapping(pending))
-	u.mu.Unlock()
-	u.persistAndNotify(pending)
 }
 
 // applyLocked sets active/activeHash to content/hash. Caller must hold mu.
