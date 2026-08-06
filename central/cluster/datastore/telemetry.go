@@ -127,6 +127,8 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	}
 	props["Orchestrator Version"] = omd.GetVersion()
 
+	props["Sensor Version Compatibility"] = cluster.GetStatus().GetSensorVersionCompatibility().String()
+
 	c.Track("Updated Secured Cluster Identity", nil, append(
 		c.WithGroups(),
 		telemeter.WithClient(clusterID, securedClusterClient, cluster.GetMainImage()),
