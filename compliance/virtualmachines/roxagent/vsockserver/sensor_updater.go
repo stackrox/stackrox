@@ -123,7 +123,13 @@ func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 	hash := repositorytocpe.HashMapping(content)
 
 	updated, deferred := concurrency.WithLock2(&u.mu, func() (bool, bool) {
-		if hash == u.activeHash || bytes.Equal(content, u.pending) {
+		if hash == u.activeHash {
+			// The newest push matches active, so it supersedes whatever
+			// an earlier, now-stale push staged as pending.
+			u.pending = nil
+			return false, false
+		}
+		if bytes.Equal(content, u.pending) {
 			return false, false
 		}
 		if u.busy {
