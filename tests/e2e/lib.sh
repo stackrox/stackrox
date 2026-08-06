@@ -366,6 +366,8 @@ export_test_environment() {
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_VULN_MGMT_LEGACY_SNOOZE "${ROX_VULN_MGMT_LEGACY_SNOOZE:-true}"
+    ci_export ROX_VULN_MGMT_UNIFIED_CVE_VIEW "${ROX_VULN_MGMT_UNIFIED_CVE_VIEW:-true}"
+    ci_export ROX_VULN_MGMT_REST_API "${ROX_VULN_MGMT_REST_API:-true}"
     ci_export ROX_DECLARATIVE_CONFIGURATION "${ROX_DECLARATIVE_CONFIGURATION:-true}"
     ci_export ROX_COMPLIANCE_ENHANCEMENTS "${ROX_COMPLIANCE_ENHANCEMENTS:-true}"
     ci_export ROX_TELEMETRY_STORAGE_KEY_V1 "DISABLED"
@@ -530,6 +532,10 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_REGISTRY_CLIENT_TIMEOUT'
     customize_envVars+=$'\n        value: '"${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     customize_envVars+=$'\n      - name: ROX_VULN_MGMT_LEGACY_SNOOZE'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_UNIFIED_CVE_VIEW'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULN_MGMT_REST_API'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SCAN_SCHEDULE_REPORT_JOBS'
     customize_envVars+=$'\n        value: "true"'

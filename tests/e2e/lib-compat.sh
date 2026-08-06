@@ -199,6 +199,8 @@ collect_feature_flags() {
     env_with_default ROX_LABEL_BASED_POLICY_SCOPING "true"
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
+    env_with_default ROX_VULN_MGMT_UNIFIED_CVE_VIEW "true"
+    env_with_default ROX_VULN_MGMT_REST_API "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
 
     # Enabled by default in StackRox, but disabled by default for test deployments.
