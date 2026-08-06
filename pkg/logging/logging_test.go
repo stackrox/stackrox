@@ -244,23 +244,19 @@ func TestForEachRotation(t *testing.T) {
 	}, "files have to be read in the older-first order")
 }
 
-// TestCreateLoggerMemoryScaling guards against per-logger memory regressions.
+// TestCreateLoggerMemoryOverhead guards against per-logger memory regressions.
 //
 // Previously, each CreateLogger call wrapped the core with a zapcore sampler
 // that allocated a [7][4096]counter array (~448 KB). With 500+ packages
 // creating loggers, this totaled 100+ MB of heap waste.
 //
-// This test creates N loggers and compares the total allocation against the
-// known cost of N sampler counter arrays. If CreateLogger ever re-introduces
-// per-logger samplers (even gated behind buildinfo.ReleaseBuild, which is
-// false in tests), the test structure makes the expected cost visible for
-// comparison. The direct assertion catches any allocation that scales with
-// logger count at sampler-like magnitude.
-func TestCreateLoggerMemoryScaling(t *testing.T) {
+// This test creates N loggers and checks total allocation stays under 1 MB.
+// A bare zap logger costs ~3 KB; our wrapper adds rotating-file cores and
+// module registry overhead but should stay in that range. Any per-logger
+// allocation in the hundreds-of-KB range (samplers, large buffers) will
+// immediately blow past this limit.
+func TestCreateLoggerMemoryOverhead(t *testing.T) {
 	const numLoggers = 100
-	// Each zapcore sampler allocates a [7][4096]counter array.
-	// counter is two atomics (int64 + uint64) = 16 bytes.
-	const samplerCounterArraySize = 7 * 4096 * 16 // 458752 bytes
 
 	runtime.GC()
 	var before runtime.MemStats
@@ -278,19 +274,19 @@ func TestCreateLoggerMemoryScaling(t *testing.T) {
 
 	totalAlloc := after.TotalAlloc - before.TotalAlloc
 	perLogger := totalAlloc / numLoggers
-	samplerCost := uint64(numLoggers) * samplerCounterArraySize
 
-	t.Logf("Created %d loggers", numLoggers)
-	t.Logf("  Total allocated:           %d bytes (%.1f MB)", totalAlloc, float64(totalAlloc)/1024/1024)
-	t.Logf("  Per logger:                %d bytes (%.1f KB)", perLogger, float64(perLogger)/1024)
-	t.Logf("  Cost if samplers present:  %d bytes (%.1f MB)", samplerCost, float64(samplerCost)/1024/1024)
+	t.Logf("Created %d loggers: %d bytes total (%.1f KB per logger)",
+		numLoggers, totalAlloc, float64(perLogger)/1024)
 
-	assert.Less(t, totalAlloc, samplerCost,
-		"Total allocation for %d loggers (%d bytes) exceeds the cost of %d sampler "+
-			"counter arrays (%d bytes). This indicates CreateLogger is allocating a "+
-			"per-logger zapcore sampler. If log-flood protection is needed, the sampler "+
-			"must be shared across all loggers, not created per-logger.",
-		numLoggers, totalAlloc, numLoggers, samplerCost)
+	// 1 MB for 100 loggers = 10 KB/logger. Current baseline is ~3 KB.
+	// This leaves room for legitimate growth but catches any per-logger
+	// allocation in the hundreds-of-KB range.
+	const maxTotalBytes = 1024 * 1024
+	assert.Less(t, totalAlloc, uint64(maxTotalBytes),
+		"Total allocation for %d loggers is %d bytes (%.1f KB/logger), exceeding %d bytes. "+
+			"This suggests a heavy per-logger allocation (sampler, buffer, etc.) "+
+			"that should be shared or removed. See PR #22151 for background.",
+		numLoggers, totalAlloc, float64(perLogger)/1024, maxTotalBytes)
 
 	runtime.KeepAlive(loggers)
 }
