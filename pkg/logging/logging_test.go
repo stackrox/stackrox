@@ -258,6 +258,9 @@ func TestForEachRotation(t *testing.T) {
 func TestCreateLoggerMemoryOverhead(t *testing.T) {
 	const numLoggers = 100
 
+	// Prevent other goroutines from running (and allocating) during measurement.
+	defer runtime.GOMAXPROCS(runtime.GOMAXPROCS(1))
+
 	runtime.GC()
 	var before runtime.MemStats
 	runtime.ReadMemStats(&before)
