@@ -102,6 +102,36 @@ type fakeCloseCoder struct {
 func (e *fakeCloseCoder) Error() string            { return "connection closed" }
 func (e *fakeCloseCoder) CloseCode() (int, string) { return e.code, e.reason }
 
+// singleConnDialer rejects a Dial while a previously dialed stream is still
+// open, mirroring roxagent's real maxConcurrentConns=1 semaphore, so a
+// caller that dials again before closing its current connection sees the
+// same failure it would against the real agent.
+type singleConnDialer struct {
+	mu   sync.Mutex
+	open bool
+}
+
+func (d *singleConnDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	return concurrency.WithLock2(&d.mu, func() (io.ReadWriteCloser, error) {
+		if d.open {
+			return nil, errors.New("agent is already serving another request; retry after a backoff")
+		}
+		d.open = true
+		return &trackedStream{dialer: d}, nil
+	})
+}
+
+type trackedStream struct {
+	dialer *singleConnDialer
+}
+
+func (t *trackedStream) Read([]byte) (int, error)  { return 0, io.EOF }
+func (t *trackedStream) Write([]byte) (int, error) { return 0, nil }
+func (t *trackedStream) Close() error {
+	concurrency.WithLock(&t.dialer.mu, func() { t.dialer.open = false })
+	return nil
+}
+
 type mockProtocolClient struct {
 	mu          sync.Mutex
 	resultQueue []*vsockclient.GetReportResult
@@ -1542,6 +1572,67 @@ func TestVMScraper_DialAndGetReport_SyncTriggering(t *testing.T) {
 			assert.Len(t, client.syncCalls, tc.wantSyncCalls)
 		})
 	}
+}
+
+// TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout covers
+// syncRepoCPEMapping's own ctx check: an already-expired context (GetReport
+// already consumed its deadline) must count as a timeout, not a sync
+// failure, matching dialAndGetReport's own ctx.Err() handling.
+func TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	dialer := &mockDialer{err: errors.New("dial must not be attempted")}
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, &mockProtocolClient{})
+
+	timeoutBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout))
+	syncErrBefore := testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	s.syncRepoCPEMapping(ctx, vm, "ns1/vm-a", 1, []byte("payload"))
+
+	assert.Zero(t, dialer.callIdx.Load(), "an already-expired context must not be dialed at all")
+	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncTimeout)))
+	assert.Equal(t, syncErrBefore, testutil.ToFloat64(metrics.PullSyncTotal.WithLabelValues(metrics.PullSyncError)),
+		"an expired context must not be counted as a sync error")
+}
+
+// TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync guards against
+// maybeSync's second dial racing the first GetReport connection: roxagent
+// allows only one connection at a time, so dialAndGetReport must close its
+// stream before calling maybeSync, not rely solely on its deferred close.
+func TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	dialer := &singleConnDialer{}
+	client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{{
+		IndexReport: &v4.IndexReport{State: "IndexFinished"},
+		Meta:        metaWithMapping("old-hash", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR),
+	}}}
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
+	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
+
+	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
+
+	require.Equal(t, scrapeOK, outcome)
+	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
+}
+
+// TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync
+// is the MAPPING_REQUIRED-error counterpart: that path closes and syncs
+// from a different branch than the success path above.
+func TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	dialer := &singleConnDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{{Meta: metaWithMapping("", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR)}},
+		errQueue:    []error{vsockclient.ErrMappingRequired},
+	}
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, dialer, client)
+	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
+
+	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, "")
+
+	require.Equal(t, scrapeRetryable, outcome)
+	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
 }
 
 func TestClampPollInterval(t *testing.T) {
