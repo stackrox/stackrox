@@ -720,16 +720,8 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
+		// GetClusterData
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(len(sc.GetClusters())*numSnapshots).
@@ -752,16 +744,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
-		// Delete Old Results of Missing Clusters
-		m.profileDataStore.EXPECT().
-			SearchProfiles(gomock.Any(), gomock.Any()).
-			Times(1).
-			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
-		m.scanDataStore.EXPECT().
-			SearchScans(gomock.Any(), gomock.Any()).
-			Times(1).Return(allScans, nil),
 		// Validate Results
 		m.complianceIntegrationDataStore.EXPECT().
 			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
