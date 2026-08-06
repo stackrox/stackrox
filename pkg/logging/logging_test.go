@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -241,4 +242,44 @@ func TestForEachRotation(t *testing.T) {
 		"-2017-12-04T18-30-00.000",
 		"",
 	}, "files have to be read in the older-first order")
+}
+
+// TestCreateLoggerMemoryPerLogger guards against per-logger memory regressions.
+//
+// Previously, each CreateLogger call wrapped the core with a zapcore sampler
+// that allocated a [7][4096]counter array (~448 KB). With 500+ packages
+// creating loggers, this totaled 100+ MB of heap waste. This test ensures
+// per-logger allocation stays well below that threshold.
+func TestCreateLoggerMemoryPerLogger(t *testing.T) {
+	const numLoggers = 100
+	// 50 KB is generous headroom above the ~3 KB baseline, but far below
+	// the ~448 KB that a per-logger sampler would add.
+	const maxBytesPerLogger = 50 * 1024
+
+	runtime.GC()
+	var before runtime.MemStats
+	runtime.ReadMemStats(&before)
+
+	loggers := make([]*LoggerImpl, numLoggers)
+	for i := range numLoggers {
+		m := ModuleForName(fmt.Sprintf("memtest-%d", i))
+		loggers[i] = CreateLogger(m, 0)
+	}
+
+	runtime.GC()
+	var after runtime.MemStats
+	runtime.ReadMemStats(&after)
+
+	perLogger := (after.TotalAlloc - before.TotalAlloc) / numLoggers
+
+	t.Logf("Per-logger allocation: %d bytes (%.1f KB)", perLogger, float64(perLogger)/1024)
+
+	assert.Less(t, perLogger, uint64(maxBytesPerLogger),
+		"Per-logger allocation of %d bytes exceeds %d byte limit. "+
+			"A common cause is wrapping each logger core with zapcore.NewSamplerWithOptions, "+
+			"which allocates a ~448 KB counter array per call. "+
+			"If log-flood protection is needed, the sampler must be shared across all loggers.",
+		perLogger, maxBytesPerLogger)
+
+	runtime.KeepAlive(loggers)
 }
