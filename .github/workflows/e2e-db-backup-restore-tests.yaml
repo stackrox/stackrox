@@ -1,4 +1,4 @@
-name: e2e-db-backup-restore-test
+name: e2e-db-backup-restore-tests
 
 on:
   workflow_call:
@@ -27,13 +27,13 @@ defaults:
     shell: bash
 
 jobs:
-  gke-db-backup-restore-test:
+  gke-db-backup-restore-tests:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-test
+      CI_JOB_NAME: gke-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ROX_SCANNER_V4: "false"
@@ -64,13 +64,8 @@ jobs:
         GKE_SPOT: "true"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster dbbr
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster dbbr
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
       # The test uses roxctl for central backup/restore operations
