@@ -214,9 +214,14 @@ func (h *Handler) attemptRepo2CPERefresh(ctx context.Context) bool {
 		h.recordRepo2CPEUnchanged(resp)
 		return true
 	case http.StatusOK:
-		body, err := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(io.LimitReader(resp.Body, repositorytocpe.MaxMappingBytes+1))
 		if err != nil {
 			log.Warnf("Failed to read repo-to-CPE mapping response: %v", err)
+			h.recordRepo2CPEAttempt(false)
+			return false
+		}
+		if len(body) > repositorytocpe.MaxMappingBytes {
+			log.Warnf("Repo-to-CPE mapping response exceeds %d bytes, rejecting", repositorytocpe.MaxMappingBytes)
 			h.recordRepo2CPEAttempt(false)
 			return false
 		}
