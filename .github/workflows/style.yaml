@@ -133,10 +133,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - uses: actions/setup-go@v6
-      with:
-        go-version-file: 'tools/linters/go.mod'
-
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
