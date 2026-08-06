@@ -35,51 +35,26 @@ export const aggregateByCreatedTime: SortAggregate = {
  * @returns The available sort fields
  */
 export function getWorkloadCveOverviewSortFields(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    useUnifiedView = false
 ): (string | string[])[] {
+    const severityFields: string | string[] = useUnifiedView
+        ? 'Severity'
+        : [
+              'Critical Severity Count',
+              'Important Severity Count',
+              'Moderate Severity Count',
+              'Low Severity Count',
+              'Unknown Severity Count',
+          ];
+
     switch (entityTab) {
         case 'CVE':
-            return [
-                'CVE',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'CVSS',
-                'Image Sha',
-                'CVE Created Time',
-            ];
+            return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
-            return [
-                'Image',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Image OS',
-                'Image Created Time',
-                'Image Scan Time',
-            ];
+            return ['Image', severityFields, 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
-            return [
-                'Deployment',
-                [
-                    'Critical Severity Count',
-                    'Important Severity Count',
-                    'Moderate Severity Count',
-                    'Low Severity Count',
-                    'Unknown Severity Count',
-                ],
-                'Cluster',
-                'Namespace',
-                'Created',
-            ];
+            return ['Deployment', severityFields, 'Cluster', 'Namespace', 'Created'];
         default:
             return ensureExhaustive(entityTab);
     }
@@ -93,8 +68,25 @@ export function getWorkloadCveOverviewSortFields(
  */
 export function getWorkloadCveOverviewDefaultSortOption(
     entityTab: WorkloadEntityTab,
-    searchFilter?: SearchFilter
+    searchFilter?: SearchFilter,
+    useUnifiedView = false
 ): SortOption | NonEmptyArray<SortOption> {
+    if (useUnifiedView) {
+        switch (entityTab) {
+            case 'CVE':
+            case 'Image':
+                return {
+                    field: 'Severity',
+                    direction: 'desc',
+                    aggregateBy: { aggregateFunc: 'max' },
+                };
+            case 'Deployment':
+                return { field: 'Deployment', direction: 'asc' };
+            default:
+                return ensureExhaustive(entityTab);
+        }
+    }
+
     // Array.prototype.map does not currently retain the arity of an input tuple, so
     // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
     // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841

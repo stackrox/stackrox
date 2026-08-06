@@ -187,14 +187,16 @@ function WorkloadCvesOverviewPage() {
     // For request and view-based report.
     const workloadCvesScopedQueryString = getRegexScopedQueryString(workloadCvesScopedSearchFilter);
 
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const getDefaultSortOption = isViewingWithCves
-        ? getWorkloadCveOverviewDefaultSortOption
+        ? (tab: WorkloadEntityTab, filter?: SearchFilter) =>
+              getWorkloadCveOverviewDefaultSortOption(tab, filter, useUnifiedView)
         : getDefaultZeroCveSortOption;
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey, useUnifiedView),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
