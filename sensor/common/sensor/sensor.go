@@ -41,6 +41,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 )
 
 const (
@@ -249,6 +250,7 @@ func (s *Sensor) Start() {
 		} else {
 			s.scannerDefsHandler = handler
 			s.AddNotifiable(handler)
+			s.injectRepo2CPEFetcher()
 
 			// The HTTP route itself is only needed by Scanner/Collector/node-index callers.
 			if env.LocalImageScanningEnabled.BooleanSetting() || features.NodeIndexEnabled.Enabled() {
@@ -326,6 +328,28 @@ func (s *Sensor) Start() {
 
 	log.Info("Running Sensor with connection retry: preventing sensor restart on disconnect")
 	go s.communicationWithCentralWithRetries(&centralReachable)
+}
+
+// repo2CPEFetcherSetter is satisfied by *vmscraper.VMScraper. Asserting
+// against this small interface, rather than the concrete type, keeps the
+// match working for any future SensorComponent with the same setter.
+type repo2CPEFetcherSetter interface {
+	SetRepo2CPEFetcher(f vmscraper.Repo2CPEFetcher)
+}
+
+// injectRepo2CPEFetcher gives a VMScraper found in s.components access to
+// s.scannerDefsHandler, if both exist. A direct, one-shot call rather than
+// pub/sub: there is exactly one producer and one consumer in this process.
+func (s *Sensor) injectRepo2CPEFetcher() {
+	if s.scannerDefsHandler == nil {
+		return
+	}
+	for _, c := range s.components {
+		if setter, ok := c.(repo2CPEFetcherSetter); ok {
+			setter.SetRepo2CPEFetcher(s.scannerDefsHandler)
+			return
+		}
+	}
 }
 
 // newScannerDefinitionsRoute returns a custom route that serves scanner
