@@ -37,6 +37,8 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       LOAD_BALANCER: lb
       ROX_SCANNER_V4: "false"
+      STORAGE: pvc
+      STORAGE_CLASS: faster
       PYTHONUNBUFFERED: "1"
     timeout-minutes: 60
     steps:

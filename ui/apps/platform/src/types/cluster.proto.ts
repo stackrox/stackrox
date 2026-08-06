@@ -123,7 +123,7 @@ export type Cluster = {
     admissionController: boolean;
     admissionControllerUpdates: boolean;
     admissionControllerEvents: boolean;
-    status: ClusterStatus; // TODO fix errors so be able to add: | null
+    status?: ClusterStatus;
     dynamicConfig: DynamicClusterConfig;
     tolerationsConfig: TolerationsConfig;
     priority: string; // int64
