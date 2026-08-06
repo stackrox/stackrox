@@ -27,6 +27,7 @@ import type { ExceptionRequestModalProps } from '../../components/ExceptionReque
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import { useImageCves } from './useImageCves';
+import { useImageCvesREST } from './useImageCvesREST';
 
 export type CVEsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -60,14 +61,26 @@ function CVEsTableContainer({
     const { sortOption, getSortParams } = sort;
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
+    const useRESTAPI = isFeatureFlagEnabled('ROX_VULN_MGMT_REST_API');
 
-    const { error, loading, data } = useImageCves({
+    const graphqlResult = useImageCves({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,
         vulnerabilityState,
         useUnifiedView,
+        options: { skip: useRESTAPI },
     });
+
+    const restResult = useImageCvesREST({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
+    });
+
+    const { error, loading, data } = useRESTAPI
+        ? { error: restResult.error, loading: restResult.loading, data: restResult.data }
+        : graphqlResult;
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
 

@@ -552,7 +552,14 @@ function WorkloadCVEOverviewTable({
                                     <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             {useUnifiedView ? (
-                                                isExpanded && <CVESummaryContent cve={cve} />
+                                                isExpanded && (
+                                                    <CVESummaryContent
+                                                        cve={cve}
+                                                        useREST={isFeatureFlagEnabled(
+                                                            'ROX_VULN_MGMT_REST_API'
+                                                        )}
+                                                    />
+                                                )
                                             ) : summary ? (
                                                 <Content component="p">{summary}</Content>
                                             ) : (
