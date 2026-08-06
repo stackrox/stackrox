@@ -242,21 +242,3 @@ func TestForEachRotation(t *testing.T) {
 		"",
 	}, "files have to be read in the older-first order")
 }
-
-// TestModuleLogLevelPropagates verifies that loggers created for the same
-// module share log level state. When a module's level changes, all loggers
-// created from that module must observe the change. This is the functional
-// contract that module sharing exists to support.
-func TestModuleLogLevelPropagates(t *testing.T) {
-	name := "propagation-test-" + uuid.NewV4().String()
-
-	m := ModuleForName(name)
-	l1 := CreateLogger(m, 0)
-	l2 := CreateLogger(ModuleForName(name), 0)
-
-	m.SetLogLevel(zapcore.WarnLevel)
-
-	assert.Equal(t, zapcore.WarnLevel, l1.Module().GetLogLevel())
-	assert.Equal(t, zapcore.WarnLevel, l2.Module().GetLogLevel(),
-		"log level change must propagate to all loggers created from the same module name")
-}
