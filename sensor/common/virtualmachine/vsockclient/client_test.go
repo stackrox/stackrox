@@ -1,9 +1,13 @@
 package vsockclient
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"io"
 	"net"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -14,6 +18,40 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 )
+
+// fakeStream is an io.ReadWriteCloser with scripted Write/Read behavior,
+// for testing GetReport's write-failure salvage path.
+type fakeStream struct {
+	writeErr error
+	reader   io.Reader
+}
+
+func (f *fakeStream) Write(p []byte) (int, error) {
+	if f.writeErr != nil {
+		return 0, f.writeErr
+	}
+	return len(p), nil
+}
+
+func (f *fakeStream) Read(p []byte) (int, error) {
+	if f.reader == nil {
+		return 0, io.EOF
+	}
+	return f.reader.Read(p)
+}
+
+func (f *fakeStream) Close() error { return nil }
+
+// framedResponse marshals and frames resp exactly as the agent would write
+// it, for use as a fakeStream's readable backing.
+func framedResponse(t *testing.T, resp *pb.VMServiceResponse) *bytes.Buffer {
+	t.Helper()
+	data, err := proto.Marshal(resp)
+	require.NoError(t, err)
+	var buf bytes.Buffer
+	require.NoError(t, vsockframing.WriteFrame(&buf, data))
+	return &buf
+}
 
 // serveOnce plays the agent side of a request/response exchange over
 // agentConn. Run in its own goroutine, since GetReport blocks on the
@@ -121,6 +159,11 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			wantErr:   ErrInternal,
 			wantInMsg: "scan crashed",
 		},
+		"should wrap ErrBusy for BUSY": {
+			code:    pb.ErrorCode_ERROR_CODE_BUSY,
+			message: "agent is already serving another request",
+			wantErr: ErrBusy,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -183,5 +226,37 @@ func TestSendGetReport_ContextCancelUnblocks(t *testing.T) {
 		assert.ErrorIs(t, err, context.Canceled)
 	case <-time.After(2 * time.Second):
 		t.Fatal("GetReport did not unblock on context cancel")
+	}
+}
+
+func TestSendGetReport_WriteFailure(t *testing.T) {
+	writeErr := errors.New("write: broken pipe")
+	cases := map[string]struct {
+		reader  io.Reader
+		wantErr error
+	}{
+		"busy reply behind the failed write should be salvaged": {
+			reader: framedResponse(t, &pb.VMServiceResponse{
+				Meta: &pb.ResponseMeta{AgentVersion: "test-agent"},
+				Result: &pb.VMServiceResponse_Error{
+					Error: &pb.ErrorResponse{Code: pb.ErrorCode_ERROR_CODE_BUSY, Message: "agent is busy"},
+				},
+			}),
+			wantErr: ErrBusy,
+		},
+		"nothing salvageable behind the failed write should surface the write error unchanged": {
+			reader:  iotest.ErrReader(errors.New("read: connection reset")),
+			wantErr: writeErr,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			client := NewClient(nil, 10<<20)
+			stream := &fakeStream{writeErr: writeErr, reader: tc.reader}
+
+			_, err := client.GetReport(context.Background(), stream, 0, 0)
+			require.Error(t, err)
+			assert.ErrorIs(t, err, tc.wantErr)
+		})
 	}
 }
