@@ -170,8 +170,9 @@ func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
 
 	_ = conn.SetReadDeadline(time.Now().Add(rejectAbsorbTimeout))
 	// Outcome never affects control flow: timeout/EOF means the peer never
-	// wrote (or wrote late).
-	if _, err := vsockframing.ReadFrame(conn, maxRequestSize); err != nil {
+	// wrote (or wrote late). DiscardFrame avoids allocating a payload buffer
+	// for a request we only need to drain.
+	if err := vsockframing.DiscardFrame(conn, maxRequestSize); err != nil {
 		log.Debugf("No request absorbed from rejected peer %s before closing: %v", conn.RemoteAddr(), err)
 	}
 }
