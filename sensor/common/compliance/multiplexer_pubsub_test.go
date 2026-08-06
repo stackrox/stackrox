@@ -1,12 +1,10 @@
 package compliance
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
@@ -30,22 +28,6 @@ type MultiplexerTestSuite struct {
 
 func (s *MultiplexerTestSuite) TearDownTest() {
 	goleak.AssertNoGoroutineLeaks(s.T())
-}
-
-// newTestMultiplexer builds a Multiplexer whose underlying channelmultiplexer.ChannelMultiplexer
-// is bound to a cancellable context, so the test can fully unwind FanIn's goroutines on cleanup --
-// production code has no such lifecycle hook today (Multiplexer.Stop() does not tear down the
-// underlying fan-in), so without this the legacy channels/pubSubIn would leak goroutines forever.
-func newTestMultiplexer(dispatcher common.PubSubDispatcher) (*Multiplexer, context.CancelFunc) {
-	ctx, cancel := context.WithCancel(context.Background())
-	mp := &Multiplexer{
-		mp:               *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](channelmultiplexer.WithContext[common.MessageToComplianceWithAddress](ctx)),
-		components:       []common.ComplianceComponent{},
-		stopper:          concurrency.NewStopper(),
-		pubSubDispatcher: dispatcher,
-		pubSubIn:         make(chan common.MessageToComplianceWithAddress),
-	}
-	return mp, cancel
 }
 
 // legacyComplianceComponent simulates a producer still on the raw ComplianceC() channel,
@@ -100,11 +82,10 @@ func (s *MultiplexerTestSuite) TestPubSubAndLegacyProducersBothFeedComplianceC()
 	defer dispatcher.Stop()
 
 	legacy := newLegacyComplianceComponent()
-	mp, cancel := newTestMultiplexer(dispatcher)
-	defer cancel()
+	mp := NewMultiplexer(dispatcher)
+	defer mp.Stop()
 	mp.AddComponentWithComplianceC(legacy)
 	s.Require().NoError(mp.Start())
-	defer mp.Stop()
 
 	require.NoError(t, dispatcher.Publish(&ComplianceAckEvent{Msg: common.MessageToComplianceWithAddress{Hostname: "node-pubsub"}}))
 	go func() {
@@ -125,14 +106,20 @@ func (s *MultiplexerTestSuite) TestPubSubAndLegacyProducersBothFeedComplianceC()
 }
 
 // TestPubSubDisabledFallsBackToLegacyOnly verifies that with PubSub disabled, the Multiplexer
-// behaves exactly as before: only legacy ComplianceC() channels are fanned in.
+// behaves exactly as before: only legacy ComplianceC() channels are fanned in, even with a live
+// dispatcher present.
 func (s *MultiplexerTestSuite) TestPubSubDisabledFallsBackToLegacyOnly() {
+	t := s.T()
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "false")
+
+	dispatcher := newTestMultiplexerDispatcher(t)
+	defer dispatcher.Stop()
+
 	legacy := newLegacyComplianceComponent()
-	mp, cancel := newTestMultiplexer(nil)
-	defer cancel()
+	mp := NewMultiplexer(dispatcher)
+	defer mp.Stop()
 	mp.AddComponentWithComplianceC(legacy)
 	s.Require().NoError(mp.Start())
-	defer mp.Stop()
 
 	go func() {
 		legacy.toCompliance <- common.MessageToComplianceWithAddress{Hostname: "node-legacy"}

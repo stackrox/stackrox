@@ -33,7 +33,9 @@ type nodeInventoryHandlerImpl struct {
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// ch2Central is the same channel exposed read-only as toCentral; kept as a field so both
-	// the legacy select loop (run()) and the PubSub event handlers can write to it.
+	// the legacy select loop (run()) and the PubSub event handlers can write to it. It is never
+	// closed: PubSub callbacks can still be invoked after Stop() (the dispatcher has no
+	// per-consumer unregistration), and writing to it must stay safe for the process lifetime.
 	ch2Central       chan *message.ExpiringMessage
 	toCompliance     chan common.MessageToComplianceWithAddress
 	nodeMatcher      NodeIDMatcher
@@ -240,14 +242,12 @@ func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeI
 	return nil
 }
 
-// run handles the messages from Compliance and forwards them to Central
-// This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
+// run handles the messages from Compliance and forwards them to Central. It is one of possibly
+// several writers into the toCentral channel (PubSub event handlers are the others); it never
+// closes that channel since it cannot guarantee no PubSub handler will write after it returns.
 func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 	go func() {
-		defer func() {
-			c.stopper.Flow().ReportStopped()
-			close(c.ch2Central)
-		}()
+		defer c.stopper.Flow().ReportStopped()
 		log.Debugf("NodeInventory/NodeIndex handler is running")
 		for {
 			select {
@@ -448,36 +448,34 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		return
 	}
 
+	if hasRHCOSPackage(indexWrap.IndexReport) {
+		log.Debugf("Node=%q has rhcos package from compliance", indexWrap.NodeName)
+	} else {
+		isRHCOS, ver, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
+		if err != nil {
+			log.Debugf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
+		} else if isRHCOS {
+			log.Warnf("Node %q appears to be RHCOS (osImage version=%s) but compliance did not add rhcos package - RHCOS-level vulnerabilities will not be reported", indexWrap.NodeName, ver)
+		}
+	}
+
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	default:
-		defer func() {
-			log.Debugf("Sent IndexReport to Central")
-			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
-		}()
-		if hasRHCOSPackage(indexWrap.IndexReport) {
-			log.Debugf("Node=%q has rhcos package from compliance", indexWrap.NodeName)
-		} else {
-			isRHCOS, ver, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
-			if err != nil {
-				log.Debugf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
-			} else if isRHCOS {
-				log.Warnf("Node %q appears to be RHCOS (osImage version=%s) but compliance did not add rhcos package - RHCOS-level vulnerabilities will not be reported", indexWrap.NodeName, ver)
-			}
-		}
-		toC <- message.New(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id: indexWrap.NodeID,
-					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: indexWrap.IndexReport,
-					},
+	case toC <- message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id: indexWrap.NodeID,
+				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+				// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
+				Resource: &central.SensorEvent_IndexReport{
+					IndexReport: indexWrap.IndexReport,
 				},
 			},
-		})
+		},
+	}):
+		log.Debugf("Sent IndexReport to Central")
+		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
 }
 
