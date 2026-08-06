@@ -274,7 +274,7 @@ func (a *clusterNamespaceLevelScopeCheckerCore) SubScopeChecker(scopeKey sac.Sco
 	}
 }
 
-func errorScopeChecker(level interface{}, scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
+func errorScopeChecker(level any, scopeKey sac.ScopeKey) sac.ScopeCheckerCore {
 	utils.Must(errors.Wrapf(ErrUnexpectedScopeKey, "%T scope checked encountered %q", level, scopeKey))
 	return sac.DenyAllAccessScopeChecker()
 }

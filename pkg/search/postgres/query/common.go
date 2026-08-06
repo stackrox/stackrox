@@ -55,7 +55,7 @@ type SelectQueryField struct {
 	// However, this includes "cd", which does NOT match the query, which is not ideal for highlights.
 	// Therefore, we do a post-transform where we apply the query to the returned rows in Go,
 	// so that the final result seen by the user includes only {"ab", "abc"}.
-	PostTransform func(interface{}) interface{}
+	PostTransform func(any) any
 }
 
 // PathForSelectPortion returns the selector string that goes into SELECT portion of the SQL.
@@ -84,21 +84,21 @@ type QueryEntry struct {
 // WhereClause is made up of the raw query template and also the values that should be substituted
 type WhereClause struct {
 	Query  string
-	Values []interface{}
+	Values []any
 
 	// equivalentGoFunc returns the equivalent Go function to the Where clause.
 	// It is used in cases where we want to do some post-processing in Go space
 	// because doing it in SQL is too hairy.
 	// See the documentation of PostTransform in SelectQueryField for more details.
 	// It will not always be set.
-	equivalentGoFunc func(foundValue interface{}) bool
+	equivalentGoFunc func(foundValue any) bool
 }
 
 // NewFalseQuery always returns false
 func NewFalseQuery() *QueryEntry {
 	return &QueryEntry{Where: WhereClause{
 		Query:            "false",
-		equivalentGoFunc: func(_ interface{}) bool { return false },
+		equivalentGoFunc: func(_ any) bool { return false },
 	}}
 }
 

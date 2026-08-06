@@ -179,7 +179,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 				defer messageReceived.Done()
 			})
 
-			expectFn := func(msg interface{}) {
+			expectFn := func(msg any) {
 				defer messageReceived.Done()
 				resourceEvent, ok := msg.(*component.ResourceEvent)
 				assert.True(s.T(), ok)
@@ -216,7 +216,7 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 			},
 		},
 	}
-	s.detector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).Times(1).Do(func(_, _ interface{}) {
+	s.detector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).Times(1).Do(func(_, _ any) {
 		defer messageReceived.Done()
 	})
 
@@ -238,14 +238,14 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 					UpdatedImage: &storage.Image{},
 				},
 			}
-			s.detector.EXPECT().ProcessUpdatedImage(gomock.Any()).Times(1).Do(func(msg interface{}) {
+			s.detector.EXPECT().ProcessUpdatedImage(gomock.Any()).Times(1).Do(func(msg any) {
 				defer messageReceived.Done()
 				image, ok := msg.(*storage.Image)
 				assert.True(s.T(), ok)
 				protoassert.Equal(s.T(), msgFromCentral.GetUpdatedImage(), image)
 			})
 
-			expectFn := func(msg interface{}) {
+			expectFn := func(msg any) {
 				defer messageReceived.Done()
 				resourceEvent, ok := msg.(*component.ResourceEvent)
 				assert.True(s.T(), ok)
@@ -278,14 +278,14 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 					ReprocessDeployment: &central.ReprocessDeployment{},
 				},
 			}
-			s.reprocessor.EXPECT().ProcessReprocessDeployments(gomock.Any()).Times(1).Do(func(msg interface{}) {
+			s.reprocessor.EXPECT().ProcessReprocessDeployments(gomock.Any()).Times(1).Do(func(msg any) {
 				defer messageReceived.Done()
 				reprocessDeployment, ok := msg.(*central.ReprocessDeployment)
 				assert.True(s.T(), ok)
 				protoassert.Equal(s.T(), msgFromCentral.GetReprocessDeployment(), reprocessDeployment)
 			})
 
-			expectFn := func(msg interface{}) {
+			expectFn := func(msg any) {
 				defer messageReceived.Done()
 				resourceEvent, ok := msg.(*component.ResourceEvent)
 				assert.True(s.T(), ok)
@@ -318,14 +318,14 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 					InvalidateImageCache: &central.InvalidateImageCache{},
 				},
 			}
-			s.reprocessor.EXPECT().ProcessInvalidateImageCache(gomock.Any()).Times(1).Do(func(msg interface{}) {
+			s.reprocessor.EXPECT().ProcessInvalidateImageCache(gomock.Any()).Times(1).Do(func(msg any) {
 				defer messageReceived.Done()
 				invalidateCache, ok := msg.(*central.InvalidateImageCache)
 				assert.True(s.T(), ok)
 				protoassert.Equal(s.T(), msgFromCentral.GetInvalidateImageCache(), invalidateCache)
 			})
 
-			expectFn := func(msg interface{}) {
+			expectFn := func(msg any) {
 				defer messageReceived.Done()
 				resourceEvent, ok := msg.(*component.ResourceEvent)
 				assert.True(s.T(), ok)

@@ -23,7 +23,7 @@ type KeyGetter interface {
 	// []byte
 	// jose.JSONWebKey
 	// *jose.JSONWebKey
-	Key(id string) interface{}
+	Key(id string) any
 }
 
 // A JWKSGetter gets trusted keys from a JSON Web Key Set (JWKS) URL.
@@ -42,7 +42,7 @@ func NewJWKSGetter(url string) *JWKSGetter {
 }
 
 // Key returns the key with the given ID, if it is in the set.
-func (j *JWKSGetter) Key(id string) interface{} {
+func (j *JWKSGetter) Key(id string) any {
 	j.fetchOnce.Do(j.fetch)
 	key := j.known[id]
 	if key == nil {
@@ -77,10 +77,10 @@ func (j *JWKSGetter) fetch() {
 
 type singleKeyStore struct {
 	keyID string
-	key   interface{}
+	key   any
 }
 
-func (s *singleKeyStore) Key(id string) interface{} {
+func (s *singleKeyStore) Key(id string) any {
 	if id == s.keyID {
 		return s.key
 	}
@@ -89,7 +89,7 @@ func (s *singleKeyStore) Key(id string) interface{} {
 }
 
 // NewSingleKeyStore returns a KeyGetter that allows obtaining a single key with a defined id.
-func NewSingleKeyStore(key interface{}, keyID string) KeyGetter {
+func NewSingleKeyStore(key any, keyID string) KeyGetter {
 	return &singleKeyStore{
 		keyID: keyID,
 		key:   key,

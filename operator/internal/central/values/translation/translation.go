@@ -232,7 +232,7 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	if c.DefaultTLSSecret != nil {
-		cv.SetMap("defaultTLS", map[string]interface{}{"reference": c.DefaultTLSSecret.Name})
+		cv.SetMap("defaultTLS", map[string]any{"reference": c.DefaultTLSSecret.Name})
 	}
 
 	cv.SetBoolValue("exposeMonitoring", c.Monitoring.IsEnabled())
@@ -456,12 +456,12 @@ func getCentralWorkerValues(c *platform.CentralWorkerSpec, defaults translation.
 	return &cv
 }
 
-func toStringInterfaceMap(v any) (map[string]interface{}, error) {
+func toStringInterfaceMap(v any) (map[string]any, error) {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return nil, err
 	}
-	var m map[string]interface{}
+	var m map[string]any
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
 	}

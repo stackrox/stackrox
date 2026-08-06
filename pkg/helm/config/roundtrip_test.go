@@ -54,8 +54,8 @@ func (h *helmConfigSuite) TestHelmConfigRoundTrip() {
 }
 
 type HelmClusterConfig struct {
-	ClusterName   string                 `json:"clusterName"`
-	ClusterConfig map[string]interface{} `json:"clusterConfig"`
+	ClusterName   string         `json:"clusterName"`
+	ClusterConfig map[string]any `json:"clusterConfig"`
 }
 
 func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.CompleteClusterConfig, error) {
@@ -74,7 +74,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 		return nil, errors.Wrap(err, "rendering chart")
 	}
 
-	var clusterCfgResource map[string]interface{}
+	var clusterCfgResource map[string]any
 	for name, resource := range rendered {
 		if strings.HasSuffix(name, "cluster-config.yaml") {
 			u, err := k8sutil.UnstructuredFromYAML(resource)
@@ -89,7 +89,7 @@ func (h *helmConfigSuite) toClusterConfig(helmCfg chartutil.Values) (*storage.Co
 		return nil, errors.New("Secret 'helm-cluster-config' not found in rendered chart")
 	}
 
-	clusterCfgData, ok := clusterCfgResource["stringData"].(map[string]interface{})
+	clusterCfgData, ok := clusterCfgResource["stringData"].(map[string]any)
 	if !ok {
 		return nil, errors.New("field 'stringData' not found in secret 'helm-cluster-config'")
 	}
@@ -127,12 +127,12 @@ func (h *helmConfigSuite) DoTestHelmConfigRoundTrip(helmValuesFile string) {
 	h.Require().NoError(err, "failed to parse Helm configuration in file %q", helmValuesFile)
 	clusterName := helmCfg["clusterName"].(string)
 
-	helmCfgOverwrites := map[string]interface{}{
-		"imagePullSecrets": map[string]interface{}{
+	helmCfgOverwrites := map[string]any{
+		"imagePullSecrets": map[string]any{
 			"allowNone": true,
 		},
 		"createSecrets": false,
-		"ca": map[string]interface{}{
+		"ca": map[string]any{
 			"cert": "DUMMY CA CERTIFICATE",
 		},
 	}

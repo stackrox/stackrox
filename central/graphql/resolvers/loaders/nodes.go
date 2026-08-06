@@ -17,7 +17,7 @@ import (
 var nodeLoaderType = reflect.TypeFor[storage.Node]()
 
 func init() {
-	RegisterTypeFactory(nodeLoaderType, func() interface{} {
+	RegisterTypeFactory(nodeLoaderType, func() any {
 		return NewNodeLoader(nodeDatastore.Singleton())
 	})
 }

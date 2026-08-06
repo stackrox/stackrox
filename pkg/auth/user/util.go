@@ -55,12 +55,12 @@ func LogSuccessfulUserLogin(logger logging.Logger, user *v1.AuthStatus) {
 // The reason this function returns []interface{} instead of []zap.Field
 // is because log.Warnw accepts ...interface{} and []zap.Field does not convert automatically
 // to []interface{}.
-func extractUserLogFields(user *v1.AuthStatus) []interface{} {
+func extractUserLogFields(user *v1.AuthStatus) []any {
 	serviceIDJSON := ""
 	if user.GetServiceId() != nil {
 		serviceIDJSON = protoToJSON(user.GetServiceId())
 	}
-	return []interface{}{
+	return []any{
 		logging.String("userID", user.GetUserId()),
 		logging.String("serviceID", serviceIDJSON),
 		logging.Any("expires", user.GetExpires()),

@@ -129,7 +129,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsErrorLBurst() {
 	prefix := getLogCallerPrefix(logLineNum)
 	resolvedErrorMsg := fmt.Sprintf(templateWithFields, "error", 2)
 
-	var variadicArgs []interface{}
+	var variadicArgs []any
 	variadicArgs = append(variadicArgs, prefix, resolvedErrorMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.ErrorLevel, "%s%s%s", variadicArgs).Times(1)
 	for range 3 * testBurstSize {
@@ -146,7 +146,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsWarnLBurst() {
 	prefix := getLogCallerPrefix(logLineNum)
 	resolvedWarnMsg := fmt.Sprintf(templateWithFields, "warn", 2)
 
-	var variadicArgs []interface{}
+	var variadicArgs []any
 	variadicArgs = append(variadicArgs, prefix, resolvedWarnMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.WarnLevel, "%s%s%s", variadicArgs).Times(1)
 	for range 3 * testBurstSize {
@@ -163,7 +163,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsInfoLBurst() {
 	prefix := getLogCallerPrefix(logLineNum)
 	resolvedInfoMsg := fmt.Sprintf(templateWithFields, "info", 2)
 
-	var variadicArgs []interface{}
+	var variadicArgs []any
 	variadicArgs = append(variadicArgs, prefix, resolvedInfoMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", variadicArgs).Times(1)
 	for range 3 * testBurstSize {
@@ -180,7 +180,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsDebugLBurst() {
 	prefix := getLogCallerPrefix(lineNum)
 	resolvedDebugMsg := fmt.Sprintf(templateWithFields, "debug", 2)
 
-	var variadicArgs []interface{}
+	var variadicArgs []any
 	variadicArgs = append(variadicArgs, prefix, resolvedDebugMsg, "")
 	s.mockLogger.EXPECT().Logf(zapcore.DebugLevel, "%s%s%s", variadicArgs).Times(1)
 	for range 3 * testBurstSize {

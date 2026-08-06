@@ -61,7 +61,7 @@ var (
 
 type fakeDispatcher struct{}
 
-func (d *fakeDispatcher) ProcessEvent(_, _ interface{}, _ central.ResourceAction) *component.ResourceEvent {
+func (d *fakeDispatcher) ProcessEvent(_, _ any, _ central.ResourceAction) *component.ResourceEvent {
 	return testResourceEvent
 }
 

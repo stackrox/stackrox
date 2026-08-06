@@ -42,7 +42,7 @@ func (s *deploymentStoreSuite) SetupTest() {
 	s.mockPodLister = &mockPodLister{}
 }
 
-func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj interface{}) *deploymentWrap {
+func (s *deploymentStoreSuite) createDeploymentWrap(deploymentObj any) *deploymentWrap {
 	action := central.ResourceAction_CREATE_RESOURCE
 	wrap := newDeploymentEventFromResource(deploymentObj, &action,
 		"deployment", "", s.mockPodLister, s.namespaceStore, hierarchyFromPodLister(s.mockPodLister), "", orchestratornamespaces.NewOrchestratorNamespaces())

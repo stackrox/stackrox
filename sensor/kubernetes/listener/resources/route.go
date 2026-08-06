@@ -19,7 +19,7 @@ func newRouteDispatcher(serviceStore *serviceStore, portExposureReconciler portE
 	}
 }
 
-func (r *routeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (r *routeDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	route, _ := obj.(*routeV1.Route)
 	if route == nil {
 		return nil

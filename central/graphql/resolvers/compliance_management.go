@@ -25,7 +25,7 @@ func (resolver *Resolver) ComplianceTriggerRuns(ctx context.Context, args struct
 		return nil, err
 	}
 
-	resp, err := resolver.processWithAuditLog(ctx, args, "ComplianceTriggerRuns", func() (interface{}, error) {
+	resp, err := resolver.processWithAuditLog(ctx, args, "ComplianceTriggerRuns", func() (any, error) {
 		resp, err := resolver.ComplianceManagementService.TriggerRuns(ctx, &v1.TriggerComplianceRunsRequest{
 			Selection: &v1.ComplianceRunSelection{
 				ClusterId:  string(args.ClusterID),

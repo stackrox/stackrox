@@ -459,7 +459,7 @@ func (cp *compiledPolicy) RequiresImageEnrichment() bool {
 }
 
 // AppliesTo returns if the compiled policy applies to the input object.
-func (cp *compiledPolicy) AppliesTo(ctx context.Context, input interface{}) bool {
+func (cp *compiledPolicy) AppliesTo(ctx context.Context, input any) bool {
 	for _, predicate := range cp.predicates {
 		if predicate.AppliesTo(ctx, input) {
 			return true
@@ -470,7 +470,7 @@ func (cp *compiledPolicy) AppliesTo(ctx context.Context, input interface{}) bool
 
 // Predicate says whether or not a compiled policy applies to an object.
 type Predicate interface {
-	AppliesTo(ctx context.Context, input interface{}) bool
+	AppliesTo(ctx context.Context, input any) bool
 }
 
 type compiledExclusion struct {
@@ -542,7 +542,7 @@ type deploymentPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *deploymentPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
+func (cp *deploymentPredicate) AppliesTo(ctx context.Context, input any) bool {
 	deployment, isDeployment := input.(*storage.Deployment)
 	if !isDeployment {
 		return false
@@ -556,7 +556,7 @@ type imagePredicate struct {
 	policy *storage.Policy
 }
 
-func (cp *imagePredicate) AppliesTo(ctx context.Context, input interface{}) bool {
+func (cp *imagePredicate) AppliesTo(ctx context.Context, input any) bool {
 	image, isImage := input.(*storage.Image)
 	if !isImage {
 		return false
@@ -570,7 +570,7 @@ type auditEventPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *auditEventPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
+func (cp *auditEventPredicate) AppliesTo(ctx context.Context, input any) bool {
 	auditEvent, isAuditEvent := input.(*storage.KubernetesEvent)
 	if !isAuditEvent {
 		return false
@@ -582,7 +582,7 @@ func (cp *auditEventPredicate) AppliesTo(ctx context.Context, input interface{})
 // Predicate for file access events on nodes.
 type fileAccessPredicate struct{}
 
-func (cp *fileAccessPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
+func (cp *fileAccessPredicate) AppliesTo(ctx context.Context, input any) bool {
 	_, isFileAccess := input.(*storage.FileAccess)
 	return isFileAccess
 }

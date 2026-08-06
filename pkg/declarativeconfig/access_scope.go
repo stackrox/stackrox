@@ -26,7 +26,7 @@ func (a *AccessScope) ConfigurationType() ConfigurationType {
 type Operator storage.SetBasedLabelSelector_Operator
 
 // MarshalYAML transforms Operator to YAML format.
-func (a Operator) MarshalYAML() (interface{}, error) {
+func (a Operator) MarshalYAML() (any, error) {
 	protoAccess := storage.SetBasedLabelSelector_Operator(a)
 	return protoAccess.String(), nil
 }

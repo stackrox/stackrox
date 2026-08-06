@@ -70,9 +70,9 @@ func getImageScan() (*scanResult, error) {
 								Link:        "https://security-tracker.debian.org/tracker/CVE-2017-7246",
 								Description: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 								Name:        "CVE-2017-7246",
-								Metadata: map[string]interface{}{
-									"NVD": map[string]interface{}{
-										"CVSSv2": map[string]interface{}{
+								Metadata: map[string]any{
+									"NVD": map[string]any{
+										"CVSSv2": map[string]any{
 											"Score":   6.8,
 											"Vectors": "AV:L/AC:L/Au:N/C:N/I:P",
 										},

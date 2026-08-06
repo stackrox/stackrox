@@ -14,7 +14,7 @@ import (
 // type.
 // We do a marshal/unmarshal round trip (using the Kubernetes apimachinery for marshaling, and Helm
 // for unmarshaling) to ensure that the representation is exactly as during a normal Helm invocation.
-func ToHelmValues(v interface{}) (chartutil.Values, error) {
+func ToHelmValues(v any) (chartutil.Values, error) {
 	dataAsYaml, err := yaml.Marshal(v)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshaling values")

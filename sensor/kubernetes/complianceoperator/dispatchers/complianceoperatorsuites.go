@@ -19,7 +19,7 @@ func NewSuitesDispatcher() *SuitesDispatcher {
 }
 
 // ProcessEvent processes a suite event
-func (c *SuitesDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (c *SuitesDispatcher) ProcessEvent(obj, _ any, action central.ResourceAction) *component.ResourceEvent {
 	// compliance operator suites are only processed for compliance V2.
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		return nil

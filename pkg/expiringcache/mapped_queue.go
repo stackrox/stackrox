@@ -9,39 +9,39 @@ import (
 type mappedQueue interface {
 	size() int
 
-	push(key, value interface{})
-	front() (key, value interface{})
-	pop() (key, value interface{})
+	push(key, value any)
+	front() (key, value any)
+	pop() (key, value any)
 
-	remove(key interface{})
+	remove(key any)
 	removeAll()
 
-	get(key interface{}) interface{}
-	getAllValues() []interface{}
+	get(key any) any
+	getAllValues() []any
 }
 
 func newMappedQueue() mappedQueue {
 	return &mappedQueueImpl{
 		queue: list.New(),
-		items: make(map[interface{}]*list.Element),
+		items: make(map[any]*list.Element),
 	}
 }
 
 type mappedQueueElement struct {
-	key   interface{}
-	value interface{}
+	key   any
+	value any
 }
 
 type mappedQueueImpl struct {
 	queue *list.List
-	items map[interface{}]*list.Element
+	items map[any]*list.Element
 }
 
 func (mq *mappedQueueImpl) size() int {
 	return len(mq.items)
 }
 
-func (mq *mappedQueueImpl) push(key, value interface{}) {
+func (mq *mappedQueueImpl) push(key, value any) {
 	if mq.get(key) != nil {
 		mq.remove(key)
 	}
@@ -53,7 +53,7 @@ func (mq *mappedQueueImpl) push(key, value interface{}) {
 	mq.items[key] = listElement
 }
 
-func (mq *mappedQueueImpl) front() (key, value interface{}) {
+func (mq *mappedQueueImpl) front() (key, value any) {
 	frontElem := mq.queue.Front()
 	if frontElem != nil {
 		mqe := frontElem.Value.(*mappedQueueElement)
@@ -63,7 +63,7 @@ func (mq *mappedQueueImpl) front() (key, value interface{}) {
 	return
 }
 
-func (mq *mappedQueueImpl) pop() (key, value interface{}) {
+func (mq *mappedQueueImpl) pop() (key, value any) {
 	key, value = mq.front()
 	if key != nil {
 		mq.remove(key)
@@ -71,7 +71,7 @@ func (mq *mappedQueueImpl) pop() (key, value interface{}) {
 	return
 }
 
-func (mq *mappedQueueImpl) get(key interface{}) interface{} {
+func (mq *mappedQueueImpl) get(key any) any {
 	listElem, ok := mq.items[key]
 	if !ok {
 		return nil
@@ -80,18 +80,18 @@ func (mq *mappedQueueImpl) get(key interface{}) interface{} {
 	return element.value
 }
 
-func (mq *mappedQueueImpl) getAllValues() []interface{} {
+func (mq *mappedQueueImpl) getAllValues() []any {
 	if mq.queue.Len() == 0 {
 		return nil
 	}
-	ret := make([]interface{}, 0, mq.queue.Len())
+	ret := make([]any, 0, mq.queue.Len())
 	for next := mq.queue.Front(); next != nil; next = next.Next() {
 		ret = append(ret, next.Value.(*mappedQueueElement).value)
 	}
 	return ret
 }
 
-func (mq *mappedQueueImpl) remove(key interface{}) {
+func (mq *mappedQueueImpl) remove(key any) {
 	listElem, ok := mq.items[key]
 	if !ok {
 		return
@@ -102,5 +102,5 @@ func (mq *mappedQueueImpl) remove(key interface{}) {
 
 func (mq *mappedQueueImpl) removeAll() {
 	mq.queue = list.New()
-	mq.items = make(map[interface{}]*list.Element)
+	mq.items = make(map[any]*list.Element)
 }

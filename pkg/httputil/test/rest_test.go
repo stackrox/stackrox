@@ -28,17 +28,17 @@ func endpointReturningJSONMarshalable(_ *http.Request) (*jsonMarshalable, error)
 
 func TestRESTHandler(t *testing.T) {
 	for testName, testCase := range map[string]struct {
-		endpointFunc     func(*http.Request) (interface{}, error)
+		endpointFunc     func(*http.Request) (any, error)
 		expectedResponse string
 	}{
 		"Endpoint returning Proto": {
-			endpointFunc: func(req *http.Request) (interface{}, error) {
+			endpointFunc: func(req *http.Request) (any, error) {
 				return endpointReturningProto(req)
 			},
 			expectedResponse: fixtures.GetJSONSerializedTestAlert(),
 		},
 		"Endpoint returning JSON Marshalable": {
-			endpointFunc: func(req *http.Request) (interface{}, error) {
+			endpointFunc: func(req *http.Request) (any, error) {
 				return endpointReturningJSONMarshalable(req)
 			},
 			expectedResponse: `{"name": "jsonMarshalable"}`,

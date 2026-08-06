@@ -47,7 +47,7 @@ func NewJSONPrinter(options ...JSONPrinterOption) *JSONPrinter {
 
 // Print will print the specified JSON object to the io.Writer.
 // It will return an error if there is an issue with writing to the io.Writer or the passed JSON object.
-func (j *JSONPrinter) Print(jsonObject interface{}, out io.Writer) error {
+func (j *JSONPrinter) Print(jsonObject any, out io.Writer) error {
 	switch {
 	case j.compact:
 		return compactPrint(jsonObject, j.escapeHTML, out)
@@ -56,13 +56,13 @@ func (j *JSONPrinter) Print(jsonObject interface{}, out io.Writer) error {
 	}
 }
 
-func prettyPrint(jsonObj interface{}, escapeHTML bool, out io.Writer) error {
+func prettyPrint(jsonObj any, escapeHTML bool, out io.Writer) error {
 	jsonEncoder := createEncoder(escapeHTML, out)
 	jsonEncoder.SetIndent("", "  ")
 	return jsonEncoder.Encode(jsonObj)
 }
 
-func compactPrint(jsonObj interface{}, escapeHTML bool, out io.Writer) error {
+func compactPrint(jsonObj any, escapeHTML bool, out io.Writer) error {
 	jsonBytes := &bytes.Buffer{}
 	enc := createEncoder(escapeHTML, jsonBytes)
 	if err := enc.Encode(jsonObj); err != nil {

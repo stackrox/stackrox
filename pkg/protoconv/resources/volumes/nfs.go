@@ -18,7 +18,7 @@ func (h *nfs) Type() string {
 	return nfsType
 }
 
-func createNFS(i interface{}) VolumeSource {
+func createNFS(i any) VolumeSource {
 	nfsVolume, ok := i.(*v1.NFSVolumeSource)
 	if !ok {
 		return &Unimplemented{}

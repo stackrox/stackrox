@@ -27,7 +27,7 @@ func enumEquality(columnName string, enumValues []int32) (WhereClause, error) {
 	return WhereClause{
 		Query:  query,
 		Values: values,
-		equivalentGoFunc: func(foundValue interface{}) bool {
+		equivalentGoFunc: func(foundValue any) bool {
 			asInt := int32(foundValue.(int))
 			return slices.Contains(enumValues, asInt)
 		},
@@ -39,7 +39,7 @@ func newEnumQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	qe := qeWithSelectFieldIfNeeded(ctx, &whereClause, func(i interface{}) interface{} {
+	qe := qeWithSelectFieldIfNeeded(ctx, &whereClause, func(i any) any {
 		return enumregistry.Lookup(ctx.field.FieldPath, int32(*(i.(*int))))
 	})
 	qe.enumStringifyFunc = func(i int32) string {
@@ -60,7 +60,7 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s is %s null", columnName, existenceStr),
-			Values: []interface{}{},
+			Values: []any{},
 		}, nil
 	}
 
@@ -112,8 +112,8 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 		}
 
 		var queries []string
-		var values []interface{}
-		var equivalentGoFuncs []func(interface{}) bool
+		var values []any
+		var equivalentGoFuncs []func(any) bool
 		for _, s := range enumValues {
 			entry := createNumericPrefixQuery(columnName, prefix, float64(s))
 			queries = append(queries, entry.Query)
@@ -123,7 +123,7 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 		return WhereClause{
 			Query:  fmt.Sprintf("(%s)", strings.Join(queries, " or ")),
 			Values: values,
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			equivalentGoFunc: func(foundValue any) bool {
 				for _, f := range equivalentGoFuncs {
 					if f(foundValue) {
 						return true

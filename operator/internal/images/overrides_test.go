@@ -23,8 +23,8 @@ func TestToValues(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedVals := chartutil.Values{
-		"central": map[string]interface{}{
-			"image": map[string]interface{}{
+		"central": map[string]any{
+			"image": map[string]any{
 				"fullRef": "override-main",
 			},
 		},

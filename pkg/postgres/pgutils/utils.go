@@ -99,7 +99,7 @@ func NilOrCIDR(value string) *net.IPNet {
 }
 
 // EmptyOrMap allows for map to be stored explicit as an empty object ({}) rather than null.
-func EmptyOrMap[K comparable, V any, M map[K]V](m M) interface{} {
+func EmptyOrMap[K comparable, V any, M map[K]V](m M) any {
 	if m == nil {
 		return make(M)
 	}

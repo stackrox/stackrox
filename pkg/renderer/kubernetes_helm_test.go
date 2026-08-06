@@ -76,7 +76,7 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 		AdmissionControlEnforceOnUpdates: false,
 
 		EnvVars:      nil,
-		FeatureFlags: make(map[string]interface{}),
+		FeatureFlags: make(map[string]any),
 
 		Versions: testutils.GetExampleVersion(t),
 
@@ -173,7 +173,7 @@ func TestRenderSensorTLSSecretsOnly(t *testing.T) {
 	expectedSecrets := []string{"admission-control-tls", "collector-tls", "sensor-tls"}
 	var encounteredSecretNames []string
 	for {
-		spec := make(map[string]interface{})
+		spec := make(map[string]any)
 		err := d.Decode(spec)
 		if errors.Is(err, io.EOF) {
 			break

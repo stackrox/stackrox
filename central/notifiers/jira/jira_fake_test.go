@@ -204,7 +204,7 @@ func testWithFakeJira(t *testing.T, cloud bool) {
 			{
 				Name: "IssueWithPrio",
 				Id:   "25",
-				Fields: map[string]interface{}{
+				Fields: map[string]any{
 					"priority": true,
 				},
 			},

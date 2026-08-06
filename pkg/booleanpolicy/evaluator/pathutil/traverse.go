@@ -7,7 +7,7 @@ import (
 )
 
 // RetrieveValueAtPath takes a path and an object and returns the value found at the path within the object.
-func RetrieveValueAtPath(obj interface{}, path *Path) (value interface{}, err error) {
+func RetrieveValueAtPath(obj any, path *Path) (value any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.Errorf("panic while retrieving value: %v", r)

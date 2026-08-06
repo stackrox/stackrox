@@ -19,7 +19,7 @@ func TestSecuredClusterStaticDefaults(t *testing.T) {
 		},
 		"non-empty defaults": {
 			defaults: &platform.SecuredClusterSpec{Customize: &platform.CustomizeSpec{}},
-			errorCheck: func(t require.TestingT, err error, i ...interface{}) {
+			errorCheck: func(t require.TestingT, err error, i ...any) {
 				require.ErrorContains(t, err, "is not empty")
 			},
 		},

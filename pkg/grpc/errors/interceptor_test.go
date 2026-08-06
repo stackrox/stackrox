@@ -21,33 +21,33 @@ func TestErrorToGrpcCodeInterceptor(t *testing.T) {
 	tests := []struct {
 		name    string
 		handler grpc.UnaryHandler
-		resp    interface{}
+		resp    any
 		err     error
 	}{
 		{
 			name: "Error is nil -> do nothing, just pass through",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "OK", nil
 			},
 			resp: "OK", err: nil,
 		},
 		{
 			name: "Error is already a gRPC status error (w/ status code) -> don't modify, just pass through",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "err", status.Error(codes.Canceled, "error message")
 			},
 			resp: "err", err: status.Error(codes.Canceled, "error message"),
 		},
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "err", errors.Wrap(errox.NotFound, "error message")
 			},
 			resp: "err", err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "err", errors.New("some error")
 			},
 			resp: "err", err: status.Error(codes.Internal, "some error"),
@@ -75,14 +75,14 @@ func TestLogInternalErrorInterceptor(t *testing.T) {
 	}{
 		{
 			name: "internal error",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "", errors.New("some internal error")
 			},
 			logged: true,
 		},
 		{
 			name: "non internal error",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "", status.Error(codes.Canceled, "some other error")
 			},
 			logged: false,
@@ -114,28 +114,28 @@ func TestErrorToGrpcCodeStreamInterceptor(t *testing.T) {
 	}{
 		{
 			name: "Error is nil -> do nothing, just pass through",
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return nil
 			},
 			err: nil,
 		},
 		{
 			name: "Error is already a gRPC status error (w/ status code) -> don't modify, just pass through",
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return status.Error(codes.Canceled, "error message")
 			},
 			err: status.Error(codes.Canceled, "error message"),
 		},
 		{
 			name: "Error is one of types from pkg/errorhelpers (ErrNotFound etc.) -> map to correct gRPC code, preserve error message",
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return errors.Wrap(errox.NotFound, "error message")
 			},
 			err: status.Error(codes.NotFound, errors.Wrap(errox.NotFound, "error message").Error()),
 		},
 		{
 			name: "Error is not a gRPC status error and not a known error type -> set error to internal",
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return errors.New("some error")
 			},
 			err: status.Error(codes.Internal, "some error"),
@@ -158,13 +158,13 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 	tests := []struct {
 		name    string
 		handler grpc.UnaryHandler
-		resp    interface{}
+		resp    any
 		err     error
 		panics  bool
 	}{
 		{
 			name: "Error is nil -> do nothing, just pass through",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "OK", nil
 			},
 			resp: "OK", err: nil,
@@ -172,7 +172,7 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		},
 		{
 			name: "Error is ErrInvariantViolation -> panic",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "err", errox.InvariantViolation
 			},
 			resp: nil, err: nil,
@@ -180,7 +180,7 @@ func TestPanicOnInvariantViolationUnaryInterceptor(t *testing.T) {
 		},
 		{
 			name: "Error is not ErrInvariantViolation -> do nothing, just pass through",
-			handler: func(ctx context.Context, req interface{}) (interface{}, error) {
+			handler: func(ctx context.Context, req any) (any, error) {
 				return "err", errox.NoCredentials
 			},
 			resp: "err", err: errox.NoCredentials,
@@ -214,21 +214,21 @@ func TestPanicOnInvariantViolationStreamInterceptor(t *testing.T) {
 		panics  bool
 	}{
 		"Error is nil -> do nothing, just pass through": {
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return nil
 			},
 			err:    nil,
 			panics: false,
 		},
 		"Error is ErrInvariantViolation -> panic": {
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return errox.InvariantViolation.CausedBy("some explanation")
 			},
 			err:    nil,
 			panics: true,
 		},
 		"Error is not ErrInvariantViolation -> do nothing, just pass through": {
-			handler: func(srv interface{}, stream grpc.ServerStream) error {
+			handler: func(srv any, stream grpc.ServerStream) error {
 				return errox.NotFound
 			},
 			err:    errox.NotFound,

@@ -6,7 +6,7 @@ import "github.com/stackrox/rox/migrator/log"
 type LogWrapper struct{}
 
 // Debugf is a helper function to write debug message to stderr
-func (l *LogWrapper) Debugf(format string, args ...interface{}) {
+func (l *LogWrapper) Debugf(format string, args ...any) {
 	log.WriteToStderrf(format, args...)
 }
 
@@ -16,6 +16,6 @@ func (l *LogWrapper) WriteToStderr(s string) {
 }
 
 // WriteToStderrf writes to stderr with a format string.
-func (l *LogWrapper) WriteToStderrf(format string, args ...interface{}) {
+func (l *LogWrapper) WriteToStderrf(format string, args ...any) {
 	log.WriteToStderrf(format, args...)
 }

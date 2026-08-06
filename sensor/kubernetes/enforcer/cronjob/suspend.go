@@ -23,13 +23,13 @@ const (
 func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string) ([]byte, metav1.PatchOptions, error) {
 	forcePatch := true
 
-	patch := map[string]interface{}{
-		"metadata": map[string]interface{}{
+	patch := map[string]any{
+		"metadata": map[string]any{
 			"name": deploymentInfo.GetDeploymentName(),
 		},
 		"kind":       deploymentInfo.GetDeploymentType(),
 		"apiVersion": apiVersion,
-		"spec": map[string]interface{}{
+		"spec": map[string]any{
 			"suspend": true,
 		},
 	}

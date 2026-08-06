@@ -98,7 +98,7 @@ func (s *storeImpl) insertIntoImages(
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		cloned.GetId(),
 		cloned.GetDigest(),
 		cloned.GetName().GetRegistry(),
@@ -235,7 +235,7 @@ func getPartsAsSlice(parts common.ImagePartsV2) *imagePartsAsSlice {
 }
 
 func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.ImageLayer, imageID string, idx int) error {
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		imageID,
 		idx,
@@ -258,7 +258,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		return err
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -281,7 +281,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),
@@ -311,7 +311,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 
 func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimestamp *timestamppb.Timestamp, cveTimeMap map[string]*timestamppb.Timestamp, objs ...*storage.ImageCVEV2) error {
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -354,7 +354,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimesta
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetId(),
 			obj.GetImageIdV2(),
 			obj.GetCveBaseInfo().GetCve(),
@@ -1051,7 +1051,7 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		obj.GetId(),
 		obj.GetImageIdV2(),
 		obj.GetCveBaseInfo().GetCve(),

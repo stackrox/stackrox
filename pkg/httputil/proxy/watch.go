@@ -15,7 +15,7 @@ type reloadProxyConfigHandler struct {
 	setEnv  bool
 }
 
-func (r *reloadProxyConfigHandler) OnChange(dir string) (interface{}, error) {
+func (r *reloadProxyConfigHandler) OnChange(dir string) (any, error) {
 	var out proxyConfig
 	configBytes, err := os.ReadFile(filepath.Join(dir, r.cfgFile))
 	if err != nil {
@@ -35,7 +35,7 @@ func (r *reloadProxyConfigHandler) OnChange(dir string) (interface{}, error) {
 	return out.Compile(initialEnvCfg), nil
 }
 
-func (r *reloadProxyConfigHandler) OnStableUpdate(val interface{}, err error) {
+func (r *reloadProxyConfigHandler) OnStableUpdate(val any, err error) {
 	if err != nil {
 		log.Errorf("Error reading proxy config file: %v. Not modifying proxy config.", err)
 		return

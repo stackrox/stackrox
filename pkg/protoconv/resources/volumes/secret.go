@@ -18,7 +18,7 @@ func (h *secret) Type() string {
 	return secretType
 }
 
-func createSecret(i interface{}) VolumeSource {
+func createSecret(i any) VolumeSource {
 	secretVolume, ok := i.(*v1.SecretVolumeSource)
 	if !ok {
 		return &Unimplemented{}

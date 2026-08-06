@@ -477,7 +477,7 @@ func (c *cachedStore[T, PT]) isWriteAllowed(ctx context.Context, obj PT) bool {
 
 func (c *cachedStore[T, PT]) isActionAllowed(ctx context.Context, action storage.Access, obj PT) bool {
 	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(action).Resource(c.targetResource)
-	var interfaceObj interface{} = obj
+	var interfaceObj any = obj
 	switch c.targetResource.GetScope() {
 	case permissions.NamespaceScope:
 		switch data := interfaceObj.(type) {

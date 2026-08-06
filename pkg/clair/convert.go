@@ -61,7 +61,7 @@ func SeverityToStorageSeverity(severity string) storage.VulnerabilitySeverity {
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
 func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerability {
-	var vulnMetadataMap interface{}
+	var vulnMetadataMap any
 	var link string
 	if metadata, ok := v.Metadata[clientMetadata.NVD]; ok {
 		vulnMetadataMap = metadata

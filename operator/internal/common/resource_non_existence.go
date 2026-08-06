@@ -38,7 +38,7 @@ func VerifyResourceNonExistence(ctx context.Context, client ctrlClient.Reader, g
 // Unfortunately we cannot simply check for the presence of the 'status' sub-resource, because the problematic helm-operator code, which does not
 // include the CR kind in its keying for the Helm release, also causes the 'status.conditions' of two colliding CRs to be cross-contaminated.
 func CustomResourceAlreadyReconciled(u *unstructured.Unstructured) bool {
-	status, ok := u.Object["status"].(map[string]interface{})
+	status, ok := u.Object["status"].(map[string]any)
 	if !ok {
 		return false
 	}

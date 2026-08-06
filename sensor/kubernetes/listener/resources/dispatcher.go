@@ -28,7 +28,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Dispatcher interface {
-	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent
+	ProcessEvent(obj, oldObj any, action central.ResourceAction) *component.ResourceEvent
 }
 
 // DispatcherRegistry provides dispatchers to use.
@@ -161,11 +161,11 @@ type InformerK8sMsg struct {
 	ObjectType   string
 	Action       string
 	Timestamp    int64
-	Payload      interface{}
+	Payload      any
 	EventsOutput []string
 }
 
-func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (m dumpingDispatcher) ProcessEvent(obj, oldObj any, action central.ResourceAction) *component.ResourceEvent {
 	now := time.Now().Unix()
 	dispType := strings.Trim(fmt.Sprintf("%T", obj), "*")
 	events := m.Dispatcher.ProcessEvent(obj, oldObj, action)
@@ -215,7 +215,7 @@ type metricDispatcher struct {
 	Dispatcher
 }
 
-func (m metricDispatcher) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (m metricDispatcher) ProcessEvent(obj, oldObj any, action central.ResourceAction) *component.ResourceEvent {
 	start := time.Now().UnixNano()
 	dispatcher := strings.Trim(fmt.Sprintf("%T", obj), "*")
 

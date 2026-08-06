@@ -13,11 +13,11 @@ func TestStringQuery(t *testing.T) {
 	cases := []struct {
 		value               string
 		expectedWhereClause string
-		expectedValues      []interface{}
+		expectedValues      []any
 		expectErr           bool
 	}{
-		{value: "test", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"test"}},
-		{value: "", expectedWhereClause: "blah = $$", expectedValues: []interface{}{""}},
+		{value: "test", expectedWhereClause: "blah = $$", expectedValues: []any{"test"}},
+		{value: "", expectedWhereClause: "blah = $$", expectedValues: []any{""}},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.value, func(t *testing.T) {

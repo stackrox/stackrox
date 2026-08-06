@@ -6,7 +6,7 @@ type errDeduplicatingHandler struct {
 	lastWatchErr string
 }
 
-func (h *errDeduplicatingHandler) OnStableUpdate(val interface{}, err error) {
+func (h *errDeduplicatingHandler) OnStableUpdate(val any, err error) {
 	h.lastWatchErr = ""
 	h.Handler.OnStableUpdate(val, err)
 }

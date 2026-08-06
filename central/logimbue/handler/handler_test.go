@@ -18,7 +18,7 @@ type logMatcher struct {
 	x string
 }
 
-func (e logMatcher) Matches(x interface{}) bool {
+func (e logMatcher) Matches(x any) bool {
 	return e.x == string(x.(*storage.LogImbue).GetLog())
 }
 

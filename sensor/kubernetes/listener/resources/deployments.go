@@ -49,7 +49,7 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 }
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) *component.ResourceEvent {
+func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj any, action central.ResourceAction) *component.ResourceEvent {
 	// Check owner references and build graph
 	// Every single object should implement this interface
 	metaObj, ok := obj.(metaV1.Object)
@@ -119,7 +119,7 @@ func newDeploymentHandler(
 	}
 }
 
-func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) *component.ResourceEvent {
+func (d *deploymentHandler) processWithType(obj, oldObj any, action central.ResourceAction, deploymentType string) *component.ResourceEvent {
 	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.clusterID, d.podLister, d.namespaceStore,
 		d.hierarchy, d.config.GetConfig().GetRegistryOverride(), d.orchestratorNamespaces)
 	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
@@ -280,7 +280,7 @@ func (d *deploymentHandler) getImageIntegrationEvent(registry string) *central.S
 
 // maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
 // We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
-func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction, rootEvent *component.ResourceEvent) {
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj any, action central.ResourceAction, rootEvent *component.ResourceEvent) {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
 		return

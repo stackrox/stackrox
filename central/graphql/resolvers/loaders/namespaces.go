@@ -16,7 +16,7 @@ import (
 var namespaceLoaderType = reflect.TypeFor[storage.NamespaceMetadata]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeFor[storage.NamespaceMetadata](), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.NamespaceMetadata](), func() any {
 		return NewNamespaceLoader(datastore.Singleton())
 	})
 }

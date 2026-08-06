@@ -42,7 +42,7 @@ func TestTraverse(t *testing.T) {
 	}
 	for _, testCase := range []struct {
 		path          *Path
-		expectedValue interface{}
+		expectedValue any
 		expectedErr   bool
 	}{
 		{

@@ -43,7 +43,7 @@ func ChainContextUpdaters(updaters ...ContextUpdater) ContextUpdater {
 // context.
 func StreamServerInterceptor(updaters ...ContextUpdater) grpc.StreamServerInterceptor {
 	updater := ChainContextUpdaters(updaters...)
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		newCtx, err := updater(ss.Context())
 		if err != nil {
 			return err
@@ -57,7 +57,7 @@ func StreamServerInterceptor(updaters ...ContextUpdater) grpc.StreamServerInterc
 // context.
 func UnaryServerInterceptor(updaters ...ContextUpdater) grpc.UnaryServerInterceptor {
 	updater := ChainContextUpdaters(updaters...)
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		newCtx, err := updater(ctx)
 		if err != nil {
 			return nil, err
