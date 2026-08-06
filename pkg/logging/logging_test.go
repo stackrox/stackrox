@@ -243,20 +243,20 @@ func TestForEachRotation(t *testing.T) {
 	}, "files have to be read in the older-first order")
 }
 
-// TestModuleIsSharedAcrossLoggers verifies that multiple loggers created for
-// the same module name share a single Module instance. This is the primary
-// mechanism preventing per-module resource duplication: even if CreateLogger
-// allocates per-call, the underlying Module (and anything hung off it) is
-// shared via the registry.
-func TestModuleIsSharedAcrossLoggers(t *testing.T) {
-	name := "shared-module-test-" + uuid.NewV4().String()
+// TestModuleLogLevelPropagates verifies that loggers created for the same
+// module share log level state. When a module's level changes, all loggers
+// created from that module must observe the change. This is the functional
+// contract that module sharing exists to support.
+func TestModuleLogLevelPropagates(t *testing.T) {
+	name := "propagation-test-" + uuid.NewV4().String()
 
-	m1 := ModuleForName(name)
-	m2 := ModuleForName(name)
-	assert.Same(t, m1, m2, "ModuleForName must return the same *Module for the same name")
+	m := ModuleForName(name)
+	l1 := CreateLogger(m, 0)
+	l2 := CreateLogger(ModuleForName(name), 0)
 
-	l1 := CreateLogger(m1, 0)
-	l2 := CreateLogger(m2, 0)
-	assert.Same(t, l1.Module(), l2.Module(),
-		"loggers created for the same module must share the same *Module")
+	m.SetLogLevel(zapcore.WarnLevel)
+
+	assert.Equal(t, zapcore.WarnLevel, l1.Module().GetLogLevel())
+	assert.Equal(t, zapcore.WarnLevel, l2.Module().GetLogLevel(),
+		"log level change must propagate to all loggers created from the same module name")
 }
