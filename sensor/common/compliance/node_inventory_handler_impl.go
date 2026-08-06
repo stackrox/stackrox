@@ -49,7 +49,9 @@ type nodeInventoryHandlerImpl struct {
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// ch2Central is the same channel exposed read-only as toCentral; kept as a field so both
-	// the legacy select loop (run()) and the PubSub event handlers can write to it.
+	// the legacy select loop (run()) and the PubSub event handlers can write to it. It is never
+	// closed: PubSub callbacks can still be invoked after Stop() (the dispatcher has no
+	// per-consumer unregistration), and writing to it must stay safe for the process lifetime.
 	ch2Central       chan *message.ExpiringMessage
 	toCompliance     chan common.MessageToComplianceWithAddress
 	nodeMatcher      NodeIDMatcher
@@ -259,14 +261,12 @@ func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeI
 	return nil
 }
 
-// run handles the messages from Compliance and forwards them to Central
-// This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
+// run handles the messages from Compliance and forwards them to Central. It is one of possibly
+// several writers into the toCentral channel (PubSub event handlers are the others); it never
+// closes that channel since it cannot guarantee no PubSub handler will write after it returns.
 func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 	go func() {
-		defer func() {
-			c.stopper.Flow().ReportStopped()
-			close(c.ch2Central)
-		}()
+		defer c.stopper.Flow().ReportStopped()
 		log.Debugf("NodeInventory/NodeIndex handler is running")
 		for {
 			select {
@@ -474,36 +474,34 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	}
 	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
 
+	irWrapperFunc := noop
+	arch := c.archCache[indexWrap.NodeName]
+	if isRHCOS {
+		if _, ok := c.archCache[indexWrap.NodeName]; !ok {
+			arch = extractArch(indexWrap.IndexReport)
+			c.archCache[indexWrap.NodeName] = arch
+		}
+		log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+		irWrapperFunc = attachRPMtoRHCOS
+	}
+
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	default:
-		defer func() {
-			log.Debugf("Sent IndexReport to Central")
-			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
-		}()
-		irWrapperFunc := noop
-		arch := c.archCache[indexWrap.NodeName]
-		if isRHCOS {
-			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
-				arch = extractArch(indexWrap.IndexReport)
-				c.archCache[indexWrap.NodeName] = arch
-			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
-			irWrapperFunc = attachRPMtoRHCOS
-		}
-		toC <- message.New(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id: indexWrap.NodeID,
-					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
-					},
+	case toC <- message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id: indexWrap.NodeID,
+				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+				// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
+				Resource: &central.SensorEvent_IndexReport{
+					IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
 				},
 			},
-		})
+		},
+	}):
+		log.Debugf("Sent IndexReport to Central")
+		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
 }
 

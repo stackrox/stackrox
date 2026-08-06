@@ -70,6 +70,45 @@ func (s *NodeInventoryHandlerTestSuite) TestPubSubNodeInventoryAndIndexReportDel
 	}
 }
 
+// TestPubSubDeliveryAfterStopDoesNotPanic guards against a regression where PubSub events
+// delivered after Stop() write to a channel run() already closed. The dispatcher has no
+// per-consumer unregistration, so callbacks can still fire post-Stop(); this must be tolerated
+// rather than panicking or hanging. Run with -race.
+func (s *NodeInventoryHandlerTestSuite) TestPubSubDeliveryAfterStopDoesNotPanic() {
+	t := s.T()
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	dispatcher := newTestNodeInventoryHandlerDispatcher(t)
+	defer dispatcher.Stop()
+
+	ch := make(chan *storage.NodeInventory)
+	defer close(ch)
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{}, dispatcher)
+	s.Require().NoError(handler.Start())
+	handler.Notify(common.SensorComponentEventCentralReachable)
+
+	handler.Stop()
+	s.NoError(handler.Stopped().Wait())
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		require.NoError(t, dispatcher.Publish(&NodeInventoryEvent{Inventory: fakeNodeInventory("node1")}))
+		require.NoError(t, dispatcher.Publish(&IndexReportWrapEvent{Wrap: &index.IndexReportWrap{
+			NodeName:    "node1",
+			IndexReport: fakeNodeIndex("x86_64"),
+		}}))
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		s.FailNow("timed out publishing events after Stop(); a callback is likely blocked sending on ch2Central")
+	}
+}
+
 func (s *NodeInventoryHandlerTestSuite) TestHandleNodeInventoryEventWrongType() {
 	ch := make(chan *storage.NodeInventory)
 	defer close(ch)

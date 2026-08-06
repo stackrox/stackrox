@@ -1,6 +1,8 @@
 package compliance
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
@@ -28,6 +30,9 @@ type Multiplexer struct {
 	// Node Inventory Handler); it is folded into the same fan-in mix as any legacy ComplianceC()
 	// channel, so producers still on raw channels (eg. the VM Handler) keep working unchanged.
 	pubSubIn chan common.MessageToComplianceWithAddress
+	// cancel stops the underlying channelmultiplexer's fan-in goroutines; without it Stop() would
+	// leave them running forever.
+	cancel context.CancelFunc
 }
 
 func (c *Multiplexer) Name() string {
@@ -41,12 +46,14 @@ func (c *Multiplexer) Stopped() concurrency.ReadOnlyErrorSignal {
 
 // NewMultiplexer creates a Multiplexer of type T, wrapped up as a sensor component
 func NewMultiplexer(pubSubDispatcher common.PubSubDispatcher) *Multiplexer {
+	ctx, cancel := context.WithCancel(context.Background())
 	multiplexer := Multiplexer{
-		mp:               *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](),
+		mp:               *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](channelmultiplexer.WithContext[common.MessageToComplianceWithAddress](ctx)),
 		components:       []common.ComplianceComponent{},
 		stopper:          concurrency.NewStopper(),
 		pubSubDispatcher: pubSubDispatcher,
 		pubSubIn:         make(chan common.MessageToComplianceWithAddress),
+		cancel:           cancel,
 	}
 	return &multiplexer
 }
@@ -99,6 +106,7 @@ func (c *Multiplexer) handleComplianceAckEvent(event pubsub.Event) error {
 // Stop stops the component
 func (c *Multiplexer) Stop() {
 	c.stopper.Client().Stop()
+	c.cancel()
 }
 
 // Capabilities is unimplemented, part of the component interface
