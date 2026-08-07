@@ -3,7 +3,7 @@ import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
 import { getSensorCompatibilityInfo } from '../cluster.helpers';
 
-type CompatibilityZone = {
+export type CompatibilityZone = {
     width: number;
     color: string;
     tooltip: string;
@@ -11,7 +11,7 @@ type CompatibilityZone = {
 
 type CompatibilityDirection = 'behind' | 'matched' | 'ahead';
 
-type VersionRangeData = {
+export type VersionRangeData = {
     zones: CompatibilityZone[];
     behindVersions: string[];
     matchedVersion: string;
@@ -139,7 +139,7 @@ function buildZones(compatibleVersions: string[], centralIndex: number): Compati
     return zones;
 }
 
-function computeVersionRangeData(
+export function computeVersionRangeData(
     compatibleVersions: string[],
     sensorVersion: string,
     centralVersion: string,
