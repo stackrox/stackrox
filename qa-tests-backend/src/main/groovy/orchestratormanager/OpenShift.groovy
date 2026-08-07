@@ -51,23 +51,25 @@ class OpenShift extends Kubernetes {
 
         provisionDefaultServiceAccount(ns)
 
+        String sccName = "anyuid"
+        if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
+            log.debug "Using a non default SCC"
+            sccName = "qatest-anyuid"
+        }
         try {
-            String sccName = "anyuid"
-            if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
-                log.debug "Using a non default SCC"
-                sccName = "qatest-anyuid"
+            SecurityContextConstraints scc = oClient.securityContextConstraints().withName(sccName).get()
+            if (scc == null) {
+                log.error "SCC '${sccName}' not found on this cluster"
+                return
             }
-            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
-            if (anyuid != null &&
-                    (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
-                            !anyuid.allowHostNetwork ||
-                            !anyuid.allowHostDirVolumePlugin ||
-                            !anyuid.allowHostPorts
-                    )) {
-                log.debug "Adding system:serviceaccount:${ns}:default to ${sccName} user list"
-                anyuid.with {
-                    // (Note: + string concatenation here to avoid json unmarshal errors
-                    users.addAll(["system:serviceaccount:" + ns + ":default"])
+            String saUser = "system:serviceaccount:" + ns + ":default"
+            if (!scc.users.contains(saUser) ||
+                    !scc.allowHostNetwork ||
+                    !scc.allowHostDirVolumePlugin ||
+                    !scc.allowHostPorts) {
+                log.info "Adding ${saUser} to ${sccName} SCC"
+                scc.with {
+                    users.addAll([saUser])
                     setAllowHostNetwork(true)
                     setAllowHostDirVolumePlugin(true)
                     setAllowHostPorts(true)
@@ -76,11 +78,30 @@ class OpenShift extends Kubernetes {
                     setAllowedCapabilities(["*"])
                     setAllowedUnsafeSysctls(["*"])
                 }
-                oClient.securityContextConstraints().createOrReplace(anyuid)
+                oClient.securityContextConstraints().createOrReplace(scc)
             }
         } catch (Exception e) {
-            log.warn("could not check if namespace exists", e)
+            log.error "Failed to configure SCC '${sccName}' for namespace ${ns}", e
+            throw e
         }
+
+        verifySccApplied(ns, sccName)
+    }
+
+    private void verifySccApplied(String ns, String sccName) {
+        int maxAttempts = 10
+        for (int i = 0; i < maxAttempts; i++) {
+            SecurityContextConstraints scc = oClient.securityContextConstraints().withName(sccName).get()
+            String saUser = "system:serviceaccount:" + ns + ":default"
+            if (scc != null && scc.users.contains(saUser)) {
+                log.info "Verified SCC '${sccName}' includes ${saUser} (attempt ${i + 1})"
+                return
+            }
+            log.warn "SCC '${sccName}' does not yet include ${saUser}, retrying (${i + 1}/${maxAttempts})"
+            sleep(1000)
+        }
+        log.error "SCC '${sccName}' was not applied to namespace ${ns} after ${maxAttempts} attempts"
+        throw new RuntimeException("SCC '${sccName}' verification failed for namespace ${ns}")
     }
 
     /*
