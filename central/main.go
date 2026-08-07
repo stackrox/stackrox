@@ -111,7 +111,6 @@ import (
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
 	"github.com/stackrox/rox/central/jwt"
-	lightspeedService "github.com/stackrox/rox/central/lightspeed/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
@@ -508,10 +507,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 
 	if features.BaseImageDetection.Enabled() {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
-	}
-
-	if features.LightspeedRiskSummary.Enabled() {
-		servicesToRegister = append(servicesToRegister, lightspeedService.Singleton())
 	}
 
 	if features.OCPConsoleIntegration.Enabled() {
