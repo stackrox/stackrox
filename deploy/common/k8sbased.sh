@@ -19,19 +19,20 @@ function inject_db_node_placement {
             echo "  Skipping ${manifest} (not found)"
             continue
         fi
+        if ! grep -q 'kind: Deployment' "${manifest}"; then
+            echo "  Skipping ${manifest} (not a Deployment)"
+            continue
+        fi
         echo "  Patching ${manifest}"
-        python3 -c "
-import yaml, sys
-key, value = sys.argv[1], sys.argv[2]
-with open(sys.argv[3]) as f:
-    doc = yaml.safe_load(f)
-spec = doc['spec']['template']['spec']
-spec.setdefault('nodeSelector', {})[key] = value
-tol = {'key': key, 'operator': 'Equal', 'value': value, 'effect': 'NoSchedule'}
-spec.setdefault('tolerations', []).append(tol)
-with open(sys.argv[3], 'w') as f:
-    yaml.dump(doc, f, default_flow_style=False)
-" "${key}" "${value}" "${manifest}"
+        sed -i "/^    spec:/{a\\
+\\      nodeSelector:\\
+\\        ${key}: ${value}\\
+\\      tolerations:\\
+\\      - key: ${key}\\
+\\        operator: Equal\\
+\\        value: ${value}\\
+\\        effect: NoSchedule
+}" "${manifest}"
     done
 }
 
