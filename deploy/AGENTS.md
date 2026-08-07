@@ -2,6 +2,10 @@
 
 This file describes the "roxie" deployment tool for deploying StackRox/ACS.
 
+For the full picture of production installation methods (operator, Helm, manifest),
+their deprecation status, and the consolidation plan, see `INSTALL_METHODS.md` in
+the repository root.
+
 The tool roxie (https://github.com/stackrox/roxie) is the primary deployment tool
 for StackRox/ACS development.
 It should be leveraged for requests to deploy StackRox/ACS by default and you,
