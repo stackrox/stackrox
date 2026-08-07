@@ -260,8 +260,9 @@ add_spot_node_pool() {
     local image_type="$4"
 
     local spot_nodes=$((num_nodes - 1))
-    if (( spot_nodes < 1 )); then
-        spot_nodes=1
+    if (( spot_nodes == 0 )); then
+        info "Skipping spot node pool because no workload nodes were requested"
+        return
     fi
 
     info "Adding spot node pool with ${spot_nodes} nodes"
