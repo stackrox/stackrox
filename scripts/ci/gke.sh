@@ -279,6 +279,9 @@ add_spot_node_pool() {
 }
 
 export_db_node_selector_values() {
+    ci_export ROX_DB_NODE_SELECTOR_KEY "stackrox-node-role"
+    ci_export ROX_DB_NODE_SELECTOR_VALUE "db"
+
     local values_file="/tmp/spot-db-node-selector-values.yaml"
     cat > "${values_file}" <<'EOF'
 central:
@@ -301,7 +304,7 @@ scannerV4:
         effect: NoSchedule
 EOF
     ci_export ROX_CENTRAL_EXTRA_HELM_VALUES_FILE "${values_file}"
-    info "Exported DB nodeSelector/tolerations values to ${values_file}"
+    info "Exported DB node placement config (nodeSelector: stackrox-node-role=db)"
 }
 
 add_a_maintenance_exclusion() {

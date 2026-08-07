@@ -19,12 +19,12 @@ deploy_external_postgres() {
     kubectl create namespace database
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
-    if [[ "${GKE_SPOT:-false}" == "true" ]]; then
-        info "Pinning external postgres to non-spot node (stackrox-node-role=db)"
+    if [[ -n "${ROX_DB_NODE_SELECTOR_KEY:-}" ]]; then
+        info "Pinning external postgres to non-spot node (${ROX_DB_NODE_SELECTOR_KEY}=${ROX_DB_NODE_SELECTOR_VALUE})"
         kubectl -n database patch statefulset postgres --type=strategic -p '{
           "spec": {"template": {"spec": {
-            "nodeSelector": {"stackrox-node-role": "db"},
-            "tolerations": [{"key": "stackrox-node-role", "operator": "Equal", "value": "db", "effect": "NoSchedule"}]
+            "nodeSelector": {"'"${ROX_DB_NODE_SELECTOR_KEY}"'": "'"${ROX_DB_NODE_SELECTOR_VALUE}"'"},
+            "tolerations": [{"key": "'"${ROX_DB_NODE_SELECTOR_KEY}"'", "operator": "Equal", "value": "'"${ROX_DB_NODE_SELECTOR_VALUE}"'", "effect": "NoSchedule"}]
           }}}
         }'
     fi

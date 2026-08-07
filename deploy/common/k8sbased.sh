@@ -5,6 +5,36 @@ function realpath {
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
 }
 
+function inject_db_node_placement {
+    local dir="$1"
+    local key="${ROX_DB_NODE_SELECTOR_KEY}"
+    local value="${ROX_DB_NODE_SELECTOR_VALUE}"
+    echo "Injecting nodeSelector ${key}=${value} and toleration into DB deployment manifests"
+    local db_manifests=(
+        "${dir}/central/01-central-12-central-db.yaml"
+        "${dir}/scanner-v4/02-scanner-v4-07-db-deployment.yaml"
+    )
+    for manifest in "${db_manifests[@]}"; do
+        if [[ ! -f "${manifest}" ]]; then
+            echo "  Skipping ${manifest} (not found)"
+            continue
+        fi
+        echo "  Patching ${manifest}"
+        python3 -c "
+import yaml, sys
+key, value = sys.argv[1], sys.argv[2]
+with open(sys.argv[3]) as f:
+    doc = yaml.safe_load(f)
+spec = doc['spec']['template']['spec']
+spec.setdefault('nodeSelector', {})[key] = value
+tol = {'key': key, 'operator': 'Equal', 'value': value, 'effect': 'NoSchedule'}
+spec.setdefault('tolerations', []).append(tol)
+with open(sys.argv[3], 'w') as f:
+    yaml.dump(doc, f, default_flow_style=False)
+" "${key}" "${value}" "${manifest}"
+    done
+}
+
 function launch_service {
     local dir="$1"
     local service="$2"
@@ -500,6 +530,9 @@ function launch_central {
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
+      if [[ -n "${ROX_DB_NODE_SELECTOR_KEY:-}" ]]; then
+        inject_db_node_placement "${unzip_dir}"
+      fi
       launch_service "${unzip_dir}" central
       echo
 
