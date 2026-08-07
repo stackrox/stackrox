@@ -26,6 +26,15 @@ import (
 // Claircore or StackRox updater names.
 const vulnDataSourceDelimiter = "::"
 
+// osvUpdaterPrefix and redHatVEXUpdaterName mirror the identically-named
+// constants in pkg/scannerv4/mappers/mappers.go. They are re-declared here,
+// rather than imported, because this package does not otherwise depend on
+// the mappers package.
+const (
+	osvUpdaterPrefix     = "osv/"
+	redHatVEXUpdaterName = "rhel-vex"
+)
+
 // digitSegment matches contiguous runs of digits for numeric segment comparisons.
 var digitSegment = regexp.MustCompile(`\d+`)
 
@@ -33,6 +42,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
 		filterNotAffectedVulnerabilities(report, layerSHAToIndex)
+	}
+	if features.ScannerV4SuppressOSVWithRedHatVEX.Enabled() {
+		suppressOSVWithRedHatVEX(report, layerSHAToIndex)
 	}
 
 	scan := &storage.ImageScan{
@@ -639,6 +651,113 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 
 			if suppressed {
 				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+			} else {
+				filtered = append(filtered, vulnID)
+			}
+		}
+
+		if len(filtered) == 0 {
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+		} else {
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+		}
+	}
+}
+
+// suppressOSVWithRedHatVEX removes osv/*-sourced vulnerabilities from
+// PackageVulnerabilities when a Red Hat VEX (rhel-vex updater) affirmative
+// vulnerability exists for the same CVE (matched via shared aliases) at or
+// above the OSV package's layer. Red Hat VEX affirmative matches for
+// container products land on the RHCC product-identity package, never on
+// the embedded language package OSV separately matches, so this uses the
+// same layer/alias-boundary mechanism as filterNotAffectedVulnerabilities,
+// except the boundary source is not restricted to AncestryPackage entries:
+// neither rhcc.Matcher.Filter() nor claircore's matcher discriminate matches
+// by package Kind, so a rhel-vex vuln can land on a source/binary/ancestry
+// package alike.
+func suppressOSVWithRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
+	if len(report.GetPackageVulnerabilities()) == 0 {
+		return
+	}
+
+	// Find every package with an affirmative rhel-vex vuln; each establishes
+	// a boundary at that package's own layer.
+	type boundary struct {
+		layerIndex int32
+		aliasKeys  set.StringSet
+	}
+	var boundaries []boundary
+
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		layerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
+			continue
+		}
+		layerIdx, ok := layerSHAToIndex[layerSHA]
+		if !ok {
+			continue
+		}
+
+		aliasKeys := set.NewStringSet()
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln.GetUpdater() != redHatVEXUpdaterName {
+				continue
+			}
+			for _, alias := range vuln.GetAliases() {
+				aliasKeys.Add(aliasKey(alias))
+			}
+		}
+
+		if aliasKeys.Cardinality() > 0 {
+			boundaries = append(boundaries, boundary{
+				layerIndex: layerIdx,
+				aliasKeys:  aliasKeys,
+			})
+		}
+	}
+
+	if len(boundaries) == 0 {
+		return
+	}
+
+	// Suppress osv/* vulns covered by a same-or-lower-layer boundary.
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		pkgLayerSHA, ok := getPackageLayerSHA(report, pkgID)
+		if !ok {
+			continue
+		}
+		pkgLayerIdx, ok := layerSHAToIndex[pkgLayerSHA]
+		if !ok {
+			continue
+		}
+
+		var filtered []string
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil || !strings.HasPrefix(vuln.GetUpdater(), osvUpdaterPrefix) {
+				filtered = append(filtered, vulnID)
+				continue
+			}
+
+			suppressed := false
+			for _, b := range boundaries {
+				if pkgLayerIdx > b.layerIndex {
+					continue
+				}
+				for _, alias := range vuln.GetAliases() {
+					if b.aliasKeys.Contains(aliasKey(alias)) {
+						suppressed = true
+						break
+					}
+				}
+				if suppressed {
+					break
+				}
+			}
+
+			if suppressed {
+				log.Debugf("Suppressing OSV vuln %q for package %q in favor of Red Hat VEX", vuln.GetName(), pkgID)
 			} else {
 				filtered = append(filtered, vulnID)
 			}
