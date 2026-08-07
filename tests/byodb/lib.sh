@@ -19,6 +19,16 @@ deploy_external_postgres() {
     kubectl create namespace database
     envsubst < ./tests/byodb/simple-postgres.yaml | kubectl apply -f -
 
+    if [[ "${GKE_SPOT:-false}" == "true" ]]; then
+        info "Pinning external postgres to non-spot node (stackrox-node-role=db)"
+        kubectl -n database patch statefulset postgres --type=strategic -p '{
+          "spec": {"template": {"spec": {
+            "nodeSelector": {"stackrox-node-role": "db"},
+            "tolerations": [{"key": "stackrox-node-role", "operator": "Equal", "value": "db", "effect": "NoSchedule"}]
+          }}}
+        }'
+    fi
+
     kubectl wait --for=condition=Ready pod -l app=postgres -n database --timeout=180s
 }
 

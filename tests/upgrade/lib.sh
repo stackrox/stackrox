@@ -96,7 +96,13 @@ deploy_earlier_postgres_central() {
     ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
+    local extra_values_args=()
+    if [[ -n "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE:-}" ]]; then
+        extra_values_args+=(-f "${ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}")
+    fi
+
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
+         "${extra_values_args[@]}" \
          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
          --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \

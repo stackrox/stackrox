@@ -157,10 +157,10 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    SPOT_ARG=
+    local use_spot="false"
     if [[ "${GKE_SPOT:-false}" == "true" ]]; then
-        SPOT_ARG="--spot"
-        echo "Using spot (preemptible) VMs for cost savings"
+        use_spot="true"
+        echo "Using mixed node pools: 1 non-spot node for databases, $((NUM_NODES - 1)) spot nodes for workloads"
     fi
     zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
     success=0
@@ -169,24 +169,41 @@ create_cluster() {
         ci_export ZONE "$zone"
         gcloud config set compute/zone "${zone}"
         status=0
+
+        local cluster_create_args=(
+            --machine-type "${MACHINE_TYPE}"
+            --disk-type=pd-ssd
+            --disk-size="${DISK_SIZE_GB}GB"
+            --create-subnetwork range=/28
+            --cluster-ipv4-cidr=/20
+            --services-ipv4-cidr=/24
+            --enable-ip-alias
+            --enable-network-policy
+            --no-enable-autorepair
+            "${VERSION_ARGS[@]}"
+            --image-type "${GCP_IMAGE_TYPE}"
+            --tags="${tags}"
+            --labels="${labels}"
+        )
+        if [[ -n "${PSP_ARG}" ]]; then
+            cluster_create_args+=("${PSP_ARG}")
+        fi
+
+        if [[ "${use_spot}" == "true" ]]; then
+            # Default pool: 1 non-spot node for database pods.
+            # Tainted so only pods with a matching toleration are scheduled here.
+            cluster_create_args+=(
+                --num-nodes 1
+                --node-labels=stackrox-node-role=db
+                --node-taints=stackrox-node-role=db:NoSchedule
+            )
+        else
+            cluster_create_args+=(--num-nodes "${NUM_NODES}")
+        fi
+
         # shellcheck disable=SC2153
         timeout 830 gcloud beta container clusters create \
-            --machine-type "${MACHINE_TYPE}" \
-            --num-nodes "${NUM_NODES}" \
-            --disk-type=pd-ssd \
-            --disk-size="${DISK_SIZE_GB}GB" \
-            --create-subnetwork range=/28 \
-            --cluster-ipv4-cidr=/20 \
-            --services-ipv4-cidr=/24 \
-            --enable-ip-alias \
-            --enable-network-policy \
-            --no-enable-autorepair \
-            "${VERSION_ARGS[@]}" \
-            --image-type "${GCP_IMAGE_TYPE}" \
-            --tags="${tags}" \
-            --labels="${labels}" \
-            ${PSP_ARG} \
-            ${SPOT_ARG} \
+            "${cluster_create_args[@]}" \
             "${CLUSTER_NAME}" || status="$?"
         if [[ "${status}" == 0 ]]; then
             success=1
@@ -228,7 +245,62 @@ create_cluster() {
         return 1
     fi
 
+    if [[ "${use_spot}" == "true" ]]; then
+        add_spot_node_pool "${NUM_NODES}" "${MACHINE_TYPE}" "${DISK_SIZE_GB}" "${GCP_IMAGE_TYPE}"
+        export_db_node_selector_values
+    fi
+
     add_a_maintenance_exclusion
+}
+
+add_spot_node_pool() {
+    local num_nodes="$1"
+    local machine_type="$2"
+    local disk_size_gb="$3"
+    local image_type="$4"
+
+    local spot_nodes=$((num_nodes - 1))
+    if (( spot_nodes < 1 )); then
+        spot_nodes=1
+    fi
+
+    info "Adding spot node pool with ${spot_nodes} nodes"
+    gcloud beta container node-pools create spot-pool \
+        --cluster "${CLUSTER_NAME}" \
+        --machine-type "${machine_type}" \
+        --num-nodes "${spot_nodes}" \
+        --spot \
+        --disk-type=pd-ssd \
+        --disk-size="${disk_size_gb}GB" \
+        --image-type "${image_type}" \
+        --no-enable-autorepair \
+        --no-enable-autoupgrade
+}
+
+export_db_node_selector_values() {
+    local values_file="/tmp/spot-db-node-selector-values.yaml"
+    cat > "${values_file}" <<'EOF'
+central:
+  db:
+    nodeSelector:
+      stackrox-node-role: db
+    tolerations:
+      - key: stackrox-node-role
+        operator: Equal
+        value: db
+        effect: NoSchedule
+scannerV4:
+  db:
+    nodeSelector:
+      stackrox-node-role: db
+    tolerations:
+      - key: stackrox-node-role
+        operator: Equal
+        value: db
+        effect: NoSchedule
+EOF
+    ci_export ROX_CENTRAL_EXTRA_HELM_VALUES_FILE "${values_file}"
+    info "Exported DB nodeSelector/tolerations values to ${values_file}"
 }
 
 add_a_maintenance_exclusion() {
