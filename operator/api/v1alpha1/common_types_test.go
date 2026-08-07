@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/ptr"
 )
 
 func TestGlobalMonitoring_IsOpenShiftMonitoringDisabled(t *testing.T) {
@@ -43,7 +42,7 @@ func TestGlobalMonitoring_IsOpenShiftMonitoringDisabled(t *testing.T) {
 		"Enabled true": {
 			m: &GlobalMonitoring{
 				OpenShiftMonitoring: &OpenShiftMonitoring{
-					Enabled: ptr.To(true),
+					Enabled: new(true),
 				},
 			},
 			want: false,
@@ -51,7 +50,7 @@ func TestGlobalMonitoring_IsOpenShiftMonitoringDisabled(t *testing.T) {
 		"Enabled false": {
 			m: &GlobalMonitoring{
 				OpenShiftMonitoring: &OpenShiftMonitoring{
-					Enabled: ptr.To(false),
+					Enabled: new(false),
 				},
 			},
 			want: true,
