@@ -59,6 +59,15 @@ retrying_kubectl() {
 export -f retrying_kubectl
 
 # shellcheck disable=SC2120
+log_db_pod_placement() {
+    local ns="${1:-stackrox}"
+    info "=== DB pod node placement ==="
+    kubectl get nodes -o wide --show-labels | grep -E 'NAME|stackrox-node-role' || kubectl get nodes -o wide
+    info "--- Pod-to-node mapping (stackrox namespace) ---"
+    kubectl -n "${ns}" get pods -o wide | grep -E 'NAME|central-db|scanner.*db'
+    info "=== end DB pod placement ==="
+}
+
 deploy_stackrox() {
     local tls_client_certs=${1:-}
     local central_namespace=${2:-stackrox}
@@ -90,6 +99,10 @@ deploy_stackrox() {
 
     if retrying_kubectl </dev/null -n "${central_namespace}" get deployment scanner-v4-indexer >/dev/null 2>&1; then
         wait_for_scanner_V4 "${central_namespace}"
+    fi
+
+    if [[ -n "${ROX_DB_NODE_SELECTOR_KEY:-}" ]]; then
+        log_db_pod_placement "${central_namespace}"
     fi
 
     touch "${STATE_DEPLOYED}"
