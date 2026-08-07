@@ -97,12 +97,6 @@ spec:
     stepSpecs:
     - name: use-trusted-artifact
       computeResources: *ta-resources
-    - name: sbom-syft-generate
-      computeResources:
-        limits:
-          memory: 3Gi
-        requests:
-          memory: 3Gi
   - pipelineTaskName: build-source-image
     podTemplate: *go-memlimit
     stepSpecs:
