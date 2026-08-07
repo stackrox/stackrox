@@ -89,19 +89,39 @@ class OpenShift extends Kubernetes {
     }
 
     private void verifySccApplied(String ns, String sccName) {
+        String probePodName = "scc-probe-" + System.nanoTime()
         int maxAttempts = 10
         for (int i = 0; i < maxAttempts; i++) {
-            SecurityContextConstraints scc = oClient.securityContextConstraints().withName(sccName).get()
-            String saUser = "system:serviceaccount:" + ns + ":default"
-            if (scc != null && scc.users.contains(saUser)) {
-                log.info "Verified SCC '${sccName}' includes ${saUser} (attempt ${i + 1})"
-                return
+            try {
+                def pod = client.pods().inNamespace(ns).createOrReplace(
+                    new io.fabric8.kubernetes.api.model.PodBuilder()
+                        .withNewMetadata().withName(probePodName).endMetadata()
+                        .withNewSpec()
+                            .addNewContainer()
+                                .withName("probe")
+                                .withImage("registry.access.redhat.com/ubi9/ubi-minimal:latest")
+                                .withCommand("true")
+                            .endContainer()
+                            .withRestartPolicy("Never")
+                        .endSpec()
+                        .build()
+                )
+                String assignedScc = pod?.metadata?.annotations?.get("openshift.io/scc") ?: ""
+                client.pods().inNamespace(ns).withName(probePodName).delete()
+                if (assignedScc == sccName) {
+                    log.info "Verified SCC '${sccName}' is active for namespace ${ns} (attempt ${i + 1})"
+                    return
+                }
+                log.warn "Probe pod got SCC '${assignedScc}' instead of '${sccName}', retrying (${i + 1}/${maxAttempts})"
+            } catch (Exception e) {
+                log.warn "SCC probe pod failed: ${e.message}, retrying (${i + 1}/${maxAttempts})"
+                try { client.pods().inNamespace(ns).withName(probePodName).delete() } catch (Exception ignored) {}
             }
-            log.warn "SCC '${sccName}' does not yet include ${saUser}, retrying (${i + 1}/${maxAttempts})"
-            sleep(1000)
+            sleep(2000)
         }
-        log.error "SCC '${sccName}' was not applied to namespace ${ns} after ${maxAttempts} attempts"
-        throw new RuntimeException("SCC '${sccName}' verification failed for namespace ${ns}")
+        log.error "SCC '${sccName}' not effective for namespace ${ns} after ${maxAttempts} probe attempts"
+        throw new RuntimeException("SCC '${sccName}' verification failed for namespace ${ns} - " +
+            "admission controller did not assign the expected SCC to probe pods")
     }
 
     /*
