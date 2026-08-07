@@ -710,20 +710,21 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 		b64CosignSignature, b64CosignSignaturePayload, nil, nil, nil)
 	require.NoError(t, err, "error creating image")
 
-	sigs, hash, err := retrieveVerificationDataFromImage(img)
+	vsigs, hash, err := retrieveVerificationDataFromImage(img)
 	require.NoError(t, err, "should not fail")
 
-	assert.Len(t, sigs, 1, "expected one signature")
-	sig := sigs[0]
-	b64sig, err := sig.Base64Signature()
+	assert.Len(t, vsigs, 1, "expected one signature")
+	vsig := vsigs[0]
+	b64sig, err := vsig.signature.Base64Signature()
 	require.NoError(t, err)
 	assert.Equal(t, b64CosignSignature, b64sig, "expected the base64 values of the signatures to match")
-	payload, err := sig.Payload()
+	payload, err := vsig.signature.Payload()
 	require.NoError(t, err)
 	expectedPayload, err := base64.StdEncoding.DecodeString(b64CosignSignaturePayload)
 	require.NoError(t, err)
 	assert.Equal(t, expectedPayload, payload, "expected the payloads of the signature to match")
 	assert.Equal(t, imgHash, hash.String(), "expected the hash to match the image's hash")
+	assert.Empty(t, vsig.sigstoreBundle)
 }
 
 func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
@@ -752,6 +753,66 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 			assert.ErrorIs(t, err, c.err)
 		})
 	}
+}
+
+func TestRetrieveVerificationDataFromImage_SigstoreBundle(t *testing.T) {
+	imgHash := "sha256:3a4d57227f02243dfc8a2849ec4a116646bed293b9e93cbf9d4a673a28ef6345"
+	bundleJSON := []byte(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
+
+	cimg, err := imgUtils.GenerateImageFromString("docker.io/nginx@" + imgHash)
+	require.NoError(t, err)
+	img := types.ToImage(cimg)
+	img.Signature = &storage.ImageSignature{
+		Signatures: []*storage.Signature{
+			{
+				Signature: &storage.Signature_Cosign{
+					Cosign: &storage.CosignSignature{
+						SigstoreBundle:  bundleJSON,
+						SignatureFormat: storage.CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE,
+					},
+				},
+			},
+		},
+	}
+
+	vsigs, hash, err := retrieveVerificationDataFromImage(img)
+	require.NoError(t, err)
+	assert.Len(t, vsigs, 1)
+	assert.Equal(t, bundleJSON, vsigs[0].sigstoreBundle)
+	assert.Nil(t, vsigs[0].signature)
+	assert.Equal(t, imgHash, hash.String())
+}
+
+func TestRetrieveVerificationDataFromImage_MixedFormats(t *testing.T) {
+	imgHash := "sha256:3a4d57227f02243dfc8a2849ec4a116646bed293b9e93cbf9d4a673a28ef6345"
+	bundleJSON := []byte(`{"mediaType":"application/vnd.dev.sigstore.bundle.v0.3+json"}`)
+
+	img, err := generateImageWithCosignSignature("docker.io/nginx@"+imgHash,
+		"MEUCIDGMmJyxVKGPxvPk/QlRzMSGzcI8pYCy+MB7RTTpegzTAiEArssqWntVN8oJOMV0Aey0zhsNqRmEVQAY"+
+			"ZNkn8hkAnXI=",
+		"eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoL2Q4ZDM4O"+
+			"TJkLTQ4YmQtNDY3MS1hNTQ2LTJlNzBhOTAwYjcwMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmVlODli"+
+			"MDA1MjhmZjRmMDJmMjQwNWU0ZWUyMjE3NDNlYmMzZjhlOGRkMGJmZDVjNGMyMGEyZmEyYWFhN2VkZTMifSwidHlwZSI6ImNvc2lnbiBjb25"+
+			"0YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ==",
+		nil, nil, nil)
+	require.NoError(t, err)
+	// Add a second signature with a sigstore bundle.
+	img.GetSignature().Signatures = append(img.GetSignature().GetSignatures(), &storage.Signature{
+		Signature: &storage.Signature_Cosign{
+			Cosign: &storage.CosignSignature{
+				SigstoreBundle:  bundleJSON,
+				SignatureFormat: storage.CosignSignature_DEAD_SIMPLE_SIGNING_ENVELOPE,
+			},
+		},
+	})
+
+	vsigs, _, err := retrieveVerificationDataFromImage(img)
+	require.NoError(t, err)
+	assert.Len(t, vsigs, 2)
+	assert.NotNil(t, vsigs[0].signature, "first signature should be SimpleSigning")
+	assert.Empty(t, vsigs[0].sigstoreBundle)
+	assert.Nil(t, vsigs[1].signature, "second signature should be bundle-only")
+	assert.Equal(t, bundleJSON, vsigs[1].sigstoreBundle)
 }
 
 func TestEqualRegistryRepository(t *testing.T) {
