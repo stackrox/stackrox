@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/exitcode"
 	"github.com/stackrox/rox/roxctl/maincommand"
 	"github.com/stackrox/rox/roxctl/utils"
 
@@ -31,6 +33,10 @@ func main() {
 	clientconn.SetUserAgent(clientconn.Roxctl)
 
 	if err := c.Execute(); err != nil {
+		var exitErr *exitcode.Error
+		if errors.As(err, &exitErr) {
+			os.Exit(exitErr.Code())
+		}
 		os.Exit(1)
 	}
 }
