@@ -1273,7 +1273,11 @@ class Kubernetes {
                 new Node(
                         uid: it.metadata.uid,
                         name: it.metadata.name,
-                        labels: it.metadata.labels,
+                        // The CI image-prefetcher DaemonSet adds labels to nodes
+                        // asynchronously, after Sensor has already reported them.
+                        labels: it.metadata.labels.findAll { k, v ->
+                            !k.startsWith("image-prefetcher.stackrox.io/")
+                        },
                         annotations: it.metadata.annotations,
                         internalIps: it.status.addresses.findAll { it.type == "InternalIP" }*.address,
                         externalIps: it.status.addresses.findAll { it.type == "ExternalIP" }*.address,
