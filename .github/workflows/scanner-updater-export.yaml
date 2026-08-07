@@ -126,7 +126,7 @@ jobs:
     - name: Download NVD
       if: inputs.source == 'nvd'
       run: |
-        set -eu
+        set -euo pipefail
         url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
         curl --fail --silent --show-error \
           --retry 3 --retry-all-errors --retry-delay 5 \
@@ -144,7 +144,7 @@ jobs:
       env:
         MANUAL_URL: ${{ inputs.manual_url }}
       run: |
-        set -eu
+        set -euo pipefail
         export STACKROX_SCANNER_V4_UPDATER_SOURCES="$UPDATER_SOURCE"
         mkdir -p bundles
         scanner/bin/updater export --manual-url "$MANUAL_URL" bundles
@@ -161,7 +161,7 @@ jobs:
 
     - name: Upload to GCS
       run: |
-        set -eu
+        set -euo pipefail
         src="bundles/${UPDATER_SOURCE}.json.zst"
         if [[ ! -f "$src" ]]; then
             echo "::error::expected output file not found: $src"
