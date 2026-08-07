@@ -18,6 +18,7 @@ import { HelpIcon } from '@patternfly/react-icons';
 
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
 import { getSensorCompatibilityInfo } from '../cluster.helpers';
+import SensorVersionRangeChart from './SensorVersionRangeChart';
 
 // TODO: add documentation link for guidance text
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -135,7 +136,19 @@ function SensorCompatibilityPanel({
                 header="Sensor version"
                 bodyItems={{
                     version: ['Version', sensorVersion],
-                    range: ['Version range', null],
+                    range: [
+                        'Version range',
+                        compatibleVersions.length > 0 &&
+                        compatibility &&
+                        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' ? (
+                            <SensorVersionRangeChart
+                                compatibleVersions={compatibleVersions}
+                                sensorVersion={sensorVersion ?? ''}
+                                centralVersion={centralVersion}
+                                compatibility={compatibility}
+                            />
+                        ) : null,
+                    ],
                 }}
             />
             <SensorCompatibilitySubPanel
