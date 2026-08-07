@@ -32,6 +32,8 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"google.golang.org/grpc"
 )
 
@@ -203,9 +205,16 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 		ReleaseBuild:  buildinfo.ReleaseBuild,
 		LicenseStatus: v1.Metadata_VALID,
 	}
-	// Only return the version to logged in users, not anonymous users.
+	// Only return version information to logged-in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
+		if centralXY, err := productstreams.ParseXYFromVersionString(version.GetMainVersion()); err == nil {
+			for _, xy := range versioncompatibility.CompatibleVersions(centralXY) {
+				metadata.CompatibleSensorVersions = append(metadata.CompatibleSensorVersions, xy.String())
+			}
+		} else {
+			log.Debugf("Failed to parse central version for compatible sensor versions: %v", err)
+		}
 	}
 	return metadata, nil
 }
