@@ -30,7 +30,7 @@
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
     // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during business
     // hours from Germany to US West Coast. This way, after we merge a PR, a new one does not pop up immediately after
-    // that. Another reason for this schedule is to include at least one 4 hour inteval from the moment of scheduled
+    // that. Another reason for this schedule is to include at least one 4 hour interval from the moment of scheduled
     // MintMaker execution
     "* 0-8 * * *",
   ],
