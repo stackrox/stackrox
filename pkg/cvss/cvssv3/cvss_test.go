@@ -185,3 +185,82 @@ func Test_CalculateScores(t *testing.T) {
 	}
 	require.NoError(t, s.Err())
 }
+
+func FuzzParseCVSSV3(f *testing.F) {
+	// Seed with valid CVSS v3.0 and v3.1 vectors covering various combinations
+	validSeeds := []string{
+		// CVSS 3.0 vectors
+		"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+		"CVSS:3.0/AV:N/AC:H/PR:H/UI:N/S:U/C:L/I:H/A:L",
+		// CVSS 3.1 vectors with all attack vectors
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+		"CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+		"CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:U/C:H/I:H/A:H",
+		"CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+		// Scope changed
+		"CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H",
+		// Different complexity and privilege levels
+		"CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L",
+		"CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H",
+		// Common real-world patterns
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+		"CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N",
+		"CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+		// Invalid vectors that should return errors gracefully
+		"",
+		"randomstring",
+		"CVSS:2.0/AV:N/AC:L/Au:N/C:P/I:P/A:P",
+		"AV:N/AC:M/Au:S/C:N/I:P/A:Z",
+	}
+
+	for _, seed := range validSeeds {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, vectorStr string) {
+		// The fuzzer should never panic, regardless of input
+		// ParseCVSSV3 should either return a valid result or a non-nil error
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("ParseCVSSV3 panicked with input %q: %v", vectorStr, r)
+			}
+		}()
+
+		result, err := ParseCVSSV3(vectorStr)
+
+		// If parsing succeeds, verify the result is valid
+		if err == nil {
+			require.NotNil(t, result, "ParseCVSSV3 returned nil result with nil error for input %q", vectorStr)
+
+			// Verify the vector string is preserved
+			assert.Equal(t, vectorStr, result.GetVector(), "Vector string should be preserved in result")
+
+			// Verify all enum fields are set to valid values (non-negative)
+			assert.GreaterOrEqual(t, int32(result.GetAttackVector()), int32(0), "AttackVector should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetAttackComplexity()), int32(0), "AttackComplexity should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetPrivilegesRequired()), int32(0), "PrivilegesRequired should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetUserInteraction()), int32(0), "UserInteraction should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetScope()), int32(0), "Scope should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetConfidentiality()), int32(0), "Confidentiality should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetIntegrity()), int32(0), "Integrity should be valid")
+			assert.GreaterOrEqual(t, int32(result.GetAvailability()), int32(0), "Availability should be valid")
+
+			// If parsing succeeded, CalculateScores should also succeed
+			err = CalculateScores(result)
+			assert.NoError(t, err, "CalculateScores should succeed for valid parsed CVSS vector %q", vectorStr)
+
+			// Verify scores are in valid ranges
+			if err == nil {
+				assert.GreaterOrEqual(t, result.GetScore(), float32(0.0), "Score should be >= 0")
+				assert.LessOrEqual(t, result.GetScore(), float32(10.0), "Score should be <= 10")
+				assert.GreaterOrEqual(t, result.GetExploitabilityScore(), float32(0.0), "ExploitabilityScore should be >= 0")
+				assert.GreaterOrEqual(t, result.GetImpactScore(), float32(0.0), "ImpactScore should be >= 0")
+			}
+		} else {
+			// If parsing fails, ensure we got a proper error message
+			assert.NotEmpty(t, err.Error(), "Error should have a non-empty message")
+			assert.Nil(t, result, "ParseCVSSV3 should return nil result on error")
+		}
+	})
+}

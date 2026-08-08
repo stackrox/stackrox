@@ -258,3 +258,79 @@ func TestDurationProto(t *testing.T) {
 	protoDuration := DurationProto(timeDuration)
 	assert.Equal(t, expectedProtoDuration.AsDuration(), protoDuration.AsDuration())
 }
+
+// FuzzParseRFC3339NanoTimestamp tests that ParseRFC3339NanoTimestamp never panics
+// on arbitrary string inputs and that valid RFC3339Nano timestamps round-trip correctly.
+func FuzzParseRFC3339NanoTimestamp(f *testing.F) {
+	// Seed corpus with valid RFC3339Nano timestamps
+	seeds := []string{
+		// Standard formats
+		"2006-01-02T15:04:05.999999999Z",
+		"2023-01-01T00:00:00Z",
+		"2044-05-01T01:28:21.123456789Z",
+		"2017-11-16T19:35:32.012345678Z",
+
+		// Boundary cases
+		"0001-01-01T00:00:00Z",           // Minimum valid time
+		"9999-12-31T23:59:59.999999999Z", // Maximum valid time
+		"1970-01-01T00:00:00Z",           // Unix epoch
+
+		// Different nanosecond precisions
+		"2023-06-15T12:30:45Z",           // No fractional seconds
+		"2023-06-15T12:30:45.1Z",         // 1 digit
+		"2023-06-15T12:30:45.12Z",        // 2 digits
+		"2023-06-15T12:30:45.123Z",       // 3 digits (milliseconds)
+		"2023-06-15T12:30:45.123456Z",    // 6 digits (microseconds)
+		"2023-06-15T12:30:45.123456789Z", // 9 digits (nanoseconds)
+
+		// Timezone offsets (RFC3339 allows these)
+		"2023-06-15T12:30:45+00:00",
+		"2023-06-15T12:30:45-07:00",
+		"2023-06-15T12:30:45.123456789+05:30",
+
+		// Edge cases from existing tests
+		"0000-12-24T23:59:59.999999999Z", // Year 0 (invalid)
+		"0000-12-2AT23:59:59.999999999Z", // Invalid day
+
+		// Common invalid formats to test error handling
+		"",
+		"not a timestamp",
+		"2023-13-01T00:00:00Z", // Invalid month
+		"2023-01-32T00:00:00Z", // Invalid day
+		"2023-01-01T25:00:00Z", // Invalid hour
+		"2023-01-01",           // Missing time
+		"12:30:45",             // Missing date
+		"2023/01/01T12:30:45Z", // Wrong separator
+	}
+
+	for _, seed := range seeds {
+		f.Add(seed)
+	}
+
+	f.Fuzz(func(t *testing.T, input string) {
+		// Primary goal: ensure no panics
+		ts, err := ParseRFC3339NanoTimestamp(input)
+
+		if err != nil {
+			// Error is acceptable, just ensure timestamp is nil
+			assert.Nil(t, ts, "timestamp should be nil when error is returned")
+			return
+		}
+
+		// If parsing succeeded, validate the result
+		assert.NotNil(t, ts, "timestamp should not be nil when no error")
+
+		// Ensure the timestamp is valid
+		assert.NoError(t, ts.CheckValid(), "parsed timestamp should be valid")
+
+		// Round-trip check: convert back to string and parse again
+		goTime := ts.AsTime()
+		roundTrip := goTime.Format(time.RFC3339Nano)
+		ts2, err2 := ParseRFC3339NanoTimestamp(roundTrip)
+		assert.NoError(t, err2, "round-trip parsing should succeed")
+		assert.NotNil(t, ts2, "round-trip timestamp should not be nil")
+
+		// Times should be equal (comparing as time.Time for precision handling)
+		assert.Equal(t, goTime, ts2.AsTime(), "round-trip should preserve time")
+	})
+}
