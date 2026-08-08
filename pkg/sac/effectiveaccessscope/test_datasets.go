@@ -587,6 +587,67 @@ func TestTreeTwoClustersFullyIncluded(_ *testing.T) *ScopeTree {
 
 // Helper functions
 
+func earthFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsSkunkWorks),
+			excluded(nsFraunhofer),
+			excluded(nsCERN),
+			excluded(nsJPL),
+		),
+		Attributes: earthAttributes,
+	}
+}
+
+func arrakisFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsAtreides),
+			excluded(nsHarkonnen),
+			excluded(nsSpacingGuild),
+			excluded(nsBeneGesserit),
+			excluded(nsFremen),
+		),
+		Attributes: arrakisAttributes,
+	}
+}
+
+func giediPrimeFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsHarkonnenAtHome),
+		),
+		Attributes: giediPrimeAttributes,
+	}
+}
+
+func arrakisFullyIncluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Included,
+		Namespaces: namespacesTree(
+			included(nsAtreides),
+			included(nsHarkonnen),
+			included(nsSpacingGuild),
+			included(nsBeneGesserit),
+			included(nsFremen),
+		),
+		Attributes: arrakisAttributes,
+	}
+}
+
+func giediPrimeFullyIncluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Included,
+		Namespaces: namespacesTree(
+			included(nsHarkonnenAtHome),
+		),
+		Attributes: giediPrimeAttributes,
+	}
+}
+
 func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespacesScopeSubTree {
 	m := map[string]*namespacesScopeSubTree{}
 	for _, n := range namespaces {
@@ -596,7 +657,7 @@ func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespace
 }
 
 func included(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Included, n)
+	return namespaceSubTree(Included, n)
 }
 
 func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
@@ -604,14 +665,14 @@ func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 }
 
 func excluded(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Excluded, n)
+	return namespaceSubTree(Excluded, n)
 }
 
 func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return namespaceStandard(Excluded, n)
 }
 
-func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespaceSubTree(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
 		ID:     n.GetId(),
 		Name:   n.GetName(),
