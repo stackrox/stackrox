@@ -1356,7 +1356,7 @@ pr_has_label() {
     if is_openshift_CI_rehearse_PR; then
         pr_has_label_in_body "${expected_label}" "$pr_details"
     else
-        jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details" | grep -qx "${expected_label}"
+        grep -qx "${expected_label}" < <(jq '([.labels | .[].name]  // []) | .[]' -r <<<"$pr_details")
     fi
 }
 

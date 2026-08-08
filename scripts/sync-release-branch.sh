@@ -85,7 +85,7 @@ fi
 arg_milestone="${1}"
 
 if [[ -n "$arg_milestone" ]]; then
-  printf '%s\n' "${milestones[@]}" | grep -F -x -q "$arg_milestone" || die "No such milestone '${arg_milestone}'! Known milestones: [${milestones[*]}]"
+  grep -F -x -q "$arg_milestone" < <(printf '%s\n' "${milestones[@]}") || die "No such milestone '${arg_milestone}'! Known milestones: [${milestones[*]}]"
   milestones=("$arg_milestone")
 else
   echo "Found milestones:"
