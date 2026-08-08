@@ -17,6 +17,7 @@ import (
 
 func Test_loggingMessage(t *testing.T) {
 	ap, err := authproviders.NewProvider(
+		t.Context(),
 		authproviders.WithID("1234-5678"),
 		authproviders.WithName("provider-name"),
 		authproviders.WithType("test-provider"),

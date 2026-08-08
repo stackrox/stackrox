@@ -18,14 +18,14 @@ var (
 // ProviderOption is a function that modifies a providerImpl.
 // Do not use Provider functions in Options, as this will try to RLock inside of a Lock and deadlock.
 // You can assume that the provider is locked for the duration of the option's execution.
-type ProviderOption func(*providerImpl) error
+type ProviderOption func(context.Context, *providerImpl) error
 
 // Options for building and updating.
 /////////////////////////////////////
 
 // WithBackendFromFactory adds a backend from the factory to the provider.
 func WithBackendFromFactory(ctx context.Context, factory BackendFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		pr.backendFactory = factory
 
 		backend, err := factory.CreateBackend(ctx, pr.storedInfo.GetId(), AllUIEndpoints(pr.storedInfo), pr.storedInfo.GetConfig(), nil)
@@ -41,7 +41,7 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 
 // DoNotStore indicates that this provider should not be stored.
 func DoNotStore() ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		pr.doNotStore = true
 		return nil
 	}
@@ -49,7 +49,7 @@ func DoNotStore() ProviderOption {
 
 // WithRoleMapper adds a role mapper to the provider.
 func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		pr.roleMapper = roleMapper
 		return nil
 	}
@@ -57,7 +57,7 @@ func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		pr.storedInfo = stored.CloneVT()
 		return nil
 	}
@@ -65,7 +65,7 @@ func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 
 // WithID sets the id for the provider to the input value.
 func WithID(id string) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -76,7 +76,7 @@ func WithID(id string) ProviderOption {
 
 // WithType sets the type for the provider.
 func WithType(typ string) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -87,7 +87,7 @@ func WithType(typ string) ProviderOption {
 
 // WithName sets the name for the provider.
 func WithName(name string) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -98,7 +98,7 @@ func WithName(name string) ProviderOption {
 
 // WithEnabled sets the enabled flag for the provider.
 func WithEnabled(enabled bool) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -109,9 +109,9 @@ func WithEnabled(enabled bool) ProviderOption {
 
 // WithValidateCallback adds a callback to validate the auth provider.
 func WithValidateCallback(store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		pr.validateCallback = func() error {
-			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
+			return pr.ApplyOptions(internalUpdateProviderCtx, WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
 		}
 		return nil
 	}
@@ -119,7 +119,7 @@ func WithValidateCallback(store Store) ProviderOption {
 
 // WithActive sets the active flag for the provider.
 func WithActive(active bool) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -131,7 +131,7 @@ func WithActive(active bool) ProviderOption {
 
 // WithConfig sets the config for the provider.
 func WithConfig(config map[string]string) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -143,7 +143,7 @@ func WithConfig(config map[string]string) ProviderOption {
 // WithAttributeVerifier adds an attribute verifier to the provider based on the list of
 // required attributes from the provided auth provider instance.
 func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if stored.GetRequiredAttributes() == nil {
 			return nil
 		}
@@ -154,7 +154,7 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 
 // WithVisibility sets the visibility for the auth provider.
 func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(_ context.Context, pr *providerImpl) error {
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
