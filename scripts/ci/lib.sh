@@ -28,7 +28,20 @@ ci_export() {
     local env_name="$1"
     local env_value="$2"
 
-    if command -v cci-export >/dev/null; then
+    if is_GITHUB_ACTIONS; then
+        export "${env_name}"="${env_value}"
+        if [[ -z "${GITHUB_ENV:-}" ]]; then
+            die "GITHUB_ENV is unset in the environment even though GITHUB_ACTION is set"
+        fi
+        if [[ "$env_value" == *$'\n'* ]]; then
+            # GHA also supports multi-line values, which need to be added to $GITHUB_ENV with a
+            # special syntax.
+            local delimiter="EOF_${env_name}_$$"
+            printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
+        else
+            echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
+        fi
+    elif command -v cci-export >/dev/null; then
         # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
         if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
             BASH_ENV=$(mktemp)
@@ -37,10 +50,6 @@ ci_export() {
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
-    fi
-
-    if [[ -n "${GITHUB_ENV:-}" ]]; then
-        printf '%s=%q\n' "${env_name}" "${env_value}" >> "$GITHUB_ENV"
     fi
 }
 
@@ -630,7 +639,7 @@ _image_prefetcher_prebuilt_start() {
     # _image_prefetcher_prebuilt_await
 
     case "$CI_JOB_NAME" in
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_start_set qa-e2e
         _set_quay_pull_policy
         ;;
@@ -799,7 +808,7 @@ _image_prefetcher_prebuilt_await() {
     # at the last moment before any of the prebuilt images is used. (See other existing examples.)
     # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
 
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_await_set qa-e2e
         ;;
     *nongroovy-e2e-tests)
@@ -1032,6 +1041,38 @@ scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
 END
+            ;;
+        *qa-e2e-tests*)
+            local tag_sanitized; tag_sanitized="$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)"
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-operator ${tag_sanitized}
+release-operator-bundle v${tag_sanitized}
+release-main ${tag_sanitized}
+release-central-db ${tag_sanitized}
+release-collector ${tag_sanitized}
+release-fact ${tag_sanitized}
+release-scanner ${tag_sanitized}
+release-scanner-db ${tag_sanitized}
+release-scanner-v4 ${tag_sanitized}
+release-scanner-v4-db ${tag_sanitized}
+release-roxctl ${tag_sanitized}
+END
+            else
+                cat >> "${image_list}" << END
+stackrox-operator ${tag_sanitized}
+stackrox-operator-bundle v${tag_sanitized}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+fact ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
+            fi
             ;;
         *)
             cat >> "${image_list}" << END
@@ -2668,19 +2709,20 @@ _record_cluster_info() {
     # Assumes (a) there is a single cluster under test (cut_*) and (b) all nodes
     # in the cluster are homogeneous.
 
-    # Product version. Currently used for OpenShift version. Could cover cloud
-    # provider versions for example.
-    local oc_version
-    oc_version="$(oc version -o json 2>&1 || true)"
-    local openshiftVersion
-    openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    # Product version. Currently used for OpenShift version.
+    if command -v oc &>/dev/null; then
+        local oc_version
+        oc_version="$(oc version -o json 2>/dev/null || true)"
+        local openshiftVersion
+        openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion // empty')
+        set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    fi
 
     # K8s version.
     local kubectl_version
-    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    kubectl_version="$(kubectl version -o json 2>/dev/null || true)"
     local serverGitVersion
-    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
+    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion // empty')
     set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
