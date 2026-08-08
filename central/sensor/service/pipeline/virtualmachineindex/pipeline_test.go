@@ -9,6 +9,7 @@ import (
 	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	virtualMachineV2DSMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
+	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -16,9 +17,12 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	scannerSetMocks "github.com/stackrox/rox/pkg/scanners/mocks"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/codes"
@@ -194,6 +198,47 @@ func (suite *PipelineTestSuite) TestNewPipeline() {
 	suite.Equal(mockDatastore, impl.virtualMachineStore)
 	suite.Equal(mockEnricher, impl.enricher)
 	suite.Nil(impl.virtualMachineV2Store)
+}
+
+func TestResolveVMScanner(t *testing.T) {
+	t.Run("returns the active Scanner V4 VM scanner", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		scannerSet := scannerSetMocks.NewMockSet(ctrl)
+		expected := newVirtualMachineScannerStub("vm-scanner", scannerTypes.ScannerV4)
+		scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{
+			imageScannerWithDataSourceStub{scanner: newScannerStub("clair", scannerTypes.Clair)},
+			imageScannerWithDataSourceStub{scanner: expected},
+		})
+
+		resolved := resolveVMScanner(scannerSet)
+		require.NotNil(t, resolved)
+		assert.Equal(t, expected.Name(), resolved.Name())
+	})
+
+	t.Run("returns nil when no active VM-capable Scanner V4 exists", func(t *testing.T) {
+		tests := map[string][]scannerTypes.ImageScannerWithDataSource{
+			"no scanner v4": {
+				imageScannerWithDataSourceStub{scanner: newScannerStub("clair", scannerTypes.Clair)},
+			},
+			"scanner v4 without VM support": {
+				imageScannerWithDataSourceStub{scanner: newScannerStub("scanner-v4", scannerTypes.ScannerV4)},
+			},
+		}
+
+		for name, integrations := range tests {
+			t.Run(name, func(t *testing.T) {
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+
+				scannerSet := scannerSetMocks.NewMockSet(ctrl)
+				scannerSet.EXPECT().GetAll().Return(integrations)
+
+				assert.Nil(t, resolveVMScanner(scannerSet))
+			})
+		}
+	})
 }
 
 // Test table-driven approach for different actions
@@ -970,4 +1015,70 @@ func TestLookupGuestOS(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+type scannerStub struct {
+	scannerTypes.ScanSemaphore
+	name     string
+	typeName string
+}
+
+func newScannerStub(name string, typeName string) *scannerStub {
+	return &scannerStub{
+		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(1),
+		name:          name,
+		typeName:      typeName,
+	}
+}
+
+func (s *scannerStub) GetScan(*storage.Image) (*storage.ImageScan, error) {
+	return nil, nil
+}
+
+func (s *scannerStub) Match(*storage.ImageName) bool {
+	return false
+}
+
+func (s *scannerStub) Test() error {
+	return nil
+}
+
+func (s *scannerStub) Type() string {
+	return s.typeName
+}
+
+func (s *scannerStub) Name() string {
+	return s.name
+}
+
+func (s *scannerStub) GetVulnDefinitionsInfo() (*apiV1.VulnDefinitionsInfo, error) {
+	return nil, nil
+}
+
+type virtualMachineScannerStub struct {
+	*scannerStub
+	scannerTypes.NodeScanSemaphore
+}
+
+func newVirtualMachineScannerStub(name string, typeName string) *virtualMachineScannerStub {
+	return &virtualMachineScannerStub{
+		scannerStub:       newScannerStub(name, typeName),
+		NodeScanSemaphore: scannerTypes.NewNodeSemaphoreWithValue(1),
+	}
+}
+
+func (*virtualMachineScannerStub) GetVirtualMachineScan(*storage.VirtualMachine, *v4.IndexReport) (*storage.VirtualMachineScan, error) {
+	return nil, nil
+}
+
+type imageScannerWithDataSourceStub struct {
+	scanner scannerTypes.Scanner
+}
+
+func (s imageScannerWithDataSourceStub) GetScanner() scannerTypes.Scanner {
+	return s.scanner
+}
+
+func (imageScannerWithDataSourceStub) DataSource() *storage.DataSource {
+	return nil
 }

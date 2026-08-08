@@ -54,3 +54,29 @@ func (mr *MockVirtualMachineEnricherMockRecorder) EnrichVirtualMachineWithVulner
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichVirtualMachineWithVulnerabilities", reflect.TypeOf((*MockVirtualMachineEnricher)(nil).EnrichVirtualMachineWithVulnerabilities), vm, indexReport)
 }
+
+// RemoveVirtualMachineIntegration mocks base method.
+func (m *MockVirtualMachineEnricher) RemoveVirtualMachineIntegration(id string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveVirtualMachineIntegration", id)
+}
+
+// RemoveVirtualMachineIntegration indicates an expected call of RemoveVirtualMachineIntegration.
+func (mr *MockVirtualMachineEnricherMockRecorder) RemoveVirtualMachineIntegration(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveVirtualMachineIntegration", reflect.TypeOf((*MockVirtualMachineEnricher)(nil).RemoveVirtualMachineIntegration), id)
+}
+
+// UpsertVirtualMachineIntegration mocks base method.
+func (m *MockVirtualMachineEnricher) UpsertVirtualMachineIntegration(integration *storage.ImageIntegration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertVirtualMachineIntegration", integration)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertVirtualMachineIntegration indicates an expected call of UpsertVirtualMachineIntegration.
+func (mr *MockVirtualMachineEnricherMockRecorder) UpsertVirtualMachineIntegration(integration any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertVirtualMachineIntegration", reflect.TypeOf((*MockVirtualMachineEnricher)(nil).UpsertVirtualMachineIntegration), integration)
+}
