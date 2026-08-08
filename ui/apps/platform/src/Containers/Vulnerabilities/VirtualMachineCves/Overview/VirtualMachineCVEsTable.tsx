@@ -1,126 +1,128 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, Pagination } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
 import { listVMCVEs } from 'services/VirtualMachineService';
+import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
 
-function VirtualMachineCVEsTable() {
-    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+type VirtualMachineCVEsTableProps = {
+    searchFilter: SearchFilter;
+    pagination: UseURLPaginationResult;
+    onTotalCountChange: (count: number) => void;
+    onClearFilters: () => void;
+};
+
+function VirtualMachineCVEsTable({
+    searchFilter,
+    pagination,
+    onTotalCountChange,
+    onClearFilters,
+}: VirtualMachineCVEsTableProps) {
+    const { page, perPage } = pagination;
 
     const fetchVirtualMachineCVEs = useCallback(
-        () => listVMCVEs({ page, perPage }),
-        [page, perPage]
+        () => listVMCVEs({ searchFilter, page, perPage }),
+        [searchFilter, page, perPage]
     );
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachineCVEs);
+
+    const totalCount = data?.totalCount ?? 0;
+    useEffect(() => {
+        onTotalCountChange(totalCount);
+    }, [totalCount, onTotalCountChange]);
 
     const tableState = getTableUIState({
         isLoading,
         data: data?.cves ?? [],
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     return (
-        <>
-            <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
-                <Pagination
-                    itemCount={data?.totalCount ?? 0}
-                    perPage={perPage}
-                    page={page}
-                    onSetPage={(_, newPage) => setPage(newPage)}
-                    onPerPageSelect={(_, newPerPage) => {
-                        setPerPage(newPerPage);
-                    }}
-                />
-            </Flex>
-            <Table
-                borders={tableState.type === 'COMPLETE'}
-                variant="compact"
-                aria-live="polite"
-                aria-busy={false}
-            >
-                <Thead noWrap>
-                    <Tr>
-                        <Th>CVE</Th>
-                        <Th>Virtual machines by severity</Th>
-                        <Th>Top CVSS</Th>
-                        <Th>Affected virtual machines</Th>
-                        <Th>EPSS probability</Th>
-                        <Th>First discovered</Th>
-                    </Tr>
-                </Thead>
-                <TbodyUnified
-                    tableState={tableState}
-                    colSpan={6}
-                    emptyProps={{
-                        message:
-                            'No CVEs have been detected for virtual machines across your secured clusters',
-                    }}
-                    renderer={({ data }) => (
-                        <Tbody>
-                            {data.map((virtualMachineCve) => {
-                                const severityCounts = virtualMachineCve.vmSeverityCounts;
-                                return (
-                                    <Tr key={virtualMachineCve.cve}>
-                                        <Td dataLabel="CVE" modifier="nowrap">
-                                            <Link
-                                                to={getVirtualMachineEntityPagePath(
-                                                    'CVE',
-                                                    virtualMachineCve.cve
-                                                )}
-                                            >
-                                                {virtualMachineCve.cve}
-                                            </Link>
-                                        </Td>
-                                        <Td dataLabel="Virtual machines by severity">
-                                            <SeverityCountLabels
-                                                criticalCount={severityCounts?.critical?.total ?? 0}
-                                                importantCount={
-                                                    severityCounts?.important?.total ?? 0
-                                                }
-                                                moderateCount={severityCounts?.moderate?.total ?? 0}
-                                                lowCount={severityCounts?.low?.total ?? 0}
-                                                unknownCount={severityCounts?.unknown?.total ?? 0}
-                                                entity="virtual machine"
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Top CVSS">
-                                            <CvssFormatted
-                                                cvss={virtualMachineCve.topCvss}
-                                                scoreVersion={virtualMachineCve.cvssVersion}
-                                            />
-                                        </Td>
-                                        <Td dataLabel="Affected virtual machines">
-                                            {`${virtualMachineCve.affectedVmCount} / ${virtualMachineCve.totalVmCount} affected VMs`}
-                                        </Td>
-                                        <Td dataLabel="EPSS probability">
-                                            {formatEpssProbabilityAsPercent(
-                                                virtualMachineCve.epssProbability
+        <Table
+            borders={tableState.type === 'COMPLETE'}
+            variant="compact"
+            aria-live="polite"
+            aria-busy={false}
+        >
+            <Thead noWrap>
+                <Tr>
+                    <Th>CVE</Th>
+                    <Th>Virtual machines by severity</Th>
+                    <Th>Top CVSS</Th>
+                    <Th>Affected virtual machines</Th>
+                    <Th>EPSS probability</Th>
+                    <Th>First discovered</Th>
+                </Tr>
+            </Thead>
+            <TbodyUnified
+                tableState={tableState}
+                colSpan={6}
+                emptyProps={{
+                    message:
+                        'No CVEs have been detected for virtual machines across your secured clusters',
+                }}
+                filteredEmptyProps={{ onClearFilters }}
+                renderer={({ data }) => (
+                    <Tbody>
+                        {data.map((virtualMachineCve) => {
+                            const severityCounts = virtualMachineCve.vmSeverityCounts;
+                            return (
+                                <Tr key={virtualMachineCve.cve}>
+                                    <Td dataLabel="CVE" modifier="nowrap">
+                                        <Link
+                                            to={getVirtualMachineEntityPagePath(
+                                                'CVE',
+                                                virtualMachineCve.cve
                                             )}
-                                        </Td>
-                                        <Td dataLabel="First discovered">
-                                            <DateDistance date={virtualMachineCve.publishedOn} />
-                                        </Td>
-                                    </Tr>
-                                );
-                            })}
-                        </Tbody>
-                    )}
-                />
-            </Table>
-        </>
+                                        >
+                                            {virtualMachineCve.cve}
+                                        </Link>
+                                    </Td>
+                                    <Td dataLabel="Virtual machines by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={severityCounts?.critical?.total ?? 0}
+                                            importantCount={severityCounts?.important?.total ?? 0}
+                                            moderateCount={severityCounts?.moderate?.total ?? 0}
+                                            lowCount={severityCounts?.low?.total ?? 0}
+                                            unknownCount={severityCounts?.unknown?.total ?? 0}
+                                            entity="virtual machine"
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Top CVSS">
+                                        <CvssFormatted
+                                            cvss={virtualMachineCve.topCvss}
+                                            scoreVersion={virtualMachineCve.cvssVersion}
+                                        />
+                                    </Td>
+                                    <Td dataLabel="Affected virtual machines">
+                                        {`${virtualMachineCve.affectedVmCount} / ${virtualMachineCve.totalVmCount} affected VMs`}
+                                    </Td>
+                                    <Td dataLabel="EPSS probability">
+                                        {formatEpssProbabilityAsPercent(
+                                            virtualMachineCve.epssProbability
+                                        )}
+                                    </Td>
+                                    <Td dataLabel="First discovered">
+                                        <DateDistance date={virtualMachineCve.publishedOn} />
+                                    </Td>
+                                </Tr>
+                            );
+                        })}
+                    </Tbody>
+                )}
+            />
+        </Table>
     );
 }
 
