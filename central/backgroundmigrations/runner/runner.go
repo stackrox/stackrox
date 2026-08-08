@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/collation"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -190,6 +191,9 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		if err := schema.ApplyAllIndexes(ctx, r.db, env.BackgroundIndexTimeout.DurationSetting()); err != nil {
 			return errors.Wrap(err, "creating background indexes")
 		}
+		if err := r.reconcileCollation(ctx); err != nil {
+			return errors.Wrap(err, "reconciling collation")
+		}
 		bgMigrationCompleteGauge.Set(1)
 		return nil
 	}
@@ -235,11 +239,22 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 	if err := schema.ApplyAllIndexes(ctx, r.db, env.BackgroundIndexTimeout.DurationSetting()); err != nil {
 		return errors.Wrap(err, "creating background indexes")
 	}
+	if err := r.reconcileCollation(ctx); err != nil {
+		return errors.Wrap(err, "reconciling collation")
+	}
 
 	bgMigrationCompleteGauge.Set(1)
 
 	log.Infof("background migrations and index reconciliation complete")
 	return nil
+}
+
+func (r *Runner) reconcileCollation(ctx context.Context) error {
+	if env.SkipCollationReconciliation.BooleanSetting() {
+		log.Infof("skipping collation reconciliation (%s=true)", env.SkipCollationReconciliation.EnvVar())
+		return nil
+	}
+	return collation.Reconcile(ctx, r.db, env.BackgroundIndexTimeout.DurationSetting())
 }
 
 func (r *Runner) readState(ctx context.Context) (int, string, error) {
