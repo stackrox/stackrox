@@ -87,6 +87,7 @@ central:
       configMaps: null # [string]
       secrets: null # [string]
   extraMounts: null # [dict]
+  redHatSigningKeyBundle: null # string
   db:
     nodeSelector: null # string | dict
     tolerations: null # [dict]

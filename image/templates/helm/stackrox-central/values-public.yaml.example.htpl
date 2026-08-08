@@ -239,6 +239,13 @@
 #       mount:
 #         mountPath: /etc/my-config-data
 #
+#     # Red Hat signing key bundle for offline environments. When set, the bundle
+#     # JSON is mounted read-only into Central at /tmp/redhat-signing-keys/ for
+#     # image signature verification. The expected format is:
+#     #   {"keys": [{"name": "<key-name>", "type": "cosign", "pem": "<PEM>"}]}
+#     # Use --set-file central.redHatSigningKeyBundle=bundle.json
+#     redHatSigningKeyBundle: null
+#
 #   # Public configuration options for the StackRox Central DB:
 #   db:
 #     # If you want to enforce StackRox Central DB to only run on certain nodes, you can specify

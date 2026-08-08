@@ -200,6 +200,11 @@ spec:
           mountPath: /var/run/secrets/openshift/serviceaccount
           readOnly: true
         {{- end }}
+        {{- if ._rox.central.redHatSigningKeyBundle }}
+        - name: redhat-signing-key-bundle
+          mountPath: /tmp/redhat-signing-keys/
+          readOnly: true
+        {{- end }}
         {{- if ._rox.central.notifierSecretsEncryption }}
         {{- if ._rox.central.notifierSecretsEncryption.enabled }}
         - name: central-encryption-key-chain
@@ -291,6 +296,12 @@ spec:
               path: token
               audience: openshift
               expirationSeconds: 3600
+      {{- end }}
+      {{- if ._rox.central.redHatSigningKeyBundle }}
+      - name: redhat-signing-key-bundle
+        configMap:
+          name: redhat-signing-key-bundle
+          optional: true
       {{- end }}
       {{- if ._rox.central.notifierSecretsEncryption }}
       {{- if ._rox.central.notifierSecretsEncryption.enabled }}
