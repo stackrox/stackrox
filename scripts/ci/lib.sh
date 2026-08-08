@@ -730,12 +730,19 @@ image_prefetcher_start_set() {
     esac
 
     # daemonset, etc
+    local collect_metrics="--collect-metrics"
+    # AWS Classic Load Balancers don't support IPv6. Detect IPv6 service network
+    # and skip metrics collection to avoid CLB timeout.
+    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]] || kubectl get network.config/cluster -o jsonpath='{.spec.serviceNetwork}' 2>/dev/null | grep -q ':'; then
+        collect_metrics=""
+        info "Skipping prefetcher metrics collection (LoadBalancer not supported on IPv6 clusters)"
+    fi
     ${image_prefetcher_deploy_bin} \
         --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
-        --collect-metrics \
+        ${collect_metrics} \
         --namespace="$ns" \
         "$name" > "$manifest"
 
