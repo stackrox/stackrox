@@ -76,5 +76,11 @@
         "job": "compatibility",
         "logfile": "400\\.(9|10)\\..*matcher-previous",
         "logline": "unable to connect to database.*connection refused"
+    },
+    {
+        "comment": "scanner restart due to DB connection loss during postgres bounce in upgrade test",
+        "job": "upgrade",
+        "logfile": "scanner-previous",
+        "logline": "Failed to initialize updater"
     }
 ]
