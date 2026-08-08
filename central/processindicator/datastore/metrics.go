@@ -7,8 +7,6 @@ import (
 )
 
 const (
-	// PruneReasonSimilarity represents pruning based on Jaccard similarity algorithm
-	PruneReasonSimilarity = "similarity"
 	// PruneReasonOrphanedByDeployment represents pruning of indicators orphaned by deleted deployments
 	PruneReasonOrphanedByDeployment = "orphaned_deployment"
 	// PruneReasonOrphanedByPod represents pruning of indicators orphaned by deleted pods
@@ -21,20 +19,6 @@ const (
 )
 
 var (
-	processPruningCacheHits = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_pruning_cache_hits",
-		Help:      "Number of times we hit the cache when trying to prune processes",
-	})
-
-	processPruningCacheMisses = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_pruning_cache_misses",
-		Help:      "Number of times we miss the cache, and have to evaluate, when trying to prune processes",
-	})
-
 	processUpsertedArgsSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -136,14 +120,6 @@ func recordProcessIndicatorsRemoved(num int, reason string) {
 	processIndicatorsRemovedTotal.Add(float64(num))
 }
 
-func incrementProcessPruningCacheHitsMetrics() {
-	processPruningCacheHits.Inc()
-}
-
-func incrementProcessPruningCacheMissesMetric() {
-	processPruningCacheMisses.Inc()
-}
-
 func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
 	if indicator == nil || indicator.GetSignal() == nil {
 		return 0
@@ -204,8 +180,6 @@ func RecordProcessIndicatorNotPersisted(indicator *storage.ProcessIndicator) {
 
 func init() {
 	prometheus.MustRegister(
-		processPruningCacheHits,
-		processPruningCacheMisses,
 		processUpsertedArgsSizeHistogram,
 		processUpsertedArgsSizeTotal,
 		processUpsertedCount,

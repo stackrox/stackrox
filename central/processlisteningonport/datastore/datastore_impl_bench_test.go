@@ -63,7 +63,7 @@ func setupBenchmark(b *testing.B) (context.Context, DataStore, *pgtest.TestPostg
 
 	store := postgresStore.NewFullStore(postgres.DB)
 	indicatorStorage := processIndicatorStorage.New(postgres.DB)
-	indicatorDataStore := processIndicatorDataStore.New(postgres.DB, indicatorStorage, store, nil)
+	indicatorDataStore := processIndicatorDataStore.New(postgres.DB, indicatorStorage, store)
 	ds := New(store, indicatorDataStore, postgres)
 
 	// Ensure required deployment exists

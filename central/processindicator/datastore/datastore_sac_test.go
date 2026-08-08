@@ -195,7 +195,7 @@ func (s *processIndicatorDatastoreSACSuite) TestPruneProcessIndicators() {
 			s.Require().NoError(err)
 			defer s.deleteProcessIndicator(processIndicator.GetId())
 
-			prunedCount, err := s.datastore.PruneProcessIndicators(ctx, []string{processIndicator.GetId()}, PruneReasonSimilarity)
+			prunedCount, err := s.datastore.PruneProcessIndicators(ctx, []string{processIndicator.GetId()}, PruneReasonOrphanedByDeployment)
 			s.NoError(err)
 
 			fetchedProcess, found, err := s.datastore.GetProcessIndicator(
