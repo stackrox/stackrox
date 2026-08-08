@@ -1817,6 +1817,202 @@ db_backup_and_restore_test() {
     [[ ! -f DB_TEST_FAIL ]] || die "The DB test failed"
 }
 
+# operator_backup_and_restore_test validates the documented RHACS Operator-based
+# backup and restore workflow (RHACS 4.11 docs §1.3.1 + §2.5):
+#   backup secrets (stripping ownerReferences) → backup CR → delete namespace →
+#   restore secrets → restore CR → restore DB → verify health + ownerRef re-adoption
+operator_backup_and_restore_test() {
+    local output_dir="$1"
+    local central_namespace=${2:-stackrox}
+
+    info "Running operator-based backup and restore test (namespace: ${central_namespace})"
+
+    if [[ "$#" -lt 1 ]]; then
+        die "Missing args. Usage: operator_backup_and_restore_test <output_dir> [namespace]"
+    fi
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    wait_for_api "${central_namespace}"
+    mkdir -p "${output_dir}"
+
+    local test_failed=""
+
+    # --- Save baseline config as a restore verification marker ---
+    info "Saving baseline config for post-restore verification"
+    roxcurl /v1/config | jq . > "${output_dir}/BASELINE_CONFIG"
+
+    # =========================================================================
+    # BACKUP (per RHACS 4.11 docs §1.2 + §1.3.1)
+    # =========================================================================
+
+    info "Backup step 1/5: Creating roxctl central backup"
+    roxctl --ca="" --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
+        central backup --output "${output_dir}" \
+        || die "roxctl central backup failed"
+
+    info "Backup step 2/5: Backing up central-tls secret (stripping ownerReferences)"
+    retrying_kubectl </dev/null -n "${central_namespace}" get secret central-tls -o json \
+        | jq 'del(.metadata.ownerReferences, .metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.managedFields)' \
+        > "${output_dir}/central-tls.json"
+
+    info "Backup step 3/5: Backing up central-htpasswd secret (stripping ownerReferences)"
+    if retrying_kubectl </dev/null -n "${central_namespace}" get secret central-htpasswd >/dev/null 2>&1; then
+        retrying_kubectl </dev/null -n "${central_namespace}" get secret central-htpasswd -o json \
+            | jq 'del(.metadata.ownerReferences, .metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.managedFields)' \
+            > "${output_dir}/central-htpasswd.json"
+    else
+        info "central-htpasswd secret not found, skipping"
+    fi
+
+    info "Backup step 4/5: Backing up Central CR"
+    retrying_kubectl </dev/null -n "${central_namespace}" get central stackrox-central-services -o json \
+        | jq 'del(.metadata.resourceVersion, .metadata.uid, .metadata.generation, .metadata.creationTimestamp, .metadata.managedFields, .metadata.finalizers, .status)' \
+        > "${output_dir}/central-cr.json"
+
+    info "Backup step 5/5: Backing up SecuredCluster CR"
+    if retrying_kubectl </dev/null -n "${central_namespace}" get securedcluster stackrox-secured-cluster-services >/dev/null 2>&1; then
+        retrying_kubectl </dev/null -n "${central_namespace}" get securedcluster stackrox-secured-cluster-services -o json \
+            | jq 'del(.metadata.resourceVersion, .metadata.uid, .metadata.generation, .metadata.creationTimestamp, .metadata.managedFields, .metadata.finalizers, .status)' \
+            > "${output_dir}/secured-cluster-cr.json"
+    else
+        info "SecuredCluster CR not found, skipping"
+    fi
+
+    # =========================================================================
+    # SIMULATE DISASTER
+    # =========================================================================
+
+    info "Simulating disaster: removing CR finalizers and deleting namespace ${central_namespace}"
+    retrying_kubectl </dev/null -n "${central_namespace}" patch central stackrox-central-services \
+        --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' 2>/dev/null || true
+    retrying_kubectl </dev/null -n "${central_namespace}" patch securedcluster stackrox-secured-cluster-services \
+        --type=json -p='[{"op": "remove", "path": "/metadata/finalizers"}]' 2>/dev/null || true
+    retrying_kubectl </dev/null delete namespace "${central_namespace}" --wait=true --timeout=300s
+
+    info "Waiting for namespace to be fully removed"
+    local ns_timeout=180
+    local ns_start
+    ns_start="$(date '+%s')"
+    while retrying_kubectl </dev/null get namespace "${central_namespace}" >/dev/null 2>&1; do
+        if (( $(date '+%s') - ns_start > ns_timeout )); then
+            die "Namespace ${central_namespace} still exists after ${ns_timeout}s"
+        fi
+        sleep 5
+    done
+    info "Namespace ${central_namespace} deleted"
+
+    # =========================================================================
+    # RESTORE (per RHACS 4.11 docs §2.5 + §2.3)
+    # =========================================================================
+
+    info "Restore step 1/8: Recreating namespace"
+    retrying_kubectl </dev/null create namespace "${central_namespace}"
+
+    info "Restore step 2/8: Restoring central-tls secret"
+    retrying_kubectl </dev/null -n "${central_namespace}" apply -f "${output_dir}/central-tls.json"
+
+    info "Restore step 3/8: Restoring central-htpasswd secret"
+    if [[ -f "${output_dir}/central-htpasswd.json" ]]; then
+        retrying_kubectl </dev/null -n "${central_namespace}" apply -f "${output_dir}/central-htpasswd.json"
+    fi
+
+    info "Restore step 4/8: Recreating image pull secret"
+    NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
+
+    info "Restore step 5/8: Restoring Central CR"
+    retrying_kubectl </dev/null -n "${central_namespace}" apply -f "${output_dir}/central-cr.json"
+
+    info "Restore step 6/8: Waiting for Central to come up"
+    wait_for_object_to_appear "${central_namespace}" deploy/central 600
+    wait_for_central_db "${central_namespace}"
+    wait_for_api "${central_namespace}"
+
+    info "Restore step 7/8: Restoring database from backup"
+    roxctl --ca="" --insecure-skip-tls-verify -e "${API_ENDPOINT}" \
+        central db restore --timeout 10m "${output_dir}"/postgres_db_* \
+        || die "roxctl central db restore failed"
+    wait_for_api "${central_namespace}"
+
+    info "Restore step 8/8: Restoring SecuredCluster"
+    if [[ -f "${output_dir}/secured-cluster-cr.json" ]]; then
+        # shellcheck disable=SC2016
+        echo "${ROX_ADMIN_PASSWORD}" | \
+        retrying_kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
+        'ROX_ADMIN_PASSWORD=$(cat) roxctl central crs generate my-test-cluster \
+            --insecure-skip-tls-verify \
+            --output -' \
+        | retrying_kubectl -n "${central_namespace}" apply -f -
+
+        retrying_kubectl </dev/null -n "${central_namespace}" apply -f "${output_dir}/secured-cluster-cr.json"
+        wait_for_object_to_appear "${central_namespace}" deploy/sensor 600
+        wait_for_object_to_appear "${central_namespace}" ds/collector 600
+        sensor_wait "${central_namespace}"
+    fi
+
+    # =========================================================================
+    # VERIFICATION
+    # =========================================================================
+
+    info "Verify 1/4: Checking DB contents preserved across backup/restore"
+    roxcurl /v1/config | jq . > "${output_dir}/POST_RESTORE_CONFIG"
+    if [[ "$(cat "${output_dir}/BASELINE_CONFIG")" != "$(cat "${output_dir}/POST_RESTORE_CONFIG")" ]]; then
+        info "FAIL: Config after restore differs from baseline"
+        diff "${output_dir}/BASELINE_CONFIG" "${output_dir}/POST_RESTORE_CONFIG" || true
+        test_failed="true"
+    else
+        info "PASS: DB contents preserved"
+    fi
+
+    info "Verify 2/4: Checking central-tls ownerReferences restored by Operator"
+    local owner_timeout=300
+    local owner_start
+    owner_start="$(date '+%s')"
+    local owner_found="false"
+    while [[ "${owner_found}" == "false" ]]; do
+        local owner_refs
+        owner_refs="$(retrying_kubectl </dev/null -n "${central_namespace}" get secret central-tls -o json \
+            | jq '.metadata.ownerReferences // []')"
+        if [[ "$(echo "${owner_refs}" | jq 'length')" -gt 0 ]]; then
+            owner_found="true"
+            info "PASS: central-tls ownerReferences restored: ${owner_refs}"
+        elif (( $(date '+%s') - owner_start > owner_timeout )); then
+            info "FAIL: central-tls ownerReferences not restored after ${owner_timeout}s"
+            test_failed="true"
+            break
+        else
+            sleep 10
+        fi
+    done
+
+    info "Verify 3/4: Checking Central CR health"
+    local deployed_status
+    deployed_status="$(retrying_kubectl </dev/null -n "${central_namespace}" get central stackrox-central-services -o json \
+        | jq -r '[.status.conditions[]? | select(.type == "Deployed")] | .[0].status // "Unknown"')"
+    local irreconcilable_status
+    irreconcilable_status="$(retrying_kubectl </dev/null -n "${central_namespace}" get central stackrox-central-services -o json \
+        | jq -r '[.status.conditions[]? | select(.type == "Irreconcilable")] | .[0].status // "Unknown"')"
+    if [[ "${deployed_status}" == "True" && "${irreconcilable_status}" == "False" ]]; then
+        info "PASS: Central CR healthy (Deployed=True, Irreconcilable=False)"
+    else
+        info "FAIL: Central CR unhealthy (Deployed=${deployed_status}, Irreconcilable=${irreconcilable_status})"
+        retrying_kubectl </dev/null -n "${central_namespace}" get central stackrox-central-services -o json \
+            | jq '.status.conditions' || true
+        test_failed="true"
+    fi
+
+    info "Verify 4/4: SecuredCluster connectivity"
+    if [[ -f "${output_dir}/secured-cluster-cr.json" ]]; then
+        info "PASS: Sensor reconnected (verified by sensor_wait above)"
+    else
+        info "SKIP: No SecuredCluster was deployed"
+    fi
+
+    [[ -z "${test_failed}" ]] || die "Operator backup and restore test FAILED"
+    info "Operator backup and restore test PASSED"
+}
+
 handle_e2e_progress_failures() {
     info "Checking for progress events"
 
