@@ -116,7 +116,7 @@ jobs:
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       shell: python
       run: |
         import sys
