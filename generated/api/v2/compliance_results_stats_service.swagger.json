@@ -501,6 +501,82 @@
         ]
       }
     },
+    "/v2/compliance/scan/stats/trends": {
+      "get": {
+        "summary": "GetComplianceScanTrends returns compliance pass/fail counts grouped by scan time",
+        "operationId": "ComplianceResultsStatsService_GetComplianceScanTrends",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListComplianceScanTrendResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceResultsStatsService"
+        ]
+      }
+    },
     "/v2/compliance/stats/configurations/clusters/{clusterId}": {
       "get": {
         "summary": "GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration",
@@ -823,6 +899,23 @@
       },
       "title": "ComplianceScanStatsShim models statistics of checks for a given scan configuration"
     },
+    "v2ComplianceScanTrendDataPoint": {
+      "type": "object",
+      "properties": {
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "checkStats": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceCheckStatusCount"
+          }
+        }
+      },
+      "title": "ComplianceScanTrendDataPoint represents a single data point in a compliance trend over time"
+    },
     "v2ListComplianceClusterOverallStatsResponse": {
       "type": "object",
       "properties": {
@@ -916,6 +1009,19 @@
         }
       },
       "title": "ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans"
+    },
+    "v2ListComplianceScanTrendResponse": {
+      "type": "object",
+      "properties": {
+        "dataPoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceScanTrendDataPoint"
+          }
+        }
+      },
+      "title": "ListComplianceScanTrendResponse provides compliance trends over time"
     },
     "v2Pagination": {
       "type": "object",
