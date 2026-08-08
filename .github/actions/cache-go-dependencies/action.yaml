@@ -9,6 +9,29 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  force-save:
+    description: >
+      Force a cache save regardless of branch/event. For the
+      cache-go-dependencies-regression.yaml test workflow only, which needs
+      to prime a cache on a non-default-branch run for a later job to restore.
+    required: false
+    default: 'false'
+  cache-scope:
+    description: >
+      Overrides the job-identity component of the cache key (normally
+      github.job). For the cache-go-dependencies-regression.yaml test
+      workflow only, which needs two differently-named jobs (prime/restore)
+      to share one cache key.
+    required: false
+    default: ''
+  skip-test-cache-clear:
+    description: >
+      Skip the "Clear test cache on non-PR runs" step below regardless of
+      event type. For the cache-go-dependencies-regression.yaml test
+      workflow only, which verifies test-cache hits on schedule/dispatch
+      runs, not just pull_request runs.
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -25,27 +48,31 @@ runs:
         echo "GOMOD_HASH=$(sha256sum go.mod | cut -c1-16)" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
+        # Normally the job id; overridable so two differently-named jobs
+        # (e.g. in cache-go-dependencies-regression.yaml) can share a key.
+        scope="${{ inputs.cache-scope }}"
+        echo "SCOPE=${scope:-${{ github.job }}}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: "(inputs.save == 'true' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || inputs.force-save == 'true'"
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ !((inputs.save == 'true' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) || inputs.force-save == 'true') }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # ratchet:actions/cache/restore@v6.1.0
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: |
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
-          go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.GOMOD_HASH }}-
+          go-build-v2-${{ steps.cache-paths.outputs.SCOPE }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Mark GOCACHE entries for stale detection
       run: |
@@ -82,7 +109,7 @@ runs:
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Clear test cache on non-PR runs
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' && inputs.skip-test-cache-clear != 'true'
       run: |
         # Non-PR runs (master, release branches, nightlies) always run tests
         # from scratch to catch real failures. go clean -testcache removes
