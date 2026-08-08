@@ -206,4 +206,10 @@ var (
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
 	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
+
+	// VulnMgmtUnifiedCVEView replaces severity count columns with TopSeverity and lazy-loads distroTuples.
+	VulnMgmtUnifiedCVEView = registerFeature("Replace severity count columns with TopSeverity and lazy-load distroTuples", "ROX_VULN_MGMT_UNIFIED_CVE_VIEW")
+
+	// VulnMgmtRESTAPI serves vulnerability list pages via REST instead of GraphQL.
+	VulnMgmtRESTAPI = registerFeature("Serve vulnerability list pages via REST instead of GraphQL", "ROX_VULN_MGMT_REST_API")
 )
