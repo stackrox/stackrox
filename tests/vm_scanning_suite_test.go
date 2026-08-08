@@ -30,7 +30,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -74,12 +73,6 @@ const (
 	// k8sResourcePollInterval is the polling cadence for waiting on k8s
 	// resources (namespace deletion, service account readiness, etc.).
 	k8sResourcePollInterval = 2 * time.Second
-
-	// defaultServiceAccountWaitTimeout is the ceiling for waiting on the
-	// default service account to appear in a newly-created namespace.
-	defaultServiceAccountWaitTimeout = 10 * time.Second
-
-	vmImagePullSecretName = "vm-image-pull-secret" //nolint:gosec // G101: not a credential, just the k8s Secret resource name
 )
 
 // VMHandle tracks a KubeVirt VM used by the suite (persistent or transient).
@@ -399,7 +392,8 @@ func (s *VMScanningSuite) provisionVMs(specs []vmhelpers.VMSpec) {
 		s.logf("provision VMs: namespace %q already exists; reusing it", s.namespace)
 	}
 
-	s.ensureImagePullSecret(ctx)
+	require.NoError(s.T(), vmhelpers.EnsureImagePullSecret(ctx, s.k8sClient, s.logf, s.namespace, vmhelpers.ImagePullSecretName, s.cfg.ImagePullSecretPath),
+		"ensure image pull secret ready in namespace %q", s.namespace)
 
 	for _, sp := range specs {
 		req := s.vmSpecToRequest(sp)
@@ -451,80 +445,6 @@ func (s *VMScanningSuite) provisionVMs(specs []vmhelpers.VMSpec) {
 	}
 
 	s.logf("VM placement:\n%s", s.vmPlacementSummary(ctx))
-}
-
-func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
-	if s.cfg.ImagePullSecretPath == "" {
-		return
-	}
-	s.logf("provision VMs: creating image pull secret from %q", s.cfg.ImagePullSecretPath)
-	dockerCfg, err := os.ReadFile(s.cfg.ImagePullSecretPath)
-	require.NoError(s.T(), err, "read image pull secret file %q", s.cfg.ImagePullSecretPath)
-
-	secret := &coreV1.Secret{
-		ObjectMeta: metaV1.ObjectMeta{Name: vmImagePullSecretName},
-		Type:       coreV1.SecretTypeDockerConfigJson,
-		Data:       map[string][]byte{coreV1.DockerConfigJsonKey: dockerCfg},
-	}
-	_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Create(ctx, secret, metaV1.CreateOptions{})
-	if apierrors.IsAlreadyExists(err) {
-		existingSecret, getErr := s.k8sClient.CoreV1().Secrets(s.namespace).Get(ctx, vmImagePullSecretName, metaV1.GetOptions{})
-		require.NoError(s.T(), getErr, "get existing image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
-		existingSecret.Type = coreV1.SecretTypeDockerConfigJson
-		if existingSecret.Data == nil {
-			existingSecret.Data = make(map[string][]byte)
-		}
-		existingSecret.Data[coreV1.DockerConfigJsonKey] = dockerCfg
-		_, err = s.k8sClient.CoreV1().Secrets(s.namespace).Update(ctx, existingSecret, metaV1.UpdateOptions{})
-	}
-	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
-
-	// Wait for the default SA to exist before attempting the update.
-	_, err = s.waitForDefaultServiceAccount(ctx)
-	require.NoError(s.T(), err, "wait for default service account in namespace %q", s.namespace)
-
-	// The SA controller may still be mutating the freshly-created default SA
-	// (e.g. patching token secrets), so a single Get+Update can hit an
-	// optimistic concurrency conflict. Retry exactly like the DaemonSet
-	// update in ensureComplianceMetricsEnv.
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		sa, getErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
-		if getErr != nil {
-			return getErr
-		}
-		for _, ref := range sa.ImagePullSecrets {
-			if ref.Name == vmImagePullSecretName {
-				return nil
-			}
-		}
-		sa.ImagePullSecrets = append(sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
-		_, updateErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
-		return updateErr
-	})
-	require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
-	s.logf("provision VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
-}
-
-func (s *VMScanningSuite) waitForDefaultServiceAccount(ctx context.Context) (*coreV1.ServiceAccount, error) {
-	waitCtx, cancel := context.WithTimeout(ctx, defaultServiceAccountWaitTimeout)
-	defer cancel()
-
-	var serviceAccount *coreV1.ServiceAccount
-	err := wait.PollUntilContextCancel(waitCtx, k8sResourcePollInterval, true, func(ctx context.Context) (bool, error) {
-		sa, err := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		serviceAccount = sa
-		return true, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return serviceAccount, nil
 }
 
 // vmPlacementSummary returns a diagnostic table mapping each persistent VM to
