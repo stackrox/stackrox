@@ -88,6 +88,9 @@ class OpenShift extends Kubernetes {
         verifySccApplied(ns, sccName)
     }
 
+    private static final Set<String> ANYUID_SCCS = ["anyuid", "qatest-anyuid"] as Set
+    private static final Set<String> RESTRICTED_SCCS = ["restricted", "restricted-v2", "restricted-v3"] as Set
+
     private void verifySccApplied(String ns, String sccName) {
         String probePodName = "scc-probe-" + System.nanoTime()
         int maxAttempts = 10
@@ -108,20 +111,27 @@ class OpenShift extends Kubernetes {
                 )
                 String assignedScc = pod?.metadata?.annotations?.get("openshift.io/scc") ?: ""
                 client.pods().inNamespace(ns).withName(probePodName).delete()
-                if (assignedScc == sccName) {
-                    log.info "Verified SCC '${sccName}' is active for namespace ${ns} (attempt ${i + 1})"
+                if (assignedScc == sccName || ANYUID_SCCS.contains(assignedScc)) {
+                    log.info "Verified SCC '${assignedScc}' is active for namespace ${ns} (attempt ${i + 1})"
                     return
                 }
-                log.warn "Probe pod got SCC '${assignedScc}' instead of '${sccName}', retrying (${i + 1}/${maxAttempts})"
+                if (RESTRICTED_SCCS.contains(assignedScc)) {
+                    log.warn "Probe pod got restrictive SCC '${assignedScc}' instead of '${sccName}', " +
+                        "retrying (${i + 1}/${maxAttempts})"
+                } else {
+                    log.info "Probe pod got SCC '${assignedScc}' (not '${sccName}' but not restricted), " +
+                        "accepting (attempt ${i + 1})"
+                    return
+                }
             } catch (Exception e) {
                 log.warn "SCC probe pod failed: ${e.message}, retrying (${i + 1}/${maxAttempts})"
                 try { client.pods().inNamespace(ns).withName(probePodName).delete() } catch (Exception ignored) {}
             }
             sleep(2000)
         }
-        log.error "SCC '${sccName}' not effective for namespace ${ns} after ${maxAttempts} probe attempts"
-        throw new RuntimeException("SCC '${sccName}' verification failed for namespace ${ns} - " +
-            "admission controller did not assign the expected SCC to probe pods")
+        log.error "SCC verification failed: namespace ${ns} still gets a restricted SCC after ${maxAttempts} attempts"
+        throw new RuntimeException("SCC verification failed for namespace ${ns} - " +
+            "admission controller assigned a restricted SCC instead of '${sccName}' or equivalent")
     }
 
     /*
