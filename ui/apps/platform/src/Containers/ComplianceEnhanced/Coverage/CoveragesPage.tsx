@@ -57,7 +57,7 @@ function CoveragesPage() {
     const { profileName } = useParams() as { profileName: string };
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
-    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+    const { scanConfigOverviewsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
     const [selectedProfileStats, setSelectedProfileStats] = useState<
         undefined | ComplianceProfileScanStats
@@ -100,8 +100,8 @@ function CoveragesPage() {
             <CoveragesPageHeader />
             <PageSection hasBodyWrapper={false}>
                 <ScanConfigurationSelect
-                    isLoading={scanConfigurationsQuery.isLoading}
-                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    isLoading={scanConfigOverviewsQuery.isLoading}
+                    scanConfigs={scanConfigOverviewsQuery.response.configs}
                     selectedScanConfigName={selectedScanConfigName}
                     setSelectedScanConfigName={setSelectedScanConfigName}
                 />

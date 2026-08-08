@@ -35,6 +35,7 @@ var (
 	ErrComplianceOperatorIntegrationZeroIntegrations = errors.New("no compliance operator integrations retrieved")
 	ErrComplianceOperatorScanMissingLastStartedFiled = errors.New("scan is missing the LastStartedTime field")
 	ErrComplianceOperatorReceivedOldCheckResult      = errors.New("the check result is older than the current scan")
+	ErrScanConfigNotFound                            = errors.New("this scan is not handled by any known scan configuration")
 )
 
 const (
@@ -120,7 +121,7 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 		return "", errors.Wrap(err, "unable to retrieve the scan configuration from the store")
 	}
 	if len(scanConfigs) == 0 {
-		return "", errors.New("this scan is not handled by any known scan configuration")
+		return "", ErrScanConfigNotFound
 	}
 	// If there is a snapshot with the same timestamp or newer we shouldn't handle this scan since we already handle a newer one
 	query := search.NewQueryBuilder().

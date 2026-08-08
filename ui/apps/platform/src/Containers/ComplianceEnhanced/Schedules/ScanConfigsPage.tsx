@@ -11,12 +11,6 @@ import ScanConfigDetailPage from './ScanConfigDetailPage';
 import ScanConfigsTablePage from './ScanConfigsTablePage';
 
 function ScanConfigsPage() {
-    /*
-     * Examples of urls for ScanConfigPage:
-     * /main/compliance-enhanced/scan-configs
-     * /main/compliance-enhanced/scan-configs?action=create
-     * /main/compliance-enhanced/scan-configs/configId
-     */
     const { pageAction } = usePageAction<PageActions>();
 
     const { hasReadWriteAccess } = usePermissions();

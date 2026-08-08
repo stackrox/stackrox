@@ -62,12 +62,14 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                                 : 'Scan is in progress'}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    <DescriptionListGroup>
-                        <DescriptionListTerm>Last updated</DescriptionListTerm>
-                        <DescriptionListDescription>
-                            {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
-                        </DescriptionListDescription>
-                    </DescriptionListGroup>
+                    {scanConfig.lastUpdatedTime && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Last updated</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                 </ScanConfigParametersView>
                 <ScanConfigClustersTable
                     headingLevel={headingLevel}

@@ -278,6 +278,7 @@ func (m *ComplianceOperatorScanConfigurationV2) CloneVT() *ComplianceOperatorSca
 	r.LastUpdatedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdatedTime).CloneVT())
 	r.ModifiedBy = m.ModifiedBy.CloneVT()
 	r.Description = m.Description
+	r.IsManaged = m.IsManaged
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -1346,6 +1347,9 @@ func (this *ComplianceOperatorScanConfigurationV2) EqualVT(that *ComplianceOpera
 				return false
 			}
 		}
+	}
+	if this.IsManaged != that.IsManaged {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2877,6 +2881,18 @@ func (m *ComplianceOperatorScanConfigurationV2) MarshalToSizedBufferVT(dAtA []by
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.IsManaged {
+		i--
+		if m.IsManaged {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x98
 	}
 	if len(m.ProfileRefs) > 0 {
 		for iNdEx := len(m.ProfileRefs) - 1; iNdEx >= 0; iNdEx-- {
@@ -5073,6 +5089,9 @@ func (m *ComplianceOperatorScanConfigurationV2) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.IsManaged {
+		n += 3
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8839,6 +8858,26 @@ func (m *ComplianceOperatorScanConfigurationV2) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsManaged", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsManaged = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -17357,6 +17396,26 @@ func (m *ComplianceOperatorScanConfigurationV2) UnmarshalVTUnsafe(dAtA []byte) e
 				return err
 			}
 			iNdEx = postIndex
+		case 19:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsManaged", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsManaged = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

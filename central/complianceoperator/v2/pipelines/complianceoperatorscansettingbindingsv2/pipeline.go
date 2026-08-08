@@ -3,6 +3,7 @@ package complianceoperatorscansettingbindingsv2
 import (
 	"context"
 
+	compliancemanager "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	v2Datastore "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -12,28 +13,33 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
 	_ pipeline.Fragment = (*pipelineImpl)(nil)
+
+	log = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(v2Datastore.Singleton())
+	return NewPipeline(v2Datastore.Singleton(), compliancemanager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(v2ScanSettingBindingDatastore v2Datastore.DataStore) pipeline.Fragment {
+func NewPipeline(v2ScanSettingBindingDatastore v2Datastore.DataStore, manager compliancemanager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		v2ScanSettingBindingDatastore: v2ScanSettingBindingDatastore,
+		manager:                       manager,
 	}
 }
 
 type pipelineImpl struct {
 	v2ScanSettingBindingDatastore v2Datastore.DataStore
+	manager                       compliancemanager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -76,13 +82,26 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	event := msg.GetEvent()
 	binding := event.GetComplianceOperatorScanSettingBindingV2()
+	ssbName := binding.GetName()
+	isACSManaged := binding.GetLabels()["app.kubernetes.io/name"] == "stackrox"
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.v2ScanSettingBindingDatastore.DeleteScanSettingBinding(ctx, binding.GetId())
+		if err := s.v2ScanSettingBindingDatastore.DeleteScanSettingBinding(ctx, binding.GetId()); err != nil {
+			return err
+		}
 	default:
-		return s.v2ScanSettingBindingDatastore.UpsertScanSettingBinding(ctx, internaltov2storage.ComplianceOperatorScanSettingBindingObject(binding, clusterID))
+		if err := s.v2ScanSettingBindingDatastore.UpsertScanSettingBinding(ctx, internaltov2storage.ComplianceOperatorScanSettingBindingObject(binding, clusterID)); err != nil {
+			return err
+		}
 	}
+
+	if !isACSManaged && s.manager != nil {
+		if err := s.manager.ReconcileDiscoveredConfig(ctx, ssbName); err != nil {
+			log.Errorf("reconciling discovered config %q: %v", ssbName, err)
+		}
+	}
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

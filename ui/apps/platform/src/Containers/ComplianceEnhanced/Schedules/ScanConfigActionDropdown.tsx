@@ -7,11 +7,6 @@ import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 
-// Component for scan config details page corresponds to ScanConfigActionsColumn for scan configs table table page.
-// One difference: omit delete on details page.
-
-// Caller is responsible for conditional rendering only if READ_WRITE_ACCESS level for Compliance resource.
-
 export type ScanConfigActionDropdownProps = {
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
@@ -31,8 +26,9 @@ function ScanConfigActionDropdown({
 }: ScanConfigActionDropdownProps): ReactElement {
     const navigate = useNavigate();
 
-    const { id, scanConfig } = scanConfigResponse;
+    const { id, scanConfig, modifiedBy } = scanConfigResponse;
     const { notifiers } = scanConfig;
+    const isDiscovered = !modifiedBy?.id;
     const scanConfigUrl = generatePath(scanConfigDetailsPath, {
         scanConfigId: id,
     });
@@ -47,13 +43,12 @@ function ScanConfigActionDropdown({
         >
             <DropdownItem
                 key="Edit scan schedule"
-                // description={isScanning ? 'Edit is disabled while scan is running' : ''}
                 isDisabled={isProcessing}
                 onClick={() => {
                     navigate(`${scanConfigUrl}?action=edit`);
                 }}
             >
-                Edit scan schedule
+                {isDiscovered ? 'Edit notifications' : 'Edit scan schedule'}
             </DropdownItem>
             <Divider component="li" key="separator" />
             <DropdownItem
@@ -69,11 +64,7 @@ function ScanConfigActionDropdown({
             <DropdownItem
                 key="Send report"
                 description={
-                    notifiers.length === 0
-                        ? 'Send is disabled if no delivery destinations'
-                        : /* : isScanning
-                        ? 'Send is disabled while scan is running' */
-                          ''
+                    notifiers.length === 0 ? 'Send is disabled if no delivery destinations' : ''
                 }
                 isDisabled={notifiers.length === 0 || isProcessing}
                 onClick={() => {

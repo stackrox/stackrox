@@ -40,6 +40,7 @@ const REVIEW_CONFIG_ID = 'review';
 
 type ScanConfigWizardFormProps = {
     initialFormValues?: ScanConfigFormValues;
+    isDiscovered?: boolean;
 };
 
 type CustomWizardFooterProps = {
@@ -115,7 +116,10 @@ function CustomWizardFooter({
     );
 }
 
-function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps): ReactElement {
+function ScanConfigWizardForm({
+    initialFormValues,
+    isDiscovered = false,
+}: ScanConfigWizardFormProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
     const formik = useFormikScanConfig(initialFormValues);
@@ -183,15 +187,21 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     }
 
     function canJumpToSelectClusters() {
-        return Object.keys(formik.errors?.parameters ?? {}).length === 0;
+        return isDiscovered || Object.keys(formik.errors?.parameters ?? {}).length === 0;
     }
 
     function canJumpToSelectProfiles() {
-        return canJumpToSelectClusters() && Object.keys(formik.errors?.clusters ?? {}).length === 0;
+        return (
+            canJumpToSelectClusters() &&
+            (isDiscovered || Object.keys(formik.errors?.clusters ?? {}).length === 0)
+        );
     }
 
     function canJumpToConfigureReport() {
-        return canJumpToSelectProfiles() && Object.keys(formik.errors?.profiles ?? {}).length === 0;
+        return (
+            canJumpToSelectProfiles() &&
+            (isDiscovered || Object.keys(formik.errors?.profiles ?? {}).length === 0)
+        );
     }
 
     function canJumpToReviewConfig() {
@@ -223,7 +233,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             />
                         }
                     >
-                        <ScanConfigOptions />
+                        <ScanConfigOptions isReadOnly={isDiscovered} />
                     </WizardStep>
                     <WizardStep
                         name={SELECT_CLUSTERS}
@@ -236,7 +246,10 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                                 formik={formik}
                                 alertRef={alertRef}
                                 openModal={openModal}
-                                validate={() => !(allClustersAreUnhealthy() && !initialFormValues)}
+                                validate={() =>
+                                    isDiscovered ||
+                                    !(allClustersAreUnhealthy() && !initialFormValues)
+                                }
                             />
                         }
                     >
@@ -244,6 +257,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                             alertRef={alertRef}
                             clusters={clusters ?? []}
                             isFetchingClusters={isFetchingClusters}
+                            isReadOnly={isDiscovered}
                         />
                     </WizardStep>
                     <WizardStep
@@ -263,6 +277,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                         <ProfileSelection
                             alertRef={alertRef}
                             clusterIds={clustersUsedForProfileData}
+                            isReadOnly={isDiscovered}
                         />
                     </WizardStep>
                     <WizardStep

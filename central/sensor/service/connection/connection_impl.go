@@ -643,6 +643,11 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 
 	var reformattedConfigs []*central.ApplyComplianceScanConfigRequest
 	for _, scanConfig := range scanConfigs {
+		// Discovered configs (auto-created from observed SSBs) have no ModifiedBy
+		// and already exist on the cluster — skip them in the sync.
+		if scanConfig.GetModifiedBy().GetId() == "" {
+			continue
+		}
 		var profiles []string
 		for _, profile := range scanConfig.GetProfiles() {
 			profiles = append(profiles, profile.GetProfileName())

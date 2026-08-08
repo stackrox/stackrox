@@ -31,6 +31,8 @@ const (
 	ComplianceScanConfigurationService_DeleteReport_FullMethodName                            = "/v2.ComplianceScanConfigurationService/DeleteReport"
 	ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName        = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles"
 	ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles"
+	ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName       = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigOverviews"
+	ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_FullMethodName          = "/v2.ComplianceScanConfigurationService/GetDiscoveredScanConfiguration"
 )
 
 // ComplianceScanConfigurationServiceClient is the client API for ComplianceScanConfigurationService service.
@@ -63,6 +65,12 @@ type ComplianceScanConfigurationServiceClient interface {
 	ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
 	ListComplianceScanConfigClusterProfiles(ctx context.Context, in *ComplianceConfigClusterProfileRequest, opts ...grpc.CallOption) (*ListComplianceScanConfigsClusterProfileResponse, error)
+	// ListComplianceScanConfigOverviews returns a unified view of managed (ACS-created) and
+	// discovered (externally-created) scan configurations across all secured clusters.
+	ListComplianceScanConfigOverviews(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigOverviewsResponse, error)
+	// GetDiscoveredScanConfiguration retrieves a discovered (externally-created) scan
+	// configuration by its SSB name.
+	GetDiscoveredScanConfiguration(ctx context.Context, in *DiscoveredScanConfigurationRequest, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error)
 }
 
 type complianceScanConfigurationServiceClient struct {
@@ -193,6 +201,26 @@ func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigClust
 	return out, nil
 }
 
+func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigOverviews(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigOverviewsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListComplianceScanConfigOverviewsResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceScanConfigurationServiceClient) GetDiscoveredScanConfiguration(ctx context.Context, in *DiscoveredScanConfigurationRequest, opts ...grpc.CallOption) (*ComplianceScanConfigurationStatus, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ComplianceScanConfigurationStatus)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ComplianceScanConfigurationServiceServer is the server API for ComplianceScanConfigurationService service.
 // All implementations should embed UnimplementedComplianceScanConfigurationServiceServer
 // for forward compatibility.
@@ -223,6 +251,12 @@ type ComplianceScanConfigurationServiceServer interface {
 	ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
 	ListComplianceScanConfigClusterProfiles(context.Context, *ComplianceConfigClusterProfileRequest) (*ListComplianceScanConfigsClusterProfileResponse, error)
+	// ListComplianceScanConfigOverviews returns a unified view of managed (ACS-created) and
+	// discovered (externally-created) scan configurations across all secured clusters.
+	ListComplianceScanConfigOverviews(context.Context, *RawQuery) (*ListComplianceScanConfigOverviewsResponse, error)
+	// GetDiscoveredScanConfiguration retrieves a discovered (externally-created) scan
+	// configuration by its SSB name.
+	GetDiscoveredScanConfiguration(context.Context, *DiscoveredScanConfigurationRequest) (*ComplianceScanConfigurationStatus, error)
 }
 
 // UnimplementedComplianceScanConfigurationServiceServer should be embedded to have
@@ -267,6 +301,12 @@ func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanC
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigClusterProfiles(context.Context, *ComplianceConfigClusterProfileRequest) (*ListComplianceScanConfigsClusterProfileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListComplianceScanConfigClusterProfiles not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigOverviews(context.Context, *RawQuery) (*ListComplianceScanConfigOverviewsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListComplianceScanConfigOverviews not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) GetDiscoveredScanConfiguration(context.Context, *DiscoveredScanConfigurationRequest) (*ComplianceScanConfigurationStatus, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDiscoveredScanConfiguration not implemented")
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) testEmbeddedByValue() {}
 
@@ -504,6 +544,42 @@ func _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RawQuery)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigOverviews(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigOverviews(ctx, req.(*RawQuery))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DiscoveredScanConfigurationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).GetDiscoveredScanConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).GetDiscoveredScanConfiguration(ctx, req.(*DiscoveredScanConfigurationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ComplianceScanConfigurationService_ServiceDesc is the grpc.ServiceDesc for ComplianceScanConfigurationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -558,6 +634,14 @@ var ComplianceScanConfigurationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListComplianceScanConfigClusterProfiles",
 			Handler:    _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_Handler,
+		},
+		{
+			MethodName: "ListComplianceScanConfigOverviews",
+			Handler:    _ComplianceScanConfigurationService_ListComplianceScanConfigOverviews_Handler,
+		},
+		{
+			MethodName: "GetDiscoveredScanConfiguration",
+			Handler:    _ComplianceScanConfigurationService_GetDiscoveredScanConfiguration_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

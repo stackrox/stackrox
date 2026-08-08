@@ -273,6 +273,7 @@ var (
 	ComplianceOperatorControl                  = newFieldLabel("Compliance Control")
 	ComplianceOperatorScanConfig               = newFieldLabel("Compliance Scan Config ID")
 	ComplianceOperatorScanConfigName           = newFieldLabel("Compliance Scan Config Name")
+	ComplianceOperatorScanConfigIsManaged      = newFieldLabel("Compliance Scan Config Is Managed")
 	ComplianceOperatorCheckID                  = newFieldLabel("Compliance Check ID")
 	ComplianceOperatorCheckUID                 = newFieldLabel("Compliance Check UID")
 	ComplianceOperatorCheckName                = newFieldLabel("Compliance Check Name")
