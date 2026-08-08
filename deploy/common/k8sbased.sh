@@ -477,6 +477,10 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
+      if [[ -n "${SCANNER_V4_DB_PERSISTENCE_NONE}" ]]; then
+        helm_args+=(--set "scannerV4.db.persistence.none=true")
+      fi
+
       if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
         helm_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
       fi
