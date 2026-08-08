@@ -730,12 +730,17 @@ image_prefetcher_start_set() {
     esac
 
     # daemonset, etc
+    local collect_metrics="--collect-metrics"
+    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]]; then
+        collect_metrics=""
+        info "Skipping prefetcher metrics collection (LoadBalancer not supported on IPv6-primary)"
+    fi
     ${image_prefetcher_deploy_bin} \
         --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
         --version="${image_prefetcher_version}" \
         --k8s-flavor="$flavor" \
         --secret=stackrox \
-        --collect-metrics \
+        ${collect_metrics} \
         --namespace="$ns" \
         "$name" > "$manifest"
 
