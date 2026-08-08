@@ -121,6 +121,11 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			wantErr:   ErrInternal,
 			wantInMsg: "scan crashed",
 		},
+		"should wrap ErrBusy for BUSY": {
+			code:    pb.ErrorCode_ERROR_CODE_BUSY,
+			message: "agent is already serving another request",
+			wantErr: ErrBusy,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
