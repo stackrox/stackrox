@@ -152,7 +152,8 @@ func TestValidateVMWorkload(t *testing.T) {
 }
 
 func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
+	gen, err := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
+	require.NoError(t, err)
 	tests := map[string]uint32{
 		"basic report": 1234,
 		"different VM": 9999,
