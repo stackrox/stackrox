@@ -114,9 +114,9 @@ describe('Listening endpoints pagination within a deployment', () => {
         cy.get(`${processTableA} > tbody > tr`).should('have.length', 20);
 
         // Verify deployment A page 1 starts with port 8000
-        cy.get(
-            `${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`
-        ).should('exist');
+        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
+            'exist'
+        );
 
         // Navigate deployment A to page 2
         cy.get(expandedContentA).find('[data-action="next"]').click();
@@ -124,12 +124,12 @@ describe('Listening endpoints pagination within a deployment', () => {
         cy.get(`${processTableA} > tbody > tr`).should('have.length', 20);
 
         // Deployment A page 2 should start with port 8020, not 8000
-        cy.get(
-            `${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`
-        ).should('exist');
-        cy.get(
-            `${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`
-        ).should('not.exist');
+        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`).should(
+            'exist'
+        );
+        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
+            'not.exist'
+        );
 
         // Now expand deployment B — it should start on page 1 independently
         cy.get(`${rowSelectorB} ${selectors.expandableRowToggle}`).click();
@@ -138,17 +138,17 @@ describe('Listening endpoints pagination within a deployment', () => {
 
         // Deployment B should show page 1 starting with port 9000
         cy.get(`${processTableB} > tbody > tr`).should('have.length', 20);
-        cy.get(
-            `${processTableB} ${selectors.tableRowWithValueForColumn('Port', '9000')}`
-        ).should('exist');
+        cy.get(`${processTableB} ${selectors.tableRowWithValueForColumn('Port', '9000')}`).should(
+            'exist'
+        );
 
         // Deployment A should still be on page 2 (port 8020 present, port 8000 absent)
-        cy.get(
-            `${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`
-        ).should('exist');
-        cy.get(
-            `${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`
-        ).should('not.exist');
+        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8020')}`).should(
+            'exist'
+        );
+        cy.get(`${processTableA} ${selectors.tableRowWithValueForColumn('Port', '8000')}`).should(
+            'not.exist'
+        );
     });
 
     it('should navigate to the last page and disable the next button', () => {

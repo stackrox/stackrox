@@ -5,10 +5,8 @@ import { Bullseye, Card, Content, Pagination, Spinner } from '@patternfly/react-
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { riskWorkloadsBasePath } from 'routePaths';
-import {
-    getListeningEndpointsForDeployment,
-    type ProcessListeningOnPort,
-} from 'services/ProcessListeningOnPortsService';
+import { getListeningEndpointsForDeployment } from 'services/ProcessListeningOnPortsService';
+import type { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import type { ListDeployment } from 'types/deployment.proto';
 import useSet from 'hooks/useSet';
