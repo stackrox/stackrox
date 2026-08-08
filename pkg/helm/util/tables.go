@@ -8,7 +8,7 @@ import "helm.sh/helm/v3/pkg/chartutil"
 // Hence, `CoalesceTables(dst, src1, src2, ..., srcN)` is equivalent to calling
 //
 //	CoalesceTables(...CoalesceTables(CoalesceTables(dst, src1), src2)..., srcN)
-func CoalesceTables(dst map[string]interface{}, srcs ...map[string]interface{}) map[string]interface{} {
+func CoalesceTables(dst map[string]any, srcs ...map[string]any) map[string]any {
 	res := dst
 	for _, src := range srcs {
 		res = chartutil.CoalesceTables(res, src)

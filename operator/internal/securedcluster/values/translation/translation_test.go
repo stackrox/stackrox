@@ -149,26 +149,26 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": true,
 							},
 						},
 					},
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -195,26 +195,26 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": true,
 							},
 						},
 					},
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -242,19 +242,19 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": true,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -274,16 +274,16 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -309,15 +309,15 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": true,
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": true,
 				},
 			},
@@ -342,24 +342,24 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
 							"none": true,
 						},
 					},
 				},
-				"sensor": map[string]interface{}{
-					"localImageScanning": map[string]interface{}{
+				"sensor": map[string]any{
+					"localImageScanning": map[string]any{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -379,16 +379,16 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -660,22 +660,22 @@ func (s *TranslationTestSuite) TestTranslate() {
 			want: chartutil.Values{
 				"clusterName":     "test-cluster",
 				"centralEndpoint": "central.test:443",
-				"clusterLabels": map[string]interface{}{
+				"clusterLabels": map[string]any{
 					"my-label1": "value1",
 					"my-label2": "value2",
 				},
-				"imagePullSecrets": map[string]interface{}{
+				"imagePullSecrets": map[string]any{
 					"useExisting": []string{
 						"image-pull-secrets-secret1",
 						"image-pull-secrets-secret2",
 					},
 				},
-				"additionalCAs": map[string]interface{}{
+				"additionalCAs": map[string]any{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
-				"sensor": map[string]interface{}{
-					"tolerations": []map[string]interface{}{
+				"sensor": map[string]any{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -688,33 +688,33 @@ func (s *TranslationTestSuite) TestTranslate() {
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
-					"hostAliases": []map[string]interface{}{
+					"hostAliases": []map[string]any{
 						{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"sensor.com"},
 						},
 					},
 				},
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
+				"admissionControl": map[string]any{
+					"dynamic": map[string]any{
 						"disableBypass": false,
 					},
 					"enforce":       true,
 					"failurePolicy": "Fail",
-					"nodeSelector": map[string]interface{}{
+					"nodeSelector": map[string]any{
 						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
 						"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
 					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "1502m",
 							"memory": "1002Mi",
-						}, "requests": map[string]interface{}{
+						}, "requests": map[string]any{
 							"cpu":    "1501m",
 							"memory": "1001Mi",
 						},
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -724,20 +724,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
-					"hostAliases": []map[string]interface{}{
+					"hostAliases": []map[string]any{
 						{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"admission-control.com"},
 						},
 					},
 				},
-				"auditLogs": map[string]interface{}{
+				"auditLogs": map[string]any{
 					"disableCollection": false,
 				},
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable":  false,
 					"replicas": int32(7),
-					"autoscaling": map[string]interface{}{
+					"autoscaling": map[string]any{
 						"disable":     false,
 						"minReplicas": int32(6),
 						"maxReplicas": int32(8),
@@ -746,7 +746,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"scanner-node-selector-label1": "scanner-node-selector-value1",
 						"scanner-node-selector-label2": "scanner-node-selector-value2",
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -756,7 +756,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
-					"hostAliases": []map[string]interface{}{
+					"hostAliases": []map[string]any{
 						{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"scanner.com"},
@@ -766,7 +766,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
 					},
-					"dbTolerations": []map[string]interface{}{
+					"dbTolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -776,48 +776,48 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"operator": "Exists",
 						},
 					},
-					"dbHostAliases": []map[string]interface{}{
+					"dbHostAliases": []map[string]any{
 						{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"scanner-db.com"},
 						},
 					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "50",
 							"memory": "60",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "70",
 							"memory": "80",
 						},
 					},
-					"dbResources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"dbResources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "90",
 							"memory": "100",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "110",
 							"memory": "120",
 						},
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
-					"indexer": map[string]interface{}{
-						"autoscaling": map[string]interface{}{
+					"indexer": map[string]any{
+						"autoscaling": map[string]any{
 							"disable":     false,
 							"minReplicas": int32(6),
 							"maxReplicas": int32(8),
 						},
 						"replicas": int32(7),
-						"resources": map[string]interface{}{
-							"limits": map[string]interface{}{
+						"resources": map[string]any{
+							"limits": map[string]any{
 								"cpu":    "110",
 								"memory": "120",
 							},
-							"requests": map[string]interface{}{
+							"requests": map[string]any{
 								"cpu":    "100",
 								"memory": "110",
 							},
@@ -826,7 +826,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"scanner-v4-indexer-node-selector-label1": "scanner-v4-indexer-node-selector-value1",
 							"scanner-v4-indexer-node-selector-label2": "scanner-v4-indexer-node-selector-value2",
 						},
-						"tolerations": []map[string]interface{}{
+						"tolerations": []map[string]any{
 							{
 								"key":      "node.stackrox.io",
 								"operator": "Equal",
@@ -836,20 +836,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 								"operator": "Exists",
 							},
 						},
-						"hostAliases": []map[string]interface{}{
+						"hostAliases": []map[string]any{
 							{
 								"ip":        "127.0.0.1",
 								"hostnames": []string{"scanner-v4-indexer.com"},
 							},
 						},
 					},
-					"db": map[string]interface{}{
-						"resources": map[string]interface{}{
-							"limits": map[string]interface{}{
+					"db": map[string]any{
+						"resources": map[string]any{
+							"limits": map[string]any{
 								"cpu":    "110",
 								"memory": "120",
 							},
-							"requests": map[string]interface{}{
+							"requests": map[string]any{
 								"cpu":    "100",
 								"memory": "110",
 							},
@@ -858,7 +858,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 							"scanner-v4-db-node-selector-label1": "scanner-v4-db-node-selector-value1",
 							"scanner-v4-db-node-selector-label2": "scanner-v4-db-node-selector-value2",
 						},
-						"tolerations": []map[string]interface{}{
+						"tolerations": []map[string]any{
 							{
 								"key":      "node.stackrox.io",
 								"operator": "Equal",
@@ -868,14 +868,14 @@ func (s *TranslationTestSuite) TestTranslate() {
 								"operator": "Exists",
 							},
 						},
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":    "scanner-v4-db-pvc",
 								"createClaim":  true,
 								"storageClass": "test-sc1",
 							},
 						},
-						"hostAliases": []map[string]interface{}{
+						"hostAliases": []map[string]any{
 							{
 								"ip":        "127.0.0.1",
 								"hostnames": []string{"scanner-v4-db.com"},
@@ -886,7 +886,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"customize": map[string]interface{}{
+				"customize": map[string]any{
 					"annotations": map[string]string{
 						"customize-annotation1": "customize-annotation1-value",
 						"customize-annotation2": "customize-annotation2-value",
@@ -895,37 +895,37 @@ func (s *TranslationTestSuite) TestTranslate() {
 						"customize-label1": "customize-label1-value",
 						"customize-label2": "customize-label2-value",
 					},
-					"envVars": map[string]interface{}{
-						"customize-env-var1": map[string]interface{}{
+					"envVars": map[string]any{
+						"customize-env-var1": map[string]any{
 							"value": "customize-env-var1-value",
 						},
-						"customize-env-var2": map[string]interface{}{
+						"customize-env-var2": map[string]any{
 							"value": "customize-env-var2-value",
 						},
 					},
 				},
-				"collector": map[string]interface{}{
+				"collector": map[string]any{
 					"forceCollectionMethod":   true,
 					"collectionMethod":        "CORE_BPF",
 					"disableTaintTolerations": false,
-					"complianceResources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"complianceResources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "1504m",
 							"memory": "1004Mi",
-						}, "requests": map[string]interface{}{
+						}, "requests": map[string]any{
 							"cpu":    "1503m",
 							"memory": "1003Mi",
 						},
 					},
-					"hostAliases": []map[string]interface{}{
+					"hostAliases": []map[string]any{
 						{
 							"ip":        "127.0.0.1",
 							"hostnames": []string{"collector.com"},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -951,20 +951,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"collector": map[string]interface{}{
+				"collector": map[string]any{
 					"forceCollectionMethod": true,
 					"collectionMethod":      "CORE_BPF",
 				},
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -987,20 +987,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"autoLockProcessBaselines": map[string]interface{}{
+				"autoLockProcessBaselines": map[string]any{
 					"enabled": true,
 				},
 			},
@@ -1022,20 +1022,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"autoLockProcessBaselines": map[string]interface{}{
+				"autoLockProcessBaselines": map[string]any{
 					"enabled": false,
 				},
 			},
@@ -1057,20 +1057,20 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable": false,
 				},
-				"sensor": map[string]interface{}{
+				"sensor": map[string]any{
 					"localImageScanning": map[string]string{
 						"enabled": "true",
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"processIndicators": map[string]interface{}{
+				"processIndicators": map[string]any{
 					"noPersistence": false,
 				},
 			},
@@ -1089,8 +1089,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 			// Remove config fingerprint as it changes as the test case changes
 			_, err = got.PathValue("meta.configFingerprintOverride")
 			require.NoError(t, err)
-			delete(got["meta"].(map[string]interface{}), "configFingerprintOverride")
-			if len(got["meta"].(map[string]interface{})) == 0 {
+			delete(got["meta"].(map[string]any), "configFingerprintOverride")
+			if len(got["meta"].(map[string]any)) == 0 {
 				delete(got, "meta")
 			}
 

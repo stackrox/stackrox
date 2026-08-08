@@ -48,51 +48,51 @@ type zapGrpcLogger struct {
 	logger logging.Logger
 }
 
-func (l *zapGrpcLogger) Info(args ...interface{}) {
+func (l *zapGrpcLogger) Info(args ...any) {
 	l.logger.Debug(args...)
 }
 
-func (l *zapGrpcLogger) Infoln(args ...interface{}) {
+func (l *zapGrpcLogger) Infoln(args ...any) {
 	l.logger.Debug(args...)
 }
 
-func (l *zapGrpcLogger) Infof(format string, args ...interface{}) {
+func (l *zapGrpcLogger) Infof(format string, args ...any) {
 	l.logger.Debugf(format, args...)
 }
 
-func (l *zapGrpcLogger) Warning(args ...interface{}) {
+func (l *zapGrpcLogger) Warning(args ...any) {
 	l.logger.Debug(args...)
 }
 
-func (l *zapGrpcLogger) Warningln(args ...interface{}) {
+func (l *zapGrpcLogger) Warningln(args ...any) {
 	l.logger.Debug(args...)
 }
 
-func (l *zapGrpcLogger) Warningf(format string, args ...interface{}) {
+func (l *zapGrpcLogger) Warningf(format string, args ...any) {
 	l.logger.Debugf(format, args...)
 }
 
-func (l *zapGrpcLogger) Error(args ...interface{}) {
+func (l *zapGrpcLogger) Error(args ...any) {
 	l.logger.Error(args...)
 }
 
-func (l *zapGrpcLogger) Errorln(args ...interface{}) {
+func (l *zapGrpcLogger) Errorln(args ...any) {
 	l.logger.Error(args...)
 }
 
-func (l *zapGrpcLogger) Errorf(format string, args ...interface{}) {
+func (l *zapGrpcLogger) Errorf(format string, args ...any) {
 	l.logger.Errorf(format, args...)
 }
 
-func (l *zapGrpcLogger) Fatal(args ...interface{}) {
+func (l *zapGrpcLogger) Fatal(args ...any) {
 	l.logger.Fatal(args...)
 }
 
-func (l *zapGrpcLogger) Fatalln(args ...interface{}) {
+func (l *zapGrpcLogger) Fatalln(args ...any) {
 	l.logger.Fatal(args...)
 }
 
-func (l *zapGrpcLogger) Fatalf(format string, args ...interface{}) {
+func (l *zapGrpcLogger) Fatalf(format string, args ...any) {
 	l.logger.Fatalf(format, args...)
 }
 

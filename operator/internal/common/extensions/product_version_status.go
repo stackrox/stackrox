@@ -30,7 +30,7 @@ func updateProductVersion(uSt *unstructured.Unstructured, version string) bool {
 		return false
 	}
 	if uSt.Object == nil {
-		uSt.Object = make(map[string]interface{})
+		uSt.Object = make(map[string]any)
 	}
 	if err := unstructured.SetNestedField(uSt.Object, version, "productVersion"); err != nil {
 		return false
@@ -48,7 +48,7 @@ func updateObservedGeneration(uSt *unstructured.Unstructured, generation int64) 
 	}
 
 	if uSt.Object == nil {
-		uSt.Object = make(map[string]interface{})
+		uSt.Object = make(map[string]any)
 	}
 
 	// Set observedGeneration to the current generation

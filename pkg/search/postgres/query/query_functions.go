@@ -24,7 +24,7 @@ type queryAndFieldContext struct {
 	now time.Time
 }
 
-func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClause, postTransformFunc func(interface{}) interface{}) *QueryEntry {
+func qeWithSelectFieldIfNeeded(ctx *queryAndFieldContext, whereClause *WhereClause, postTransformFunc func(any) any) *QueryEntry {
 	qe := &QueryEntry{Where: *whereClause}
 
 	if ctx.derivedMetadata != nil {
@@ -113,7 +113,7 @@ func matchFieldQuery(qualifiedColName string, sqlDataType postgres.DataType, fie
 	return qe, nil
 }
 
-func handleExistenceQueries(ctx *queryAndFieldContext, transformFn func(interface{}) interface{}) *QueryEntry {
+func handleExistenceQueries(ctx *queryAndFieldContext, transformFn func(any) any) *QueryEntry {
 	switch ctx.value {
 	case pkgSearch.WildcardString:
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{

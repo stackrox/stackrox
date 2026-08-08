@@ -67,12 +67,12 @@ func (s *ManagerImplSuite) addNameMapping(name, key string) {
 	s.mgr.imageNameToImageCacheKey.Add(name, key)
 }
 
-func (s *ManagerImplSuite) assertCached(key string, expected bool, msgAndArgs ...interface{}) {
+func (s *ManagerImplSuite) assertCached(key string, expected bool, msgAndArgs ...any) {
 	_, ok := s.mgr.imageCache.Get(key)
 	s.Equal(expected, ok, msgAndArgs...)
 }
 
-func (s *ManagerImplSuite) assertNameMapped(name string, expected bool, msgAndArgs ...interface{}) {
+func (s *ManagerImplSuite) assertNameMapped(name string, expected bool, msgAndArgs ...any) {
 	_, ok := s.mgr.imageNameToImageCacheKey.Get(name)
 	s.Equal(expected, ok, msgAndArgs...)
 }

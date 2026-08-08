@@ -266,12 +266,12 @@ func (s *ImageCacheTestSuite) addNameMapping(name, key string) {
 	s.manager.imageNameToImageCacheKey.Add(name, key)
 }
 
-func (s *ImageCacheTestSuite) assertCached(key string, expected bool, msgAndArgs ...interface{}) {
+func (s *ImageCacheTestSuite) assertCached(key string, expected bool, msgAndArgs ...any) {
 	_, ok := s.manager.imageCache.Get(key)
 	s.Equal(expected, ok, msgAndArgs...)
 }
 
-func (s *ImageCacheTestSuite) assertNameMapped(name string, expected bool, msgAndArgs ...interface{}) {
+func (s *ImageCacheTestSuite) assertNameMapped(name string, expected bool, msgAndArgs ...any) {
 	_, ok := s.manager.imageNameToImageCacheKey.Get(name)
 	s.Equal(expected, ok, msgAndArgs...)
 }

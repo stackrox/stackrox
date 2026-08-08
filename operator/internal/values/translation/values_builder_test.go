@@ -22,7 +22,7 @@ func TestBuildNil(t *testing.T) {
 func TestBuildWithValue(t *testing.T) {
 	v := NewValuesBuilder()
 	v.SetBoolValue("flag", true)
-	assert.Equal(t, map[string]interface{}{"flag": true}, build(t, &v))
+	assert.Equal(t, map[string]any{"flag": true}, build(t, &v))
 }
 
 func TestBuildWithError(t *testing.T) {
@@ -54,7 +54,7 @@ func TestAddAllFrom(t *testing.T) {
 
 	host.AddAllFrom(&donor)
 
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"host-string":  "bar",
 		"donor-string": "foo",
 		"donor-flag":   false,
@@ -66,7 +66,7 @@ func TestAllFromEmpty(t *testing.T) {
 	v.SetStringValue("foo", "bar")
 	v.AddAllFrom(nil)
 	v.AddAllFrom(&empty)
-	assert.Equal(t, map[string]interface{}{"foo": "bar"}, build(t, &v))
+	assert.Equal(t, map[string]any{"foo": "bar"}, build(t, &v))
 }
 
 func TestAddAllFromError(t *testing.T) {
@@ -108,9 +108,9 @@ func TestAddChild(t *testing.T) {
 
 	parent.AddChild("child", &child)
 
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"parent-foo": "foo1",
-		"child": map[string]interface{}{
+		"child": map[string]any{
 			"child-foo": "foo6",
 		},
 	}, build(t, &parent))
@@ -121,7 +121,7 @@ func TestAddChildEmpty(t *testing.T) {
 	v.SetStringValue("foo", "bar")
 	v.AddChild("nil-child", nil)
 	v.AddChild("empty-child", &empty)
-	assert.Equal(t, map[string]interface{}{"foo": "bar"}, build(t, &v))
+	assert.Equal(t, map[string]any{"foo": "bar"}, build(t, &v))
 }
 
 func TestAddChildWithError(t *testing.T) {
@@ -196,17 +196,17 @@ func TestSetValues(t *testing.T) {
 	v.SetResourceList("nil-resources", nil)
 	v.SetResourceList("empty-resources", v1.ResourceList{})
 
-	values := map[string]interface{}{"chartutil-key": "chartutil-anything"}
+	values := map[string]any{"chartutil-key": "chartutil-anything"}
 	v.SetMap("map", values)
 	v.SetMap("nil-map", nil)
-	v.SetMap("empty-map", map[string]interface{}{})
+	v.SetMap("empty-map", map[string]any{})
 
-	valuesSlice := []map[string]interface{}{{"chartutil-1": 1}, {"chartutil-2": 2}}
+	valuesSlice := []map[string]any{{"chartutil-1": 1}, {"chartutil-2": 2}}
 	v.SetMapSlice("map-slice", valuesSlice)
 	v.SetMapSlice("nil-map-slice", nil)
-	v.SetMapSlice("empty-map-slice", []map[string]interface{}{})
+	v.SetMapSlice("empty-map-slice", []map[string]any{})
 
-	assert.Equal(t, map[string]interface{}{
+	assert.Equal(t, map[string]any{
 		"bool-pointer":         true,
 		"bool":                 true,
 		"int32":                float64(42),
@@ -216,11 +216,11 @@ func TestSetValues(t *testing.T) {
 		"string":               "freedom",
 		"empty-string":         "",
 		"pull-policy":          "Always",
-		"string-slice":         []interface{}{"string1", ""},
-		"string-map":           map[string]interface{}{"string-key": "string-value"},
-		"resources":            map[string]interface{}{"cpu": "6"},
-		"map":                  map[string]interface{}{"chartutil-key": "chartutil-anything"},
-		"map-slice":            []interface{}{map[string]interface{}{"chartutil-1": float64(1)}, map[string]interface{}{"chartutil-2": float64(2)}},
+		"string-slice":         []any{"string1", ""},
+		"string-map":           map[string]any{"string-key": "string-value"},
+		"resources":            map[string]any{"cpu": "6"},
+		"map":                  map[string]any{"chartutil-key": "chartutil-anything"},
+		"map-slice":            []any{map[string]any{"chartutil-1": float64(1)}, map[string]any{"chartutil-2": float64(2)}},
 	}, build(t, &v))
 }
 
@@ -253,10 +253,10 @@ func TestSetClashingKey(t *testing.T) {
 			v.SetResourceList(key, v1.ResourceList{v1.ResourcePods: resource.MustParse("14")})
 		},
 		"chartutil-values": func(v *ValuesBuilder) {
-			v.SetMap(key, map[string]interface{}{"foo": 100500})
+			v.SetMap(key, map[string]any{"foo": 100500})
 		},
 		"chartutil-values-slice": func(v *ValuesBuilder) {
-			v.SetMapSlice(key, []map[string]interface{}{{"bar": -1}})
+			v.SetMapSlice(key, []map[string]any{{"bar": -1}})
 		},
 	}
 
@@ -281,9 +281,9 @@ func TestSetData(t *testing.T) {
 	v.SetPathValue("root.child.another child", "test value")
 	require.Empty(t, v.errors)
 
-	assert.Equal(t, map[string]interface{}{
-		"root": map[string]interface{}{
-			"child": map[string]interface{}{
+	assert.Equal(t, map[string]any{
+		"root": map[string]any{
+			"child": map[string]any{
 				"another child": "test value",
 			},
 		},
@@ -296,14 +296,14 @@ func TestSetDataDontOverwrite(t *testing.T) {
 	require.NoError(t, v.errors.Unwrap())
 	v.SetPathValue("root.child.grandchild", "fails to be written")
 	require.Error(t, v.errors)
-	assert.Equal(t, map[string]interface{}{
-		"root": map[string]interface{}{
+	assert.Equal(t, map[string]any{
+		"root": map[string]any{
 			"child": "already existent",
 		},
 	}, v.data)
 }
 
-func build(t *testing.T, b *ValuesBuilder) map[string]interface{} {
+func build(t *testing.T, b *ValuesBuilder) map[string]any {
 	val, err := b.Build()
 	require.NoError(t, err)
 	assert.NotNil(t, val)

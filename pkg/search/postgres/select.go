@@ -511,13 +511,13 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	}
 
 	// Add PostTransform for enum fields to convert integer values to strings
-	var postTransform func(interface{}) interface{}
+	var postTransform func(any) any
 	if dataType == postgres.Enum {
 		var enumFieldPath string
 		if searchFieldObj, ok := field.Schema.OptionsMap.Get(searchField); ok {
 			enumFieldPath = searchFieldObj.FieldPath
 		}
-		postTransform = func(i interface{}) interface{} {
+		postTransform = func(i any) any {
 			// The value from postgres is a *int, convert it to string using enum registry
 			return enumregistry.Lookup(enumFieldPath, int32(*(i.(*int))))
 		}

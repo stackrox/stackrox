@@ -149,7 +149,7 @@ func String(field, value string) zap.Field {
 
 // Any provides a wrapper around zap.Any and adds the key-value pair as structured log field.
 // This should be _always_ preferred over direct calls to zap to minimize dependency to it.
-func Any(field string, value interface{}) zap.Field {
+func Any(field string, value any) zap.Field {
 	if value == nil {
 		return zap.Skip()
 	}

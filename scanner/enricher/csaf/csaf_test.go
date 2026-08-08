@@ -61,9 +61,9 @@ var (
 )
 
 func TestConfigure(t *testing.T) {
-	noopConfig := func(_ interface{}) error { return nil }
+	noopConfig := func(_ any) error { return nil }
 	type configTestcase struct {
-		Config func(interface{}) error
+		Config func(any) error
 		Check  func(*testing.T, error)
 		Name   string
 	}
@@ -74,7 +74,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "OK",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
 				cfg.URL = s
@@ -83,7 +83,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name:   "UnmarshalError",
-			Config: func(_ interface{}) error { return errors.New("expected error") },
+			Config: func(_ any) error { return errors.New("expected error") },
 			Check: func(t *testing.T, err error) {
 				if err == nil {
 					t.Error("expected unmarshal error")
@@ -92,7 +92,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "TrailingSlashOK",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com"
 				cfg.URL = s
@@ -101,7 +101,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "BadURL",
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://[notaurl:/"
 				cfg.URL = s

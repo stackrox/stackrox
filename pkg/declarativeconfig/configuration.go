@@ -70,7 +70,7 @@ func ConfigurationFromRawBytes(rawConfigurations ...[]byte) ([]Configuration, er
 	return configurations, nil
 }
 
-func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration, error) {
+func fromUnstructuredConfigs(unstructuredConfigs []any) ([]Configuration, error) {
 	configurations := make([]Configuration, 0, len(unstructuredConfigs))
 	for _, unstructuredConfig := range unstructuredConfigs {
 		config, err := fromUnstructured(unstructuredConfig)
@@ -82,7 +82,7 @@ func fromUnstructuredConfigs(unstructuredConfigs []interface{}) ([]Configuration
 	return configurations, nil
 }
 
-func fromUnstructured(unstructured interface{}) (Configuration, error) {
+func fromUnstructured(unstructured any) (Configuration, error) {
 	rawConfiguration, err := yaml.Marshal(unstructured)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling unstructured configuration")
@@ -112,9 +112,9 @@ func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) erro
 
 func parseToConfiguration(contents []byte) ([]Configuration, error) {
 	dec := yaml.NewDecoder(bytes.NewReader(contents))
-	var unstructuredObjs []interface{}
+	var unstructuredObjs []any
 	for {
-		var obj interface{}
+		var obj any
 		err := dec.Decode(&obj)
 		if errors.Is(err, io.EOF) {
 			break
@@ -132,7 +132,7 @@ func parseToConfiguration(contents []byte) ([]Configuration, error) {
 	var configurations []Configuration
 	for _, unstructured := range unstructuredObjs {
 		// Special case: a list of objects.
-		listOfObj, ok := unstructured.([]interface{})
+		listOfObj, ok := unstructured.([]any)
 		if ok {
 			configs, err := fromUnstructuredConfigs(listOfObj)
 			if err != nil {

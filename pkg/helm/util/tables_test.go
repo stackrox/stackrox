@@ -7,19 +7,19 @@ import (
 )
 
 func TestCoalesceTables_LeftToRight(t *testing.T) {
-	dst := map[string]interface{}{
-		"foo": map[string]interface{}{
+	dst := map[string]any{
+		"foo": map[string]any{
 			"bar": "baz",
 		},
 	}
-	src1 := map[string]interface{}{
-		"foo": map[string]interface{}{
+	src1 := map[string]any{
+		"foo": map[string]any{
 			"bar": "nope",
 			"qux": "quux",
 		},
 	}
-	src2 := map[string]interface{}{
-		"foo": map[string]interface{}{
+	src2 := map[string]any{
+		"foo": map[string]any{
 			"bar": "nope nope",
 			"qux": "NOPE",
 		},
@@ -28,8 +28,8 @@ func TestCoalesceTables_LeftToRight(t *testing.T) {
 
 	result := CoalesceTables(dst, src1, src2)
 
-	expected := map[string]interface{}{
-		"foo": map[string]interface{}{
+	expected := map[string]any{
+		"foo": map[string]any{
 			"bar": "baz",
 			"qux": "quux",
 		},

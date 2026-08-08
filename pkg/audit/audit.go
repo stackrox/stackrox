@@ -10,7 +10,7 @@ import (
 
 // Auditor implements a unary server interceptor
 type Auditor interface {
-	UnaryServerInterceptor() func(context.Context, interface{}, *grpc.UnaryServerInfo, grpc.UnaryHandler) (interface{}, error)
+	UnaryServerInterceptor() func(context.Context, any, *grpc.UnaryServerInfo, grpc.UnaryHandler) (any, error)
 	PostAuthHTTPInterceptor(handler http.Handler) http.Handler
-	SendAuditMessage(ctx context.Context, req interface{}, grpcMethod string, authError interceptor.AuthStatus, requestError error)
+	SendAuditMessage(ctx context.Context, req any, grpcMethod string, authError interceptor.AuthStatus, requestError error)
 }

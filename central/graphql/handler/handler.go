@@ -29,7 +29,7 @@ var (
 type logger struct {
 }
 
-func (*logger) LogPanic(ctx context.Context, value interface{}) {
+func (*logger) LogPanic(ctx context.Context, value any) {
 	const size = 64 << 10
 	buf := make([]byte, size)
 	buf = buf[:runtime.Stack(buf, false)]
@@ -41,9 +41,9 @@ type relayHandler struct {
 }
 
 type params struct {
-	Query         string                 `json:"query"`
-	OperationName string                 `json:"operationName"`
-	Variables     map[string]interface{} `json:"variables"`
+	Query         string         `json:"query"`
+	OperationName string         `json:"operationName"`
+	Variables     map[string]any `json:"variables"`
 }
 
 type paramsContextKey struct{}

@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	RegisterTypeFactory(componentV2LoaderType, func() interface{} {
+	RegisterTypeFactory(componentV2LoaderType, func() any {
 		return NewComponentV2Loader(datastore.Singleton())
 	})
 }

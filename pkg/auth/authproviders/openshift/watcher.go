@@ -72,11 +72,11 @@ type handler struct {
 	readCAs          func() ([][]byte, error)
 }
 
-func (h *handler) OnChange(_ string) (interface{}, error) {
+func (h *handler) OnChange(_ string) (any, error) {
 	return h.readCAs()
 }
 
-func (h *handler) OnStableUpdate(val interface{}, err error) {
+func (h *handler) OnStableUpdate(val any, err error) {
 	// Ignore errors and nil values.
 	if err != nil || val == nil {
 		return

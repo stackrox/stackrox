@@ -16,7 +16,7 @@ import (
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
-func setNestedField(obj *unstructured.Unstructured, value interface{}, fields ...string) {
+func setNestedField(obj *unstructured.Unstructured, value any, fields ...string) {
 	if err := unstructured.SetNestedField(obj.Object, value, fields...); err != nil {
 		log.Warnf("failed to set nested field %s: %v", strings.Join(fields, "."), err)
 	}
@@ -191,7 +191,7 @@ func toUnstructuredVM(vm *kubeVirtV1.VirtualMachine) *unstructured.Unstructured 
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(vm)
 	if err != nil {
 		log.Warnf("failed to convert VM %s to unstructured object: %v", vm.GetName(), err)
-		return &unstructured.Unstructured{Object: map[string]interface{}{}}
+		return &unstructured.Unstructured{Object: map[string]any{}}
 	}
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
@@ -201,7 +201,7 @@ func toUnstructuredVMI(vmi *kubeVirtV1.VirtualMachineInstance) *unstructured.Uns
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(vmi)
 	if err != nil {
 		log.Warnf("failed to convert VMI %s to unstructured object: %v", vmi.GetName(), err)
-		return &unstructured.Unstructured{Object: map[string]interface{}{}}
+		return &unstructured.Unstructured{Object: map[string]any{}}
 	}
 	obj := &unstructured.Unstructured{Object: unstructuredObj}
 	normalizeVMIUnsignedFields(obj, vmi.Status)

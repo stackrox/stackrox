@@ -29,8 +29,8 @@ func newCIDRQueryWhereClause(columnName string, value string, queryModifiers ...
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s <<= $$", columnName),
-			Values: []interface{}{cidrVal},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{cidrVal},
+			equivalentGoFunc: func(foundValue any) bool {
 				foundValueStr, ok := foundValue.(string)
 				if !ok {
 					return false

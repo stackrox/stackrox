@@ -68,7 +68,7 @@ var (
 	}
 )
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	callerPkg := pass.Pkg.Path()
 	if slices.Contains(allowedCallerPackages, callerPkg) {
 		return nil, nil

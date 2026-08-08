@@ -165,7 +165,7 @@ func (s *storeImpl) insertVM(ctx context.Context, tx *postgres.Tx, vm *storage.V
 		return err
 	}
 
-	values := []interface{}{
+	values := []any{
 		id,
 		vm.GetName(),
 		vm.GetNamespace(),
@@ -457,7 +457,7 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 		return err
 	}
 
-	values := []interface{}{
+	values := []any{
 		id,
 		vmID,
 		protocompat.NilOrTime(scan.GetScanTime()),
@@ -478,7 +478,7 @@ func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, com
 	}
 
 	batchSize := min(len(components), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -506,7 +506,7 @@ func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, com
 			return err
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			id,
 			scanID,
 			obj.GetName(),
@@ -534,7 +534,7 @@ func (s *storeImpl) copyFromCVEs(ctx context.Context, tx *postgres.Tx, cves []*s
 	}
 
 	batchSize := min(len(cves), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	copyCols := []string{
 		"id",
@@ -575,7 +575,7 @@ func (s *storeImpl) copyFromCVEs(ctx context.Context, tx *postgres.Tx, cves []*s
 			return err
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			id,
 			vmID,
 			compID,

@@ -59,7 +59,7 @@ func (g *grpcMetricsImpl) updateInternalMetric(path string, responseCode codes.C
 	perPathMetric.normalInvocationStats[responseCode]++
 }
 
-func anyToError(x interface{}) error {
+func anyToError(x any) error {
 	if x == nil {
 		return errors.New("nil panic reason")
 	}
@@ -69,13 +69,13 @@ func anyToError(x interface{}) error {
 	return errors.Errorf("%v", x)
 }
 
-func (g *grpcMetricsImpl) convertPanicToError(p interface{}) error {
+func (g *grpcMetricsImpl) convertPanicToError(p any) error {
 	err := anyToError(p)
 	utils.Should(errors.Errorf("Caught panic in gRPC call. Reason: %v. Stack trace:\n%s", err, string(debug.Stack())))
 	return err
 }
 
-func (g *grpcMetricsImpl) UnaryMonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func (g *grpcMetricsImpl) UnaryMonitoringInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	panicked := true
 	defer func() {
 		r := recover()

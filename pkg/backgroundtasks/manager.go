@@ -5,16 +5,16 @@ import (
 )
 
 // Task is the functional type through which this manager accepts tasks.
-type Task func(ctx concurrency.ErrorWaitable) (interface{}, error)
+type Task func(ctx concurrency.ErrorWaitable) (any, error)
 
 // Manager takes care of accepting and running background processes.
 type Manager interface {
 	// AddTask adds a task to run as a background process and returns a task id. It also stores any metadata related to
 	// the task.
-	AddTask(metadata map[string]interface{}, task Task) (string, error)
+	AddTask(metadata map[string]any, task Task) (string, error)
 
 	// GetTaskStatusAndMetadata returns the status of the task id, along with results and associated metadata.
-	GetTaskStatusAndMetadata(taskID string) (metadata map[string]interface{}, result interface{}, completed bool, err error)
+	GetTaskStatusAndMetadata(taskID string) (metadata map[string]any, result any, completed bool, err error)
 
 	// CancelTask cancels the execution for the particular taskID. It is the responsibility of the task to clean up any
 	// intermediate results/resource acquisitions that occur while it is executing and is asked to stop.

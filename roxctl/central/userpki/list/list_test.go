@@ -86,23 +86,23 @@ type fakeLogger struct {
 	buf bytes.Buffer
 }
 
-func (l *fakeLogger) ErrfLn(format string, args ...interface{}) {
+func (l *fakeLogger) ErrfLn(format string, args ...any) {
 	l.println("ERROR: ", format, args...)
 }
 
-func (l *fakeLogger) WarnfLn(format string, args ...interface{}) {
+func (l *fakeLogger) WarnfLn(format string, args ...any) {
 	l.println("WARN: ", format, args...)
 }
 
-func (l *fakeLogger) InfofLn(format string, args ...interface{}) {
+func (l *fakeLogger) InfofLn(format string, args ...any) {
 	l.println("INFO: ", format, args...)
 }
 
-func (l *fakeLogger) PrintfLn(format string, args ...interface{}) {
+func (l *fakeLogger) PrintfLn(format string, args ...any) {
 	l.println("", format, args...)
 }
 
-func (l *fakeLogger) println(prefix string, format string, args ...interface{}) {
+func (l *fakeLogger) println(prefix string, format string, args ...any) {
 	l.buf.WriteString(fmt.Sprintf(prefix+format, args...))
 }
 

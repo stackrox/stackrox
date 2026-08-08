@@ -48,26 +48,26 @@ func TestNumericQuery(t *testing.T) {
 	cases := []struct {
 		value               string
 		expectedWhereClause string
-		expectedValues      []interface{}
+		expectedValues      []any
 		expectErr           bool
 	}{
-		{value: "<4.60", expectedWhereClause: "blah < $$", expectedValues: []interface{}{"4.6"}},
-		{value: "<=4.60", expectedWhereClause: "blah <= $$", expectedValues: []interface{}{"4.6"}},
-		{value: "=4.60", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"4.6"}},
-		{value: "==4.60", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"4.6"}},
-		{value: ">=4.60", expectedWhereClause: "blah >= $$", expectedValues: []interface{}{"4.6"}},
-		{value: ">9.80", expectedWhereClause: "blah > $$", expectedValues: []interface{}{"9.8"}},
-		{value: "7", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"7"}},
-		{value: ">1", expectedWhereClause: "blah > $$", expectedValues: []interface{}{"1"}},
-		{value: ">4294967295", expectedWhereClause: "blah > $$", expectedValues: []interface{}{"4294967295"}},
-		{value: "-1", expectedWhereClause: "blah = $$", expectedValues: []interface{}{"-1"}},
-		{value: "1-2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"1", "2"}},
-		{value: "3294967295-4294967295", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"3294967295", "4294967295"}},
+		{value: "<4.60", expectedWhereClause: "blah < $$", expectedValues: []any{"4.6"}},
+		{value: "<=4.60", expectedWhereClause: "blah <= $$", expectedValues: []any{"4.6"}},
+		{value: "=4.60", expectedWhereClause: "blah = $$", expectedValues: []any{"4.6"}},
+		{value: "==4.60", expectedWhereClause: "blah = $$", expectedValues: []any{"4.6"}},
+		{value: ">=4.60", expectedWhereClause: "blah >= $$", expectedValues: []any{"4.6"}},
+		{value: ">9.80", expectedWhereClause: "blah > $$", expectedValues: []any{"9.8"}},
+		{value: "7", expectedWhereClause: "blah = $$", expectedValues: []any{"7"}},
+		{value: ">1", expectedWhereClause: "blah > $$", expectedValues: []any{"1"}},
+		{value: ">4294967295", expectedWhereClause: "blah > $$", expectedValues: []any{"4294967295"}},
+		{value: "-1", expectedWhereClause: "blah = $$", expectedValues: []any{"-1"}},
+		{value: "1-2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"1", "2"}},
+		{value: "3294967295-4294967295", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"3294967295", "4294967295"}},
 		{value: "-1--2", expectErr: true},
-		{value: "-2--1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2", "-1"}},
-		{value: "-2.9124--1.2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2.91", "-1.2"}},
-		{value: "-2-1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"-2", "1"}},
-		{value: "1.2-2.992", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []interface{}{"1.2", "2.99"}},
+		{value: "-2--1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"-2", "-1"}},
+		{value: "-2.9124--1.2", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"-2.91", "-1.2"}},
+		{value: "-2-1", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"-2", "1"}},
+		{value: "1.2-2.992", expectedWhereClause: "(blah > $$) AND (blah < $$)", expectedValues: []any{"1.2", "2.99"}},
 		{value: "1-1", expectErr: true},
 		{value: "2-1", expectErr: true},
 	}

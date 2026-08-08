@@ -71,7 +71,7 @@ func TestMerge(t *testing.T) {
 }
 
 func TestMarshalMap(t *testing.T) {
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"clusterId":   "aaaaaaaa-bbbb-4011-0000-111111111111",
 		"clusterName": "Cluster 1",
 		"id":          "namespaceA",
@@ -92,5 +92,5 @@ func TestMarshalMap(t *testing.T) {
 	// Test with nil value
 	marshalled, err = MarshalMap(nil)
 	assert.Nil(t, err)
-	assert.Equal(t, map[string]interface{}{}, marshalled)
+	assert.Equal(t, map[string]any{}, marshalled)
 }

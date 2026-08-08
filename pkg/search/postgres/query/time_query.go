@@ -28,7 +28,7 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		}
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query:  fmt.Sprintf("%s is %s null", ctx.qualifiedColumnName, existenceStr),
-			Values: []interface{}{},
+			Values: []any{},
 		}, nil), nil
 	}
 
@@ -39,7 +39,7 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if ok {
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query:  fmt.Sprintf("%s >= $$ and %s < $$", ctx.qualifiedColumnName, ctx.qualifiedColumnName),
-			Values: []interface{}{from.Format(sqlTimeStampFormat), to.Format(sqlTimeStampFormat)},
+			Values: []any{from.Format(sqlTimeStampFormat), to.Format(sqlTimeStampFormat)},
 		}, nil), nil
 	}
 
@@ -49,7 +49,7 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 		if prefix == "" {
 			return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 				Query:  fmt.Sprintf("%s >= $$ and %s < $$", ctx.qualifiedColumnName, ctx.qualifiedColumnName),
-				Values: []interface{}{t.Format(sqlTimeStampFormat), t.Add(dayDuration).Format(sqlTimeStampFormat)},
+				Values: []any{t.Format(sqlTimeStampFormat), t.Add(dayDuration).Format(sqlTimeStampFormat)},
 			}, nil), nil
 		}
 		return timeQueryEntry(ctx, prefix, t.Format(sqlTimeStampFormat)), nil
@@ -59,7 +59,7 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 	if err == nil {
 		return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 			Query:  fmt.Sprintf("%s > $$ and %s < $$", ctx.qualifiedColumnName, ctx.qualifiedColumnName),
-			Values: []interface{}{ctx.now.Add(-upper).Format(sqlTimeStampFormat), ctx.now.Add(-lower).Format(sqlTimeStampFormat)},
+			Values: []any{ctx.now.Add(-upper).Format(sqlTimeStampFormat), ctx.now.Add(-lower).Format(sqlTimeStampFormat)},
 		}, nil), nil
 	} else if err != errNotARange {
 		return nil, fmt.Errorf("tried to parse %s as a range, but it was not valid: %w", ctx.value, err)
@@ -83,7 +83,7 @@ func newTimeQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
 func timeQueryEntry(ctx *queryAndFieldContext, prefix, formattedTime string) *QueryEntry {
 	return qeWithSelectFieldIfNeeded(ctx, &WhereClause{
 		Query:  fmt.Sprintf("%s %s $$", ctx.qualifiedColumnName, prefix),
-		Values: []interface{}{formattedTime},
+		Values: []any{formattedTime},
 	}, nil)
 }
 

@@ -37,7 +37,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Version) error {
-	values := []interface{}{
+	values := []any{
 		obj.GetSeqNum(),
 		obj.GetVersion(),
 		obj.GetMinSeqNum(),

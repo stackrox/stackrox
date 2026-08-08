@@ -22,7 +22,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	for _, file := range pass.Files {
 		for _, imp := range file.Imports {
 			verifyImportUsesAllowedPackageName(pass, imp)

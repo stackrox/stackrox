@@ -39,12 +39,12 @@ type Properties struct {
 }
 
 // Map changes the Properties struct into an untyped map for API usage.
-func (p Properties) Map() map[string]interface{} {
+func (p Properties) Map() map[string]any {
 	b, err := json.Marshal(p)
 	if err != nil {
 		panic(err)
 	}
-	m := make(map[string]interface{})
+	m := make(map[string]any)
 	err = json.Unmarshal(b, &m)
 	if err != nil {
 		panic(err)

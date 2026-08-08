@@ -227,7 +227,7 @@ func main() {
 			)
 		}
 
-		templateMap := map[string]interface{}{
+		templateMap := map[string]any{
 			"Type":           props.Type,
 			"TrimmedType":    trimmedType,
 			"Table":          props.Table,
@@ -295,7 +295,7 @@ func main() {
 }
 
 func generateConversionFuncs(s *walker.Schema, dir string) error {
-	templateMap := map[string]interface{}{
+	templateMap := map[string]any{
 		"Schema": s,
 	}
 

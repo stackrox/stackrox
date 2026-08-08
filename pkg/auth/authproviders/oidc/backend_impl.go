@@ -714,11 +714,11 @@ func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim 
 }
 
 type claimExtractor interface {
-	Claims(v interface{}) error
+	Claims(v any) error
 }
 
 func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[string]string, claimExtractor claimExtractor) error {
-	claims := make(map[string]interface{}, 0)
+	claims := make(map[string]any, 0)
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return errors.Wrap(err, "failed to extract claims from IdP's token")
 	}
@@ -736,7 +736,7 @@ func mapCustomClaims(externalUserClaim *tokens.ExternalUserClaim, mappings map[s
 }
 
 func claimsAsString(claimExtractor claimExtractor) (string, error) {
-	claims := make(map[string]interface{})
+	claims := make(map[string]any)
 	if err := claimExtractor.Claims(&claims); err != nil {
 		return "", errors.Wrap(err, "failed to extract all claims")
 	}
@@ -747,12 +747,12 @@ func claimsAsString(claimExtractor claimExtractor) (string, error) {
 	return string(byteClaims), nil
 }
 
-func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue interface{}) error {
+func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attributeName string, claimValue any) error {
 	switch v := claimValue.(type) {
-	case []interface{}:
+	case []any:
 		for i, arrayVal := range v {
-			_, isArray := arrayVal.([]interface{})
-			_, isNestedStruct := arrayVal.(map[string]interface{})
+			_, isArray := arrayVal.([]any)
+			_, isNestedStruct := arrayVal.(map[string]any)
 			if isArray || isNestedStruct {
 				return errors.Errorf("unsupported claim type %T with value %+v", arrayVal, arrayVal)
 			}
@@ -770,7 +770,7 @@ func addClaimToUserClaims(externalUserClaim *tokens.ExternalUserClaim, attribute
 	return nil
 }
 
-func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (interface{}, error) {
+func extractClaimFromPath(fromClaimName string, claims map[string]any) (any, error) {
 	claimPath := strings.Split(fromClaimName, ".")
 	currentNode := claims
 	for i, next := range claimPath {
@@ -781,7 +781,7 @@ func extractClaimFromPath(fromClaimName string, claims map[string]interface{}) (
 		if i == len(claimPath)-1 {
 			return nextVal, nil
 		}
-		currentNode, ok = nextVal.(map[string]interface{})
+		currentNode, ok = nextVal.(map[string]any)
 		if !ok {
 			return nil, errors.Errorf("expected next value to be of map type but got %T", nextVal)
 		}

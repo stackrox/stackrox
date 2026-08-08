@@ -16,7 +16,7 @@ import (
 var imageV2LoaderType = reflect.TypeFor[storage.ImageV2]()
 
 func init() {
-	RegisterTypeFactory(reflect.TypeFor[storage.ImageV2](), func() interface{} {
+	RegisterTypeFactory(reflect.TypeFor[storage.ImageV2](), func() any {
 		return NewImageV2Loader(datastore.Singleton(), imagesView.Singleton())
 	})
 }

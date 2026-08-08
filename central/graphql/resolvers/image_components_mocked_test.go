@@ -78,7 +78,7 @@ func TestImageComponentGraphQLQuery(t *testing.T) {
 	setupImageComponentCVEMocks(mockCtrl, mockContainer)
 
 	response := schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-		map[string]interface{}{
+		map[string]any{
 			"id":         componentID,
 			"vulnQuery":  nil,
 			"scopeQuery": nil,
@@ -131,7 +131,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 
 	// Step 1: Find the systemd component ID using a separate query
 	findResponse := s.schema.Exec(ctx, findComponentID, "findComponent",
-		map[string]interface{}{
+		map[string]any{
 			"query": "Component:systemd+Component Version:249.11-0ubuntu3.11",
 		})
 
@@ -146,7 +146,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
+			map[string]any{
 				"id":         componentID,
 				"vulnQuery":  nil,
 				"scopeQuery": nil,
@@ -163,7 +163,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
+			map[string]any{
 				"id":         componentID,
 				"vulnQuery":  "CVE:CVE-2023-7008",
 				"scopeQuery": nil,
@@ -180,7 +180,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
+			map[string]any{
 				"id":         componentID,
 				"vulnQuery":  "Fixable:true",
 				"scopeQuery": nil,
@@ -196,7 +196,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 		setupImageComponentCVEMocks(s.mockCtrl, s.mockContainer)
 
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
+			map[string]any{
 				"id":         componentID,
 				"vulnQuery":  "CVE:CVE-2023-7008+Fixable:true",
 				"scopeQuery": nil,
@@ -211,7 +211,7 @@ func (s *ImageComponentVulnerabilitiesGraphQLTestSuite) TestGetFixableCVEsForEnt
 	s.T().Run("query with invalid component ID", func(t *testing.T) {
 		// Test error handling with invalid component ID
 		response := s.schema.Exec(ctx, getFixableCVEsForEntityQuery, "getFixableCvesForEntity",
-			map[string]interface{}{
+			map[string]any{
 				"id":         "invalid-component-id",
 				"vulnQuery":  nil,
 				"scopeQuery": nil,

@@ -31,7 +31,7 @@ type NamespaceStore struct {
 }
 
 // ProcessEvent processes namespace event.
-func (m *NamespaceStore) ProcessEvent(action central.ResourceAction, obj interface{}) {
+func (m *NamespaceStore) ProcessEvent(action central.ResourceAction, obj any) {
 	ns, isNs := obj.(*storage.NamespaceMetadata)
 	if !isNs {
 		return

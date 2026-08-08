@@ -27,8 +27,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 	if value == pkgSearch.WildcardString {
 		return WhereClause{
 			Query:  fmt.Sprintf("%s is not null", columnName),
-			Values: []interface{}{},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{},
+			equivalentGoFunc: func(foundValue any) bool {
 				foundVal := strings.ToLower(foundValue.(string))
 				return foundVal != ""
 			},
@@ -38,8 +38,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 	if value == pkgSearch.NullString {
 		return WhereClause{
 			Query:  fmt.Sprintf("%s is null", columnName),
-			Values: []interface{}{},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{},
+			equivalentGoFunc: func(foundValue any) bool {
 				foundVal := strings.ToLower(foundValue.(string))
 				return foundVal == ""
 			},
@@ -53,8 +53,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s = $$", columnName),
-			Values: []interface{}{uuidVal},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{uuidVal},
+			equivalentGoFunc: func(foundValue any) bool {
 				return strings.EqualFold(foundValue.(string), value)
 			},
 		}, nil
@@ -73,8 +73,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 			}
 			return WhereClause{
 				Query:  fmt.Sprintf("%s != $$", columnName),
-				Values: []interface{}{uuidVal},
-				equivalentGoFunc: func(foundValue interface{}) bool {
+				Values: []any{uuidVal},
+				equivalentGoFunc: func(foundValue any) bool {
 					return strings.EqualFold(foundValue.(string), value) != negated
 				},
 			}, nil
@@ -90,8 +90,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s::text %s~* $$", columnName, negationString),
-			Values: []interface{}{value},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{value},
+			equivalentGoFunc: func(foundValue any) bool {
 				foundVal := strings.ToLower(foundValue.(string))
 				return re.MatchString(foundVal) != negated
 			},
@@ -103,8 +103,8 @@ func newUUIDQueryWhereClause(columnName string, value string, queryModifiers ...
 		}
 		return WhereClause{
 			Query:  fmt.Sprintf("%s %s= $$", columnName, negationString),
-			Values: []interface{}{uuidVal},
-			equivalentGoFunc: func(foundValue interface{}) bool {
+			Values: []any{uuidVal},
+			equivalentGoFunc: func(foundValue any) bool {
 				return strings.EqualFold(foundValue.(string), value) != negated
 			},
 		}, nil

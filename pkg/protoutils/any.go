@@ -21,7 +21,7 @@ func MarshalAny(msg protocompat.Message) (*anypb.Any, error) {
 
 // RequestToAny converts an input protobuf message to the generic protobuf Any type,
 // with the secrets scrubbed.
-func RequestToAny(req interface{}) *anypb.Any {
+func RequestToAny(req any) *anypb.Any {
 	if req == nil {
 		return nil
 	}

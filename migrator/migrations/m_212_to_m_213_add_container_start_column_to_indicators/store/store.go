@@ -73,7 +73,7 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
@@ -103,7 +103,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		return nil
 	}
 	batchSize := min(len(objs), pgSearch.MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	// This is a copy so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
@@ -139,7 +139,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 				return marshalErr
 			}
 
-			inputRows = append(inputRows, []interface{}{
+			inputRows = append(inputRows, []any{
 				pgutils.NilOrUUID(obj.GetId()),
 				pgutils.NilOrUUID(obj.GetDeploymentId()),
 				obj.GetContainerName(),

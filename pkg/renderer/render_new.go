@@ -141,8 +141,8 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	// the Scanner V4 activation switch to the list of Helm values files.
 	//
 	// This can be removed once Scanner V4 is activated by default.
-	activateScannerV4 := map[string]interface{}{
-		"scannerV4": map[string]interface{}{
+	activateScannerV4 := map[string]any{
+		"scannerV4": map[string]any{
 			"disable": false,
 		},
 	}

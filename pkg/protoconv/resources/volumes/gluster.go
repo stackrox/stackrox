@@ -18,7 +18,7 @@ func (h *glusterfs) Type() string {
 	return glusterfsType
 }
 
-func createGlusterfs(i interface{}) VolumeSource {
+func createGlusterfs(i any) VolumeSource {
 	glusterVolume, ok := i.(*v1.GlusterfsVolumeSource)
 	if !ok {
 		return &Unimplemented{}

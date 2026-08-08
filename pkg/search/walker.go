@@ -17,7 +17,7 @@ type searchWalker struct {
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(category v1.SearchCategory, prefix string, obj interface{}) OptionsMap {
+func Walk(category v1.SearchCategory, prefix string, obj any) OptionsMap {
 	sw := searchWalker{
 		category: category,
 		fields:   make(map[FieldLabel]*Field),

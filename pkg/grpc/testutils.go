@@ -31,7 +31,7 @@ func CreateTestGRPCStreamingService(
 	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
 
-	authInterceptor := func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	authInterceptor := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		return handler(srv, &grpcMiddleware.WrappedServerStream{
 			ServerStream:   ss,
 			WrappedContext: ctx,

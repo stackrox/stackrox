@@ -54,7 +54,7 @@ func sortEnvVars() []string {
 
 // LogFeatureFlags logs the global state of all features flags.
 func LogFeatureFlags() {
-	data := []interface{}{}
+	data := []any{}
 	for _, envVar := range sortEnvVars() {
 		flag := Flags[envVar]
 		data = append(data, logging.Any(flag.EnvVar(), flag.Enabled()))
@@ -64,8 +64,8 @@ func LogFeatureFlags() {
 	}
 }
 
-func GetFeatureFlagsAsGenericMap() map[string]interface{} {
-	featureFlagVals := make(map[string]interface{})
+func GetFeatureFlagsAsGenericMap() map[string]any {
+	featureFlagVals := make(map[string]any)
 	for _, feature := range Flags {
 		featureFlagVals[feature.EnvVar()] = feature.Enabled()
 	}

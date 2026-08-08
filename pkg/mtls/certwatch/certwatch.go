@@ -52,11 +52,11 @@ type handler struct {
 	cfg        *CertWatchConfig
 }
 
-func (h *handler) OnChange(dir string) (interface{}, error) {
+func (h *handler) OnChange(dir string) (any, error) {
 	return h.loadCert(dir)
 }
 
-func (h *handler) OnStableUpdate(val interface{}, err error) {
+func (h *handler) OnStableUpdate(val any, err error) {
 	var cert *tls.Certificate
 	if err != nil {
 		log.Errorf("Error reading %s certificate: %v. Watch dir: %q", h.name, err, h.dir)

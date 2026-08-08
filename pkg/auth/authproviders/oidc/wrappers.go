@@ -50,7 +50,7 @@ func (w wrappedOIDCProvider) Verifier(config *oidc.Config) oidcIDTokenVerifier {
 
 // oidcUserInfo is an abstraction of oidc.UserInfo which adds a level of indirection used in testing.
 type oidcUserInfo interface {
-	Claims(u interface{}) error
+	Claims(u any) error
 }
 
 // oidcIDTokenVerifier is an abstraction of oidc.IDTokenVerifier which adds a level of indirection used in testing.
@@ -74,7 +74,7 @@ func (w wrappedOIDCIDTokenVerifier) Verify(ctx context.Context, token string) (o
 // oidcIDToken is an abstraction of oidc.IDToken which adds a level of indirection used in testing.
 type oidcIDToken interface {
 	GetNonce() string
-	Claims(v interface{}) error
+	Claims(v any) error
 	GetExpiry() time.Time
 }
 
@@ -87,7 +87,7 @@ func (w wrappedOIDCIDToken) GetNonce() string {
 	return w.token.Nonce
 }
 
-func (w wrappedOIDCIDToken) Claims(v interface{}) error {
+func (w wrappedOIDCIDToken) Claims(v any) error {
 	return w.token.Claims(v)
 }
 
@@ -110,7 +110,7 @@ func oauthExchange(ctx context.Context, oauthCfg *oauth2.Config, code string) (o
 type oauth2Token interface {
 	GetAccessToken() string
 	GetRefreshToken() string
-	GetExtra(s string) interface{}
+	GetExtra(s string) any
 }
 
 // wrappedOAuth2Token simply delegates to the oauth2.Token it contains.
@@ -126,6 +126,6 @@ func (w wrappedOAuth2Token) GetRefreshToken() string {
 	return w.token.RefreshToken
 }
 
-func (w wrappedOAuth2Token) GetExtra(s string) interface{} {
+func (w wrappedOAuth2Token) GetExtra(s string) any {
 	return w.token.Extra(s)
 }

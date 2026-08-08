@@ -58,7 +58,7 @@ func checkAnyObjectUsedIn(expr ast.Expr, objs map[*ast.Object]struct{}) bool {
 	return found
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func run(pass *analysis.Pass) (any, error) {
 	nodeFilter := []ast.Node{
 		(*ast.IfStmt)(nil),
 	}

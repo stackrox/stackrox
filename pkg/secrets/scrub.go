@@ -48,7 +48,7 @@ func WithScrubZeroValues(value bool) ScrubOption {
 }
 
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
-func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string, options ...ScrubOption) {
+func ScrubSecretsFromStructWithReplacement(obj any, replacement string, options ...ScrubOption) {
 	cfg := applyScrubOptions(options...)
 	scrubber := func(field reflect.Value, scrubTag string) {
 		switch scrubTag {
