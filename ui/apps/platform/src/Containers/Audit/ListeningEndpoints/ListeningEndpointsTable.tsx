@@ -32,11 +32,14 @@ function EmbeddedTable({
         if (page === 1 && perPage === DEFAULT_ENDPOINTS_PER_PAGE) {
             return Promise.resolve(preloadedEndpoints);
         }
-        const { request } = getListeningEndpointsForDeployment(deploymentId, {
+        const { request, cancel } = getListeningEndpointsForDeployment(deploymentId, {
             offset: (page - 1) * perPage,
             limit: perPage,
         });
-        return request.then((r) => r.listeningEndpoints);
+        return {
+            request: request.then((r) => r.listeningEndpoints),
+            cancel,
+        };
     }, [deploymentId, page, perPage, preloadedEndpoints]);
 
     const { data: endpoints, isLoading, error } = useRestQuery(queryFn);
