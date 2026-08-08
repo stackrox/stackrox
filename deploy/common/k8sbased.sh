@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -x
 
 # shellcheck source=./feature-flag-env.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/feature-flag-env.sh"
