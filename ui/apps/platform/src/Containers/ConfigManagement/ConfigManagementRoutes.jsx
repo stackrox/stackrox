@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
+import { Alert } from '@patternfly/react-core';
 import PageNotFound from 'Components/PageNotFound';
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
@@ -14,6 +15,12 @@ const entityPath = `:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:enti
 
 const ConfigManagementRoutes = () => (
     <searchContext.Provider value={searchParams.page}>
+        <Alert
+            title="Configuration Management is deprecated and will be removed in a future release."
+            component="p"
+            variant="info"
+            isInline
+        />
         <Routes>
             <Route index element={<ConfigManagementDashboardPage />} />
             <Route path={`namespace/${entityPath}`} element={<EntityPage />} />
