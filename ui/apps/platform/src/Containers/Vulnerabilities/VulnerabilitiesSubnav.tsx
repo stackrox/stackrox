@@ -13,6 +13,7 @@ import {
 import type { MenuToggleElement } from '@patternfly/react-core';
 
 import {
+    vulnerabilitiesAIWorkloadsPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
@@ -66,6 +67,12 @@ function VulnerabilitiesSubnav({
             content: 'Virtual Machines',
             path: vulnerabilitiesVirtualMachineCvesPath,
             routeKey: 'vulnerabilities/virtual-machine-cves',
+        },
+        {
+            type: 'link',
+            content: 'AI Workloads',
+            path: vulnerabilitiesAIWorkloadsPath,
+            routeKey: 'vulnerabilities/ai-workloads',
         },
         {
             type: 'parent',
