@@ -5,8 +5,6 @@ import (
 	"context"
 	"slices"
 	"time"
-
-	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -77,8 +75,6 @@ type reportGeneratorImpl struct {
 	namespaceDatastore      namespaceDS.DataStore
 	imageCVE2Datastore      imageCVE2DS.DataStore
 	db                      postgres.DB
-
-	Schema *graphql.Schema
 }
 
 type ImageCVEInterface interface {
