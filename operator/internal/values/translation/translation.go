@@ -92,7 +92,7 @@ func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 func GetImagePullSecrets(imagePullSecrets []platform.LocalSecretReference) *ValuesBuilder {
 	res := NewValuesBuilder()
 	if len(imagePullSecrets) > 0 {
-		var ps []string
+		ps := make([]string, 0, len(imagePullSecrets))
 		for _, secret := range imagePullSecrets {
 			ps = append(ps, secret.Name)
 		}

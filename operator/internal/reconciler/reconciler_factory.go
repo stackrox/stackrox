@@ -101,7 +101,8 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		return errors.Wrap(err, "unable to create action client getter")
 	}
 
-	reconcilerOpts := []reconciler.Option{
+	reconcilerOpts := make([]reconciler.Option, 0, 10+len(extraOpts))
+	reconcilerOpts = append(reconcilerOpts,
 		reconciler.WithChart(*chart),
 		reconciler.WithGroupVersionKind(gvk),
 		reconciler.WithValueTranslator(translator),
@@ -113,7 +114,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 		reconciler.WithLog(logger),
 		reconciler.WithActionClientGetter(actionClientGetter),
 		reconciler.StripManifestFromStatus(true),
-	}
+	)
 	reconcilerOpts = append(reconcilerOpts, extraOpts...)
 
 	r, err := reconciler.New(reconcilerOpts...)
@@ -135,7 +136,7 @@ func HandleSiblings[T ctrlClient.Object](gvk schema.GroupVersionKind, manager ct
 		list := &unstructured.UnstructuredList{}
 		list.SetGroupVersionKind(gvk)
 		utils.ListSiblings(ctx, list, object, manager.GetClient())
-		var ret []reconcile.Request
+		ret := make([]reconcile.Request, 0, len(list.Items))
 		for _, c := range list.Items {
 			ret = append(ret, utils.RequestFor(&c)) // #nosec
 		}
