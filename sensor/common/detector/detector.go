@@ -868,6 +868,18 @@ func (d *detectorImpl) handleIndicatorEvent(event pubsub.Event) error {
 		return errors.Errorf("unexpected event type: %T", event)
 	}
 
+	// Enrich before blocking so the deployment snapshot is captured while
+	// the deployment still exists in the store. If enrichment is deferred
+	// past the runtimeRunning gate, the deployment may be deleted during
+	// offline mode and the indicator silently dropped.
+	if indicatorEvent.Deployment == nil {
+		enriched := d.enrichIndicator(indicatorEvent.Ctx, indicatorEvent.Indicator)
+		if enriched == nil {
+			return nil
+		}
+		indicatorEvent = enriched
+	}
+
 	// Block while paused (offline mode)
 	select {
 	case <-d.runtimeRunning.Done():
