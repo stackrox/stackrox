@@ -52,6 +52,7 @@ import {
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityNodeReportsPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
@@ -290,6 +291,13 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/images-without-cves': {
         component: makeVulnMgmtUserWorkloadView('images-without-cves'),
         path: vulnerabilitiesImagesWithoutCvesPath,
+    },
+    'vulnerabilities/node-reports': {
+        component: asyncComponent(
+            () =>
+                import('Containers/Vulnerabilities/NodeVulnerabilityReports/NodeVulnerabilityReportingPage')
+        ),
+        path: vulnerabilityNodeReportsPath,
     },
     'vulnerabilities/reports': {
         component: asyncComponent(
