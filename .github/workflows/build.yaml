@@ -1278,6 +1278,220 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+  resolve-cve-ids:
+    name: "Resolve CVE IDs for verification"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Broad pre-filter; extract-cve-ids.sh's JIRA cross-reference does the
+    # real filtering.
+    if: >-
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      (contains(github.event.pull_request.title, 'CVE-') || contains(github.event.pull_request.title, 'ROX-'))
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      JIRA_USER: ${{ secrets.JIRA_USER }}
+      JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+    outputs:
+      cves: ${{ steps.extract-cves.outputs.cves }}
+      applicable: ${{ steps.extract-cves.outputs.applicable }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Extract CVE IDs from PR title
+        id: extract-cves
+        # continue-on-error: the gate above is substring-only; a non-zero
+        # exit here just means no CVE resolved, not a failure.
+        continue-on-error: true
+        run: .github/workflows/scripts/extract-cve-ids.sh "$PR_TITLE"
+
+  scan-cve-fix:
+    # job `name:` can't reference `steps.*.outputs`; shows the root tag even
+    # though stackrox-operator scans under a different one (see below).
+    name: "CVE scan: ${{ matrix.image }}:${{ needs.define-job-matrix.outputs.build-tag }}"
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - resolve-cve-ids
+      - push-main-manifests
+      - push-scanner-manifests
+      - push-operator-manifests
+      - build-and-push-db
+    # Gates on resolve-cve-ids's actual result (a resolved CVE ID), not the
+    # raw title substrings from its own gate.
+    if: >-
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      needs.resolve-cve-ids.outputs.cves != ''
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "central-db",
+            "main",
+            "roxctl",
+            "scanner-v4",
+            "scanner-v4-db",
+            "stackrox-operator",
+          ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Determine image tag to scan
+        id: determine-tag
+        # stackrox-operator's tag differs (operator/Makefile rewrites .x ->
+        # .0); resolving it avoids polling a tag that was never pushed.
+        #
+        # continue-on-error: falls into flatten-cve-scan-results.sh's
+        # "missing scan result" handling instead of hard-failing this leg.
+        continue-on-error: true
+        env:
+          IMAGE: ${{ matrix.image }}
+          DEFAULT_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+        run: |
+          tag="$DEFAULT_TAG"
+          if [[ "$IMAGE" == "stackrox-operator" ]]; then
+            tag="$(BUILD_TAG="$DEFAULT_TAG" make --quiet --no-print-directory -C operator tag)"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Scan image vulnerabilities
+        uses: stackrox/actions/release/scan-image-vulnerabilities@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/scan-image-vulnerabilities@v1
+        id: scan-image
+        # Skips a 30-minute wait for a tag that was never determined.
+        if: steps.determine-tag.outcome == 'success'
+        # Fails on ANY CVE in the image, not just this PR's target; the
+        # real check is verify-cve-fix.sh against the uploaded artifact, so
+        # this must not block the PR.
+        continue-on-error: true
+        with:
+          image: rhacs-eng/${{ matrix.image }}
+          version: ${{ steps.determine-tag.outputs.tag }}
+          wait-limit: "1800"
+          summary-prefix: "CVE-fix-verify:"
+          quay-bearer-token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          central-url: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+      - name: Upload scan result artifact
+        # Skips when scan-image never set result-path (e.g. a timeout) -
+        # upload-artifact errors on an empty path. verify-cve-fix still
+        # reports this as a missing image.
+        if: always() && steps.scan-image.outputs.result-path != ''
+        uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: cve-verify_${{ matrix.image }}
+          path: ${{ steps.scan-image.outputs.result-path }}
+
+  verify-cve-fix:
+    name: "CVE fix verification"
+    runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
+      - resolve-cve-ids
+      - scan-cve-fix
+    # Gates on a genuine CVE signal (applicable), not a resolved CVE ID
+    # (cves != ''): a Vulnerability-typed ticket with no CVE ID set yet
+    # must still get the NOT APPLICABLE comment, but an ordinary ROX- PR
+    # must stay silent.
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      !github.event.pull_request.head.repo.fork &&
+      needs.resolve-cve-ids.result == 'success' &&
+      needs.resolve-cve-ids.outputs.applicable == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      CVES: ${{ needs.resolve-cve-ids.outputs.cves }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Download all scan artifacts
+        if: needs.resolve-cve-ids.outputs.cves != ''
+        # continue-on-error: a failure here just means nothing to flatten
+        # below; flatten-cve-scan-results.sh already reports that as
+        # missing images.
+        continue-on-error: true
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          pattern: cve-verify_*
+          path: scan-results
+
+      - name: Flatten scan results
+        id: flatten
+        if: needs.resolve-cve-ids.outputs.cves != ''
+        # continue-on-error: same as above - a crash here must not skip
+        # the render/comment steps below.
+        continue-on-error: true
+        env:
+          SOURCE_DIR: scan-results
+          DEST_DIR: scan-results-flat
+          EXPECTED_IMAGES: central-db,main,roxctl,scanner-v4,scanner-v4-db,stackrox-operator
+        run: .github/workflows/scripts/flatten-cve-scan-results.sh
+
+      - name: Verify CVE fix and render PR comment
+        id: verify
+        # always(): must render even if earlier steps failed - this
+        # comment is the job's only output. verify-cve-fix.sh itself turns
+        # missing CVES/scan-dir input into NOT APPLICABLE / COULD NOT RUN.
+        if: always()
+        continue-on-error: true
+        env:
+          SCAN_DIR: scan-results-flat
+          MISSING_IMAGES: ${{ steps.flatten.outputs.missing-images }}
+        # Exit 1 is a real FAILED verdict, not a step failure - captured as
+        # an output for "Fail if CVE still present" below instead of
+        # failing this step. Empty output (a crash) falls back to a
+        # generic message.
+        run: |
+          set +e
+          comment_body="$(.github/workflows/scripts/verify-cve-fix.sh)"
+          exit_code=$?
+          set -e
+          if [[ -z "$comment_body" ]]; then
+            comment_body="**CVE Fix Verification: COULD NOT RUN** :warning: The verification script exited unexpectedly (exit code ${exit_code}) without producing a result. Please verify manually that your CVE fix is effective before merging this PR."
+          fi
+          printf '%s\n' "$comment_body" > cve-fix-comment.md
+          echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        # message-id updates the same comment across re-runs instead of
+        # piling up new ones. Unlike `--edit-last`, it can't clobber
+        # performance-tests.yml's comment, which posts as the same bot
+        # identity.
+        if: always() && steps.verify.outcome == 'success'
+        continue-on-error: true
+        uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
+        with:
+          message-id: cve-fix-verify
+          message-path: cve-fix-comment.md
+
+      - name: Fail if CVE still present
+        if: steps.verify.outputs.exit-code == '1'
+        run: exit 1
+
   slack-on-build-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
