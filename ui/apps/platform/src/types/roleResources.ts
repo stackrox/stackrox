@@ -10,6 +10,7 @@
 // prettier-ignore
 export type ResourceName =
     | 'Access' // Access is the new resource grouping all access related resources.
+    | 'AIWorkload'
     | 'Administration' // Administration is the new resource grouping all administration-like resources.
     | 'Alert'
     | 'CVE' // SAC check is not performed directly on CVE resource. It exists here for postgres sac generation to pass.

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package aiworkload.v1;
+
+option go_package = "./internalapi/aiworkload/v1;v1";
+
+message AIWorkload {
+  string id = 1;
+  string namespace = 2;
+  string name = 3;
+  string cluster_id = 4;
+
+  enum WorkloadType {
+    UNKNOWN = 0;
+    INFERENCE = 1;
+    TRAINING = 2;
+  }
+  WorkloadType workload_type = 5;
+
+  string model_format = 6;
+  string storage_uri = 7;
+  string runtime = 8;
+  string gpu_requests = 9;
+  string cpu_requests = 10;
+  string memory_requests = 11;
+  string deployment_mode = 12;
+  bool auth_enabled = 13;
+}

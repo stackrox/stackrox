@@ -494,6 +494,10 @@ var (
 	// AuthProvider fields.
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
+	// AI Workload fields.
+	AIWorkloadID   = newFieldLabel("AI Workload ID")
+	AIWorkloadName = newFieldLabel("AI Workload Name")
+
 	// Virtual Machine fields.
 	VirtualMachineID       = newFieldLabel("Virtual Machine ID")
 	VirtualMachineName     = newFieldLabel("Virtual Machine Name")

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	aiworkloadDispatcher "github.com/stackrox/rox/sensor/kubernetes/listener/resources/aiworkload/dispatcher"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -49,6 +50,8 @@ type DispatcherRegistry interface {
 
 	ForVirtualMachines() Dispatcher
 	ForVirtualMachineInstances() Dispatcher
+
+	ForInferenceServices() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -112,6 +115,8 @@ func NewDispatcherRegistry(
 
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
+
+		inferenceServiceDispatcher: aiworkloadDispatcher.NewInferenceServiceDispatcher(clusterID),
 	}
 }
 
@@ -142,6 +147,8 @@ type registryImpl struct {
 
 	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
+
+	inferenceServiceDispatcher *aiworkloadDispatcher.InferenceServiceDispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -346,4 +353,8 @@ func (d *registryImpl) ForVirtualMachines() Dispatcher {
 
 func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
 	return wrapDispatcher(d.virtualMachineInstanceDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForInferenceServices() Dispatcher {
+	return wrapDispatcher(d.inferenceServiceDispatcher, d.traceWriter)
 }

@@ -37,6 +37,7 @@ import {
     systemHealthPath,
     violationsBasePath,
     vulnManagementPath,
+    vulnerabilitiesAIWorkloadsPath,
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
     vulnerabilitiesInactiveImagesPath,
@@ -82,6 +83,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     vulnerabilitiesViewPath,
                     vulnerabilitiesPlatformCvesPath,
                     vulnerabilitiesVirtualMachineCvesPath,
+                    vulnerabilitiesAIWorkloadsPath,
                 ];
 
                 return pathsToMatch.some((path) =>
