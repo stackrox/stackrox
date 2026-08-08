@@ -102,7 +102,7 @@ class OpenShift extends Kubernetes {
                         .withNewSpec()
                             .addNewContainer()
                                 .withName("probe")
-                                .withImage("registry.access.redhat.com/ubi9/ubi-minimal:latest")
+                                .withImage("registry.access.redhat.com/ubi9/ubi-minimal:9.5")
                                 .withCommand("true")
                             .endContainer()
                             .withRestartPolicy("Never")
