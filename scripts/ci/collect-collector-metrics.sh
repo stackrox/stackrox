@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-set -eu
+
+set -euo pipefail
 
 # Gather collector metrics script
 
@@ -8,9 +9,13 @@ usage() {
     echo "e.g. $0 stackrox /logs 9090 metrics"
 }
 
+warn() {
+    >&2 echo "$@"
+}
+
 die() {
-    echo >&2 "$@"
-    exit 1
+    warn "$@"
+    exit 3
 }
 
 main() {
@@ -42,7 +47,6 @@ main() {
     else
         metrics_path="metrics"
     fi
-    set +e
 
     local_port=9090
     local="localhost:${local_port}"
@@ -53,19 +57,29 @@ main() {
         exit 0
     fi
 
+    success="yes"
+
     for pod in ${pods}; do
         remote="${pod}:${pod_port}"
         metrics_file="${pod}.txt"
+        if ! kubectl -n "$namespace" wait --for=condition=ready --timeout 5s "$pod"; then
+            warn "Pod $pod is not ready, skipping"
+            success="no"
+            continue
+        fi
         nohup kubectl -n "$namespace" port-forward "$pod" "${local_port}:${pod_port}" >/dev/null &
         PID=$!
-        trap 'kill -TERM ${PID}; wait ${PID}' TERM INT
+        trap 'kill ${PID} || true; wait ${PID} || true' EXIT
         max_retries=5
         retries=1
         until curl --output /dev/null --silent --fail -k "${local}/${metrics_path}"; do
             echo -n '.'
             if ((retries==max_retries)); then
-                kill ${PID}
-                die "failed to collect metrics from $pod after $retries retries"
+                kill "${PID}" || true
+                trap - EXIT
+                warn "failed to collect metrics from $pod after $retries retries"
+                success="no"
+                continue
             else
                 ((retries++))
             fi
@@ -75,9 +89,14 @@ main() {
         echo "set up port-forwarding from $remote to $local"
         curl --silent --fail -k "${local}/${metrics_path}" > "${metrics_dir}/${metrics_file}"
         echo "finished download ${metrics_file}"
-        kill ${PID}
+        kill "${PID}" || true
         echo "finished tear down of port-forwarding from $remote to $local"
+        trap - EXIT
     done
+
+    [[ "$success" == "yes" ]] || exit 2
 }
 
 main "$@"
+
+}
