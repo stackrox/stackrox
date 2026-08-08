@@ -1,8 +1,11 @@
 package reportgenerator
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/csv"
+	"io"
 	"slices"
 	"time"
 
@@ -24,6 +27,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
@@ -66,6 +70,16 @@ var (
 	}
 )
 
+// imageCVESelectCursorFn is the function type for cursor-based CVE queries, extracted to allow
+// injection in unit tests without requiring a real database connection.
+type imageCVESelectCursorFn func(
+	ctx context.Context,
+	db postgres.DB,
+	schema *walker.Schema,
+	query *v1.Query,
+	fn func(*ImageCVEQueryResponse) error,
+) error
+
 type reportGeneratorImpl struct {
 	reportSnapshotStore     reportSnapshotDS.DataStore
 	deploymentDatastore     deploymentDS.DataStore
@@ -79,6 +93,10 @@ type reportGeneratorImpl struct {
 	db                      postgres.DB
 
 	Schema *graphql.Schema
+
+	// selectCursorFn allows tests to inject a fake cursor implementation;
+	// nil defaults to pgSearch.RunSelectCursorForSchemaFn.
+	selectCursorFn imageCVESelectCursorFn
 }
 
 type ImageCVEInterface interface {
@@ -143,12 +161,16 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	// Get the results of running the report query
 	var err error
 	var reportData *ReportData
-	if req.ReportSnapshot.GetVulnReportFilters() != nil {
-		reportData, err = rg.getReportDataSQF(ctx, req.ReportSnapshot, req.Collection, req.DataStartTime)
+	if req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+		if features.VulnerabilityReportStreamingDownload.Enabled() {
+			log.Info("Streaming report generation")
+			return rg.generateReportTransaction(ctx, req)
+		}
+		return rg.generateReportInMemoryDownload(ctx, req)
 	}
-	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
-		reportData, err = rg.getReportDataViewBased(ctx, req.ReportSnapshot)
-	}
+
+	// EMAIL path: use existing in-memory approach (email attachments have practical size limits)
+	reportData, err = rg.getReportDataSQF(ctx, req.ReportSnapshot, req.Collection, req.DataStartTime)
 	if err != nil {
 		return err
 	}
@@ -172,72 +194,313 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		return err
 	}
 
-	switch req.ReportSnapshot.GetReportStatus().GetReportNotificationMethod() {
-	case storage.ReportStatus_DOWNLOAD:
-		parentDir := req.ReportSnapshot.GetReportConfigurationId()
-		if req.ReportSnapshot.GetVulnReportFilters() == nil {
-			parentDir = "view-based-report"
-		}
-		if err = rg.saveReportData(ctx, parentDir,
-			req.ReportSnapshot.GetReportId(), zippedCSVData); err != nil {
-			return errors.Wrap(err, "error persisting blob")
-		}
+	defaultEmailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
+	if err != nil {
+		return errors.Wrap(err, "Error generating email subject")
+	}
+	templateStr := defaultEmailBodyTemplate
+	if reportData.NumDeployedImageResults == 0 && reportData.NumWatchedImageResults == 0 {
+		zippedCSVData = nil
+		templateStr = defaultNoVulnsEmailBodyTemplate
+	}
 
-	case storage.ReportStatus_EMAIL:
-		defaultEmailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
+	defaultEmailBody, err := formatEmailBody(templateStr)
+	if err != nil {
+		return errors.Wrap(err, "Error generating email body")
+	}
+
+	configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, reportData.NumDeployedImageResults,
+		reportData.NumWatchedImageResults)
+	if err != nil {
+		return errors.Wrap(err, "Error adding report config details")
+	}
+
+	errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
+	for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
+		nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
+		reportNotifier, ok := nf.(notifiers.ReportNotifier)
+		if !ok {
+			errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
+			continue
+		}
+		customBody := notifierSnap.GetEmailConfig().GetCustomBody()
+		emailBody := defaultEmailBody
+		if customBody != "" {
+			emailBody = customBody
+		}
+		customSubject := notifierSnap.GetEmailConfig().GetCustomSubject()
+		emailSubject := defaultEmailSubject
+		if customSubject != "" {
+			emailSubject = customSubject
+		}
+		emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
+		reportName := req.ReportSnapshot.GetName()
+		err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
+			zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 		if err != nil {
-			return errors.Wrap(err, "Error generating email subject")
+			errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
+				notifierSnap.GetEmailConfig().GetNotifierId(), err))
 		}
-		// If it is an empty report, do not send an attachment in the final notification email and the email body
-		// will indicate that no vulns were found
-		templateStr := defaultEmailBodyTemplate
-		if reportData.NumDeployedImageResults == 0 && reportData.NumWatchedImageResults == 0 {
-			// If it is an empty report, the email body will indicate that no vulns were found
-			zippedCSVData = nil
-			templateStr = defaultNoVulnsEmailBodyTemplate
-		}
+	}
+	if !errorList.Empty() {
+		return errorList.ToError()
+	}
+	return nil
+}
 
-		defaultEmailBody, err := formatEmailBody(templateStr)
+// generateReportInMemoryDownload accumulates report data in memory, builds the CSV/ZIP, and stores it in blob storage.
+func (rg *reportGeneratorImpl) generateReportInMemoryDownload(ctx context.Context, req *ReportRequest) error {
+	snap := req.ReportSnapshot
+
+	var reportData *ReportData
+	var err error
+	if snap.GetViewBasedVulnReportFilters() != nil {
+		reportData, err = rg.getReportDataViewBased(ctx, snap)
+	} else {
+		reportData, err = rg.getReportDataSQF(ctx, snap, req.Collection, req.DataStartTime)
+	}
+	if err != nil {
+		return err
+	}
+
+	zippedCSVData, err := GenerateCSV(reportData.CVEResponses, snap.GetName())
+	if err != nil {
+		return err
+	}
+
+	parentDir := snap.GetReportConfigurationId()
+	if snap.GetVulnReportFilters() == nil {
+		parentDir = "view-based-report"
+	}
+	if err := rg.saveReportData(ctx, parentDir, snap.GetReportId(), zippedCSVData); err != nil {
+		return errors.Wrap(err, "error saving report to blob store")
+	}
+
+	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
+	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
+		return errors.Wrap(err, "Error changing report status to GENERATED")
+	}
+	return nil
+}
+
+type querySpec struct {
+	schema *walker.Schema
+	query  *v1.Query
+}
+
+// buildReportQueries constructs the cursor queries for a report request.
+func (rg *reportGeneratorImpl) buildReportQueries(ctx context.Context, req *ReportRequest) ([]querySpec, error) {
+	var queries []querySpec
+	snap := req.ReportSnapshot
+
+	if snap.GetVulnReportFilters() != nil {
+		rQuery, err := rg.buildReportQuery(ctx, snap, req.Collection, req.DataStartTime)
 		if err != nil {
-			return errors.Wrap(err, "Error generating email body")
+			return nil, err
 		}
-
-		configDetailsHTML, err := formatReportConfigDetails(req.ReportSnapshot, reportData.NumDeployedImageResults,
-			reportData.NumWatchedImageResults)
+		cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
 		if err != nil {
-			return errors.Wrap(err, "Error adding report config details")
+			return nil, err
 		}
-
-		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
-		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
-			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
-			reportNotifier, ok := nf.(notifiers.ReportNotifier)
-			if !ok {
-				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
-				continue
-			}
-			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
-			emailBody := defaultEmailBody
-			if customBody != "" {
-				emailBody = customBody
-			}
-			customSubject := notifierSnap.GetEmailConfig().GetCustomSubject()
-			emailSubject := defaultEmailSubject
-			if customSubject != "" {
-				emailSubject = customSubject
-			}
-			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.GetName()
-			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
+		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
+			q := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
+			q.Pagination = deployedImagesQueryParts.Pagination
+			q.Selects = deployedImagesQueryParts.Selects
+			queries = append(queries, querySpec{schema: deployedImagesQueryParts.Schema, query: q})
+		}
+		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_WATCHED) {
+			watchedImages, err := rg.getWatchedImages(ctx)
 			if err != nil {
-				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
-					notifierSnap.GetEmailConfig().GetNotifierId(), err))
+				return nil, err
+			}
+			if len(watchedImages) != 0 {
+				q := search.ConjunctionQuery(
+					search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+					cveFilterQuery)
+				q.Pagination = watchedImagesQueryParts.Pagination
+				q.Selects = watchedImagesQueryParts.Selects
+				queries = append(queries, querySpec{schema: watchedImagesQueryParts.Schema, query: q})
 			}
 		}
-		if !errorList.Empty() {
-			return errorList.ToError()
+	}
+	if snap.GetViewBasedVulnReportFilters() != nil {
+		watchedImages, err := rg.getWatchedImages(ctx)
+		if err != nil {
+			return nil, err
 		}
+		vbQuery, err := rg.buildReportQueryViewBased(ctx, snap, watchedImages)
+		if err != nil {
+			return nil, err
+		}
+		vbQuery.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
+		vbQuery.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+		queries = append(queries, querySpec{schema: deployedImagesQueryParts.Schema, query: vbQuery.DeployedImagesQuery})
+
+		if len(watchedImages) != 0 {
+			vbQuery.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
+			vbQuery.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+			queries = append(queries, querySpec{schema: watchedImagesQueryParts.Schema, query: vbQuery.WatchedImagesQuery})
+		}
+	}
+	return queries, nil
+}
+
+// generateReportTransaction runs all report operations — cursor reads, CVE
+// lookups, CSV/ZIP generation, and blob store write — within a single database
+// transaction. The writeFn callback writes directly to a PostgreSQL large
+// object, so memory usage stays constant regardless of report size.
+//
+// Connection usage: 1 connection. All operations (cursor FETCH, CVE lookups,
+// large object writes, metadata upsert) share the same transaction on a single
+// goroutine, so there are no concurrent-tx-access issues.
+func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, req *ReportRequest) error {
+	snap := req.ReportSnapshot
+	queries, err := rg.buildReportQueries(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	tx, err := rg.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting report transaction")
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			if rbErr := tx.Rollback(context.Background()); rbErr != nil {
+				log.Errorf("failed to rollback report transaction: %v", rbErr)
+			}
+		}
+	}()
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	parentDir := snap.GetReportConfigurationId()
+	if snap.GetVulnReportFilters() == nil {
+		parentDir = "view-based-report"
+	}
+	blobPath := common.GetReportBlobPath(parentDir, snap.GetReportId())
+	blob := &storage.Blob{
+		Name:         blobPath,
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
+		Length:       -1,
+	}
+
+	refLinksCache := make(map[string]string)
+	rowCount := 0
+
+	err = rg.blobStore.UpsertWithWriter(txCtx, tx, blob, func(w io.Writer) error {
+		zipWriter := zip.NewWriter(w)
+		zipEntry, err := zipWriter.Create(csvReportName(snap.GetName()))
+		if err != nil {
+			return errors.Wrap(err, "creating zip entry")
+		}
+		csvW := csv.NewWriter(zipEntry)
+		csvW.UseCRLF = true
+		if err := csvW.Write(csvHeader); err != nil {
+			return errors.Wrap(err, "writing CSV header")
+		}
+
+		for _, qs := range queries {
+			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
+				return err
+			}
+		}
+
+		csvW.Flush()
+		if err := csvW.Error(); err != nil {
+			return errors.Wrap(err, "flushing CSV writer")
+		}
+		return zipWriter.Close()
+	})
+	if err != nil {
+		return errors.Wrap(err, "error streaming report to blob store")
+	}
+
+	if err := tx.Commit(context.Background()); err != nil {
+		return errors.Wrap(err, "committing report transaction")
+	}
+	committed = true
+
+	snap.ReportStatus.CompletedAt = protocompat.TimestampNow()
+	if err := rg.updateReportStatus(snap, storage.ReportStatus_GENERATED); err != nil {
+		return errors.Wrap(err, "Error changing report status to GENERATED")
+	}
+	return nil
+}
+
+var refLinkBatchSize = env.ReportBatchSize.IntegerSetting()
+
+// streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
+// to the provided csv.Writer. CVE reference links are resolved incrementally in batches and cached.
+func (rg *reportGeneratorImpl) streamQueryToCSV(
+	ctx context.Context,
+	schema *walker.Schema,
+	query *v1.Query,
+	csvW *csv.Writer,
+	refLinksCache map[string]string,
+	rowCount *int,
+) error {
+	var batch []*ImageCVEQueryResponse
+	batchNum := 0
+
+	flushBatch := func() error {
+		batchNum++
+		log.Infof("Processing batch %d (%d rows so far)", batchNum, *rowCount)
+		unseenIDs := set.NewStringSet()
+		for _, r := range batch {
+			id := r.GetCVEID()
+			if id != "" {
+				if _, cached := refLinksCache[id]; !cached {
+					unseenIDs.Add(id)
+				}
+			}
+		}
+		if unseenIDs.Cardinality() > 0 {
+			cves, err := rg.imageCVE2Datastore.GetBatch(ctx, unseenIDs.AsSlice())
+			if err != nil {
+				return errors.Wrap(err, "fetching CVE reference links")
+			}
+			for _, cve := range cves {
+				refLinksCache[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
+			}
+		}
+		for _, r := range batch {
+			if link, ok := refLinksCache[r.GetCVEID()]; ok {
+				r.Link = link
+			}
+			if err := csvW.Write(formatCSVRow(r)); err != nil {
+				return err
+			}
+		}
+		batch = batch[:0]
+		return nil
+	}
+
+	cursorFn := rg.selectCursorFn
+	if cursorFn == nil {
+		cursorFn = pgSearch.RunSelectCursorForSchemaFn[ImageCVEQueryResponse]
+	}
+	err := cursorFn(
+		ctx, rg.db, schema, query,
+		func(r *ImageCVEQueryResponse) error {
+			batch = append(batch, r)
+			*rowCount++
+			if len(batch) >= refLinkBatchSize {
+				return flushBatch()
+			}
+			return nil
+		})
+	if err != nil {
+		return err
+	}
+
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	if len(batch) > 0 {
+		return flushBatch()
 	}
 	return nil
 }
