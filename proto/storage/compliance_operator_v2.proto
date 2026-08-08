@@ -109,7 +109,7 @@ message RuleControls {
   string control = 3; // @gotags: search:"Compliance Control,hidden"
 }
 
-// Next Tag: 19
+// Next Tag: 20
 message ComplianceOperatorScanConfigurationV2 {
   string id = 1; // @gotags: search:"Compliance Scan Config ID,hidden" sql:"pk,type(uuid)"
   string scan_config_name = 2; // @gotags: search:"Compliance Scan Config Name" sql:"unique"
@@ -133,7 +133,7 @@ message ComplianceOperatorScanConfigurationV2 {
   // Stored in the serialized blob only (not indexed); populated on create/update so the
   // startup sync path can forward correct kinds to Sensor on reconnect.
   repeated ProfileReference profile_refs = 18;
-  repeated NodeRole node_roles = 9;
+  reserved 9; // was repeated NodeRole node_roles, never populated
   // Will be configurable via env var
   bool strict_node_scan = 10;
   // Starting point for schedule will probably have to build upon it
@@ -148,6 +148,11 @@ message ComplianceOperatorScanConfigurationV2 {
   }
   repeated Cluster clusters = 16;
   repeated NotifierConfiguration notifiers = 17;
+  // node_roles specifies which node roles the compliance scan should target.
+  // Each value must match the Compliance Operator validation: alphanumeric + hyphens,
+  // 1-39 chars, or the special value "@all" (which cannot be mixed with other roles).
+  // Defaults to ["master", "worker"] for backward compatibility when empty.
+  repeated string node_roles = 19;
 }
 
 // Next Tag: 7
