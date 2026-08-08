@@ -54,6 +54,15 @@ func (m *VMServiceRequest_GetReport) CloneVT() isVMServiceRequest_Method {
 	return r
 }
 
+func (m *VMServiceRequest_SyncRepoCpeMapping) CloneVT() isVMServiceRequest_Method {
+	if m == nil {
+		return (*VMServiceRequest_SyncRepoCpeMapping)(nil)
+	}
+	r := new(VMServiceRequest_SyncRepoCpeMapping)
+	r.SyncRepoCpeMapping = m.SyncRepoCpeMapping.CloneVT()
+	return r
+}
+
 func (m *VMServiceResponse) CloneVT() *VMServiceResponse {
 	if m == nil {
 		return (*VMServiceResponse)(nil)
@@ -91,6 +100,15 @@ func (m *VMServiceResponse_Error) CloneVT() isVMServiceResponse_Result {
 	}
 	r := new(VMServiceResponse_Error)
 	r.Error = m.Error.CloneVT()
+	return r
+}
+
+func (m *VMServiceResponse_SyncRepoCpeMapping) CloneVT() isVMServiceResponse_Result {
+	if m == nil {
+		return (*VMServiceResponse_SyncRepoCpeMapping)(nil)
+	}
+	r := new(VMServiceResponse_SyncRepoCpeMapping)
+	r.SyncRepoCpeMapping = m.SyncRepoCpeMapping.CloneVT()
 	return r
 }
 
@@ -144,6 +162,14 @@ func (m *ResponseMeta) CloneVT() *ResponseMeta {
 		}
 		r.Facts = tmpContainer
 	}
+	if rhs := m.RepoCpeMappingHash; rhs != nil {
+		tmpVal := *rhs
+		r.RepoCpeMappingHash = &tmpVal
+	}
+	if rhs := m.RepoCpeMappingUpdatePath; rhs != nil {
+		tmpVal := *rhs
+		r.RepoCpeMappingUpdatePath = &tmpVal
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -194,6 +220,44 @@ func (m *GetReportResponse) CloneVT() *GetReportResponse {
 }
 
 func (m *GetReportResponse) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *SyncRepoCPEMappingRequest) CloneVT() *SyncRepoCPEMappingRequest {
+	if m == nil {
+		return (*SyncRepoCPEMappingRequest)(nil)
+	}
+	r := new(SyncRepoCPEMappingRequest)
+	if rhs := m.Mapping; rhs != nil {
+		tmpBytes := make([]byte, len(rhs))
+		copy(tmpBytes, rhs)
+		r.Mapping = tmpBytes
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *SyncRepoCPEMappingRequest) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *SyncRepoCPEMappingResponse) CloneVT() *SyncRepoCPEMappingResponse {
+	if m == nil {
+		return (*SyncRepoCPEMappingResponse)(nil)
+	}
+	r := new(SyncRepoCPEMappingResponse)
+	r.Updated = m.Updated
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *SyncRepoCPEMappingResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -270,6 +334,31 @@ func (this *VMServiceRequest_GetReport) EqualVT(thatIface isVMServiceRequest_Met
 		}
 		if q == nil {
 			q = &GetReportRequest{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *VMServiceRequest_SyncRepoCpeMapping) EqualVT(thatIface isVMServiceRequest_Method) bool {
+	that, ok := thatIface.(*VMServiceRequest_SyncRepoCpeMapping)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.SyncRepoCpeMapping, that.SyncRepoCpeMapping; p != q {
+		if p == nil {
+			p = &SyncRepoCPEMappingRequest{}
+		}
+		if q == nil {
+			q = &SyncRepoCPEMappingRequest{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -359,6 +448,31 @@ func (this *VMServiceResponse_Error) EqualVT(thatIface isVMServiceResponse_Resul
 	return true
 }
 
+func (this *VMServiceResponse_SyncRepoCpeMapping) EqualVT(thatIface isVMServiceResponse_Result) bool {
+	that, ok := thatIface.(*VMServiceResponse_SyncRepoCpeMapping)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.SyncRepoCpeMapping, that.SyncRepoCpeMapping; p != q {
+		if p == nil {
+			p = &SyncRepoCPEMappingResponse{}
+		}
+		if q == nil {
+			q = &SyncRepoCPEMappingResponse{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *RequestMeta) EqualVT(that *RequestMeta) bool {
 	if this == that {
 		return true
@@ -438,6 +552,12 @@ func (this *ResponseMeta) EqualVT(that *ResponseMeta) bool {
 	if this.Epoch != that.Epoch {
 		return false
 	}
+	if p, q := this.RepoCpeMappingHash, that.RepoCpeMappingHash; (p == nil && q != nil) || (p != nil && (q == nil || *p != *q)) {
+		return false
+	}
+	if p, q := this.RepoCpeMappingUpdatePath, that.RepoCpeMappingUpdatePath; (p == nil && q != nil) || (p != nil && (q == nil || *p != *q)) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -491,6 +611,44 @@ func (this *GetReportResponse) EqualVT(that *GetReportResponse) bool {
 
 func (this *GetReportResponse) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*GetReportResponse)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *SyncRepoCPEMappingRequest) EqualVT(that *SyncRepoCPEMappingRequest) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if string(this.Mapping) != string(that.Mapping) {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *SyncRepoCPEMappingRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*SyncRepoCPEMappingRequest)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *SyncRepoCPEMappingResponse) EqualVT(that *SyncRepoCPEMappingResponse) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Updated != that.Updated {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *SyncRepoCPEMappingResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*SyncRepoCPEMappingResponse)
 	if !ok {
 		return false
 	}
@@ -605,6 +763,29 @@ func (m *VMServiceRequest_GetReport) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
+func (m *VMServiceRequest_SyncRepoCpeMapping) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *VMServiceRequest_SyncRepoCpeMapping) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SyncRepoCpeMapping != nil {
+		size, err := m.SyncRepoCpeMapping.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *VMServiceResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -700,6 +881,29 @@ func (m *VMServiceResponse_Error) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *VMServiceResponse_SyncRepoCpeMapping) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *VMServiceResponse_SyncRepoCpeMapping) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SyncRepoCpeMapping != nil {
+		size, err := m.SyncRepoCpeMapping.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x22
 	}
 	return len(dAtA) - i, nil
 }
@@ -800,6 +1004,18 @@ func (m *ResponseMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.RepoCpeMappingUpdatePath != nil {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(*m.RepoCpeMappingUpdatePath))
+		i--
+		dAtA[i] = 0x40
+	}
+	if m.RepoCpeMappingHash != nil {
+		i -= len(*m.RepoCpeMappingHash)
+		copy(dAtA[i:], *m.RepoCpeMappingHash)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(*m.RepoCpeMappingHash)))
+		i--
+		dAtA[i] = 0x3a
 	}
 	if m.Epoch != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Epoch))
@@ -967,6 +1183,89 @@ func (m *GetReportResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *SyncRepoCPEMappingRequest) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SyncRepoCPEMappingRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SyncRepoCPEMappingRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Mapping) > 0 {
+		i -= len(m.Mapping)
+		copy(dAtA[i:], m.Mapping)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Mapping)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *SyncRepoCPEMappingResponse) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *SyncRepoCPEMappingResponse) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SyncRepoCPEMappingResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Updated {
+		i--
+		if m.Updated {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *ErrorResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1062,6 +1361,20 @@ func (m *VMServiceRequest_GetReport) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *VMServiceRequest_SyncRepoCpeMapping) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SyncRepoCpeMapping != nil {
+		l = m.SyncRepoCpeMapping.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
 func (m *VMServiceResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1101,6 +1414,20 @@ func (m *VMServiceResponse_Error) SizeVT() (n int) {
 	_ = l
 	if m.Error != nil {
 		l = m.Error.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *VMServiceResponse_SyncRepoCpeMapping) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SyncRepoCpeMapping != nil {
+		l = m.SyncRepoCpeMapping.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -1169,6 +1496,13 @@ func (m *ResponseMeta) SizeVT() (n int) {
 	if m.Epoch != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Epoch))
 	}
+	if m.RepoCpeMappingHash != nil {
+		l = len(*m.RepoCpeMappingHash)
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.RepoCpeMappingUpdatePath != nil {
+		n += 1 + protohelpers.SizeOfVarint(uint64(*m.RepoCpeMappingUpdatePath))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1206,6 +1540,33 @@ func (m *GetReportResponse) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Unchanged {
+		n += 2
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *SyncRepoCPEMappingRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Mapping)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *SyncRepoCPEMappingResponse) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Updated {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -1341,6 +1702,47 @@ func (m *VMServiceRequest) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Method = &VMServiceRequest_GetReport{GetReport: v}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SyncRepoCpeMapping", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Method.(*VMServiceRequest_SyncRepoCpeMapping); ok {
+				if err := oneof.SyncRepoCpeMapping.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SyncRepoCPEMappingRequest{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Method = &VMServiceRequest_SyncRepoCpeMapping{SyncRepoCpeMapping: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -1510,6 +1912,47 @@ func (m *VMServiceResponse) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Result = &VMServiceResponse_Error{Error: v}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SyncRepoCpeMapping", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Result.(*VMServiceResponse_SyncRepoCpeMapping); ok {
+				if err := oneof.SyncRepoCpeMapping.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SyncRepoCPEMappingResponse{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Result = &VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -2070,6 +2513,59 @@ func (m *ResponseMeta) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			s := string(dAtA[iNdEx:postIndex])
+			m.RepoCpeMappingHash = &s
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingUpdatePath", wireType)
+			}
+			var v RepoCPEMappingUpdatePath
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= RepoCPEMappingUpdatePath(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RepoCpeMappingUpdatePath = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2274,6 +2770,162 @@ func (m *GetReportResponse) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Unchanged = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SyncRepoCPEMappingRequest) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mapping = append(m.Mapping[:0], dAtA[iNdEx:postIndex]...)
+			if m.Mapping == nil {
+				m.Mapping = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SyncRepoCPEMappingResponse) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Updated", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Updated = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2631,6 +3283,47 @@ func (m *VMServiceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Method = &VMServiceRequest_GetReport{GetReport: v}
 			}
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SyncRepoCpeMapping", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Method.(*VMServiceRequest_SyncRepoCpeMapping); ok {
+				if err := oneof.SyncRepoCpeMapping.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SyncRepoCPEMappingRequest{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Method = &VMServiceRequest_SyncRepoCpeMapping{SyncRepoCpeMapping: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2798,6 +3491,47 @@ func (m *VMServiceResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Result = &VMServiceResponse_Error{Error: v}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SyncRepoCpeMapping", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Result.(*VMServiceResponse_SyncRepoCpeMapping); ok {
+				if err := oneof.SyncRepoCpeMapping.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SyncRepoCPEMappingResponse{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Result = &VMServiceResponse_SyncRepoCpeMapping{SyncRepoCpeMapping: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -3390,6 +4124,63 @@ func (m *ResponseMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			s := stringValue
+			m.RepoCpeMappingHash = &s
+			iNdEx = postIndex
+		case 8:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RepoCpeMappingUpdatePath", wireType)
+			}
+			var v RepoCPEMappingUpdatePath
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= RepoCPEMappingUpdatePath(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RepoCpeMappingUpdatePath = &v
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3594,6 +4385,159 @@ func (m *GetReportResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.Unchanged = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SyncRepoCPEMappingRequest) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingRequest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Mapping", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Mapping = dAtA[iNdEx:postIndex]
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *SyncRepoCPEMappingResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: SyncRepoCPEMappingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Updated", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Updated = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
