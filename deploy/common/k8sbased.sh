@@ -286,7 +286,19 @@ function launch_central {
     if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
         echo "Generating Central bundle..."
-        roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}" "${STORAGE_ARGS[@]}"
+
+        roxctl_cmd=(
+          roxctl
+          central generate
+          "${ORCH}"
+          "${EXTRA_ARGS[@]}"
+          --output-dir="central-bundle"
+          "${STORAGE}" "${STORAGE_ARGS[@]}"
+        )
+
+        echo "Executing command: ${roxctl_cmd[@]}"
+        "${roxctl_cmd[@]}"
+
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
@@ -966,10 +978,24 @@ function launch_sensor {
 
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
-             --collection-method="$COLLECTION_METHOD" \
-             "${ORCH}" \
-             "${extra_config[@]+"${extra_config[@]}"}"
+
+        roxctl_cmd=(
+          roxctl
+          --endpoint "${API_ENDPOINT}"
+          --ca ""
+          --insecure-skip-tls-verify
+          sensor generate
+          --main-image-repository="${MAIN_IMAGE_REPO}"
+          --central="$CLUSTER_API_ENDPOINT"
+          --name="$CLUSTER"
+          --collection-method="$COLLECTION_METHOD"
+          "${ORCH}"
+          "${extra_config[@]+"${extra_config[@]}"}"
+        )
+
+        echo "Executing command: ${roxctl_cmd[@]}"
+        "${roxctl_cmd[@]}"
+
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
 
         # roxctl sensor generate does not support setting dynamicConfig fields
