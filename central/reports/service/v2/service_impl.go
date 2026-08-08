@@ -41,30 +41,33 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			apiV2.ReportService_GetReportConfiguration_FullMethodName,
 			apiV2.ReportService_CountReportConfigurations_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Image)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_PostReportConfiguration_FullMethodName,
 			apiV2.ReportService_UpdateReportConfiguration_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
+			apiV2.ReportService_RunReport_FullMethodName,
 		},
-		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
+		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+		},
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
-		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
-			apiV2.ReportService_RunReport_FullMethodName,
-			apiV2.ReportService_CancelReport_FullMethodName,
-			apiV2.ReportService_DeleteReport_FullMethodName,
 			apiV2.ReportService_PostViewBasedReport_FullMethodName,
+			apiV2.ReportService_CancelReport_FullMethodName,
+		},
+		// view permissions are enough if user is deleting a job created by the user
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
+			apiV2.ReportService_DeleteReport_FullMethodName,
 		},
 	})
 )
@@ -385,9 +388,6 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 }
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report job ID is empty")
 	}
@@ -467,11 +467,6 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
 	}
 
-	// Authorisation: must have write access on workflow administration.
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
-
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
 	}
@@ -516,7 +511,9 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
+	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -562,7 +559,10 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate here.
+	// Results are already scoped to the requesting user via the UserID query filter above.
+	results, err := s.snapshotDatastore.SearchReportSnapshots(sac.WithAllAccess(ctx), conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
