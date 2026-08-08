@@ -18,8 +18,12 @@ import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
@@ -69,6 +73,7 @@ export type ClustersTablePanelProps = {
 function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -94,6 +99,16 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const metadata = useMetadata();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
+
+    const filteredSearchFilterConfig = useMemo(
+        () =>
+            getSearchFilterConfigWithFeatureFlagDependency(
+                isFeatureFlagEnabled,
+                searchFilterConfig
+            ),
+
+        [isFeatureFlagEnabled]
+    );
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
@@ -378,7 +393,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
-                            config={searchFilterConfig}
+                            config={filteredSearchFilterConfig}
                             defaultEntity="Cluster"
                             searchFilter={searchFilter}
                             onSearch={(payload) =>
@@ -421,7 +436,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         <ToolbarGroup className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
-                                config={searchFilterConfig}
+                                config={filteredSearchFilterConfig}
                                 onFilterChange={setSearchFilter}
                                 searchFilter={searchFilter}
                             />
