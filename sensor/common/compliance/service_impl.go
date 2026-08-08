@@ -258,7 +258,13 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			} else {
 				s.auditEvents <- t.AuditEvents
 			}
-			s.auditLogCollectionManager.AuditMessagesChan() <- msg
+			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
+				if err := s.pubSubDispatcher.Publish(&AuditLogManagerEvent{Node: msg.GetNode(), AuditEvents: t.AuditEvents}); err != nil {
+					logging.GetRateLimitedLogger().ErrorL("audit-log-manager-publish", "Failed to publish audit log manager event: %v", err)
+				}
+			} else {
+				s.auditLogCollectionManager.AuditMessagesChan() <- msg
+			}
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
 		case *sensor.MsgFromCompliance_IndexReport:

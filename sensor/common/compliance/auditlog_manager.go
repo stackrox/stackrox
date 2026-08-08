@@ -46,7 +46,7 @@ type clusterIDWaiter interface {
 }
 
 // NewAuditLogCollectionManager creates a new instance of AuditLogCollectionManager, which provides an API to manage the lifecycle of audit log collection within the cluster
-func NewAuditLogCollectionManager(clusterID clusterIDWaiter) AuditLogCollectionManager {
+func NewAuditLogCollectionManager(clusterID clusterIDWaiter, pubSubDispatcher common.PubSubDispatcher) AuditLogCollectionManager {
 	return &auditLogCollectionManagerImpl{
 		// Need to use a getter instead of directly calling clusterid.Get because it may block if the communication with central is not yet finished
 		// Putting it as a getter so it can be overridden in tests
@@ -59,5 +59,6 @@ func NewAuditLogCollectionManager(clusterID clusterIDWaiter) AuditLogCollectionM
 		forceUpdateSig:          concurrency.NewSignal(),
 		centralReady:            concurrency.NewSignal(),
 		updaterTicker:           time.NewTicker(defaultInterval),
+		pubSubDispatcher:        pubSubDispatcher,
 	}
 }
