@@ -1,8 +1,6 @@
 package paginated
 
 import (
-	"math"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/search"
@@ -168,7 +166,7 @@ func PaginateSlice[T any](offset, limit int, slice []T) []T {
 
 // GetLimit returns pagination limit or a value if it's unlimited
 func GetLimit(paginationLimit int32, whenUnlimited int32) int32 {
-	if paginationLimit <= 0 || paginationLimit == math.MaxInt32 {
+	if paginationLimit <= 0 || paginationLimit > whenUnlimited {
 		return whenUnlimited
 	}
 	return paginationLimit
