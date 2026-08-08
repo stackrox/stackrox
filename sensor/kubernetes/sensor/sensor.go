@@ -62,6 +62,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
+	"github.com/stackrox/rox/sensor/kubernetes/lightspeed"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
@@ -235,6 +236,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
 	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+
+	lightspeedUpdater := lightspeed.NewUpdater(0)
+	lightspeedQuerier := lightspeed.NewQuerier(lightspeedUpdater)
+	components = append(components, lightspeedUpdater, lightspeedQuerier)
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)

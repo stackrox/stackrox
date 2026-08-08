@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package central;
+
+option go_package = "./internalapi/central;central";
+
+// LightspeedConfig is sent from Central to Sensor to configure the Lightspeed endpoint.
+message LightspeedConfig {
+  // The base URL of the Lightspeed service (e.g. "https://lightspeed-app-server.openshift-lightspeed.svc:8443").
+  // Empty string means Lightspeed is not configured for this cluster.
+  string host = 1;
+}
+
+// LightspeedInfo is sent from Sensor to Central with the current Lightspeed status.
+message LightspeedInfo {
+  string host = 1;
+  bool is_ready = 2;
+  bool has_query_access = 3;
+  string status_error = 4;
+}
+
+// LightspeedQueryRequest is sent from Central to Sensor to query Lightspeed.
+message LightspeedQueryRequest {
+  string id = 1;
+  string query = 2;
+  string context_json = 3;
+}
+
+// LightspeedQueryResponse is sent from Sensor to Central with the Lightspeed response.
+message LightspeedQueryResponse {
+  string id = 1;
+  string summary = 2;
+  string error = 3;
+}
