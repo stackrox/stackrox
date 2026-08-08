@@ -51,23 +51,25 @@ class OpenShift extends Kubernetes {
 
         provisionDefaultServiceAccount(ns)
 
+        String sccName = "anyuid"
+        if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
+            log.debug "Using a non default SCC"
+            sccName = "qatest-anyuid"
+        }
         try {
-            String sccName = "anyuid"
-            if (Env.CI_JOB_NAME =~ /^(rosa|aro)-/ || Env.CI_JOB_NAME =~ /^osd-/) {
-                log.debug "Using a non default SCC"
-                sccName = "qatest-anyuid"
+            SecurityContextConstraints scc = oClient.securityContextConstraints().withName(sccName).get()
+            if (scc == null) {
+                log.error "SCC '${sccName}' not found on this cluster"
+                return
             }
-            SecurityContextConstraints anyuid = oClient.securityContextConstraints().withName(sccName).get()
-            if (anyuid != null &&
-                    (!anyuid.users.contains("system:serviceaccount:" + ns + ":default") ||
-                            !anyuid.allowHostNetwork ||
-                            !anyuid.allowHostDirVolumePlugin ||
-                            !anyuid.allowHostPorts
-                    )) {
-                log.debug "Adding system:serviceaccount:${ns}:default to ${sccName} user list"
-                anyuid.with {
-                    // (Note: + string concatenation here to avoid json unmarshal errors
-                    users.addAll(["system:serviceaccount:" + ns + ":default"])
+            String saUser = "system:serviceaccount:" + ns + ":default"
+            if (!scc.users.contains(saUser) ||
+                    !scc.allowHostNetwork ||
+                    !scc.allowHostDirVolumePlugin ||
+                    !scc.allowHostPorts) {
+                log.info "Adding ${saUser} to ${sccName} SCC"
+                scc.with {
+                    users.addAll([saUser])
                     setAllowHostNetwork(true)
                     setAllowHostDirVolumePlugin(true)
                     setAllowHostPorts(true)
@@ -76,11 +78,60 @@ class OpenShift extends Kubernetes {
                     setAllowedCapabilities(["*"])
                     setAllowedUnsafeSysctls(["*"])
                 }
-                oClient.securityContextConstraints().createOrReplace(anyuid)
+                oClient.securityContextConstraints().createOrReplace(scc)
             }
         } catch (Exception e) {
-            log.warn("could not check if namespace exists", e)
+            log.error "Failed to configure SCC '${sccName}' for namespace ${ns}", e
+            throw e
         }
+
+        verifySccApplied(ns, sccName)
+    }
+
+    private static final Set<String> ANYUID_SCCS = ["anyuid", "qatest-anyuid"] as Set
+    private static final Set<String> RESTRICTED_SCCS = ["restricted", "restricted-v2", "restricted-v3"] as Set
+
+    private void verifySccApplied(String ns, String sccName) {
+        String probePodName = "scc-probe-" + System.nanoTime()
+        int maxAttempts = 10
+        for (int i = 0; i < maxAttempts; i++) {
+            try {
+                def pod = client.pods().inNamespace(ns).createOrReplace(
+                    new io.fabric8.kubernetes.api.model.PodBuilder()
+                        .withNewMetadata().withName(probePodName).endMetadata()
+                        .withNewSpec()
+                            .addNewContainer()
+                                .withName("probe")
+                                .withImage("registry.access.redhat.com/ubi9/ubi-minimal:9.5")
+                                .withCommand("true")
+                            .endContainer()
+                            .withRestartPolicy("Never")
+                        .endSpec()
+                        .build()
+                )
+                String assignedScc = pod?.metadata?.annotations?.get("openshift.io/scc") ?: ""
+                client.pods().inNamespace(ns).withName(probePodName).delete()
+                if (assignedScc == sccName || ANYUID_SCCS.contains(assignedScc)) {
+                    log.info "Verified SCC '${assignedScc}' is active for namespace ${ns} (attempt ${i + 1})"
+                    return
+                }
+                if (RESTRICTED_SCCS.contains(assignedScc)) {
+                    log.warn "Probe pod got restrictive SCC '${assignedScc}' instead of '${sccName}', " +
+                        "retrying (${i + 1}/${maxAttempts})"
+                } else {
+                    log.info "Probe pod got SCC '${assignedScc}' (not '${sccName}' but not restricted), " +
+                        "accepting (attempt ${i + 1})"
+                    return
+                }
+            } catch (Exception e) {
+                log.warn "SCC probe pod failed: ${e.message}, retrying (${i + 1}/${maxAttempts})"
+                try { client.pods().inNamespace(ns).withName(probePodName).delete() } catch (Exception ignored) {}
+            }
+            sleep(2000)
+        }
+        log.error "SCC verification failed: namespace ${ns} still gets a restricted SCC after ${maxAttempts} attempts"
+        throw new RuntimeException("SCC verification failed for namespace ${ns} - " +
+            "admission controller assigned a restricted SCC instead of '${sccName}' or equivalent")
     }
 
     /*
