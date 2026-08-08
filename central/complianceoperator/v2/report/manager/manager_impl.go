@@ -39,6 +39,12 @@ import (
 var (
 	log         = logging.LoggerForModule()
 	maxRequests = 100
+
+	// completedScansTTL is how long a completed scan ID stays in the
+	// completedScans map. It only needs to cover the window between watcher
+	// completion and snapshot persistence in the DB; after that,
+	// GetWatcherIDFromScan's DB query serves as the durable backstop.
+	completedScansTTL = 5 * time.Minute
 )
 
 type reportRequest struct {
@@ -80,6 +86,12 @@ type managerImpl struct {
 	watchingScans map[string]watcher.ScanWatcher
 	// watchingScansStartTime records when a given watcher was started (for the metrics)
 	watchingScansStartTime map[string]time.Time
+	// completedScans tracks recently completed scan watcher IDs with their
+	// completion time. Entries expire after completedScansTTL. This prevents
+	// duplicate watcher creation in the brief window between watcher completion
+	// and snapshot persistence, without permanently blocking future scan cycles
+	// that reuse the same K8s UID.
+	completedScans map[string]time.Time
 	// readyQueue holds the scan that are ready to be reported
 	readyQueue *queue.Queue[*watcher.ScanWatcherResults]
 
@@ -123,6 +135,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore,
 		automaticReportingCtx:  sac.WithAllAccess(context.Background()),
 		watchingScans:          make(map[string]watcher.ScanWatcher),
 		watchingScansStartTime: make(map[string]time.Time),
+		completedScans:         make(map[string]time.Time),
 		readyQueue:             queue.NewQueue[*watcher.ScanWatcherResults](),
 		watchingScanConfigs:    make(map[string]watcher.ScanConfigWatcher),
 		scanConfigReadyQueue:   queue.NewQueue[*watcher.ScanConfigWatcherResults](),
@@ -196,6 +209,7 @@ func (m *managerImpl) Stop() {
 		}
 		m.watchingScans = make(map[string]watcher.ScanWatcher)
 		m.watchingScansStartTime = make(map[string]time.Time)
+		m.completedScans = make(map[string]time.Time)
 	})
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		for _, scanConfigWatcher := range m.watchingScanConfigs {
@@ -370,11 +384,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 		}
 		return err
 	}
-	numChecks, err := watcher.GetExpectedNumChecks(scan)
-	if err != nil {
-		log.Warnf("Failed to get expected number of checks from annotations for %s: %v", scan.GetScanName(), err)
-	}
-	w := m.getWatcher(sensorCtx, id, numChecks)
+	w := m.getWatcher(sensorCtx, id)
 	if w != nil {
 		return w.PushScan(scan)
 	}
@@ -424,24 +434,30 @@ func (m *managerImpl) HandleScanRemove(scanID string) error {
 		if scanWatcher, found := m.watchingScans[id]; found {
 			scanWatcher.Stop(watcher.ErrScanRemoved)
 		}
+		delete(m.completedScans, id)
 	})
 	return nil
 }
 
-func (m *managerImpl) getWatcher(sensorCtx context.Context, id string, numChecks int) watcher.ScanWatcher {
+func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
+		// Lazily purge expired entries from completedScans.
+		now := time.Now()
+		for k, completedAt := range m.completedScans {
+			if now.Sub(completedAt) >= completedScansTTL {
+				delete(m.completedScans, k)
+			}
+		}
+
 		var found bool
-		// The check for `numChecks == 0` is here to prevent starting a watcher twice per scan.
-		// It may happen that additional status updates (e.g., state) from CO arrive
-		// after the watcher is removed from the watchingScans (i.e., we have all the checks).
-		// Not checking that would cause a new watcher to be created here and in some circumstances
-		// (when no e-mail is provided for notification), the watcher would time-out and delete the data from DB.
-		if scanWatcher, found = m.watchingScans[id]; !found && numChecks == 0 {
-			scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
-			m.watchingScans[id] = scanWatcher
-			m.watchingScansStartTime[id] = time.Now()
-			m.updateMaxNumScansRunningInParallelNoLock()
+		if scanWatcher, found = m.watchingScans[id]; !found {
+			if _, recentlyCompleted := m.completedScans[id]; !recentlyCompleted {
+				scanWatcher = watcher.NewScanWatcher(m.automaticReportingCtx, sensorCtx, id, m.readyQueue)
+				m.watchingScans[id] = scanWatcher
+				m.watchingScansStartTime[id] = time.Now()
+				m.updateMaxNumScansRunningInParallelNoLock()
+			}
 		}
 	})
 	return scanWatcher
@@ -468,7 +484,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		}
 		return err
 	}
-	w := m.getWatcher(sensorCtx, id, 0)
+	w := m.getWatcher(sensorCtx, id)
 	if w != nil {
 		return w.PushCheckResult(result)
 	}
@@ -484,6 +500,7 @@ func (m *managerImpl) handleReadyScan() {
 	for scanWatcherResult := range m.readyQueue.Seq(m.stopper.LowLevel().GetStopRequestSignal()) {
 		concurrency.WithLock(&m.watchingScansLock, func() {
 			delete(m.watchingScans, scanWatcherResult.WatcherID)
+			m.completedScans[scanWatcherResult.WatcherID] = time.Now()
 
 			m.maxScansInParallel.Store(int32(len(m.watchingScans)))
 			timeActive := time.Since(m.watchingScansStartTime[scanWatcherResult.WatcherID])
