@@ -1,0 +1,343 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+  namespace: stackrox
+  labels:
+    app: scanner
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.10.1
+        helm.sh/chart: stackrox-central-services-400.10.1
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+        openshift.io/required-scc: nonroot-v2
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: Exists
+            weight: 50
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/compute
+                operator: Exists
+            weight: 25
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/control-plane
+                operator: DoesNotExist
+            weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: scanner
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - name: scanner
+        
+        image: "quay.io/stackrox-io/scanner:4.10.1"
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: ROX_OPENSHIFT_API
+          value: "true"
+        
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 1500Mi
+        command:
+        - /entrypoint.sh
+        ports:
+        - name: https
+          containerPort: 8080
+        - name: grpc
+          containerPort: 8443
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["NET_RAW"]
+          runAsUser: 65534
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /scanner/ping
+            port: 8080
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+          successThreshold: 1
+        volumeMounts:
+        - name: scanner-etc-ssl-volume
+          mountPath: /etc/ssl
+        - name: scanner-etc-pki-volume
+          mountPath: /etc/pki/ca-trust
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: scanner-config-volume
+          mountPath: /etc/scanner
+          readOnly: true
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: vuln-temp-db
+          mountPath: /var/lib/stackrox
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
+        - name: scanner-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
+          readOnly: true
+        
+        - name: trusted-ca-volume
+          mountPath: /etc/pki/injected-ca-trust/
+          readOnly: true
+        
+        
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      serviceAccountName: scanner
+      volumes:
+      - name: additional-ca-volume
+        secret:
+          defaultMode: 420
+          optional: true
+          secretName: additional-ca
+      - name: scanner-etc-ssl-volume
+        emptyDir: {}
+      - name: scanner-etc-pki-volume
+        emptyDir: {}
+      - name: scanner-config-volume
+        configMap:
+          name: scanner-config
+      - name: certs
+        secret:
+          secretName: scanner-tls
+      - name: vuln-temp-db
+        emptyDir: {}
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password
+      
+      - name: trusted-ca-volume
+        configMap:
+          name: injected-cabundle-stackrox-central-services
+          items:
+            - key: ca-bundle.crt
+              path: tls-ca-bundle.pem
+          optional: true
+      
+      
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+  namespace: stackrox
+  labels:
+    app: scanner-db
+    app.kubernetes.io/component: scanner
+    app.kubernetes.io/instance: stackrox-central-services
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: stackrox
+    app.kubernetes.io/part-of: stackrox-central-services
+    app.kubernetes.io/version: 4.10.1
+    helm.sh/chart: stackrox-central-services-400.10.1
+  annotations:
+    email: support@stackrox.com
+    meta.helm.sh/release-name: stackrox-central-services
+    meta.helm.sh/release-namespace: stackrox
+    owner: stackrox
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: scanner-db
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 4.10.1
+        helm.sh/chart: stackrox-central-services-400.10.1
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+        openshift.io/required-scc: nonroot-v2
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            # ScannerDB is single-homed, so avoid preemptible nodes.
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: cloud.google.com/gke-preemptible
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: Exists
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: Exists
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: DoesNotExist
+      initContainers:
+      - name: init-db
+        image: "quay.io/stackrox-io/scanner-db:4.10.1"
+        env:
+          - name: POSTGRES_PASSWORD_FILE
+            value: "/run/secrets/stackrox.io/secrets/password"
+          - name: ROX_SCANNER_DB_INIT
+            value: "true"
+        resources:
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+        volumeMounts:
+          - name: scanner-db-data
+            mountPath: /var/lib/postgresql/data
+          - name: certs
+            mountPath: /run/secrets/stackrox.io/certs
+            readOnly: true
+          - name: scanner-db-password
+            mountPath: /run/secrets/stackrox.io/secrets
+            readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+      containers:
+      - name: db
+        image: "quay.io/stackrox-io/scanner-db:4.10.1"
+        env:
+          
+        ports:
+        - name: tcp-postgresql
+          protocol: TCP
+          containerPort: 5432
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+          - name: scanner-db-data
+            mountPath: /var/lib/postgresql/data
+          - name: certs
+            mountPath: /run/secrets/stackrox.io/certs
+            readOnly: true
+      serviceAccountName: scanner
+      securityContext:
+        fsGroup: 70
+        runAsGroup: 70
+        runAsNonRoot: true
+        runAsUser: 70
+      volumes:
+      - name: scanner-config-volume
+        configMap:
+          name: scanner-config
+      - name: certs
+        secret:
+          secretName: scanner-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: scanner-db-data
+        emptyDir: {}
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password
