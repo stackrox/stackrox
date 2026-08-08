@@ -908,3 +908,67 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestMultipleDeploymen
 	suite.NoError(err)
 	suite.False(persistedResult2.GetBaselineStatuses()[0].GetAnomalousProcessesExecuted())
 }
+
+func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestEmptyExecPathAndUnlockedContainersFiltered() {
+	deployment := fixtures.GetDeployment()
+	deployment.Id = uuid.NewV4().String()
+	lockedContainer := deployment.GetContainers()[0].GetName()
+	unlockedContainer := deployment.GetContainers()[1].GetName()
+
+	// Lock only the first container's baseline.
+	baseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			DeploymentId:  deployment.GetId(),
+			ContainerName: lockedContainer,
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
+		},
+		UserLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+		Elements:            []*storage.BaselineElement{},
+	}
+	suite.addLockedBaseline(baseline)
+
+	unlockedBaseline := &storage.ProcessBaseline{
+		Key: &storage.ProcessBaselineKey{
+			DeploymentId:  deployment.GetId(),
+			ContainerName: unlockedContainer,
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
+		},
+		Elements: []*storage.BaselineElement{},
+	}
+	suite.addLockedBaseline(unlockedBaseline)
+
+	makeIndicator := func(container, execPath string) *storage.ProcessIndicator {
+		return &storage.ProcessIndicator{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  deployment.GetId(),
+			ContainerName: container,
+			PodId:         uuid.NewV4().String(),
+			PodUid:        uuid.NewV4().String(),
+			ClusterId:     deployment.GetClusterId(),
+			Namespace:     deployment.GetNamespace(),
+			Signal: &storage.ProcessSignal{
+				Name:         "proc",
+				ExecFilePath: execPath,
+				Time:         protoconv.ConvertTimeToTimestamp(time.Now()),
+				ContainerId:  uuid.NewV4().String(),
+			},
+			ContainerStartTime: protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * time.Hour)),
+		}
+	}
+
+	err := suite.indicatorsDatastore.AddProcessIndicators(suite.ctx,
+		makeIndicator(lockedContainer, "/bin/curl"),   // should appear as violation
+		makeIndicator(lockedContainer, ""),            // empty exec path — filtered by SQL
+		makeIndicator(unlockedContainer, "/bin/wget"), // unlocked container — not queried
+		makeIndicator(unlockedContainer, ""),          // unlocked + empty — not queried
+	)
+	suite.NoError(err)
+
+	results, err := suite.evaluator.EvaluateBaselinesAndPersistResult(deployment)
+	suite.NoError(err)
+	suite.Len(results, 1)
+	suite.Equal("/bin/curl", results[0].ExecFilePath)
+	suite.Equal(lockedContainer, results[0].ContainerName)
+}
