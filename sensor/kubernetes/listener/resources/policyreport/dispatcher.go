@@ -6,23 +6,31 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policyreport"
+	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var log = logging.LoggerForModule()
 
 // Dispatcher processes PolicyReport CRD events, canonicalizes them into
-// SecurityEvents, and records dry-run metrics. It does not forward events
-// to Central — that wiring comes in a later PR once the protobuf contract
-// and detector path exist.
+// SecurityEvents, resolves Pod subjects to ACS deployments, and records
+// dry-run metrics. It does not forward events to Central — that wiring
+// comes in a later PR once the protobuf contract and detector path exist.
 type Dispatcher struct {
-	clusterID string
+	clusterID       string
+	hierarchy       references.ParentHierarchy
+	deploymentStore store.DeploymentStore
 }
 
 // NewDispatcher creates a PolicyReport dispatcher.
-func NewDispatcher(clusterID string) *Dispatcher {
-	return &Dispatcher{clusterID: clusterID}
+func NewDispatcher(clusterID string, hierarchy references.ParentHierarchy, deploymentStore store.DeploymentStore) *Dispatcher {
+	return &Dispatcher{
+		clusterID:       clusterID,
+		hierarchy:       hierarchy,
+		deploymentStore: deploymentStore,
+	}
 }
 
 // ProcessEvent implements resources.Dispatcher.
@@ -53,6 +61,10 @@ func (d *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 	reportsProcessed.WithLabelValues("ok").Inc()
 	eventsCanonicalizedTotal.Add(float64(len(events)))
 
+	for i := range events {
+		d.resolveSubject(&events[i])
+	}
+
 	if len(events) > 0 {
 		log.Debugf("Canonicalized %d actionable SecurityEvents from PolicyReport %s/%s",
 			len(events), u.GetNamespace(), u.GetName())
@@ -60,6 +72,48 @@ func (d *Dispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAct
 
 	// No forwarding to Central yet — dry-run metrics only.
 	return nil
+}
+
+// resolveSubject attempts to resolve a SecurityEvent's Pod subject to an ACS
+// Deployment using the parent ownership hierarchy. This mirrors the resolution
+// logic in deployments.go's processWithType.
+func (d *Dispatcher) resolveSubject(event *policyreport.SecurityEvent) {
+	if event.Subject.Kind != "Pod" || event.Subject.UID == "" {
+		resolutionTotal.WithLabelValues("unresolved").Inc()
+		return
+	}
+
+	ownerIDs := d.hierarchy.TopLevelParents(event.Subject.UID)
+	// TopLevelParents returns the child itself when unknown, so this is
+	// effectively unreachable. Kept for defensive parity with deployments.go.
+	if ownerIDs.Cardinality() == 0 {
+		resolutionTotal.WithLabelValues("unresolved").Inc()
+		log.Debugf("No owning deployment found for Pod %s/%s (UID %s)",
+			event.Subject.Namespace, event.Subject.Name, event.Subject.UID)
+		return
+	}
+
+	if ownerIDs.Cardinality() > 1 {
+		resolutionTotal.WithLabelValues("error").Inc()
+		log.Warnf("Multiple owning deployments for Pod %s/%s (UID %s), skipping resolution",
+			event.Subject.Namespace, event.Subject.Name, event.Subject.UID)
+		return
+	}
+
+	ownerID := ownerIDs.GetArbitraryElem()
+	deployment := d.deploymentStore.Get(ownerID)
+	if deployment == nil {
+		resolutionTotal.WithLabelValues("unresolved").Inc()
+		log.Debugf("Owning deployment %s not in store for Pod %s/%s",
+			ownerID, event.Subject.Namespace, event.Subject.Name)
+		return
+	}
+
+	event.ResolvedEntity = policyreport.ResolvedEntity{
+		Type: policyreport.EntityTypeDeployment,
+		ID:   deployment.GetId(),
+	}
+	resolutionTotal.WithLabelValues("resolved").Inc()
 }
 
 func toUnstructured(obj interface{}) (*unstructured.Unstructured, bool) {
@@ -85,8 +139,15 @@ var (
 		Name:      "policyreport_events_canonicalized_total",
 		Help:      "Total actionable SecurityEvents produced from PolicyReport canonicalization.",
 	})
+
+	resolutionTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "rox",
+		Subsystem: "sensor",
+		Name:      "policyreport_resolution_total",
+		Help:      "Total Pod-to-Deployment resolution attempts, by outcome (resolved, unresolved, error).",
+	}, []string{"outcome"})
 )
 
 func init() {
-	prometheus.MustRegister(reportsProcessed, eventsCanonicalizedTotal)
+	prometheus.MustRegister(reportsProcessed, eventsCanonicalizedTotal, resolutionTotal)
 }
