@@ -2,11 +2,14 @@ package reconcile
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	versionTestutils "github.com/stackrox/rox/pkg/version/testutils"
+	"go.uber.org/zap/zapcore"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,18 +23,23 @@ import (
 var (
 	testEnv *envtest.Environment
 	cfg     *rest.Config
+	testT   *testing.T
 	gvk     = schema.GroupVersionKind{Group: "example.com", Version: "v1", Kind: "TestApp"}
 )
 
 func TestReconcileExtensions(t *testing.T) {
+	testT = t
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Reconcile Extensions Suite")
 }
 
 var _ = BeforeSuite(func() {
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	prefixedLogger := newPrefixedLogger("\t", GinkgoWriter)
+	logf.SetLogger(zap.New(zap.WriteTo(prefixedLogger), zap.UseDevMode(true), zap.Level(zapcore.InfoLevel)))
+	versionTestutils.SetExampleVersion(testT)
 	testEnv = &envtest.Environment{
 		AttachControlPlaneOutput: false, // set to true to see kube-apiserver and etcd logs
+		CRDDirectoryPaths:        []string{"../../config/crd/bases"},
 	}
 
 	var err error
@@ -100,4 +108,24 @@ func BuildTestCR(gvk schema.GroupVersionKind) *unstructured.Unstructured {
 		"helm.sdk.operatorframework.io/uninstall-description": "test uninstall description",
 	})
 	return obj
+}
+
+type prefixedLogger struct {
+	prefix []byte
+	writer io.Writer
+}
+
+func (p *prefixedLogger) Write(data []byte) (int, error) {
+	_, err := p.writer.Write(p.prefix)
+	if err != nil {
+		return 0, err
+	}
+	return p.writer.Write(data)
+}
+
+func newPrefixedLogger(prefix string, writer io.Writer) io.Writer {
+	return &prefixedLogger{
+		prefix: []byte(prefix),
+		writer: writer,
+	}
 }
