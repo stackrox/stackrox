@@ -1,0 +1,85 @@
+name: Create GKE cluster
+description: >
+  Creates a GKE cluster via scripts/ci/gke.sh, waits for readiness,
+  and registers automatic teardown. CLUSTER_NAME, ZONE, and KUBECONFIG
+  are exported to GITHUB_ENV via ci_export for subsequent steps.
+
+inputs:
+  cluster-name:
+    description: Cluster identifier passed to provision_gke_cluster
+    required: true
+  gcp-account:
+    description: GCP service account JSON. Optional when job-preamble has already authenticated.
+    required: false
+    default: ""
+  nodes:
+    description: Number of GKE nodes
+    default: "3"
+  machine-type:
+    description: GKE machine type
+    default: e2-standard-8
+  spot:
+    description: Use spot (preemptible) VMs for cost savings
+    default: "true"
+  wait-for-cluster:
+    description: >
+      Wait for cluster readiness before returning. Defaults to "false": callers
+      should add an explicit 'scripts/ci/gke.sh wait_for_cluster' step after any
+      parallel work (e.g. builds), allowing the cluster to stabilize concurrently.
+      Set to "true" only when no parallel work is available.
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Auth gcloud
+      if: inputs.gcp-account != ''
+      uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ inputs.gcp-account }}
+        export_environment_variables: true
+        create_credentials_file: true
+
+    - name: Setup gcloud CLI
+      uses: 'google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db' # ratchet:google-github-actions/setup-gcloud@v3
+      with:
+        install_components: "gke-gcloud-auth-plugin,beta"
+
+    - name: Create GKE cluster
+      shell: bash
+      env:
+        CLUSTER_ID: ${{ inputs.cluster-name }}
+        MACHINE_TYPE: ${{ inputs.machine-type }}
+        NUM_NODES: ${{ inputs.nodes }}
+        GKE_SPOT: ${{ inputs.spot }}
+      run: |
+        source scripts/ci/lib.sh
+        set_ci_shared_export CLUSTER_FLAVOR_VARIANT "gke"
+        if scripts/ci/gke.sh provision_gke_cluster "${CLUSTER_ID}"; then
+          set_ci_shared_export CREATE_CLUSTER_OUTCOME "passed"
+          save_junit_success "Cluster" "Create GKE"
+        else
+          set_ci_shared_export CREATE_CLUSTER_OUTCOME "failed"
+          save_junit_failure "Cluster" "Create GKE" "See Create GKE cluster step logs for details"
+          exit 1
+        fi
+
+    - name: Wait for cluster
+      if: inputs.wait-for-cluster != 'false'
+      shell: bash
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster
+
+    - name: Register automatic teardown
+      if: always()
+      uses: gacts/run-and-post-run@598d7a875d5620e0457490555b5e18e46082aa47 # v1.4.0
+      with:
+        shell: bash
+        run: echo "Teardown registered for ${CLUSTER_NAME} in ${ZONE}"
+        post: >-
+          if [ -n "${DESTROY_CLUSTER_OUTCOME:-}" ]; then echo "Teardown already handled by workflow step"; exit 0; fi;
+          if [ -z "${CLUSTER_NAME:-}" ]; then echo "No CLUSTER_NAME — cluster was never created"; exit 0; fi;
+          echo "Safety-net teardown for ${CLUSTER_NAME} (workflow step did not run)";
+          scripts/ci/gke.sh teardown_and_report_gke_cluster true || true

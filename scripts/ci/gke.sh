@@ -228,6 +228,8 @@ create_cluster() {
         return 1
     fi
 
+    ci_export KUBECONFIG "${KUBECONFIG:-${HOME}/.kube/config}"
+
     add_a_maintenance_exclusion
 }
 
@@ -352,6 +354,31 @@ teardown_gke_cluster() {
     info "Cluster deleting asynchronously"
 
     create_log_explorer_links
+}
+
+teardown_and_report_gke_cluster() {
+    local canceled="${1:-false}"
+
+    require_environment "CLUSTER_NAME"
+    require_environment "ZONE"
+
+    if teardown_gke_cluster "$canceled"; then
+        set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed"
+        save_junit_success "Cluster" "Destroy GKE"
+        return 0
+    fi
+
+    if gcloud container clusters describe "${CLUSTER_NAME}" 2>/dev/null; then
+        set_ci_shared_export DESTROY_CLUSTER_OUTCOME "failed"
+        save_junit_failure "Cluster" "Destroy GKE" \
+            "Cluster ${CLUSTER_NAME} in ${ZONE} still exists after teardown"
+        echo "::error::Teardown FAILED — cluster ${CLUSTER_NAME} in ${ZONE} still exists and may need manual cleanup"
+        return 1
+    fi
+
+    set_ci_shared_export DESTROY_CLUSTER_OUTCOME "passed"
+    save_junit_success "Cluster" "Destroy GKE"
+    return 0
 }
 
 create_log_explorer_links() {
