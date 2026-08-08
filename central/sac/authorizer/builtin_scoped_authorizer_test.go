@@ -837,6 +837,7 @@ func countAllowedResults(xs []bool) int {
 
 func TestNoAddedResources(t *testing.T) {
 	knownResources := []permissions.ResourceMetadata{
+		resources.AIWorkload,
 		resources.Access,
 		resources.Administration,
 		resources.Alert,

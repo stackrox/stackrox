@@ -67,6 +67,8 @@ var (
 	NetworkPolicy  = newResourceMetadata("NetworkPolicy", permissions.NamespaceScope)
 	Node           = newResourceMetadata("Node", permissions.ClusterScope)
 
+	AIWorkload = newResourceMetadata("AIWorkload", permissions.NamespaceScope)
+
 	Secret                           = newResourceMetadata("Secret", permissions.NamespaceScope)
 	ServiceAccount                   = newResourceMetadata("ServiceAccount", permissions.NamespaceScope)
 	VirtualMachine                   = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)

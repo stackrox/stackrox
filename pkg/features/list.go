@@ -206,4 +206,6 @@ var (
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
 	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
+
+	AIWorkloads = registerFeature("Enable AI workload detection and classification", "ROX_AI_WORKLOADS")
 )
