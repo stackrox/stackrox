@@ -157,10 +157,9 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    SPOT_ARG=
+    local use_spot="false"
     if [[ "${GKE_SPOT:-false}" == "true" ]]; then
-        SPOT_ARG="--spot"
-        echo "Using spot (preemptible) VMs for cost savings"
+        use_spot="true"
     fi
     zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
     success=0
@@ -172,7 +171,7 @@ create_cluster() {
         # shellcheck disable=SC2153
         timeout 830 gcloud beta container clusters create \
             --machine-type "${MACHINE_TYPE}" \
-            --num-nodes "${NUM_NODES}" \
+            --num-nodes "$( [[ "${use_spot}" == "true" ]] && echo 1 || echo "${NUM_NODES}" )" \
             --disk-type=pd-ssd \
             --disk-size="${DISK_SIZE_GB}GB" \
             --create-subnetwork range=/28 \
@@ -186,7 +185,6 @@ create_cluster() {
             --tags="${tags}" \
             --labels="${labels}" \
             ${PSP_ARG} \
-            ${SPOT_ARG} \
             "${CLUSTER_NAME}" || status="$?"
         if [[ "${status}" == 0 ]]; then
             success=1
@@ -226,6 +224,20 @@ create_cluster() {
     if [[ "${success}" == "0" ]]; then
         info "Cluster creation failed"
         return 1
+    fi
+
+    if [[ "${use_spot}" == "true" ]]; then
+        info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
+        gcloud beta container node-pools create spot-pool \
+            --cluster "${CLUSTER_NAME}" \
+            --machine-type "${MACHINE_TYPE}" \
+            --num-nodes "$((NUM_NODES - 1))" \
+            --spot \
+            --disk-type=pd-ssd \
+            --disk-size="${DISK_SIZE_GB}GB" \
+            --image-type "${GCP_IMAGE_TYPE}" \
+            --no-enable-autorepair \
+            --no-enable-autoupgrade
     fi
 
     add_a_maintenance_exclusion
