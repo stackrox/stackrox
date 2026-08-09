@@ -731,9 +731,11 @@ image_prefetcher_start_set() {
 
     # daemonset, etc
     local collect_metrics="--collect-metrics"
-    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]]; then
+    # AWS CLBs don't support IPv6. Skip metrics (which creates a LoadBalancer service)
+    # on IPv6-primary clusters. Check env var first, then detect from cluster config.
+    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]] || kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
         collect_metrics=""
-        info "Skipping prefetcher metrics collection (LoadBalancer not supported on IPv6-primary)"
+        info "Skipping prefetcher metrics collection (CLB not supported on IPv6 clusters)"
     fi
     ${image_prefetcher_deploy_bin} \
         --use-kubelet-image-credential-integration="${kubelet_image_creds}" \
