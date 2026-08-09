@@ -1,6 +1,13 @@
 import withAuth from '../../helpers/basicAuth';
-import { visitListeningEndpointsFromLeftNav } from './ListeningEndpoints.helpers';
+import { visit } from '../../helpers/visit';
 import selectors from './ListeningEndpoints.selectors';
+
+const listeningEndpointsPath = '/main/listening-endpoints';
+
+const deploymentsRouteMatcherMap = {
+    deployments: { method: 'GET', url: '/v1/deployments?*' },
+    deploymentsCount: { method: 'GET', url: '/v1/deploymentscount?*' },
+};
 
 function makeEndpoint(deploymentId, port) {
     return {
@@ -78,21 +85,16 @@ describe('Listening endpoints pagination within a deployment', () => {
     withAuth();
 
     beforeEach(() => {
-        cy.intercept('GET', '/v1/deployments?*', {
-            body: deploymentResponse,
-        }).as('deployments');
-
-        cy.intercept('GET', '/v1/deploymentscount?*', {
-            body: { count: 2 },
-        }).as('deploymentsCount');
-
         interceptListeningEndpointsAPI();
     });
 
     it('should paginate listening endpoints independently for each deployment', () => {
-        visitListeningEndpointsFromLeftNav();
+        visit(listeningEndpointsPath, deploymentsRouteMatcherMap, {
+            deployments: { body: deploymentResponse },
+            deploymentsCount: { body: { count: 2 } },
+        });
 
-        cy.wait(['@deployments', '@deploymentsCount']);
+        cy.get('h1:contains("Listening endpoints")');
 
         // Assert that two deployment rows are displayed
         cy.get(`${selectors.deploymentTable} > tbody`).should('have.length', 2);
@@ -152,9 +154,12 @@ describe('Listening endpoints pagination within a deployment', () => {
     });
 
     it('should navigate to the last page and disable the next button', () => {
-        visitListeningEndpointsFromLeftNav();
+        visit(listeningEndpointsPath, deploymentsRouteMatcherMap, {
+            deployments: { body: deploymentResponse },
+            deploymentsCount: { body: { count: 2 } },
+        });
 
-        cy.wait(['@deployments', '@deploymentsCount']);
+        cy.get('h1:contains("Listening endpoints")');
 
         const rowSelector = `${selectors.deploymentTable} > tbody:has(${selectors.tableRowWithValueForColumn('Deployment', 'listeners-alpha')})`;
 
