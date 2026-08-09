@@ -898,6 +898,11 @@ EOM
         fi
         rm -f "${query}"
     fi
+    # Skip metrics retrieval on IPv6 clusters where CLB-backed metrics services can't be created
+    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]] || kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+        info "Skipping prefetcher metrics retrieval (CLB not supported on IPv6 clusters)"
+        return
+    fi
     info "Now retrieving prefetcher metrics..."
     local attempt=0
     local service="service/${name}-metrics"
