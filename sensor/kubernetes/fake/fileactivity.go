@@ -95,12 +95,13 @@ func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) 
 		}
 	}
 
+	name := goodProcessNames[rand.Intn(len(goodProcessNames))]
 	process := &sensorAPI.ProcessSignal{
 		Id:           uuid.NewV4().String(),
 		ContainerId:  containerID,
-		Name:         "test-process",
-		Args:         "--flag value",
-		ExecFilePath: "/usr/bin/test-process",
+		Name:         name,
+		Args:         "abc def ghi jkl lmn op qrs tuv",
+		ExecFilePath: "/usr/bin/" + name,
 		Pid:          uint32(rand.Intn(65535) + 1),
 		Uid:          1000,
 		Gid:          1000,
