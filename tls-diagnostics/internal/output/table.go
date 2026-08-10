@@ -8,21 +8,30 @@ import (
 
 	"github.com/stackrox/rox/tls-diagnostics/internal/certs"
 	"github.com/stackrox/rox/tls-diagnostics/internal/detect"
+	"github.com/stackrox/rox/tls-diagnostics/internal/diagnostics"
 	"github.com/stackrox/rox/tls-diagnostics/internal/liveprobe"
 	"github.com/stackrox/rox/tls-diagnostics/internal/rotation"
 )
 
-func WriteTable(w io.Writer, topo *detect.Topology, rotationReport *rotation.Report, reports []certs.SecretReport, probeResults []liveprobe.ProbeResult) {
+func WriteTable(w io.Writer, topo *detect.Topology, rotationReport *rotation.Report, reports []certs.SecretReport, probeResults []liveprobe.ProbeResult, diagResult *diagnostics.Result) {
 	writeTopology(w, topo)
-	fmt.Fprintln(w)
+
 	if rotationReport != nil {
-		writeRotation(w, rotationReport)
 		fmt.Fprintln(w)
+		writeRotation(w, rotationReport)
 	}
+
+	fmt.Fprintln(w)
 	writeSecrets(w, reports)
+
 	if len(probeResults) > 0 {
 		fmt.Fprintln(w)
 		writeLiveProbes(w, probeResults)
+	}
+
+	if diagResult != nil {
+		fmt.Fprintln(w)
+		writeDiagnostics(w, diagResult)
 	}
 }
 
@@ -41,7 +50,7 @@ func writeTopology(w io.Writer, topo *detect.Topology) {
 }
 
 func writeRotation(w io.Writer, r *rotation.Report) {
-	fmt.Fprintln(w, "=== CA Rotation ===")
+	fmt.Fprintln(w, "=== CA Rotation Lifecycle ===")
 	fmt.Fprintf(w, "  %-16s %s\n", "Stage:", r.Stage)
 	fmt.Fprintf(w, "  %-16s %s\n", "Description:", r.StageDescription)
 	fmt.Fprintf(w, "  %-16s %s\n", "Next action:", r.NextAction)
@@ -77,35 +86,6 @@ func writeRotation(w io.Writer, r *rotation.Report) {
 				iss.Namespace+"/"+iss.SecretName,
 				iss.SignedBy, marker)
 		}
-	}
-
-	writeFindings(w, r.Findings)
-}
-
-func writeFindings(w io.Writer, findings []rotation.Finding) {
-	fmt.Fprintln(w)
-
-	if len(findings) == 0 {
-		fmt.Fprintln(w, "  Verification:   all checks passed")
-		return
-	}
-
-	fmt.Fprintln(w, "  Verification findings:")
-	for _, f := range findings {
-		prefix := "    "
-		switch f.Severity {
-		case rotation.SeverityFail:
-			prefix += "[FAIL] "
-		case rotation.SeverityWarn:
-			prefix += "[WARN] "
-		}
-
-		location := ""
-		if f.SecretName != "" {
-			location = f.Namespace + "/" + f.SecretName + ": "
-		}
-
-		fmt.Fprintf(w, "%s%s%s\n", prefix, location, f.Message)
 	}
 }
 
@@ -213,4 +193,32 @@ func writeLiveProbes(w io.Writer, results []liveprobe.ProbeResult) {
 			fmt.Fprintf(w, "    Secret match: MISMATCH — served cert not found in any secret ✗\n")
 		}
 	}
+}
+
+func writeDiagnostics(w io.Writer, result *diagnostics.Result) {
+	fmt.Fprintln(w, "=== Diagnostics ===")
+
+	var currentCategory string
+	for _, c := range result.Checks {
+		if c.Category != currentCategory {
+			fmt.Fprintln(w)
+			fmt.Fprintf(w, "  %s\n", c.Category)
+			currentCategory = c.Category
+		}
+
+		var marker string
+		switch c.Status {
+		case diagnostics.StatusPass:
+			marker = "✓"
+		case diagnostics.StatusWarn:
+			marker = "⚠"
+		case diagnostics.StatusFail:
+			marker = "✗"
+		}
+
+		fmt.Fprintf(w, "    %s %s\n", marker, c.Name)
+	}
+
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "  %d passed, %d warnings, %d failures\n", result.Passed, result.Warnings, result.Failures)
 }
