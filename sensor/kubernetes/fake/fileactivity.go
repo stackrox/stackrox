@@ -182,7 +182,7 @@ func (w *WorkloadManager) sanitizeFileActivityParams() {
 		log.Infof("FileActivityWorkload: batchSize=%d is invalid, defaulting to %d", fa.BatchSize, defaultBatchSize)
 		fa.BatchSize = defaultBatchSize
 	}
-	if fa.NodeEventPercent <= 0 {
+	if fa.NodeEventPercent < 0 {
 		defaultNodeEventPercent := 50
 		log.Infof("FileActivityWorkload: nodeEventPercent=%d is invalid, defaulting to %d", fa.NodeEventPercent, defaultNodeEventPercent)
 		fa.NodeEventPercent = defaultNodeEventPercent
