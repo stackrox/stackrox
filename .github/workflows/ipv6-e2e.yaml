@@ -1,7 +1,13 @@
-# IPv6-only E2E smoke tests on KinD
+# IPv6-only E2E tests on KinD
 #
 # Validates that ACS deploys and operates correctly on a single-stack
 # IPv6 Kubernetes cluster. Runs on GHA runners (no cloud infra needed).
+#
+# Test suites:
+#   smoke       — deploy + verify IPv6 networking + API + sensor health (~7 min)
+#   qa-e2e      — Groovy/Spock QA tests (BAT group) (~30 min)
+#   nongroovy   — Go e2e tests (~30 min)
+#   ui-e2e      — Cypress UI tests (uses ui-e2e.yaml workflow_call)
 #
 # Triggered by label 'e2e-ipv6' on PRs, or manually via workflow_dispatch.
 
@@ -14,6 +20,15 @@ on:
         description: "Image tag to test"
         required: true
         type: string
+      suite:
+        description: "Test suite to run"
+        type: choice
+        options:
+          - smoke
+          - qa-e2e
+          - nongroovy
+          - all
+        default: smoke
   pull_request:
     types: [labeled]
 
@@ -22,47 +37,55 @@ defaults:
     shell: bash
 
 jobs:
-  ipv6-e2e:
-    name: IPv6 KinD e2e
+  resolve-tag:
+    name: Resolve image tag
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.label.name == 'e2e-ipv6'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-
-    env:
-      CLUSTER_NAME: ipv6-e2e-${{ github.run_id }}
-
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-
-      - name: Resolve image tag
-        id: tag
+      - id: tag
         run: |
           if [[ -n "${{ inputs.tag }}" ]]; then
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            # Use the latest master commit's tag — this branch may not have images built
             echo "tag=$(git describe --tags --abbrev=10 origin/master)" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create IPv6-only KinD cluster (background)
-        uses: ./.github/actions/create-kind-cluster
+  # ── Smoke test: deploy + verify IPv6 + API + sensor ────────────────
+  smoke:
+    name: IPv6 smoke
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'smoke' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLUSTER_NAME: ipv6-smoke-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - uses: ./.github/actions/create-kind-cluster
         with:
           cluster-name: ${{ env.CLUSTER_NAME }}
-          tag: ${{ steps.tag.outputs.tag }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
           ip-family: ipv6
           quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-      - name: Deploy StackRox
-        uses: ./.github/actions/deploy-stackrox
+      - uses: ./.github/actions/deploy-stackrox
         with:
-          tag: ${{ steps.tag.outputs.tag }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
           exposure: none
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
           registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -70,19 +93,8 @@ jobs:
 
       - name: Verify IPv6-only networking
         run: |
-          echo "=== Cluster network config ==="
           kubectl get nodes -o wide
-          echo ""
-          echo "=== Pod CIDRs ==="
-          kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.podCIDR}{"\n"}{end}'
-          echo ""
-          echo "=== Service CIDRs ==="
-          kubectl cluster-info dump | grep -i service-cluster-ip-range || true
-          echo ""
-          echo "=== Central pod IPs ==="
           kubectl -n stackrox get pods -o wide
-          echo ""
-          # Verify no IPv4 addresses on pods
           ipv4_pods=$(kubectl -n stackrox get pods -o jsonpath='{.items[*].status.podIP}' | tr ' ' '\n' | grep -c '\.' || true)
           if [[ "$ipv4_pods" -gt 0 ]]; then
             echo "ERROR: Found $ipv4_pods pods with IPv4 addresses on an IPv6-only cluster"
@@ -90,59 +102,233 @@ jobs:
           fi
           echo "All pods are using IPv6 addresses"
 
-      - name: Smoke test — Central API
+      - name: Smoke test — Central API + Sensor
         run: |
           ROX_ADMIN_PASSWORD=$(cat /tmp/rox-admin-password)
           API_ENDPOINT=$(cat /tmp/rox-api-endpoint)
-          echo "Testing Central API at ${API_ENDPOINT}..."
-
-          # Basic API health
-          curl -sk "https://${API_ENDPOINT}/v1/metadata" \
-            -u "admin:${ROX_ADMIN_PASSWORD}" | jq .
-
-          # Cluster health
-          curl -sk "https://${API_ENDPOINT}/v1/clusters" \
-            -u "admin:${ROX_ADMIN_PASSWORD}" | jq '.clusters | length'
-
-      - name: Smoke test — Sensor connection
-        run: |
-          echo "Checking sensor health..."
-          kubectl -n stackrox rollout status deploy/sensor --timeout=5m
-          # Verify sensor connected to central
-          ROX_ADMIN_PASSWORD=$(cat /tmp/rox-admin-password)
-          API_ENDPOINT=$(cat /tmp/rox-api-endpoint)
+          curl -sk "https://${API_ENDPOINT}/v1/metadata" -u "admin:${ROX_ADMIN_PASSWORD}" | jq .
           for i in $(seq 1 30); do
             status=$(curl -sk "https://${API_ENDPOINT}/v1/clusters" \
               -u "admin:${ROX_ADMIN_PASSWORD}" | jq -r '.clusters[0].healthStatus.sensorHealthStatus // "UNKNOWN"')
             echo "Attempt $i: sensor status = $status"
-            if [[ "$status" == "HEALTHY" ]]; then
-              echo "Sensor connected and healthy"
-              break
-            fi
+            [[ "$status" == "HEALTHY" ]] && break
             sleep 10
           done
           [[ "$status" == "HEALTHY" ]] || { echo "Sensor not healthy after 5 minutes"; exit 1; }
 
-      - name: Collect logs on failure
-        if: failure()
-        run: |
-          mkdir -p test-artifacts
-          kubectl -n stackrox get pods -o wide > test-artifacts/pods.txt 2>&1 || true
-          kubectl -n stackrox describe pods > test-artifacts/pod-descriptions.txt 2>&1 || true
-          kubectl -n stackrox logs deploy/central --tail=200 > test-artifacts/central.log 2>&1 || true
-          kubectl -n stackrox logs deploy/sensor --tail=200 > test-artifacts/sensor.log 2>&1 || true
-          kubectl -n stackrox get svc -o wide > test-artifacts/services.txt 2>&1 || true
-          kubectl get nodes -o wide > test-artifacts/nodes.txt 2>&1 || true
-          cat /tmp/deploy-stackrox.log > test-artifacts/deploy-stackrox.log 2>&1 || true
+      - if: always()
+        run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
 
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+  # ── QA E2E: Groovy/Spock tests (BAT group) ────────────────────────
+  qa-e2e:
+    name: "IPv6 QA ${{ matrix.name }}"
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'qa-e2e' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: policy-config
+            tests: "--tests PolicyConfigurationTest"
+          - name: enforcement
+            tests: "--tests Enforcement"
+          - name: runtime
+            tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest"
+          - name: vuln-scan
+            tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest"
+          - name: network
+            tests: "--tests NetworkFlowTest --tests NetworkSimulator"
+          - name: deployment
+            tests: "--tests DeploymentCheck --tests DeploymentTest"
+          - name: auth
+            tests: "--tests AuthServiceTest --tests K8sRbacTest --tests ServiceAccountTest"
+          - name: integrations
+            tests: "--tests IntegrationsTest"
+
+    env:
+      CLUSTER_NAME: ipv6-qa-${{ github.run_id }}-${{ strategy.job-index }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          name: ipv6-e2e-${{ github.run_id }}
-          path: test-artifacts/
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          ip-family: ipv6
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          scanner: v2
+          background: "true"
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Wait for Central API
+        run: |
+          for _ in $(seq 1 300); do [ -s /tmp/rox-auth-token ] && break; sleep 2; done
+          if [ ! -s /tmp/rox-auth-token ]; then
+            echo "::error::Auth token not generated after 10 minutes"
+            tail -80 /tmp/deploy-stackrox.log 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Add registry integration + pull secrets
+        env:
+          QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_PASS: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          for attempt in 1 2 3; do
+            curl -sk --retry 3 --retry-delay 5 -u "admin:${ROX_ADMIN_PASSWORD}" \
+              "https://localhost:8443/v1/imageintegrations" \
+              -X POST -d "{
+                \"name\": \"quay-ci\",
+                \"type\": \"docker\",
+                \"categories\": [\"REGISTRY\"],
+                \"docker\": {
+                  \"endpoint\": \"https://quay.io\",
+                  \"username\": \"${QUAY_USER}\",
+                  \"password\": \"${QUAY_PASS}\"
+                }
+              }" 2>/dev/null | jq -r '.id // .error' && break
+            sleep 5
+          done
+          for ns in qa default; do
+            kubectl create namespace "$ns" 2>/dev/null || true
+            kubectl -n "$ns" create secret docker-registry quay-pull-secret \
+              --docker-server=quay.io \
+              --docker-username="${QUAY_USER}" \
+              --docker-password="${QUAY_PASS}" 2>/dev/null || true
+            kubectl -n "$ns" patch serviceaccount default \
+              -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
+          done
+
+      - name: "Run QA tests: ${{ matrix.name }}"
+        working-directory: qa-tests-backend
+        env:
+          ROX_USERNAME: admin
+          API_HOSTNAME: localhost
+          API_PORT: "8443"
+          ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+          CLUSTER: K8S
+          POD_SECURITY_POLICIES: "false"
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REMOTE_CLUSTER_ARCH: multi-arch
+          SLACK_MAIN_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_ALT_WEBHOOK: "https://hooks.slack.com/services/disabled"
+          SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
+        run: |
+          export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+          ./gradlew testBAT ${{ matrix.tests }}
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p /tmp/test-artifacts
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "/tmp/test-artifacts/$(basename "$pod").log" || true
+          done
+          cp -r qa-tests-backend/build/reports/ /tmp/test-artifacts/reports/ 2>/dev/null || true
+          cp -r qa-tests-backend/build/test-results/ /tmp/test-artifacts/test-results/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ipv6-qa-${{ matrix.name }}-${{ github.run_id }}
+          path: /tmp/test-artifacts
           retention-days: 7
 
-      - name: Cleanup
+      - if: always()
+        run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
+
+  # ── Non-groovy E2E: Go-based tests ────────────────────────────────
+  nongroovy:
+    name: IPv6 nongroovy e2e
+    needs: resolve-tag
+    if: >
+      inputs.suite == 'nongroovy' || inputs.suite == 'all' ||
+      github.event.label.name == 'e2e-ipv6'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLUSTER_NAME: ipv6-nongroovy-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: ./.github/actions/create-kind-cluster
+        with:
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          ip-family: ipv6
+          quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Run non-groovy e2e tests
+        env:
+          ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
+          API_ENDPOINT: localhost:8443
+          CLUSTER_TYPE: K8S
+        run: |
+          export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
+          export ROX_PASSWORD="${ROX_ADMIN_PASSWORD}"
+          make -C tests e2e-tests 2>&1 | tee /tmp/nongroovy-e2e.log
+
+      - name: Collect logs
         if: always()
+        run: |
+          mkdir -p /tmp/test-artifacts
+          cp /tmp/nongroovy-e2e.log /tmp/test-artifacts/ 2>/dev/null || true
+          for pod in $(kubectl -n stackrox get pods -o name 2>/dev/null); do
+            kubectl -n stackrox logs "$(basename "$pod")" --all-containers 2>&1 \
+              | sed -E 's/(password|token|secret|credential|bearer)[=: ]*[^ "]+/\1=REDACTED/gi' \
+              > "/tmp/test-artifacts/$(basename "$pod").log" || true
+          done
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ipv6-nongroovy-${{ github.run_id }}
+          path: /tmp/test-artifacts
+          retention-days: 7
+
+      - if: always()
         run: kind delete cluster --name "${{ env.CLUSTER_NAME }}" || true
