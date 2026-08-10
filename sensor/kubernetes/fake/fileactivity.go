@@ -55,14 +55,7 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 		}
 
 		if len(nodeNames) == 0 {
-			nodeResp, err := w.fakeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
-			if err != nil {
-				log.Errorf("error listing nodes for file activity: %v", err)
-				continue
-			}
-			for _, node := range nodeResp.Items {
-				nodeNames = append(nodeNames, node.Name)
-			}
+			nodeNames = w.listNodeNames(ctx)
 			if len(nodeNames) == 0 {
 				continue
 			}
@@ -81,6 +74,19 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			}
 		}
 	}
+}
+
+func (w *WorkloadManager) listNodeNames(ctx context.Context) []string {
+	nodeResp, err := w.fakeClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		log.Errorf("error listing nodes for file activity: %v", err)
+		return nil
+	}
+	names := make([]string, 0, len(nodeResp.Items))
+	for _, node := range nodeResp.Items {
+		names = append(names, node.Name)
+	}
+	return names
 }
 
 func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) *sensorAPI.FileActivity {
