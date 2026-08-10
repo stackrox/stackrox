@@ -62,7 +62,7 @@ func main() {
 	log.Infof("Pruning GC started")
 
 	scheduler := vulnReportV2Scheduler.Singleton()
-	scheduler.Start()
+	scheduler.Start(globaldb.GetPostgres())
 	log.Infof("Vulnerability report scheduler started")
 
 	collectionDatastore, _ := collectionDS.Singleton()
