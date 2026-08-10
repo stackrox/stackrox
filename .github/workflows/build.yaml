@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -170,7 +170,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -214,7 +214,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -292,7 +292,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -369,7 +369,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -400,7 +400,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -445,7 +445,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -553,7 +553,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -642,7 +642,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -770,7 +770,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -841,7 +841,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -930,7 +930,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -1045,7 +1045,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -1132,7 +1132,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -1196,7 +1196,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -1237,7 +1237,7 @@ jobs:
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 1
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || (!contains(github.event.pull_request.labels.*.name, 'ci-merge-test') && github.event.pull_request.head.sha) || github.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
