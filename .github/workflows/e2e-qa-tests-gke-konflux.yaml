@@ -30,6 +30,5 @@ jobs:
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=k8s
         KUBERNETES_PROVIDER=gke
-        SFA_AGENT=true
         USE_KONFLUX_IMAGES=true
     secrets: inherit
