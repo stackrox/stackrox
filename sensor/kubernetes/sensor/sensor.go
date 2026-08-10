@@ -206,9 +206,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	var virtualMachineHandler vmIndex.Handler
 	var vmService vmIndex.Service
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines(), internalMessageDispatcher)
 		components = append(components, virtualMachineHandler)
-		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
+		if !(features.SensorInternalPubSub.Enabled() && internalMessageDispatcher != nil) {
+			// When PubSub is active, virtualMachineHandler's ACKs reach complianceMultiplexer via its
+			// PubSub subscription instead of this legacy ComplianceC() channel.
+			complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
+		}
 
 		var pullChecker vmIndex.PullActiveChecker
 		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {

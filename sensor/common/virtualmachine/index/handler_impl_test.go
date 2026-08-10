@@ -14,17 +14,34 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
+
+func newTestVMHandlerDispatcher(t *testing.T) common.PubSubDispatcher {
+	t.Helper()
+	dispatcher, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+		[]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.ComplianceAckLane),
+		},
+	))
+	require.NoError(t, err)
+	return dispatcher
+}
 
 func TestVirtualMachineHandler(t *testing.T) {
 	suite.Run(t, new(virtualMachineHandlerSuite))
@@ -694,6 +711,72 @@ func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsOnCancelledCon
 		s.Fail("the message with cancelled context should have been dropped")
 	default:
 	}
+}
+
+// TestForwardToCompliance_PublishesViaPubSub verifies forwardToCompliance() publishes a
+// compliance.ComplianceAckEvent instead of writing to the legacy toCompliance channel when
+// PubSub is enabled.
+func (s *virtualMachineHandlerSuite) TestForwardToCompliance_PublishesViaPubSub() {
+	synctest.Test(s.T(), func(t *testing.T) {
+		t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+		dispatcher := newTestVMHandlerDispatcher(t)
+		defer dispatcher.Stop()
+
+		handler := &handlerImpl{
+			centralReady:     concurrency.NewSignal(),
+			lock:             &sync.RWMutex{},
+			stopper:          concurrency.NewStopper(),
+			store:            s.store,
+			pubSubDispatcher: dispatcher,
+		}
+		s.Require().NoError(handler.Start())
+		defer handler.Stop()
+
+		received := make(chan common.MessageToComplianceWithAddress, 1)
+		require.NoError(t, dispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceMultiplexerAckConsumer,
+			pubsub.ComplianceAckTopic,
+			pubsub.ComplianceAckLane,
+			func(event pubsub.Event) error {
+				ackEvent, ok := event.(*compliance.ComplianceAckEvent)
+				s.Require().True(ok)
+				received <- ackEvent.Msg
+				return nil
+			},
+		))
+
+		s.store.EXPECT().Get(virtualmachine.VMID("vm-pubsub")).Return(
+			&virtualmachine.Info{ID: "vm-pubsub", NodeName: "node-pubsub"})
+
+		go func() {
+			err := handler.ProcessMessage(context.Background(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  "vm-pubsub",
+				}},
+			})
+			s.Require().NoError(err)
+		}()
+
+		synctest.Wait()
+
+		select {
+		case msg := <-received:
+			s.Equal("node-pubsub", msg.Hostname)
+			s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, msg.Msg.GetComplianceAck().GetMessageType())
+		default:
+			s.Fail("timed out waiting for compliance ack via pubsub")
+		}
+
+		// The legacy toCompliance channel must stay untouched while PubSub is enabled.
+		select {
+		case <-handler.ComplianceC():
+			s.Fail("unexpected message on legacy toCompliance channel while PubSub is enabled")
+		default:
+		}
+	})
 }
 
 func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
