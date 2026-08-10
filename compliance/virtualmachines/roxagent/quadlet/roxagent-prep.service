@@ -2,8 +2,6 @@
 Description=Prepare RPM database for StackRox VM Agent
 # Copy the RPM database to a writable location because SQLite WAL mode
 # requires write access even for read-only queries.
-# In pull mode this runs once at container start; a container restart
-# triggers a fresh copy.
 
 [Service]
 Type=oneshot

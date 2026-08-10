@@ -1,5 +1,5 @@
 [Unit]
-Description=StackRox VM Agent Container (pull mode)
+Description=StackRox VM Agent Container
 # Copy RPM database before starting (SQLite WAL requires writable access)
 Requires=roxagent-prep.service
 After=roxagent-prep.service

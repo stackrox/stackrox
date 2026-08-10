@@ -418,7 +418,6 @@ setup() {
 # =============================================================================
 
 write_stage_files() {
-    # install.sh is required by validate_stage_dir; content is unused for these tests.
     cp "${INSTALL_SCRIPT}" "${STAGE_DIR}/install.sh"
     printf '%s\n' "${STAGE_CONTAINER}" > "${STAGE_DIR}/roxagent.container"
     printf '%s\n' "${STAGE_PREP_SERVICE}" > "${STAGE_DIR}/roxagent-prep.service"

@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# Install roxagent serve (pull mode) on VMs using the native binary method.
+# Install roxagent serve on VMs using the native binary method.
 #
-# Builds the roxagent binary from source and deploys via virtctl scp, then
-# enables roxagent-serve.service (long-running VSOCK server). Always
-# overwrites (binary has no version info; binary is small).
-#
-# Used by add-vms.sh and the Add VMs to Cluster GitHub Action/workflow.
+# Builds the roxagent binary from source and deploys via virtctl scp.
+# Always overwrites (binary has no version info; binary is small).
 #
 # Requires: Go toolchain, STACKROX_REPO (defaults to repo root).
 
@@ -65,7 +62,7 @@ build_agent() {
     echo "$output"
 }
 
-# Prints a systemd unit (to stdout) for the roxagent serve (pull) mode.
+# Prints a systemd unit (to stdout) for the long-running roxagent serve service.
 create_native_serve_file() {
     local mount_path
 

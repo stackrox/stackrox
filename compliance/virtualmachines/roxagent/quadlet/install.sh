@@ -206,7 +206,6 @@ install_from_stage_dir() {
     # restorecon resets SELinux labels so systemd/podman can read the new files.
     sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
-    # Prep service goes in standard systemd directory
     sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
 

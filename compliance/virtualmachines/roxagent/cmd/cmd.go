@@ -9,11 +9,8 @@ import (
 
 var log = logging.LoggerForModule()
 
-const (
-	repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-)
+const repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 
-// RootCmd returns the root cobra command that dispatches to subcommands.
 func RootCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
 		Use:          "agent",
