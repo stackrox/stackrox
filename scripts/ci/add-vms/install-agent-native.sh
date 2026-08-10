@@ -96,6 +96,18 @@ EOF
 
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
+# Runs virtctl with _ssh_opts. On failure records vm_name as failed and returns 1.
+# Args: vm_name, short failure label for logs, then virtctl subcommand + args.
+native_virtctl_or_fail() {
+    local vm_name="$1" what="$2"
+    shift 2
+    if ! virtctl "${_ssh_opts[@]}" "$@"; then
+        echo "  Failed to ${what} on ${vm_name}" >&2
+        NATIVE_AGENT_FAILED_VMS+=("$vm_name")
+        return 1
+    fi
+}
+
 # Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
 # querying systemd. Returns 0 only if the serve service is enabled and active.
 native_agent_service_verified() {
@@ -118,6 +130,7 @@ printf \"%s\\n%s\\n\" \"\$serve_enabled\" \"\$serve_active\"" \
 # Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
 # Steps: scp binary + systemd units -> install and enable via SSH -> verify.
 # Appends the VM name to NATIVE_AGENT_READY_VMS or NATIVE_AGENT_FAILED_VMS.
+# Install/copy failures record the VM as failed and return so the batch continues.
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
 
@@ -126,9 +139,9 @@ install_on_vm() {
     build_ssh_opts
 
     echo "  Copying binary..."
-    virtctl scp "${_ssh_opts[@]}" \
+    native_virtctl_or_fail "$vm_name" "copy binary" scp \
         "$binary_path" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent" || return
 
     echo "  Installing systemd units..."
     local serve_service_file prep_service_file
@@ -136,15 +149,21 @@ install_on_vm() {
     create_native_serve_file > "$serve_service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
 
-    virtctl scp "${_ssh_opts[@]}" \
+    if ! native_virtctl_or_fail "$vm_name" "copy prep unit" scp \
         "$prep_service_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"
-    virtctl scp "${_ssh_opts[@]}" \
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"; then
+        rm -f "$serve_service_file"
+        return
+    fi
+    if ! native_virtctl_or_fail "$vm_name" "copy serve unit" scp \
         "$serve_service_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"; then
+        rm -f "$serve_service_file"
+        return
+    fi
     rm -f "$serve_service_file"
 
-    virtctl ssh "${_ssh_opts[@]}" \
+    native_virtctl_or_fail "$vm_name" "install roxagent" ssh \
         --command 'set -e
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
@@ -155,7 +174,7 @@ sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/syste
 sudo systemctl daemon-reload
 sudo systemctl enable --now roxagent-serve.service
 echo "NATIVE_INSTALL_OK"' \
-        "${SSH_USER}@vmi/${vm_name}"
+        "${SSH_USER}@vmi/${vm_name}" || return
 
     echo "  Installed on $vm_name."
     echo "  Verifying agent status on $vm_name..."

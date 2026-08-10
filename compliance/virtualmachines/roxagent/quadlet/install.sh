@@ -215,8 +215,11 @@ install_from_stage_dir() {
     echo "Enabling and starting roxagent service..."
     sudo systemctl enable --now roxagent.service
 
-    echo "Status:"
-    sudo systemctl status --no-pager roxagent.service || true
+    if ! sudo systemctl is-active --quiet roxagent.service; then
+        echo "roxagent.service failed to become active" >&2
+        sudo systemctl status --no-pager roxagent.service || true
+        return 1
+    fi
 }
 
 install_local() {

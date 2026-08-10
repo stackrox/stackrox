@@ -63,7 +63,8 @@ sudo systemctl status roxagent.service
 # View logs
 sudo journalctl -u roxagent.service -f
 
-# Restart after config change
+# After editing roxagent.container, reload then restart
+sudo systemctl daemon-reload
 sudo systemctl restart roxagent.service
 ```
 
