@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -23,7 +24,7 @@ var (
 	}
 
 	// SecuredUnitsSchema is the go schema for table `secured_units`.
-	SecuredUnitsSchema = func() *walker.Schema {
+	SecuredUnitsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("secured_units")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableSecuredUnitsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_USAGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

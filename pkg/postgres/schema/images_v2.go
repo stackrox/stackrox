@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,7 +31,7 @@ var (
 	}
 
 	// ImagesV2Schema is the go schema for table `images_v2`.
-	ImagesV2Schema = func() *walker.Schema {
+	ImagesV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("images_v2")
 		if schema != nil {
 			return schema
@@ -49,7 +50,7 @@ var (
 		RegisterTable(schema, CreateTableImagesV2Stmt, features.FlattenImageData.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

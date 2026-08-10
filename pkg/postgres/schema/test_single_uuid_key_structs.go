@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -27,7 +28,7 @@ var (
 	}
 
 	// TestSingleUUIDKeyStructsSchema is the go schema for table `test_single_uuid_key_structs`.
-	TestSingleUUIDKeyStructsSchema = func() *walker.Schema {
+	TestSingleUUIDKeyStructsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_single_uuid_key_structs")
 		if schema != nil {
 			return schema
@@ -38,7 +39,7 @@ var (
 		RegisterTable(schema, CreateTableTestSingleUUIDKeyStructsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(115), schema)
 		return schema
-	}()
+	})
 )
 
 const (

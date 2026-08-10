@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,14 +31,14 @@ var (
 	}
 
 	// ProcessIndicatorsSchema is the go schema for table `process_indicators`.
-	ProcessIndicatorsSchema = func() *walker.Schema {
+	ProcessIndicatorsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("process_indicators")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ProcessIndicator)(nil)), "process_indicators")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Deployment": DeploymentsSchema,
+			"storage.Deployment": DeploymentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -48,7 +49,7 @@ var (
 		RegisterTable(schema, CreateTableProcessIndicatorsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_INDICATORS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

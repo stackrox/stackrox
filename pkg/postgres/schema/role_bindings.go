@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,7 +31,7 @@ var (
 	}
 
 	// RoleBindingsSchema is the go schema for table `role_bindings`.
-	RoleBindingsSchema = func() *walker.Schema {
+	RoleBindingsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("role_bindings")
 		if schema != nil {
 			return schema
@@ -41,7 +42,7 @@ var (
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

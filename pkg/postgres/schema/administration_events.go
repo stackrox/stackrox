@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -23,7 +24,7 @@ var (
 	}
 
 	// AdministrationEventsSchema is the go schema for table `administration_events`.
-	AdministrationEventsSchema = func() *walker.Schema {
+	AdministrationEventsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("administration_events")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

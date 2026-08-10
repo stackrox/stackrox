@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -19,7 +20,7 @@ var (
 	}
 
 	// WatchedImagesSchema is the go schema for table `watched_images`.
-	WatchedImagesSchema = func() *walker.Schema {
+	WatchedImagesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("watched_images")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.WatchedImage
 		RegisterTable(schema, CreateTableWatchedImagesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

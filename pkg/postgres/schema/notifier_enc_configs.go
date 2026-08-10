@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -22,7 +23,7 @@ var (
 	}
 
 	// NotifierEncConfigsSchema is the go schema for table `notifier_enc_configs`.
-	NotifierEncConfigsSchema = func() *walker.Schema {
+	NotifierEncConfigsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("notifier_enc_configs")
 		if schema != nil {
 			return schema
@@ -31,7 +32,7 @@ var (
 		schema.ScopingResource = resources.InstallationInfo
 		RegisterTable(schema, CreateTableNotifierEncConfigsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -22,7 +23,7 @@ var (
 	}
 
 	// AuthProvidersSchema is the go schema for table `auth_providers`.
-	AuthProvidersSchema = func() *walker.Schema {
+	AuthProvidersSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("auth_providers")
 		if schema != nil {
 			return schema
@@ -33,7 +34,7 @@ var (
 		RegisterTable(schema, CreateTableAuthProvidersStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_AUTH_PROVIDERS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

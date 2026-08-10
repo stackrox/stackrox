@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +27,7 @@ var (
 	}
 
 	// ComplianceOperatorRemediationV2Schema is the go schema for table `compliance_operator_remediation_v2`.
-	ComplianceOperatorRemediationV2Schema = func() *walker.Schema {
+	ComplianceOperatorRemediationV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_remediation_v2")
 		if schema != nil {
 			return schema
@@ -37,7 +38,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorRemediationV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_REMEDIATIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -23,7 +24,7 @@ var (
 	}
 
 	// APITokensSchema is the go schema for table `api_tokens`.
-	APITokensSchema = func() *walker.Schema {
+	APITokensSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("api_tokens")
 		if schema != nil {
 			return schema
@@ -34,7 +35,7 @@ var (
 		RegisterTable(schema, CreateTableAPITokensStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_API_TOKEN, schema)
 		return schema
-	}()
+	})
 )
 
 const (

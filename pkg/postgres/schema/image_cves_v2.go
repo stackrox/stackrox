@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -32,16 +33,16 @@ var (
 	}
 
 	// ImageCvesV2Schema is the go schema for table `image_cves_v2`.
-	ImageCvesV2Schema = func() *walker.Schema {
+	ImageCvesV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("image_cves_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ImageCVEV2)(nil)), "image_cves_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":            ImagesSchema,
-			"storage.ImageComponentV2": ImageComponentV2Schema,
-			"storage.ImageV2":          ImagesV2Schema,
+			"storage.Image":            ImagesSchema(),
+			"storage.ImageComponentV2": ImageComponentV2Schema(),
+			"storage.ImageV2":          ImagesV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -61,7 +62,7 @@ var (
 		RegisterTable(schema, CreateTableImageCvesV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, schema)
 		return schema
-	}()
+	})
 )
 
 const (

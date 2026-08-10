@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -25,7 +26,7 @@ var (
 	}
 
 	// K8sRolesSchema is the go schema for table `k8s_roles`.
-	K8sRolesSchema = func() *walker.Schema {
+	K8sRolesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("k8s_roles")
 		if schema != nil {
 			return schema
@@ -36,7 +37,7 @@ var (
 		RegisterTable(schema, CreateTableK8sRolesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

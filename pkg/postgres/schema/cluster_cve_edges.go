@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,15 +27,15 @@ var (
 	}
 
 	// ClusterCveEdgesSchema is the go schema for table `cluster_cve_edges`.
-	ClusterCveEdgesSchema = func() *walker.Schema {
+	ClusterCveEdgesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_cve_edges")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ClusterCVEEdge)(nil)), "cluster_cve_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster":    ClustersSchema,
-			"storage.ClusterCVE": ClusterCvesSchema,
+			"storage.Cluster":    ClustersSchema(),
+			"storage.ClusterCVE": ClusterCvesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -50,7 +51,7 @@ var (
 		RegisterTable(schema, CreateTableClusterCveEdgesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULN_EDGE, schema)
 		return schema
-	}()
+	})
 )
 
 const (

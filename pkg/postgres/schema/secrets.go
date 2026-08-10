@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -36,7 +37,7 @@ var (
 	}
 
 	// SecretsSchema is the go schema for table `secrets`.
-	SecretsSchema = func() *walker.Schema {
+	SecretsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("secrets")
 		if schema != nil {
 			return schema
@@ -47,7 +48,7 @@ var (
 		RegisterTable(schema, CreateTableSecretsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_SECRETS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

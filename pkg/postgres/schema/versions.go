@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -23,7 +24,7 @@ var (
 	}
 
 	// VersionsSchema is the go schema for table `versions`.
-	VersionsSchema = func() *walker.Schema {
+	VersionsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("versions")
 		if schema != nil {
 			return schema
@@ -32,7 +33,7 @@ var (
 		schema.ScopingResource = resources.Version
 		RegisterTable(schema, CreateTableVersionsStmt)
 		return schema
-	}()
+	})
 )
 
 const (

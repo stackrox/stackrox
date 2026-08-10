@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,14 +27,14 @@ var (
 	}
 
 	// ComplianceIntegrationsSchema is the go schema for table `compliance_integrations`.
-	ComplianceIntegrationsSchema = func() *walker.Schema {
+	ComplianceIntegrationsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_integrations")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceIntegration)(nil)), "compliance_integrations")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Cluster": ClustersSchema,
+			"storage.Cluster": ClustersSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -47,7 +48,7 @@ var (
 		RegisterTable(schema, CreateTableComplianceIntegrationsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_INTEGRATIONS, schema)
 		return schema
-	}()
+	})
 )
 
 const (

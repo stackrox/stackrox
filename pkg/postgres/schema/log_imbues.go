@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -20,7 +21,7 @@ var (
 	}
 
 	// LogImbuesSchema is the go schema for table `log_imbues`.
-	LogImbuesSchema = func() *walker.Schema {
+	LogImbuesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("log_imbues")
 		if schema != nil {
 			return schema
@@ -29,7 +30,7 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableLogImbuesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

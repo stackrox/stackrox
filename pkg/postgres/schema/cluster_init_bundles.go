@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -19,7 +20,7 @@ var (
 	}
 
 	// ClusterInitBundlesSchema is the go schema for table `cluster_init_bundles`.
-	ClusterInitBundlesSchema = func() *walker.Schema {
+	ClusterInitBundlesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_init_bundles")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.InitBundleMeta
 		RegisterTable(schema, CreateTableClusterInitBundlesStmt)
 		return schema
-	}()
+	})
 )
 
 const (

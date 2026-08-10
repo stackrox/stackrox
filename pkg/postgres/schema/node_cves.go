@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -26,7 +27,7 @@ var (
 	}
 
 	// NodeCvesSchema is the go schema for table `node_cves`.
-	NodeCvesSchema = func() *walker.Schema {
+	NodeCvesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_cves")
 		if schema != nil {
 			return schema
@@ -45,7 +46,7 @@ var (
 		RegisterTable(schema, CreateTableNodeCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema)
 		return schema
-	}()
+	})
 )
 
 const (

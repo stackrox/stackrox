@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -19,7 +20,7 @@ var (
 	}
 
 	// DeclarativeConfigHealthsSchema is the go schema for table `declarative_config_healths`.
-	DeclarativeConfigHealthsSchema = func() *walker.Schema {
+	DeclarativeConfigHealthsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("declarative_config_healths")
 		if schema != nil {
 			return schema
@@ -28,7 +29,7 @@ var (
 		schema.ScopingResource = resources.Integration
 		RegisterTable(schema, CreateTableDeclarativeConfigHealthsStmt)
 		return schema
-	}()
+	})
 )
 
 const (
