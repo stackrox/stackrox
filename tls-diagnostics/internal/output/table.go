@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/certs"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/detect"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/liveprobe"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/rotation"
+	"github.com/stackrox/rox/tls-diagnostics/internal/certs"
+	"github.com/stackrox/rox/tls-diagnostics/internal/detect"
+	"github.com/stackrox/rox/tls-diagnostics/internal/liveprobe"
+	"github.com/stackrox/rox/tls-diagnostics/internal/rotation"
 )
 
 func WriteTable(w io.Writer, topo *detect.Topology, rotationReport *rotation.Report, reports []certs.SecretReport, probeResults []liveprobe.ProbeResult) {

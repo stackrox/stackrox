@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/cmd"
+	"github.com/stackrox/rox/tls-diagnostics/cmd"
 )
 
 func main() {

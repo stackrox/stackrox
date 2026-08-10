@@ -7,19 +7,19 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/certs"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/detect"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/k8s"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/liveprobe"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/output"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/rotation"
+	"github.com/stackrox/rox/tls-diagnostics/internal/certs"
+	"github.com/stackrox/rox/tls-diagnostics/internal/detect"
+	"github.com/stackrox/rox/tls-diagnostics/internal/k8s"
+	"github.com/stackrox/rox/tls-diagnostics/internal/liveprobe"
+	"github.com/stackrox/rox/tls-diagnostics/internal/output"
+	"github.com/stackrox/rox/tls-diagnostics/internal/rotation"
 )
 
 var outputFormat string
 
 func Root() *cobra.Command {
 	c := &cobra.Command{
-		Use:          "stackrox-tls-diagnostics",
+		Use:          "tls-diagnostics",
 		Short:        "Inspect TLS certificates in a StackRox deployment",
 		SilenceUsage: true,
 		RunE:         run,
@@ -58,7 +58,7 @@ func run(_ *cobra.Command, _ []string) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "Probing live TLS endpoints...\n")
-	probeResults := liveprobe.ProbeAll(ctx, clients.RestConfig, clients.Typed, topo, reports)
+	probeResults := liveprobe.ProbeAll(ctx, clients.RestConfig, clients.Typed, topo, reports, os.Stderr)
 
 	switch outputFormat {
 	case "json":

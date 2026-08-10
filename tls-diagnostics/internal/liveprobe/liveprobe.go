@@ -3,15 +3,17 @@ package liveprobe
 import (
 	"context"
 	"fmt"
+	"io"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/certs"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/detect"
+	"github.com/stackrox/rox/tls-diagnostics/internal/certs"
+	"github.com/stackrox/rox/tls-diagnostics/internal/detect"
 )
 
-func ProbeAll(ctx context.Context, restConfig *rest.Config, client kubernetes.Interface, topo *detect.Topology, secretReports []certs.SecretReport) []ProbeResult {
+func ProbeAll(ctx context.Context, restConfig *rest.Config, client kubernetes.Interface, topo *detect.Topology, secretReports []certs.SecretReport, statusLog io.Writer) []ProbeResult {
 	var results []ProbeResult
 
 	for _, inst := range topo.Installations {
@@ -25,9 +27,14 @@ func ProbeAll(ctx context.Context, restConfig *rest.Config, client kubernetes.In
 			continue
 		}
 
+		fmt.Fprintf(statusLog, "Checking %s %q in namespace %s...\n", inst.Kind, inst.Name, inst.Namespace)
+
+		existingSvcs := listExistingServices(ctx, client, inst.Namespace)
+
 		if inst.Kind == "Central" {
 			if ext := detectExternalEndpoint(ctx, client, inst.Namespace); ext != nil {
 				centralSvc := ServiceDef{Name: "central", Port: 443, Protocol: "tls"}
+				fmt.Fprintf(statusLog, "  Probing %s:%d (%s, external)...\n", centralSvc.Name, centralSvc.Port, ext.Method)
 				r := probeDirectTLS(ctx, ext.Address, centralSvc)
 				r.Namespace = inst.Namespace
 				r.Endpoint = fmt.Sprintf("%s (%s)", ext.Address, ext.Method)
@@ -36,6 +43,18 @@ func ProbeAll(ctx context.Context, restConfig *rest.Config, client kubernetes.In
 		}
 
 		for _, svc := range services {
+			if !existingSvcs[svc.Name] {
+				fmt.Fprintf(statusLog, "  Skipping %s (not deployed)\n", svc.Name)
+				results = append(results, ProbeResult{
+					ServiceName: svc.Name,
+					Namespace:   inst.Namespace,
+					Port:        svc.Port,
+					Endpoint:    "port-forward",
+					Error:       "service not found in namespace",
+				})
+				continue
+			}
+			fmt.Fprintf(statusLog, "  Probing %s:%d (%s)...\n", svc.Name, svc.Port, svc.Protocol)
 			r := probeViaPortForward(ctx, restConfig, client, inst.Namespace, svc)
 			results = append(results, *r)
 		}
@@ -43,6 +62,18 @@ func ProbeAll(ctx context.Context, restConfig *rest.Config, client kubernetes.In
 
 	matchSecrets(results, secretReports)
 	return results
+}
+
+func listExistingServices(ctx context.Context, client kubernetes.Interface, namespace string) map[string]bool {
+	svcs, err := client.CoreV1().Services(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return nil
+	}
+	existing := make(map[string]bool, len(svcs.Items))
+	for _, svc := range svcs.Items {
+		existing[svc.Name] = true
+	}
+	return existing
 }
 
 func matchSecrets(results []ProbeResult, secretReports []certs.SecretReport) {

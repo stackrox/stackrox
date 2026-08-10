@@ -106,18 +106,21 @@ func findReadyPod(ctx context.Context, client kubernetes.Interface, namespace, s
 		return nil, 0, fmt.Errorf("getting service %s/%s: %w", namespace, serviceName, err)
 	}
 
-	var targetPort int32
+	var targetPortNum int32
+	var targetPortName string
 	for _, p := range svc.Spec.Ports {
 		if int(p.Port) == servicePort {
 			if p.TargetPort.IntValue() != 0 {
-				targetPort = int32(p.TargetPort.IntValue())
+				targetPortNum = int32(p.TargetPort.IntValue())
+			} else if p.TargetPort.String() != "" && p.TargetPort.String() != "0" {
+				targetPortName = p.TargetPort.String()
 			} else {
-				targetPort = p.Port
+				targetPortNum = p.Port
 			}
 			break
 		}
 	}
-	if targetPort == 0 {
+	if targetPortNum == 0 && targetPortName == "" {
 		return nil, 0, fmt.Errorf("port %d not found on service %s/%s", servicePort, namespace, serviceName)
 	}
 
@@ -136,12 +139,30 @@ func findReadyPod(ctx context.Context, client kubernetes.Interface, namespace, s
 		}
 		for _, c := range pod.Status.Conditions {
 			if c.Type == corev1.PodReady && c.Status == corev1.ConditionTrue {
-				return pod, targetPort, nil
+				if targetPortName != "" {
+					resolved, err := resolveNamedPort(pod, targetPortName)
+					if err != nil {
+						return nil, 0, err
+					}
+					return pod, resolved, nil
+				}
+				return pod, targetPortNum, nil
 			}
 		}
 	}
 
 	return nil, 0, fmt.Errorf("no ready pod found for service %s/%s", namespace, serviceName)
+}
+
+func resolveNamedPort(pod *corev1.Pod, portName string) (int32, error) {
+	for _, c := range pod.Spec.Containers {
+		for _, p := range c.Ports {
+			if p.Name == portName {
+				return p.ContainerPort, nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("named port %q not found in pod %s/%s", portName, pod.Namespace, pod.Name)
 }
 
 func startPortForward(restConfig *rest.Config, pod *corev1.Pod, targetPort int32) (uint16, chan struct{}, error) {

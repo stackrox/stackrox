@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/certs"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/detect"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/liveprobe"
-	"github.com/stackrox/rox/stackrox-tls-diagnostics/internal/rotation"
+	"github.com/stackrox/rox/tls-diagnostics/internal/certs"
+	"github.com/stackrox/rox/tls-diagnostics/internal/detect"
+	"github.com/stackrox/rox/tls-diagnostics/internal/liveprobe"
+	"github.com/stackrox/rox/tls-diagnostics/internal/rotation"
 )
 
 type fullReport struct {
