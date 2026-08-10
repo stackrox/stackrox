@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ProcessBaselinesSchema() })
+}
+
+
 var (
 	// CreateTableProcessBaselinesStmt holds the create statement for table `process_baselines`.
 	CreateTableProcessBaselinesStmt = &postgres.CreateStmts{
@@ -41,10 +46,12 @@ var (
 	})
 )
 
+
 const (
 	// ProcessBaselinesTableName specifies the name of the table in postgres.
 	ProcessBaselinesTableName = "process_baselines"
 )
+
 
 // ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {

@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { RolesSchema() })
+}
+
+
 var (
 	// CreateTableRolesStmt holds the create statement for table `roles`.
 	CreateTableRolesStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// RolesTableName specifies the name of the table in postgres.
 	RolesTableName = "roles"
 )
+
 
 // Roles holds the Gorm model for Postgres table `roles`.
 type Roles struct {

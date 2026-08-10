@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { APITokensSchema() })
+}
+
+
 var (
 	// CreateTableAPITokensStmt holds the create statement for table `api_tokens`.
 	CreateTableAPITokensStmt = &postgres.CreateStmts{
@@ -38,10 +43,12 @@ var (
 	})
 )
 
+
 const (
 	// APITokensTableName specifies the name of the table in postgres.
 	APITokensTableName = "api_tokens"
 )
+
 
 // APITokens holds the Gorm model for Postgres table `api_tokens`.
 type APITokens struct {

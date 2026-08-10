@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { NotifierEncConfigsSchema() })
+}
+
+
 var (
 	// CreateTableNotifierEncConfigsStmt holds the create statement for table `notifier_enc_configs`.
 	CreateTableNotifierEncConfigsStmt = &postgres.CreateStmts{
@@ -35,10 +40,12 @@ var (
 	})
 )
 
+
 const (
 	// NotifierEncConfigsTableName specifies the name of the table in postgres.
 	NotifierEncConfigsTableName = "notifier_enc_configs"
 )
+
 
 // NotifierEncConfigs holds the Gorm model for Postgres table `notifier_enc_configs`.
 type NotifierEncConfigs struct {

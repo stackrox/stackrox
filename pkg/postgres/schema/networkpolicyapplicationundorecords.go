@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { NetworkpolicyapplicationundorecordsSchema() })
+}
+
+
 var (
 	// CreateTableNetworkpolicyapplicationundorecordsStmt holds the create statement for table `networkpolicyapplicationundorecords`.
 	CreateTableNetworkpolicyapplicationundorecordsStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// NetworkpolicyapplicationundorecordsTableName specifies the name of the table in postgres.
 	NetworkpolicyapplicationundorecordsTableName = "networkpolicyapplicationundorecords"
 )
+
 
 // Networkpolicyapplicationundorecords holds the Gorm model for Postgres table `networkpolicyapplicationundorecords`.
 type Networkpolicyapplicationundorecords struct {

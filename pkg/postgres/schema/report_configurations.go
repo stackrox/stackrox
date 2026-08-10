@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ReportConfigurationsSchema() })
+}
+
+
 var (
 	// CreateTableReportConfigurationsStmt holds the create statement for table `report_configurations`.
 	CreateTableReportConfigurationsStmt = &postgres.CreateStmts{
@@ -53,12 +58,14 @@ var (
 	})
 )
 
+
 const (
 	// ReportConfigurationsTableName specifies the name of the table in postgres.
 	ReportConfigurationsTableName = "report_configurations"
 	// ReportConfigurationsNotifiersTableName specifies the name of the table in postgres.
 	ReportConfigurationsNotifiersTableName = "report_configurations_notifiers"
 )
+
 
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {

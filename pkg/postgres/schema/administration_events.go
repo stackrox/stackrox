@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { AdministrationEventsSchema() })
+}
+
+
 var (
 	// CreateTableAdministrationEventsStmt holds the create statement for table `administration_events`.
 	CreateTableAdministrationEventsStmt = &postgres.CreateStmts{
@@ -38,10 +43,12 @@ var (
 	})
 )
 
+
 const (
 	// AdministrationEventsTableName specifies the name of the table in postgres.
 	AdministrationEventsTableName = "administration_events"
 )
+
 
 // AdministrationEvents holds the Gorm model for Postgres table `administration_events`.
 type AdministrationEvents struct {

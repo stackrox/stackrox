@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { SimpleAccessScopesSchema() })
+}
+
+
 var (
 	// CreateTableSimpleAccessScopesStmt holds the create statement for table `simple_access_scopes`.
 	CreateTableSimpleAccessScopesStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// SimpleAccessScopesTableName specifies the name of the table in postgres.
 	SimpleAccessScopesTableName = "simple_access_scopes"
 )
+
 
 // SimpleAccessScopes holds the Gorm model for Postgres table `simple_access_scopes`.
 type SimpleAccessScopes struct {

@@ -6,6 +6,11 @@ import (
 	pkgsync "github.com/stackrox/rox/pkg/sync"
 )
 
+func init() {
+	registerLazySchema(func() { BackgroundMigrationVersionsSchema() })
+}
+
+
 var (
 	// CreateTableBackgroundMigrationVersionsStmt holds the create statement for table `background_migration_versions`.
 	CreateTableBackgroundMigrationVersionsStmt = &postgres.CreateStmts{
@@ -31,10 +36,12 @@ var (
 	})
 )
 
+
 const (
 	// BackgroundMigrationVersionsTableName specifies the name of the table in postgres.
 	BackgroundMigrationVersionsTableName = "background_migration_versions"
 )
+
 
 // BackgroundMigrationVersion holds the Gorm model for Postgres table `background_migration_versions`.
 type BackgroundMigrationVersion struct {

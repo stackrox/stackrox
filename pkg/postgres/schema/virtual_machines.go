@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { VirtualMachinesSchema() })
+}
+
+
 var (
 	// CreateTableVirtualMachinesStmt holds the create statement for table `virtual_machines`.
 	CreateTableVirtualMachinesStmt = &postgres.CreateStmts{
@@ -40,10 +45,12 @@ var (
 	})
 )
 
+
 const (
 	// VirtualMachinesTableName specifies the name of the table in postgres.
 	VirtualMachinesTableName = "virtual_machines"
 )
+
 
 // VirtualMachines holds the Gorm model for Postgres table `virtual_machines`.
 type VirtualMachines struct {

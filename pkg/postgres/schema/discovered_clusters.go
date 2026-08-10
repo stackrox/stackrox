@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { DiscoveredClustersSchema() })
+}
+
+
 var (
 	// CreateTableDiscoveredClustersStmt holds the create statement for table `discovered_clusters`.
 	CreateTableDiscoveredClustersStmt = &postgres.CreateStmts{
@@ -46,10 +51,12 @@ var (
 	})
 )
 
+
 const (
 	// DiscoveredClustersTableName specifies the name of the table in postgres.
 	DiscoveredClustersTableName = "discovered_clusters"
 )
+
 
 // DiscoveredClusters holds the Gorm model for Postgres table `discovered_clusters`.
 type DiscoveredClusters struct {

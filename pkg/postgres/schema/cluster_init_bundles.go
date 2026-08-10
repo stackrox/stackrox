@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { ClusterInitBundlesSchema() })
+}
+
+
 var (
 	// CreateTableClusterInitBundlesStmt holds the create statement for table `cluster_init_bundles`.
 	CreateTableClusterInitBundlesStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// ClusterInitBundlesTableName specifies the name of the table in postgres.
 	ClusterInitBundlesTableName = "cluster_init_bundles"
 )
+
 
 // ClusterInitBundles holds the Gorm model for Postgres table `cluster_init_bundles`.
 type ClusterInitBundles struct {

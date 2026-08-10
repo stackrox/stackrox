@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { TestGGrandChild1Schema() })
+}
+
+
 var (
 	// CreateTableTestGGrandChild1Stmt holds the create statement for table `test_g_grand_child1`.
 	CreateTableTestGGrandChild1Stmt = &postgres.CreateStmts{
@@ -37,10 +42,12 @@ var (
 	})
 )
 
+
 const (
 	// TestGGrandChild1TableName specifies the name of the table in postgres.
 	TestGGrandChild1TableName = "test_g_grand_child1"
 )
+
 
 // TestGGrandChild1 holds the Gorm model for Postgres table `test_g_grand_child1`.
 type TestGGrandChild1 struct {

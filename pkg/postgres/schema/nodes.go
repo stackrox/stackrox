@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { NodesSchema() })
+}
+
+
 var (
 	// CreateTableNodesStmt holds the create statement for table `nodes`.
 	CreateTableNodesStmt = &postgres.CreateStmts{
@@ -62,12 +67,14 @@ var (
 	})
 )
 
+
 const (
 	// NodesTableName specifies the name of the table in postgres.
 	NodesTableName = "nodes"
 	// NodesTaintsTableName specifies the name of the table in postgres.
 	NodesTaintsTableName = "nodes_taints"
 )
+
 
 // Nodes holds the Gorm model for Postgres table `nodes`.
 type Nodes struct {

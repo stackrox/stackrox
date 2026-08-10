@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { BlobsSchema() })
+}
+
+
 var (
 	// CreateTableBlobsStmt holds the create statement for table `blobs`.
 	CreateTableBlobsStmt = &postgres.CreateStmts{
@@ -38,10 +43,12 @@ var (
 	})
 )
 
+
 const (
 	// BlobsTableName specifies the name of the table in postgres.
 	BlobsTableName = "blobs"
 )
+
 
 // Blobs holds the Gorm model for Postgres table `blobs`.
 type Blobs struct {

@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ComplianceOperatorScanSettingBindingV2Schema() })
+}
+
+
 var (
 	// CreateTableComplianceOperatorScanSettingBindingV2Stmt holds the create statement for table `compliance_operator_scan_setting_binding_v2`.
 	CreateTableComplianceOperatorScanSettingBindingV2Stmt = &postgres.CreateStmts{
@@ -49,10 +54,12 @@ var (
 	})
 )
 
+
 const (
 	// ComplianceOperatorScanSettingBindingV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorScanSettingBindingV2TableName = "compliance_operator_scan_setting_binding_v2"
 )
+
 
 // ComplianceOperatorScanSettingBindingV2 holds the Gorm model for Postgres table `compliance_operator_scan_setting_binding_v2`.
 type ComplianceOperatorScanSettingBindingV2 struct {

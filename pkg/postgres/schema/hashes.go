@@ -13,6 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { HashesSchema() })
+}
+
+
 var (
 	// CreateTableHashesStmt holds the create statement for table `hashes`.
 	CreateTableHashesStmt = &postgres.CreateStmts{
@@ -33,10 +38,12 @@ var (
 	})
 )
 
+
 const (
 	// HashesTableName specifies the name of the table in postgres.
 	HashesTableName = "hashes"
 )
+
 
 // Hashes holds the Gorm model for Postgres table `hashes`.
 type Hashes struct {

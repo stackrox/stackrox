@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { PolicyCategoriesSchema() })
+}
+
+
 var (
 	// CreateTablePolicyCategoriesStmt holds the create statement for table `policy_categories`.
 	CreateTablePolicyCategoriesStmt = &postgres.CreateStmts{
@@ -37,10 +42,12 @@ var (
 	})
 )
 
+
 const (
 	// PolicyCategoriesTableName specifies the name of the table in postgres.
 	PolicyCategoriesTableName = "policy_categories"
 )
+
 
 // PolicyCategories holds the Gorm model for Postgres table `policy_categories`.
 type PolicyCategories struct {

@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { VirtualMachineScanV2Schema() })
+}
+
+
 var (
 	// CreateTableVirtualMachineScanV2Stmt holds the create statement for table `virtual_machine_scan_v2`.
 	CreateTableVirtualMachineScanV2Stmt = &postgres.CreateStmts{
@@ -58,10 +63,12 @@ var (
 	})
 )
 
+
 const (
 	// VirtualMachineScanV2TableName specifies the name of the table in postgres.
 	VirtualMachineScanV2TableName = "virtual_machine_scan_v2"
 )
+
 
 // VirtualMachineScanV2 holds the Gorm model for Postgres table `virtual_machine_scan_v2`.
 type VirtualMachineScanV2 struct {

@@ -18,6 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ImagesV2Schema() })
+}
+
+
 var (
 	// CreateTableImagesV2Stmt holds the create statement for table `images_v2`.
 	CreateTableImagesV2Stmt = &postgres.CreateStmts{
@@ -53,12 +58,14 @@ var (
 	})
 )
 
+
 const (
 	// ImagesV2TableName specifies the name of the table in postgres.
 	ImagesV2TableName = "images_v2"
 	// ImagesV2LayersTableName specifies the name of the table in postgres.
 	ImagesV2LayersTableName = "images_v2_layers"
 )
+
 
 // ImagesV2 holds the Gorm model for Postgres table `images_v2`.
 type ImagesV2 struct {

@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { ComplianceOperatorRulesSchema() })
+}
+
+
 var (
 	// CreateTableComplianceOperatorRulesStmt holds the create statement for table `compliance_operator_rules`.
 	CreateTableComplianceOperatorRulesStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// ComplianceOperatorRulesTableName specifies the name of the table in postgres.
 	ComplianceOperatorRulesTableName = "compliance_operator_rules"
 )
+
 
 // ComplianceOperatorRules holds the Gorm model for Postgres table `compliance_operator_rules`.
 type ComplianceOperatorRules struct {

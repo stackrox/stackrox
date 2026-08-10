@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { ExternalBackupsSchema() })
+}
+
+
 var (
 	// CreateTableExternalBackupsStmt holds the create statement for table `external_backups`.
 	CreateTableExternalBackupsStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// ExternalBackupsTableName specifies the name of the table in postgres.
 	ExternalBackupsTableName = "external_backups"
 )
+
 
 // ExternalBackups holds the Gorm model for Postgres table `external_backups`.
 type ExternalBackups struct {

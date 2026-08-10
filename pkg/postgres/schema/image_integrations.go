@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ImageIntegrationsSchema() })
+}
+
+
 var (
 	// CreateTableImageIntegrationsStmt holds the create statement for table `image_integrations`.
 	CreateTableImageIntegrationsStmt = &postgres.CreateStmts{
@@ -40,10 +45,12 @@ var (
 	})
 )
 
+
 const (
 	// ImageIntegrationsTableName specifies the name of the table in postgres.
 	ImageIntegrationsTableName = "image_integrations"
 )
+
 
 // ImageIntegrations holds the Gorm model for Postgres table `image_integrations`.
 type ImageIntegrations struct {

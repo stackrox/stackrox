@@ -18,6 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ComplianceOperatorClusterScanConfigStatusesSchema() })
+}
+
+
 var (
 	// CreateTableComplianceOperatorClusterScanConfigStatusesStmt holds the create statement for table `compliance_operator_cluster_scan_config_statuses`.
 	CreateTableComplianceOperatorClusterScanConfigStatusesStmt = &postgres.CreateStmts{
@@ -51,10 +56,12 @@ var (
 	})
 )
 
+
 const (
 	// ComplianceOperatorClusterScanConfigStatusesTableName specifies the name of the table in postgres.
 	ComplianceOperatorClusterScanConfigStatusesTableName = "compliance_operator_cluster_scan_config_statuses"
 )
+
 
 // ComplianceOperatorClusterScanConfigStatuses holds the Gorm model for Postgres table `compliance_operator_cluster_scan_config_statuses`.
 type ComplianceOperatorClusterScanConfigStatuses struct {

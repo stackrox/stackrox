@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { RoleBindingsSchema() })
+}
+
+
 var (
 	// CreateTableRoleBindingsStmt holds the create statement for table `role_bindings`.
 	CreateTableRoleBindingsStmt = &postgres.CreateStmts{
@@ -45,12 +50,14 @@ var (
 	})
 )
 
+
 const (
 	// RoleBindingsTableName specifies the name of the table in postgres.
 	RoleBindingsTableName = "role_bindings"
 	// RoleBindingsSubjectsTableName specifies the name of the table in postgres.
 	RoleBindingsSubjectsTableName = "role_bindings_subjects"
 )
+
 
 // RoleBindings holds the Gorm model for Postgres table `role_bindings`.
 type RoleBindings struct {

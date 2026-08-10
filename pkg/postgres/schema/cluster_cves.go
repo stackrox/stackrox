@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ClusterCvesSchema() })
+}
+
+
 var (
 	// CreateTableClusterCvesStmt holds the create statement for table `cluster_cves`.
 	CreateTableClusterCvesStmt = &postgres.CreateStmts{
@@ -46,10 +51,12 @@ var (
 	})
 )
 
+
 const (
 	// ClusterCvesTableName specifies the name of the table in postgres.
 	ClusterCvesTableName = "cluster_cves"
 )
+
 
 // ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {

@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ImageCvesV2Schema() })
+}
+
+
 var (
 	// CreateTableImageCvesV2Stmt holds the create statement for table `image_cves_v2`.
 	CreateTableImageCvesV2Stmt = &postgres.CreateStmts{
@@ -65,10 +70,12 @@ var (
 	})
 )
 
+
 const (
 	// ImageCvesV2TableName specifies the name of the table in postgres.
 	ImageCvesV2TableName = "image_cves_v2"
 )
+
 
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
 type ImageCvesV2 struct {

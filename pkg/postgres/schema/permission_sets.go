@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { PermissionSetsSchema() })
+}
+
+
 var (
 	// CreateTablePermissionSetsStmt holds the create statement for table `permission_sets`.
 	CreateTablePermissionSetsStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// PermissionSetsTableName specifies the name of the table in postgres.
 	PermissionSetsTableName = "permission_sets"
 )
+
 
 // PermissionSets holds the Gorm model for Postgres table `permission_sets`.
 type PermissionSets struct {

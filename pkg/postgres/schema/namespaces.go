@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { NamespacesSchema() })
+}
+
+
 var (
 	// CreateTableNamespacesStmt holds the create statement for table `namespaces`.
 	CreateTableNamespacesStmt = &postgres.CreateStmts{
@@ -56,10 +61,12 @@ var (
 	})
 )
 
+
 const (
 	// NamespacesTableName specifies the name of the table in postgres.
 	NamespacesTableName = "namespaces"
 )
+
 
 // Namespaces holds the Gorm model for Postgres table `namespaces`.
 type Namespaces struct {

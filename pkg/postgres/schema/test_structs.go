@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { TestStructsSchema() })
+}
+
+
 var (
 	// CreateTableTestStructsStmt holds the create statement for table `test_structs`.
 	CreateTableTestStructsStmt = &postgres.CreateStmts{
@@ -44,12 +49,14 @@ var (
 	})
 )
 
+
 const (
 	// TestStructsTableName specifies the name of the table in postgres.
 	TestStructsTableName = "test_structs"
 	// TestStructsNestedsTableName specifies the name of the table in postgres.
 	TestStructsNestedsTableName = "test_structs_nesteds"
 )
+
 
 // TestStructs holds the Gorm model for Postgres table `test_structs`.
 type TestStructs struct {

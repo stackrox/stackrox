@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { GroupsSchema() })
+}
+
+
 var (
 	// CreateTableGroupsStmt holds the create statement for table `groups`.
 	CreateTableGroupsStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// GroupsTableName specifies the name of the table in postgres.
 	GroupsTableName = "groups"
 )
+
 
 // Groups holds the Gorm model for Postgres table `groups`.
 type Groups struct {

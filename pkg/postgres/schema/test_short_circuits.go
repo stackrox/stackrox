@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { TestShortCircuitsSchema() })
+}
+
+
 var (
 	// CreateTableTestShortCircuitsStmt holds the create statement for table `test_short_circuits`.
 	CreateTableTestShortCircuitsStmt = &postgres.CreateStmts{
@@ -46,10 +51,12 @@ var (
 	})
 )
 
+
 const (
 	// TestShortCircuitsTableName specifies the name of the table in postgres.
 	TestShortCircuitsTableName = "test_short_circuits"
 )
+
 
 // TestShortCircuits holds the Gorm model for Postgres table `test_short_circuits`.
 type TestShortCircuits struct {

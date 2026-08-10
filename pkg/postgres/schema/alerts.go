@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { AlertsSchema() })
+}
+
+
 var (
 	// CreateTableAlertsStmt holds the create statement for table `alerts`.
 	CreateTableAlertsStmt = &postgres.CreateStmts{
@@ -47,10 +52,12 @@ var (
 	})
 )
 
+
 const (
 	// AlertsTableName specifies the name of the table in postgres.
 	AlertsTableName = "alerts"
 )
+
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {

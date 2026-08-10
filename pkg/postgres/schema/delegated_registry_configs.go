@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { DelegatedRegistryConfigsSchema() })
+}
+
+
 var (
 	// CreateTableDelegatedRegistryConfigsStmt holds the create statement for table `delegated_registry_configs`.
 	CreateTableDelegatedRegistryConfigsStmt = &postgres.CreateStmts{
@@ -35,10 +40,12 @@ var (
 	})
 )
 
+
 const (
 	// DelegatedRegistryConfigsTableName specifies the name of the table in postgres.
 	DelegatedRegistryConfigsTableName = "delegated_registry_configs"
 )
+
 
 // DelegatedRegistryConfigs holds the Gorm model for Postgres table `delegated_registry_configs`.
 type DelegatedRegistryConfigs struct {

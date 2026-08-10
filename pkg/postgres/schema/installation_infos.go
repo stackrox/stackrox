@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { InstallationInfosSchema() })
+}
+
+
 var (
 	// CreateTableInstallationInfosStmt holds the create statement for table `installation_infos`.
 	CreateTableInstallationInfosStmt = &postgres.CreateStmts{
@@ -35,10 +40,12 @@ var (
 	})
 )
 
+
 const (
 	// InstallationInfosTableName specifies the name of the table in postgres.
 	InstallationInfosTableName = "installation_infos"
 )
+
 
 // InstallationInfos holds the Gorm model for Postgres table `installation_infos`.
 type InstallationInfos struct {

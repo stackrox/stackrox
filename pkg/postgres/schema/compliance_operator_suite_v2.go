@@ -17,6 +17,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { ComplianceOperatorSuiteV2Schema() })
+}
+
+
 var (
 	// CreateTableComplianceOperatorSuiteV2Stmt holds the create statement for table `compliance_operator_suite_v2`.
 	CreateTableComplianceOperatorSuiteV2Stmt = &postgres.CreateStmts{
@@ -49,10 +54,12 @@ var (
 	})
 )
 
+
 const (
 	// ComplianceOperatorSuiteV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorSuiteV2TableName = "compliance_operator_suite_v2"
 )
+
 
 // ComplianceOperatorSuiteV2 holds the Gorm model for Postgres table `compliance_operator_suite_v2`.
 type ComplianceOperatorSuiteV2 struct {

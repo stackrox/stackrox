@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { SignatureIntegrationsSchema() })
+}
+
+
 var (
 	// CreateTableSignatureIntegrationsStmt holds the create statement for table `signature_integrations`.
 	CreateTableSignatureIntegrationsStmt = &postgres.CreateStmts{
@@ -32,10 +37,12 @@ var (
 	})
 )
 
+
 const (
 	// SignatureIntegrationsTableName specifies the name of the table in postgres.
 	SignatureIntegrationsTableName = "signature_integrations"
 )
+
 
 // SignatureIntegrations holds the Gorm model for Postgres table `signature_integrations`.
 type SignatureIntegrations struct {

@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { NodeCvesSchema() })
+}
+
+
 var (
 	// CreateTableNodeCvesStmt holds the create statement for table `node_cves`.
 	CreateTableNodeCvesStmt = &postgres.CreateStmts{
@@ -49,10 +54,12 @@ var (
 	})
 )
 
+
 const (
 	// NodeCvesTableName specifies the name of the table in postgres.
 	NodeCvesTableName = "node_cves"
 )
+
 
 // NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {

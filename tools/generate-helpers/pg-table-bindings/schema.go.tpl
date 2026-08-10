@@ -100,6 +100,10 @@ var (
     })
 )
 
+func init() {
+    registerLazySchema(func() { {{template "schemaVar" .Schema.Table}}() })
+}
+
 {{- define "createGormModel" }}
 {{- $obj := .Obj }}
 {{- $schema := .Schema }}

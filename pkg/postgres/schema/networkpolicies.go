@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { NetworkpoliciesSchema() })
+}
+
+
 var (
 	// CreateTableNetworkpoliciesStmt holds the create statement for table `networkpolicies`.
 	CreateTableNetworkpoliciesStmt = &postgres.CreateStmts{
@@ -40,10 +45,12 @@ var (
 	})
 )
 
+
 const (
 	// NetworkpoliciesTableName specifies the name of the table in postgres.
 	NetworkpoliciesTableName = "networkpolicies"
 )
+
 
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {

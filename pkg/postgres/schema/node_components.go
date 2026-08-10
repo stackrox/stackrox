@@ -15,6 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { NodeComponentsSchema() })
+}
+
+
 var (
 	// CreateTableNodeComponentsStmt holds the create statement for table `node_components`.
 	CreateTableNodeComponentsStmt = &postgres.CreateStmts{
@@ -45,10 +50,12 @@ var (
 	})
 )
 
+
 const (
 	// NodeComponentsTableName specifies the name of the table in postgres.
 	NodeComponentsTableName = "node_components"
 )
+
 
 // NodeComponents holds the Gorm model for Postgres table `node_components`.
 type NodeComponents struct {

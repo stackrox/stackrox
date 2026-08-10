@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
+func init() {
+	registerLazySchema(func() { PolicyCategoryEdgesSchema() })
+}
+
+
 var (
 	// CreateTablePolicyCategoryEdgesStmt holds the create statement for table `policy_category_edges`.
 	CreateTablePolicyCategoryEdgesStmt = &postgres.CreateStmts{
@@ -50,10 +55,12 @@ var (
 	})
 )
 
+
 const (
 	// PolicyCategoryEdgesTableName specifies the name of the table in postgres.
 	PolicyCategoryEdgesTableName = "policy_category_edges"
 )
+
 
 // PolicyCategoryEdges holds the Gorm model for Postgres table `policy_category_edges`.
 type PolicyCategoryEdges struct {

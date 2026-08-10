@@ -13,6 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
+func init() {
+	registerLazySchema(func() { LogImbuesSchema() })
+}
+
+
 var (
 	// CreateTableLogImbuesStmt holds the create statement for table `log_imbues`.
 	CreateTableLogImbuesStmt = &postgres.CreateStmts{
@@ -33,10 +38,12 @@ var (
 	})
 )
 
+
 const (
 	// LogImbuesTableName specifies the name of the table in postgres.
 	LogImbuesTableName = "log_imbues"
 )
+
 
 // LogImbues holds the Gorm model for Postgres table `log_imbues`.
 type LogImbues struct {

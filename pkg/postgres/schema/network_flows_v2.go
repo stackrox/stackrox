@@ -9,6 +9,11 @@ import (
 	pkgsync "github.com/stackrox/rox/pkg/sync"
 )
 
+func init() {
+	registerLazySchema(func() { NetworkFlowsSchema() })
+}
+
+
 var (
 	// CreateTableNetworkFlowsStmt holds the create statement for table `network_flows_v2`.
 	// The flow store only deals with the identifying information, so this table has been shrunk accordingly
@@ -53,7 +58,9 @@ var (
 	})
 )
 
+
 const (
 	// NetworkFlowsTableName holds the database table name
 	NetworkFlowsTableName = "network_flows_v2"
 )
+
