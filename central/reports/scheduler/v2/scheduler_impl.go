@@ -158,6 +158,11 @@ func (s *scheduler) StartWithLock(db postgres.DB) {
 		log.Info("Report scheduler: advisory lock held by another process, not starting")
 		return
 	}
+	if s.isStopped.Load() || s.isStarted.Load() {
+		release()
+		log.Error("Report scheduler: cannot start with lock, scheduler already started or stopped")
+		return
+	}
 	s.advisoryLockRelease = release
 	s.Start()
 }
