@@ -1,0 +1,22 @@
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: file-activity-policy
+  namespace: stackrox
+spec:
+  policyName: "Long Running Cluster File Activity"
+  description: "Detects file open operations under /tmp/data to exercise file activity policy evaluation against berserker file activity load."
+  categories:
+  - Anomalous Activity
+  lifecycleStages:
+  - RUNTIME
+  eventSource: DEPLOYMENT_EVENT
+  severity: LOW_SEVERITY
+  policySections:
+  - policyGroups:
+    - fieldName: File Path
+      values:
+      - value: "/tmp/data/**"
+    - fieldName: File Operation
+      values:
+      - value: "OPEN"
