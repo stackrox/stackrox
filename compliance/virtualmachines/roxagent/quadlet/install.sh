@@ -31,7 +31,6 @@ STAGED_INSTALL_FILES=(
     install.sh
     roxagent.container
     roxagent-prep.service
-    roxagent-tmpfiles.conf
 )
 
 TRANSPORT_KIND=""
@@ -210,18 +209,6 @@ install_from_stage_dir() {
     # Prep service goes in standard systemd directory
     sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
     sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
-
-    # Remove stale push-mode timer if present from a previous install
-    if [ -f /etc/systemd/system/roxagent.timer ]; then
-        sudo systemctl disable --now roxagent.timer 2>/dev/null || true
-        sudo rm -f /etc/systemd/system/roxagent.timer
-    fi
-
-    # Recreate the lock directory on every boot since /run is tmpfs.
-    sudo mkdir -p /etc/tmpfiles.d/
-    sudo cp "${stage_dir}/roxagent-tmpfiles.conf" /etc/tmpfiles.d/roxagent.conf
-    sudo restorecon -Rv /etc/tmpfiles.d/roxagent.conf 2>/dev/null || true
-    sudo systemd-tmpfiles --create /etc/tmpfiles.d/roxagent.conf
 
     echo "Reloading systemd..."
     sudo systemctl daemon-reload

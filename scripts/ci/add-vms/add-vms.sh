@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Main orchestrator for adding VMs to an ACS cluster and installing roxagent.
+# Main orchestrator for adding VMs to an ACS cluster and installing
+# roxagent via install-agent-native.sh.
 #
 # Usage:
 #   add-vms.sh [options]
@@ -187,7 +188,9 @@ write_github_summary() {
     append_summary_list "### Skipped VMs (inaccessible)" "${SKIPPED_VMS[@]}"
 
     {
-        echo "### Native agent service verification"
+        echo "### Native agent service verification (\`roxagent-serve.service\`)"
+        echo ""
+        echo "Each ready VM runs \`roxagent serve\` under systemd."
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
     append_summary_list "Successfully started on:" "${NATIVE_AGENT_READY_VMS[@]}"

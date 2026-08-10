@@ -49,8 +49,6 @@ SENTINEL-CONTAINER=true'
 
 STAGE_PREP_SERVICE='SENTINEL-PREP=true'
 
-STAGE_TMPFILES_CONF='SENTINEL-TMPFILES=true'
-
 setup() {
     INSTALL_SCRIPT="${BATS_TEST_DIRNAME}/../../../${INSTALL_SCRIPT_REL}"
     STAGE_DIR="${BATS_TEST_TMPDIR}/custom-stage"
@@ -85,16 +83,13 @@ setup() {
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
-    [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
+    [ ! -e "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
     assert_output --partial "SENTINEL-CONTAINER"
 
     run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
     assert_output --partial "SENTINEL-PREP"
-
-    run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
-    assert_output --partial "SENTINEL-TMPFILES"
 }
 
 # =============================================================================
@@ -108,16 +103,13 @@ setup() {
 
     [ -f "${FAKE_ROOT}/etc/containers/systemd/roxagent.container" ]
     [ -f "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service" ]
-    [ -f "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
+    [ ! -e "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf" ]
 
     run cat "${FAKE_ROOT}/etc/containers/systemd/roxagent.container"
     assert_output --partial "SENTINEL-CONTAINER"
 
     run cat "${FAKE_ROOT}/etc/systemd/system/roxagent-prep.service"
     assert_output --partial "SENTINEL-PREP"
-
-    run cat "${FAKE_ROOT}/etc/tmpfiles.d/roxagent.conf"
-    assert_output --partial "SENTINEL-TMPFILES"
 }
 
 @test "--stage-dir does not invoke any remote transport" {
@@ -369,7 +361,7 @@ setup() {
     assert_output --partial "install.sh"
     assert_output --partial "roxagent.container"
     assert_output --partial "roxagent-prep.service"
-    assert_output --partial "roxagent-tmpfiles.conf"
+    refute_output --partial "roxagent-tmpfiles.conf"
 }
 
 @test "install_remote heredoc includes cleanup trap with rm -rf" {
@@ -426,9 +418,10 @@ setup() {
 # =============================================================================
 
 write_stage_files() {
+    # install.sh is required by validate_stage_dir; content is unused for these tests.
+    cp "${INSTALL_SCRIPT}" "${STAGE_DIR}/install.sh"
     printf '%s\n' "${STAGE_CONTAINER}" > "${STAGE_DIR}/roxagent.container"
     printf '%s\n' "${STAGE_PREP_SERVICE}" > "${STAGE_DIR}/roxagent-prep.service"
-    printf '%s\n' "${STAGE_TMPFILES_CONF}" > "${STAGE_DIR}/roxagent-tmpfiles.conf"
 }
 
 # Place a fake "sudo" on PATH that intercepts file operations and redirects

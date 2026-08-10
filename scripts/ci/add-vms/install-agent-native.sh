@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Install roxagent on VMs using the native binary method.
+# Install roxagent serve (pull mode) on VMs using the native binary method.
 #
-# Builds the roxagent binary from source and deploys via virtctl scp.
-# Always overwrites (binary has no version info; binary is small).
+# Builds the roxagent binary from source and deploys via virtctl scp, then
+# enables roxagent-serve.service (long-running VSOCK server). Always
+# overwrites (binary has no version info; binary is small).
+#
+# Used by add-vms.sh and the Add VMs to Cluster GitHub Action/workflow.
 #
 # Requires: Go toolchain, STACKROX_REPO (defaults to repo root).
 
@@ -149,10 +152,6 @@ install_on_vm() {
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
 rm -f /tmp/roxagent
-# Remove stale push-mode units from previous installs
-sudo systemctl disable --now roxagent.timer 2>/dev/null || true
-sudo systemctl disable --now roxagent.service 2>/dev/null || true
-sudo rm -f /etc/systemd/system/roxagent.timer /etc/systemd/system/roxagent.service
 sudo cp /tmp/roxagent-prep.service /etc/systemd/system/roxagent-prep.service
 sudo cp /tmp/roxagent-serve.service /etc/systemd/system/roxagent-serve.service
 sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent-serve.service 2>/dev/null || true

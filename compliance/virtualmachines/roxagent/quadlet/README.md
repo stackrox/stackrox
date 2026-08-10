@@ -12,7 +12,6 @@ This deployment uses [Podman Quadlet](https://docs.podman.io/en/latest/markdown/
 |------|-------------|
 | `roxagent.container` | Quadlet container unit that runs `roxagent serve` |
 | `roxagent-prep.service` | Copies RPM database to a writable location |
-| `roxagent-tmpfiles.conf` | Recreates `/run/lock/roxagent` on boot |
 | `install.sh` | Installation script for local or remote deployment |
 
 ## Prerequisites
@@ -156,6 +155,5 @@ sudo journalctl -u roxagent.service
 sudo systemctl disable --now roxagent.service
 sudo rm /etc/containers/systemd/roxagent.container
 sudo rm /etc/systemd/system/roxagent-prep.service
-sudo rm /etc/tmpfiles.d/roxagent.conf
 sudo systemctl daemon-reload
 ```

@@ -1,86 +1,80 @@
 # roxagent
 
-Runs inside KubeVirt VMs to scan for vulnerabilities and serve reports to Sensor
-via VSOCK (pull mode). While co-located under `compliance/`, the agent reuses
-compliance node-scanning code for package indexing — it is not part of the
-Compliance Operator feature.
+Runs inside KubeVirt VMs to scan for vulnerabilities and serve index reports to Sensor over VSOCK (pull mode). It lives under `compliance/` because it reuses the Scanner V4 node indexer for RPM/DNF package databases; it is not part of the Compliance Operator.
+
+The only supported command is `roxagent serve`. Sensor's VM scraper dials the agent, pulls a cached report, and forwards it to Central for vulnerability matching.
 
 ## What it does
 
-1. Scans the VM for installed packages (`rpm`/`dnf` databases) using the same
-   Scanner V4 indexer as node scanning.
-2. Caches the scan report in memory with a generation counter.
-3. Listens on a VSOCK port for incoming connections from Sensor.
-4. When Sensor connects, serves the cached report via the `VMServiceRequest` /
-   `VMServiceResponse` framed protobuf protocol.
-5. Periodically rescans to pick up package changes.
-
-Sensor pulls reports from all running VMs on a timer and forwards them to
-Central for vulnerability matching.
+1. Fetches the repository-to-CPE mapping file (required before the first scan).
+2. Scans the VM for installed packages and caches the index report with a generation counter.
+3. Listens on a VSOCK port with mandatory mTLS.
+4. On each Sensor connection, handles a framed `VMServiceRequest` / `VMServiceResponse` (for example `get_report`).
+5. Periodically rescans and atomically swaps the cached report.
 
 ## Usage
 
 ```bash
-# Start pull-mode server (production mode)
 sudo ./roxagent serve
 
-# Custom settings
+# Example with common overrides
 sudo ./roxagent serve --port 818 --host-path / --rescan-interval 4h
 ```
 
-## Flags (`serve` subcommand)
+## Flags (`serve`)
 
-- `--port` — VSOCK port to listen on (default: 818).
-- `--host-path` — Root filesystem path for package indexing (default: /).
-- `--repo-cpe-url` — URL for the repository-to-CPE mapping file.
-- `--rescan-interval` — Interval between periodic rescans (default: 4h).
+| Flag | Default | Notes |
+|------|---------|-------|
+| `--port` | `818` | VSOCK listen port |
+| `--host-path` | `/` | Root filesystem path for package indexing |
+| `--repo-cpe-url` | Red Hat metrics URL | Repository-to-CPE mapping download URL |
+| `--rescan-interval` | `4h` | Must be between `5m` and `168h` (7d) |
+| `--ca-fetch-timeout` | `10s` | Timeout for one KubeVirt CA fetch over VSOCK |
+| `--conn-deadline` | `30s` | Max time for one connection's TLS handshake plus request/response (`5s`-`5m`) |
 
 ## How it works
 
-1. Performs an initial scan of the VM filesystem for package databases.
-2. Fetches repo-to-CPE mappings from Red Hat (requires network access).
-3. Starts a VSOCK listener with optional mTLS (KubeVirt CA).
-4. On each Sensor connection: reads a `VMServiceRequest`, dispatches by method,
-   returns the cached `VMServiceResponse` with the index report.
-5. On rescan timer: re-indexes the filesystem and atomically swaps the cached
-   report, incrementing the generation counter.
+1. **Mapping file:** Startup blocks on an initial download to a local cache file. Scans always read that file; a later download failure keeps the last good cache and does not fail the scan.
+2. **Initial scan:** Indexes `--host-path`, stores the report and discovered VM facts in an in-memory cache, then starts the VSOCK server and the rescan loop.
+3. **Pull protocol:** Sensor connects; the agent serves the cached report (and can omit the payload when Sensor's known generation still matches).
+4. **Rescan:** On `--rescan-interval`, re-indexes and swaps the cache, bumping the generation.
 
-### TLS
+### TLS (mandatory)
 
-When running inside a KubeVirt VM with TLS enabled:
-- roxagent fetches the KubeVirt CA from the host (VSOCK CID 2, port 1).
-- Connections from Sensor (via virt-handler) present a client cert signed by
-  the KubeVirt CA, which roxagent validates.
-- roxagent uses a self-signed server cert (virt-handler does not validate it).
-- The CA is refreshed hourly to support rotation.
+Sensor always dials with TLS. The agent always requires TLS; there is no plaintext mode.
 
-If the KubeVirt CA is unavailable, roxagent falls back to plaintext VSOCK
-(RBAC on the KubeVirt subresource still gates access).
+- On each handshake, the agent fetches the KubeVirt CA from the host (VSOCK CID 2, port 1) via virt-handler's `System.CABundle` RPC. In namespace-isolated VSOCK mode that CA service is only up for the duration of the dial/handshake, so the fetch runs inside the handshake.
+- If a fetch fails but a CA was cached earlier, the agent reuses the cache. If there is no cache yet, the handshake fails.
+- Sensor (via virt-handler) presents a client cert signed by the KubeVirt CA; the agent verifies it.
+- The agent uses a self-signed server cert (virt-handler does not verify the server cert).
 
 ## Deployment
 
-### Native systemd service (CI / dev)
+### Native systemd (CI / GitHub Action)
 
-The CI script `scripts/ci/add-vms/install-agent-native.sh` builds roxagent,
-copies it into the VM via `virtctl scp`, and enables a systemd service:
+CI and the [Add VMs to Cluster](../../../.github/workflows/add-vms-to-cluster.yml) workflow install through `scripts/ci/add-vms/`:
+
+1. Workflow → composite action `scripts/ci/add-vms`
+2. `add-vms.sh` deploys VMs, then calls `install-agent-native.sh`
+3. `install-agent-native.sh` cross-compiles roxagent, copies it with `virtctl scp`, and installs two units:
+   - `roxagent-prep.service` builds the `/tmp/roxroot` mount-point skeleton and copies `/var/lib/rpm` to `/tmp/roxagent-rpm` (writable, for SQLite WAL - see [quadlet/README.md](quadlet/README.md#why-copy-the-rpm-database))
+   - `roxagent-serve.service` bind-mounts the real host paths into `/tmp/roxroot` and runs:
 
 ```bash
-# roxagent-serve.service runs: /usr/local/bin/roxagent serve
+ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot
 ```
+
+Verification waits until `roxagent-serve.service` is enabled and active. That is the same path developers get when they run the workflow against an infra cluster.
 
 ### Quadlet (RHEL VMs)
 
-See [quadlet/README.md](quadlet/README.md) for Podman Quadlet deployment.
-Note: Quadlet units may still reference the old push-mode entrypoint and need
-updating for pull mode.
+See [quadlet/README.md](quadlet/README.md) for Podman Quadlet deployment (`Exec=serve`, systemd unit `roxagent.service`).
 
 ### Building from source
 
 ```bash
-# For the current platform
 go build -o roxagent .
 
-# Cross-compile for Linux VMs
 GOOS=linux GOARCH=amd64 go build -o roxagent .
 ```
 
@@ -88,18 +82,19 @@ GOOS=linux GOARCH=amd64 go build -o roxagent .
 
 ### Can't connect / dial failures from Sensor
 
-- Verify VSOCK is enabled on the VMI spec (`spec.domain.devices.autoattachVSOCK`).
-- Check that the VSOCK port isn't in use by another process inside the VM.
-- Ensure Sensor has RBAC for `virtualmachineinstances/vsock` on `subresources.kubevirt.io`.
+- Confirm VSOCK is enabled on the VMI (`spec.domain.devices.autoattachVSOCK`).
+- Confirm the VSOCK port is free inside the VM and matches Sensor's config.
+- Confirm Sensor has RBAC for `virtualmachineinstances/vsock` on `subresources.kubevirt.io`.
 
 ### No packages found (zero-package reports)
 
-- Check `--host-path` points to the correct root filesystem.
-- Verify `rpm`/`dnf` databases exist and are readable.
+- Confirm `--host-path` points at the real root (native CI uses `/tmp/roxroot` with bind mounts).
+- Confirm `rpm`/`dnf` databases exist and are readable under that path.
 - Check Sensor logs for `reportcheck` warnings.
 
 ### TLS handshake failures
 
-- Verify KubeVirt has TLS enabled (check virt-handler logs).
-- Check that roxagent can reach CID 2 port 1 (KubeVirt CA service).
-- Look for "Rejected plaintext connection" in roxagent logs (Sensor not using TLS).
+- Confirm virt-handler is serving the CA on CID 2 port 1 during the dial.
+- On first connect with a cold CA cache, a failed CA fetch fails the handshake (no plaintext fallback).
+- Look for `Rejected plaintext connection` if the peer is not speaking TLS.
+- Tune `--ca-fetch-timeout` / `--conn-deadline` if handshakes time out under load.
