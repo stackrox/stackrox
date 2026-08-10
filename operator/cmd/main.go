@@ -119,8 +119,6 @@ func main() {
 }
 
 func run() error {
-	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
-
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -146,6 +144,8 @@ func run() error {
 		return errors.Wrap(err, "unable to redirect std log")
 	}
 	defer restore()
+
+	setupLog.Info("Starting RHACS Operator", "version", version.GetMainVersion())
 
 	clusterTLSProfile, tlsOpts, err := buildMetricsServerTLSOpts(enableHTTP2)
 	if err != nil {
