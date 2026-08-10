@@ -38,7 +38,6 @@ func main() {
 	defer cancel()
 	umhNodeInv := handler.NewUnconfirmedMessageHandler(ctx, "node-inventory", env.NodeScanningAckDeadlineBase.DurationSetting())
 	umhNodeIndex := handler.NewUnconfirmedMessageHandler(ctx, "node-index", env.NodeScanningAckDeadlineBase.DurationSetting())
-	umhVMIndex := handler.NewUnconfirmedMessageHandler(ctx, "vm-index", env.NodeScanningAckDeadlineBase.DurationSetting())
-	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umhNodeInv, umhNodeIndex, umhVMIndex)
+	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umhNodeInv, umhNodeIndex)
 	c.Start()
 }
