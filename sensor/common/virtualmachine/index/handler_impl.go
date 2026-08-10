@@ -114,24 +114,12 @@ func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
-	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
-		return sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
-	}
+func (h *handlerImpl) Accepts(_ *central.MsgToSensor) bool {
+	// VM index SensorACKs are consumed only by VMScraper.
 	return false
 }
 
-// ProcessMessage handles SensorACK messages for VM index reports.
-func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
-	sensorAck := msg.GetSensorAck()
-	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
-		return nil
-	}
-
-	// Not limiting to ACK & NACK and recording all types of actions for better debuggability.
-	// The risk of prometheus label cardinality explosion is considered low and accepted hereby.
-	metrics.IndexReportAcksReceived.WithLabelValues(sensorAck.GetAction().String()).Inc()
-
+func (h *handlerImpl) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 

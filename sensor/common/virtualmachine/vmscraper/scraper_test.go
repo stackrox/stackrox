@@ -130,6 +130,11 @@ func makeReport(gen uint32) *vsockclient.GetReportResult {
 		},
 		Meta: &pb.ResponseMeta{
 			ReportGeneration: gen,
+			Facts: map[string]string{
+				"detected_os":         "RHEL",
+				"activation_status":   "ACTIVE",
+				"dnf_metadata_status": "AVAILABLE",
+			},
 		},
 	}
 }
@@ -175,10 +180,12 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	}
 
 	s := newTestScraper(store, sender, dialer, client)
+	discoveredBefore := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE"))
 	s.pollOnce(context.Background())
 
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
+	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
@@ -428,6 +435,7 @@ func TestVMScraper_NACK(t *testing.T) {
 			// once before the ACK/NACK under test is delivered.
 			vmA.Running = tc.vmRunning
 
+			acksBefore := testutil.ToFloat64(metrics.IndexReportAcksReceived.WithLabelValues(tc.ackAction.String()))
 			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
 				Msg: &central.MsgToSensor_SensorAck{
 					SensorAck: &central.SensorACK{
@@ -438,6 +446,7 @@ func TestVMScraper_NACK(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
+			assert.Equal(t, acksBefore+1, testutil.ToFloat64(metrics.IndexReportAcksReceived.WithLabelValues(tc.ackAction.String())))
 
 			client.reset()
 			client.resultQueue = []*vsockclient.GetReportResult{tc.pollResultAfterNack}
