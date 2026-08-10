@@ -39,14 +39,13 @@ runs:
       run: |
         set +x
         echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io
-        set -x
 
         SCANNER_TAG=$(cat SCANNER_VERSION)
 
         (
           NODE="${{ inputs.cluster-name }}-control-plane"
-          # Store credentials once — never trace them
           CTR_AUTH="${{ inputs.quay-user }}:${{ inputs.quay-pass }}"
+          set -x
 
           KIND_ARGS=()
           if [[ "${{ inputs.ip-family }}" == "ipv6" ]]; then

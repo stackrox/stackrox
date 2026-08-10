@@ -133,7 +133,6 @@ jobs:
           kubectl -n stackrox logs deploy/sensor --tail=200 > test-artifacts/sensor.log 2>&1 || true
           kubectl -n stackrox get svc -o wide > test-artifacts/services.txt 2>&1 || true
           kubectl get nodes -o wide > test-artifacts/nodes.txt 2>&1 || true
-          cat /tmp/kind-create.log > test-artifacts/kind-create.log 2>&1 || true
           cat /tmp/deploy-stackrox.log > test-artifacts/deploy-stackrox.log 2>&1 || true
 
       - name: Upload artifacts
