@@ -1159,14 +1159,14 @@ func (s *ImageCVEViewTestSuite) compileExpected(images []testImage, filter *filt
 					val.CVEIDs = append(val.CVEIDs, id)
 				}
 
-				val.TopCVSS = pointers.Float32(max(val.GetTopCVSS(), vuln.GetCvss()))
+				val.TopCVSS = new(max(val.GetTopCVSS(), vuln.GetCvss()))
 				if val.TopSeverity == nil || vuln.GetSeverity() > *val.TopSeverity {
 					sev := vuln.GetSeverity()
 					val.TopSeverity = &sev
 				}
 				epss := vuln.GetCveBaseInfo().GetEpss().GetEpssProbability()
 				if val.EpssProbability == nil || epss > *val.EpssProbability {
-					val.EpssProbability = pointers.Float32(epss)
+					val.EpssProbability = new(epss)
 				}
 
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
