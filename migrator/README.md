@@ -177,6 +177,10 @@ from the moment it starts. Adding a unique index to an existing table is a speci
 the old version must not produce non-unique rows during RollingUpdate, or index creation
 fails.
 
+### NetworkFlow Indexes
+
+NetworkFlows are an exception because their schema is not applied through GORM. Existing indices were created through PostStmts in the `postgres.CreateStmts` for `network_flows_v2.go`. All future indexes should be created by manually adding to the Indexes field of `postgres.CreateStmts`, which will make them apply through the background migrations.
+
 ### Composite indexes
 
 Give fields the same index name to create a multi-column index:
@@ -204,14 +208,3 @@ A migration must **never** import schemas from `pkg/postgres/schema` -- those ev
 latest release. Instead, freeze schemas inside the migration package. This is primarily
 relevant for background migrations that deserialize data; startup migrations that only
 run DDL typically don't need frozen schemas.
-
-## History
-
-1. Before release 3.73, the migrator targeted internal key-value stores (BoltDB and RocksDB).
-2. Releases 3.73 and 3.74 introduced Postgres as Technical Preview with parallel migration
-   paths (key-value and data-move migrations).
-3. After 4.0, Postgres became the default data store.
-4. Starting in 4.2, all migrations must be backwards compatible while previous releases are
-   supported.
-5. Starting in 4.11, background migrations were introduced for high-cardinality tables to
-   eliminate upgrade downtime for large data transformations.

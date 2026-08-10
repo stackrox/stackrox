@@ -205,6 +205,17 @@ func (s *migrationTestSuite) TestBackwardsCompatibility() {
 - **Edge cases**: NULL values, empty strings, missing foreign keys
 - **Backwards compatibility**: old-version SQL queries work against the new schema
 
+### Benchmark tests for high-cardinality tables
+
+If a migration touches a [high-cardinality table](../migrator/README.md#high-cardinality-tables-always-use-background-migrations),
+add a Go benchmark test (`func Benchmark*`) that runs the migration against a
+representative data volume (500k–1M rows). A single startup migration **must
+complete within 2 minutes** at this scale. Parameterize across multiple sizes
+(e.g., 10k, 100k, 500k) to catch non-linear scaling.
+
+See `m_223_to_m_224_add_deployment_type_and_enforcement_count_to_alerts/migration_bench_test.go`
+for a production-grade example that models realistic data distributions.
+
 ## Local testing on a cluster
 
 1. Create a PR with your migration to build a CI image
@@ -239,6 +250,7 @@ from upgrading into an incompatible state.
 - [ ] DDL statements are idempotent (`IF EXISTS`, `IF NOT EXISTS`)
 - [ ] Does not import `pkg/postgres/schema`
 - [ ] Tests cover happy path, edge cases, and idempotency
+- [ ] Benchmark test for high-cardinality tables (must complete within 2 minutes at 500k–1M rows)
 - [ ] Backwards compatibility test verifies old queries still work
 - [ ] No feature flag dependencies in migration code
 - [ ] `CurrentDBVersionSeqNum` is incremented (done by bootstrap tool)

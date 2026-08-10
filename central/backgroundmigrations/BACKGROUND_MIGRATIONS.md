@@ -544,6 +544,44 @@ the `//go:build sql_integration` tag and a running PostgreSQL instance.
 - **Graceful shutdown**: cancellation mid-migration doesn't corrupt data; re-run completes
 - **Batch boundaries**: test with small batch sizes to exercise pagination logic
 
+### Performance testing on a long-running cluster
+
+Background migration runtime is not a primary concern since they run after
+Central is serving. However, they must not starve Central of CPU or memory, and
+must not cause SQL conflicts or deadlocks with concurrent Central operations.
+
+**For migrations touching [high-cardinality tables](../../migrator/README.md#high-cardinality-tables-always-use-background-migrations),
+testing with a long running cluster or a similar real load environment is mandatory.**
+
+
+
+For the testing process:
+
+1. **Set up a long-running cluster under load**: Deploy Central with active
+   sensor connections and realistic workload (events, API calls, policy
+   evaluations). The cluster should be exercising the tables the migration
+   touches.
+2. **Populate target tables**: If the cluster's organic data is insufficient,
+   generate synthetic rows to reach representative volumes (500k–1M rows) in
+   the target table before triggering the migration.
+3. **Monitor during migration**:
+   - **Logs**: Watch for SQL conflicts, deadlocks, lock wait timeouts, or
+     retry storms. Any `deadlock detected` or `could not serialize access`
+     errors indicate the batch strategy needs adjustment.
+   - **Metrics**: Track Central's memory RSS, heap usage, and CPU utilization.
+     The migration must not cause memory spikes that could trigger OOM kills
+     or CPU saturation that degrades API latency.
+   - **Central responsiveness**: Verify that API response times and sensor
+     connections remain healthy throughout the migration.
+4. **Tune batch size**: Adjust `batchSize` to balance throughput against
+   resource impact. Smaller batches reduce peak memory, shorten lock hold
+   times, and lower the chance of conflicts with Central. Larger batches
+   improve throughput. Find the sweet spot where Central remains responsive
+   and no conflicts or deadlocks appear in the logs.
+
+**The simplest way to set up such environment to run the [GHA](https://github.com/stackrox/stackrox/actions/workflows/create-clusters.yml) at a stable release (e.g 4.11.0), then update central to a PR image.**
+Read this [section](https://redhat.atlassian.net/wiki/spaces/StackRox/pages/309338714/Long+Running+Clusters) of the release docs for more information.
+
 ## Checklist
 
 - [ ] Migration is idempotent (safe to re-run after rollback or crash)
@@ -556,4 +594,5 @@ the `//go:build sql_integration` tag and a running PostgreSQL instance.
 - [ ] Registered in `central/backgroundmigrations/runner/all.go`
 - [ ] `CurrentBgMigrationSeqNum` incremented in `central/backgroundmigrations/seq_num.go`
 - [ ] Tests cover correctness, idempotency, existing data, and graceful shutdown
+- [ ] Long-running cluster test for high-cardinality tables (no deadlocks, stable memory/CPU)
 - [ ] No feature flag dependencies in migration code
