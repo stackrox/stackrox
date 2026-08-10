@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-github/v60/github"
@@ -69,7 +70,8 @@ func Test_jobStateMapping(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tt.fromCheck {
-				check := &github.CheckRun{Conclusion: github.String(tt.raw)}
+				rawClone := strings.Clone(tt.raw)
+				check := &github.CheckRun{Conclusion: new(rawClone)}
 				assert.Equal(t, tt.wantState, checkToState(check))
 				return
 			}
