@@ -16,7 +16,7 @@ import (
 func testNamespaces(clusters []*storage.Cluster, namespacesPerCluster int) []*storage.NamespaceMetadata {
 	namespaces := make([]*storage.NamespaceMetadata, 0)
 	for _, cluster := range clusters {
-		for i := 0; i < namespacesPerCluster; i++ {
+		for i := range namespacesPerCluster {
 			namespaceName := fmt.Sprintf("ns%d", i+1)
 			namespaces = append(namespaces, &storage.NamespaceMetadata{
 				Id:          uuid.NewV4().String(),
@@ -44,7 +44,7 @@ func testDeploymentsWithImages(namespaces []*storage.NamespaceMetadata, numDeplo
 	images := make([]*storage.Image, 0, capacity)
 
 	for _, namespace := range namespaces {
-		for i := 0; i < numDeploymentsPerNamespace; i++ {
+		for i := range numDeploymentsPerNamespace {
 			depName := fmt.Sprintf("%s_%s_dep%d", namespace.GetClusterName(), namespace.GetName(), i)
 			image := testImage(depName, map[string]string{"app": "test"}, "docker.io")
 			deployment := testDeployment(depName, namespace, image)
@@ -74,7 +74,7 @@ func testDeployment(deploymentName string, namespace *storage.NamespaceMetadata,
 
 func testWatchedImages(numImages int) []*storage.Image {
 	images := make([]*storage.Image, 0, numImages)
-	for i := 0; i < numImages; i++ {
+	for i := range numImages {
 		imgNamePrefix := fmt.Sprintf("w%d", i)
 		image := testImage(imgNamePrefix, map[string]string{"app": "watch"}, "quay.io")
 		images = append(images, image)

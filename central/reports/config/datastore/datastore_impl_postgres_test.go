@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -25,14 +26,16 @@ func TestReportConfigurationPostgresDatastore(t *testing.T) {
 type ReportConfigurationPostgresDatastoreTests struct {
 	suite.Suite
 
-	testDB    *pgtest.TestPostgres
-	datastore DataStore
-	ctx       context.Context
+	testDB            *pgtest.TestPostgres
+	datastore         DataStore
+	notifierDataStore notifierDS.DataStore
+	ctx               context.Context
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.notifierDataStore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -41,10 +44,13 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 
 func (s *ReportConfigurationPostgresDatastoreTests) TearDownTest() {
 	s.truncateTable(postgresSchema.ReportConfigurationsTableName)
+	s.truncateTable(postgresSchema.NotifiersTableName)
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore() {
 	reportConfig := fixtures.GetValidReportConfiguration()
+	s.storeNotifiers(reportConfig)
+
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
 	s.Require().NoError(err)
@@ -92,7 +98,8 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	s.storeNotifiers(reportConfig)
 
 	// Test add
 	_, err := s.datastore.AddReportConfiguration(s.ctx, reportConfig)
@@ -106,7 +113,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
-	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
+	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	reportConfig.Notifiers = nil
 
 	// Test add
@@ -118,6 +125,15 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 	s.Require().NoError(err)
 	s.True(found)
 	protoassert.Equal(s.T(), reportConfig, foundReportConfig)
+}
+
+func (s *ReportConfigurationPostgresDatastoreTests) storeNotifiers(config *storage.ReportConfiguration) {
+	allCtx := sac.WithAllAccess(context.Background())
+	for i, n := range config.GetNotifiers() {
+		id, err := s.notifierDataStore.AddNotifier(allCtx, &storage.Notifier{Name: n.GetId()})
+		s.Require().NoError(err)
+		config.Notifiers[i].Ref = &storage.NotifierConfiguration_Id{Id: id}
+	}
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) truncateTable(name string) {

@@ -17,7 +17,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
   check-crd-compatibility:
+    needs: detect-changes
+    if: ${{ !needs.detect-changes.outputs.ui_only }}
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11@sha256:df3459cf038e73775314b3a5d36d14dda41e6df438a0273c9efa8d23e0f2358a # ratchet:quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.11
@@ -25,7 +30,7 @@ jobs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
     - name: Checkout stackrox/stackrox
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -35,7 +40,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout crd-schema-checker
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         repository: openshift/crd-schema-checker
         path: .crd-schema-checker
@@ -53,7 +58,7 @@ jobs:
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
     - name: Checkout previous released version
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ steps.get_previous_released_version.outputs.released_version }}
@@ -86,7 +91,7 @@ jobs:
         set -e
         old_path="$PWD/.old-stackrox/operator/config/crd/bases"
         new_path="$PWD/operator/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify"
+        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
         set -x
         $crdify "file://${old_path}/platform.stackrox.io_securedclusters.yaml" "file://${new_path}/platform.stackrox.io_securedclusters.yaml"
         $crdify "file://${old_path}/platform.stackrox.io_centrals.yaml" "file://${new_path}/platform.stackrox.io_centrals.yaml"
@@ -96,6 +101,6 @@ jobs:
         set -e
         old_path="$PWD/.old-stackrox/config-controller/config/crd/bases"
         new_path="$PWD/config-controller/config/crd/bases"
-        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify"
+        crdify="go run -C operator/tools/crdify sigs.k8s.io/crdify --config=config.yaml"
         set -x
         $crdify "file://${old_path}/config.stackrox.io_securitypolicies.yaml" "file://${new_path}/config.stackrox.io_securitypolicies.yaml"

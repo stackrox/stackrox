@@ -10,6 +10,14 @@ const (
 	EnrichedProcessIndicatorLane
 	DetectorProcessIndicatorLane
 	DetectorNetworkFlowLane
+	DetectorFileAccessLane
+	DetectorAuditLogLane
+	DetectorDeploymentLane
+	DetectorScanResultLane
+	DetectorDeployAlertOutputLane
+	ResolvedResourceEventLane
+	SoftRestartLane
+	ResourceSyncFinishedLane
 )
 
 var (
@@ -21,6 +29,14 @@ var (
 		EnrichedProcessIndicatorLane:   "EnrichedProcessIndicator",
 		DetectorProcessIndicatorLane:   "DetectorProcessIndicator",
 		DetectorNetworkFlowLane:        "DetectorNetworkFlow",
+		DetectorFileAccessLane:         "DetectorFileAccess",
+		DetectorAuditLogLane:           "DetectorAuditLog",
+		DetectorDeploymentLane:         "DetectorDeployment",
+		DetectorScanResultLane:         "DetectorScanResult",
+		DetectorDeployAlertOutputLane:  "DetectorDeployAlertOutput",
+		ResolvedResourceEventLane:      "ResolvedResourceEvent",
+		SoftRestartLane:                "SoftRestart",
+		ResourceSyncFinishedLane:       "ResourceSyncFinished",
 	}
 )
 

@@ -12,7 +12,7 @@ import (
 func GetNode() *storage.Node {
 	componentCount := 50
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, componentCount)
-	for i := 0; i < componentCount; i++ {
+	for i := range componentCount {
 		components = append(components, &storage.EmbeddedNodeScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
@@ -25,7 +25,7 @@ func GetNode() *storage.Node {
 // GetNodeWithUniqueComponents returns a mock Node where each component is unique
 func GetNodeWithUniqueComponents(numComponents, numVulns int) *storage.Node {
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, numComponents)
-	for i := 0; i < numComponents; i++ {
+	for i := range numComponents {
 		components = append(components, &storage.EmbeddedNodeScanComponent{
 			Name:    fmt.Sprintf("name-%d", i),
 			Version: fmt.Sprintf("%d.2.3.4", i),

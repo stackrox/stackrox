@@ -415,10 +415,17 @@ function launch_central {
         )
       fi
 
-      if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" && "${ROX_SCANNER_V4:-false}" != "false" ]]; then
-        helm_args+=(
-          --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
-        )
+      if [[ "${ROX_SCANNER_V4:-}" != "false" ]]; then
+        if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
+          helm_args+=(
+            --set customize.envVars.SCANNER_V4_MATCHER_READINESS=vulnerability
+          )
+        fi
+        if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+          helm_args+=(
+            --set-json "customize.envVars.SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=\"${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}\""
+          )
+        fi
       fi
 
       if [[ -n "$EXTERNAL_DB" ]]; then
@@ -551,6 +558,10 @@ function launch_central {
                 ${ORCH_CMD} -n stackrox patch deployment scanner-v4-db --patch "$(cat "${common_dir}/scanner-v4-db-patch.yaml")"
                 if [[ "${SCANNER_V4_VULN_READINESS:-false}" == "true" ]]; then
                   ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher SCANNER_V4_MATCHER_READINESS=vulnerability
+                fi
+                if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+                  ${ORCH_CMD} -n stackrox set env deploy/scanner-v4-matcher \
+                    "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST=${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST}"
                 fi
               fi
             else
@@ -882,6 +893,14 @@ function launch_sensor {
 
       if [[ "$SENSOR_SCANNER_V4_SUPPORT" == "true" ]]; then
         helm_args+=(--set scannerV4.disable=false)
+      fi
+
+      if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
+        # Enables Sensor VSOCK RBAC and ROX_VIRTUAL_MACHINES on Sensor.
+        extra_helm_config+=(--set "virtualMachines.enabled=true")
+        # Shorten pull-mode scraper cadence for VM e2e (production default is 5m).
+        # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
+        extra_helm_config+=(--set "customize.envVars.ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}")
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then

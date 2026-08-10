@@ -1,4 +1,4 @@
-//go:build test
+//go:build test && !test_e2e && !test_e2e_vm
 
 package vmhelpers
 
@@ -7,26 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 )
-
-func TestVerboseOutputHasOSFields(t *testing.T) {
-	t.Parallel()
-	cases := map[string]struct {
-		stdout string
-		want   bool
-	}{
-		"detectedOs key":       {`{"detectedOs":"rhel:9"}`, true},
-		"operatingSystem key":  {`{"operatingSystem":"rhel"}`, true},
-		"operating_system key": {`{"operating_system":"rhel"}`, true},
-		"no OS keys":           {`{"components":["rpm"]}`, false},
-		"empty":                {``, false},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			require.Equal(t, tc.want, verboseOutputHasOSFields(tc.stdout))
-		})
-	}
-}
 
 func TestIsVsockUnavailableOutput(t *testing.T) {
 	t.Parallel()
@@ -40,6 +20,10 @@ func TestIsVsockUnavailableOutput(t *testing.T) {
 		},
 		"dev vsock missing": {
 			output: "open /dev/vsock: no such file or directory",
+			want:   true,
+		},
+		"listen vsock missing": {
+			output: "listening on VSOCK port 818: no such device",
 			want:   true,
 		},
 		"non-vsock no such device": {

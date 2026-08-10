@@ -3,7 +3,6 @@
 package tests
 
 import (
-	"context"
 	"testing"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -25,15 +24,15 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			var first *v2.VirtualMachine
 			roxagentOK := false
 
-			t.Run("RunRoxagent", func(t *testing.T) {
-				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
-					s.cfg.Repo2CPEURL, vmhelpers.DefaultRoxagentInstallPath)
-				err := s.ensureCanonicalScan(s.ctx, vm)
+			t.Run("EnsureRoxagentServing", func(t *testing.T) {
+				t.Logf("ensuring pull-mode agent: sudo %s serve --port 818 --host-path / --repo-cpe-url %s",
+					vmhelpers.DefaultRoxagentInstallPath, s.cfg.Repo2CPEURL)
+				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true
 			})
 			if !roxagentOK {
-				t.Log("skipping remaining subtests: roxagent invocation failed")
+				t.Log("skipping remaining subtests: roxagent serve failed to become ready")
 				return
 			}
 
@@ -73,39 +72,10 @@ func (s *VMScanningSuite) TestScanPipeline() {
 					"scan.operating_system should be populated via Sensor DiscoveredData")
 			})
 
-			beforeTime := s.mustGetScanTimestamp(first.GetId())
-			var rescan *v2.VirtualMachine
-
-			t.Run("Rescan", func(t *testing.T) {
-				err := s.ensureCanonicalScan(s.ctx, vm)
-				require.NoError(t, err)
-
-				waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)
-				defer cancel()
-				rescan, err = vmhelpers.WaitForScanTimestampAfter(
-					waitCtx, s.vmClient,
-					vmhelpers.WaitOptions{
-						Timeout:      s.cfg.ScanTimeout,
-						PollInterval: s.cfg.ScanPollInterval,
-						Logf:         s.logf,
-					},
-					vm.ID, beforeTime.AsTime(),
-				)
-				require.NoError(t, err, "rescan should produce a newer scan_time than %v", beforeTime.AsTime())
-			})
-			if rescan == nil {
-				t.Log("skipping remaining subtests: rescan did not produce a newer scan_time")
-				return
-			}
-
-			t.Run("PipelineMetrics", func(t *testing.T) {
-				s.assertPipelineMetrics(s.ctx, t, vm.NodeName)
-			})
-
 			t.Run("ConsistencyCheck", func(t *testing.T) {
-				fetched := s.mustGetVM(rescan.GetId())
+				fetched := s.mustGetVM(first.GetId())
 				require.Equal(t, first.GetId(), fetched.GetId(),
-					"VM ID should remain stable across rescans")
+					"VM ID should remain stable after pull-mode scan")
 			})
 		})
 	}

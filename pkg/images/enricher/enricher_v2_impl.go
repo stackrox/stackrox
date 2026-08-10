@@ -835,7 +835,7 @@ func (e *enricherV2Impl) enrichWithSignature(ctx context.Context, enrichmentCont
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatIntegrationID
 
 	// Short-circuit if
 	//	- no integrations are available, or

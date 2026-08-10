@@ -25,6 +25,7 @@ import (
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/tests/logmatchers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -353,7 +354,7 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 		require.NoError(t, err)
 
 		ts.waitUntilLog(ctx, "contain delegated registry config upsert",
-			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted delegated registry config.*%s", path)), fromByte),
+			logmatchers.ContainsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted delegated registry config.*%s", path)), fromByte),
 		)
 	})
 }
@@ -413,7 +414,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), fromByte),
+			logmatchers.ContainsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), fromByte),
 		)
 
 		// Update image integration.
@@ -423,7 +424,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsMultipleLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), 2, fromByte),
+			logmatchers.ContainsMultipleLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), 2, fromByte),
 		)
 
 		// Delete the image integration.
@@ -432,7 +433,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the deleted integration",
 			// Requires debug logging.
-			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Deleted registry integration.*%s", id)), fromByte),
+			logmatchers.ContainsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Deleted registry integration.*%s", id)), fromByte),
 		)
 	})
 
@@ -446,7 +447,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.checkLogsMatch(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsNoLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", ii.GetId())), fromByte),
+			logmatchers.ContainsNoLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", ii.GetId())), fromByte),
 		)
 	})
 }
@@ -1067,7 +1068,7 @@ func (ts *DelegatedScanningSuite) waitUntilSensorLogsScan(ctx context.Context, i
 	regexp.MustCompile(reStr)
 
 	ts.waitUntilLog(ctx, "contain the image scan",
-		containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
+		logmatchers.ContainsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 	)
 
 	logf(t, "Found Sensor log entries indiciating successful scan of %q after byte %d", imageStr, fromByte)

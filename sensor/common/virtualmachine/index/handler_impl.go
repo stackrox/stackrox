@@ -312,12 +312,14 @@ func (h *handlerImpl) handleIndexReport(
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
-	log.Debugf("Handling virtual machine index report with vsock_cid=%q...", indexReport.GetVsockCid())
+	log.Debugf("Handling virtual machine index report (vm_id=%q vsock_cid=%q)...",
+		indexReport.GetVmId(), indexReport.GetVsockCid())
 
 	msg, outcome, err := h.newMessageToCentral(indexReport)
 	if err != nil {
 		// TODO: send a message the sensor relay to retry later if the VM was not found
-		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
+		log.Warnf("unable to send index report message for virtual machine (vm_id=%q vsock_cid=%q) to central: %v",
+			indexReport.GetVmId(), indexReport.GetVsockCid(), err)
 		return
 	}
 	h.sendIndexReportEvent(toCentral, msg)
@@ -325,15 +327,9 @@ func (h *handlerImpl) handleIndexReport(
 }
 
 func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
-	cid, err := strconv.ParseUint(indexReport.GetVsockCid(), 10, 32)
+	vmInfo, outcome, err := h.resolveVM(indexReport)
 	if err != nil {
-		return nil, metrics.IndexReportHandlingMessageToCentralInvalidCID, errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
-	}
-
-	vmInfo := h.store.GetFromCID(uint32(cid))
-	if vmInfo == nil {
-		// Return retryable error if the virtual machine is not yet known to Sensor.
-		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+		return nil, outcome, err
 	}
 
 	return message.New(&central.MsgFromSensor{
@@ -350,6 +346,33 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 			},
 		},
 	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
+}
+
+// resolveVM finds the VirtualMachine for an index report. Prefer vm_id when
+// Sensor already knows the Kubernetes UID (pull path). Otherwise resolve via
+// vsock_cid (push path from agent/relay).
+func (h *handlerImpl) resolveVM(indexReport *v1.IndexReport) (*virtualmachine.Info, string, error) {
+	if vmID := indexReport.GetVmId(); vmID != "" {
+		vmInfo := h.store.Get(virtualmachine.VMID(vmID))
+		if vmInfo == nil {
+			return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown,
+				errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine %q not found", vmID)
+		}
+		return vmInfo, "", nil
+	}
+
+	cid, err := strconv.ParseUint(indexReport.GetVsockCid(), 10, 32)
+	if err != nil {
+		return nil, metrics.IndexReportHandlingMessageToCentralInvalidCID,
+			errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
+	}
+
+	vmInfo := h.store.GetFromCID(uint32(cid))
+	if vmInfo == nil {
+		return nil, metrics.IndexReportHandlingMessageToCentralVMUnknown,
+			errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+	}
+	return vmInfo, "", nil
 }
 
 func (h *handlerImpl) sendIndexReportEvent(

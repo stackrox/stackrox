@@ -1,7 +1,7 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
-import { doPolicyRowAction, importPolicyFromFixture, visitPolicies } from '../../helpers/policies';
+import { doPolicyRowAction, importPolicyFromFixture, visitPolicies } from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 
 describe('Import policy', () => {
     withAuth();

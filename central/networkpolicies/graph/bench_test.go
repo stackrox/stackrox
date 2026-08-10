@@ -92,11 +92,11 @@ func matchPolicyToRandomDeps(networkPolicies []*storage.NetworkPolicy, deploymen
 func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies, numPoliciesApplyTo, ingressMatches, egressMatches int) {
 	m := newMockGraphEvaluator()
 	deployments := make([]*storage.Deployment, 0, numDeployments)
-	for i := 0; i < numDeployments; i++ {
+	for i := range numDeployments {
 		deployments = append(deployments, getMockDeployment(strconv.Itoa(i)))
 	}
 	networkPolicies := make([]*storage.NetworkPolicy, 0, numDeployments)
-	for i := 0; i < numNetworkPolicies; i++ {
+	for i := range numNetworkPolicies {
 		networkPolicies = append(networkPolicies, getMockNetworkPolicy(fmt.Sprintf("%d", i)))
 	}
 	applyPolicies(networkPolicies, deployments, numPoliciesApplyTo)

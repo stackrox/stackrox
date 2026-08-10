@@ -44,7 +44,7 @@ func registerFeature(name, envVar string, options ...option) FeatureFlag {
 }
 
 func sortEnvVars() []string {
-	sortedEnvVars := []string{}
+	sortedEnvVars := make([]string, 0, len(Flags))
 	for envVar := range Flags {
 		sortedEnvVars = append(sortedEnvVars, envVar)
 	}

@@ -1,0 +1,5 @@
+validations:
+  - name: enum
+    enforcement: Error
+    configuration:
+      additionPolicy: Allow

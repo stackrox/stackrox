@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"errors"
+	"maps"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -18,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -81,10 +81,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -93,7 +93,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"install: explicit enforcement disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforcement: ptr.To(platform.PolicyEnforcementDisabled),
+					Enforcement: new(platform.PolicyEnforcementDisabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -101,9 +101,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
 				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
@@ -113,7 +113,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"install: explicit enforcement enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					Enforcement: ptr.To(platform.PolicyEnforcementEnabled),
+					Enforcement: new(platform.PolicyEnforcementEnabled),
 				},
 			},
 			Status: platform.SecuredClusterStatus{},
@@ -121,9 +121,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
 				Enforcement:   nil,
 			},
 			ExpectedAnnotations: map[string]string{
@@ -140,10 +140,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -159,10 +159,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
@@ -171,8 +171,8 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"upgrade: enforcement disabled if listenOnCreates & listenOnUpdates disabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					ListenOnCreates: ptr.To(false),
-					ListenOnUpdates: ptr.To(false),
+					ListenOnCreates: new(false),
+					ListenOnUpdates: new(false),
 				},
 			},
 			Status: postInstallStatus,
@@ -180,10 +180,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementDisabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
@@ -192,8 +192,8 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"upgrade: enforcement enabled if listenOnCreates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					ListenOnCreates: ptr.To(true),
-					ListenOnUpdates: ptr.To(false),
+					ListenOnCreates: new(true),
+					ListenOnUpdates: new(false),
 				},
 			},
 			Status: postInstallStatus,
@@ -201,10 +201,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -213,8 +213,8 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 		"upgrade: enforcement enabled if listenOnUpdates enabled": {
 			Spec: platform.SecuredClusterSpec{
 				AdmissionControl: &platform.AdmissionControlComponentSpec{
-					ListenOnCreates: ptr.To(false),
-					ListenOnUpdates: ptr.To(true),
+					ListenOnCreates: new(false),
+					ListenOnUpdates: new(true),
 				},
 			},
 			Status: postInstallStatus,
@@ -222,10 +222,10 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				DeploymentSpec: platform.DeploymentSpec{
 					Resources: expectedResourcesEnforcementEnabled,
 				},
-				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
-				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
-				Replicas:      ptr.To(int32(3)),
-				Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+				Bypass:        new(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: new(platform.FailurePolicyIgnore),
+				Replicas:      new(int32(3)),
+				Enforcement:   new(platform.PolicyEnforcementEnabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
@@ -248,9 +248,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				Spec:   *c.Spec.DeepCopy(),
 				Status: *c.Status.DeepCopy(),
 			}
-			for key, val := range c.Annotations {
-				baseSecuredCluster.Annotations[key] = val
-			}
+			maps.Copy(baseSecuredCluster.Annotations, c.Annotations)
 
 			ctx := context.Background()
 			sch := runtime.NewScheme()
@@ -385,9 +383,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				Spec:   *c.Spec.DeepCopy(),
 				Status: *c.Status.DeepCopy(),
 			}
-			for key, val := range c.Annotations {
-				baseSecuredCluster.Annotations[key] = val
-			}
+			maps.Copy(baseSecuredCluster.Annotations, c.Annotations)
 
 			ctx := context.Background()
 			sch := runtime.NewScheme()

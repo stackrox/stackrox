@@ -9,6 +9,7 @@ import (
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/store"
 	categoriesDataStore "github.com/stackrox/rox/central/policycategory/datastore"
@@ -299,6 +300,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		metrics.IncrementTotalExternalPoliciesGauge()
 	}
 
+	refresh.RefreshTracker(metrics.Configuration)
 	return clonedPolicy.GetId(), nil
 }
 
@@ -337,6 +339,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	if err = ds.storage.Upsert(ctx, clonedPolicy); err != nil {
 		return ds.wrapWithRollback(ctx, tx, err)
 	}
+	defer refresh.RefreshTracker(metrics.Configuration)
 	return tx.Commit(ctx)
 }
 
@@ -353,10 +356,12 @@ func (ds *datastoreImpl) RemovePolicy(ctx context.Context, policy *storage.Polic
 
 	err := ds.removePolicyNoLock(ctx, policy.GetId())
 
-	if err == nil && policy.GetSource() == storage.PolicySource_DECLARATIVE {
-		metrics.DecrementTotalExternalPoliciesGauge()
+	if err == nil {
+		if policy.GetSource() == storage.PolicySource_DECLARATIVE {
+			metrics.DecrementTotalExternalPoliciesGauge()
+		}
+		refresh.RefreshTracker(metrics.Configuration)
 	}
-
 	return err
 }
 
@@ -410,7 +415,7 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 
 		responses[i] = response
 	}
-
+	refresh.RefreshTracker(metrics.Configuration)
 	return responses, allSucceeded, nil
 }
 
@@ -549,8 +554,7 @@ func (ds *datastoreImpl) importOverwrite(ctx context.Context, policy *storage.Po
 }
 
 func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
-	var policyError *PolicyStoreErrorList
-	if errors.As(err, &policyError) {
+	if policyError, converted := errors.AsType[*PolicyStoreErrorList](err); converted {
 		return handlePolicyStoreErrorList(policyError)
 	}
 
@@ -565,8 +569,7 @@ func getImportErrorsFromError(err error) []*v1.ImportPolicyError {
 func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportPolicyError {
 	var errList []*v1.ImportPolicyError
 	for _, err := range policyError.Errors {
-		var nameErr *NameConflictError
-		if errors.As(err, &nameErr) {
+		if nameErr, converted := errors.AsType[*NameConflictError](err); converted {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: nameErr.ErrString,
 				Type:    policiesPkg.ErrImportDuplicateName,
@@ -577,8 +580,7 @@ func handlePolicyStoreErrorList(policyError *PolicyStoreErrorList) []*v1.ImportP
 			continue
 		}
 
-		var idError *IDConflictError
-		if errors.As(err, &idError) {
+		if idError, converted := errors.AsType[*IDConflictError](err); converted {
 			errList = append(errList, &v1.ImportPolicyError{
 				Message: idError.ErrString,
 				Type:    policiesPkg.ErrImportDuplicateID,

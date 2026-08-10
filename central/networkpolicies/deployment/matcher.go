@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"slices"
 
 	"github.com/pkg/errors"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -121,18 +122,9 @@ func (m *policyMatcherImpl) GetIsolationDetails(resource LabeledResource) Isolat
 }
 
 func hasEgress(types []storage.NetworkPolicyType) bool {
-	return hasPolicyType(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
+	return slices.Contains(types, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE)
 }
 
 func hasIngress(types []storage.NetworkPolicyType) bool {
-	return len(types) == 0 || hasPolicyType(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
-}
-
-func hasPolicyType(types []storage.NetworkPolicyType, t storage.NetworkPolicyType) bool {
-	for _, pType := range types {
-		if pType == t {
-			return true
-		}
-	}
-	return false
+	return len(types) == 0 || slices.Contains(types, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
 }

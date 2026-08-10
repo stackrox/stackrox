@@ -1,6 +1,7 @@
 package oidc
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -15,9 +16,7 @@ type mockClaimExtractor struct {
 func (e *mockClaimExtractor) Claims(input interface{}) error {
 	switch u := input.(type) {
 	case *map[string]interface{}:
-		for k, v := range e.claims {
-			(*u)[k] = v
-		}
+		maps.Copy((*u), e.claims)
 		return nil
 	default:
 		return errors.Errorf("unsupported type %T", input)

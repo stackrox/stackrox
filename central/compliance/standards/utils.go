@@ -6,8 +6,9 @@ import (
 
 // GetSupportedStandards returns the ids of all supported compliance standards
 func GetSupportedStandards() []string {
-	var registeredStandards []string
-	for _, standard := range RegistrySingleton().AllStandards() {
+	allStandards := RegistrySingleton().AllStandards()
+	registeredStandards := make([]string, 0, len(allStandards))
+	for _, standard := range allStandards {
 		registeredStandards = append(registeredStandards, standard.ID)
 	}
 	return registeredStandards

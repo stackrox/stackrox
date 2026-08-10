@@ -22,7 +22,6 @@ spec:
     metadata:
       labels:
         app: sensor
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
@@ -220,6 +219,10 @@ spec:
           value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
+          value: "true"
+        {{- end }}
+        {{- if ._rox.virtualMachines.enabled }}
+        - name: ROX_VIRTUAL_MACHINES
           value: "true"
         {{- end }}
         [<- if (not .KubectlOutput) >]

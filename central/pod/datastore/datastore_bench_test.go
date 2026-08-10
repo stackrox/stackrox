@@ -35,7 +35,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	podPrototype := fixtures.GetPod().CloneVT()
 
 	const numPods = 1000
-	for i := 0; i < numPods; i++ {
+	for range numPods {
 		podPrototype.Id = uuid.NewV4().String()
 		require.NoError(b, podsDatastore.UpsertPod(ctx, podPrototype))
 	}

@@ -10,6 +10,14 @@ const (
 	EnrichedProcessIndicatorTopic
 	DetectorProcessIndicatorTopic
 	DetectorNetworkFlowTopic
+	DetectorFileAccessTopic
+	DetectorAuditLogTopic
+	DetectorDeploymentTopic
+	DetectorScanResultTopic
+	DetectorDeployAlertOutputTopic
+	ResolvedResourceEventTopic
+	SoftRestartTopic
+	ResourceSyncFinishedTopic
 )
 
 var (
@@ -21,6 +29,14 @@ var (
 		EnrichedProcessIndicatorTopic:   "EnrichedProcessIndicator",
 		DetectorProcessIndicatorTopic:   "DetectorProcessIndicator",
 		DetectorNetworkFlowTopic:        "DetectorNetworkFlow",
+		DetectorFileAccessTopic:         "DetectorFileAccess",
+		DetectorAuditLogTopic:           "DetectorAuditLog",
+		DetectorDeploymentTopic:         "DetectorDeployment",
+		DetectorScanResultTopic:         "DetectorScanResult",
+		DetectorDeployAlertOutputTopic:  "DetectorDeployAlertOutput",
+		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
+		SoftRestartTopic:                "SoftRestart",
+		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
 	}
 )
 

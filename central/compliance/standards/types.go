@@ -1,6 +1,7 @@
 package standards
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -71,9 +72,7 @@ func (s *Standard) protoScopes() []v1.ComplianceStandardMetadata_Scope {
 			scopes = append(scopes, v1.ComplianceStandardMetadata_NODE)
 		}
 	}
-	sort.Slice(scopes, func(i, j int) bool {
-		return scopes[i] < scopes[j]
-	})
+	slices.Sort(scopes)
 	return scopes
 }
 
@@ -110,12 +109,7 @@ func (s *Standard) ToProto() *v1.ComplianceStandard {
 
 // HasAnyDataDependency checks if the given standard requires at least one of the given data dependencies.
 func (s *Standard) HasAnyDataDependency(deps ...string) bool {
-	for _, dep := range deps {
-		if s.allDataDeps.Contains(dep) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(deps, s.allDataDeps.Contains)
 }
 
 // AllDataDependencies returns all data dependencies of all checks in this standard in sorted order.
@@ -260,9 +254,7 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 	for s := range scopeMap {
 		scopes = append(scopes, s)
 	}
-	sort.Slice(scopes, func(i, j int) bool {
-		return scopes[i] < scopes[j]
-	})
+	slices.Sort(scopes)
 	s.scopes = scopes
 
 	return s

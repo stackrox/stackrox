@@ -5,7 +5,7 @@ import { Nav } from '@patternfly/react-core';
 
 import {
     everyResource,
-    riskBasePath,
+    riskWorkloadsBasePath,
     someResource,
     violationsBasePath,
     vulnerabilitiesAllImagesPath,
@@ -46,7 +46,7 @@ type SubnavRouteConfig = {
 const subnavRoutes: SubnavRouteConfig[] = [
     {
         key: 'risk',
-        patterns: [`${riskBasePath}/*`],
+        patterns: [`${riskWorkloadsBasePath}/*`],
         component: RiskSubnav,
         resourceAccessRequirements: everyResource(['Deployment']),
     },

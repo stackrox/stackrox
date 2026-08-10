@@ -21,7 +21,7 @@ import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
 import PublicConfigTelemetryDetails from './PublicConfigTelemetryDetails';
 import PlatformComponentsConfigDetails from './PlatformComponentsConfigDetails';
-import PrivateConfigPrometheusMetricsDetails from './PrivateConfigPrometheusMetricsDetails';
+import PrometheusMetricsTabbedCard from './components/PrometheusMetricsTabbedCard';
 
 export type SystemConfigDetailsProps = {
     systemConfig: SystemConfig;
@@ -81,11 +81,7 @@ function SystemConfigDetails({
                         <code>/metrics</code> path. Scrape requests require permissions to view
                         Administration resources and are subject for the scoped access control.
                     </Content>
-                    <Grid hasGutter>
-                        <PrivateConfigPrometheusMetricsDetails
-                            privateConfig={systemConfig?.privateConfig}
-                        />
-                    </Grid>
+                    <PrometheusMetricsTabbedCard privateConfig={systemConfig?.privateConfig} />
                 </Stack>
             </PageSection>
             <PageSection data-testid="public-config">

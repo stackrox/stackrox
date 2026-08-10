@@ -405,3 +405,38 @@ func Test_ProxyConfig_validate(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestNormalizeStringList(t *testing.T) {
+	tests := map[string]struct {
+		input []string
+		want  []string
+	}{
+		"nil returns nil": {
+			input: nil,
+			want:  nil,
+		},
+		"empty slice returns empty": {
+			input: []string{},
+			want:  []string{},
+		},
+		"trims whitespace": {
+			input: []string{" a ", " b "},
+			want:  []string{"a", "b"},
+		},
+		"drops empties": {
+			input: []string{"a", "", " ", "b"},
+			want:  []string{"a", "b"},
+		},
+		"no changes needed": {
+			input: []string{"a", "b"},
+			want:  []string{"a", "b"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := NormalizeStringList(tc.input)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

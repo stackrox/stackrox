@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
-	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -79,11 +78,34 @@ func (s *RunnerTestSuite) SetupSuite() {
 	s.db = pool
 
 	gormDB := conn.OpenGormDB(s.T(), source, false)
-	pgutils.CreateTableFromModel(s.ctx, gormDB, schema.CreateTableBackgroundMigrationVersionsStmt)
+	schema.ApplyAllSchemas(s.ctx, gormDB)
+}
+
+// waitForAdvisoryUnlock ensures no pool connection holds the background migration
+// advisory lock. Tests that use Start()/Stop() may leave the lock briefly held
+// due to connection pool timing, causing the next test to fail with
+// "advisory lock held by another instance".
+func (s *RunnerTestSuite) waitForAdvisoryUnlock() {
+	require.EventuallyWithT(s.T(), func(t *assert.CollectT) {
+		dbConn, err := s.db.Acquire(s.ctx)
+		require.NoError(t, err)
+		require.NotNil(t, dbConn)
+
+		defer dbConn.Release()
+		var acquired bool
+		err = dbConn.QueryRow(s.ctx, "SELECT pg_try_advisory_lock($1)", bgMigrationAdvisoryLockID).Scan(&acquired)
+		require.NoError(t, err)
+		require.True(t, acquired)
+
+		_, err = dbConn.Exec(s.ctx, "SELECT pg_advisory_unlock($1)", bgMigrationAdvisoryLockID)
+		assert.NoError(t, err)
+	}, time.Second, 50*time.Millisecond, "advisory lock still held")
 }
 
 func (s *RunnerTestSuite) SetupTest() {
 	migrations.ResetRegistryForTesting(s.T())
+
+	s.waitForAdvisoryUnlock()
 
 	_, err := s.db.Exec(s.ctx,
 		"DELETE FROM "+schema.BackgroundMigrationVersionsTableName)
@@ -118,7 +140,8 @@ func requireStoppedWithin(t *testing.T, runner *Runner, timeout time.Duration) {
 
 func (s *RunnerTestSuite) TestUpToDate() {
 	runner := s.newRunner(&doneRolloutChecker{}, 0)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err := runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -135,7 +158,8 @@ func (s *RunnerTestSuite) TestDetectsRollback() {
 	s.Require().NoError(err)
 
 	runner := s.newRunner(&doneRolloutChecker{}, 2)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -166,7 +190,8 @@ func (s *RunnerTestSuite) TestRunsOnlyNewMigrations() {
 	})
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{1, 2}, ran)
 
@@ -265,11 +290,13 @@ func (s *RunnerTestSuite) TestRetriesOnRolloutCheckError() {
 
 func (s *RunnerTestSuite) TestLockReleasedAfterMigrations() {
 	runner := s.newRunner(&doneRolloutChecker{}, 0)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err := runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	// If the lock was released, we should be able to acquire it again.
 	runner2 := s.newRunner(&doneRolloutChecker{}, 0)
-	requireStoppedWithin(s.T(), runner2, testTimeout)
+	err = runner2.runOnce(s.ctx)
+	s.Require().NoError(err)
 }
 
 func (s *RunnerTestSuite) TestStopCancelsRunningMigration() {
@@ -330,7 +357,8 @@ func (s *RunnerTestSuite) TestOverrideAppliesWithNewTag() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{0, 1, 2}, ran)
 
@@ -349,7 +377,8 @@ func (s *RunnerTestSuite) TestOverrideSkipsWhenTagMatches() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -379,7 +408,8 @@ func (s *RunnerTestSuite) TestOverrideRerunsWithNewTag() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-456")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{0, 1, 2}, ran)
 }
@@ -392,7 +422,8 @@ func (s *RunnerTestSuite) TestOverrideIgnoredWithoutTag() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_SEQ_NUM", "0")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -408,7 +439,8 @@ func (s *RunnerTestSuite) TestOverrideIgnoredWhenSeqNumExceedsCurrent() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-999")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -420,7 +452,8 @@ func (s *RunnerTestSuite) TestSeedsInitialRowWhenTableEmpty() {
 	s.Require().NoError(err)
 
 	runner := s.newRunner(&doneRolloutChecker{}, 0)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, overrideTag, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -435,7 +468,8 @@ func (s *RunnerTestSuite) TestOverrideTagClearedWhenEnvRemoved() {
 	s.Require().NoError(err)
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, overrideTag, err := runner.readState(s.ctx)
 	s.Require().NoError(err)
@@ -444,9 +478,6 @@ func (s *RunnerTestSuite) TestOverrideTagClearedWhenEnvRemoved() {
 }
 
 func (s *RunnerTestSuite) TestOverrideNotReappliedOnRestart() {
-	// Simulates the restart loop bug: env vars are still set, tag matches DB.
-	// First run applies the override and re-runs migrations (expected).
-	// Second run should NOT re-run migrations because the tag already matches.
 	ran := []int{}
 	migrations.MustRegister(types.BackgroundMigration{
 		StartingSeqNum: 0, VersionAfterSeqNum: 1, Description: "m0",
@@ -470,7 +501,8 @@ func (s *RunnerTestSuite) TestOverrideNotReappliedOnRestart() {
 
 	// First run: override applies, migrations re-run.
 	runner1 := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner1, testTimeout)
+	err = runner1.runOnce(s.ctx)
+	s.Require().NoError(err)
 	s.Equal([]int{0, 1, 2}, ran)
 
 	seqNum, overrideTag, err := runner1.readState(s.ctx)
@@ -482,7 +514,8 @@ func (s *RunnerTestSuite) TestOverrideNotReappliedOnRestart() {
 	// Migrations must NOT re-run.
 	ran = []int{}
 	runner2 := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner2, testTimeout)
+	err = runner2.runOnce(s.ctx)
+	s.Require().NoError(err)
 	s.Empty(ran, "migrations must not re-run when override tag already matches")
 
 	seqNum, overrideTag, err = runner2.readState(s.ctx)
@@ -509,7 +542,8 @@ func (s *RunnerTestSuite) TestSkipMigrations() {
 	s.T().Setenv("ROX_SKIP_BACKGROUND_MIGRATIONS", "1")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err := runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{0, 2}, ran)
 
@@ -536,7 +570,8 @@ func (s *RunnerTestSuite) TestSkipMultipleMigrations() {
 	s.T().Setenv("ROX_SKIP_BACKGROUND_MIGRATIONS", "0, 2")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err := runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{1}, ran)
 
@@ -553,7 +588,8 @@ func (s *RunnerTestSuite) TestSkipMigrationsEmptyEnv() {
 	})
 
 	runner := s.newRunner(&doneRolloutChecker{}, 1)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err := runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	s.Equal([]int{0}, ran)
 }
@@ -566,7 +602,8 @@ func (s *RunnerTestSuite) TestOverrideIgnoredWithoutSeqNum() {
 	s.T().Setenv("ROX_BACKGROUND_MIGRATION_OVERRIDE_TAG", "ROX-123")
 
 	runner := s.newRunner(&doneRolloutChecker{}, 3)
-	requireStoppedWithin(s.T(), runner, testTimeout)
+	err = runner.runOnce(s.ctx)
+	s.Require().NoError(err)
 
 	seqNum, _, err := runner.readState(s.ctx)
 	s.Require().NoError(err)

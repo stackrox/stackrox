@@ -186,7 +186,10 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 	bgMigrationSeqNumGauge.Set(float64(dbSeqNum))
 
 	if dbSeqNum == r.targetSeqNum {
-		log.Infof("up to date at seq num %d", dbSeqNum)
+		log.Infof("up to date at seq num %d, reconciling background indexes...", dbSeqNum)
+		if err := schema.ApplyAllIndexes(ctx, r.db, env.BackgroundIndexTimeout.DurationSetting()); err != nil {
+			return errors.Wrap(err, "creating background indexes")
+		}
 		bgMigrationCompleteGauge.Set(1)
 		return nil
 	}
@@ -227,9 +230,15 @@ func (r *Runner) runMigrations(ctx context.Context) error {
 		log.Infof("completed migration %d, now at seq num %d", seqNum, migration.VersionAfterSeqNum)
 	}
 
+	log.Infof("all numbered migrations complete, at seq num %d. Reconciling background indexes...", r.targetSeqNum)
+
+	if err := schema.ApplyAllIndexes(ctx, r.db, env.BackgroundIndexTimeout.DurationSetting()); err != nil {
+		return errors.Wrap(err, "creating background indexes")
+	}
+
 	bgMigrationCompleteGauge.Set(1)
 
-	log.Infof("all migrations complete, at seq num %d", r.targetSeqNum)
+	log.Infof("background migrations and index reconciliation complete")
 	return nil
 }
 

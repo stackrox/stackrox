@@ -129,6 +129,13 @@ spec:
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:advanced
           - description: |-
+              Central Worker configuration. When enabled, pruning and reporting jobs run in a
+              separate Deployment instead of inside Central.
+            displayName: Central Worker
+            path: centralWorker
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: |-
               Deprecated field. This field will be removed in a future release.
               Miscellaneous settings.
             displayName: Miscellaneous
@@ -179,6 +186,11 @@ spec:
             path: central.notifierSecretsEncryption
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:hidden
+          - description: |-
+              Configures the rollout strategy for the Central deployment.
+              The default is: Recreate.
+            displayName: Rollout Strategy
+            path: central.rolloutStrategy
           - description: |-
               Allows overriding the default resource settings for this component. Please consult the documentation
               for an overview of default resource requirements and a sizing guide.
@@ -486,6 +498,41 @@ spec:
           - description: Storage API key. If not set, telemetry is disabled.
             displayName: Key
             path: central.telemetry.storage.key
+          - description: |-
+              If set to true, pruning and reporting jobs run in a separate Deployment.
+              The default is: false.
+            displayName: Enabled
+            path: centralWorker.enabled
+          - description: |-
+              If you want this component to only run on specific nodes, you can configure
+              tolerations and affinity settings here.
+            displayName: Affinity
+            path: centralWorker.affinity
+          - description: Configures the priority class name for the central-worker deployment.
+            displayName: Priority Class Name
+            path: centralWorker.priorityClassName
+          - description: |-
+              Allows overriding the default resource settings for this component. Please consult the documentation
+              for an overview of default resource requirements and a sizing guide.
+            displayName: Resources
+            path: centralWorker.resources
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+          - description: |-
+              If you want this component to only run on specific nodes, you can configure a node selector here.
+              This setting overrides spec.customize.deploymentDefaults.nodeSelector.
+            displayName: Node Selector
+            path: centralWorker.nodeSelector
+          - description: |-
+              If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+              This setting overrides spec.customize.deploymentDefaults.tolerations.
+            displayName: Tolerations
+            path: centralWorker.tolerations
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:tolerations
+          - description: HostAliases allows configuring additional hostnames to resolve in the pod's hosts file.
+            displayName: Host Aliases
+            path: centralWorker.hostAliases
           - description: |-
               If you want to deploy the Config as Code component, set this to "Enabled"
               The default is: Enabled.

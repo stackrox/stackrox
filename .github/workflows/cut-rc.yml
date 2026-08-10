@@ -177,7 +177,7 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           ref: ${{needs.variables.outputs.branch}}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -331,7 +331,7 @@ jobs:
     name: Setup demo clusters
     secrets: inherit
     needs: [variables, cut-rc, trim-cluster-names]
-    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
+    uses: stackrox/actions/.github/workflows/create-demo-clusters.yml@4efb76aa74694b9ee55e95c4ead57fdf50d79ddf # ratchet:stackrox/actions/.github/workflows/create-demo-clusters.yml@v1
     if: >- # Skip if no clusters are going to be created. Checking unequal with "false" because closed milestones have unset input values.
       github.event.inputs.create-k8s-cluster != 'false' ||
       github.event.inputs.create-os4-cluster != 'false' ||

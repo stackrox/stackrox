@@ -3,6 +3,7 @@ package extensions
 import (
 	"context"
 	"fmt"
+	"maps"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -18,7 +19,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/pointer"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -525,9 +525,7 @@ func executeAndVerify(t *testing.T, testCase pvcReconciliationTestCase, r reconc
 	}
 
 	pvcsToVerify := make(map[string]pvcVerifyFunc)
-	for name, pvf := range testCase.ExpectedPVCs {
-		pvcsToVerify[name] = pvf
-	}
+	maps.Copy(pvcsToVerify, testCase.ExpectedPVCs)
 
 	pvcList := &corev1.PersistentVolumeClaimList{}
 	err = r.client.List(context.TODO(), pvcList)
@@ -659,7 +657,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 					},
 				},
@@ -673,10 +671,10 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							ClaimName: new(DefaultCentralDBPVCName),
 						},
 					},
 				},
@@ -745,7 +743,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 					},
 				},
@@ -753,7 +751,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 			target: PVCTargetCentralDB,
 			want: &platform.DBPersistence{
 				HostPath: &platform.HostPathSpec{
-					Path: ptr.To("/foo/bar"),
+					Path: new("/foo/bar"),
 				},
 			},
 			wantErr: assert.NoError,
@@ -763,17 +761,17 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							ClaimName: new(DefaultCentralDBPVCName),
 						},
 					},
 				},
 			},
 			target: PVCTargetCentralDB,
 			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
-				Path: ptr.To("/foo/bar"),
+				Path: new("/foo/bar"),
 			}},
 			wantErr: assert.NoError,
 		},
@@ -792,8 +790,8 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
-							Size:      ptr.To("100Gi"),
+							ClaimName: new(DefaultCentralDBPVCName),
+							Size:      new("100Gi"),
 						},
 					},
 				},
@@ -801,8 +799,8 @@ func Test_getPersistenceByTarget(t *testing.T) {
 			target: PVCTargetCentralDB,
 			want: &platform.DBPersistence{
 				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-					ClaimName: ptr.To(DefaultCentralDBPVCName),
-					Size:      ptr.To("100Gi"),
+					ClaimName: new(DefaultCentralDBPVCName),
+					Size:      new("100Gi"),
 				},
 			},
 			wantErr: assert.NoError,
@@ -857,7 +855,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 					},
 				},
@@ -865,7 +863,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 			target: PVCTargetCentralDBBackup,
 			want: &platform.DBPersistence{
 				HostPath: &platform.HostPathSpec{
-					Path: ptr.To("/foo/bar"),
+					Path: new("/foo/bar"),
 				},
 			},
 			wantErr: assert.NoError,
@@ -875,17 +873,17 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						HostPath: &platform.HostPathSpec{
-							Path: ptr.To("/foo/bar"),
+							Path: new("/foo/bar"),
 						},
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							ClaimName: new(DefaultCentralDBPVCName),
 						},
 					},
 				},
 			},
 			target: PVCTargetCentralDBBackup,
 			want: &platform.DBPersistence{HostPath: &platform.HostPathSpec{
-				Path: ptr.To("/foo/bar"),
+				Path: new("/foo/bar"),
 			}},
 			wantErr: assert.NoError,
 		},
@@ -908,8 +906,8 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
-							Size:      ptr.To("100Gi"),
+							ClaimName: new(DefaultCentralDBPVCName),
+							Size:      new("100Gi"),
 						},
 					},
 				},
@@ -917,8 +915,8 @@ func Test_getPersistenceByTarget(t *testing.T) {
 			target: PVCTargetCentralDBBackup,
 			want: &platform.DBPersistence{
 				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-					ClaimName: ptr.To("central-db-backup"),
-					Size:      ptr.To("200Gi"),
+					ClaimName: new("central-db-backup"),
+					Size:      new("200Gi"),
 				},
 			},
 			wantErr: assert.NoError,
@@ -928,8 +926,8 @@ func Test_getPersistenceByTarget(t *testing.T) {
 				DB: &platform.CentralDBSpec{
 					Persistence: &platform.DBPersistence{
 						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To(DefaultCentralDBPVCName),
-							Size:      ptr.To("1 Badger"),
+							ClaimName: new(DefaultCentralDBPVCName),
+							Size:      new("1 Badger"),
 						},
 					},
 				},

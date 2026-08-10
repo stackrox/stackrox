@@ -17,6 +17,7 @@ describe('useMetadata hook', () => {
         buildFlavor: 'release',
         releaseBuild: true,
         licenseStatus: 'VALID',
+        compatibleSensorVersions: [],
     };
 
     const mockRefetch = vi.fn();
@@ -70,6 +71,7 @@ describe('useMetadata hook', () => {
             buildFlavor: 'release',
             releaseBuild: true,
             licenseStatus: 'VALID',
+            compatibleSensorVersions: [],
             // Context properties
             isLoadingMetadata: false,
             error: undefined,

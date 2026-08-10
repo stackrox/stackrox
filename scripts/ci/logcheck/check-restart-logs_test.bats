@@ -36,7 +36,7 @@ function setup() {
     run "$CMD" "openshift-crio-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log"
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "Checking for a restart exception in: ${TEST_FIXTURES}/exception-collector-previous.log" ]
-    [ "${lines[1]}" = "Ignoring this restart due to: collector initialization restart with download failure" ]
+    [ "${lines[1]}" = "Ignoring this restart due to: collector restart due to sensor connection failure (likely slow start)" ]
 }
 
 @test "it can depend on process" {
@@ -80,13 +80,8 @@ function setup() {
     [ "${#lines[@]}" -eq 5 ]
 }
 
-@test "this kernel flavor restart is OK" {
-    run "$CMD" "gke-kernel-api-e2e-tests" "${TEST_FIXTURES}/kernel-collector-previous.log"
-    [ "$status" -eq 0 ]
-}
-
-@test "this ebpf flavor restart is OK" {
-    run "$CMD" "gke-api-e2e-tests" "${TEST_FIXTURES}/ebpf-collector-previous.log"
+@test "collector sensor connection failure is OK for any job" {
+    run "$CMD" "gke-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log"
     [ "$status" -eq 0 ]
 }
 

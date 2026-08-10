@@ -24,6 +24,11 @@ on:
           release candidate version stream, appending `-rc` to the version
           stream vN (eg. v2-rc).
         required: false
+      vuln_bundles:
+        description: >
+          Sets a specific updater to run. If unset, all updaters are built.
+          Not supported by older git references, please double-check
+        required: false
       job:
         type: choice
         description: "Choose the NVD source"
@@ -45,7 +50,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -104,7 +109,7 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -112,7 +117,6 @@ jobs:
       if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
-        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
         NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
@@ -129,21 +133,15 @@ jobs:
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
         dir=${branch////-}
         url="https://storage.googleapis.com/scanner-v4-test/nvd/$dir/$nvd_file"
-
-        code=$(curl \
-            -o nvd.zip \
-            -w "%{http_code}" \
-            -H "If-Modified-Since: $since_time" \
-            "$url")
-
-        echo "code: $code"
-        echo "$code" | grep -q 200
+        curl --fail --silent --show-error \
+          --retry 3 --retry-all-errors --retry-delay 5 \
+          --connect-timeout 10 --max-time 300 \
+          -o nvd.zip "$url"
 
     - name: Download NVD
       if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
-        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
         NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
         case "$NVD_BUNDLE_TYPE" in
             nvd-api)
@@ -157,15 +155,10 @@ jobs:
                 exit 1
         esac
         url="https://definitions.stackrox.io/v4/nvd/$nvd_file"
-
-        code=$(curl \
-            -o nvd.zip \
-            -w "%{http_code}" \
-            -H "If-Modified-Since: $since_time" \
-            "$url")
-
-        echo "code: $code"
-        echo "$code" | grep -q 200
+        curl --fail --silent --show-error \
+          --retry 3 --retry-all-errors --retry-delay 5 \
+          --connect-timeout 10 --max-time 300 \
+          -o nvd.zip "$url"
 
     - name: Set MANUAL_URL
       id: set-manual-url
@@ -216,7 +209,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -226,7 +219,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -254,7 +247,12 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run updater (multi bundle)
+      env:
+        VULN_BUNDLES: ${{ github.event.inputs.vuln_bundles }}
       run: |
+        if [ -n "$VULN_BUNDLES" ]; then
+            export STACKROX_SCANNER_V4_UPDATER_SOURCES="$VULN_BUNDLES"
+        fi
         tag=$(make -s --no-print-directory tag)
         # In pre-4.9, the exporter requires --split to generate multi-bundles.
         case "$tag" in
@@ -267,7 +265,67 @@ jobs:
         esac
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
+    - name: Validate bundle
+      # ROX-33993: fails on any per-source issue; "Upload definitions artifacts"
+      # still runs via if: always() so healthy sources still reach users.
+      shell: bash
+      run: |
+        set -euo pipefail
+        shopt -s nullglob
+
+        files=(bundles/*.json.zst)
+        if [ "${#files[@]}" -eq 0 ]; then
+            echo "::error::no vulnerability bundle files found in bundles/ directory"
+            exit 1
+        fi
+
+        # Accumulate failures so all sources are checked before exiting.
+        failures=()
+        fail() {
+            echo "::error::$*"
+            failures+=("$*")
+        }
+
+        # Counts JSON objects in an NDJSON stream, failing on any non-object value.
+        # shellcheck disable=SC2016 # $i is jq syntax, not a shell variable.
+        jq_filter='reduce inputs as $i (0; if ($i | type) == "object" then . + 1 else error("malformed JSON value: \($i | type)") end)'
+        for f in "${files[@]}"; do
+            name=$(basename "$f" .json.zst)
+
+            if [ ! -s "$f" ]; then
+                fail "source '$name': file $f is empty (0 bytes)"
+                continue
+            fi
+
+            if ! zstd -t "$f" >/dev/null 2>&1; then
+                fail "source '$name': file $f is not a valid zstd archive (corrupted/truncated?)"
+                continue
+            fi
+
+            if ! record_count=$(zstd -dc "$f" | jq -n "$jq_filter" 2>/dev/null); then
+                fail "source '$name': file $f decompressed successfully, but a malformed JSON value was found"
+                continue
+            fi
+
+            if [ "$record_count" -eq 0 ]; then
+                fail "source '$name': file $f decompresses fine but contains 0 JSON objects (expected >0)"
+                continue
+            fi
+
+            echo "source '$name': OK ($record_count records)"
+        done
+
+        if [ "${#failures[@]}" -gt 0 ]; then
+            echo "::error::vulnerability bundle validation failed: ${#failures[@]} of ${#files[@]} source(s) broken (affected source(s) will be missing from the published bundle; this does not block publishing)"
+            printf '  - %s\n' "${failures[@]}"
+            exit 1
+        fi
+
+        echo "vulnerability bundle validation passed: all ${#files[@]} sources OK"
+
+    # Uploads the definitions as a temporary GitHub Actions artifact. The actual publishing to GCS happens on: upload-definitions
     - name: Upload definitions artifacts
+      if: always()
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
@@ -275,7 +333,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
         fetch-depth: 0
@@ -297,7 +355,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -307,7 +365,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -365,7 +423,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       if: always()
       with:
         fetch-depth: 0
@@ -377,7 +435,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
       with:
         fetch-depth: 0
 
@@ -456,7 +514,117 @@ jobs:
     - upload-definitions
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
+    permissions:
+      checks: read
+      actions: read
     steps:
-    - name: Send Slack notification on workflow failure
+    - name: Collect failure annotations
+      # Pulls ::error:: annotations from every failed job for the Slack
+      # message below; jobs with none get a generic fallback line.
+      id: annotations
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.repository }}
+        RUN_ID: ${{ github.run_id }}
       run: |
-        curl -X POST -H 'Content-type: application/json' --data '{"text":"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed in repository ${{ github.repository }}: Failed to update vulnerabilities"}' ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        set -euo pipefail
+
+        # --paginate output is multiple JSON docs back-to-back; jq below
+        # handles that as a stream, no --slurp needed.
+        jobs_json=$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --paginate)
+
+        # Plain text: rendered inside a Slack code block, not mrkdwn.
+        max_messages_per_job=10
+        summary=""
+        while IFS=$'\t' read -r job_id job_name failed_step; do
+            # Exclude GitHub's generic "Process completed..." annotation (noise).
+            # --paginate: a job can have >30 annotations (API's page size).
+            if ! messages=$(gh api "repos/${REPO}/check-runs/${job_id}/annotations" --paginate \
+                --jq '.[] | select(.annotation_level == "failure") | select(.message | test("^Process completed with exit code") | not) | .message'); then
+                # Distinct fallback so an API failure isn't confused with "no annotations".
+                messages="(failed to fetch annotations for this job via the GitHub API; see the workflow run directly for details)"
+            fi
+
+            # Blank line between job blocks, but not before the first one.
+            if [ -n "$summary" ]; then
+                summary+=$'\n\n'
+            fi
+            summary+="${job_name}: ${failed_step}"$'\n'
+            if [ -n "$messages" ]; then
+                total=$(printf '%s\n' "$messages" | grep -c .)
+                summary+="$(printf '%s\n' "$messages" | sed -n "1,${max_messages_per_job}s/^/  - /p")"
+                if [ "$total" -gt "$max_messages_per_job" ]; then
+                    summary+=$'\n'"  - ... and $((total - max_messages_per_job)) more (see the workflow run for full details)"
+                fi
+            else
+                summary+="  - (no detailed error annotations found; see the workflow run for details)"
+            fi
+        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | [.id, .name, ([.steps[]? | select(.conclusion | IN("failure","timed_out","action_required","neutral","stale","startup_failure")) | .name][0] // "unknown step")] | @tsv')
+
+        if [ -z "$summary" ]; then
+            summary="(no failed jobs found; see the workflow run for details)"
+        fi
+
+        # Safety-net truncation, on top of the per-job cap above.
+        summary="${summary:0:3000}"
+
+        # Status of every job (not just failed ones), icons matching GitHub's own.
+        job_status=""
+        while IFS=$'\t' read -r job_name job_conclusion; do
+            case "$job_conclusion" in
+                success) icon="✅" ;;
+                skipped) icon="⏭️" ;;
+                cancelled) icon="🚫" ;;
+                in_progress) icon="🟡" ;;
+                failure | timed_out | action_required | neutral | stale | startup_failure) icon="❌" ;;
+                *) icon="❔" ;; # genuinely unrecognized future conclusion value
+            esac
+            job_status+="${icon} ${job_name}"$'\n'
+        done < <(printf '%s' "$jobs_json" | jq -r '.jobs[] | [.name, (.conclusion // "in_progress")] | @tsv')
+
+        job_status="${job_status:0:3000}"
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        {
+            echo "summary<<$EOF"
+            echo "$summary"
+            echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        {
+            echo "job_status<<$EOF"
+            echo "$job_status"
+            echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Send Slack notification on workflow failure
+      # Runs even if "Collect failure annotations" failed, so a degraded
+      # message still reaches on-call instead of nothing at all.
+      if: always()
+      env:
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        WORKFLOW: ${{ github.workflow }}
+        REPO: ${{ github.repository }}
+        SUMMARY: ${{ steps.annotations.outputs.summary }}
+        JOB_STATUS: ${{ steps.annotations.outputs.job_status }}
+        ANNOTATIONS_OUTCOME: ${{ steps.annotations.outcome }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+      run: |
+        set -euo pipefail
+        # shellcheck disable=SC2016 # backticks below are a Slack code-block
+        # delimiter, not shell command substitution.
+        if [ "$ANNOTATIONS_OUTCOME" != "success" ]; then
+            text=$(printf ':warning: *Failed Workflow:* <%s|%s>\n*Repository:* %s\nCould not collect failure annotations for this run (the collection step itself failed) -- please check the workflow run directly for details.' \
+                "$RUN_URL" "$WORKFLOW" "$REPO")
+        else
+            text=$(printf '*Failed Workflow:* <%s|%s>\n*Repository:* %s\n*Job Status:*\n```\n%s```\n*Failed steps:*\n```\n%s\n```' \
+                "$RUN_URL" "$WORKFLOW" "$REPO" "$JOB_STATUS" "$SUMMARY")
+        fi
+        # --retry-all-errors means a slow-but-eventually-successful post could be
+        # retried and sent twice; unlikely in practice, but possible.
+        jq -n --arg text "$text" '{text: $text}' \
+            | curl --fail --silent --show-error \
+                --retry 3 --retry-all-errors --retry-delay 5 \
+                --connect-timeout 10 --max-time 300 \
+                -X POST -H 'Content-type: application/json' --data @- "$SLACK_WEBHOOK"

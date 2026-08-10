@@ -61,11 +61,26 @@ else
     info "Warning: Could not find admin password in SHARED_DIR"
 fi
 
-# Wait for Central API to be responsive (ignore ci_export permission errors at end of function)
-# If wait_for_api truly fails (API down), it will exit the script with exit 1
-# If it succeeds but ci_export fails, || true catches that and we continue
-wait_for_api || true
-info "Central API is responsive, getting diagnostics"
+# Wait for Central API to be responsive.
+wait_for_api_rc=0
+wait_for_api || wait_for_api_rc=$?
+
+# IPI manages the cluster lifecycle, but end.sh expects these variables
+# to generate correct JUnit records (see PR #21101).
+set_ci_shared_export CLUSTER_FLAVOR_VARIANT "openshift-4"
+if [[ "${wait_for_api_rc}" -eq 0 ]]; then
+    set_ci_shared_export CREATE_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
+    set_ci_shared_export DESTROY_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
+    info "Central API is responsive, getting diagnostics"
+elif curl -sk --connect-timeout 2 --max-time 5 "https://${API_ENDPOINT}/v1/ping" >/dev/null 2>&1; then
+    set_ci_shared_export CREATE_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
+    set_ci_shared_export DESTROY_CLUSTER_OUTCOME "${OUTCOME_PASSED}"
+    info "Central API is responsive (wait_for_api exited ${wait_for_api_rc}), getting diagnostics"
+else
+    set_ci_shared_export CREATE_CLUSTER_OUTCOME "${OUTCOME_FAILED}"
+    set_ci_shared_export DESTROY_CLUSTER_OUTCOME "${OUTCOME_FAILED}"
+    info "Error: Central API is not responsive"
+fi
 
 # Get central diagnostics bundle
 if get_central_diagnostics "${DIAGNOSTIC_OUTPUT}"; then

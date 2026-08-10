@@ -88,7 +88,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 	policiesToMigrate := map[string]PolicyChanges{
 		"0000-0000-0000-0000": {
 			FieldsToCompare: []FieldComparator{DescriptionComparator},
-			ToChange:        PolicyUpdates{Description: strPtr("this is a new description")},
+			ToChange:        PolicyUpdates{Description: new("this is a new description")},
 		},
 	}
 
@@ -112,7 +112,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdat
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
 			FieldsToCompare: []FieldComparator{DescriptionComparator},
-			ToChange:        PolicyUpdates{Description: strPtr("this is a new description")},
+			ToChange:        PolicyUpdates{Description: new("this is a new description")},
 		},
 	}
 
@@ -145,7 +145,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 	for tc, fn := range tests {
 		s.T().Run(tc, func(t *testing.T) {
 			// Create and insert a set of unmodified fake policies
-			for i := 0; i < 10; i++ {
+			for i := range 10 {
 				policy := testPolicy(fmt.Sprintf("policy%d", i))
 				policiesToTest[i] = policy
 				policy.Name = fmt.Sprintf("policy-name%d", i) // name is a unique key
@@ -155,7 +155,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 				comparisonPolicies[policy.GetId()] = comparisonPolicy
 				policiesToMigrate[policy.GetId()] = PolicyChanges{
 					FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
-					ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.GetId()))}, // give them all a new description
+					ToChange:        PolicyUpdates{Description: new(fmt.Sprintf("%s new description", policy.GetId()))}, // give them all a new description
 				}
 			}
 

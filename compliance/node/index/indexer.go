@@ -102,6 +102,12 @@ type NodeIndexerConfig struct {
 	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
 	// Consulting the mapping file is preferred over the Container API.
 	Repo2CPEMappingURL string
+	// Repo2CPEMappingFile is a local path to the repo-to-CPE mapping file.
+	// When set, leave Repo2CPEMappingURL empty: claircore still fetches a
+	// non-empty URL on every call (its freshly-constructed rate limiter is
+	// not treated as "already fetched"), so a non-empty URL would make a
+	// network request on top of the seeded file.
+	Repo2CPEMappingFile string
 	// Timeout controls the timeout for any remote API calls.
 	Timeout time.Duration
 	// PackageDBFilter removes irrelevant packages. For node scanning, we are
@@ -224,9 +230,10 @@ func runRepositoryScanner(ctx context.Context, cfg NodeIndexerConfig, l *clairco
 	config := rhel.RepositoryScannerConfig{
 		// Do not reach out to the Red Hat Container Catalog API.
 		// We do *not* want to reach out to the internet for node scanning.
-		DisableAPI:         true,
-		Repo2CPEMappingURL: cfg.Repo2CPEMappingURL,
-		Timeout:            cfg.Timeout,
+		DisableAPI:          true,
+		Repo2CPEMappingURL:  cfg.Repo2CPEMappingURL,
+		Repo2CPEMappingFile: cfg.Repo2CPEMappingFile,
+		Timeout:             cfg.Timeout,
 	}
 
 	var buf bytes.Buffer

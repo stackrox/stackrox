@@ -1,13 +1,13 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import pf6 from '../../selectors/pf6';
 import {
     doPolicyPageAction,
     doPolicyRowAction,
     visitPolicies,
     visitPolicy,
-} from '../../helpers/policies';
-import pf6 from '../../selectors/pf6';
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 
 describe('Export policy', () => {
     withAuth();

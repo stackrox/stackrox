@@ -14,7 +14,7 @@ jobs:
     if: ${{ contains(github.event.pull_request.labels.*.name, 'ci-performance-tests') }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -46,13 +46,13 @@ jobs:
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
       - name: Checkout repo
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
         with:
           repository: "stackrox/workflow"
           path: workflow
@@ -69,7 +69,7 @@ jobs:
           wait: true
 
       # Fetch infractl artifacts
-      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+      - uses: stackrox/actions/infra/install-infractl@4efb76aa74694b9ee55e95c4ead57fdf50d79ddf # ratchet:stackrox/actions/infra/install-infractl@v1
       - uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # ratchet:google-github-actions/auth@v3
         with:
           credentials_json: "${{ secrets.GCP_PERFORMANCE_TESTER_CI_SA }}"
@@ -197,7 +197,7 @@ jobs:
           cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add text report and links as PR comment
-        uses: mshick/add-pr-comment@8e4927817251f1ff60c001f04568532b38e0b4a0 # ratchet:mshick/add-pr-comment@v3
+        uses: mshick/add-pr-comment@ec328af66588ab8f77cdeb2c264f14aba45bbf59 # ratchet:mshick/add-pr-comment@v3
         with:
           message-id: performance-evaluation
           message-path: |

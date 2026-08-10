@@ -22,7 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/utils/pointer"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	fkClient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -321,7 +320,7 @@ func TestTranslate(t *testing.T) {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: ptr.To(true),
+								Enabled: new(true),
 							},
 						},
 						Central: &platform.CentralComponentSpec{
@@ -898,6 +897,151 @@ func TestTranslate(t *testing.T) {
 							"key":      "node-role.kubernetes.io/infra",
 							"operator": "Exists",
 							"effect":   "NoSchedule",
+						},
+					},
+				},
+			},
+		},
+
+		"centralWorker enabled with deployment settings": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						CentralWorker: &platform.CentralWorkerSpec{
+							Enabled: pointer.Bool(true),
+							DeploymentSpec: platform.DeploymentSpec{
+								Resources: &corev1.ResourceRequirements{
+									Limits: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("2"),
+										corev1.ResourceMemory: resource.MustParse("4Gi"),
+									},
+									Requests: corev1.ResourceList{
+										corev1.ResourceCPU:    resource.MustParse("500m"),
+										corev1.ResourceMemory: resource.MustParse("1Gi"),
+									},
+								},
+								NodeSelector: map[string]string{
+									"node-type": "infra",
+								},
+								Tolerations: []*corev1.Toleration{
+									{
+										Key:      "node-role.kubernetes.io/infra",
+										Operator: corev1.TolerationOpExists,
+										Effect:   corev1.TaintEffectNoSchedule,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"centralWorker": map[string]interface{}{
+					"enabled": true,
+					"resources": map[string]interface{}{
+						"limits": map[string]interface{}{
+							"cpu":    "2",
+							"memory": "4Gi",
+						},
+						"requests": map[string]interface{}{
+							"cpu":    "500m",
+							"memory": "1Gi",
+						},
+					},
+					"nodeSelector": map[string]string{
+						"node-type": "infra",
+					},
+					"tolerations": []map[string]interface{}{
+						{
+							"key":      "node-role.kubernetes.io/infra",
+							"operator": "Exists",
+							"effect":   "NoSchedule",
+						},
+					},
+				},
+			},
+		},
+
+		"centralWorker disabled": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						CentralWorker: &platform.CentralWorkerSpec{
+							Enabled: pointer.Bool(false),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"centralWorker": map[string]interface{}{
+					"enabled": false,
+				},
+			},
+		},
+
+		"centralWorker nil spec": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						CentralWorker: nil,
+					},
+				},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"telemetry":        telemetryDisabledKey,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
 						},
 					},
 				},
@@ -1682,6 +1826,75 @@ func TestTranslatePartialMatch(t *testing.T) {
 				"central.db.source.connectionString": nil,
 				"central.db.source.minConns":         30,
 				"central.db.source.maxConns":         400,
+			},
+		},
+		"central without explicit rollout strategy set": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.rolloutStrategy": nil,
+			},
+		},
+		"central with RollingUpdate rollout strategy": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							RolloutStrategy: new(platform.RolloutStrategyRollingUpdate),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"rolloutStrategy":  "RollingUpdate",
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"central with Recreate rollout strategy": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							RolloutStrategy: new(platform.RolloutStrategyRecreate),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"rolloutStrategy":  "Recreate",
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
 			},
 		},
 	}

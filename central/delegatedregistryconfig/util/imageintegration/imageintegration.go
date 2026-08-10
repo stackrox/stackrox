@@ -1,6 +1,10 @@
 package imageintegration
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"slices"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // ValidForSync returns true if the provided image integration is eligible
 // for syncing with secured clusters.
@@ -9,11 +13,5 @@ func ValidForSync(ii *storage.ImageIntegration) bool {
 		return false
 	}
 
-	for _, cat := range ii.GetCategories() {
-		if cat == storage.ImageIntegrationCategory_REGISTRY {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(ii.GetCategories(), storage.ImageIntegrationCategory_REGISTRY)
 }
