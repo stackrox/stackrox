@@ -668,6 +668,8 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
+    local vm_mode_setting="Disabled"
+    local vm_scraper_poll_interval="5m"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -699,16 +701,15 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    customize_envVars=""
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
-        customize_envVars+=$'\n      value: "true"'
+        vm_mode_setting="Enabled"
         # Shorten pull-mode scraper cadence so VM e2e does not wait on the
         # production default (5m) between Sensor polls of guest agents.
         # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
-        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL'
-        customize_envVars+=$'\n      value: "'"${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"'"'
+        vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     fi
+
+    customize_envVars=""
     # For VM e2e tests that may send multiple index reports per minute.
     if [[ -n "${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE'
@@ -738,6 +739,8 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
+      vm_mode_setting="$vm_mode_setting" \
+      vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
       scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
@@ -746,18 +749,6 @@ deploy_sensor_via_operator() {
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
-
-    # Operator cannot set Helm virtualMachines.enabled yet; without that value
-    # the chart skips VSOCK RBAC. Pull-mode scraping needs get on
-    # virtualmachineinstances/vsock, so apply the equivalent roles here.
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        info "Applying Sensor VSOCK RBAC for virtual machine pull-mode scraping"
-        if [[ "${sensor_namespace}" != "stackrox" ]]; then
-            # Manifest hard-codes the sensor SA namespace as stackrox.
-            die "ROX_VIRTUAL_MACHINES VSOCK RBAC currently requires sensor_namespace=stackrox (got ${sensor_namespace})"
-        fi
-        retrying_kubectl </dev/null apply -f "${ROOT}/tests/e2e/yaml/sensor-vsock-rbac.yaml"
-    fi
 
     collector_envs=()
 
