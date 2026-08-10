@@ -19,27 +19,6 @@ var (
 	StatusTimeoutLabels         = prometheus.Labels{"status": "timeout"}
 )
 
-// IndexReportsReceived is a counter for the number of virtual machine index reports received.
-var IndexReportsReceived = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_reports_received_total",
-		Help:      "Total number of virtual machine index reports received by this Sensor",
-	},
-)
-
-// IndexReportsSuppressed counts push-mode index reports dropped because the
-// VM is actively scraped via pull mode.
-var IndexReportsSuppressed = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_reports_suppressed_total",
-		Help:      "Total number of push-mode virtual machine index reports suppressed because the VM is actively scraped via pull mode",
-	},
-)
-
 // IndexReportsSent is a counter for the number of virtual machine index reports sent.
 var IndexReportsSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -49,17 +28,6 @@ var IndexReportsSent = prometheus.NewCounterVec(
 		Help:      "Total number of virtual machine index reports sent by this Sensor",
 	},
 	[]string{"status"},
-)
-
-// VirtualMachineIndexReportHandlingDurationMilliseconds captures how long it takes to handle a virtual machine index report.
-var VirtualMachineIndexReportHandlingDurationMilliseconds = prometheus.NewHistogram(
-	prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_handling_duration_milliseconds",
-		Help:      "Distribution of time spent (in ms) handling virtual machine index reports in Sensor, including the enqueue step",
-		Buckets:   prometheus.ExponentialBuckets(10, 2, 12), // 10ms to ~40s
-	},
 )
 
 // IndexReportProcessingDuration label values.
@@ -113,17 +81,6 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 		Name:      "virtual_machine_index_report_enqueue_blocked_total",
 		Help:      "Number of times virtual machine index report enqueue attempts found the indexReports channel full",
 	},
-)
-
-// VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
-var VMDiscoveredData = prometheus.NewCounterVec(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_discovered_data_total",
-		Help:      "Total number of VM index reports received by Sensor grouped by detected OS and discovered data status values",
-	},
-	[]string{"detected_os", "activation_status", "dnf_metadata_status"},
 )
 
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
@@ -254,17 +211,11 @@ var PullVMsInCycle = prometheus.NewGauge(
 
 func init() {
 	prometheus.MustRegister(
-		// Push-mode metrics.
-		IndexReportsReceived,
-		IndexReportsSuppressed,
 		IndexReportsSent,
-		VirtualMachineIndexReportHandlingDurationMilliseconds,
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
-		VMDiscoveredData,
 		IndexReportAcksReceived,
-		// Pull-mode metrics.
 		PullDialDurationSeconds,
 		PullReadDurationSeconds,
 		PullTotalDurationSeconds,

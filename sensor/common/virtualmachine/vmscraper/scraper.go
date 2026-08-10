@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -85,9 +84,8 @@ type VMScraper struct {
 	started               atomic.Bool
 	now                   func() time.Time
 
-	mu        sync.Mutex
-	vmState   map[string]*vmState
-	activeVMs set.StringSet
+	mu      sync.Mutex
+	vmState map[string]*vmState
 }
 
 type vmState struct {
@@ -114,18 +112,8 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		// being rejected at that limit.
 		warnMaxBytes: env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
-}
-
-// IsActivelyScraped reports whether the given VM is actively scraped via pull
-// mode. Accepts either a "namespace/name" key or a vsock CID string.
-// Used to suppress duplicate push-mode reports during the push→pull transition.
-func (s *VMScraper) IsActivelyScraped(key string) bool {
-	return concurrency.WithLock1(&s.mu, func() bool {
-		return s.activeVMs.Contains(key)
-	})
 }
 
 func (s *VMScraper) Name() string { return "virtualmachine.vmscraper" }
@@ -241,10 +229,6 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	metrics.PullCyclesTotal.Inc()
 	metrics.PullVMsInCycle.Set(float64(len(vms)))
 
-	// Build a new activeVMs set during the cycle. The old set remains in
-	// effect for IsActivelyScraped callers, preventing a suppression gap
-	// while scraping is in progress.
-	scrapedVMs := set.NewStringSet()
 	var successCount atomic.Int32
 
 	liveKeys := set.NewStringSet()
@@ -254,7 +238,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	for _, vm := range vms {
 		liveKeys.Add(vmKey(vm))
 		g.Go(func() error {
-			if s.scrapeVM(gCtx, vm, scrapedVMs) {
+			if s.scrapeVM(gCtx, vm) {
 				successCount.Add(1)
 			}
 			return nil
@@ -262,17 +246,13 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	}
 	_ = g.Wait()
 
-	concurrency.WithLock(&s.mu, func() {
-		s.activeVMs = scrapedVMs
-	})
-
 	s.pruneStaleVMState(liveKeys)
 	elapsed := time.Since(cycleStart)
 	log.Infof("VMScraper: cycle done: %d/%d VMs scraped successfully in %s", successCount.Load(), len(vms), elapsed.Truncate(time.Millisecond))
 	metrics.PullCycleDurationSeconds.Observe(elapsed.Seconds())
 }
 
-func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrapedVMs set.StringSet) bool {
+func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool {
 	key := vmKey(vm)
 	snap := s.snapshotVMState(key)
 
@@ -319,7 +299,6 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		epoch := result.Meta.GetEpoch()
 		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
 		if !epochMismatch {
-			s.registerScrapedVM(scrapedVMs, vm)
 			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
@@ -353,7 +332,6 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
-	s.registerScrapedVM(scrapedVMs, vm)
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
 		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
@@ -432,21 +410,9 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	}
 }
 
-// vmKey returns the identifier used for vmState and activeVMs lookups.
+// vmKey returns the identifier used for vmState lookups.
 func vmKey(vm *virtualmachine.Info) string {
 	return vm.Namespace + "/" + vm.Name
-}
-
-func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachine.Info) {
-	key := vmKey(vm)
-	// Register both identifiers so IsActivelyScraped works whether the
-	// caller uses "namespace/name" (pull path) or a CID string (push path).
-	concurrency.WithLock(&s.mu, func() {
-		scrapedVMs.Add(key)
-		if vm.VSOCKCID != nil {
-			scrapedVMs.Add(strconv.FormatUint(uint64(*vm.VSOCKCID), 10))
-		}
-	})
 }
 
 type vmStateSnapshot struct {

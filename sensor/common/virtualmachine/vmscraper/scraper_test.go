@@ -15,7 +15,6 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -202,31 +201,6 @@ func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
 	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
 	s.pollOnce(context.Background())
 	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
-}
-
-func TestVMScraper_RemainsActiveAcrossUnchangedPolls(t *testing.T) {
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-	}}
-	sender := &mockSender{}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
-	}
-
-	s := newTestScraper(store, sender, dialer, client)
-
-	s.pollOnce(context.Background())
-	require.True(t, s.IsActivelyScraped("ns1/vm-a"))
-	require.True(t, s.IsActivelyScraped("100"))
-
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
-	s.pollOnce(context.Background())
-
-	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
-	assert.True(t, s.IsActivelyScraped("ns1/vm-a"))
-	assert.True(t, s.IsActivelyScraped("100"))
 }
 
 func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
@@ -669,7 +643,6 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	s := newTestScraper(store, sender, dialer, client)
 	s.pollOnce(context.Background())
 	assert.Len(t, s.vmState, 2)
-	assert.True(t, s.activeVMs.Contains("ns1/vm-a"))
 
 	// Remove vm-a from running set
 	store.vms = []*virtualmachine.Info{makeVM("ns2", "vm-b", 200)}
@@ -678,8 +651,6 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	s.pollOnce(context.Background())
 
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
-	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
-	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
 }
 
 // cachedGeneration reads a VM's cached generation under s.mu, so the read is
@@ -707,7 +678,6 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
 		warnMaxBytes: 8 << 20,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
 }
@@ -789,7 +759,6 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 		concurrency:  concurrency,
 		warnMaxBytes: 8 << 20,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
 

@@ -3,17 +3,16 @@ package index
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
@@ -24,6 +23,8 @@ import (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
 	errCentralNotReachable    = errors.New("Central is not reachable")
 	errInputChanClosed        = errors.New("channel receiving virtual machines is closed")
@@ -37,22 +38,12 @@ type handlerImpl struct {
 	lock         *sync.RWMutex
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
-	toCompliance chan common.MessageToComplianceWithAddress
 	indexReports chan *v1.IndexReport
 	store        VirtualMachineStore
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorACKSupport}
-}
-
-func (h *handlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
-	return h.stopper.Client().Stopped()
-}
-
-// ComplianceC returns a channel with messages destined for Compliance.
-func (h *handlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress {
-	return h.toCompliance
 }
 
 func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
@@ -131,20 +122,15 @@ func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 }
 
 // ProcessMessage handles SensorACK messages for VM index reports.
-func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	sensorAck := msg.GetSensorAck()
 	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
 		return nil
 	}
 
-	vmID := sensorAck.GetResourceId()
-	action := sensorAck.GetAction()
-	reason := sensorAck.GetReason()
-	h.forwardToCompliance(ctx, vmID, action, reason)
-
 	// Not limiting to ACK & NACK and recording all types of actions for better debuggability.
 	// The risk of prometheus label cardinality explosion is considered low and accepted hereby.
-	metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
+	metrics.IndexReportAcksReceived.WithLabelValues(sensorAck.GetAction().String()).Inc()
 
 	return nil
 }
@@ -164,11 +150,10 @@ func (h *handlerImpl) Start() error {
 	log.Debug("Starting virtual machine handler")
 	h.lock.Lock()
 	defer h.lock.Unlock()
-	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
+	if h.toCentral != nil || h.indexReports != nil {
 		return errStartMoreThanOnce
 	}
 	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
-	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
@@ -220,81 +205,6 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 	return ch2Central
 }
 
-func (h *handlerImpl) forwardToCompliance(
-	ctx context.Context,
-	resourceID string,
-	action central.SensorACK_Action,
-	reason string,
-) {
-	if h.toCompliance == nil {
-		log.Debug("Compliance channel not initialized; skipping forwarding VM ACK/NACK")
-		return
-	}
-
-	var complianceAction sensor.MsgToCompliance_ComplianceACK_Action
-	switch action {
-	case central.SensorACK_ACK:
-		complianceAction = sensor.MsgToCompliance_ComplianceACK_ACK
-	case central.SensorACK_NACK:
-		complianceAction = sensor.MsgToCompliance_ComplianceACK_NACK
-	default:
-		log.Warnf("Unknown SensorACK action for VM index report: %v", action)
-		return
-	}
-
-	// Resolve the VM's host node so the compliance multiplexer can route to
-	// the correct compliance connection.
-	var nodeName string
-	if resourceID != "" {
-		vmID := vmIDFromResourceID(resourceID)
-		if vmInfo := h.store.Get(virtualmachine.VMID(vmID)); vmInfo != nil {
-			nodeName = vmInfo.NodeName
-		}
-	}
-
-	// Drop the ACK when the target node is unknown rather than broadcasting.
-	// vsock CIDs are host-local and can collide across nodes; broadcasting
-	// would risk a compliance instance on another node matching the CID to
-	// the wrong VM. A deleted/migrated VM does not need its ACK delivered.
-	if nodeName == "" {
-		log.Debugf("Dropping VM ACK/NACK (resourceID=%s): VM not found in store, cannot route to node", resourceID)
-		return
-	}
-
-	msg := common.MessageToComplianceWithAddress{
-		Msg: &sensor.MsgToCompliance{
-			Msg: &sensor.MsgToCompliance_ComplianceAck{
-				ComplianceAck: &sensor.MsgToCompliance_ComplianceACK{
-					Action:      complianceAction,
-					MessageType: sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT,
-					ResourceId:  resourceID,
-					Reason:      reason,
-				},
-			},
-		},
-		// Hostname is the node name (not the VM resource ID) used by the
-		// compliance multiplexer to route to the correct compliance connection.
-		Hostname:  nodeName,
-		Broadcast: false,
-	}
-
-	select {
-	case <-ctx.Done():
-		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): %v", resourceID, ctx.Err())
-		return
-	case <-h.stopper.Flow().StopRequested():
-		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
-		return
-	default:
-	}
-
-	select {
-	case h.toCompliance <- msg:
-	default:
-		log.Warnf("Dropping VM ACK/NACK (resourceID=%s): compliance queue is full", resourceID)
-	}
-}
-
 func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
 	indexReport *v1.IndexReport,
@@ -317,7 +227,6 @@ func (h *handlerImpl) handleIndexReport(
 
 	msg, outcome, err := h.newMessageToCentral(indexReport)
 	if err != nil {
-		// TODO: send a message the sensor relay to retry later if the VM was not found
 		log.Warnf("unable to send index report message for virtual machine (vm_id=%q vsock_cid=%q) to central: %v",
 			indexReport.GetVmId(), indexReport.GetVsockCid(), err)
 		return
@@ -350,7 +259,8 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 
 // resolveVM finds the VirtualMachine for an index report. Prefer vm_id when
 // Sensor already knows the Kubernetes UID (pull path). Otherwise resolve via
-// vsock_cid (push path from agent/relay).
+// vsock_cid, used by synthetic/local-sensor load-generated reports that only
+// know the CID.
 func (h *handlerImpl) resolveVM(indexReport *v1.IndexReport) (*virtualmachine.Info, string, error) {
 	if vmID := indexReport.GetVmId(); vmID != "" {
 		vmInfo := h.store.Get(virtualmachine.VMID(vmID))
@@ -383,13 +293,4 @@ func (h *handlerImpl) sendIndexReportEvent(
 	case <-h.stopper.Flow().StopRequested():
 	case toCentral <- msg:
 	}
-}
-
-// vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
-// (format "vmID:vsockCID"). Returns the input as-is when no separator is found.
-func vmIDFromResourceID(resourceID string) string {
-	if before, _, ok := strings.Cut(resourceID, ":"); ok {
-		return before
-	}
-	return resourceID
 }

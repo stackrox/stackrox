@@ -204,25 +204,20 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	var virtualMachineHandler vmIndex.Handler
-	var vmService vmIndex.Service
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
-		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 
-		var pullChecker vmIndex.PullActiveChecker
 		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
 			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
 			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 			vmSender := &vmScraperSenderAdapter{handler: virtualMachineHandler}
 			scraper := vmscraper.New(storeProvider.VirtualMachines(), vmSender, vmDial, vmProtoClient)
-			pullChecker = scraper
 			components = append(components, scraper)
 		} else {
 			log.Warn("VSOCK pull mode disabled (no REST config available)")
 		}
-		vmService = vmIndex.NewService(virtualMachineHandler, pullChecker)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -322,10 +317,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		apiServices = append(apiServices, fileSystemService)
 	}
 
-	if vmService != nil {
-		apiServices = append(apiServices, vmService)
-	}
-
 	if admCtrlSettingsMgr != nil {
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
@@ -338,7 +329,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 // It constructs the v1.IndexReport envelope that the handler expects.
 // Pull mode sets vm_id from the Kubernetes UID so the handler can forward
 // without requiring vsock_cid. vsock_cid is still included when known for
-// ACK correlation and push-suppression.
+// ACK correlation.
 type vmScraperSenderAdapter struct {
 	handler vmIndex.Handler
 }
