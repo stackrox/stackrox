@@ -310,10 +310,10 @@ run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quic
 quick-run: ## Same as run, but without ensuring dependencies.
 	@if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
 		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
-		IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh | while read -r line; do \
+		while read -r line; do \
 			echo " * $$line"; \
 			export "$$line"; \
-		done; \
+		done < <(IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh); \
 	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
