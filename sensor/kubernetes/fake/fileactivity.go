@@ -87,13 +87,8 @@ func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) 
 	path := paths[rand.Intn(len(paths))]
 	now := timestamppb.Now()
 
-	nodePercent := w.workload.FileActivityWorkload.NodeEventPercent
-	if nodePercent == 0 {
-		nodePercent = 50
-	}
-
 	var containerID string
-	if rand.Intn(100) >= nodePercent {
+	if rand.Intn(100) >= w.workload.FileActivityWorkload.NodeEventPercent {
 		cid, ok := w.containerPool.randomElem()
 		if ok {
 			containerID = cid
@@ -179,6 +174,11 @@ func (w *WorkloadManager) sanitizeFileActivityParams() {
 		defaultBatchSize := 1
 		log.Infof("FileActivityWorkload: batchSize=%d is invalid, defaulting to %d", fa.BatchSize, defaultBatchSize)
 		fa.BatchSize = defaultBatchSize
+	}
+	if fa.NodeEventPercent <= 0 {
+		defaultNodeEventPercent := 50
+		log.Infof("FileActivityWorkload: nodeEventPercent=%d is invalid, defaulting to %d", fa.NodeEventPercent, defaultNodeEventPercent)
+		fa.NodeEventPercent = defaultNodeEventPercent
 	}
 }
 
