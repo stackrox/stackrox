@@ -1066,6 +1066,9 @@ spec:
             path: processIndicators
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Settings for virtual machine scanning (VSOCK RBAC and pull-mode scraper).
+            displayName: Virtual Machines Settings
+            path: virtualMachines
           - description: |-
               Deprecated field. This field will be removed in a future release.
               Miscellaneous settings.
@@ -1604,6 +1607,35 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
+          - description: |-
+              Whether VM scanning and VSOCK RBAC are enabled.
+              The default is: Disabled.
+            displayName: Mode
+            path: virtualMachines.mode
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+              - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+          - description: Scraper tuning for pull-mode VM scanning.
+            displayName: Scraper
+            path: virtualMachines.scraper
+          - description: |-
+              Maximum VMs scraped concurrently per poll cycle.
+              The default is: 20.
+            displayName: Concurrency
+            path: virtualMachines.scraper.concurrency
+          - description: |-
+              Maximum response size in KB from a VM agent (16384 KB is 16 MiB).
+              Oversized responses are rejected and that VM's report is skipped until the next poll.
+              The default is: 16384.
+            displayName: Max Response Size KB
+            path: virtualMachines.scraper.maxResponseSizeKB
+          - description: |-
+              How often the scraper polls VMs for new reports.
+              Sensor enforces a floor of 1m; values below that are silently raised.
+              Lower values cause the VM scanning to be refreshed more frequently, but may increase the load on the cluster's control plane.
+              The default is: 5m.
+            displayName: Poll Interval
+            path: virtualMachines.scraper.pollInterval
         statusDescriptors:
           - description: The deployed version of the product.
             displayName: Product Version

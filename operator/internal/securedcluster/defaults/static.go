@@ -76,6 +76,14 @@ var staticDefaults = platform.SecuredClusterSpec{
 		Persistence:        platform.ProcessIndicatorConfigEnabled.Pointer(),
 		ExcludeOpenshiftNs: platform.ProcessIndicatorConfigDisabled.Pointer(),
 	},
+	VirtualMachines: &platform.VirtualMachinesSpec{
+		Mode: platform.VirtualMachinesModeDisabled.Pointer(),
+		Scraper: &platform.VirtualMachinesScraperSpec{
+			Concurrency:       new(int32(20)),
+			MaxResponseSizeKB: new(int32(16384)),
+			PollInterval:      new("5m"),
+		},
+	},
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{

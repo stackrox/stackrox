@@ -1137,6 +1137,19 @@ spec:
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: |-
+          Whether VM scanning and VSOCK RBAC are enabled.
+          The default is: Disabled.
+        displayName: Mode
+        path: virtualMachines.mode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: |-
+          Maximum VMs scraped concurrently per poll cycle.
+          The default is: 20.
+        displayName: Concurrency
+        path: virtualMachines.scraper.concurrency
+      - description: |-
           Enables teams to bypass admission control in a monitored manner in the event of an emergency.
           The default is: BreakGlassAnnotation.
         displayName: Bypass
@@ -1214,6 +1227,15 @@ spec:
           The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
+      - description: Scraper tuning for pull-mode VM scanning.
+        displayName: Scraper
+        path: virtualMachines.scraper
+      - description: |-
+          Maximum response size in KB from a VM agent (16384 KB is 16 MiB).
+          Oversized responses are rejected and that VM's report is skipped until the next poll.
+          The default is: 16384.
+        displayName: Max Response Size KB
+        path: virtualMachines.scraper.maxResponseSizeKB
       - description: |-
           If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
           fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
@@ -1280,6 +1302,13 @@ spec:
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
+      - description: |-
+          How often the scraper polls VMs for new reports.
+          Sensor enforces a floor of 1m; values below that are silently raised.
+          Lower values cause the VM scanning to be refreshed more frequently, but may increase the load on the cluster's control plane.
+          The default is: 5m.
+        displayName: Poll Interval
+        path: virtualMachines.scraper.pollInterval
       - description: |-
           Settings for the Admission Control component, which is necessary for preventive policy enforcement,
           and for Kubernetes event monitoring.
@@ -1397,6 +1426,10 @@ spec:
         path: processIndicators
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Settings for virtual machine scanning (VSOCK RBAC and pull-mode
+          scraper).
+        displayName: Virtual Machines Settings
+        path: virtualMachines
       - description: |-
           Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
