@@ -168,6 +168,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("processIndicators", getProcessIndicatorsValues(sc.Spec.ProcessIndicators))
 
+	v.AddChild("virtualMachines", getVirtualMachinesValues(sc.Spec.VirtualMachines))
+
 	return v.Build()
 }
 
@@ -613,4 +615,29 @@ func getProcessIndicatorsValues(processIndicators *platform.ProcessIndicatorsSpe
 	}
 
 	return &v
+}
+
+func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.ValuesBuilder {
+	if vm == nil {
+		return nil
+	}
+	cv := translation.NewValuesBuilder()
+	if vm.Mode != nil {
+		switch *vm.Mode {
+		case platform.VirtualMachinesModeEnabled:
+			cv.SetBoolValue("enabled", true)
+		case platform.VirtualMachinesModeDisabled:
+			cv.SetBoolValue("enabled", false)
+		default:
+			return cv.SetError(fmt.Errorf("invalid virtual machines mode %q", *vm.Mode))
+		}
+	}
+	if vm.Scraper != nil {
+		sv := translation.NewValuesBuilder()
+		sv.SetInt32("concurrency", vm.Scraper.Concurrency)
+		sv.SetInt32("maxResponseSizeKB", vm.Scraper.MaxResponseSizeKB)
+		sv.SetString("pollInterval", vm.Scraper.PollInterval)
+		cv.AddChild("scraper", &sv)
+	}
+	return &cv
 }
