@@ -127,28 +127,10 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 
 /* Concurrency and scheduling functions */
 
-// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
-// This func will log errors if the scheduler fails to start.
-func (s *scheduler) Start() {
-	if s.isStopped.Load() {
-		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
-		return
-	}
-	swapped := s.isStarted.CompareAndSwap(false, true)
-	if !swapped {
-		log.Error("Scheduler already running")
-		return
-	}
-	s.queuePendingReports()
-	s.recoverMissedSchedules()
-	s.queueScheduledReports()
-	go s.runReports()
-}
-
-// StartWithLock is like Start but first acquires a PostgreSQL advisory lock.
-// If the lock is already held (e.g., by another Central instance or the worker),
-// this method logs and returns without starting.
-func (s *scheduler) StartWithLock(db postgres.DB) {
+// Start acquires a PostgreSQL advisory lock and starts the scheduler.
+// If the lock is already held by another process, the scheduler is not started.
+// A scheduler instance can only be started once and cannot be re-started once stopped.
+func (s *scheduler) Start(db postgres.DB) {
 	acquired, release, err := dblock.TryAcquireAdvisoryLock(scheduledCtx, db, dblock.ReportSchedulerLockID)
 	if err != nil {
 		log.Errorf("Report scheduler: failed to acquire advisory lock: %v", err)
@@ -158,13 +140,22 @@ func (s *scheduler) StartWithLock(db postgres.DB) {
 		log.Info("Report scheduler: advisory lock held by another process, not starting")
 		return
 	}
-	if s.isStopped.Load() || s.isStarted.Load() {
+	if s.isStopped.Load() {
 		release()
-		log.Error("Report scheduler: cannot start with lock, scheduler already started or stopped")
+		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
+		return
+	}
+	swapped := s.isStarted.CompareAndSwap(false, true)
+	if !swapped {
+		release()
+		log.Error("Scheduler already running")
 		return
 	}
 	s.advisoryLockRelease = release
-	s.Start()
+	s.queuePendingReports()
+	s.recoverMissedSchedules()
+	s.queueScheduledReports()
+	go s.runReports()
 }
 
 // Stop scheduler

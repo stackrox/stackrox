@@ -29,11 +29,10 @@ type Scheduler interface {
 	// If the report is already being prepared or has completed execution, it cannot be cancelled.
 	CancelReportRequest(ctx context.Context, reportID string) (bool, error)
 
-	// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
-	// This func will log errors if the scheduler fails to start.
-	Start()
-	// StartWithLock is like Start but first acquires a PostgreSQL advisory lock.
-	StartWithLock(db postgres.DB)
+	// Start acquires a PostgreSQL advisory lock and starts the scheduler.
+	// If the lock is already held by another process, the scheduler is not started.
+	// A scheduler instance can only be started once and cannot be re-started once stopped.
+	Start(db postgres.DB)
 	// Stop scheduler
 	Stop()
 }
