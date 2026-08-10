@@ -31,7 +31,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.DeploymentsSchema
+	schema         = pkgSchema.DeploymentsSchema()
 	targetResource = resources.Deployment
 )
 
@@ -82,7 +82,7 @@ func New(db postgres.DB) Store {
 		isUpsertAllowed,
 		targetResource,
 		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
-		pkgSchema.DeploymentsSchema.OptionsMap,
+		pkgSchema.DeploymentsSchema().OptionsMap,
 	)
 }
 

@@ -318,7 +318,7 @@ func (ds *datastoreImpl) GetProfilesNames(ctx context.Context, q *v1.Query) ([]s
 	clonedQuery.Pagination = q.GetPagination()
 
 	var profileNames []string
-	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, clonedQuery, func(r *distinctProfileName) error {
+	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileName](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema(), clonedQuery, func(r *distinctProfileName) error {
 		profileNames = append(profileNames, r.ProfileName)
 		return nil
 	})
@@ -354,7 +354,7 @@ func (ds *datastoreImpl) DistinctProfiles(ctx context.Context, q *v1.Query) (map
 	}
 
 	countMap := make(map[string]int)
-	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema, withCountQuery(query, search.ComplianceOperatorConfigProfileName), func(dp *distinctProfileCount) error {
+	err = pgSearch.RunSelectRequestForSchemaFn[distinctProfileCount](ctx, ds.db, schema.ComplianceOperatorScanConfigurationV2Schema(), withCountQuery(query, search.ComplianceOperatorConfigProfileName), func(dp *distinctProfileCount) error {
 		countMap[dp.Name] = dp.TotalCount
 		return nil
 	})

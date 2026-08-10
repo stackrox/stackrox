@@ -20,12 +20,12 @@ func NewImageView(db postgres.DB) ImageView {
 	if features.FlattenImageData.Enabled() {
 		return &imageCoreViewImpl{
 			db:     db,
-			schema: schema.ImagesV2Schema,
+			schema: schema.ImagesV2Schema(),
 		}
 	}
 	return &imageCoreViewImpl{
 		db:     db,
-		schema: schema.ImagesSchema,
+		schema: schema.ImagesSchema(),
 	}
 }
 

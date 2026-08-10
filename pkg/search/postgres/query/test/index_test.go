@@ -173,7 +173,7 @@ func (s *SingleIndexSuite) TestAutocomplete() {
 	}
 	s.NoError(s.store.Upsert(ctx, obj))
 
-	optionsMap := schema.TestSingleKeyStructsSchema.OptionsMap
+	optionsMap := schema.TestSingleKeyStructsSchema().OptionsMap
 	for _, testCase := range []struct {
 		field       search.FieldLabel
 		queryString string

@@ -19,7 +19,7 @@ var (
 func NewCVEView(db postgres.DB) CveView {
 	return &vmCVECoreViewImpl{
 		db:     db,
-		schema: schema.VirtualMachineCvev2Schema,
+		schema: schema.VirtualMachineCvev2Schema(),
 	}
 }
 
