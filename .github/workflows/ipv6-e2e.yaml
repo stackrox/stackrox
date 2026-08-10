@@ -46,7 +46,8 @@ jobs:
           if [[ -n "${{ inputs.tag }}" ]]; then
             echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=$(make tag)" >> "$GITHUB_OUTPUT"
+            # Use the latest master commit's tag — this branch may not have images built
+            echo "tag=$(git describe --tags --abbrev=10 origin/master)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create IPv6-only KinD cluster (background)
