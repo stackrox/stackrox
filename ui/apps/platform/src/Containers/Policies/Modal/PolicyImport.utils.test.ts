@@ -545,6 +545,7 @@ function getPolicy(errors: { id?: boolean; name?: boolean } = {}): ImportPolicie
                     severity: 'HIGH_SEVERITY',
                     enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                     notifiers: [],
+                    notifierToCollectionMappings: [],
                     lastUpdated: null,
                     SORTName: 'Fixable CVSS >= 9',
                     SORTLifecycleStage: 'BUILD,DEPLOY',

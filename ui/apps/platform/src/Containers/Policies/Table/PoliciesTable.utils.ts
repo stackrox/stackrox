@@ -1,4 +1,4 @@
-import { sortAsciiCaseInsensitive, sortSeverity, sortValueByLength } from 'sorters/sorters';
+import { sortAsciiCaseInsensitive, sortSeverity } from 'sorters/sorters';
 import type { ListPolicy } from 'types/policy.proto';
 import { getPolicyOriginLabel } from '../policies.utils';
 
@@ -21,7 +21,13 @@ export const columns = [
     {
         Header: 'Notifiers',
         accessor: 'notifiers',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => sortValueByLength(a.notifiers, b.notifiers),
+        sortMethod: (a: ListPolicy, b: ListPolicy) => {
+            const aCount =
+                a.notifiers.length + (a.notifierToCollectionMappings?.length ?? 0);
+            const bCount =
+                b.notifiers.length + (b.notifierToCollectionMappings?.length ?? 0);
+            return aCount - bCount;
+        },
     },
     {
         Header: 'Severity',

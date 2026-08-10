@@ -94,8 +94,9 @@ function PolicyActionsForm() {
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h3">Notifiers</Title>
                         <div className="pf-v5-u-mt-sm">
-                            Forward policy violations to external tooling by selecting one or more
-                            notifiers from existing integrations.
+                            Route policy violation notifications to external tooling. Optionally
+                            scope each notifier to a deployment collection so different teams
+                            receive alerts only for their namespaces.
                         </div>
                     </FlexItem>
                 </Flex>

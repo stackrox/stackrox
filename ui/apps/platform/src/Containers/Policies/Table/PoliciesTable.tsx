@@ -415,14 +415,21 @@ function PoliciesTable({
                                         lifecycleStages,
                                         name,
                                         notifiers: notifierIds,
+                                        notifierToCollectionMappings,
                                         severity,
                                     } = policy;
                                     const isExpanded = expandedRowSet.has(id);
 
+                                    const allNotifierIds = [
+                                        ...notifierIds,
+                                        ...(notifierToCollectionMappings ?? []).map(
+                                            (m) => m.notifierId
+                                        ),
+                                    ];
                                     const notifierCountsWithLabelStrings =
                                         formatNotifierCountsWithLabelStrings(
                                             labelAndNotifierIdsForTypes,
-                                            notifierIds
+                                            allNotifierIds
                                         );
                                     const exportPolicyAction: IAction = {
                                         title: 'Export policy to JSON',

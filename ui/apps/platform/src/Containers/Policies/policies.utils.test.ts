@@ -1,10 +1,14 @@
-import type { ClientPolicy, Policy } from 'types/policy.proto';
+import type { ClientPolicy, NotifierCollectionBinding, Policy } from 'types/policy.proto';
 import {
+    buildNotificationRoutes,
     getClientWizardPolicy,
     getLifeCyclesUpdates,
     getPolicyOriginLabel,
     getServerPolicy,
+    hasDuplicateRoute,
+    splitNotificationRoutes,
 } from './policies.utils';
+import type { NotificationRoute } from './policies.utils';
 
 describe('policies.utils', () => {
     describe('getClientWizardPolicy', () => {
@@ -61,6 +65,7 @@ describe('policies.utils', () => {
                 severity: 'LOW_SEVERITY',
                 enforcementActions: [],
                 notifiers: ['10a830c7-dc0b-4d9e-9505-4ae3b72d6b50'],
+                notifierToCollectionMappings: [],
                 lastUpdated: '2024-08-08T19:27:43.987955873Z',
                 SORTName: 'Test policy',
                 SORTLifecycleStage: 'BUILD,DEPLOY',
@@ -181,6 +186,7 @@ describe('policies.utils', () => {
                 severity: 'LOW_SEVERITY',
                 enforcementActions: [],
                 notifiers: ['10a830c7-dc0b-4d9e-9505-4ae3b72d6b50'],
+                notifierToCollectionMappings: [],
                 lastUpdated: '2024-08-08T19:27:43.987955873Z',
                 SORTName: 'Test policy',
                 SORTLifecycleStage: 'BUILD,DEPLOY',
@@ -379,6 +385,7 @@ describe('policies.utils', () => {
                 severity: 'LOW_SEVERITY',
                 enforcementActions: [],
                 notifiers: ['10a830c7-dc0b-4d9e-9505-4ae3b72d6b50'],
+                notifierToCollectionMappings: [],
                 lastUpdated: '2024-08-08T19:27:43.987955873Z',
                 SORTName: 'Test policy',
                 SORTLifecycleStage: 'BUILD,DEPLOY',
@@ -499,6 +506,7 @@ describe('policies.utils', () => {
                 severity: 'LOW_SEVERITY',
                 enforcementActions: [],
                 notifiers: ['10a830c7-dc0b-4d9e-9505-4ae3b72d6b50'],
+                notifierToCollectionMappings: [],
                 lastUpdated: '2024-08-08T19:27:43.987955873Z',
                 SORTName: 'Test policy',
                 SORTLifecycleStage: 'BUILD,DEPLOY',
@@ -720,6 +728,179 @@ describe('policies.utils', () => {
                 enforcementActions: ['FAIL_BUILD_ENFORCEMENT'],
                 excludedImageNames: ['docker.io/library/archlinux:latest'],
             });
+        });
+    });
+
+    describe('buildNotificationRoutes', () => {
+        it('should combine unscoped notifiers and scoped bindings into a flat route list', () => {
+            const unscopedNotifierIds = ['notifier-1', 'notifier-2'];
+            const scopedBindings: NotifierCollectionBinding[] = [
+                {
+                    notifierId: 'notifier-3',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ];
+
+            const routes = buildNotificationRoutes(unscopedNotifierIds, scopedBindings);
+
+            expect(routes).toEqual([
+                { notifierId: 'notifier-1', collectionId: '', collectionName: '' },
+                { notifierId: 'notifier-2', collectionId: '', collectionName: '' },
+                {
+                    notifierId: 'notifier-3',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ]);
+        });
+
+        it('should return empty array when no notifiers or bindings exist', () => {
+            expect(buildNotificationRoutes([], [])).toEqual([]);
+        });
+
+        it('should handle only unscoped notifiers', () => {
+            const routes = buildNotificationRoutes(['notifier-1'], []);
+            expect(routes).toEqual([
+                { notifierId: 'notifier-1', collectionId: '', collectionName: '' },
+            ]);
+        });
+
+        it('should handle only scoped bindings', () => {
+            const bindings: NotifierCollectionBinding[] = [
+                {
+                    notifierId: 'notifier-1',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ];
+            const routes = buildNotificationRoutes([], bindings);
+            expect(routes).toEqual([
+                {
+                    notifierId: 'notifier-1',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ]);
+        });
+    });
+
+    describe('splitNotificationRoutes', () => {
+        it('should split routes into unscoped notifiers and scoped bindings', () => {
+            const routes: NotificationRoute[] = [
+                { notifierId: 'notifier-1', collectionId: '', collectionName: '' },
+                { notifierId: 'notifier-2', collectionId: 'collection-a', collectionName: 'FE' },
+                { notifierId: 'notifier-3', collectionId: '', collectionName: '' },
+                { notifierId: 'notifier-4', collectionId: 'collection-b', collectionName: 'BE' },
+            ];
+
+            const { notifiers, notifierToCollectionMappings } = splitNotificationRoutes(routes);
+
+            expect(notifiers).toEqual(['notifier-1', 'notifier-3']);
+            expect(notifierToCollectionMappings).toEqual([
+                {
+                    notifierId: 'notifier-2',
+                    collectionId: 'collection-a',
+                    collectionName: 'FE',
+                },
+                {
+                    notifierId: 'notifier-4',
+                    collectionId: 'collection-b',
+                    collectionName: 'BE',
+                },
+            ]);
+        });
+
+        it('should return empty arrays when routes are empty', () => {
+            const { notifiers, notifierToCollectionMappings } = splitNotificationRoutes([]);
+            expect(notifiers).toEqual([]);
+            expect(notifierToCollectionMappings).toEqual([]);
+        });
+
+        it('should be the inverse of buildNotificationRoutes for a round-trip', () => {
+            const originalNotifiers = ['notifier-1', 'notifier-2'];
+            const originalBindings: NotifierCollectionBinding[] = [
+                {
+                    notifierId: 'notifier-3',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ];
+
+            const routes = buildNotificationRoutes(originalNotifiers, originalBindings);
+            const { notifiers, notifierToCollectionMappings } = splitNotificationRoutes(routes);
+
+            expect(notifiers).toEqual(originalNotifiers);
+            expect(notifierToCollectionMappings).toEqual([
+                {
+                    notifierId: 'notifier-3',
+                    collectionId: 'collection-a',
+                    collectionName: 'Frontend',
+                },
+            ]);
+        });
+    });
+
+    describe('hasDuplicateRoute', () => {
+        it('should return true when the same notifier-collection pair exists', () => {
+            const routes: NotificationRoute[] = [
+                { notifierId: 'notifier-1', collectionId: 'collection-a', collectionName: 'FE' },
+                { notifierId: 'notifier-2', collectionId: '', collectionName: '' },
+            ];
+
+            expect(
+                hasDuplicateRoute(routes, {
+                    notifierId: 'notifier-1',
+                    collectionId: 'collection-a',
+                    collectionName: 'FE',
+                })
+            ).toBe(true);
+        });
+
+        it('should return false when the notifier-collection pair does not exist', () => {
+            const routes: NotificationRoute[] = [
+                { notifierId: 'notifier-1', collectionId: 'collection-a', collectionName: 'FE' },
+            ];
+
+            expect(
+                hasDuplicateRoute(routes, {
+                    notifierId: 'notifier-1',
+                    collectionId: 'collection-b',
+                    collectionName: 'BE',
+                })
+            ).toBe(false);
+        });
+
+        it('should return false for an empty route list', () => {
+            expect(
+                hasDuplicateRoute([], {
+                    notifierId: 'notifier-1',
+                    collectionId: '',
+                    collectionName: '',
+                })
+            ).toBe(false);
+        });
+
+        it('should distinguish between scoped and unscoped routes for the same notifier', () => {
+            const routes: NotificationRoute[] = [
+                { notifierId: 'notifier-1', collectionId: '', collectionName: '' },
+            ];
+
+            expect(
+                hasDuplicateRoute(routes, {
+                    notifierId: 'notifier-1',
+                    collectionId: 'collection-a',
+                    collectionName: 'FE',
+                })
+            ).toBe(false);
+
+            expect(
+                hasDuplicateRoute(routes, {
+                    notifierId: 'notifier-1',
+                    collectionId: '',
+                    collectionName: '',
+                })
+            ).toBe(true);
         });
     });
 });

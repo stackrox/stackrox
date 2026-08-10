@@ -13,6 +13,7 @@ import type {
     EnforcementAction,
     LifecycleStage,
     ListPolicy,
+    NotifierCollectionBinding,
     Policy,
     PolicyDeploymentExclusion,
     PolicyEventSource,
@@ -48,6 +49,7 @@ export const initialPolicy: ClientPolicy = {
     disabled: false,
     lifecycleStages: [],
     notifiers: [],
+    notifierToCollectionMappings: [],
     lastUpdated: null,
     eventSource: 'NOT_APPLICABLE',
     isDefault: false,
@@ -255,6 +257,63 @@ export function getLabelAndNotifierIdsForTypes(
         label,
         notifiers.filter((notifier) => notifier.type === type).map(({ id }) => id),
     ]);
+}
+
+// notifier-to-collection mappings
+
+export type NotificationRoute = {
+    notifierId: string;
+    collectionId: string;
+    collectionName: string;
+};
+
+export function buildNotificationRoutes(
+    unscopedNotifierIds: string[],
+    scopedBindings: NotifierCollectionBinding[] | undefined
+): NotificationRoute[] {
+    const unscopedRoutes: NotificationRoute[] = (unscopedNotifierIds ?? []).map((notifierId) => ({
+        notifierId,
+        collectionId: '',
+        collectionName: '',
+    }));
+
+    const scopedRoutes: NotificationRoute[] = (scopedBindings ?? []).map(
+        ({ notifierId, collectionId, collectionName }) => ({
+            notifierId,
+            collectionId,
+            collectionName,
+        })
+    );
+
+    return [...unscopedRoutes, ...scopedRoutes];
+}
+
+export function splitNotificationRoutes(routes: NotificationRoute[]): {
+    notifiers: string[];
+    notifierToCollectionMappings: NotifierCollectionBinding[];
+} {
+    const notifiers: string[] = [];
+    const notifierToCollectionMappings: NotifierCollectionBinding[] = [];
+
+    for (const route of routes) {
+        if (route.collectionId) {
+            notifierToCollectionMappings.push({
+                notifierId: route.notifierId,
+                collectionId: route.collectionId,
+                collectionName: route.collectionName,
+            });
+        } else {
+            notifiers.push(route.notifierId);
+        }
+    }
+
+    return { notifiers, notifierToCollectionMappings };
+}
+
+export function hasDuplicateRoute(routes: NotificationRoute[], route: NotificationRoute): boolean {
+    return routes.some(
+        (r) => r.notifierId === route.notifierId && r.collectionId === route.collectionId
+    );
 }
 
 // scope

@@ -1,3 +1,9 @@
+export type NotifierCollectionBinding = {
+    notifierId: string;
+    collectionId: string;
+    collectionName: string;
+};
+
 export type ListPolicy = {
     id: string;
     name: string;
@@ -6,6 +12,7 @@ export type ListPolicy = {
     disabled: boolean;
     lifecycleStages: LifecycleStage[];
     notifiers: string[];
+    notifierToCollectionMappings: NotifierCollectionBinding[];
     lastUpdated: string | null; // ISO 8601 date string
     eventSource: PolicyEventSource;
     readonly isDefault: boolean; // Indicates the policy is a default policy if true and a custom policy if false.
