@@ -74,18 +74,6 @@ export function getWorkloadCveOverviewDefaultSortOption(
     if (useUnifiedView) {
         switch (entityTab) {
             case 'CVE':
-                return [
-                    {
-                        field: 'Severity',
-                        direction: 'desc',
-                        aggregateBy: { aggregateFunc: 'max' },
-                    },
-                    {
-                        field: 'Image Sha',
-                        direction: 'desc',
-                        aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
-                    },
-                ] as NonEmptyArray<SortOption>;
             case 'Image':
                 return {
                     field: 'Severity',
