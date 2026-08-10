@@ -429,7 +429,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	return nil
 }
 
-var refLinkBatchSize = env.ReportBatchSize.IntegerSetting()
+var refLinkBatchSize = env.PostgresDefaultCursorBatchSize.IntegerSetting()
 
 // streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
 // to the provided csv.Writer. CVE reference links are resolved incrementally in batches and cached.

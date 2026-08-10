@@ -37,7 +37,7 @@ var (
 	emptyQueryErr = errox.InvalidArgs.New("empty query")
 
 	cursorDefaultTimeout = env.PostgresDefaultCursorTimeout.DurationSetting()
-	cursorBatchSize      = env.ReportBatchSize.IntegerSetting()
+	cursorBatchSize      = env.PostgresDefaultCursorBatchSize.IntegerSetting()
 )
 
 type cursorSession struct {

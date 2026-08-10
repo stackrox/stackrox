@@ -250,30 +250,17 @@ func RunSelectCursorForSchemaFn[T any](ctx context.Context, db postgres.DB, sche
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
 
-	tx, err := db.Begin(ctx)
+	cursor, err := getSelectCursorSession(ctx, db, builtQuery)
 	if err != nil {
-		return errors.Wrap(err, "creating transaction for cursor")
+		return errors.Wrap(err, "prepare cursor")
 	}
-	defer func() {
-		commitCtx, commitCancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
-		defer commitCancel()
-		if retErr != nil {
-			_ = tx.Rollback(commitCtx)
-		} else {
-			retErr = tx.Commit(commitCtx)
-		}
-	}()
-
-	cursorID := fmt.Sprintf("report_%s", random.GenerateString(16, random.CaseInsensitiveAlpha))
-	queryStr := builtQuery.AsSQL()
-
-	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorID, queryStr), builtQuery.Data...)
-	if err != nil {
-		return errors.Wrap(err, "declaring cursor")
+	if cursor == nil {
+		return nil
 	}
+	defer cursor.close()
 
 	for {
-		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursorID))
+		rows, err := cursor.tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor.id))
 		if err != nil {
 			return errors.Wrap(err, "fetching from cursor")
 		}
@@ -298,13 +285,51 @@ func RunSelectCursorForSchemaFn[T any](ctx context.Context, db postgres.DB, sche
 				return err
 			}
 		}
-		count := len(batch)
 
-		if count < cursorBatchSize {
+		if len(batch) < cursorBatchSize {
 			break
 		}
 	}
 	return nil
+}
+
+// getSelectCursorSession creates a cursor session for a pre-built SELECT query,
+// following the same tx-reuse pattern as retryableGetCursorSession in common.go.
+func getSelectCursorSession(ctx context.Context, db postgres.DB, builtQuery *query) (*cursorSession, error) {
+	tx, parentTxExists := postgres.TxFromContext(ctx)
+	if !parentTxExists {
+		var err error
+		tx, err = db.Begin(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating transaction for cursor")
+		}
+	}
+
+	cleanupFunc := func() {
+		if parentTxExists {
+			return
+		}
+		commitCtx, commitCancel := contextutil.ContextWithTimeoutIfNotExists(context.Background(), cursorDefaultTimeout)
+		defer commitCancel()
+		if err := tx.Commit(commitCtx); err != nil {
+			log.Errorf("error committing cursor transaction: %v", err)
+		}
+	}
+
+	cursorID := fmt.Sprintf("select_%s", random.GenerateString(16, random.CaseInsensitiveAlpha))
+	queryStr := builtQuery.AsSQL()
+
+	_, err := tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorID, queryStr), builtQuery.Data...)
+	if err != nil {
+		cleanupFunc()
+		return nil, errors.Wrap(err, "declaring cursor")
+	}
+
+	return &cursorSession{
+		id:    cursorID,
+		tx:    tx,
+		close: cleanupFunc,
+	}, nil
 }
 
 func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {

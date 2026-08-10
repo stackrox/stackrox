@@ -188,6 +188,9 @@ func heapAllocBytes() uint64 {
 // BenchmarkMemory_InMemory measures peak heap allocation for the old in-memory path:
 // accumulate all rows, build CSV buffer, build ZIP buffer, then write to blob store.
 func BenchmarkMemory_InMemory(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 	s := setupMemoryBench(b, 10, 50, 500)
 
 	b.Run("getReportData+GenerateCSV+saveReportData", func(b *testing.B) {
@@ -222,6 +225,9 @@ func BenchmarkMemory_InMemory(b *testing.B) {
 // path: cursor reads, CVE lookups, CSV/ZIP generation, and blob store writes all within a
 // single database transaction using constant memory.
 func BenchmarkMemory_Transaction(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 	s := setupMemoryBench(b, 10, 50, 500)
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
 
@@ -296,6 +302,9 @@ func BenchmarkMemoryComparison(b *testing.B) {
 // heap allocations using a finalizer-based approach.
 // This gives the most accurate picture since runtime.ReadMemStats is a stop-the-world snapshot.
 func BenchmarkMemoryPeakTracking(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 	s := setupMemoryBench(b, 10, 50, 500)
 
 	b.Run("InMemory_Peak", func(b *testing.B) {
@@ -358,6 +367,9 @@ func BenchmarkMemoryPeakTracking(b *testing.B) {
 // 2 clusters * 20 namespaces * 100 deployments * 2 CVEs = 8000 deployed rows
 // + 1000 watched images * 2 CVEs = 2000 watched rows = 10000 total rows.
 func BenchmarkMemoryAtScale(b *testing.B) {
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 	s := setupMemoryBench(b, 20, 100, 1000)
 
 	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
@@ -377,6 +389,47 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 
 			after := heapAllocBytes()
 			b.ReportMetric(float64(after-before), "heap-delta-bytes")
+		}
+	})
+}
+
+// BenchmarkReportDuration measures time for InMemory vs Transaction report generation.
+// The built-in ns/op from testing.B captures this automatically, but this benchmark also reports
+// explicit millisecond metrics for easier comparison.
+// Use: go test -tags sql_integration -bench BenchmarkReportDuration -benchtime 3x -v
+func BenchmarkReportDuration(b *testing.B) {
+	s := setupMemoryBench(b, 10, 50, 500)
+
+	b.Run("InMemory", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+
+			start := time.Now()
+			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
+			require.NoError(b, err)
+
+			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
+			require.NoError(b, err)
+
+			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
+			require.NoError(b, err)
+			b.ReportMetric(float64(time.Since(start).Milliseconds()), "ms/report")
+		}
+	})
+
+	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
+	b.Run("Transaction", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
+
+			start := time.Now()
+			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
+				ReportSnapshot: s.snap,
+				Collection:     s.collection,
+				DataStartTime:  time.Time{},
+			})
+			require.NoError(b, err)
+			b.ReportMetric(float64(time.Since(start).Milliseconds()), "ms/report")
 		}
 	})
 }
