@@ -69,7 +69,7 @@ func Test_jobStateMapping(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tt.fromCheck {
-				check := &github.CheckRun{Conclusion: github.String(tt.raw)}
+				check := &github.CheckRun{Conclusion: new(tt.raw)}
 				assert.Equal(t, tt.wantState, checkToState(check))
 				return
 			}
