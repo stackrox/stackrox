@@ -34,16 +34,8 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 	ticker := time.NewTicker(w.workload.FileActivityWorkload.ActivityInterval)
 	defer ticker.Stop()
 
-	numPaths := w.workload.FileActivityWorkload.NumPaths
-	if numPaths == 0 {
-		numPaths = 50
-	}
-	paths := generateFileActivityPaths(numPaths)
-
-	batchSize := w.workload.FileActivityWorkload.BatchSize
-	if batchSize == 0 {
-		batchSize = 1
-	}
+	w.sanitizeFileActivityParams()
+	paths := generateFileActivityPaths(w.workload.FileActivityWorkload.NumPaths)
 
 	var nodeNames []string
 
@@ -76,7 +68,7 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			}
 		}
 
-		for range batchSize {
+		for range w.workload.FileActivityWorkload.BatchSize {
 			hostname := nodeNames[rand.Intn(len(nodeNames))]
 			activity := w.generateFileActivity(paths, hostname)
 			if activity == nil {
@@ -174,6 +166,20 @@ func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) 
 	}
 
 	return activity
+}
+
+func (w *WorkloadManager) sanitizeFileActivityParams() {
+	fa := &w.workload.FileActivityWorkload
+	if fa.NumPaths <= 0 {
+		defaultNumPaths := 50
+		log.Infof("FileActivityWorkload: numPaths=%d is invalid, defaulting to %d", fa.NumPaths, defaultNumPaths)
+		fa.NumPaths = defaultNumPaths
+	}
+	if fa.BatchSize <= 0 {
+		defaultBatchSize := 1
+		log.Infof("FileActivityWorkload: batchSize=%d is invalid, defaulting to %d", fa.BatchSize, defaultBatchSize)
+		fa.BatchSize = defaultBatchSize
+	}
 }
 
 func generateFileActivityPaths(n int) []string {
