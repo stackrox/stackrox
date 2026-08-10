@@ -48,11 +48,11 @@ on:
       job-timeout-minutes:
         description: "Overall job timeout"
         type: number
-        default: 360
+        default: 361
       part1-timeout-minutes:
         description: "Part 1 test timeout"
         type: number
-        default: 250
+        default: 245
       part2-timeout-minutes:
         description: "Part 2 test timeout"
         type: number
