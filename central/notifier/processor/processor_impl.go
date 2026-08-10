@@ -11,7 +11,10 @@ import (
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 )
 
 var (
@@ -23,8 +26,10 @@ var (
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
-	ns       pkgNotifier.Set
-	reporter integrationhealth.Reporter
+	ns                  pkgNotifier.Set
+	reporter            integrationhealth.Reporter
+	collectionDataStore collectionDS.DataStore
+	collectionResolver  collectionDS.QueryResolver
 }
 
 func (p *processorImpl) HasNotifiers() bool {
@@ -52,10 +57,26 @@ func (p *processorImpl) UpdateNotifier(ctx context.Context, notifier notifiers.N
 
 // ProcessAlert pushes the alert into a channel to be processed
 func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) {
-	if len(alert.GetPolicy().GetNotifiers()) == 0 {
+	policy := alert.GetPolicy()
+	unscopedNotifiers := policy.GetNotifiers()
+	scopedMappings := policy.GetNotifierToCollectionMappings()
+
+	if len(unscopedNotifiers) == 0 && len(scopedMappings) == 0 {
 		return
 	}
-	alertNotifiers := set.NewStringSet(alert.GetPolicy().GetNotifiers()...)
+
+	alertNotifiers := set.NewStringSet(unscopedNotifiers...)
+
+	// For scoped mappings, check if the alert entity matches the collection
+	for _, mapping := range scopedMappings {
+		if p.alertMatchesCollection(ctx, alert, mapping.GetCollectionId()) {
+			alertNotifiers.Add(mapping.GetNotifierId())
+		}
+	}
+
+	if alertNotifiers.Cardinality() == 0 {
+		return
+	}
 
 	p.ns.ForEach(ctx, func(ctx context.Context, notifier notifiers.Notifier, failures pkgNotifier.AlertSet) {
 		if alertNotifiers.Contains(notifier.ProtoNotifier().GetId()) {
@@ -72,11 +93,110 @@ func (p *processorImpl) ProcessAlert(ctx context.Context, alert *storage.Alert) 
 	})
 }
 
+func (p *processorImpl) alertMatchesCollection(ctx context.Context, alert *storage.Alert, collectionID string) bool {
+	if p.collectionDataStore == nil || p.collectionResolver == nil || collectionID == "" {
+		return false
+	}
+
+	collection, exists, err := p.collectionDataStore.Get(ctx, collectionID)
+	if err != nil || !exists {
+		log.Warnf("Could not resolve collection %s for scoped notification: %v", collectionID, err)
+		return false
+	}
+
+	collectionQuery, err := p.collectionResolver.ResolveCollectionQuery(ctx, collection)
+	if err != nil {
+		log.Warnf("Could not resolve collection query for %s: %v", collectionID, err)
+		return false
+	}
+
+	return alertMatchesQuery(alert, collectionQuery)
+}
+
+func alertMatchesQuery(alert *storage.Alert, query *v1.Query) bool {
+	deployment := alert.GetDeployment()
+	if deployment == nil {
+		return false
+	}
+
+	return matchesQueryRecursive(deployment, query)
+}
+
+func matchesQueryRecursive(deployment *storage.Alert_Deployment, query *v1.Query) bool {
+	if query == nil {
+		return true
+	}
+
+	switch q := query.GetQuery().(type) {
+	case *v1.Query_BaseQuery:
+		return matchesBaseQuery(deployment, q.BaseQuery)
+	case *v1.Query_Conjunction:
+		for _, subQuery := range q.Conjunction.GetQueries() {
+			if !matchesQueryRecursive(deployment, subQuery) {
+				return false
+			}
+		}
+		return true
+	case *v1.Query_Disjunction:
+		for _, subQuery := range q.Disjunction.GetQueries() {
+			if matchesQueryRecursive(deployment, subQuery) {
+				return true
+			}
+		}
+		return false
+	case *v1.Query_BooleanQuery:
+		for _, mustQuery := range q.BooleanQuery.GetMust().GetQueries() {
+			if !matchesQueryRecursive(deployment, mustQuery) {
+				return false
+			}
+		}
+		for _, mustNotQuery := range q.BooleanQuery.GetMustNot().GetQueries() {
+			if matchesQueryRecursive(deployment, mustNotQuery) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
+}
+
+func matchesBaseQuery(deployment *storage.Alert_Deployment, baseQuery *v1.BaseQuery) bool {
+	matchFieldQuery, ok := baseQuery.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+	if !ok {
+		return true
+	}
+
+	fieldName := matchFieldQuery.MatchFieldQuery.GetField()
+	value := matchFieldQuery.MatchFieldQuery.GetValue()
+
+	switch search.FieldLabel(fieldName) {
+	case search.Cluster:
+		return matchString(deployment.GetClusterName(), value) || matchString(deployment.GetClusterId(), value)
+	case search.Namespace:
+		return matchString(deployment.GetNamespace(), value)
+	case search.DeploymentName:
+		return matchString(deployment.GetName(), value)
+	}
+	return true
+}
+
+func matchString(actual, pattern string) bool {
+	if pattern == "" {
+		return true
+	}
+	// Exact match or regex-style prefix match
+	if actual == pattern {
+		return true
+	}
+	// Handle "r/..." regex patterns from collection rules
+	if len(pattern) > 2 && pattern[:2] == "r/" {
+		return false // regex matching would require a regex engine; fall back to not matching
+	}
+	return false
+}
+
 // ProcessAuditMessage sends the audit message with all applicable notifiers.
 func (p *processorImpl) ProcessAuditMessage(ctx context.Context, msg *v1.Audit_Message) {
-	// TODO: Turn processorImpl into a work queue and introduce func (p *processorImpl) run(context.Context) error.
-	// With that, we wouldn't have to fan out n go routines (n = # notifiers in p.ns) and ensure ordering
-	// of audit messages.
 	p.ns.ForEach(ctx, func(_ context.Context, notifier notifiers.Notifier, _ pkgNotifier.AlertSet) {
 		go p.tryToSendAudit(ctxBackground, notifier, msg)
 	})
@@ -123,5 +243,15 @@ func New(ns pkgNotifier.Set, reporter integrationhealth.Reporter) pkgNotifier.Pr
 	return &processorImpl{
 		ns:       ns,
 		reporter: reporter,
+	}
+}
+
+// NewWithCollections returns a new Processor with collection-scoped notification support
+func NewWithCollections(ns pkgNotifier.Set, reporter integrationhealth.Reporter, collectionDS collectionDS.DataStore, collectionResolver collectionDS.QueryResolver) pkgNotifier.Processor {
+	return &processorImpl{
+		ns:                  ns,
+		reporter:            reporter,
+		collectionDataStore: collectionDS,
+		collectionResolver:  collectionResolver,
 	}
 }

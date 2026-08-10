@@ -646,6 +646,25 @@ func (ds *datastoreImpl) removeForeignClusterScopesAndNotifiers(ctx context.Cont
 		}
 		policy.Notifiers = notifiers
 
+		var validMappings []*storage.NotifierToCollectionMapping
+		for _, mapping := range policy.GetNotifierToCollectionMappings() {
+			notifierID := mapping.GetNotifierId()
+			exists, cached := notifierCache[notifierID]
+			if !cached {
+				_, exists, err = ds.notifierDatastore.GetNotifier(ctx, notifierID)
+				if err != nil {
+					return set.NewIntSet(), err
+				}
+				notifierCache[notifierID] = exists
+			}
+			if exists {
+				validMappings = append(validMappings, mapping)
+				continue
+			}
+			modified = true
+		}
+		policy.NotifierToCollectionMappings = validMappings
+
 		var exclusions []*storage.Exclusion
 		for _, exclusion := range policy.GetExclusions() {
 			excludeCluster := exclusion.GetDeployment().GetScope().GetCluster()

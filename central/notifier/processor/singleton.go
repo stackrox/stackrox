@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/datastore"
 	encConfigDatastore "github.com/stackrox/rox/central/notifier/encconfig/datastore"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
+	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
@@ -47,7 +48,8 @@ func initialize() {
 	ns = notifier.NewNotifierSet(retryAlertsFor)
 
 	// When alerts are generated, we will want to notify.
-	pr = New(ns, reporter.Singleton())
+	collDS, collResolver := collectionDS.Singleton()
+	pr = NewWithCollections(ns, reporter.Singleton(), collDS, collResolver)
 
 	notifierDatastore := datastore.Singleton()
 	var protoNotifiers []*storage.Notifier

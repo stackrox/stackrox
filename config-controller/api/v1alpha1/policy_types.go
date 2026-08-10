@@ -71,6 +71,8 @@ type SecurityPolicySpec struct {
 	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
 	// Notifiers is a list of IDs or names of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
 	Notifiers []string `json:"notifiers,omitempty"`
+	// NotifierToCollectionMappings maps notifiers to collection scopes for targeted notification routing in multi-tenancy environments.
+	NotifierToCollectionMappings []NotifierToCollectionMapping `json:"notifierToCollectionMappings,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []PolicySection      `json:"policySections"`
@@ -85,6 +87,12 @@ type SecurityPolicySpec struct {
 	// +optional
 	// MitreVetorsLocked is unused and deprecated
 	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
+}
+
+type NotifierToCollectionMapping struct {
+	NotifierID     string `json:"notifierId"`
+	CollectionID   string `json:"collectionId"`
+	CollectionName string `json:"collectionName,omitempty"`
 }
 
 type Exclusion struct {
@@ -262,6 +270,19 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 			return nil, errors.New(fmt.Sprintf("Notifier '%s' does not exist", notifier))
 		}
 		proto.Notifiers = append(proto.Notifiers, id)
+	}
+
+	proto.NotifierToCollectionMappings = make([]*storage.NotifierToCollectionMapping, 0, len(p.NotifierToCollectionMappings))
+	for _, mapping := range p.NotifierToCollectionMappings {
+		notifierID, err := getNotifierID(mapping.NotifierID, caches)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Notifier '%s' in collection mapping does not exist", mapping.NotifierID))
+		}
+		proto.NotifierToCollectionMappings = append(proto.NotifierToCollectionMappings, &storage.NotifierToCollectionMapping{
+			NotifierId:     notifierID,
+			CollectionId:   mapping.CollectionID,
+			CollectionName: mapping.CollectionName,
+		})
 	}
 
 	for _, ls := range p.LifecycleStages {
