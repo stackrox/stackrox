@@ -184,9 +184,9 @@ func (w *WorkloadManager) sanitizeFileActivityParams() {
 
 func generateFileActivityPaths(n int) []string {
 	paths := make([]string, 0, n)
-	for i := range n {
-		dir := fileActivityDirs[i%len(fileActivityDirs)]
-		paths = append(paths, fmt.Sprintf("%s/file-%04d.conf", dir, i))
+	for range n {
+		dir := fileActivityDirs[rand.Intn(len(fileActivityDirs))]
+		paths = append(paths, fmt.Sprintf("%s/file-%s.conf", dir, uuid.NewV4().String()[:8]))
 	}
 	return paths
 }
