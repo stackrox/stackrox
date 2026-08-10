@@ -423,6 +423,9 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	case errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF):
 		log.Debugf("VMScraper: roxagent on %q connection closed (agent may be down or restarting): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
+	case errors.Is(err, vsockclient.ErrBusy):
+		log.Infof("VMScraper: roxagent on %q is busy with another request: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy).Inc()
 	default:
 		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()

@@ -148,6 +148,7 @@ const (
 	PullStatusNotReady      = "not_ready"
 	PullStatusUnknownMethod = "unknown_method"
 	PullStatusTimeout       = "timeout"
+	PullStatusBusy          = "busy"
 )
 
 // PullDialDurationSeconds measures time to establish a websocket connection per VM.
