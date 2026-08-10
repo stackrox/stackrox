@@ -226,7 +226,7 @@ create_cluster() {
         return 1
     fi
 
-    if [[ "${use_spot}" == "true" ]]; then
+    if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
         info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
         gcloud beta container node-pools create spot-pool \
             --cluster "${CLUSTER_NAME}" \
