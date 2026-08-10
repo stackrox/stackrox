@@ -35,22 +35,19 @@ function appendSortParams(params: URLSearchParams, sortOption: ApiSortOption | u
         return;
     }
 
-    const options: ApiSortOptionSingle[] = Array.isArray(sortOption) ? sortOption : [sortOption];
+    const opt: ApiSortOptionSingle = Array.isArray(sortOption) ? sortOption[0] : sortOption;
 
-    if (options.length > 0) {
-        const opt = options[0];
-        params.set('pagination.sortOption.field', opt.field);
-        if (opt.reversed) {
-            params.set('pagination.sortOption.reversed', 'true');
-        }
-        if (opt.aggregateBy) {
-            params.set(
-                'pagination.sortOption.aggregateBy.aggregateFunc',
-                opt.aggregateBy.aggregateFunc
-            );
-            if (opt.aggregateBy.distinct) {
-                params.set('pagination.sortOption.aggregateBy.distinct', 'true');
-            }
+    params.set('pagination.sortOption.field', opt.field);
+    if (opt.reversed) {
+        params.set('pagination.sortOption.reversed', 'true');
+    }
+    if (opt.aggregateBy) {
+        params.set(
+            'pagination.sortOption.aggregateBy.aggregateFunc',
+            opt.aggregateBy.aggregateFunc
+        );
+        if (opt.aggregateBy.distinct) {
+            params.set('pagination.sortOption.aggregateBy.distinct', 'true');
         }
     }
 }
