@@ -44,6 +44,7 @@ var (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
+	GetClusterID(ctx context.Context, name string) (string, bool, error)
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 	GetClustersForSAC() ([]effectiveaccessscope.Cluster, error)
