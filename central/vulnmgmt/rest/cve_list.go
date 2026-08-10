@@ -3,12 +3,16 @@ package rest
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/central/views"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
+	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -20,6 +24,8 @@ func (h *handler) listCVEs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	addSeveritySortTiebreaker(query)
 
 	cveFlats, err := h.cveView.Get(ctx, query, views.ReadOptions{})
 	if err != nil {
@@ -84,6 +90,30 @@ func batchExceptionCounts(ctx context.Context, store vulnReqDataStore.DataStore,
 		}
 	}
 	return counts, nil
+}
+
+func addSeveritySortTiebreaker(query *v1.Query) {
+	pagination := query.GetPagination()
+	if pagination == nil {
+		return
+	}
+	imageField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		imageField = search.ImageID
+	}
+	for _, so := range pagination.GetSortOptions() {
+		if strings.EqualFold(so.GetField(), search.Severity.String()) {
+			pagination.SortOptions = append(pagination.SortOptions, &v1.QuerySortOption{
+				Field:    imageField.String(),
+				Reversed: so.GetReversed(),
+				AggregateBy: &v1.AggregateBy{
+					AggrFunc: aggregatefunc.Count.Proto(),
+					Distinct: true,
+				},
+			})
+			return
+		}
+	}
 }
 
 func formatTime(t *time.Time) string {
