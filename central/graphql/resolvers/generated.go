@@ -583,8 +583,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"certPem: String!",
 		"rawSignature: String!",
 		"rekorBundle: String!",
+		"signatureFormat: CosignSignature_SignatureFormat!",
 		"signaturePayload: String!",
+		"sigstoreBundle: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CosignSignature_SignatureFormat(0)))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"mirror: String!",
@@ -712,6 +715,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mode: Int!",
 		"uid: Int!",
 		"username: String!",
+		"xattrName: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileAccess_Operation(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
@@ -7171,9 +7175,37 @@ func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) string
 	return base64.StdEncoding.EncodeToString(value)
 }
 
+func (resolver *cosignSignatureResolver) SignatureFormat(ctx context.Context) string {
+	value := resolver.data.GetSignatureFormat()
+	return value.String()
+}
+
 func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) string {
 	value := resolver.data.GetSignaturePayload()
 	return base64.StdEncoding.EncodeToString(value)
+}
+
+func (resolver *cosignSignatureResolver) SigstoreBundle(ctx context.Context) string {
+	value := resolver.data.GetSigstoreBundle()
+	return base64.StdEncoding.EncodeToString(value)
+}
+
+func toCosignSignature_SignatureFormat(value *string) storage.CosignSignature_SignatureFormat {
+	if value != nil {
+		return storage.CosignSignature_SignatureFormat(storage.CosignSignature_SignatureFormat_value[*value])
+	}
+	return storage.CosignSignature_SignatureFormat(0)
+}
+
+func toCosignSignature_SignatureFormats(values *[]string) []storage.CosignSignature_SignatureFormat {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CosignSignature_SignatureFormat, len(*values))
+	for i, v := range *values {
+		output[i] = toCosignSignature_SignatureFormat(&v)
+	}
+	return output
 }
 
 type dataSourceResolver struct {
@@ -8424,6 +8456,11 @@ func (resolver *fileAccess_FileMetadataResolver) Uid(ctx context.Context) int32 
 
 func (resolver *fileAccess_FileMetadataResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
+	return value
+}
+
+func (resolver *fileAccess_FileMetadataResolver) XattrName(ctx context.Context) string {
+	value := resolver.data.GetXattrName()
 	return value
 }
 

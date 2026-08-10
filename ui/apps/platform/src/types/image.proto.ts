@@ -20,26 +20,12 @@ export type WatchedImage = {
     name: string;
 };
 
-export const sourceTypes = [
-    'OS',
-    'PYTHON',
-    'JAVA',
-    'RUBY',
-    'NODEJS',
-    'GO',
-    'DOTNETCORERUNTIME',
-    'INFRASTRUCTURE',
-] as const;
-
-export const sourceTypeLabels: Record<SourceType, string> = {
-    OS: 'OS',
-    PYTHON: 'Python',
-    JAVA: 'Java',
-    RUBY: 'Ruby',
-    NODEJS: 'Node js',
-    GO: 'Go',
-    DOTNETCORERUNTIME: 'Dotnet Core Runtime',
-    INFRASTRUCTURE: 'Infrastructure',
-};
-
-export type SourceType = (typeof sourceTypes)[number];
+export type SourceType =
+    | 'OS'
+    | 'PYTHON'
+    | 'JAVA'
+    | 'RUBY'
+    | 'NODEJS'
+    | 'GO'
+    | 'DOTNETCORERUNTIME'
+    | 'INFRASTRUCTURE';

@@ -228,5 +228,5 @@ func TestGetStatuses(t *testing.T) {
 
 	statuses, err := statusesForPR(context.Background(), client, baseUrl.String())
 	assert.NoError(t, err)
-	assert.Equal(t, map[string]string{"gke-upgrade-tests": "success"}, statuses)
+	assert.Equal(t, map[string]jobState{"gke-upgrade-tests": jobOK}, statuses)
 }

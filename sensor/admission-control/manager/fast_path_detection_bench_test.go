@@ -162,7 +162,7 @@ func makeAdmissionRequest(name, namespace string, images []string, privileged bo
 func makeAdmissionRequests(deploymentCount int, violationPct float64, images []string) []*admission.AdmissionRequest {
 	violatingCount := int(float64(deploymentCount) * violationPct)
 	reqs := make([]*admission.AdmissionRequest, deploymentCount)
-	for i := 0; i < deploymentCount; i++ {
+	for i := range deploymentCount {
 		privileged := i < violatingCount
 		reqs[i] = makeAdmissionRequest(fmt.Sprintf("deploy-%d", i), "bench", images, privileged)
 	}
@@ -261,7 +261,7 @@ func slowPathPolicyValue(fieldName string) string {
 
 func generatePolicies(prefix string, n int, fields []string, valueFn func(string) string) []*storage.Policy {
 	policies := make([]*storage.Policy, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		field := fields[i%len(fields)]
 		policies[i] = &storage.Policy{
 			Id:              uuid.NewV4().String(),

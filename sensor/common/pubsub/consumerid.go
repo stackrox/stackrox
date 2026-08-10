@@ -17,24 +17,28 @@ const (
 	DetectorScanResultConsumer
 	DetectorDeployAlertOutputConsumer
 	OutputQueueConsumer
+	NetworkFlowManagerResourceSyncConsumer
+	SensorSoftRestartConsumer
 )
 
 var (
 	consumerToString = map[ConsumerID]string{
-		NoConsumers:                         "NoConsumers",
-		DefaultConsumer:                     "Default",
-		ResolverConsumer:                    "Resolver",
-		EnrichedProcessConsumer:             "EnrichedProcess",
-		FileActivityEnrichedProcessConsumer: "FileActivityEnrichedProcess",
-		UnenrichedProcessConsumer:           "UnenrichedProcess",
-		DetectorProcessIndicatorConsumer:    "DetectorProcessIndicator",
-		DetectorNetworkFlowConsumer:         "DetectorNetworkFlow",
-		DetectorFileAccessConsumer:          "DetectorFileAccess",
-		DetectorAuditLogConsumer:            "DetectorAuditLog",
-		DetectorDeploymentConsumer:          "DetectorDeployment",
-		DetectorScanResultConsumer:          "DetectorScanResult",
-		DetectorDeployAlertOutputConsumer:   "DetectorDeployAlertOutput",
-		OutputQueueConsumer:                 "OutputQueue",
+		NoConsumers:                            "NoConsumers",
+		DefaultConsumer:                        "Default",
+		ResolverConsumer:                       "Resolver",
+		EnrichedProcessConsumer:                "EnrichedProcess",
+		FileActivityEnrichedProcessConsumer:    "FileActivityEnrichedProcess",
+		UnenrichedProcessConsumer:              "UnenrichedProcess",
+		DetectorProcessIndicatorConsumer:       "DetectorProcessIndicator",
+		DetectorNetworkFlowConsumer:            "DetectorNetworkFlow",
+		DetectorFileAccessConsumer:             "DetectorFileAccess",
+		DetectorAuditLogConsumer:               "DetectorAuditLog",
+		DetectorDeploymentConsumer:             "DetectorDeployment",
+		DetectorScanResultConsumer:             "DetectorScanResult",
+		DetectorDeployAlertOutputConsumer:      "DetectorDeployAlertOutput",
+		OutputQueueConsumer:                    "OutputQueue",
+		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
+		SensorSoftRestartConsumer:              "SensorSoftRestart",
 	}
 )
 

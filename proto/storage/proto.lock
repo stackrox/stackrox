@@ -8728,6 +8728,14 @@
               {
                 "name": "ACL_CHANGE",
                 "integer": 6
+              },
+              {
+                "name": "XATTR_SET",
+                "integer": 7
+              },
+              {
+                "name": "XATTR_REMOVE",
+                "integer": 8
               }
             ]
           }
@@ -8826,6 +8834,11 @@
                     "name": "acl_entries",
                     "type": "AclEntry",
                     "is_repeated": true
+                  },
+                  {
+                    "id": 8,
+                    "name": "xattr_name",
+                    "type": "string"
                   }
                 ]
               },
@@ -9208,6 +9221,22 @@
               {
                 "name": "INFRASTRUCTURE",
                 "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "CosignSignature.SignatureFormat",
+            "enum_fields": [
+              {
+                "name": "SIGNATURE_FORMAT_UNSPECIFIED"
+              },
+              {
+                "name": "SIMPLE_SIGNING",
+                "integer": 1
+              },
+              {
+                "name": "DEAD_SIMPLE_SIGNING_ENVELOPE",
+                "integer": 2
               }
             ]
           }
@@ -9630,6 +9659,16 @@
               {
                 "id": 5,
                 "name": "rekor_bundle",
+                "type": "bytes"
+              },
+              {
+                "id": 6,
+                "name": "signature_format",
+                "type": "SignatureFormat"
+              },
+              {
+                "id": 7,
+                "name": "sigstore_bundle",
                 "type": "bytes"
               }
             ]

@@ -151,7 +151,7 @@ func (s *networkGraphServiceBenchmarks) createFlows(b *testing.B, numDeployments
 	chunkSize := len(entities) / numDeployments
 
 	ts := time.Now()
-	for i := 0; i < numDeployments; i++ {
+	for i := range numDeployments {
 		name := fmt.Sprintf("deployment-%d", i)
 		deployment := &storage.Deployment{
 			Name:      name,

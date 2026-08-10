@@ -19,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
@@ -293,7 +292,7 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	var alerts []*storage.ListAlert
 	// Retry until desired alert count is reached when sensor(s) resync
-	for i := 0; i < 45; i++ {
+	for range 45 {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()
@@ -420,7 +419,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 			},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(int32(replicas)),
+			Replicas: new(int32(replicas)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -590,7 +589,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(int64(0))})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())

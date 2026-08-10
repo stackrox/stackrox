@@ -299,7 +299,7 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 }
 
 func (s *serviceImpl) reprocessUpdatedBaselines(resp **v1.UpdateProcessBaselinesResponse) {
-	var keys []*storage.ProcessBaselineKey
+	keys := make([]*storage.ProcessBaselineKey, 0, len((*resp).GetBaselines()))
 	for _, pb := range (*resp).GetBaselines() {
 		keys = append(keys, pb.GetKey())
 	}

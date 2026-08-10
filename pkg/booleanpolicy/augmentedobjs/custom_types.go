@@ -30,6 +30,12 @@ const (
 	FileAccessOperationCustomTag       = "File Operation"
 
 	RuntimeClassCustomTag = "Runtime Class"
+
+	// XattrChange is a virtual operation name used during detection.
+	// Both XATTR_SET and XATTR_REMOVE storage operations are mapped
+	// to this value in the augmented object so that a single policy
+	// criterion matches both.
+	XattrChange = "XATTR_CHANGE"
 )
 
 type dockerfileLine struct {

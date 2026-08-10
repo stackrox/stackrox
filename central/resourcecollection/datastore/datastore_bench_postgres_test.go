@@ -27,7 +27,7 @@ func BenchmarkCollections(b *testing.B) {
 
 	ids := make([]string, 0, numSeedObjects)
 	collections := make([]*storage.ResourceCollection, 0, numSeedObjects)
-	for i := 0; i < numSeedObjects; i++ {
+	for i := range numSeedObjects {
 		name := fmt.Sprintf("%d", i)
 		collections = append(collections, getTestCollection(name, nil))
 		id, err := datastore.AddCollection(ctx, collections[i])

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -207,6 +208,59 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
 	case <-time.After(500 * time.Millisecond):
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
+	vmID := virtualmachine.VMID("test-vm")
+	cases := map[string]struct {
+		vsockCID string
+	}{
+		"should forward when only vm_id is set": {
+			vsockCID: "",
+		},
+		"should prefer vm_id over vsock_cid": {
+			vsockCID: "42",
+		},
+	}
+	s.store.EXPECT().Get(gomock.Eq(vmID)).Times(len(cases)).Return(&virtualmachine.Info{ID: vmID})
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			synctest.Test(s.T(), func(t *testing.T) {
+				handler := &handlerImpl{
+					centralReady: concurrency.NewSignal(),
+					lock:         &sync.RWMutex{},
+					stopper:      concurrency.NewStopper(),
+					store:        s.store,
+				}
+				err := handler.Start()
+				s.Require().NoError(err)
+				handler.Notify(common.SensorComponentEventCentralReachable)
+				defer handler.Stop()
+
+				go func() {
+					err := handler.Send(context.Background(), &v1.IndexReport{
+						VmId:     string(vmID),
+						VsockCid: tc.vsockCID,
+					})
+					s.Require().NoError(err)
+				}()
+
+				synctest.Wait()
+
+				msg := <-handler.ResponsesC()
+				s.Require().NotNil(msg)
+				sensorEvent := msg.GetEvent()
+				s.Require().NotNil(sensorEvent)
+				s.Assert().Equal(string(vmID), sensorEvent.GetId())
+				indexEvent := sensorEvent.GetVirtualMachineIndexReport()
+				s.Require().NotNil(indexEvent)
+				s.Assert().Equal(string(vmID), indexEvent.GetId())
+				s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
+				s.Assert().Equal(tc.vsockCID, indexEvent.GetIndex().GetVsockCid())
+			})
+		})
 	}
 }
 

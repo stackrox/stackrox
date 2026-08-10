@@ -217,7 +217,7 @@ func (s *enricherSuite) TestScanAndSetWithLock() {
 
 func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {
 	waitGroup := &sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		for _, req := range reqs {
 			waitGroup.Add(1)
 			go func(req *scanImageRequest) {

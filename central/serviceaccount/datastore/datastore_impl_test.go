@@ -116,7 +116,7 @@ func (suite *ServiceAccountDataStoreTestSuite) TestSearchServiceAccounts_NameAnd
 	results, err := suite.datastore.SearchServiceAccounts(suite.ctx, nil)
 	suite.Require().NoError(err)
 	ids := make(map[string]struct{})
-	var actualNames []string
+	actualNames := make([]string, 0, len(results))
 	for _, r := range results {
 		if r.GetId() == sa1.GetId() || r.GetId() == sa2.GetId() {
 			ids[r.GetId()] = struct{}{}

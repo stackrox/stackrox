@@ -1,0 +1,27 @@
+# Sensor needs get on virtualmachineinstances/vsock for pull-mode scraping.
+# Secured-cluster Helm creates this when virtualMachines.enabled=true; the
+# operator SecuredCluster CR has no equivalent field yet, so operator e2e
+# applies this manifest when ROX_VIRTUAL_MACHINES=true.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:vsock-access
+rules:
+- resources:
+  - virtualmachineinstances/vsock
+  apiGroups: ["subresources.kubevirt.io"]
+  verbs:
+  - get
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:vsock-access-binding
+subjects:
+- kind: ServiceAccount
+  name: sensor
+  namespace: stackrox
+roleRef:
+  kind: ClusterRole
+  name: stackrox:vsock-access
+  apiGroup: rbac.authorization.k8s.io

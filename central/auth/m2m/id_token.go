@@ -1,7 +1,7 @@
 package m2m
 
 import (
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 )

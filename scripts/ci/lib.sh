@@ -29,6 +29,11 @@ ci_export() {
     local env_value="$2"
 
     if command -v cci-export >/dev/null; then
+        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
+        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
+            BASH_ENV=$(mktemp)
+            export BASH_ENV
+        fi
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
@@ -1483,10 +1488,6 @@ openshift_ci_mods() {
 
     info "Current Status:"
     "$ROOT/status.sh" || true
-
-    # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
-    BASH_ENV=$(mktemp)
-    export BASH_ENV
 
     # These are not set in the binary_build_commands or image build envs.
     export CI=true

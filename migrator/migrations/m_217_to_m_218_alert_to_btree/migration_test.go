@@ -47,7 +47,7 @@ func (s *migrationTestSuite) TestMigration() {
 	var convertedAlerts []schema.Alerts
 	numAlerts := 3000
 	batchSize := 50
-	for i := 0; i < numAlerts; i++ {
+	for range numAlerts {
 		id := uuid.NewV4().String()
 		alert := fixtures.GetAlertWithID(id)
 		alert.NamespaceId = uuid.NewV4().String()
