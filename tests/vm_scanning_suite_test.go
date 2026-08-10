@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -323,6 +322,31 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "daemonset", "collector", "compliance", ns, wantEnv)
+	s.mustVerifySensorVSOCKRBAC(ctx)
+}
+
+// mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
+// Pull-mode scraping fails without this; operator e2e applies the binding in lib.sh
+// because SecuredCluster cannot set Helm virtualMachines.enabled yet.
+func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
+	t := s.T()
+	t.Helper()
+
+	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
+	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
+		"Sensor cannot scrape guest agents over vsock without this RBAC "+
+		"(operator e2e should apply tests/e2e/yaml/sensor-vsock-rbac.yaml when ROX_VIRTUAL_MACHINES=true)")
+	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
+	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
+
+	foundSensorSA := false
+	for _, sub := range binding.Subjects {
+		if sub.Kind == "ServiceAccount" && sub.Name == "sensor" && sub.Namespace == namespaces.StackRox {
+			foundSensorSA = true
+			break
+		}
+	}
+	require.True(t, foundSensorSA, "ClusterRoleBinding stackrox:vsock-access-binding must bind stackrox/sensor")
 }
 
 // mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
@@ -689,18 +713,18 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureCanonicalScan runs a single guest-side roxagent invocation.
-// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
-func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
+// ensureRoxagentServing starts pull-mode `roxagent serve` on the guest (if needed)
+// and waits until its VSOCK listener is ready. Sensor scrapes the report afterward.
+func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
-		return errors.New("ensureCanonicalScan: nil VM handle")
+		return errors.New("ensureRoxagentServing: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
 	if err := s.waitForScannerV4Initialized(); err != nil {
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
 }
 
 // waitForScan polls Central in order until scan data is visible.
@@ -749,16 +773,6 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 		return s.cfg.DeleteTimeout
 	}
 	return defaultVMDeleteTimeout
-}
-
-func (s *VMScanningSuite) mustGetScanTimestamp(id string) *timestamppb.Timestamp {
-	t := s.T()
-	t.Helper()
-	vm := s.mustGetVM(id)
-	require.NotNil(t, vm.GetScan(), "mustGetScanTimestamp: GetVirtualMachine id=%q returned nil scan", id)
-	ts := vm.GetScan().GetScanTime()
-	require.NotNil(t, ts, "mustGetScanTimestamp: GetVirtualMachine id=%q scan_time is nil", id)
-	return ts
 }
 
 func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
