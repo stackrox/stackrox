@@ -800,9 +800,16 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "notifierToCollectionMappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNotifierToCollectionMapping"
+          }
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "googleRpcStatus": {
       "type": "object",
@@ -949,6 +956,13 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "notifierToCollectionMappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNotifierToCollectionMapping"
+          }
         }
       }
     },
@@ -991,6 +1005,20 @@
           "type": "string"
         },
         "description": {
+          "type": "string"
+        }
+      }
+    },
+    "storageNotifierToCollectionMapping": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "collectionId": {
+          "type": "string"
+        },
+        "collectionName": {
           "type": "string"
         }
       }
@@ -1120,9 +1148,16 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "notifierToCollectionMappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNotifierToCollectionMapping"
+          }
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "storagePolicyGroup": {
       "type": "object",

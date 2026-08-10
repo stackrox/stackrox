@@ -1163,6 +1163,20 @@
       "default": "UNKNOWN_TYPE",
       "title": "- INTERNAL_ENTITIES: INTERNAL_ENTITIES is for grouping all internal entities under a single network graph node"
     },
+    "storageNotifierToCollectionMapping": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "collectionId": {
+          "type": "string"
+        },
+        "collectionName": {
+          "type": "string"
+        }
+      }
+    },
     "storagePermissionLevel": {
       "type": "string",
       "enum": [
@@ -1301,9 +1315,16 @@
         },
         "source": {
           "$ref": "#/definitions/storagePolicySource"
+        },
+        "notifierToCollectionMappings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNotifierToCollectionMapping"
+          }
         }
       },
-      "title": "Next tag: 28"
+      "title": "Next tag: 29"
     },
     "storagePolicyGroup": {
       "type": "object",

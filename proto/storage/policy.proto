@@ -13,7 +13,13 @@ option java_package = "io.stackrox.proto.storage";
 // in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function
 // to account for the new field, and its conversion.
 
-//Next tag: 28
+message NotifierToCollectionMapping {
+  string notifier_id = 1;
+  string collection_id = 2;
+  string collection_name = 3;
+}
+
+//Next tag: 29
 message Policy {
   string id = 1; // @gotags: search:"Policy ID,hidden" sql:"pk,index=btree" crYaml:"-"
   // Name of the policy.  Must be unique.
@@ -77,6 +83,8 @@ message Policy {
   bool is_default = 26; // @gotags: crYaml:"isDefault"
 
   PolicySource source = 27; // @gotags: crYaml:"-"
+
+  repeated NotifierToCollectionMapping notifier_to_collection_mappings = 28; // @gotags: crYaml:"notifierToCollectionMappings,omitempty"
 }
 
 enum PolicySource {
@@ -133,6 +141,7 @@ message ListPolicy {
   EventSource event_source = 9;
   bool is_default = 10;
   PolicySource source = 11;
+  repeated NotifierToCollectionMapping notifier_to_collection_mappings = 12;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.
