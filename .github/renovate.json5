@@ -30,15 +30,16 @@
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
     // The time was selected (with the help of https://time.fyi/timezones) so that Renovate isn't active during business
     // hours from Germany to US West Coast. This way, after we merge a PR, a new one does not pop up immediately after
-    // that.
-    "after 3am and before 7am",
+    // that. Another reason for this schedule is to include at least one 4 hour interval from the moment of scheduled
+    // MintMaker execution
+    "* 0-8 * * *",
   ],
   // Tell Renovate not to update PRs when outside of schedule.
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
-      "after 3am and before 7am",
+      "* 0-8 * * *",
     ],
     "packageRules": [
       // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
@@ -60,14 +61,14 @@
     ],
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
-      "after 3am and before 7am",
+      "* 0-8 * * *",
     ],
   },
   "rpm-lockfile": {
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
       // Note that MintMaker will create security updates outside of schedule.
-      "after 3am and before 7am",
+      "* 0-8 * * *",
     ],
   },
   "enabledManagers": [
