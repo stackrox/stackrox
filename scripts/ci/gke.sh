@@ -226,12 +226,11 @@ create_cluster() {
                     --image-type "${GCP_IMAGE_TYPE}" \
                     --no-enable-autorepair \
                     --no-enable-autoupgrade; then
-                    success=1
+                    info "Spot node pool created successfully"
                 else
-                    info "Spot node pool creation failed. Deleting cluster and trying another zone..."
-                    gcloud container clusters delete "${CLUSTER_NAME}" --async || true
-                    continue
+                    info "WARNING: Spot node pool creation failed. Continuing with non-spot nodes only."
                 fi
+                success=1
             else
                 success=1
             fi
