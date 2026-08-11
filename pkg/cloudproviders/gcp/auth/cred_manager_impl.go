@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"context"
 
-	artifactv1 "cloud.google.com/go/artifactregistry/apiv1"
-	securitycenterv1 "cloud.google.com/go/securitycenter/apiv1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/secretinformer"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/oauth2/google"
-	storagev1 "google.golang.org/api/storage/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -108,9 +105,7 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 		)
 	}
 
-	scopes := []string{storagev1.CloudPlatformScope}
-	scopes = append(scopes, artifactv1.DefaultAuthScopes()...)
-	scopes = append(scopes, securitycenterv1.DefaultAuthScopes()...)
+	scopes := gcpAuthScopes
 
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
