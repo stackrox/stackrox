@@ -163,8 +163,7 @@ jobs:
           NUM_NODES: "3"
           GKE_SPOT: "true"
         run: |
-          source scripts/ci/gke.sh
-          provision_gke_cluster "$CLUSTER_NAME_PREFIX"
+          scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Docker login to Quay.io
@@ -394,9 +393,8 @@ jobs:
             echo "No cluster to teardown"
             exit 0
           fi
-          source scripts/ci/gke.sh
-          if ! teardown_gke_cluster false; then
-            echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
+          if ! scripts/ci/gke.sh teardown_gke_cluster false; then
+            echo "::warning::WARNING: Could not delete the cluster ${CLUSTER_NAME}. See the step logs for details."
             exit 6
           fi
 
