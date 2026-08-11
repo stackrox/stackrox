@@ -71,7 +71,7 @@ func TestSettingsManager_GetResourcesForSync(t *testing.T) {
 			},
 		}
 
-		mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, namespaces).(*settingsManager)
+		mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, namespaces, nil).(*settingsManager)
 
 		resources := mgr.GetResourcesForSync()
 
@@ -97,7 +97,7 @@ func TestSettingsManager_GetResourcesForSync(t *testing.T) {
 		deployments.EXPECT().GetAll().Return(nil).AnyTimes()
 		pods.EXPECT().GetAll().Return(nil).AnyTimes()
 
-		mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, nil).(*settingsManager)
+		mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, nil, nil).(*settingsManager)
 
 		resources := mgr.GetResourcesForSync()
 
@@ -122,7 +122,7 @@ func TestSettingsManager_UpdateResources_NamespaceEvents(t *testing.T) {
 	pods := storeMocks.NewMockPodStore(ctrl)
 	namespaces := &mockNamespaceGetter{}
 
-	mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, namespaces).(*settingsManager)
+	mgr := NewSettingsManager(clusterID, clusterLabels, deployments, pods, namespaces, nil).(*settingsManager)
 
 	// Test that all namespace event types are forwarded (not just deletes)
 	testCases := []struct {
