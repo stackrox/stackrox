@@ -183,21 +183,19 @@ export function computeVersionRangeData(
     };
 }
 
-function getAriaLabel(compatibility: SensorVersionCompatibility | undefined): string {
-    switch (compatibility) {
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
-            return 'Sensor version compatibility chart. Sensor is incompatible and behind Central.';
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
-            return 'Sensor version compatibility chart. Sensor is compatible and behind Central.';
-        case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
-            return 'Sensor version compatibility chart. Sensor is matched with Central.';
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
-            return 'Sensor version compatibility chart. Sensor is compatible and ahead of Central.';
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
-            return 'Sensor version compatibility chart. Sensor is incompatible and ahead of Central.';
-        default:
-            return 'Sensor version compatibility chart.';
-    }
+function buildAriaLabel(
+    compatibility: SensorVersionCompatibility | undefined,
+    sensorVersion: string,
+    centralVersion: string,
+    compatibleVersions: string[]
+): string {
+    const { displayValue } = getSensorCompatibilityInfo(compatibility);
+    const range =
+        compatibleVersions.length > 0
+            ? `${compatibleVersions[0]} to ${compatibleVersions[compatibleVersions.length - 1]}`
+            : 'unknown';
+
+    return `Sensor version compatibility chart. Sensor ${sensorVersion || 'unknown'}, Central ${centralVersion}. Status: ${displayValue}. Compatible range: ${range}.`;
 }
 
 type SensorVersionRangeChartProps = {
@@ -231,7 +229,12 @@ function SensorVersionRangeChart({
     return (
         <Flex
             role="img"
-            aria-label={getAriaLabel(compatibility)}
+            aria-label={buildAriaLabel(
+                compatibility,
+                sensorVersion,
+                centralVersion,
+                compatibleVersions
+            )}
             direction={{ default: 'column' }}
             gap={{ default: 'gapSm' }}
             className="pf-v6-u-font-size-xs pf-v6-u-text-align-center pf-v6-u-pb-lg"
