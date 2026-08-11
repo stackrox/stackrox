@@ -82,15 +82,22 @@ function computeMarkerPercent(
         }
     }
 
+    const behindCount = centralIndex;
+    const aheadCount = compatibleVersions.length - centralIndex - 1;
+
+    // Determines the percentage position from the left edge of the chart to
+    // match the appropriate zone.
     switch (compatibility) {
         case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND':
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
             return toPercent(0.5);
-        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
-        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
-            return toPercent(totalUnits - 0.5);
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND':
+            return toPercent(1 + behindCount / 2);
         case 'SENSOR_VERSION_COMPATIBILITY_MATCHED':
             return toPercent(1 + centralIndex + 0.5);
+        case 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD':
+            return toPercent(1 + centralIndex + 1 + aheadCount / 2);
+        case 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD':
+            return toPercent(totalUnits - 0.5);
         default:
             return null;
     }
