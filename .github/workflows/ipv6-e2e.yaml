@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - uses: ./.github/actions/create-kind-cluster
         with:
@@ -156,7 +156,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - uses: ./.github/actions/create-kind-cluster
         with:
@@ -187,7 +187,9 @@ jobs:
 
       - name: Copy scanner protos
         working-directory: qa-tests-backend
-        run: scripts/copy_scanner_protos.sh
+        run: |
+          go mod download github.com/stackrox/scanner
+          scripts/copy_scanner_protos.sh
 
       - name: Wait for Central API
         run: |
@@ -292,7 +294,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
@@ -320,6 +322,10 @@ jobs:
           API_ENDPOINT: localhost:8443
           CLUSTER_TYPE: K8S
           KUBECONFIG: /home/runner/.kube/config
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
           export ROX_PASSWORD="${ROX_ADMIN_PASSWORD}"
