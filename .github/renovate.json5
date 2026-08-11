@@ -32,14 +32,16 @@
     // hours from Germany to US West Coast. This way, after we merge a PR, a new one does not pop up immediately after
     // that. Another reason for this schedule is to include at least one 4 hour interval from the moment of scheduled
     // MintMaker execution
-    "* 0-8 * * *",
+    // Between 0a.m. and 7:59a.m. every day.
+    "* 0-7 * * *",
   ],
   // Tell Renovate not to update PRs when outside of schedule.
   "updateNotScheduled": false,
   "tekton": {
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
-      "* 0-8 * * *",
+      // Between 0a.m. and 7:59a.m. every day.
+      "* 0-7 * * *",
     ],
     "packageRules": [
       // Note: the packageRules from the Konflux config (find URL in comments above) get merged with these.
