@@ -57,11 +57,11 @@ var (
 func listSupportedK8sAPIGroups(mapping map[string]permissions.ResourceMetadata) set.StringSet {
 	output := set.NewStringSet()
 	for resource := range mapping {
-		firstSeparator := strings.Index(resource, ".")
-		if firstSeparator == -1 {
+		_, after, found := strings.Cut(resource, ".")
+		if !found {
 			continue
 		}
-		output.Add(resource[firstSeparator+1:])
+		output.Add(after)
 	}
 	return output
 }

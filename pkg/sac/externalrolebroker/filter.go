@@ -1,6 +1,7 @@
 package externalrolebroker
 
 import (
+	"slices"
 	"strings"
 
 	clusterviewv1alpha1 "github.com/stolostron/cluster-lifecycle-api/clusterview/v1alpha1"
@@ -33,13 +34,10 @@ func hasSupportedK8sResources(permission *clusterviewv1alpha1.UserPermission) bo
 	if permission == nil {
 		return false
 	}
-	rules := permission.Status.ClusterRoleDefinition.Rules
-	for _, rule := range rules {
-		if ruleHasSupportedK8sResource(rule) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(
+		permission.Status.ClusterRoleDefinition.Rules,
+		ruleHasSupportedK8sResource,
+	)
 }
 
 // ruleHasSupportedK8sResource checks if a PolicyRule includes any of
@@ -67,8 +65,8 @@ func ruleHasSupportedK8sResource(rule rbacv1.PolicyRule) bool {
 			continue
 		}
 		baseResource := resource
-		if idx := strings.Index(resource, "/"); idx != -1 {
-			baseResource = resource[:idx]
+		if before, _, found := strings.Cut(resource, "/"); found {
+			baseResource = before
 		}
 		for _, apiGroup := range rule.APIGroups {
 			if apiGroup == "*" {
