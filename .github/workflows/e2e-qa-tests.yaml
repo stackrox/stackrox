@@ -163,8 +163,7 @@ jobs:
           NUM_NODES: "3"
           GKE_SPOT: "true"
         run: |
-          source scripts/ci/gke.sh
-          provision_gke_cluster "$CLUSTER_NAME_PREFIX"
+          scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
           echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Docker login to Quay.io
