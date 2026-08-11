@@ -207,7 +207,7 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 	if skewQuery != nil {
 		pred, err := clusterPredicateFactory.GeneratePredicate(skewQuery)
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "invalid query %q: %v", req.GetQuery(), err)
+			return nil, errors.Wrapf(errox.InvalidArgs, "failed to build predicate for version compatibility filter %q: %v", req.GetQuery(), err)
 		}
 		var filtered []*storage.Cluster
 		for _, cluster := range clusters {
