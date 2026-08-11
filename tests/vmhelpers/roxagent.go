@@ -14,6 +14,10 @@ const (
 	DefaultRoxagentInstallPath = "/usr/local/bin/roxagent"
 	roxagentStagingPath        = "/tmp/roxagent"
 	roxagentServePort          = "818"
+	// e2eRescanInterval is the minimum serve --rescan-interval. Short enough
+	// for the package-freshness e2e to observe a post-start RPM change without
+	// reactive watching or restarting the agent.
+	e2eRescanInterval = "5m"
 	// Transient systemd unit started by EnsureRoxagentServing (systemd-run --unit=...).
 	roxagentE2EUnit            = "roxagent-e2e.service"
 	roxagentE2EUnitName        = "roxagent-e2e"
@@ -117,6 +121,7 @@ func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm
 			DefaultRoxagentInstallPath, "serve",
 			"--port", roxagentServePort,
 			"--host-path", "/",
+			"--rescan-interval", e2eRescanInterval,
 			"--repo-cpe-url", repo2cpeURL,
 		)
 		if err != nil {
@@ -194,6 +199,38 @@ func systemctlShowProperty(ctx context.Context, virt Virtctl, namespace, vm, uni
 			property, unit, err, strings.TrimSpace(stdout), strings.TrimSpace(stderr))
 	}
 	return strings.TrimSpace(stdout), nil
+}
+
+// RoxagentServeInvocationID returns the e2e unit's current systemd InvocationID.
+// That UUID is unique per activation, so comparing it before and after a wait
+// detects restarts.
+func RoxagentServeInvocationID(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
+	id, err := roxagentInvocationID(ctx, virt, namespace, vm)
+	if err != nil {
+		return "", err
+	}
+	if id == "" {
+		return "", errors.New("roxagent-e2e InvocationID is empty")
+	}
+	return id, nil
+}
+
+// RoxagentServeDidNotRestart returns nil when the e2e unit still has beforeID
+// as its InvocationID. A different ID means systemd started a new activation
+// (stop/start, crash recovery, or an explicit restart).
+func RoxagentServeDidNotRestart(ctx context.Context, virt Virtctl, namespace, vm, beforeID string) error {
+	if beforeID == "" {
+		return errors.New("before InvocationID is empty")
+	}
+	afterID, err := RoxagentServeInvocationID(ctx, virt, namespace, vm)
+	if err != nil {
+		return err
+	}
+	if afterID != beforeID {
+		return fmt.Errorf("roxagent-e2e restarted during the wait: InvocationID changed from %s to %s",
+			beforeID, afterID)
+	}
+	return nil
 }
 
 // roxagentServeState returns the e2e unit's ActiveState (active/inactive/failed/activating/…).
