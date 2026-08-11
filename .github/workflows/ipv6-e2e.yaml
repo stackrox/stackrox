@@ -193,10 +193,11 @@ jobs:
 
       - name: Wait for Central API
         run: |
-          for _ in $(seq 1 300); do [ -s /tmp/rox-auth-token ] && break; sleep 2; done
+          for _ in $(seq 1 450); do [ -s /tmp/rox-auth-token ] && break; sleep 2; done
           if [ ! -s /tmp/rox-auth-token ]; then
-            echo "::error::Auth token not generated after 10 minutes"
+            echo "::error::Auth token not generated after 15 minutes"
             tail -80 /tmp/deploy-stackrox.log 2>/dev/null || true
+            kubectl -n stackrox get pods --no-headers 2>/dev/null || true
             exit 1
           fi
 
