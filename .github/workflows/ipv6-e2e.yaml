@@ -212,6 +212,19 @@ jobs:
               kubectl -n stackrox rollout status deploy/"$deploy" --timeout=3m
             fi
           done
+          # Wait for Scanner V4 to reload vulnerability data and register with Central
+          ROX_ADMIN_PASSWORD="$(cat /tmp/rox-admin-password)"
+          for i in $(seq 1 60); do
+            scanners=$(curl -sk "https://localhost:8443/v1/imageintegrations" \
+              -u "admin:${ROX_ADMIN_PASSWORD}" 2>/dev/null \
+              | jq '[.integrations[] | select(.categories[] == "SCANNER")] | length' 2>/dev/null || echo 0)
+            if [[ "$scanners" -gt 0 ]]; then
+              echo "Scanner integration available after restart (attempt $i)"
+              break
+            fi
+            echo "Waiting for scanner integration... (attempt $i/60)"
+            sleep 5
+          done
 
       - name: Add registry integration + pull secrets
         env:
