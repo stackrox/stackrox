@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/search"
@@ -92,25 +91,6 @@ func WaitForVMScanTimestamp(ctx context.Context, client v2.VirtualMachineService
 			return false, "scan_time is nil"
 		}
 		return true, "scan_time set"
-	})
-}
-
-// WaitForScanTimestampAfter polls until the VM's scan_time is strictly after the given
-// threshold. Use this to wait for a rescan to be reflected in Central.
-func WaitForScanTimestampAfter(ctx context.Context, client v2.VirtualMachineServiceClient, opts WaitOptions, id string, after time.Time) (*v2.VirtualMachine, error) {
-	return waitForVMCondition(ctx, client, opts, id, fmt.Sprintf("scan timestamp after %v (id=%q)", after.Format(time.RFC3339), id), func(vm *v2.VirtualMachine) (bool, string) {
-		sc := vm.GetScan()
-		if sc == nil {
-			return false, "scan is nil"
-		}
-		if sc.GetScanTime() == nil {
-			return false, "scan_time is nil"
-		}
-		ts := sc.GetScanTime().AsTime()
-		if !ts.After(after) {
-			return false, fmt.Sprintf("scan_time=%v not yet after %v", ts.Format(time.RFC3339Nano), after.Format(time.RFC3339Nano))
-		}
-		return true, fmt.Sprintf("scan_time=%v", ts.Format(time.RFC3339Nano))
 	})
 }
 

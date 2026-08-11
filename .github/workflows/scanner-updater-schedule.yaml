@@ -1,0 +1,145 @@
+name: Scanner updater schedule
+# This workflow writes to the test bucket while under validation.
+# Once the bundler workflow is ready and the full pipeline is verified,
+# update storage.bucket in source-config.yaml to definitions.stackrox.io
+# and remove the schedule from scanner-versioned-definitions-update.yaml.
+
+on:
+  schedule:
+  - cron: "17 * * * *"
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+    - labeled
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-matrix:
+    if: >-
+      github.repository_owner == 'stackrox' && (
+        github.event_name != 'pull_request' ||
+        contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
+      )
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Authenticate with GCS
+      if: github.event_name != 'pull_request'
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER.
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      if: github.event_name != 'pull_request'
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Build updater matrix (scheduled/dispatch)
+      if: github.event_name != 'pull_request'
+      id: matrix-scheduled
+      env:
+        SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+      run: |
+        set -euo pipefail
+        result=$(./.github/workflows/scripts/scanner-updater-matrix.sh)
+        {
+          echo "has_errors=$(echo "$result" | jq -r '.has_errors')"
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "errors<<$EOF"
+          echo "$result" | jq -r '.errors | join(", ")'
+          echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+        echo "$result" > matrix-result.json
+
+    - name: Notify on matrix errors
+      if: github.event_name != 'pull_request' && steps.matrix-scheduled.outputs.has_errors == 'true'
+      env:
+        ERRORS: ${{ steps.matrix-scheduled.outputs.errors }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        echo "::error::vulnerability updater scheduling errors: ${ERRORS}"
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability updater scheduling errors: ${ERRORS}. <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
+
+    - name: Build updater matrix (PR)
+      if: github.event_name == 'pull_request'
+      env:
+        SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+        PR_SHA: ${{ github.event.pull_request.head.sha }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        set -euo pipefail
+        bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
+        prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
+        matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual/data.json.zst\"}]}"
+        printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
+
+    - name: Validate matrix builder (PR)
+      if: github.event_name == 'pull_request'
+      env:
+        SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+      run: |
+        echo "Running matrix builder for validation (output not used for scheduling):"
+        ./.github/workflows/scripts/scanner-updater-matrix.sh | jq .
+
+    - name: Upload matrix result
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: matrix-result
+        path: matrix-result.json
+
+  plan:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    outputs:
+      has_due: ${{ steps.emit.outputs.has_due }}
+      matrix: ${{ steps.emit.outputs.matrix }}
+    steps:
+    - name: Download matrix result
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+      with:
+        name: matrix-result
+
+    - name: Emit matrix outputs
+      id: emit
+      run: |
+        set -euo pipefail
+        result=$(cat matrix-result.json)
+        {
+          echo "has_due=$(echo "$result" | jq -r '.has_due')"
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "matrix<<$EOF"
+          echo "$result" | jq -c '.matrix'
+          echo "$EOF"
+        } >> "$GITHUB_OUTPUT"
+
+  update:
+    needs: plan
+    if: needs.plan.outputs.has_due == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/scanner-updater-export.yaml
+    with:
+      source: ${{ matrix.source }}
+      ref: ${{ matrix.ref }}
+      object: ${{ matrix.object }}
+      manual_url: ${{ github.event_name == 'pull_request' && format('https://raw.githubusercontent.com/stackrox/stackrox/{0}/scanner/updater/manual/vulns.yaml', github.event.pull_request.head.sha) || 'https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml' }}
+      skip_freshness_check: ${{ github.event_name == 'pull_request' }}
+    secrets:
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      GOOGLE_SA_CIRCLECI_SCANNER: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+      GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+      SLACK_ONCALL_SCANNER_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
