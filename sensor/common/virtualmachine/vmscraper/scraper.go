@@ -263,7 +263,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
-	log.Infof("VMScraper: tick: %d due VMs (concurrency=%d, reconcile=%v)", len(due), s.concurrency, reconcile)
+	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
 	if reconcile {
 		metrics.PullCyclesTotal.Inc()
 		concurrency.WithLock(&s.mu, func() {
@@ -287,7 +287,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	elapsed := time.Since(cycleStart)
 	if reconcile {
-		log.Infof("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
+		log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
 		metrics.PullCycleDurationSeconds.Observe(elapsed.Seconds())
 	}
 }
@@ -365,6 +365,8 @@ func (s *VMScraper) scrapeKey(ctx context.Context, key string) bool {
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool {
 	key := vmKey(vm)
 	snap := s.snapshotVMState(key)
+	reason, backoff := s.scrapeScheduleHint(key)
+	log.Infof("VMScraper: scraping %q (reason=%s backoff=%s)", key, reason, backoff)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
@@ -384,7 +386,12 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	log.Debugf("VMScraper: dialing roxagent on %q with TLS", key)
 	result, outcome := s.dialAndGetReport(vmCtx, vm, key, port, ifNewerThan, knownEpoch)
 	if outcome != scrapeOK {
-		s.scheduleAfterAttempt(key, outcome)
+		next := s.scheduleAfterAttempt(key, outcome)
+		kind := "retryable"
+		if outcome == scrapeNonRetryable {
+			kind = "non-retryable"
+		}
+		log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 		return false
 	}
 
@@ -405,7 +412,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		epoch := result.Meta.GetEpoch()
 		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
 		if !epochMismatch {
-			s.scheduleAfterAttempt(key, scrapeOK)
+			next := s.scheduleAfterAttempt(key, scrapeOK)
+			log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
@@ -414,7 +422,12 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 			key, snap.lastEpoch, epoch, snap.lastGeneration)
 		result, outcome = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
 		if outcome != scrapeOK {
-			s.scheduleAfterAttempt(key, outcome)
+			next := s.scheduleAfterAttempt(key, outcome)
+			kind := "retryable"
+			if outcome == scrapeNonRetryable {
+				kind = "non-retryable"
+			}
+			log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 			return false
 		}
 	}
@@ -425,7 +438,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 	if !viable {
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusInvalidReport).Inc()
-		s.scheduleAfterAttempt(key, scrapeNonRetryable)
+		next := s.scheduleAfterAttempt(key, scrapeNonRetryable)
+		log.Infof("VMScraper: scrape %q failed non-retryable next=%s", key, next)
 		return false
 	}
 
@@ -437,20 +451,35 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
-		s.scheduleAfterAttempt(key, scrapeNonRetryable)
+		next := s.scheduleAfterAttempt(key, scrapeNonRetryable)
+		log.Infof("VMScraper: scrape %q failed non-retryable next=%s", key, next)
 		return false
 	}
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
-	s.scheduleAfterAttempt(key, scrapeOK)
+	next := s.scheduleAfterAttempt(key, scrapeOK)
 
+	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
 		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
 		time.Since(totalStart).Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
 	return true
+}
+
+// scrapeScheduleHint reports whether this scrape is a normal poll or a backoff
+// retry, based on the current per-VM backoff (NACK and retryable failures share
+// that field).
+func (s *VMScraper) scrapeScheduleHint(key string) (string, time.Duration) {
+	return concurrency.WithLock2(&s.mu, func() (string, time.Duration) {
+		st, ok := s.vmState[key]
+		if !ok || st.backoff <= 0 {
+			return "poll", 0
+		}
+		return "retry", st.backoff
+	})
 }
 
 type scrapeOutcome int
@@ -461,24 +490,30 @@ const (
 	scrapeNonRetryable
 )
 
-func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) {
-	concurrency.WithLock(&s.mu, func() {
+// scheduleAfterAttempt updates nextAttemptAt/backoff for key and returns the
+// delay until the next attempt (0 if the slot was dropped).
+func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time.Duration {
+	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		st, ok := s.vmState[key]
 		if !ok {
-			return
+			return 0
 		}
 		now := s.now()
 		switch outcome {
 		case scrapeOK:
 			st.backoff = 0
 			st.nextAttemptAt = now.Add(s.interval)
+			return s.interval
 		case scrapeRetryable:
 			st.backoff = nextBackoff(st.backoff, s.interval)
 			st.nextAttemptAt = now.Add(st.backoff)
-			log.Infof("VMScraper: retryable failure for %q; next attempt in %s", key, st.backoff)
+			return st.backoff
 		case scrapeNonRetryable:
 			st.backoff = 0
 			st.nextAttemptAt = now.Add(s.interval)
+			return s.interval
+		default:
+			return 0
 		}
 	})
 }
