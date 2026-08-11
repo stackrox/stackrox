@@ -102,7 +102,6 @@ jobs:
 
       - name: Compute cluster name for infra-provisioned cluster
         if: inputs.cluster-provisioning-method == 'infra'
-        id: cluster-name
         # infractl enforces a 28-char limit for cluster names.
         run: |
           cluster_name_max=28
