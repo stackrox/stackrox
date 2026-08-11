@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	versionTestutils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,6 +45,7 @@ type clusterDatastoreSACSuite struct {
 }
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
+	versionTestutils.SetMainVersion(s.T(), "4.5.0")
 	var err error
 	s.pgTestBase = pgtest.ForT(s.T())
 	s.NotNil(s.pgTestBase)

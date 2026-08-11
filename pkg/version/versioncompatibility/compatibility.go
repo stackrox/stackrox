@@ -24,6 +24,22 @@ func initialize() (productstreams.XYVersion, []productstreams.XYVersion, error) 
 	return selfXY, compatibleRange, initErr
 }
 
+// OverrideForTesting recomputes the singleton using the current main version.
+// Call after testutils.SetMainVersion.
+func OverrideForTesting(t interface{ Cleanup(func()) }) {
+	old := struct {
+		selfXY          productstreams.XYVersion
+		compatibleRange []productstreams.XYVersion
+		initErr         error
+	}{selfXY, compatibleRange, initErr}
+	initErr = computeCompatibleRange()
+	t.Cleanup(func() {
+		selfXY = old.selfXY
+		compatibleRange = old.compatibleRange
+		initErr = old.initErr
+	})
+}
+
 func computeCompatibleRange() error {
 	selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
 	if initErr != nil {

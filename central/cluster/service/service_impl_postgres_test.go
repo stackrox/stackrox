@@ -28,11 +28,13 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 	testutils.SetMainVersion(t, "4.5.0")
+	versioncompatibility.OverrideForTesting(t)
 
 	db := pgtest.ForT(t)
 	ds, err := datastore.GetTestPostgresDataStore(t, db)

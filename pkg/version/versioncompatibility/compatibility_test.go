@@ -363,5 +363,5 @@ func TestCompatibilityString(t *testing.T) {
 }
 
 func TestCompatibleVersionRangePanicsOnNegativeN(t *testing.T) {
-	assert.Panics(t, func() { CompatibleVersionRange(xy(4, 5), -1) })
+	assert.Panics(t, func() { _, _ = CompatibleVersionRange(xy(4, 5), -1) })
 }
