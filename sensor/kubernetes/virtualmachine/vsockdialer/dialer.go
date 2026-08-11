@@ -29,16 +29,22 @@ func NewMultiDialer() (*MultiDialer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("creating kubevirt client: %w", err)
 	}
-	return &MultiDialer{client: client}, nil
+	return NewMultiDialerFromClient(client), nil
+}
+
+// NewMultiDialerFromClient creates a dialer from an existing KubeVirt client.
+func NewMultiDialerFromClient(client kubecli.KubevirtClient) *MultiDialer {
+	return &MultiDialer{client: client}
 }
 
 // Dial connects to the named VMI's VSOCK port in the given namespace.
-// The context deadline is applied to the connection's read/write deadlines
-// when present so the per-VM timeout budget covers dial + request + response.
+// When ctx carries a deadline, it is applied to the established connection's
+// read/write deadlines only. kubecli's VSOCK path does not take ctx into the
+// WebSocket handshake, so cancellation/deadline do not abort dial or upgrade.
 //
-// Deadline propagation alone does not abort an in-flight read when the
-// parent context is cancelled without a nearer deadline (e.g. Sensor
-// shutdown). GetReport closes the stream on ctx cancel for that case.
+// GetReport closes the stream on ctx cancel so an in-flight read can still
+// stop when the parent context ends without a nearer deadline (e.g. Sensor
+// shutdown).
 func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uint32, useTLS bool) (io.ReadWriteCloser, error) {
 	stream, err := d.client.VirtualMachineInstance(namespace).VSOCK(name, &v1.VSOCKOptions{
 		TargetPort: port,
