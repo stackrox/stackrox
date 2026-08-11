@@ -228,7 +228,7 @@ create_cluster() {
 
     if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
         info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
-        gcloud beta container node-pools create spot-pool \
+        timeout 300 gcloud beta container node-pools create spot-pool \
             --cluster "${CLUSTER_NAME}" \
             --machine-type "${MACHINE_TYPE}" \
             --num-nodes "$((NUM_NODES - 1))" \
