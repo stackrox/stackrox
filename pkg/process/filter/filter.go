@@ -101,9 +101,11 @@ type level struct {
 }
 
 func newLevel() *level {
-	return &level{
-		children: make(map[BinaryHash]*level),
-	}
+	return &level{}
+}
+
+func makeChildren() map[BinaryHash]*level {
+	return make(map[BinaryHash]*level)
 }
 
 type filterImpl struct {
@@ -145,6 +147,9 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 			return false
 		}
 		nextLevel = newLevel()
+		if level.children == nil {
+			level.children = makeChildren()
+		}
 		level.children[argHash] = nextLevel
 	}
 
@@ -198,6 +203,9 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 			return false
 		}
 		processLevel = newLevel()
+		if rootLevel.children == nil {
+			rootLevel.children = make(map[BinaryHash]*level)
+		}
 		rootLevel.children[execFilePathHash] = processLevel
 	}
 
