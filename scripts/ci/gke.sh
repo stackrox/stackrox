@@ -240,8 +240,9 @@ create_cluster() {
                         --image-type "${GCP_IMAGE_TYPE}" \
                         --no-enable-autorepair \
                         --no-enable-autoupgrade; then
-                        info "Fallback node pool also failed. Cluster does not have enough nodes."
-                        return 1
+                        info "Fallback node pool also failed. Deleting cluster and trying another zone."
+                        gcloud container clusters delete "${CLUSTER_NAME}" --async || true
+                        continue
                     fi
                 fi
                 success=1
