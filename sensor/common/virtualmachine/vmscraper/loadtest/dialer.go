@@ -29,7 +29,7 @@ func NewFarmDialer(farm *Farm, latency time.Duration) *FarmDialer {
 // Dial implements vmscraper.VMDialer. Port and TLS are accepted for interface
 // compatibility but unused: the farm has no network/TLS layer to configure.
 func (d *FarmDialer) Dial(ctx context.Context, namespace, name string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
-	vm := d.farm.Get(namespace, name)
+	vm := d.farm.GetByName(namespace, name)
 	if vm == nil {
 		return nil, fmt.Errorf("loadtest: no synthetic VM %s/%s", namespace, name)
 	}

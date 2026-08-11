@@ -163,10 +163,10 @@ func newFarmVM(index int, gen *vmindexreport.Generator) *FarmVM {
 	return vm
 }
 
-// Get returns the FarmVM for namespace/name, or nil if not found. If the
+// GetByName returns the FarmVM for namespace/name, or nil if not found. If the
 // farm was created with alwaysChanged, the VM's generation is bumped first
 // so the caller's next dial always observes a "changed" report.
-func (f *Farm) Get(namespace, name string) *FarmVM {
+func (f *Farm) GetByName(namespace, name string) *FarmVM {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 	vm := f.vms[namespace+"/"+name]
@@ -174,6 +174,24 @@ func (f *Farm) Get(namespace, name string) *FarmVM {
 		vm.bump()
 	}
 	return vm
+}
+
+// Get implements vmscraper.RunningVMStore.
+func (f *Farm) Get(id virtualmachine.VMID) *virtualmachine.Info {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	vm := f.vms[string(id)]
+	if vm == nil {
+		return nil
+	}
+	cid := vm.VSOCKCID
+	return &virtualmachine.Info{
+		ID:        virtualmachine.VMID(vm.key()),
+		Name:      vm.Name,
+		Namespace: vm.Namespace,
+		VSOCKCID:  &cid,
+		Running:   true,
+	}
 }
 
 // ListRunning implements vmscraper.RunningVMStore.
@@ -196,7 +214,7 @@ func (f *Farm) ListRunning() []*virtualmachine.Info {
 
 // Start begins the background rescan loop. It returns immediately; the loop
 // stops when ctx is cancelled. It is a no-op when alwaysChanged is set,
-// since every dial already bumps its VM's generation (see Get).
+// since every dial already bumps its VM's generation (see GetByName).
 func (f *Farm) Start(ctx context.Context) {
 	if f.alwaysChanged || f.rescanInterval <= 0 {
 		return

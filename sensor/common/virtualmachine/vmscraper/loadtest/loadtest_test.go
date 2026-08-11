@@ -47,7 +47,7 @@ func TestFarmDialer_RealProtocolRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = stream.Close() }()
 
-	result, err := client.GetReport(stream, 0, 0)
+	result, err := client.GetReport(t.Context(), stream, 0, 0)
 	require.NoError(t, err)
 	assert.False(t, result.Unchanged)
 	assert.Equal(t, uint32(1), result.Meta.GetReportGeneration())
@@ -61,14 +61,14 @@ func TestFarmDialer_UnchangedAfterSameGeneration(t *testing.T) {
 
 	stream1, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
 	require.NoError(t, err)
-	first, err := client.GetReport(stream1, 0, 0)
+	first, err := client.GetReport(t.Context(), stream1, 0, 0)
 	require.NoError(t, err)
 	_ = stream1.Close()
 
 	stream2, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
 	require.NoError(t, err)
 	defer func() { _ = stream2.Close() }()
-	second, err := client.GetReport(stream2, first.Meta.GetReportGeneration(), first.Meta.GetEpoch())
+	second, err := client.GetReport(t.Context(), stream2, first.Meta.GetReportGeneration(), first.Meta.GetEpoch())
 	require.NoError(t, err)
 	assert.True(t, second.Unchanged)
 	assert.Nil(t, second.IndexReport)
@@ -88,7 +88,7 @@ func TestFarm_RescanBumpsGeneration(t *testing.T) {
 			return false
 		}
 		defer func() { _ = stream.Close() }()
-		result, err := client.GetReport(stream, 0, 0)
+		result, err := client.GetReport(t.Context(), stream, 0, 0)
 		if err != nil {
 			return false
 		}
@@ -112,7 +112,7 @@ func TestFarm_AlwaysChangedBumpsGenerationEveryDial(t *testing.T) {
 	for range 5 {
 		stream, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
 		require.NoError(t, err)
-		result, err := client.GetReport(stream, lastGeneration, lastEpoch)
+		result, err := client.GetReport(t.Context(), stream, lastGeneration, lastEpoch)
 		require.NoError(t, err)
 		_ = stream.Close()
 
@@ -134,7 +134,7 @@ func TestFarm_AddVMsGrowsFleetWithoutDisturbingExisting(t *testing.T) {
 	client := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, testMaxResponseSize)
 	stream, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
 	require.NoError(t, err)
-	before, err := client.GetReport(stream, 0, 0)
+	before, err := client.GetReport(t.Context(), stream, 0, 0)
 	require.NoError(t, err)
 	_ = stream.Close()
 
@@ -153,7 +153,7 @@ func TestFarm_AddVMsGrowsFleetWithoutDisturbingExisting(t *testing.T) {
 	stream2, err := dialer.Dial(context.Background(), Namespace, "vm-0", 818, true)
 	require.NoError(t, err)
 	defer func() { _ = stream2.Close() }()
-	after, err := client.GetReport(stream2, before.Meta.GetReportGeneration(), before.Meta.GetEpoch())
+	after, err := client.GetReport(t.Context(), stream2, before.Meta.GetReportGeneration(), before.Meta.GetEpoch())
 	require.NoError(t, err)
 	assert.True(t, after.Unchanged, "existing VM's generation should be unaffected by AddVMs")
 }
