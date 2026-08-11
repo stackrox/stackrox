@@ -115,13 +115,11 @@ func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 
 // --- Helpers ---
 
-func ptr32(v uint32) *uint32 { return &v }
-
 func makeVM(ns, name string, cid uint32) *virtualmachine.Info {
 	return &virtualmachine.Info{
 		Namespace: ns,
 		Name:      name,
-		VSOCKCID:  ptr32(cid),
+		VSOCKCID:  new(cid),
 		Running:   true,
 	}
 }
@@ -635,6 +633,26 @@ func TestVMScraper_GetReportTimeoutClassified(t *testing.T) {
 	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout)))
 	assert.Equal(t, readErrBefore, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError)),
 		"timed-out read must not be counted as a protocol/read error")
+}
+
+// TestVMScraper_GetReportBusyClassified verifies busy is counted separately
+// from generic read/protocol errors.
+func TestVMScraper_GetReportBusyClassified(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	client := &mockProtocolClient{
+		errQueue: []error{vsockclient.ErrBusy},
+	}
+	s := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+
+	busyBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy))
+	readErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError))
+
+	_, ok := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
+
+	assert.False(t, ok)
+	assert.Equal(t, busyBefore+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy)))
+	assert.Equal(t, readErrBefore, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError)),
+		"a busy response must not be counted as a generic protocol/read error")
 }
 
 func TestVMScraper_PrunesStaleState(t *testing.T) {

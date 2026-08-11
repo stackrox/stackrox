@@ -27,6 +27,8 @@ var (
 	ErrUnknownMethod = errors.New("agent does not support the requested method")
 	// ErrInternal indicates the agent encountered an internal error.
 	ErrInternal = errors.New("agent internal error")
+	// ErrBusy indicates the agent's single connection slot is held by another request.
+	ErrBusy = errors.New("agent is busy with another request")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -142,6 +144,8 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrUnknownMethod, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_INTERNAL:
 		return fmt.Errorf("%w: %s", ErrInternal, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_BUSY:
+		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
 	default:
 		return fmt.Errorf("agent error (%s): %s", e.GetCode(), e.GetMessage())
 	}
