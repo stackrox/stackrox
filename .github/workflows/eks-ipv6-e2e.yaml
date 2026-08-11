@@ -32,6 +32,8 @@ on:
         description: "Keep cluster after tests (for debugging)"
         type: boolean
         default: false
+  pull_request:
+    types: [labeled]
 
 defaults:
   run:
@@ -45,15 +47,27 @@ env:
 
 jobs:
   eks-ipv6-e2e:
-    name: "EKS IPv6 ${{ inputs.suite }}"
+    name: "EKS IPv6 ${{ inputs.suite || 'smoke' }}"
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.label.name == 'e2e-eks-ipv6'
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ -n "${{ inputs.tag }}" ]]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(git describe --tags --abbrev=10 origin/master)" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install eksctl
         run: |
@@ -104,8 +118,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
-          docker pull -q --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}"
-          cid=$(docker create --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ inputs.tag }}" true)
+          docker pull -q --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ steps.tag.outputs.tag }}"
+          cid=$(docker create --platform linux/amd64 "quay.io/stackrox-io/roxctl:${{ steps.tag.outputs.tag }}" true)
           docker cp "$cid:/usr/bin/roxctl" /usr/local/bin/roxctl
           docker rm "$cid" >/dev/null
 
@@ -123,7 +137,7 @@ jobs:
           export ROX_ADMIN_PASSWORD="$(openssl rand -base64 20)"
           echo "::add-mask::${ROX_ADMIN_PASSWORD}"
           echo "${ROX_ADMIN_PASSWORD}" > /tmp/rox-admin-password
-          export MAIN_IMAGE_TAG="${{ inputs.tag }}"
+          export MAIN_IMAGE_TAG="${{ steps.tag.outputs.tag }}"
 
           echo "$QUAY_PASS" | docker login -u "$QUAY_USER" --password-stdin quay.io
 
@@ -138,7 +152,7 @@ jobs:
             --resources=small \
             --single-namespace \
             --envrc /tmp/roxie-env.sh \
-            --tag ${{ inputs.tag }}
+            --tag ${{ steps.tag.outputs.tag }}
 
           source /tmp/roxie-env.sh
           echo "$API_ENDPOINT" > /tmp/rox-api-endpoint
@@ -220,7 +234,7 @@ jobs:
             | jq '{name: .image.name.fullName, components: (.image.scan.components | length), vulns: [.image.scan.components[].vulns[]?] | length}'
 
       - name: Run QA smoke tests
-        if: inputs.suite == 'smoke'
+        if: inputs.suite == 'smoke' || !inputs.suite
         run: |
           echo "EKS IPv6 smoke test passed — ACS deployed, sensor healthy, image scan works"
 
