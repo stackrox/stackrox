@@ -30,7 +30,7 @@ func (m *HelmManagedConfigInit) CloneVT() *HelmManagedConfigInit {
 	r.ClusterId = m.ClusterId
 	r.ManagedBy = m.ManagedBy
 	if rhs := m.ClusterConfig; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.CompleteClusterConfig
 		}); ok {
 			r.ClusterConfig = vtpb.CloneVT()
@@ -65,7 +65,7 @@ func (m *SensorHello) CloneVT() *SensorHello {
 		r.Capabilities = tmpContainer
 	}
 	if rhs := m.DeploymentIdentification; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.SensorDeploymentIdentification
 		}); ok {
 			r.DeploymentIdentification = vtpb.CloneVT()
@@ -127,7 +127,7 @@ func (this *HelmManagedConfigInit) EqualVT(that *HelmManagedConfigInit) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.ClusterConfig).(interface {
+	if equal, ok := interface{}(this.ClusterConfig).(interface {
 		EqualVT(*storage.CompleteClusterConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.ClusterConfig) {
@@ -179,7 +179,7 @@ func (this *SensorHello) EqualVT(that *SensorHello) bool {
 	if this.PolicyVersion != that.PolicyVersion {
 		return false
 	}
-	if equal, ok := any(this.DeploymentIdentification).(interface {
+	if equal, ok := interface{}(this.DeploymentIdentification).(interface {
 		EqualVT(*storage.SensorDeploymentIdentification) bool
 	}); ok {
 		if !equal.EqualVT(that.DeploymentIdentification) {
@@ -312,7 +312,7 @@ func (m *HelmManagedConfigInit) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		dAtA[i] = 0x12
 	}
 	if m.ClusterConfig != nil {
-		if vtmsg, ok := any(m.ClusterConfig).(interface {
+		if vtmsg, ok := interface{}(m.ClusterConfig).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -382,7 +382,7 @@ func (m *SensorHello) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x30
 	}
 	if m.DeploymentIdentification != nil {
-		if vtmsg, ok := any(m.DeploymentIdentification).(interface {
+		if vtmsg, ok := interface{}(m.DeploymentIdentification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -550,7 +550,7 @@ func (m *HelmManagedConfigInit) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ClusterConfig != nil {
-		if size, ok := any(m.ClusterConfig).(interface {
+		if size, ok := interface{}(m.ClusterConfig).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -599,7 +599,7 @@ func (m *SensorHello) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.DeploymentIdentification != nil {
-		if size, ok := any(m.DeploymentIdentification).(interface {
+		if size, ok := interface{}(m.DeploymentIdentification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -723,7 +723,7 @@ func (m *HelmManagedConfigInit) UnmarshalVT(dAtA []byte) error {
 			if m.ClusterConfig == nil {
 				m.ClusterConfig = &storage.CompleteClusterConfig{}
 			}
-			if unmarshal, ok := any(m.ClusterConfig).(interface {
+			if unmarshal, ok := interface{}(m.ClusterConfig).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1033,7 +1033,7 @@ func (m *SensorHello) UnmarshalVT(dAtA []byte) error {
 			if m.DeploymentIdentification == nil {
 				m.DeploymentIdentification = &storage.SensorDeploymentIdentification{}
 			}
-			if unmarshal, ok := any(m.DeploymentIdentification).(interface {
+			if unmarshal, ok := interface{}(m.DeploymentIdentification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1513,7 +1513,7 @@ func (m *HelmManagedConfigInit) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ClusterConfig == nil {
 				m.ClusterConfig = &storage.CompleteClusterConfig{}
 			}
-			if unmarshal, ok := any(m.ClusterConfig).(interface {
+			if unmarshal, ok := interface{}(m.ClusterConfig).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1843,7 +1843,7 @@ func (m *SensorHello) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.DeploymentIdentification == nil {
 				m.DeploymentIdentification = &storage.SensorDeploymentIdentification{}
 			}
-			if unmarshal, ok := any(m.DeploymentIdentification).(interface {
+			if unmarshal, ok := interface{}(m.DeploymentIdentification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

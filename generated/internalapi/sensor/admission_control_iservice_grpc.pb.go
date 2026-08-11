@@ -108,14 +108,14 @@ func RegisterAdmissionControlManagementServiceServer(s grpc.ServiceRegistrar, sr
 	s.RegisterService(&AdmissionControlManagementService_ServiceDesc, srv)
 }
 
-func _AdmissionControlManagementService_Communicate_Handler(srv any, stream grpc.ServerStream) error {
+func _AdmissionControlManagementService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(AdmissionControlManagementServiceServer).Communicate(&grpc.GenericServerStream[MsgFromAdmissionControl, MsgToAdmissionControl]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type AdmissionControlManagementService_CommunicateServer = grpc.BidiStreamingServer[MsgFromAdmissionControl, MsgToAdmissionControl]
 
-func _AdmissionControlManagementService_PolicyAlerts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AdmissionControlManagementService_PolicyAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdmissionControlAlerts)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func _AdmissionControlManagementService_PolicyAlerts_Handler(srv any, ctx contex
 		Server:     srv,
 		FullMethod: AdmissionControlManagementService_PolicyAlerts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdmissionControlManagementServiceServer).PolicyAlerts(ctx, req.(*AdmissionControlAlerts))
 	}
 	return interceptor(ctx, in, info, handler)

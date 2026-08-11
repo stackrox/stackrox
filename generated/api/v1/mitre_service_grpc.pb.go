@@ -108,7 +108,7 @@ func RegisterMitreAttackServiceServer(s grpc.ServiceRegistrar, srv MitreAttackSe
 	s.RegisterService(&MitreAttackService_ServiceDesc, srv)
 }
 
-func _MitreAttackService_ListMitreAttackVectors_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MitreAttackService_ListMitreAttackVectors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -120,13 +120,13 @@ func _MitreAttackService_ListMitreAttackVectors_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: MitreAttackService_ListMitreAttackVectors_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MitreAttackServiceServer).ListMitreAttackVectors(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MitreAttackService_GetMitreAttackVector_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MitreAttackService_GetMitreAttackVector_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func _MitreAttackService_GetMitreAttackVector_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: MitreAttackService_GetMitreAttackVector_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MitreAttackServiceServer).GetMitreAttackVector(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

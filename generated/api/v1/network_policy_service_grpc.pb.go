@@ -309,7 +309,7 @@ func RegisterNetworkPolicyServiceServer(s grpc.ServiceRegistrar, srv NetworkPoli
 	s.RegisterService(&NetworkPolicyService_ServiceDesc, srv)
 }
 
-func _NetworkPolicyService_GetNetworkPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetNetworkPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -321,13 +321,13 @@ func _NetworkPolicyService_GetNetworkPolicy_Handler(srv any, ctx context.Context
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetNetworkPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetNetworkPolicy(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetNetworkPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetNetworkPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNetworkPoliciesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -339,13 +339,13 @@ func _NetworkPolicyService_GetNetworkPolicies_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetNetworkPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetNetworkPolicies(ctx, req.(*GetNetworkPoliciesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetNetworkGraph_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetNetworkGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNetworkGraphRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -357,13 +357,13 @@ func _NetworkPolicyService_GetNetworkGraph_Handler(srv any, ctx context.Context,
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetNetworkGraph_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetNetworkGraph(ctx, req.(*GetNetworkGraphRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetNetworkGraphEpoch_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetNetworkGraphEpoch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNetworkGraphEpochRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -375,13 +375,13 @@ func _NetworkPolicyService_GetNetworkGraphEpoch_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetNetworkGraphEpoch_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetNetworkGraphEpoch(ctx, req.(*GetNetworkGraphEpochRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_ApplyNetworkPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_ApplyNetworkPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ApplyNetworkPolicyYamlRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -393,13 +393,13 @@ func _NetworkPolicyService_ApplyNetworkPolicy_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: NetworkPolicyService_ApplyNetworkPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).ApplyNetworkPolicy(ctx, req.(*ApplyNetworkPolicyYamlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetUndoModification_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetUndoModification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetUndoModificationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -411,13 +411,13 @@ func _NetworkPolicyService_GetUndoModification_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetUndoModification_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetUndoModification(ctx, req.(*GetUndoModificationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_SimulateNetworkGraph_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_SimulateNetworkGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SimulateNetworkGraphRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -429,13 +429,13 @@ func _NetworkPolicyService_SimulateNetworkGraph_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: NetworkPolicyService_SimulateNetworkGraph_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).SimulateNetworkGraph(ctx, req.(*SimulateNetworkGraphRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_SendNetworkPolicyYAML_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_SendNetworkPolicyYAML_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendNetworkPolicyYamlRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -447,13 +447,13 @@ func _NetworkPolicyService_SendNetworkPolicyYAML_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: NetworkPolicyService_SendNetworkPolicyYAML_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).SendNetworkPolicyYAML(ctx, req.(*SendNetworkPolicyYamlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GenerateNetworkPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GenerateNetworkPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateNetworkPoliciesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -465,13 +465,13 @@ func _NetworkPolicyService_GenerateNetworkPolicies_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GenerateNetworkPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GenerateNetworkPolicies(ctx, req.(*GenerateNetworkPoliciesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBaselineGeneratedPolicyForDeploymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -483,13 +483,13 @@ func _NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_Handle
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetBaselineGeneratedNetworkPolicyForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetBaselineGeneratedNetworkPolicyForDeployment(ctx, req.(*GetBaselineGeneratedPolicyForDeploymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -501,13 +501,13 @@ func _NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_Handler
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetAllowedPeersFromCurrentPolicyForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetAllowedPeersFromCurrentPolicyForDeployment(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ApplyNetworkPolicyYamlForDeploymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -519,13 +519,13 @@ func _NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_Handler(srv any, 
 		Server:     srv,
 		FullMethod: NetworkPolicyService_ApplyNetworkPolicyYamlForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).ApplyNetworkPolicyYamlForDeployment(ctx, req.(*ApplyNetworkPolicyYamlForDeploymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetUndoModificationForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetUndoModificationForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -537,13 +537,13 @@ func _NetworkPolicyService_GetUndoModificationForDeployment_Handler(srv any, ctx
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetUndoModificationForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetUndoModificationForDeployment(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -555,13 +555,13 @@ func _NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_Han
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetDiffFlowsBetweenPolicyAndBaselineForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetDiffFlowsBetweenPolicyAndBaselineForDeployment(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -573,7 +573,7 @@ func _NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_Handler
 		Server:     srv,
 		FullMethod: NetworkPolicyService_GetDiffFlowsFromUndoModificationForDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkPolicyServiceServer).GetDiffFlowsFromUndoModificationForDeployment(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

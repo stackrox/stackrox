@@ -144,7 +144,7 @@ func RegisterBaseImageServiceV2Server(s grpc.ServiceRegistrar, srv BaseImageServ
 	s.RegisterService(&BaseImageServiceV2_ServiceDesc, srv)
 }
 
-func _BaseImageServiceV2_GetBaseImageReferences_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _BaseImageServiceV2_GetBaseImageReferences_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -156,13 +156,13 @@ func _BaseImageServiceV2_GetBaseImageReferences_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: BaseImageServiceV2_GetBaseImageReferences_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BaseImageServiceV2Server).GetBaseImageReferences(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BaseImageServiceV2_CreateBaseImageReference_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _BaseImageServiceV2_CreateBaseImageReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateBaseImageReferenceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -174,13 +174,13 @@ func _BaseImageServiceV2_CreateBaseImageReference_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: BaseImageServiceV2_CreateBaseImageReference_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BaseImageServiceV2Server).CreateBaseImageReference(ctx, req.(*CreateBaseImageReferenceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BaseImageServiceV2_UpdateBaseImageTagPattern_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _BaseImageServiceV2_UpdateBaseImageTagPattern_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateBaseImageTagPatternRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -192,13 +192,13 @@ func _BaseImageServiceV2_UpdateBaseImageTagPattern_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: BaseImageServiceV2_UpdateBaseImageTagPattern_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BaseImageServiceV2Server).UpdateBaseImageTagPattern(ctx, req.(*UpdateBaseImageTagPatternRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _BaseImageServiceV2_DeleteBaseImageReference_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _BaseImageServiceV2_DeleteBaseImageReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteBaseImageReferenceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func _BaseImageServiceV2_DeleteBaseImageReference_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: BaseImageServiceV2_DeleteBaseImageReference_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BaseImageServiceV2Server).DeleteBaseImageReference(ctx, req.(*DeleteBaseImageReferenceRequest))
 	}
 	return interceptor(ctx, in, info, handler)

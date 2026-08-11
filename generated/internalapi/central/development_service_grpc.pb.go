@@ -151,7 +151,7 @@ func RegisterDevelopmentServiceServer(s grpc.ServiceRegistrar, srv DevelopmentSe
 	s.RegisterService(&DevelopmentService_ServiceDesc, srv)
 }
 
-func _DevelopmentService_ReplicateImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DevelopmentService_ReplicateImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReplicateImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -163,13 +163,13 @@ func _DevelopmentService_ReplicateImage_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: DevelopmentService_ReplicateImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DevelopmentServiceServer).ReplicateImage(ctx, req.(*ReplicateImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DevelopmentService_URLHasValidCert_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DevelopmentService_URLHasValidCert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(URLHasValidCertRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -181,13 +181,13 @@ func _DevelopmentService_URLHasValidCert_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: DevelopmentService_URLHasValidCert_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DevelopmentServiceServer).URLHasValidCert(ctx, req.(*URLHasValidCertRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DevelopmentService_RandomData_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DevelopmentService_RandomData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RandomDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -199,13 +199,13 @@ func _DevelopmentService_RandomData_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: DevelopmentService_RandomData_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DevelopmentServiceServer).RandomData(ctx, req.(*RandomDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DevelopmentService_EnvVars_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DevelopmentService_EnvVars_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -217,13 +217,13 @@ func _DevelopmentService_EnvVars_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: DevelopmentService_EnvVars_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DevelopmentServiceServer).EnvVars(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DevelopmentService_ReconciliationStatsByCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DevelopmentService_ReconciliationStatsByCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func _DevelopmentService_ReconciliationStatsByCluster_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: DevelopmentService_ReconciliationStatsByCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DevelopmentServiceServer).ReconciliationStatsByCluster(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

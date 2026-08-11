@@ -371,7 +371,7 @@ func RegisterPolicyServiceServer(s grpc.ServiceRegistrar, srv PolicyServiceServe
 	s.RegisterService(&PolicyService_ServiceDesc, srv)
 }
 
-func _PolicyService_GetPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_GetPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -383,13 +383,13 @@ func _PolicyService_GetPolicy_Handler(srv any, ctx context.Context, dec func(any
 		Server:     srv,
 		FullMethod: PolicyService_GetPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).GetPolicy(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_GetPolicyMitreVectors_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_GetPolicyMitreVectors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPolicyMitreVectorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -401,13 +401,13 @@ func _PolicyService_GetPolicyMitreVectors_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: PolicyService_GetPolicyMitreVectors_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).GetPolicyMitreVectors(ctx, req.(*GetPolicyMitreVectorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_ListPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_ListPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -419,13 +419,13 @@ func _PolicyService_ListPolicies_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: PolicyService_ListPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).ListPolicies(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_PostPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_PostPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PostPolicyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -437,13 +437,13 @@ func _PolicyService_PostPolicy_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: PolicyService_PostPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).PostPolicy(ctx, req.(*PostPolicyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_PutPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_PutPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Policy)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -455,13 +455,13 @@ func _PolicyService_PutPolicy_Handler(srv any, ctx context.Context, dec func(any
 		Server:     srv,
 		FullMethod: PolicyService_PutPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).PutPolicy(ctx, req.(*storage.Policy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_PatchPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_PatchPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PatchPolicyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -473,13 +473,13 @@ func _PolicyService_PatchPolicy_Handler(srv any, ctx context.Context, dec func(a
 		Server:     srv,
 		FullMethod: PolicyService_PatchPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).PatchPolicy(ctx, req.(*PatchPolicyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_DeletePolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_DeletePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -491,13 +491,13 @@ func _PolicyService_DeletePolicy_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: PolicyService_DeletePolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).DeletePolicy(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_EnableDisablePolicyNotification_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_EnableDisablePolicyNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EnableDisablePolicyNotificationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -509,13 +509,13 @@ func _PolicyService_EnableDisablePolicyNotification_Handler(srv any, ctx context
 		Server:     srv,
 		FullMethod: PolicyService_EnableDisablePolicyNotification_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).EnableDisablePolicyNotification(ctx, req.(*EnableDisablePolicyNotificationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_ReassessPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_ReassessPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -527,13 +527,13 @@ func _PolicyService_ReassessPolicies_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: PolicyService_ReassessPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).ReassessPolicies(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_DryRunPolicy_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_DryRunPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Policy)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -545,13 +545,13 @@ func _PolicyService_DryRunPolicy_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: PolicyService_DryRunPolicy_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).DryRunPolicy(ctx, req.(*storage.Policy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_SubmitDryRunPolicyJob_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_SubmitDryRunPolicyJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Policy)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -563,13 +563,13 @@ func _PolicyService_SubmitDryRunPolicyJob_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: PolicyService_SubmitDryRunPolicyJob_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).SubmitDryRunPolicyJob(ctx, req.(*storage.Policy))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_QueryDryRunJobStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_QueryDryRunJobStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JobId)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -581,13 +581,13 @@ func _PolicyService_QueryDryRunJobStatus_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: PolicyService_QueryDryRunJobStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).QueryDryRunJobStatus(ctx, req.(*JobId))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_CancelDryRunJob_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_CancelDryRunJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JobId)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -599,13 +599,13 @@ func _PolicyService_CancelDryRunJob_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: PolicyService_CancelDryRunJob_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).CancelDryRunJob(ctx, req.(*JobId))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_GetPolicyCategories_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_GetPolicyCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -617,13 +617,13 @@ func _PolicyService_GetPolicyCategories_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: PolicyService_GetPolicyCategories_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).GetPolicyCategories(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_ExportPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_ExportPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ExportPoliciesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -635,13 +635,13 @@ func _PolicyService_ExportPolicies_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: PolicyService_ExportPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).ExportPolicies(ctx, req.(*ExportPoliciesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_PolicyFromSearch_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_PolicyFromSearch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PolicyFromSearchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -653,13 +653,13 @@ func _PolicyService_PolicyFromSearch_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: PolicyService_PolicyFromSearch_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).PolicyFromSearch(ctx, req.(*PolicyFromSearchRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_ImportPolicies_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyService_ImportPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ImportPoliciesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -671,7 +671,7 @@ func _PolicyService_ImportPolicies_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: PolicyService_ImportPolicies_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyServiceServer).ImportPolicies(ctx, req.(*ImportPoliciesRequest))
 	}
 	return interceptor(ctx, in, info, handler)

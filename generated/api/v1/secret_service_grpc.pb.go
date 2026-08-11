@@ -141,7 +141,7 @@ func RegisterSecretServiceServer(s grpc.ServiceRegistrar, srv SecretServiceServe
 	s.RegisterService(&SecretService_ServiceDesc, srv)
 }
 
-func _SecretService_GetSecret_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SecretService_GetSecret_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -153,13 +153,13 @@ func _SecretService_GetSecret_Handler(srv any, ctx context.Context, dec func(any
 		Server:     srv,
 		FullMethod: SecretService_GetSecret_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SecretServiceServer).GetSecret(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretService_CountSecrets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SecretService_CountSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -171,13 +171,13 @@ func _SecretService_CountSecrets_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: SecretService_CountSecrets_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SecretServiceServer).CountSecrets(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretService_ListSecrets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SecretService_ListSecrets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -189,13 +189,13 @@ func _SecretService_ListSecrets_Handler(srv any, ctx context.Context, dec func(a
 		Server:     srv,
 		FullMethod: SecretService_ListSecrets_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SecretServiceServer).ListSecrets(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SecretService_ListSecretsExtended_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SecretService_ListSecretsExtended_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListSecretsExtendedRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func _SecretService_ListSecretsExtended_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: SecretService_ListSecretsExtended_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SecretServiceServer).ListSecretsExtended(ctx, req.(*ListSecretsExtendedRequest))
 	}
 	return interceptor(ctx, in, info, handler)

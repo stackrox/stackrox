@@ -31,7 +31,7 @@ func (m *NetworkFlowUpdate) CloneVT() *NetworkFlowUpdate {
 	if rhs := m.Updated; rhs != nil {
 		tmpContainer := make([]*storage.NetworkFlow, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.NetworkFlow }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.NetworkFlow }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.NetworkFlow)
@@ -42,7 +42,7 @@ func (m *NetworkFlowUpdate) CloneVT() *NetworkFlowUpdate {
 	if rhs := m.UpdatedEndpoints; rhs != nil {
 		tmpContainer := make([]*storage.NetworkEndpoint, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.NetworkEndpoint
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -72,7 +72,7 @@ func (m *PushNetworkEntitiesRequest) CloneVT() *PushNetworkEntitiesRequest {
 	if rhs := m.Entities; rhs != nil {
 		tmpContainer := make([]*storage.NetworkEntityInfo, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.NetworkEntityInfo
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -111,7 +111,7 @@ func (this *NetworkFlowUpdate) EqualVT(that *NetworkFlowUpdate) bool {
 			if q == nil {
 				q = &storage.NetworkFlow{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.NetworkFlow) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -137,7 +137,7 @@ func (this *NetworkFlowUpdate) EqualVT(that *NetworkFlowUpdate) bool {
 			if q == nil {
 				q = &storage.NetworkEndpoint{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.NetworkEndpoint) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -176,7 +176,7 @@ func (this *PushNetworkEntitiesRequest) EqualVT(that *PushNetworkEntitiesRequest
 			if q == nil {
 				q = &storage.NetworkEntityInfo{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.NetworkEntityInfo) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -232,7 +232,7 @@ func (m *NetworkFlowUpdate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.UpdatedEndpoints) > 0 {
 		for iNdEx := len(m.UpdatedEndpoints) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.UpdatedEndpoints[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.UpdatedEndpoints[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -266,7 +266,7 @@ func (m *NetworkFlowUpdate) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Updated) > 0 {
 		for iNdEx := len(m.Updated) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Updated[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Updated[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -328,7 +328,7 @@ func (m *PushNetworkEntitiesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.Entities) > 0 {
 		for iNdEx := len(m.Entities) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Entities[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Entities[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -361,7 +361,7 @@ func (m *NetworkFlowUpdate) SizeVT() (n int) {
 	_ = l
 	if len(m.Updated) > 0 {
 		for _, e := range m.Updated {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -377,7 +377,7 @@ func (m *NetworkFlowUpdate) SizeVT() (n int) {
 	}
 	if len(m.UpdatedEndpoints) > 0 {
 		for _, e := range m.UpdatedEndpoints {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -399,7 +399,7 @@ func (m *PushNetworkEntitiesRequest) SizeVT() (n int) {
 	_ = l
 	if len(m.Entities) > 0 {
 		for _, e := range m.Entities {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -475,7 +475,7 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Updated = append(m.Updated, &storage.NetworkFlow{})
-			if unmarshal, ok := any(m.Updated[len(m.Updated)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Updated[len(m.Updated)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -553,7 +553,7 @@ func (m *NetworkFlowUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
-			if unmarshal, ok := any(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
+			if unmarshal, ok := interface{}(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -646,7 +646,7 @@ func (m *PushNetworkEntitiesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Entities = append(m.Entities, &storage.NetworkEntityInfo{})
-			if unmarshal, ok := any(m.Entities[len(m.Entities)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Entities[len(m.Entities)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -758,7 +758,7 @@ func (m *NetworkFlowUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Updated = append(m.Updated, &storage.NetworkFlow{})
-			if unmarshal, ok := any(m.Updated[len(m.Updated)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Updated[len(m.Updated)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -836,7 +836,7 @@ func (m *NetworkFlowUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedEndpoints = append(m.UpdatedEndpoints, &storage.NetworkEndpoint{})
-			if unmarshal, ok := any(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
+			if unmarshal, ok := interface{}(m.UpdatedEndpoints[len(m.UpdatedEndpoints)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -929,7 +929,7 @@ func (m *PushNetworkEntitiesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Entities = append(m.Entities, &storage.NetworkEntityInfo{})
-			if unmarshal, ok := any(m.Entities[len(m.Entities)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Entities[len(m.Entities)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

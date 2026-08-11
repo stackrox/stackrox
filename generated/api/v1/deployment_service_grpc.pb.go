@@ -206,7 +206,7 @@ func RegisterDeploymentServiceServer(s grpc.ServiceRegistrar, srv DeploymentServ
 	s.RegisterService(&DeploymentService_ServiceDesc, srv)
 }
 
-func _DeploymentService_GetDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_GetDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -218,13 +218,13 @@ func _DeploymentService_GetDeployment_Handler(srv any, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: DeploymentService_GetDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).GetDeployment(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_GetDeploymentWithRisk_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_GetDeploymentWithRisk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -236,13 +236,13 @@ func _DeploymentService_GetDeploymentWithRisk_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: DeploymentService_GetDeploymentWithRisk_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).GetDeploymentWithRisk(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_CountDeployments_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_CountDeployments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -254,13 +254,13 @@ func _DeploymentService_CountDeployments_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: DeploymentService_CountDeployments_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).CountDeployments(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_ListDeployments_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_ListDeployments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -272,13 +272,13 @@ func _DeploymentService_ListDeployments_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: DeploymentService_ListDeployments_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).ListDeployments(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_ListDeploymentsWithProcessInfo_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_ListDeploymentsWithProcessInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -290,13 +290,13 @@ func _DeploymentService_ListDeploymentsWithProcessInfo_Handler(srv any, ctx cont
 		Server:     srv,
 		FullMethod: DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).ListDeploymentsWithProcessInfo(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_GetLabels_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeploymentService_GetLabels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -308,13 +308,13 @@ func _DeploymentService_GetLabels_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: DeploymentService_GetLabels_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeploymentServiceServer).GetLabels(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DeploymentService_ExportDeployments_Handler(srv any, stream grpc.ServerStream) error {
+func _DeploymentService_ExportDeployments_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportDeploymentRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

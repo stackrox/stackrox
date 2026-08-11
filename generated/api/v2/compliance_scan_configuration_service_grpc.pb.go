@@ -288,7 +288,7 @@ func RegisterComplianceScanConfigurationServiceServer(s grpc.ServiceRegistrar, s
 	s.RegisterService(&ComplianceScanConfigurationService_ServiceDesc, srv)
 }
 
-func _ComplianceScanConfigurationService_ListComplianceScanConfigurations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_ListComplianceScanConfigurations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -300,13 +300,13 @@ func _ComplianceScanConfigurationService_ListComplianceScanConfigurations_Handle
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigurations(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -318,13 +318,13 @@ func _ComplianceScanConfigurationService_GetComplianceScanConfiguration_Handler(
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).GetComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_CreateComplianceScanConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_CreateComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceScanConfiguration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -336,13 +336,13 @@ func _ComplianceScanConfigurationService_CreateComplianceScanConfiguration_Handl
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).CreateComplianceScanConfiguration(ctx, req.(*ComplianceScanConfiguration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceScanConfiguration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -354,13 +354,13 @@ func _ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_Handl
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).UpdateComplianceScanConfiguration(ctx, req.(*ComplianceScanConfiguration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -372,13 +372,13 @@ func _ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_Handl
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).DeleteComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -390,13 +390,13 @@ func _ComplianceScanConfigurationService_RunComplianceScanConfiguration_Handler(
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).RunComplianceScanConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_RunReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_RunReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceRunReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -408,13 +408,13 @@ func _ComplianceScanConfigurationService_RunReport_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_RunReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).RunReport(ctx, req.(*ComplianceRunReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_GetReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_GetReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -426,13 +426,13 @@ func _ComplianceScanConfigurationService_GetReportHistory_Handler(srv any, ctx c
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).GetReportHistory(ctx, req.(*ComplianceReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_GetMyReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_GetMyReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -444,13 +444,13 @@ func _ComplianceScanConfigurationService_GetMyReportHistory_Handler(srv any, ctx
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).GetMyReportHistory(ctx, req.(*ComplianceReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_DeleteReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_DeleteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -462,13 +462,13 @@ func _ComplianceScanConfigurationService_DeleteReport_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_DeleteReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).DeleteReport(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -480,13 +480,13 @@ func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handle
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigProfiles(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceConfigClusterProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -498,7 +498,7 @@ func _ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles
 		Server:     srv,
 		FullMethod: ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceScanConfigurationServiceServer).ListComplianceScanConfigClusterProfiles(ctx, req.(*ComplianceConfigClusterProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)

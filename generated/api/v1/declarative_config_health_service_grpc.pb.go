@@ -84,7 +84,7 @@ func RegisterDeclarativeConfigHealthServiceServer(s grpc.ServiceRegistrar, srv D
 	s.RegisterService(&DeclarativeConfigHealthService_ServiceDesc, srv)
 }
 
-func _DeclarativeConfigHealthService_GetDeclarativeConfigHealths_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DeclarativeConfigHealthService_GetDeclarativeConfigHealths_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func _DeclarativeConfigHealthService_GetDeclarativeConfigHealths_Handler(srv any
 		Server:     srv,
 		FullMethod: DeclarativeConfigHealthService_GetDeclarativeConfigHealths_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DeclarativeConfigHealthServiceServer).GetDeclarativeConfigHealths(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

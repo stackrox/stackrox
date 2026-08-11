@@ -47,7 +47,7 @@ func (m *GetImageIntegrationsResponse) CloneVT() *GetImageIntegrationsResponse {
 	if rhs := m.Integrations; rhs != nil {
 		tmpContainer := make([]*storage.ImageIntegration, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ImageIntegration
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -75,7 +75,7 @@ func (m *UpdateImageIntegrationRequest) CloneVT() *UpdateImageIntegrationRequest
 	r := new(UpdateImageIntegrationRequest)
 	r.UpdatePassword = m.UpdatePassword
 	if rhs := m.Config; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ImageIntegration
 		}); ok {
 			r.Config = vtpb.CloneVT()
@@ -134,7 +134,7 @@ func (this *GetImageIntegrationsResponse) EqualVT(that *GetImageIntegrationsResp
 			if q == nil {
 				q = &storage.ImageIntegration{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ImageIntegration) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -161,7 +161,7 @@ func (this *UpdateImageIntegrationRequest) EqualVT(that *UpdateImageIntegrationR
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Config).(interface {
+	if equal, ok := interface{}(this.Config).(interface {
 		EqualVT(*storage.ImageIntegration) bool
 	}); ok {
 		if !equal.EqualVT(that.Config) {
@@ -262,7 +262,7 @@ func (m *GetImageIntegrationsResponse) MarshalToSizedBufferVT(dAtA []byte) (int,
 	}
 	if len(m.Integrations) > 0 {
 		for iNdEx := len(m.Integrations) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Integrations[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Integrations[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -328,7 +328,7 @@ func (m *UpdateImageIntegrationRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 		dAtA[i] = 0x10
 	}
 	if m.Config != nil {
-		if vtmsg, ok := any(m.Config).(interface {
+		if vtmsg, ok := interface{}(m.Config).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -378,7 +378,7 @@ func (m *GetImageIntegrationsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Integrations) > 0 {
 		for _, e := range m.Integrations {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -399,7 +399,7 @@ func (m *UpdateImageIntegrationRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Config != nil {
-		if size, ok := any(m.Config).(interface {
+		if size, ok := interface{}(m.Config).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -589,7 +589,7 @@ func (m *GetImageIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Integrations = append(m.Integrations, &storage.ImageIntegration{})
-			if unmarshal, ok := any(m.Integrations[len(m.Integrations)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Integrations[len(m.Integrations)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -684,7 +684,7 @@ func (m *UpdateImageIntegrationRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.ImageIntegration{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -920,7 +920,7 @@ func (m *GetImageIntegrationsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Integrations = append(m.Integrations, &storage.ImageIntegration{})
-			if unmarshal, ok := any(m.Integrations[len(m.Integrations)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Integrations[len(m.Integrations)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1015,7 +1015,7 @@ func (m *UpdateImageIntegrationRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.ImageIntegration{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

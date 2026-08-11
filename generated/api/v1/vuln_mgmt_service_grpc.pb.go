@@ -109,7 +109,7 @@ func RegisterVulnMgmtServiceServer(s grpc.ServiceRegistrar, srv VulnMgmtServiceS
 	s.RegisterService(&VulnMgmtService_ServiceDesc, srv)
 }
 
-func _VulnMgmtService_VulnMgmtExportWorkloads_Handler(srv any, stream grpc.ServerStream) error {
+func _VulnMgmtService_VulnMgmtExportWorkloads_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(VulnMgmtExportWorkloadsRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

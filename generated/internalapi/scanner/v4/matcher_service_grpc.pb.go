@@ -145,7 +145,7 @@ func RegisterMatcherServer(s grpc.ServiceRegistrar, srv MatcherServer) {
 	s.RegisterService(&Matcher_ServiceDesc, srv)
 }
 
-func _Matcher_GetVulnerabilities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Matcher_GetVulnerabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVulnerabilitiesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -157,13 +157,13 @@ func _Matcher_GetVulnerabilities_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: Matcher_GetVulnerabilities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MatcherServer).GetVulnerabilities(ctx, req.(*GetVulnerabilitiesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Matcher_GetMetadata_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Matcher_GetMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -175,13 +175,13 @@ func _Matcher_GetMetadata_Handler(srv any, ctx context.Context, dec func(any) er
 		Server:     srv,
 		FullMethod: Matcher_GetMetadata_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MatcherServer).GetMetadata(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Matcher_GetSBOM_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Matcher_GetSBOM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSBOMRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -193,13 +193,13 @@ func _Matcher_GetSBOM_Handler(srv any, ctx context.Context, dec func(any) error,
 		Server:     srv,
 		FullMethod: Matcher_GetSBOM_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MatcherServer).GetSBOM(ctx, req.(*GetSBOMRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Matcher_ScanSBOM_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Matcher_ScanSBOM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ScanSBOMRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -211,7 +211,7 @@ func _Matcher_ScanSBOM_Handler(srv any, ctx context.Context, dec func(any) error
 		Server:     srv,
 		FullMethod: Matcher_ScanSBOM_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MatcherServer).ScanSBOM(ctx, req.(*ScanSBOMRequest))
 	}
 	return interceptor(ctx, in, info, handler)

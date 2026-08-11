@@ -165,7 +165,7 @@ func (m *DatabaseBackupStatus) CloneVT() *DatabaseBackupStatus {
 	}
 	r := new(DatabaseBackupStatus)
 	if rhs := m.BackupInfo; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.BackupInfo }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.BackupInfo }); ok {
 			r.BackupInfo = vtpb.CloneVT()
 		} else {
 			r.BackupInfo = proto.Clone(rhs).(*storage.BackupInfo)
@@ -367,7 +367,7 @@ func (this *DatabaseBackupStatus) EqualVT(that *DatabaseBackupStatus) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.BackupInfo).(interface {
+	if equal, ok := interface{}(this.BackupInfo).(interface {
 		EqualVT(*storage.BackupInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.BackupInfo) {
@@ -752,7 +752,7 @@ func (m *DatabaseBackupStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.BackupInfo != nil {
-		if vtmsg, ok := any(m.BackupInfo).(interface {
+		if vtmsg, ok := interface{}(m.BackupInfo).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -966,7 +966,7 @@ func (m *DatabaseBackupStatus) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.BackupInfo != nil {
-		if size, ok := any(m.BackupInfo).(interface {
+		if size, ok := interface{}(m.BackupInfo).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1840,7 +1840,7 @@ func (m *DatabaseBackupStatus) UnmarshalVT(dAtA []byte) error {
 			if m.BackupInfo == nil {
 				m.BackupInfo = &storage.BackupInfo{}
 			}
-			if unmarshal, ok := any(m.BackupInfo).(interface {
+			if unmarshal, ok := interface{}(m.BackupInfo).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2872,7 +2872,7 @@ func (m *DatabaseBackupStatus) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.BackupInfo == nil {
 				m.BackupInfo = &storage.BackupInfo{}
 			}
-			if unmarshal, ok := any(m.BackupInfo).(interface {
+			if unmarshal, ok := interface{}(m.BackupInfo).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

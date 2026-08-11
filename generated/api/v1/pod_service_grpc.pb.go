@@ -115,7 +115,7 @@ func RegisterPodServiceServer(s grpc.ServiceRegistrar, srv PodServiceServer) {
 	s.RegisterService(&PodService_ServiceDesc, srv)
 }
 
-func _PodService_GetPods_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PodService_GetPods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -127,13 +127,13 @@ func _PodService_GetPods_Handler(srv any, ctx context.Context, dec func(any) err
 		Server:     srv,
 		FullMethod: PodService_GetPods_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PodServiceServer).GetPods(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PodService_ExportPods_Handler(srv any, stream grpc.ServerStream) error {
+func _PodService_ExportPods_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportPodRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

@@ -26,7 +26,7 @@ func (m *ClusterConfig) CloneVT() *ClusterConfig {
 	}
 	r := new(ClusterConfig)
 	if rhs := m.Config; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.DynamicClusterConfig
 		}); ok {
 			r.Config = vtpb.CloneVT()
@@ -51,7 +51,7 @@ func (this *ClusterConfig) EqualVT(that *ClusterConfig) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Config).(interface {
+	if equal, ok := interface{}(this.Config).(interface {
 		EqualVT(*storage.DynamicClusterConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.Config) {
@@ -101,7 +101,7 @@ func (m *ClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Config != nil {
-		if vtmsg, ok := any(m.Config).(interface {
+		if vtmsg, ok := interface{}(m.Config).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -132,7 +132,7 @@ func (m *ClusterConfig) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Config != nil {
-		if size, ok := any(m.Config).(interface {
+		if size, ok := interface{}(m.Config).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -206,7 +206,7 @@ func (m *ClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.DynamicClusterConfig{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -301,7 +301,7 @@ func (m *ClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.DynamicClusterConfig{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

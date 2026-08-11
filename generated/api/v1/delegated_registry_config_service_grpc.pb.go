@@ -130,7 +130,7 @@ func RegisterDelegatedRegistryConfigServiceServer(s grpc.ServiceRegistrar, srv D
 	s.RegisterService(&DelegatedRegistryConfigService_ServiceDesc, srv)
 }
 
-func _DelegatedRegistryConfigService_GetConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DelegatedRegistryConfigService_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -142,13 +142,13 @@ func _DelegatedRegistryConfigService_GetConfig_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: DelegatedRegistryConfigService_GetConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DelegatedRegistryConfigServiceServer).GetConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DelegatedRegistryConfigService_GetClusters_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DelegatedRegistryConfigService_GetClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -160,13 +160,13 @@ func _DelegatedRegistryConfigService_GetClusters_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: DelegatedRegistryConfigService_GetClusters_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DelegatedRegistryConfigServiceServer).GetClusters(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DelegatedRegistryConfigService_UpdateConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DelegatedRegistryConfigService_UpdateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DelegatedRegistryConfig)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func _DelegatedRegistryConfigService_UpdateConfig_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: DelegatedRegistryConfigService_UpdateConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DelegatedRegistryConfigServiceServer).UpdateConfig(ctx, req.(*DelegatedRegistryConfig))
 	}
 	return interceptor(ctx, in, info, handler)

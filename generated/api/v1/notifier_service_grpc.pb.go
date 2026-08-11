@@ -213,7 +213,7 @@ func RegisterNotifierServiceServer(s grpc.ServiceRegistrar, srv NotifierServiceS
 	s.RegisterService(&NotifierService_ServiceDesc, srv)
 }
 
-func _NotifierService_GetNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_GetNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -225,13 +225,13 @@ func _NotifierService_GetNotifier_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: NotifierService_GetNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).GetNotifier(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_GetNotifiers_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_GetNotifiers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNotifiersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -243,13 +243,13 @@ func _NotifierService_GetNotifiers_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: NotifierService_GetNotifiers_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).GetNotifiers(ctx, req.(*GetNotifiersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_PutNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_PutNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Notifier)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -261,13 +261,13 @@ func _NotifierService_PutNotifier_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: NotifierService_PutNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).PutNotifier(ctx, req.(*storage.Notifier))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_PostNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_PostNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Notifier)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -279,13 +279,13 @@ func _NotifierService_PostNotifier_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: NotifierService_PostNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).PostNotifier(ctx, req.(*storage.Notifier))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_TestNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_TestNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Notifier)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -297,13 +297,13 @@ func _NotifierService_TestNotifier_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: NotifierService_TestNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).TestNotifier(ctx, req.(*storage.Notifier))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_DeleteNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_DeleteNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteNotifierRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -315,13 +315,13 @@ func _NotifierService_DeleteNotifier_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: NotifierService_DeleteNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).DeleteNotifier(ctx, req.(*DeleteNotifierRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_UpdateNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_UpdateNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateNotifierRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -333,13 +333,13 @@ func _NotifierService_UpdateNotifier_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: NotifierService_UpdateNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).UpdateNotifier(ctx, req.(*UpdateNotifierRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NotifierService_TestUpdatedNotifier_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NotifierService_TestUpdatedNotifier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateNotifierRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func _NotifierService_TestUpdatedNotifier_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: NotifierService_TestUpdatedNotifier_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotifierServiceServer).TestUpdatedNotifier(ctx, req.(*UpdateNotifierRequest))
 	}
 	return interceptor(ctx, in, info, handler)

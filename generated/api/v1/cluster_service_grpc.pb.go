@@ -196,7 +196,7 @@ func RegisterClustersServiceServer(s grpc.ServiceRegistrar, srv ClustersServiceS
 	s.RegisterService(&ClustersService_ServiceDesc, srv)
 }
 
-func _ClustersService_GetClusters_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_GetClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetClustersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -208,13 +208,13 @@ func _ClustersService_GetClusters_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: ClustersService_GetClusters_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).GetClusters(ctx, req.(*GetClustersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_GetCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_GetCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -226,13 +226,13 @@ func _ClustersService_GetCluster_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: ClustersService_GetCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).GetCluster(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_PostCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_PostCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Cluster)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -244,13 +244,13 @@ func _ClustersService_PostCluster_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: ClustersService_PostCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).PostCluster(ctx, req.(*storage.Cluster))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_PutCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_PutCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Cluster)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -262,13 +262,13 @@ func _ClustersService_PutCluster_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: ClustersService_PutCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).PutCluster(ctx, req.(*storage.Cluster))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_DeleteCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_DeleteCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -280,13 +280,13 @@ func _ClustersService_DeleteCluster_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: ClustersService_DeleteCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).DeleteCluster(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_GetKernelSupportAvailable_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_GetKernelSupportAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -298,13 +298,13 @@ func _ClustersService_GetKernelSupportAvailable_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: ClustersService_GetKernelSupportAvailable_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).GetKernelSupportAvailable(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClustersService_GetClusterDefaultValues_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ClustersService_GetClusterDefaultValues_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func _ClustersService_GetClusterDefaultValues_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ClustersService_GetClusterDefaultValues_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClustersServiceServer).GetClusterDefaultValues(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -212,7 +212,7 @@ func RegisterComplianceResultsStatsServiceServer(s grpc.ServiceRegistrar, srv Co
 	s.RegisterService(&ComplianceResultsStatsService_ServiceDesc, srv)
 }
 
-func _ComplianceResultsStatsService_GetComplianceProfileStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceProfileStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceProfileResultsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -224,13 +224,13 @@ func _ComplianceResultsStatsService_GetComplianceProfileStats_Handler(srv any, c
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceProfileStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceProfileStats(ctx, req.(*ComplianceProfileResultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceProfilesStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceProfilesStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -242,13 +242,13 @@ func _ComplianceResultsStatsService_GetComplianceProfilesStats_Handler(srv any, 
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceProfilesStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceProfilesStats(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceProfilesClusterStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceProfilesClusterStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceScanClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -260,13 +260,13 @@ func _ComplianceResultsStatsService_GetComplianceProfilesClusterStats_Handler(sr
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceProfilesClusterStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceProfilesClusterStats(ctx, req.(*ComplianceScanClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceProfileCheckStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceProfileCheckStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceProfileCheckRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -278,13 +278,13 @@ func _ComplianceResultsStatsService_GetComplianceProfileCheckStats_Handler(srv a
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceProfileCheckStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceProfileCheckStats(ctx, req.(*ComplianceProfileCheckRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceClusterScanStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceClusterScanStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceScanClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -296,13 +296,13 @@ func _ComplianceResultsStatsService_GetComplianceClusterScanStats_Handler(srv an
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceClusterScanStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceClusterScanStats(ctx, req.(*ComplianceScanClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceOverallClusterStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceOverallClusterStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -314,13 +314,13 @@ func _ComplianceResultsStatsService_GetComplianceOverallClusterStats_Handler(srv
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceOverallClusterStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceOverallClusterStats(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceResultsStatsService_GetComplianceClusterStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceResultsStatsService_GetComplianceClusterStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceProfileResultsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -332,7 +332,7 @@ func _ComplianceResultsStatsService_GetComplianceClusterStats_Handler(srv any, c
 		Server:     srv,
 		FullMethod: ComplianceResultsStatsService_GetComplianceClusterStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceResultsStatsServiceServer).GetComplianceClusterStats(ctx, req.(*ComplianceProfileResultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

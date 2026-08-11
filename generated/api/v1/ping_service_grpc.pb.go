@@ -84,7 +84,7 @@ func RegisterPingServiceServer(s grpc.ServiceRegistrar, srv PingServiceServer) {
 	s.RegisterService(&PingService_ServiceDesc, srv)
 }
 
-func _PingService_Ping_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PingService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func _PingService_Ping_Handler(srv any, ctx context.Context, dec func(any) error
 		Server:     srv,
 		FullMethod: PingService_Ping_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PingServiceServer).Ping(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

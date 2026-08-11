@@ -336,7 +336,7 @@ func RegisterReportServiceServer(s grpc.ServiceRegistrar, srv ReportServiceServe
 	s.RegisterService(&ReportService_ServiceDesc, srv)
 }
 
-func _ReportService_PostReportConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_PostReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportConfiguration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -348,13 +348,13 @@ func _ReportService_PostReportConfiguration_Handler(srv any, ctx context.Context
 		Server:     srv,
 		FullMethod: ReportService_PostReportConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).PostReportConfiguration(ctx, req.(*ReportConfiguration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_UpdateReportConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_UpdateReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportConfiguration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -366,13 +366,13 @@ func _ReportService_UpdateReportConfiguration_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ReportService_UpdateReportConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).UpdateReportConfiguration(ctx, req.(*ReportConfiguration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_ListReportConfigurations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_ListReportConfigurations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -384,13 +384,13 @@ func _ReportService_ListReportConfigurations_Handler(srv any, ctx context.Contex
 		Server:     srv,
 		FullMethod: ReportService_ListReportConfigurations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).ListReportConfigurations(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_CountReportConfigurations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_CountReportConfigurations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -402,13 +402,13 @@ func _ReportService_CountReportConfigurations_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ReportService_CountReportConfigurations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).CountReportConfigurations(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetReportConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -420,13 +420,13 @@ func _ReportService_GetReportConfiguration_Handler(srv any, ctx context.Context,
 		Server:     srv,
 		FullMethod: ReportService_GetReportConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetReportConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_DeleteReportConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_DeleteReportConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -438,13 +438,13 @@ func _ReportService_DeleteReportConfiguration_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ReportService_DeleteReportConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).DeleteReportConfiguration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetReportStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetReportStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -456,13 +456,13 @@ func _ReportService_GetReportStatus_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: ReportService_GetReportStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetReportStatus(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -474,13 +474,13 @@ func _ReportService_GetReportHistory_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: ReportService_GetReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetReportHistory(ctx, req.(*GetReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetMyReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetMyReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -492,13 +492,13 @@ func _ReportService_GetMyReportHistory_Handler(srv any, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: ReportService_GetMyReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetMyReportHistory(ctx, req.(*GetReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_RunReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_RunReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RunReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -510,13 +510,13 @@ func _ReportService_RunReport_Handler(srv any, ctx context.Context, dec func(any
 		Server:     srv,
 		FullMethod: ReportService_RunReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).RunReport(ctx, req.(*RunReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_CancelReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_CancelReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -528,13 +528,13 @@ func _ReportService_CancelReport_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: ReportService_CancelReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).CancelReport(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_DeleteReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_DeleteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -546,13 +546,13 @@ func _ReportService_DeleteReport_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: ReportService_DeleteReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).DeleteReport(ctx, req.(*DeleteReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_PostViewBasedReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_PostViewBasedReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReportRequestViewBased)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -564,13 +564,13 @@ func _ReportService_PostViewBasedReport_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: ReportService_PostViewBasedReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).PostViewBasedReport(ctx, req.(*ReportRequestViewBased))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetViewBasedMyReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetViewBasedMyReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetViewBasedReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -582,13 +582,13 @@ func _ReportService_GetViewBasedMyReportHistory_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: ReportService_GetViewBasedMyReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetViewBasedMyReportHistory(ctx, req.(*GetViewBasedReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReportService_GetViewBasedReportHistory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ReportService_GetViewBasedReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetViewBasedReportHistoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -600,7 +600,7 @@ func _ReportService_GetViewBasedReportHistory_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ReportService_GetViewBasedReportHistory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ReportServiceServer).GetViewBasedReportHistory(ctx, req.(*GetViewBasedReportHistoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)

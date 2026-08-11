@@ -87,7 +87,7 @@ func RegisterSensorServiceServer(s grpc.ServiceRegistrar, srv SensorServiceServe
 	s.RegisterService(&SensorService_ServiceDesc, srv)
 }
 
-func _SensorService_Communicate_Handler(srv any, stream grpc.ServerStream) error {
+func _SensorService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(SensorServiceServer).Communicate(&grpc.GenericServerStream[MsgFromSensor, MsgToSensor]{ServerStream: stream})
 }
 

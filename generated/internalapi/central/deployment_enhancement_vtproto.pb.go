@@ -30,7 +30,7 @@ func (m *DeploymentEnhancementMessage) CloneVT() *DeploymentEnhancementMessage {
 	if rhs := m.Deployments; rhs != nil {
 		tmpContainer := make([]*storage.Deployment, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Deployment }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Deployment }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Deployment)
@@ -104,7 +104,7 @@ func (this *DeploymentEnhancementMessage) EqualVT(that *DeploymentEnhancementMes
 			if q == nil {
 				q = &storage.Deployment{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.Deployment) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -195,7 +195,7 @@ func (m *DeploymentEnhancementMessage) MarshalToSizedBufferVT(dAtA []byte) (int,
 	}
 	if len(m.Deployments) > 0 {
 		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Deployments[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Deployments[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -325,7 +325,7 @@ func (m *DeploymentEnhancementMessage) SizeVT() (n int) {
 	}
 	if len(m.Deployments) > 0 {
 		for _, e := range m.Deployments {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -458,7 +458,7 @@ func (m *DeploymentEnhancementMessage) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.Deployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -761,7 +761,7 @@ func (m *DeploymentEnhancementMessage) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.Deployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

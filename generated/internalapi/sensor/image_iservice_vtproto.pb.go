@@ -29,7 +29,7 @@ func (m *GetImageRequest) CloneVT() *GetImageRequest {
 	r.Namespace = m.Namespace
 	r.ScanInline = m.ScanInline
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ContainerImage
 		}); ok {
 			r.Image = vtpb.CloneVT()
@@ -54,7 +54,7 @@ func (m *GetImageResponse) CloneVT() *GetImageResponse {
 	}
 	r := new(GetImageResponse)
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Image }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Image }); ok {
 			r.Image = vtpb.CloneVT()
 		} else {
 			r.Image = proto.Clone(rhs).(*storage.Image)
@@ -77,7 +77,7 @@ func (this *GetImageRequest) EqualVT(that *GetImageRequest) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Image).(interface {
+	if equal, ok := interface{}(this.Image).(interface {
 		EqualVT(*storage.ContainerImage) bool
 	}); ok {
 		if !equal.EqualVT(that.Image) {
@@ -108,7 +108,7 @@ func (this *GetImageResponse) EqualVT(that *GetImageResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
+	if equal, ok := interface{}(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
 		if !equal.EqualVT(that.Image) {
 			return false
 		}
@@ -173,7 +173,7 @@ func (m *GetImageRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -228,7 +228,7 @@ func (m *GetImageResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -259,7 +259,7 @@ func (m *GetImageRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -286,7 +286,7 @@ func (m *GetImageResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -360,7 +360,7 @@ func (m *GetImageRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -507,7 +507,7 @@ func (m *GetImageResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -602,7 +602,7 @@ func (m *GetImageRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -753,7 +753,7 @@ func (m *GetImageResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

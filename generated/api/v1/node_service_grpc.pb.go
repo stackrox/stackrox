@@ -130,7 +130,7 @@ func RegisterNodeServiceServer(s grpc.ServiceRegistrar, srv NodeServiceServer) {
 	s.RegisterService(&NodeService_ServiceDesc, srv)
 }
 
-func _NodeService_ListNodes_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NodeService_ListNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListNodesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -142,13 +142,13 @@ func _NodeService_ListNodes_Handler(srv any, ctx context.Context, dec func(any) 
 		Server:     srv,
 		FullMethod: NodeService_ListNodes_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NodeServiceServer).ListNodes(ctx, req.(*ListNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeService_GetNode_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NodeService_GetNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNodeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -160,13 +160,13 @@ func _NodeService_GetNode_Handler(srv any, ctx context.Context, dec func(any) er
 		Server:     srv,
 		FullMethod: NodeService_GetNode_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NodeServiceServer).GetNode(ctx, req.(*GetNodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeService_ExportNodes_Handler(srv any, stream grpc.ServerStream) error {
+func _NodeService_ExportNodes_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(ExportNodeRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

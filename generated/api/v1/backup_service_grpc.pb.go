@@ -231,7 +231,7 @@ func RegisterExternalBackupServiceServer(s grpc.ServiceRegistrar, srv ExternalBa
 	s.RegisterService(&ExternalBackupService_ServiceDesc, srv)
 }
 
-func _ExternalBackupService_GetExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_GetExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -243,13 +243,13 @@ func _ExternalBackupService_GetExternalBackup_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ExternalBackupService_GetExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).GetExternalBackup(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_GetExternalBackups_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_GetExternalBackups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -261,13 +261,13 @@ func _ExternalBackupService_GetExternalBackups_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: ExternalBackupService_GetExternalBackups_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).GetExternalBackups(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_PostExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_PostExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.ExternalBackup)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -279,13 +279,13 @@ func _ExternalBackupService_PostExternalBackup_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: ExternalBackupService_PostExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).PostExternalBackup(ctx, req.(*storage.ExternalBackup))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_PutExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_PutExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.ExternalBackup)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -297,13 +297,13 @@ func _ExternalBackupService_PutExternalBackup_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: ExternalBackupService_PutExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).PutExternalBackup(ctx, req.(*storage.ExternalBackup))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_TestExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_TestExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.ExternalBackup)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -315,13 +315,13 @@ func _ExternalBackupService_TestExternalBackup_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: ExternalBackupService_TestExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).TestExternalBackup(ctx, req.(*storage.ExternalBackup))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_DeleteExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_DeleteExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -333,13 +333,13 @@ func _ExternalBackupService_DeleteExternalBackup_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: ExternalBackupService_DeleteExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).DeleteExternalBackup(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_TriggerExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_TriggerExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -351,13 +351,13 @@ func _ExternalBackupService_TriggerExternalBackup_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: ExternalBackupService_TriggerExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).TriggerExternalBackup(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_UpdateExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_UpdateExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateExternalBackupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -369,13 +369,13 @@ func _ExternalBackupService_UpdateExternalBackup_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: ExternalBackupService_UpdateExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).UpdateExternalBackup(ctx, req.(*UpdateExternalBackupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalBackupService_TestUpdatedExternalBackup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ExternalBackupService_TestUpdatedExternalBackup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateExternalBackupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -387,7 +387,7 @@ func _ExternalBackupService_TestUpdatedExternalBackup_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: ExternalBackupService_TestUpdatedExternalBackup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ExternalBackupServiceServer).TestUpdatedExternalBackup(ctx, req.(*UpdateExternalBackupRequest))
 	}
 	return interceptor(ctx, in, info, handler)

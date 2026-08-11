@@ -188,7 +188,7 @@ func RegisterIndexerServer(s grpc.ServiceRegistrar, srv IndexerServer) {
 	s.RegisterService(&Indexer_ServiceDesc, srv)
 }
 
-func _Indexer_CreateIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_CreateIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -200,13 +200,13 @@ func _Indexer_CreateIndexReport_Handler(srv any, ctx context.Context, dec func(a
 		Server:     srv,
 		FullMethod: Indexer_CreateIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).CreateIndexReport(ctx, req.(*CreateIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_GetIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_GetIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -218,13 +218,13 @@ func _Indexer_GetIndexReport_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: Indexer_GetIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).GetIndexReport(ctx, req.(*GetIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_GetOrCreateIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_GetOrCreateIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOrCreateIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -236,13 +236,13 @@ func _Indexer_GetOrCreateIndexReport_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: Indexer_GetOrCreateIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).GetOrCreateIndexReport(ctx, req.(*GetOrCreateIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_HasIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HasIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -254,13 +254,13 @@ func _Indexer_HasIndexReport_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: Indexer_HasIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).HasIndexReport(ctx, req.(*HasIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_StoreIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_StoreIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StoreIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -272,13 +272,13 @@ func _Indexer_StoreIndexReport_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: Indexer_StoreIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).StoreIndexReport(ctx, req.(*StoreIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Indexer_GetRepositoryToCPEMapping_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _Indexer_GetRepositoryToCPEMapping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRepositoryToCPEMappingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -290,7 +290,7 @@ func _Indexer_GetRepositoryToCPEMapping_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: Indexer_GetRepositoryToCPEMapping_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IndexerServer).GetRepositoryToCPEMapping(ctx, req.(*GetRepositoryToCPEMappingRequest))
 	}
 	return interceptor(ctx, in, info, handler)

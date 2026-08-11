@@ -77,7 +77,7 @@ func (m *Audit_Message) CloneVT() *Audit_Message {
 	r.Method = m.Method
 	r.Interaction = m.Interaction
 	if rhs := m.User; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.UserInfo }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.UserInfo }); ok {
 			r.User = vtpb.CloneVT()
 		} else {
 			r.User = proto.Clone(rhs).(*storage.UserInfo)
@@ -181,7 +181,7 @@ func (this *Audit_Message) EqualVT(that *Audit_Message) bool {
 	if this.StatusReason != that.StatusReason {
 		return false
 	}
-	if equal, ok := any(this.User).(interface{ EqualVT(*storage.UserInfo) bool }); ok {
+	if equal, ok := interface{}(this.User).(interface{ EqualVT(*storage.UserInfo) bool }); ok {
 		if !equal.EqualVT(that.User) {
 			return false
 		}
@@ -402,7 +402,7 @@ func (m *Audit_Message) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x2a
 	}
 	if m.User != nil {
-		if vtmsg, ok := any(m.User).(interface {
+		if vtmsg, ok := interface{}(m.User).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -551,7 +551,7 @@ func (m *Audit_Message) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.User != nil {
-		if size, ok := any(m.User).(interface {
+		if size, ok := interface{}(m.User).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1098,7 +1098,7 @@ func (m *Audit_Message) UnmarshalVT(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &storage.UserInfo{}
 			}
-			if unmarshal, ok := any(m.User).(interface {
+			if unmarshal, ok := interface{}(m.User).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1799,7 +1799,7 @@ func (m *Audit_Message) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.User == nil {
 				m.User = &storage.UserInfo{}
 			}
-			if unmarshal, ok := any(m.User).(interface {
+			if unmarshal, ok := interface{}(m.User).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

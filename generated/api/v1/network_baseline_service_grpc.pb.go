@@ -165,7 +165,7 @@ func RegisterNetworkBaselineServiceServer(s grpc.ServiceRegistrar, srv NetworkBa
 	s.RegisterService(&NetworkBaselineService_ServiceDesc, srv)
 }
 
-func _NetworkBaselineService_GetNetworkBaselineStatusForFlows_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_GetNetworkBaselineStatusForFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NetworkBaselineStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -177,13 +177,13 @@ func _NetworkBaselineService_GetNetworkBaselineStatusForFlows_Handler(srv any, c
 		Server:     srv,
 		FullMethod: NetworkBaselineService_GetNetworkBaselineStatusForFlows_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).GetNetworkBaselineStatusForFlows(ctx, req.(*NetworkBaselineStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NetworkBaselineExternalStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -195,13 +195,13 @@ func _NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_Handler(sr
 		Server:     srv,
 		FullMethod: NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).GetNetworkBaselineStatusForExternalFlows(ctx, req.(*NetworkBaselineExternalStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkBaselineService_GetNetworkBaseline_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_GetNetworkBaseline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -213,13 +213,13 @@ func _NetworkBaselineService_GetNetworkBaseline_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: NetworkBaselineService_GetNetworkBaseline_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).GetNetworkBaseline(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkBaselineService_ModifyBaselineStatusForPeers_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_ModifyBaselineStatusForPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ModifyBaselineStatusForPeersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -231,13 +231,13 @@ func _NetworkBaselineService_ModifyBaselineStatusForPeers_Handler(srv any, ctx c
 		Server:     srv,
 		FullMethod: NetworkBaselineService_ModifyBaselineStatusForPeers_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).ModifyBaselineStatusForPeers(ctx, req.(*ModifyBaselineStatusForPeersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkBaselineService_LockNetworkBaseline_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_LockNetworkBaseline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -249,13 +249,13 @@ func _NetworkBaselineService_LockNetworkBaseline_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: NetworkBaselineService_LockNetworkBaseline_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).LockNetworkBaseline(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkBaselineService_UnlockNetworkBaseline_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkBaselineService_UnlockNetworkBaseline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func _NetworkBaselineService_UnlockNetworkBaseline_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: NetworkBaselineService_UnlockNetworkBaseline_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkBaselineServiceServer).UnlockNetworkBaseline(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

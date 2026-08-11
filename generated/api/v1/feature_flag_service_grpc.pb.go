@@ -88,7 +88,7 @@ func RegisterFeatureFlagServiceServer(s grpc.ServiceRegistrar, srv FeatureFlagSe
 	s.RegisterService(&FeatureFlagService_ServiceDesc, srv)
 }
 
-func _FeatureFlagService_GetFeatureFlags_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _FeatureFlagService_GetFeatureFlags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func _FeatureFlagService_GetFeatureFlags_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: FeatureFlagService_GetFeatureFlags_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FeatureFlagServiceServer).GetFeatureFlags(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

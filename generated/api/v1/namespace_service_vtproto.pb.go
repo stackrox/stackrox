@@ -29,7 +29,7 @@ func (m *Namespace) CloneVT() *Namespace {
 	r.NumSecrets = m.NumSecrets
 	r.NumNetworkPolicies = m.NumNetworkPolicies
 	if rhs := m.Metadata; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.NamespaceMetadata
 		}); ok {
 			r.Metadata = vtpb.CloneVT()
@@ -94,7 +94,7 @@ func (this *Namespace) EqualVT(that *Namespace) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Metadata).(interface {
+	if equal, ok := interface{}(this.Metadata).(interface {
 		EqualVT(*storage.NamespaceMetadata) bool
 	}); ok {
 		if !equal.EqualVT(that.Metadata) {
@@ -220,7 +220,7 @@ func (m *Namespace) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	if m.Metadata != nil {
-		if vtmsg, ok := any(m.Metadata).(interface {
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -339,7 +339,7 @@ func (m *Namespace) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Metadata != nil {
-		if size, ok := any(m.Metadata).(interface {
+		if size, ok := interface{}(m.Metadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -452,7 +452,7 @@ func (m *Namespace) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.NamespaceMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -776,7 +776,7 @@ func (m *Namespace) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.NamespaceMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

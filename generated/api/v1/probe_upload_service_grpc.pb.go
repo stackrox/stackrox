@@ -84,7 +84,7 @@ func RegisterProbeUploadServiceServer(s grpc.ServiceRegistrar, srv ProbeUploadSe
 	s.RegisterService(&ProbeUploadService_ServiceDesc, srv)
 }
 
-func _ProbeUploadService_GetExistingProbes_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProbeUploadService_GetExistingProbes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExistingProbesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func _ProbeUploadService_GetExistingProbes_Handler(srv any, ctx context.Context,
 		Server:     srv,
 		FullMethod: ProbeUploadService_GetExistingProbes_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProbeUploadServiceServer).GetExistingProbes(ctx, req.(*GetExistingProbesRequest))
 	}
 	return interceptor(ctx, in, info, handler)

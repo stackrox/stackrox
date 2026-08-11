@@ -148,7 +148,7 @@ func RegisterIntegrationHealthServiceServer(s grpc.ServiceRegistrar, srv Integra
 	s.RegisterService(&IntegrationHealthService_ServiceDesc, srv)
 }
 
-func _IntegrationHealthService_GetImageIntegrations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _IntegrationHealthService_GetImageIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -160,13 +160,13 @@ func _IntegrationHealthService_GetImageIntegrations_Handler(srv any, ctx context
 		Server:     srv,
 		FullMethod: IntegrationHealthService_GetImageIntegrations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IntegrationHealthServiceServer).GetImageIntegrations(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IntegrationHealthService_GetNotifiers_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _IntegrationHealthService_GetNotifiers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -178,13 +178,13 @@ func _IntegrationHealthService_GetNotifiers_Handler(srv any, ctx context.Context
 		Server:     srv,
 		FullMethod: IntegrationHealthService_GetNotifiers_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IntegrationHealthServiceServer).GetNotifiers(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IntegrationHealthService_GetBackupPlugins_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _IntegrationHealthService_GetBackupPlugins_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -196,13 +196,13 @@ func _IntegrationHealthService_GetBackupPlugins_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: IntegrationHealthService_GetBackupPlugins_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IntegrationHealthServiceServer).GetBackupPlugins(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IntegrationHealthService_GetDeclarativeConfigs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _IntegrationHealthService_GetDeclarativeConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -214,13 +214,13 @@ func _IntegrationHealthService_GetDeclarativeConfigs_Handler(srv any, ctx contex
 		Server:     srv,
 		FullMethod: IntegrationHealthService_GetDeclarativeConfigs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IntegrationHealthServiceServer).GetDeclarativeConfigs(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IntegrationHealthService_GetVulnDefinitionsInfo_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _IntegrationHealthService_GetVulnDefinitionsInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VulnDefinitionsInfoRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func _IntegrationHealthService_GetVulnDefinitionsInfo_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: IntegrationHealthService_GetVulnDefinitionsInfo_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(IntegrationHealthServiceServer).GetVulnDefinitionsInfo(ctx, req.(*VulnDefinitionsInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)

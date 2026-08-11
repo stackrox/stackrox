@@ -191,7 +191,7 @@ func RegisterProcessBaselineServiceServer(s grpc.ServiceRegistrar, srv ProcessBa
 	s.RegisterService(&ProcessBaselineService_ServiceDesc, srv)
 }
 
-func _ProcessBaselineService_GetProcessBaseline_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_GetProcessBaseline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProcessBaselineRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -203,13 +203,13 @@ func _ProcessBaselineService_GetProcessBaseline_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: ProcessBaselineService_GetProcessBaseline_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).GetProcessBaseline(ctx, req.(*GetProcessBaselineRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_UpdateProcessBaselines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_UpdateProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -221,13 +221,13 @@ func _ProcessBaselineService_UpdateProcessBaselines_Handler(srv any, ctx context
 		Server:     srv,
 		FullMethod: ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).UpdateProcessBaselines(ctx, req.(*UpdateProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_LockProcessBaselines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_LockProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LockProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -239,13 +239,13 @@ func _ProcessBaselineService_LockProcessBaselines_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: ProcessBaselineService_LockProcessBaselines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).LockProcessBaselines(ctx, req.(*LockProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_BulkLockProcessBaselines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_BulkLockProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BulkProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -257,13 +257,13 @@ func _ProcessBaselineService_BulkLockProcessBaselines_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: ProcessBaselineService_BulkLockProcessBaselines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).BulkLockProcessBaselines(ctx, req.(*BulkProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_BulkUnlockProcessBaselines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_BulkUnlockProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BulkProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -275,13 +275,13 @@ func _ProcessBaselineService_BulkUnlockProcessBaselines_Handler(srv any, ctx con
 		Server:     srv,
 		FullMethod: ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).BulkUnlockProcessBaselines(ctx, req.(*BulkProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessBaselineService_DeleteProcessBaselines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ProcessBaselineService_DeleteProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteProcessBaselinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -293,7 +293,7 @@ func _ProcessBaselineService_DeleteProcessBaselines_Handler(srv any, ctx context
 		Server:     srv,
 		FullMethod: ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessBaselineServiceServer).DeleteProcessBaselines(ctx, req.(*DeleteProcessBaselinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)

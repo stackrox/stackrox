@@ -33,7 +33,7 @@ func (m *SBOMScanResponse_SBOMScan) CloneVT() *SBOMScanResponse_SBOMScan {
 	if rhs := m.Components; rhs != nil {
 		tmpContainer := make([]*storage.EmbeddedImageScanComponent, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.EmbeddedImageScanComponent
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -44,7 +44,7 @@ func (m *SBOMScanResponse_SBOMScan) CloneVT() *SBOMScanResponse_SBOMScan {
 		r.Components = tmpContainer
 	}
 	if rhs := m.DataSource; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.DataSource }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.DataSource }); ok {
 			r.DataSource = vtpb.CloneVT()
 		} else {
 			r.DataSource = proto.Clone(rhs).(*storage.DataSource)
@@ -103,7 +103,7 @@ func (this *SBOMScanResponse_SBOMScan) EqualVT(that *SBOMScanResponse_SBOMScan) 
 			if q == nil {
 				q = &storage.EmbeddedImageScanComponent{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.EmbeddedImageScanComponent) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -114,7 +114,7 @@ func (this *SBOMScanResponse_SBOMScan) EqualVT(that *SBOMScanResponse_SBOMScan) 
 			}
 		}
 	}
-	if equal, ok := any(this.DataSource).(interface {
+	if equal, ok := interface{}(this.DataSource).(interface {
 		EqualVT(*storage.DataSource) bool
 	}); ok {
 		if !equal.EqualVT(that.DataSource) {
@@ -186,7 +186,7 @@ func (m *SBOMScanResponse_SBOMScan) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.DataSource != nil {
-		if vtmsg, ok := any(m.DataSource).(interface {
+		if vtmsg, ok := interface{}(m.DataSource).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -209,7 +209,7 @@ func (m *SBOMScanResponse_SBOMScan) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	}
 	if len(m.Components) > 0 {
 		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Components[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Components[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -317,7 +317,7 @@ func (m *SBOMScanResponse_SBOMScan) SizeVT() (n int) {
 	}
 	if len(m.Components) > 0 {
 		for _, e := range m.Components {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -328,7 +328,7 @@ func (m *SBOMScanResponse_SBOMScan) SizeVT() (n int) {
 		}
 	}
 	if m.DataSource != nil {
-		if size, ok := any(m.DataSource).(interface {
+		if size, ok := interface{}(m.DataSource).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -486,7 +486,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Components = append(m.Components, &storage.EmbeddedImageScanComponent{})
-			if unmarshal, ok := any(m.Components[len(m.Components)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Components[len(m.Components)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -530,7 +530,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVT(dAtA []byte) error {
 			if m.DataSource == nil {
 				m.DataSource = &storage.DataSource{}
 			}
-			if unmarshal, ok := any(m.DataSource).(interface {
+			if unmarshal, ok := interface{}(m.DataSource).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -814,7 +814,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Components = append(m.Components, &storage.EmbeddedImageScanComponent{})
-			if unmarshal, ok := any(m.Components[len(m.Components)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Components[len(m.Components)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -858,7 +858,7 @@ func (m *SBOMScanResponse_SBOMScan) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.DataSource == nil {
 				m.DataSource = &storage.DataSource{}
 			}
-			if unmarshal, ok := any(m.DataSource).(interface {
+			if unmarshal, ok := interface{}(m.DataSource).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

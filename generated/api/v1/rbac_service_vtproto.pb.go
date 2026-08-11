@@ -29,7 +29,7 @@ func (m *ListRolesResponse) CloneVT() *ListRolesResponse {
 	if rhs := m.Roles; rhs != nil {
 		tmpContainer := make([]*storage.K8SRole, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.K8SRole }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.K8SRole }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.K8SRole)
@@ -54,7 +54,7 @@ func (m *GetRoleResponse) CloneVT() *GetRoleResponse {
 	}
 	r := new(GetRoleResponse)
 	if rhs := m.Role; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.K8SRole }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.K8SRole }); ok {
 			r.Role = vtpb.CloneVT()
 		} else {
 			r.Role = proto.Clone(rhs).(*storage.K8SRole)
@@ -79,7 +79,7 @@ func (m *ListRoleBindingsResponse) CloneVT() *ListRoleBindingsResponse {
 	if rhs := m.Bindings; rhs != nil {
 		tmpContainer := make([]*storage.K8SRoleBinding, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.K8SRoleBinding
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -106,7 +106,7 @@ func (m *GetRoleBindingResponse) CloneVT() *GetRoleBindingResponse {
 	}
 	r := new(GetRoleBindingResponse)
 	if rhs := m.Binding; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.K8SRoleBinding
 		}); ok {
 			r.Binding = vtpb.CloneVT()
@@ -154,7 +154,7 @@ func (m *SubjectAndRoles) CloneVT() *SubjectAndRoles {
 	}
 	r := new(SubjectAndRoles)
 	if rhs := m.Subject; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Subject }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Subject }); ok {
 			r.Subject = vtpb.CloneVT()
 		} else {
 			r.Subject = proto.Clone(rhs).(*storage.Subject)
@@ -163,7 +163,7 @@ func (m *SubjectAndRoles) CloneVT() *SubjectAndRoles {
 	if rhs := m.Roles; rhs != nil {
 		tmpContainer := make([]*storage.K8SRole, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.K8SRole }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.K8SRole }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.K8SRole)
@@ -188,7 +188,7 @@ func (m *GetSubjectResponse) CloneVT() *GetSubjectResponse {
 	}
 	r := new(GetSubjectResponse)
 	if rhs := m.Subject; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Subject }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Subject }); ok {
 			r.Subject = vtpb.CloneVT()
 		} else {
 			r.Subject = proto.Clone(rhs).(*storage.Subject)
@@ -197,7 +197,7 @@ func (m *GetSubjectResponse) CloneVT() *GetSubjectResponse {
 	if rhs := m.ClusterRoles; rhs != nil {
 		tmpContainer := make([]*storage.K8SRole, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.K8SRole }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.K8SRole }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.K8SRole)
@@ -232,7 +232,7 @@ func (m *ScopedRoles) CloneVT() *ScopedRoles {
 	if rhs := m.Roles; rhs != nil {
 		tmpContainer := make([]*storage.K8SRole, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.K8SRole }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.K8SRole }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.K8SRole)
@@ -269,7 +269,7 @@ func (this *ListRolesResponse) EqualVT(that *ListRolesResponse) bool {
 			if q == nil {
 				q = &storage.K8SRole{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -294,7 +294,7 @@ func (this *GetRoleResponse) EqualVT(that *GetRoleResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Role).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+	if equal, ok := interface{}(this.Role).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 		if !equal.EqualVT(that.Role) {
 			return false
 		}
@@ -329,7 +329,7 @@ func (this *ListRoleBindingsResponse) EqualVT(that *ListRoleBindingsResponse) bo
 			if q == nil {
 				q = &storage.K8SRoleBinding{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.K8SRoleBinding) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -356,7 +356,7 @@ func (this *GetRoleBindingResponse) EqualVT(that *GetRoleBindingResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Binding).(interface {
+	if equal, ok := interface{}(this.Binding).(interface {
 		EqualVT(*storage.K8SRoleBinding) bool
 	}); ok {
 		if !equal.EqualVT(that.Binding) {
@@ -414,7 +414,7 @@ func (this *SubjectAndRoles) EqualVT(that *SubjectAndRoles) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Subject).(interface{ EqualVT(*storage.Subject) bool }); ok {
+	if equal, ok := interface{}(this.Subject).(interface{ EqualVT(*storage.Subject) bool }); ok {
 		if !equal.EqualVT(that.Subject) {
 			return false
 		}
@@ -433,7 +433,7 @@ func (this *SubjectAndRoles) EqualVT(that *SubjectAndRoles) bool {
 			if q == nil {
 				q = &storage.K8SRole{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -458,7 +458,7 @@ func (this *GetSubjectResponse) EqualVT(that *GetSubjectResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Subject).(interface{ EqualVT(*storage.Subject) bool }); ok {
+	if equal, ok := interface{}(this.Subject).(interface{ EqualVT(*storage.Subject) bool }); ok {
 		if !equal.EqualVT(that.Subject) {
 			return false
 		}
@@ -477,7 +477,7 @@ func (this *GetSubjectResponse) EqualVT(that *GetSubjectResponse) bool {
 			if q == nil {
 				q = &storage.K8SRole{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -534,7 +534,7 @@ func (this *ScopedRoles) EqualVT(that *ScopedRoles) bool {
 			if q == nil {
 				q = &storage.K8SRole{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -585,7 +585,7 @@ func (m *ListRolesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Roles) > 0 {
 		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Roles[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Roles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -641,7 +641,7 @@ func (m *GetRoleResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Role != nil {
-		if vtmsg, ok := any(m.Role).(interface {
+		if vtmsg, ok := interface{}(m.Role).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -697,7 +697,7 @@ func (m *ListRoleBindingsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	if len(m.Bindings) > 0 {
 		for iNdEx := len(m.Bindings) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Bindings[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Bindings[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -753,7 +753,7 @@ func (m *GetRoleBindingResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Binding != nil {
-		if vtmsg, ok := any(m.Binding).(interface {
+		if vtmsg, ok := interface{}(m.Binding).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -854,7 +854,7 @@ func (m *SubjectAndRoles) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Roles) > 0 {
 		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Roles[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Roles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -877,7 +877,7 @@ func (m *SubjectAndRoles) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 	}
 	if m.Subject != nil {
-		if vtmsg, ok := any(m.Subject).(interface {
+		if vtmsg, ok := interface{}(m.Subject).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -945,7 +945,7 @@ func (m *GetSubjectResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.ClusterRoles) > 0 {
 		for iNdEx := len(m.ClusterRoles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ClusterRoles[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ClusterRoles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -968,7 +968,7 @@ func (m *GetSubjectResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 	}
 	if m.Subject != nil {
-		if vtmsg, ok := any(m.Subject).(interface {
+		if vtmsg, ok := interface{}(m.Subject).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1024,7 +1024,7 @@ func (m *ScopedRoles) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Roles) > 0 {
 		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Roles[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Roles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1064,7 +1064,7 @@ func (m *ListRolesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Roles) > 0 {
 		for _, e := range m.Roles {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1085,7 +1085,7 @@ func (m *GetRoleResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Role != nil {
-		if size, ok := any(m.Role).(interface {
+		if size, ok := interface{}(m.Role).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1106,7 +1106,7 @@ func (m *ListRoleBindingsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Bindings) > 0 {
 		for _, e := range m.Bindings {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1127,7 +1127,7 @@ func (m *GetRoleBindingResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Binding != nil {
-		if size, ok := any(m.Binding).(interface {
+		if size, ok := interface{}(m.Binding).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1163,7 +1163,7 @@ func (m *SubjectAndRoles) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Subject != nil {
-		if size, ok := any(m.Subject).(interface {
+		if size, ok := interface{}(m.Subject).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1174,7 +1174,7 @@ func (m *SubjectAndRoles) SizeVT() (n int) {
 	}
 	if len(m.Roles) > 0 {
 		for _, e := range m.Roles {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1195,7 +1195,7 @@ func (m *GetSubjectResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Subject != nil {
-		if size, ok := any(m.Subject).(interface {
+		if size, ok := interface{}(m.Subject).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1206,7 +1206,7 @@ func (m *GetSubjectResponse) SizeVT() (n int) {
 	}
 	if len(m.ClusterRoles) > 0 {
 		for _, e := range m.ClusterRoles {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1238,7 +1238,7 @@ func (m *ScopedRoles) SizeVT() (n int) {
 	}
 	if len(m.Roles) > 0 {
 		for _, e := range m.Roles {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1311,7 +1311,7 @@ func (m *ListRolesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1406,7 +1406,7 @@ func (m *GetRoleResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.K8SRole{}
 			}
-			if unmarshal, ok := any(m.Role).(interface {
+			if unmarshal, ok := interface{}(m.Role).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1499,7 +1499,7 @@ func (m *ListRoleBindingsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Bindings = append(m.Bindings, &storage.K8SRoleBinding{})
-			if unmarshal, ok := any(m.Bindings[len(m.Bindings)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Bindings[len(m.Bindings)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1594,7 +1594,7 @@ func (m *GetRoleBindingResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Binding == nil {
 				m.Binding = &storage.K8SRoleBinding{}
 			}
-			if unmarshal, ok := any(m.Binding).(interface {
+			if unmarshal, ok := interface{}(m.Binding).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1774,7 +1774,7 @@ func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if unmarshal, ok := any(m.Subject).(interface {
+			if unmarshal, ok := interface{}(m.Subject).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1816,7 +1816,7 @@ func (m *SubjectAndRoles) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1911,7 +1911,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if unmarshal, ok := any(m.Subject).(interface {
+			if unmarshal, ok := interface{}(m.Subject).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1953,7 +1953,7 @@ func (m *GetSubjectResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2112,7 +2112,7 @@ func (m *ScopedRoles) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2205,7 +2205,7 @@ func (m *ListRolesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2300,7 +2300,7 @@ func (m *GetRoleResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.K8SRole{}
 			}
-			if unmarshal, ok := any(m.Role).(interface {
+			if unmarshal, ok := interface{}(m.Role).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2393,7 +2393,7 @@ func (m *ListRoleBindingsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Bindings = append(m.Bindings, &storage.K8SRoleBinding{})
-			if unmarshal, ok := any(m.Bindings[len(m.Bindings)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Bindings[len(m.Bindings)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2488,7 +2488,7 @@ func (m *GetRoleBindingResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Binding == nil {
 				m.Binding = &storage.K8SRoleBinding{}
 			}
-			if unmarshal, ok := any(m.Binding).(interface {
+			if unmarshal, ok := interface{}(m.Binding).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2668,7 +2668,7 @@ func (m *SubjectAndRoles) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if unmarshal, ok := any(m.Subject).(interface {
+			if unmarshal, ok := interface{}(m.Subject).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2710,7 +2710,7 @@ func (m *SubjectAndRoles) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2805,7 +2805,7 @@ func (m *GetSubjectResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Subject == nil {
 				m.Subject = &storage.Subject{}
 			}
-			if unmarshal, ok := any(m.Subject).(interface {
+			if unmarshal, ok := interface{}(m.Subject).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2847,7 +2847,7 @@ func (m *GetSubjectResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3010,7 +3010,7 @@ func (m *ScopedRoles) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

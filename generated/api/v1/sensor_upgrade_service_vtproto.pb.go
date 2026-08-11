@@ -26,7 +26,7 @@ func (m *UpdateSensorUpgradeConfigRequest) CloneVT() *UpdateSensorUpgradeConfigR
 	}
 	r := new(UpdateSensorUpgradeConfigRequest)
 	if rhs := m.Config; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.SensorUpgradeConfig
 		}); ok {
 			r.Config = vtpb.CloneVT()
@@ -86,7 +86,7 @@ func (this *UpdateSensorUpgradeConfigRequest) EqualVT(that *UpdateSensorUpgradeC
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Config).(interface {
+	if equal, ok := interface{}(this.Config).(interface {
 		EqualVT(*storage.SensorUpgradeConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.Config) {
@@ -177,7 +177,7 @@ func (m *UpdateSensorUpgradeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Config != nil {
-		if vtmsg, ok := any(m.Config).(interface {
+		if vtmsg, ok := interface{}(m.Config).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -299,7 +299,7 @@ func (m *UpdateSensorUpgradeConfigRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Config != nil {
-		if size, ok := any(m.Config).(interface {
+		if size, ok := interface{}(m.Config).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -403,7 +403,7 @@ func (m *UpdateSensorUpgradeConfigRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Config == nil {
 				m.Config = &storage.SensorUpgradeConfig{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -675,7 +675,7 @@ func (m *UpdateSensorUpgradeConfigRequest) UnmarshalVTUnsafe(dAtA []byte) error 
 			if m.Config == nil {
 				m.Config = &storage.SensorUpgradeConfig{}
 			}
-			if unmarshal, ok := any(m.Config).(interface {
+			if unmarshal, ok := interface{}(m.Config).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

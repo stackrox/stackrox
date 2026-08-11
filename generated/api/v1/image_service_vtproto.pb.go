@@ -50,7 +50,7 @@ func (m *ListImagesResponse) CloneVT() *ListImagesResponse {
 	if rhs := m.Images; rhs != nil {
 		tmpContainer := make([]*storage.ListImage, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.ListImage }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.ListImage }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.ListImage)
@@ -138,7 +138,7 @@ func (m *ScanImageInternalRequest) CloneVT() *ScanImageInternalRequest {
 	r.CachedOnly = m.CachedOnly
 	r.Source = m.Source.CloneVT()
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ContainerImage
 		}); ok {
 			r.Image = vtpb.CloneVT()
@@ -163,7 +163,7 @@ func (m *ScanImageInternalResponse) CloneVT() *ScanImageInternalResponse {
 	}
 	r := new(ScanImageInternalResponse)
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Image }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Image }); ok {
 			r.Image = vtpb.CloneVT()
 		} else {
 			r.Image = proto.Clone(rhs).(*storage.Image)
@@ -188,21 +188,21 @@ func (m *GetImageVulnerabilitiesInternalRequest) CloneVT() *GetImageVulnerabilit
 	r.ImageId = m.ImageId
 	r.IsClusterLocal = m.IsClusterLocal
 	if rhs := m.ImageName; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ImageName }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ImageName }); ok {
 			r.ImageName = vtpb.CloneVT()
 		} else {
 			r.ImageName = proto.Clone(rhs).(*storage.ImageName)
 		}
 	}
 	if rhs := m.Metadata; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ImageMetadata }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ImageMetadata }); ok {
 			r.Metadata = vtpb.CloneVT()
 		} else {
 			r.Metadata = proto.Clone(rhs).(*storage.ImageMetadata)
 		}
 	}
 	if rhs := m.Components; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.Components }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.Components }); ok {
 			r.Components = vtpb.CloneVT()
 		} else {
 			r.Components = proto.Clone(rhs).(*v1.Components)
@@ -235,21 +235,21 @@ func (m *EnrichLocalImageInternalRequest) CloneVT() *EnrichLocalImageInternalReq
 	r.RequestId = m.RequestId
 	r.Force = m.Force
 	if rhs := m.ImageName; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ImageName }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ImageName }); ok {
 			r.ImageName = vtpb.CloneVT()
 		} else {
 			r.ImageName = proto.Clone(rhs).(*storage.ImageName)
 		}
 	}
 	if rhs := m.Metadata; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ImageMetadata }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ImageMetadata }); ok {
 			r.Metadata = vtpb.CloneVT()
 		} else {
 			r.Metadata = proto.Clone(rhs).(*storage.ImageMetadata)
 		}
 	}
 	if rhs := m.ImageSignature; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ImageSignature
 		}); ok {
 			r.ImageSignature = vtpb.CloneVT()
@@ -258,7 +258,7 @@ func (m *EnrichLocalImageInternalRequest) CloneVT() *EnrichLocalImageInternalReq
 		}
 	}
 	if rhs := m.Components; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.Components }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.Components }); ok {
 			r.Components = vtpb.CloneVT()
 		} else {
 			r.Components = proto.Clone(rhs).(*v1.Components)
@@ -275,7 +275,7 @@ func (m *EnrichLocalImageInternalRequest) CloneVT() *EnrichLocalImageInternalReq
 		r.ImageNotes = tmpContainer
 	}
 	if rhs := m.V4Contents; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *v4.Contents }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.Contents }); ok {
 			r.V4Contents = vtpb.CloneVT()
 		} else {
 			r.V4Contents = proto.Clone(rhs).(*v4.Contents)
@@ -407,7 +407,7 @@ func (m *GetWatchedImagesResponse) CloneVT() *GetWatchedImagesResponse {
 	if rhs := m.WatchedImages; rhs != nil {
 		tmpContainer := make([]*storage.WatchedImage, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.WatchedImage }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.WatchedImage }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.WatchedImage)
@@ -482,7 +482,7 @@ func (m *ExportImageResponse) CloneVT() *ExportImageResponse {
 	}
 	r := new(ExportImageResponse)
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Image }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Image }); ok {
 			r.Image = vtpb.CloneVT()
 		} else {
 			r.Image = proto.Clone(rhs).(*storage.Image)
@@ -542,7 +542,7 @@ func (this *ListImagesResponse) EqualVT(that *ListImagesResponse) bool {
 			if q == nil {
 				q = &storage.ListImage{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.ListImage) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.ListImage) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -648,7 +648,7 @@ func (this *ScanImageInternalRequest) EqualVT(that *ScanImageInternalRequest) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Image).(interface {
+	if equal, ok := interface{}(this.Image).(interface {
 		EqualVT(*storage.ContainerImage) bool
 	}); ok {
 		if !equal.EqualVT(that.Image) {
@@ -679,7 +679,7 @@ func (this *ScanImageInternalResponse) EqualVT(that *ScanImageInternalResponse) 
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
+	if equal, ok := interface{}(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
 		if !equal.EqualVT(that.Image) {
 			return false
 		}
@@ -705,14 +705,14 @@ func (this *GetImageVulnerabilitiesInternalRequest) EqualVT(that *GetImageVulner
 	if this.ImageId != that.ImageId {
 		return false
 	}
-	if equal, ok := any(this.ImageName).(interface{ EqualVT(*storage.ImageName) bool }); ok {
+	if equal, ok := interface{}(this.ImageName).(interface{ EqualVT(*storage.ImageName) bool }); ok {
 		if !equal.EqualVT(that.ImageName) {
 			return false
 		}
 	} else if !proto.Equal(this.ImageName, that.ImageName) {
 		return false
 	}
-	if equal, ok := any(this.Metadata).(interface {
+	if equal, ok := interface{}(this.Metadata).(interface {
 		EqualVT(*storage.ImageMetadata) bool
 	}); ok {
 		if !equal.EqualVT(that.Metadata) {
@@ -721,7 +721,7 @@ func (this *GetImageVulnerabilitiesInternalRequest) EqualVT(that *GetImageVulner
 	} else if !proto.Equal(this.Metadata, that.Metadata) {
 		return false
 	}
-	if equal, ok := any(this.Components).(interface{ EqualVT(*v1.Components) bool }); ok {
+	if equal, ok := interface{}(this.Components).(interface{ EqualVT(*v1.Components) bool }); ok {
 		if !equal.EqualVT(that.Components) {
 			return false
 		}
@@ -759,14 +759,14 @@ func (this *EnrichLocalImageInternalRequest) EqualVT(that *EnrichLocalImageInter
 	if this.ImageId != that.ImageId {
 		return false
 	}
-	if equal, ok := any(this.ImageName).(interface{ EqualVT(*storage.ImageName) bool }); ok {
+	if equal, ok := interface{}(this.ImageName).(interface{ EqualVT(*storage.ImageName) bool }); ok {
 		if !equal.EqualVT(that.ImageName) {
 			return false
 		}
 	} else if !proto.Equal(this.ImageName, that.ImageName) {
 		return false
 	}
-	if equal, ok := any(this.Metadata).(interface {
+	if equal, ok := interface{}(this.Metadata).(interface {
 		EqualVT(*storage.ImageMetadata) bool
 	}); ok {
 		if !equal.EqualVT(that.Metadata) {
@@ -775,7 +775,7 @@ func (this *EnrichLocalImageInternalRequest) EqualVT(that *EnrichLocalImageInter
 	} else if !proto.Equal(this.Metadata, that.Metadata) {
 		return false
 	}
-	if equal, ok := any(this.ImageSignature).(interface {
+	if equal, ok := interface{}(this.ImageSignature).(interface {
 		EqualVT(*storage.ImageSignature) bool
 	}); ok {
 		if !equal.EqualVT(that.ImageSignature) {
@@ -784,7 +784,7 @@ func (this *EnrichLocalImageInternalRequest) EqualVT(that *EnrichLocalImageInter
 	} else if !proto.Equal(this.ImageSignature, that.ImageSignature) {
 		return false
 	}
-	if equal, ok := any(this.Components).(interface{ EqualVT(*v1.Components) bool }); ok {
+	if equal, ok := interface{}(this.Components).(interface{ EqualVT(*v1.Components) bool }); ok {
 		if !equal.EqualVT(that.Components) {
 			return false
 		}
@@ -818,7 +818,7 @@ func (this *EnrichLocalImageInternalRequest) EqualVT(that *EnrichLocalImageInter
 	if this.Force != that.Force {
 		return false
 	}
-	if equal, ok := any(this.V4Contents).(interface{ EqualVT(*v4.Contents) bool }); ok {
+	if equal, ok := interface{}(this.V4Contents).(interface{ EqualVT(*v4.Contents) bool }); ok {
 		if !equal.EqualVT(that.V4Contents) {
 			return false
 		}
@@ -985,7 +985,7 @@ func (this *GetWatchedImagesResponse) EqualVT(that *GetWatchedImagesResponse) bo
 			if q == nil {
 				q = &storage.WatchedImage{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.WatchedImage) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1066,7 +1066,7 @@ func (this *ExportImageResponse) EqualVT(that *ExportImageResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
+	if equal, ok := interface{}(this.Image).(interface{ EqualVT(*storage.Image) bool }); ok {
 		if !equal.EqualVT(that.Image) {
 			return false
 		}
@@ -1175,7 +1175,7 @@ func (m *ListImagesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Images) > 0 {
 		for iNdEx := len(m.Images) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Images[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Images[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1419,7 +1419,7 @@ func (m *ScanImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x18
 	}
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1474,7 +1474,7 @@ func (m *ScanImageInternalResponse) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1560,7 +1560,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) MarshalToSizedBufferVT(dAtA []b
 		dAtA[i] = 0x2a
 	}
 	if m.Components != nil {
-		if vtmsg, ok := any(m.Components).(interface {
+		if vtmsg, ok := interface{}(m.Components).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1582,7 +1582,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) MarshalToSizedBufferVT(dAtA []b
 		dAtA[i] = 0x22
 	}
 	if m.Metadata != nil {
-		if vtmsg, ok := any(m.Metadata).(interface {
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1604,7 +1604,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) MarshalToSizedBufferVT(dAtA []b
 		dAtA[i] = 0x1a
 	}
 	if m.ImageName != nil {
-		if vtmsg, ok := any(m.ImageName).(interface {
+		if vtmsg, ok := interface{}(m.ImageName).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1673,7 +1673,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x62
 	}
 	if m.V4Contents != nil {
-		if vtmsg, ok := any(m.V4Contents).(interface {
+		if vtmsg, ok := interface{}(m.V4Contents).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1761,7 +1761,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x32
 	}
 	if m.Components != nil {
-		if vtmsg, ok := any(m.Components).(interface {
+		if vtmsg, ok := interface{}(m.Components).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1783,7 +1783,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x2a
 	}
 	if m.ImageSignature != nil {
-		if vtmsg, ok := any(m.ImageSignature).(interface {
+		if vtmsg, ok := interface{}(m.ImageSignature).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1805,7 +1805,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x22
 	}
 	if m.Metadata != nil {
-		if vtmsg, ok := any(m.Metadata).(interface {
+		if vtmsg, ok := interface{}(m.Metadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1827,7 +1827,7 @@ func (m *EnrichLocalImageInternalRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 		dAtA[i] = 0x1a
 	}
 	if m.ImageName != nil {
-		if vtmsg, ok := any(m.ImageName).(interface {
+		if vtmsg, ok := interface{}(m.ImageName).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2170,7 +2170,7 @@ func (m *GetWatchedImagesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	if len(m.WatchedImages) > 0 {
 		for iNdEx := len(m.WatchedImages) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.WatchedImages[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.WatchedImages[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2337,7 +2337,7 @@ func (m *ExportImageResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2389,7 +2389,7 @@ func (m *ListImagesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Images) > 0 {
 		for _, e := range m.Images {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2475,7 +2475,7 @@ func (m *ScanImageInternalRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2502,7 +2502,7 @@ func (m *ScanImageInternalResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2526,7 +2526,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ImageName != nil {
-		if size, ok := any(m.ImageName).(interface {
+		if size, ok := interface{}(m.ImageName).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2536,7 +2536,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		if size, ok := any(m.Metadata).(interface {
+		if size, ok := interface{}(m.Metadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2546,7 +2546,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Components != nil {
-		if size, ok := any(m.Components).(interface {
+		if size, ok := interface{}(m.Components).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2580,7 +2580,7 @@ func (m *EnrichLocalImageInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ImageName != nil {
-		if size, ok := any(m.ImageName).(interface {
+		if size, ok := interface{}(m.ImageName).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2590,7 +2590,7 @@ func (m *EnrichLocalImageInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		if size, ok := any(m.Metadata).(interface {
+		if size, ok := interface{}(m.Metadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2600,7 +2600,7 @@ func (m *EnrichLocalImageInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ImageSignature != nil {
-		if size, ok := any(m.ImageSignature).(interface {
+		if size, ok := interface{}(m.ImageSignature).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2610,7 +2610,7 @@ func (m *EnrichLocalImageInternalRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Components != nil {
-		if size, ok := any(m.Components).(interface {
+		if size, ok := interface{}(m.Components).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2645,7 +2645,7 @@ func (m *EnrichLocalImageInternalRequest) SizeVT() (n int) {
 		n += 2
 	}
 	if m.V4Contents != nil {
-		if size, ok := any(m.V4Contents).(interface {
+		if size, ok := interface{}(m.V4Contents).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2770,7 +2770,7 @@ func (m *GetWatchedImagesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.WatchedImages) > 0 {
 		for _, e := range m.WatchedImages {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2828,7 +2828,7 @@ func (m *ExportImageResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3023,7 +3023,7 @@ func (m *ListImagesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Images = append(m.Images, &storage.ListImage{})
-			if unmarshal, ok := any(m.Images[len(m.Images)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Images[len(m.Images)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3522,7 +3522,7 @@ func (m *ScanImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3673,7 +3673,7 @@ func (m *ScanImageInternalResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3800,7 +3800,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if unmarshal, ok := any(m.ImageName).(interface {
+			if unmarshal, ok := interface{}(m.ImageName).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3844,7 +3844,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3888,7 +3888,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVT(dAtA []byte) error 
 			if m.Components == nil {
 				m.Components = &v1.Components{}
 			}
-			if unmarshal, ok := any(m.Components).(interface {
+			if unmarshal, ok := interface{}(m.Components).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4104,7 +4104,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if unmarshal, ok := any(m.ImageName).(interface {
+			if unmarshal, ok := interface{}(m.ImageName).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4148,7 +4148,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4192,7 +4192,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.ImageSignature == nil {
 				m.ImageSignature = &storage.ImageSignature{}
 			}
-			if unmarshal, ok := any(m.ImageSignature).(interface {
+			if unmarshal, ok := interface{}(m.ImageSignature).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4236,7 +4236,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Components == nil {
 				m.Components = &v1.Components{}
 			}
-			if unmarshal, ok := any(m.Components).(interface {
+			if unmarshal, ok := interface{}(m.Components).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4502,7 +4502,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVT(dAtA []byte) error {
 			if m.V4Contents == nil {
 				m.V4Contents = &v4.Contents{}
 			}
-			if unmarshal, ok := any(m.V4Contents).(interface {
+			if unmarshal, ok := interface{}(m.V4Contents).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5239,7 +5239,7 @@ func (m *GetWatchedImagesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.WatchedImages = append(m.WatchedImages, &storage.WatchedImage{})
-			if unmarshal, ok := any(m.WatchedImages[len(m.WatchedImages)-1]).(interface {
+			if unmarshal, ok := interface{}(m.WatchedImages[len(m.WatchedImages)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5538,7 +5538,7 @@ func (m *ExportImageResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5758,7 +5758,7 @@ func (m *ListImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Images = append(m.Images, &storage.ListImage{})
-			if unmarshal, ok := any(m.Images[len(m.Images)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Images[len(m.Images)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6281,7 +6281,7 @@ func (m *ScanImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6432,7 +6432,7 @@ func (m *ScanImageInternalResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6563,7 +6563,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if unmarshal, ok := any(m.ImageName).(interface {
+			if unmarshal, ok := interface{}(m.ImageName).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6607,7 +6607,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6651,7 +6651,7 @@ func (m *GetImageVulnerabilitiesInternalRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			if m.Components == nil {
 				m.Components = &v1.Components{}
 			}
-			if unmarshal, ok := any(m.Components).(interface {
+			if unmarshal, ok := interface{}(m.Components).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6871,7 +6871,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ImageName == nil {
 				m.ImageName = &storage.ImageName{}
 			}
-			if unmarshal, ok := any(m.ImageName).(interface {
+			if unmarshal, ok := interface{}(m.ImageName).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6915,7 +6915,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.ImageMetadata{}
 			}
-			if unmarshal, ok := any(m.Metadata).(interface {
+			if unmarshal, ok := interface{}(m.Metadata).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6959,7 +6959,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ImageSignature == nil {
 				m.ImageSignature = &storage.ImageSignature{}
 			}
-			if unmarshal, ok := any(m.ImageSignature).(interface {
+			if unmarshal, ok := interface{}(m.ImageSignature).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -7003,7 +7003,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Components == nil {
 				m.Components = &v1.Components{}
 			}
-			if unmarshal, ok := any(m.Components).(interface {
+			if unmarshal, ok := interface{}(m.Components).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -7277,7 +7277,7 @@ func (m *EnrichLocalImageInternalRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.V4Contents == nil {
 				m.V4Contents = &v4.Contents{}
 			}
-			if unmarshal, ok := any(m.V4Contents).(interface {
+			if unmarshal, ok := interface{}(m.V4Contents).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8042,7 +8042,7 @@ func (m *GetWatchedImagesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.WatchedImages = append(m.WatchedImages, &storage.WatchedImage{})
-			if unmarshal, ok := any(m.WatchedImages[len(m.WatchedImages)-1]).(interface {
+			if unmarshal, ok := interface{}(m.WatchedImages[len(m.WatchedImages)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8345,7 +8345,7 @@ func (m *ExportImageResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Image == nil {
 				m.Image = &storage.Image{}
 			}
-			if unmarshal, ok := any(m.Image).(interface {
+			if unmarshal, ok := interface{}(m.Image).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

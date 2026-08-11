@@ -28,7 +28,7 @@ func (m *GetExternalBackupsResponse) CloneVT() *GetExternalBackupsResponse {
 	if rhs := m.ExternalBackups; rhs != nil {
 		tmpContainer := make([]*storage.ExternalBackup, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ExternalBackup
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -56,7 +56,7 @@ func (m *UpdateExternalBackupRequest) CloneVT() *UpdateExternalBackupRequest {
 	r := new(UpdateExternalBackupRequest)
 	r.UpdatePassword = m.UpdatePassword
 	if rhs := m.ExternalBackup; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ExternalBackup
 		}); ok {
 			r.ExternalBackup = vtpb.CloneVT()
@@ -93,7 +93,7 @@ func (this *GetExternalBackupsResponse) EqualVT(that *GetExternalBackupsResponse
 			if q == nil {
 				q = &storage.ExternalBackup{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ExternalBackup) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -120,7 +120,7 @@ func (this *UpdateExternalBackupRequest) EqualVT(that *UpdateExternalBackupReque
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.ExternalBackup).(interface {
+	if equal, ok := interface{}(this.ExternalBackup).(interface {
 		EqualVT(*storage.ExternalBackup) bool
 	}); ok {
 		if !equal.EqualVT(that.ExternalBackup) {
@@ -174,7 +174,7 @@ func (m *GetExternalBackupsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.ExternalBackups) > 0 {
 		for iNdEx := len(m.ExternalBackups) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ExternalBackups[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ExternalBackups[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -240,7 +240,7 @@ func (m *UpdateExternalBackupRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		dAtA[i] = 0x10
 	}
 	if m.ExternalBackup != nil {
-		if vtmsg, ok := any(m.ExternalBackup).(interface {
+		if vtmsg, ok := interface{}(m.ExternalBackup).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -272,7 +272,7 @@ func (m *GetExternalBackupsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.ExternalBackups) > 0 {
 		for _, e := range m.ExternalBackups {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -293,7 +293,7 @@ func (m *UpdateExternalBackupRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ExternalBackup != nil {
-		if size, ok := any(m.ExternalBackup).(interface {
+		if size, ok := interface{}(m.ExternalBackup).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -368,7 +368,7 @@ func (m *GetExternalBackupsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExternalBackups = append(m.ExternalBackups, &storage.ExternalBackup{})
-			if unmarshal, ok := any(m.ExternalBackups[len(m.ExternalBackups)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ExternalBackups[len(m.ExternalBackups)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -463,7 +463,7 @@ func (m *UpdateExternalBackupRequest) UnmarshalVT(dAtA []byte) error {
 			if m.ExternalBackup == nil {
 				m.ExternalBackup = &storage.ExternalBackup{}
 			}
-			if unmarshal, ok := any(m.ExternalBackup).(interface {
+			if unmarshal, ok := interface{}(m.ExternalBackup).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -576,7 +576,7 @@ func (m *GetExternalBackupsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ExternalBackups = append(m.ExternalBackups, &storage.ExternalBackup{})
-			if unmarshal, ok := any(m.ExternalBackups[len(m.ExternalBackups)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ExternalBackups[len(m.ExternalBackups)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -671,7 +671,7 @@ func (m *UpdateExternalBackupRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ExternalBackup == nil {
 				m.ExternalBackup = &storage.ExternalBackup{}
 			}
-			if unmarshal, ok := any(m.ExternalBackup).(interface {
+			if unmarshal, ok := interface{}(m.ExternalBackup).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -100,7 +100,7 @@ func (m *ListAlertsResponse) CloneVT() *ListAlertsResponse {
 	if rhs := m.Alerts; rhs != nil {
 		tmpContainer := make([]*storage.ListAlert, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.ListAlert }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.ListAlert }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.ListAlert)
@@ -162,7 +162,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) CloneVT() *GetAlertsGroupResponse_P
 	r := new(GetAlertsGroupResponse_PolicyGroup)
 	r.NumAlerts = m.NumAlerts
 	if rhs := m.Policy; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ListAlertPolicy
 		}); ok {
 			r.Policy = vtpb.CloneVT()
@@ -480,7 +480,7 @@ func (this *ListAlertsResponse) EqualVT(that *ListAlertsResponse) bool {
 			if q == nil {
 				q = &storage.ListAlert{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.ListAlert) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.ListAlert) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -549,7 +549,7 @@ func (this *GetAlertsGroupResponse_PolicyGroup) EqualVT(that *GetAlertsGroupResp
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Policy).(interface {
+	if equal, ok := interface{}(this.Policy).(interface {
 		EqualVT(*storage.ListAlertPolicy) bool
 	}); ok {
 		if !equal.EqualVT(that.Policy) {
@@ -1067,7 +1067,7 @@ func (m *ListAlertsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Alerts) > 0 {
 		for iNdEx := len(m.Alerts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Alerts[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Alerts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1229,7 +1229,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) MarshalToSizedBufferVT(dAtA []byte)
 		dAtA[i] = 0x10
 	}
 	if m.Policy != nil {
-		if vtmsg, ok := any(m.Policy).(interface {
+		if vtmsg, ok := interface{}(m.Policy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1756,7 +1756,7 @@ func (m *ListAlertsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Alerts) > 0 {
 		for _, e := range m.Alerts {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1810,7 +1810,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Policy != nil {
-		if size, ok := any(m.Policy).(interface {
+		if size, ok := interface{}(m.Policy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2440,7 +2440,7 @@ func (m *ListAlertsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.ListAlert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2732,7 +2732,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) UnmarshalVT(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.ListAlertPolicy{}
 			}
-			if unmarshal, ok := any(m.Policy).(interface {
+			if unmarshal, ok := interface{}(m.Policy).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4160,7 +4160,7 @@ func (m *ListAlertsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.ListAlert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4452,7 +4452,7 @@ func (m *GetAlertsGroupResponse_PolicyGroup) UnmarshalVTUnsafe(dAtA []byte) erro
 			if m.Policy == nil {
 				m.Policy = &storage.ListAlertPolicy{}
 			}
-			if unmarshal, ok := any(m.Policy).(interface {
+			if unmarshal, ok := interface{}(m.Policy).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

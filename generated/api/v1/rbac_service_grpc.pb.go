@@ -168,7 +168,7 @@ func RegisterRbacServiceServer(s grpc.ServiceRegistrar, srv RbacServiceServer) {
 	s.RegisterService(&RbacService_ServiceDesc, srv)
 }
 
-func _RbacService_GetRole_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_GetRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -180,13 +180,13 @@ func _RbacService_GetRole_Handler(srv any, ctx context.Context, dec func(any) er
 		Server:     srv,
 		FullMethod: RbacService_GetRole_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).GetRole(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RbacService_ListRoles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_ListRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -198,13 +198,13 @@ func _RbacService_ListRoles_Handler(srv any, ctx context.Context, dec func(any) 
 		Server:     srv,
 		FullMethod: RbacService_ListRoles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).ListRoles(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RbacService_GetRoleBinding_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_GetRoleBinding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -216,13 +216,13 @@ func _RbacService_GetRoleBinding_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: RbacService_GetRoleBinding_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).GetRoleBinding(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RbacService_ListRoleBindings_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_ListRoleBindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -234,13 +234,13 @@ func _RbacService_ListRoleBindings_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: RbacService_ListRoleBindings_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).ListRoleBindings(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RbacService_GetSubject_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_GetSubject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -252,13 +252,13 @@ func _RbacService_GetSubject_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: RbacService_GetSubject_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).GetSubject(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RbacService_ListSubjects_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RbacService_ListSubjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func _RbacService_ListSubjects_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: RbacService_ListSubjects_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RbacServiceServer).ListSubjects(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)

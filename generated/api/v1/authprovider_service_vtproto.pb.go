@@ -107,7 +107,7 @@ func (m *GetAuthProvidersResponse) CloneVT() *GetAuthProvidersResponse {
 	if rhs := m.AuthProviders; rhs != nil {
 		tmpContainer := make([]*storage.AuthProvider, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.AuthProvider }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.AuthProvider }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.AuthProvider)
@@ -132,7 +132,7 @@ func (m *PostAuthProviderRequest) CloneVT() *PostAuthProviderRequest {
 	}
 	r := new(PostAuthProviderRequest)
 	if rhs := m.Provider; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.AuthProvider }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.AuthProvider }); ok {
 			r.Provider = vtpb.CloneVT()
 		} else {
 			r.Provider = proto.Clone(rhs).(*storage.AuthProvider)
@@ -398,7 +398,7 @@ func (this *GetAuthProvidersResponse) EqualVT(that *GetAuthProvidersResponse) bo
 			if q == nil {
 				q = &storage.AuthProvider{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.AuthProvider) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -425,7 +425,7 @@ func (this *PostAuthProviderRequest) EqualVT(that *PostAuthProviderRequest) bool
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Provider).(interface {
+	if equal, ok := interface{}(this.Provider).(interface {
 		EqualVT(*storage.AuthProvider) bool
 	}); ok {
 		if !equal.EqualVT(that.Provider) {
@@ -860,7 +860,7 @@ func (m *GetAuthProvidersResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	if len(m.AuthProviders) > 0 {
 		for iNdEx := len(m.AuthProviders) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.AuthProviders[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.AuthProviders[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -916,7 +916,7 @@ func (m *PostAuthProviderRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Provider != nil {
-		if vtmsg, ok := any(m.Provider).(interface {
+		if vtmsg, ok := interface{}(m.Provider).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1326,7 +1326,7 @@ func (m *GetAuthProvidersResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.AuthProviders) > 0 {
 		for _, e := range m.AuthProviders {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1347,7 +1347,7 @@ func (m *PostAuthProviderRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Provider != nil {
-		if size, ok := any(m.Provider).(interface {
+		if size, ok := interface{}(m.Provider).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2003,7 +2003,7 @@ func (m *GetAuthProvidersResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AuthProviders = append(m.AuthProviders, &storage.AuthProvider{})
-			if unmarshal, ok := any(m.AuthProviders[len(m.AuthProviders)-1]).(interface {
+			if unmarshal, ok := interface{}(m.AuthProviders[len(m.AuthProviders)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2098,7 +2098,7 @@ func (m *PostAuthProviderRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Provider == nil {
 				m.Provider = &storage.AuthProvider{}
 			}
-			if unmarshal, ok := any(m.Provider).(interface {
+			if unmarshal, ok := interface{}(m.Provider).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3335,7 +3335,7 @@ func (m *GetAuthProvidersResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AuthProviders = append(m.AuthProviders, &storage.AuthProvider{})
-			if unmarshal, ok := any(m.AuthProviders[len(m.AuthProviders)-1]).(interface {
+			if unmarshal, ok := interface{}(m.AuthProviders[len(m.AuthProviders)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3430,7 +3430,7 @@ func (m *PostAuthProviderRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Provider == nil {
 				m.Provider = &storage.AuthProvider{}
 			}
-			if unmarshal, ok := any(m.Provider).(interface {
+			if unmarshal, ok := interface{}(m.Provider).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

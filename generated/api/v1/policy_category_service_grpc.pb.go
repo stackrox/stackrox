@@ -162,7 +162,7 @@ func RegisterPolicyCategoryServiceServer(s grpc.ServiceRegistrar, srv PolicyCate
 	s.RegisterService(&PolicyCategoryService_ServiceDesc, srv)
 }
 
-func _PolicyCategoryService_GetPolicyCategory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyCategoryService_GetPolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -174,13 +174,13 @@ func _PolicyCategoryService_GetPolicyCategory_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: PolicyCategoryService_GetPolicyCategory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyCategoryServiceServer).GetPolicyCategory(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyCategoryService_GetPolicyCategories_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyCategoryService_GetPolicyCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -192,13 +192,13 @@ func _PolicyCategoryService_GetPolicyCategories_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: PolicyCategoryService_GetPolicyCategories_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyCategoryServiceServer).GetPolicyCategories(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyCategoryService_PostPolicyCategory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyCategoryService_PostPolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PostPolicyCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -210,13 +210,13 @@ func _PolicyCategoryService_PostPolicyCategory_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: PolicyCategoryService_PostPolicyCategory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyCategoryServiceServer).PostPolicyCategory(ctx, req.(*PostPolicyCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyCategoryService_RenamePolicyCategory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyCategoryService_RenamePolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RenamePolicyCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -228,13 +228,13 @@ func _PolicyCategoryService_RenamePolicyCategory_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: PolicyCategoryService_RenamePolicyCategory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyCategoryServiceServer).RenamePolicyCategory(ctx, req.(*RenamePolicyCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyCategoryService_DeletePolicyCategory_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _PolicyCategoryService_DeletePolicyCategory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeletePolicyCategoryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -246,7 +246,7 @@ func _PolicyCategoryService_DeletePolicyCategory_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: PolicyCategoryService_DeletePolicyCategory_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PolicyCategoryServiceServer).DeletePolicyCategory(ctx, req.(*DeletePolicyCategoryRequest))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -258,7 +258,7 @@ func RegisterVirtualMachineV2ServiceServer(s grpc.ServiceRegistrar, srv VirtualM
 	s.RegisterService(&VirtualMachineV2Service_ServiceDesc, srv)
 }
 
-func _VirtualMachineV2Service_GetVM_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_GetVM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVMRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -270,13 +270,13 @@ func _VirtualMachineV2Service_GetVM_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_GetVM_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).GetVM(ctx, req.(*GetVMRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_GetVMVulnSummary_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_GetVMVulnSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVMVulnSummaryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -288,13 +288,13 @@ func _VirtualMachineV2Service_GetVMVulnSummary_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_GetVMVulnSummary_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).GetVMVulnSummary(ctx, req.(*GetVMVulnSummaryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_ListVMCVEsByVM_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_ListVMCVEsByVM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListVMCVEsByVMRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -306,13 +306,13 @@ func _VirtualMachineV2Service_ListVMCVEsByVM_Handler(srv any, ctx context.Contex
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_ListVMCVEsByVM_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).ListVMCVEsByVM(ctx, req.(*ListVMCVEsByVMRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_GetVMCVEComponents_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_GetVMCVEComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVMCVEComponentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -324,13 +324,13 @@ func _VirtualMachineV2Service_GetVMCVEComponents_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_GetVMCVEComponents_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).GetVMCVEComponents(ctx, req.(*GetVMCVEComponentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_ListVMComponents_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_ListVMComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListVMComponentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -342,13 +342,13 @@ func _VirtualMachineV2Service_ListVMComponents_Handler(srv any, ctx context.Cont
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_ListVMComponents_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).ListVMComponents(ctx, req.(*ListVMComponentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_ListVMs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_ListVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListVMsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -360,13 +360,13 @@ func _VirtualMachineV2Service_ListVMs_Handler(srv any, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_ListVMs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).ListVMs(ctx, req.(*ListVMsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_ListVMCVEs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_ListVMCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListVMCVEsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -378,13 +378,13 @@ func _VirtualMachineV2Service_ListVMCVEs_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_ListVMCVEs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).ListVMCVEs(ctx, req.(*ListVMCVEsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_GetVMDashboardCounts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_GetVMDashboardCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VMDashboardCountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -396,13 +396,13 @@ func _VirtualMachineV2Service_GetVMDashboardCounts_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_GetVMDashboardCounts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).GetVMDashboardCounts(ctx, req.(*VMDashboardCountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_GetVMCVEDetail_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_GetVMCVEDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetVMCVEDetailRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -414,13 +414,13 @@ func _VirtualMachineV2Service_GetVMCVEDetail_Handler(srv any, ctx context.Contex
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_GetVMCVEDetail_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).GetVMCVEDetail(ctx, req.(*GetVMCVEDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineV2Service_ListVMCVEAffectedVMs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _VirtualMachineV2Service_ListVMCVEAffectedVMs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListVMCVEAffectedVMsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func _VirtualMachineV2Service_ListVMCVEAffectedVMs_Handler(srv any, ctx context.
 		Server:     srv,
 		FullMethod: VirtualMachineV2Service_ListVMCVEAffectedVMs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(VirtualMachineV2ServiceServer).ListVMCVEAffectedVMs(ctx, req.(*ListVMCVEAffectedVMsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

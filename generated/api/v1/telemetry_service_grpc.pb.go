@@ -140,7 +140,7 @@ func RegisterTelemetryServiceServer(s grpc.ServiceRegistrar, srv TelemetryServic
 	s.RegisterService(&TelemetryService_ServiceDesc, srv)
 }
 
-func _TelemetryService_GetTelemetryConfiguration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _TelemetryService_GetTelemetryConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -152,13 +152,13 @@ func _TelemetryService_GetTelemetryConfiguration_Handler(srv any, ctx context.Co
 		Server:     srv,
 		FullMethod: TelemetryService_GetTelemetryConfiguration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TelemetryServiceServer).GetTelemetryConfiguration(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TelemetryService_ConfigureTelemetry_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _TelemetryService_ConfigureTelemetry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfigureTelemetryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -170,13 +170,13 @@ func _TelemetryService_ConfigureTelemetry_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: TelemetryService_ConfigureTelemetry_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TelemetryServiceServer).ConfigureTelemetry(ctx, req.(*ConfigureTelemetryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TelemetryService_GetConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _TelemetryService_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -188,13 +188,13 @@ func _TelemetryService_GetConfig_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: TelemetryService_GetConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TelemetryServiceServer).GetConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TelemetryService_PostConfigReload_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _TelemetryService_PostConfigReload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func _TelemetryService_PostConfigReload_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: TelemetryService_PostConfigReload_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TelemetryServiceServer).PostConfigReload(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -213,7 +213,7 @@ func RegisterNetworkGraphServiceServer(s grpc.ServiceRegistrar, srv NetworkGraph
 	s.RegisterService(&NetworkGraphService_ServiceDesc, srv)
 }
 
-func _NetworkGraphService_GetNetworkGraph_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_GetNetworkGraph_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NetworkGraphRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -225,13 +225,13 @@ func _NetworkGraphService_GetNetworkGraph_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: NetworkGraphService_GetNetworkGraph_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetNetworkGraph(ctx, req.(*NetworkGraphRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_GetExternalNetworkEntities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_GetExternalNetworkEntities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExternalNetworkEntitiesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -243,13 +243,13 @@ func _NetworkGraphService_GetExternalNetworkEntities_Handler(srv any, ctx contex
 		Server:     srv,
 		FullMethod: NetworkGraphService_GetExternalNetworkEntities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetExternalNetworkEntities(ctx, req.(*GetExternalNetworkEntitiesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExternalNetworkFlowsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -261,13 +261,13 @@ func _NetworkGraphService_GetExternalNetworkFlows_Handler(srv any, ctx context.C
 		Server:     srv,
 		FullMethod: NetworkGraphService_GetExternalNetworkFlows_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlows(ctx, req.(*GetExternalNetworkFlowsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetExternalNetworkFlowsMetadataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -279,13 +279,13 @@ func _NetworkGraphService_GetExternalNetworkFlowsMetadata_Handler(srv any, ctx c
 		Server:     srv,
 		FullMethod: NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetExternalNetworkFlowsMetadata(ctx, req.(*GetExternalNetworkFlowsMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_CreateExternalNetworkEntity_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_CreateExternalNetworkEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateNetworkEntityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -297,13 +297,13 @@ func _NetworkGraphService_CreateExternalNetworkEntity_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: NetworkGraphService_CreateExternalNetworkEntity_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).CreateExternalNetworkEntity(ctx, req.(*CreateNetworkEntityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_PatchExternalNetworkEntity_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_PatchExternalNetworkEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PatchNetworkEntityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -315,13 +315,13 @@ func _NetworkGraphService_PatchExternalNetworkEntity_Handler(srv any, ctx contex
 		Server:     srv,
 		FullMethod: NetworkGraphService_PatchExternalNetworkEntity_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).PatchExternalNetworkEntity(ctx, req.(*PatchNetworkEntityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_DeleteExternalNetworkEntity_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_DeleteExternalNetworkEntity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -333,13 +333,13 @@ func _NetworkGraphService_DeleteExternalNetworkEntity_Handler(srv any, ctx conte
 		Server:     srv,
 		FullMethod: NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).DeleteExternalNetworkEntity(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_GetNetworkGraphConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_GetNetworkGraphConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -351,13 +351,13 @@ func _NetworkGraphService_GetNetworkGraphConfig_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: NetworkGraphService_GetNetworkGraphConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).GetNetworkGraphConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkGraphService_PutNetworkGraphConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _NetworkGraphService_PutNetworkGraphConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PutNetworkGraphConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -369,7 +369,7 @@ func _NetworkGraphService_PutNetworkGraphConfig_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: NetworkGraphService_PutNetworkGraphConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkGraphServiceServer).PutNetworkGraphConfig(ctx, req.(*PutNetworkGraphConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)

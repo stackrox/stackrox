@@ -149,7 +149,7 @@ func RegisterComplianceServiceServer(s grpc.ServiceRegistrar, srv ComplianceServ
 	s.RegisterService(&ComplianceService_ServiceDesc, srv)
 }
 
-func _ComplianceService_GetStandards_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceService_GetStandards_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -161,13 +161,13 @@ func _ComplianceService_GetStandards_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: ComplianceService_GetStandards_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceServiceServer).GetStandards(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceService_GetStandard_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceService_GetStandard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -179,13 +179,13 @@ func _ComplianceService_GetStandard_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: ComplianceService_GetStandard_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceServiceServer).GetStandard(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceService_GetRunResults_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceService_GetRunResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetComplianceRunResultsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -197,13 +197,13 @@ func _ComplianceService_GetRunResults_Handler(srv any, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: ComplianceService_GetRunResults_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceServiceServer).GetRunResults(ctx, req.(*GetComplianceRunResultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceService_GetAggregatedResults_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceService_GetAggregatedResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComplianceAggregationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -215,13 +215,13 @@ func _ComplianceService_GetAggregatedResults_Handler(srv any, ctx context.Contex
 		Server:     srv,
 		FullMethod: ComplianceService_GetAggregatedResults_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceServiceServer).GetAggregatedResults(ctx, req.(*ComplianceAggregationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceService_UpdateComplianceStandardConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _ComplianceService_UpdateComplianceStandardConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateComplianceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -233,7 +233,7 @@ func _ComplianceService_UpdateComplianceStandardConfig_Handler(srv any, ctx cont
 		Server:     srv,
 		FullMethod: ComplianceService_UpdateComplianceStandardConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ComplianceServiceServer).UpdateComplianceStandardConfig(ctx, req.(*UpdateComplianceRequest))
 	}
 	return interceptor(ctx, in, info, handler)

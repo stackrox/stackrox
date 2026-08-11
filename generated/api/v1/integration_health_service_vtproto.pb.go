@@ -30,7 +30,7 @@ func (m *GetIntegrationHealthResponse) CloneVT() *GetIntegrationHealthResponse {
 	if rhs := m.IntegrationHealth; rhs != nil {
 		tmpContainer := make([]*storage.IntegrationHealth, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.IntegrationHealth
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -103,7 +103,7 @@ func (this *GetIntegrationHealthResponse) EqualVT(that *GetIntegrationHealthResp
 			if q == nil {
 				q = &storage.IntegrationHealth{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.IntegrationHealth) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -194,7 +194,7 @@ func (m *GetIntegrationHealthResponse) MarshalToSizedBufferVT(dAtA []byte) (int,
 	}
 	if len(m.IntegrationHealth) > 0 {
 		for iNdEx := len(m.IntegrationHealth) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.IntegrationHealth[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.IntegrationHealth[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -308,7 +308,7 @@ func (m *GetIntegrationHealthResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.IntegrationHealth) > 0 {
 		for _, e := range m.IntegrationHealth {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -408,7 +408,7 @@ func (m *GetIntegrationHealthResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.IntegrationHealth = append(m.IntegrationHealth, &storage.IntegrationHealth{})
-			if unmarshal, ok := any(m.IntegrationHealth[len(m.IntegrationHealth)-1]).(interface {
+			if unmarshal, ok := interface{}(m.IntegrationHealth[len(m.IntegrationHealth)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -658,7 +658,7 @@ func (m *GetIntegrationHealthResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.IntegrationHealth = append(m.IntegrationHealth, &storage.IntegrationHealth{})
-			if unmarshal, ok := any(m.IntegrationHealth[len(m.IntegrationHealth)-1]).(interface {
+			if unmarshal, ok := interface{}(m.IntegrationHealth[len(m.IntegrationHealth)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

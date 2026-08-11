@@ -158,7 +158,7 @@ func RegisterMetadataServiceServer(s grpc.ServiceRegistrar, srv MetadataServiceS
 	s.RegisterService(&MetadataService_ServiceDesc, srv)
 }
 
-func _MetadataService_GetMetadata_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MetadataService_GetMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -170,13 +170,13 @@ func _MetadataService_GetMetadata_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: MetadataService_GetMetadata_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).GetMetadata(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MetadataService_TLSChallenge_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MetadataService_TLSChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TLSChallengeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -188,13 +188,13 @@ func _MetadataService_TLSChallenge_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: MetadataService_TLSChallenge_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).TLSChallenge(ctx, req.(*TLSChallengeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MetadataService_GetDatabaseStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MetadataService_GetDatabaseStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -206,13 +206,13 @@ func _MetadataService_GetDatabaseStatus_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: MetadataService_GetDatabaseStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).GetDatabaseStatus(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MetadataService_GetDatabaseBackupStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MetadataService_GetDatabaseBackupStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -224,13 +224,13 @@ func _MetadataService_GetDatabaseBackupStatus_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: MetadataService_GetDatabaseBackupStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).GetDatabaseBackupStatus(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MetadataService_GetCentralCapabilities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _MetadataService_GetCentralCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -242,7 +242,7 @@ func _MetadataService_GetCentralCapabilities_Handler(srv any, ctx context.Contex
 		Server:     srv,
 		FullMethod: MetadataService_GetCentralCapabilities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MetadataServiceServer).GetCentralCapabilities(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

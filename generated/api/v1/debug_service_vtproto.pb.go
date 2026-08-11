@@ -159,7 +159,7 @@ func (m *AuthorizationTraceResponse_User_Role) CloneVT() *AuthorizationTraceResp
 		r.Permissions = tmpContainer
 	}
 	if rhs := m.AccessScope; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.SimpleAccessScope_Rules
 		}); ok {
 			r.AccessScope = vtpb.CloneVT()
@@ -481,7 +481,7 @@ func (this *AuthorizationTraceResponse_User_Role) EqualVT(that *AuthorizationTra
 	if this.AccessScopeName != that.AccessScopeName {
 		return false
 	}
-	if equal, ok := any(this.AccessScope).(interface {
+	if equal, ok := interface{}(this.AccessScope).(interface {
 		EqualVT(*storage.SimpleAccessScope_Rules) bool
 	}); ok {
 		if !equal.EqualVT(that.AccessScope) {
@@ -1012,7 +1012,7 @@ func (m *AuthorizationTraceResponse_User_Role) MarshalToSizedBufferVT(dAtA []byt
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.AccessScope != nil {
-		if vtmsg, ok := any(m.AccessScope).(interface {
+		if vtmsg, ok := interface{}(m.AccessScope).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1536,7 +1536,7 @@ func (m *AuthorizationTraceResponse_User_Role) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.AccessScope != nil {
-		if size, ok := any(m.AccessScope).(interface {
+		if size, ok := interface{}(m.AccessScope).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2571,7 +2571,7 @@ func (m *AuthorizationTraceResponse_User_Role) UnmarshalVT(dAtA []byte) error {
 			if m.AccessScope == nil {
 				m.AccessScope = &storage.SimpleAccessScope_Rules{}
 			}
-			if unmarshal, ok := any(m.AccessScope).(interface {
+			if unmarshal, ok := interface{}(m.AccessScope).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4633,7 +4633,7 @@ func (m *AuthorizationTraceResponse_User_Role) UnmarshalVTUnsafe(dAtA []byte) er
 			if m.AccessScope == nil {
 				m.AccessScope = &storage.SimpleAccessScope_Rules{}
 			}
-			if unmarshal, ok := any(m.AccessScope).(interface {
+			if unmarshal, ok := interface{}(m.AccessScope).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -31,7 +31,7 @@ func (m *ProcessListeningOnPortsUpdate) CloneVT() *ProcessListeningOnPortsUpdate
 	if rhs := m.ProcessesListeningOnPorts; rhs != nil {
 		tmpContainer := make([]*storage.ProcessListeningOnPortFromSensor, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ProcessListeningOnPortFromSensor
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -70,7 +70,7 @@ func (this *ProcessListeningOnPortsUpdate) EqualVT(that *ProcessListeningOnPorts
 			if q == nil {
 				q = &storage.ProcessListeningOnPortFromSensor{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ProcessListeningOnPortFromSensor) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -136,7 +136,7 @@ func (m *ProcessListeningOnPortsUpdate) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.ProcessesListeningOnPorts) > 0 {
 		for iNdEx := len(m.ProcessesListeningOnPorts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ProcessesListeningOnPorts[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ProcessesListeningOnPorts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -169,7 +169,7 @@ func (m *ProcessListeningOnPortsUpdate) SizeVT() (n int) {
 	_ = l
 	if len(m.ProcessesListeningOnPorts) > 0 {
 		for _, e := range m.ProcessesListeningOnPorts {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -246,7 +246,7 @@ func (m *ProcessListeningOnPortsUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessesListeningOnPorts = append(m.ProcessesListeningOnPorts, &storage.ProcessListeningOnPortFromSensor{})
-			if unmarshal, ok := any(m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -375,7 +375,7 @@ func (m *ProcessListeningOnPortsUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessesListeningOnPorts = append(m.ProcessesListeningOnPorts, &storage.ProcessListeningOnPortFromSensor{})
-			if unmarshal, ok := any(m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ProcessesListeningOnPorts[len(m.ProcessesListeningOnPorts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -88,7 +88,7 @@ func RegisterFileActivityServiceServer(s grpc.ServiceRegistrar, srv FileActivity
 	s.RegisterService(&FileActivityService_ServiceDesc, srv)
 }
 
-func _FileActivityService_Communicate_Handler(srv any, stream grpc.ServerStream) error {
+func _FileActivityService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(FileActivityServiceServer).Communicate(&grpc.GenericServerStream[FileActivity, emptypb.Empty]{ServerStream: stream})
 }
 

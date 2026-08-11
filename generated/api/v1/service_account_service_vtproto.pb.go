@@ -50,7 +50,7 @@ func (m *ServiceAccountAndRoles) CloneVT() *ServiceAccountAndRoles {
 	}
 	r := new(ServiceAccountAndRoles)
 	if rhs := m.ServiceAccount; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ServiceAccount
 		}); ok {
 			r.ServiceAccount = vtpb.CloneVT()
@@ -61,7 +61,7 @@ func (m *ServiceAccountAndRoles) CloneVT() *ServiceAccountAndRoles {
 	if rhs := m.ClusterRoles; rhs != nil {
 		tmpContainer := make([]*storage.K8SRole, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.K8SRole }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.K8SRole }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.K8SRole)
@@ -168,7 +168,7 @@ func (this *ServiceAccountAndRoles) EqualVT(that *ServiceAccountAndRoles) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.ServiceAccount).(interface {
+	if equal, ok := interface{}(this.ServiceAccount).(interface {
 		EqualVT(*storage.ServiceAccount) bool
 	}); ok {
 		if !equal.EqualVT(that.ServiceAccount) {
@@ -189,7 +189,7 @@ func (this *ServiceAccountAndRoles) EqualVT(that *ServiceAccountAndRoles) bool {
 			if q == nil {
 				q = &storage.K8SRole{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -384,7 +384,7 @@ func (m *ServiceAccountAndRoles) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	if len(m.ClusterRoles) > 0 {
 		for iNdEx := len(m.ClusterRoles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ClusterRoles[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ClusterRoles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -407,7 +407,7 @@ func (m *ServiceAccountAndRoles) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		}
 	}
 	if m.ServiceAccount != nil {
-		if vtmsg, ok := any(m.ServiceAccount).(interface {
+		if vtmsg, ok := interface{}(m.ServiceAccount).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -544,7 +544,7 @@ func (m *ServiceAccountAndRoles) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ServiceAccount != nil {
-		if size, ok := any(m.ServiceAccount).(interface {
+		if size, ok := interface{}(m.ServiceAccount).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -555,7 +555,7 @@ func (m *ServiceAccountAndRoles) SizeVT() (n int) {
 	}
 	if len(m.ClusterRoles) > 0 {
 		for _, e := range m.ClusterRoles {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -759,7 +759,7 @@ func (m *ServiceAccountAndRoles) UnmarshalVT(dAtA []byte) error {
 			if m.ServiceAccount == nil {
 				m.ServiceAccount = &storage.ServiceAccount{}
 			}
-			if unmarshal, ok := any(m.ServiceAccount).(interface {
+			if unmarshal, ok := interface{}(m.ServiceAccount).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -801,7 +801,7 @@ func (m *ServiceAccountAndRoles) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1251,7 +1251,7 @@ func (m *ServiceAccountAndRoles) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ServiceAccount == nil {
 				m.ServiceAccount = &storage.ServiceAccount{}
 			}
-			if unmarshal, ok := any(m.ServiceAccount).(interface {
+			if unmarshal, ok := interface{}(m.ServiceAccount).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1293,7 +1293,7 @@ func (m *ServiceAccountAndRoles) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ClusterRoles = append(m.ClusterRoles, &storage.K8SRole{})
-			if unmarshal, ok := any(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ClusterRoles[len(m.ClusterRoles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

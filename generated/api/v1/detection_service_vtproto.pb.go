@@ -58,7 +58,7 @@ func (m *BuildDetectionRequest_Image) CloneVT() isBuildDetectionRequest_Resource
 	}
 	r := new(BuildDetectionRequest_Image)
 	if rhs := m.Image; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ContainerImage
 		}); ok {
 			r.Image = vtpb.CloneVT()
@@ -86,7 +86,7 @@ func (m *BuildDetectionResponse) CloneVT() *BuildDetectionResponse {
 	if rhs := m.Alerts; rhs != nil {
 		tmpContainer := make([]*storage.Alert, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Alert }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Alert }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Alert)
@@ -135,7 +135,7 @@ func (m *DeployDetectionRequest_Deployment) CloneVT() isDeployDetectionRequest_R
 	}
 	r := new(DeployDetectionRequest_Deployment)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
@@ -181,7 +181,7 @@ func (m *DeployDetectionResponse_Run) CloneVT() *DeployDetectionResponse_Run {
 	if rhs := m.Alerts; rhs != nil {
 		tmpContainer := make([]*storage.Alert, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Alert }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Alert }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Alert)
@@ -266,7 +266,7 @@ func (m *ResultAggregation) CloneVT() *ResultAggregation {
 	if rhs := m.Alerts; rhs != nil {
 		tmpContainer := make([]*storage.Alert, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Alert }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Alert }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Alert)
@@ -362,7 +362,7 @@ func (this *BuildDetectionRequest_Image) EqualVT(thatIface isBuildDetectionReque
 		if q == nil {
 			q = &storage.ContainerImage{}
 		}
-		if equal, ok := any(p).(interface {
+		if equal, ok := interface{}(p).(interface {
 			EqualVT(*storage.ContainerImage) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -410,7 +410,7 @@ func (this *BuildDetectionResponse) EqualVT(that *BuildDetectionResponse) bool {
 			if q == nil {
 				q = &storage.Alert{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -484,7 +484,7 @@ func (this *DeployDetectionRequest_Deployment) EqualVT(thatIface isDeployDetecti
 		if q == nil {
 			q = &storage.Deployment{}
 		}
-		if equal, ok := any(p).(interface {
+		if equal, ok := interface{}(p).(interface {
 			EqualVT(*storage.Deployment) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -564,7 +564,7 @@ func (this *DeployDetectionResponse_Run) EqualVT(that *DeployDetectionResponse_R
 			if q == nil {
 				q = &storage.Alert{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -691,7 +691,7 @@ func (this *ResultAggregation) EqualVT(that *ResultAggregation) bool {
 			if q == nil {
 				q = &storage.Alert{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -830,7 +830,7 @@ func (m *BuildDetectionRequest_Image) MarshalToVT(dAtA []byte) (int, error) {
 func (m *BuildDetectionRequest_Image) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Image != nil {
-		if vtmsg, ok := any(m.Image).(interface {
+		if vtmsg, ok := interface{}(m.Image).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -903,7 +903,7 @@ func (m *BuildDetectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	if len(m.Alerts) > 0 {
 		for iNdEx := len(m.Alerts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Alerts[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Alerts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1005,7 +1005,7 @@ func (m *DeployDetectionRequest_Deployment) MarshalToVT(dAtA []byte) (int, error
 func (m *DeployDetectionRequest_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Deployment != nil {
-		if vtmsg, ok := any(m.Deployment).(interface {
+		if vtmsg, ok := interface{}(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1157,7 +1157,7 @@ func (m *DeployDetectionResponse_Run) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	}
 	if len(m.Alerts) > 0 {
 		for iNdEx := len(m.Alerts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Alerts[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Alerts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1362,7 +1362,7 @@ func (m *ResultAggregation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Alerts) > 0 {
 		for iNdEx := len(m.Alerts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Alerts[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Alerts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1430,7 +1430,7 @@ func (m *BuildDetectionRequest_Image) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Image != nil {
-		if size, ok := any(m.Image).(interface {
+		if size, ok := interface{}(m.Image).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1461,7 +1461,7 @@ func (m *BuildDetectionResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Alerts) > 0 {
 		for _, e := range m.Alerts {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1505,7 +1505,7 @@ func (m *DeployDetectionRequest_Deployment) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := any(m.Deployment).(interface {
+		if size, ok := interface{}(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1571,7 +1571,7 @@ func (m *DeployDetectionResponse_Run) SizeVT() (n int) {
 	}
 	if len(m.Alerts) > 0 {
 		for _, e := range m.Alerts {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1645,7 +1645,7 @@ func (m *ResultAggregation) SizeVT() (n int) {
 	_ = l
 	if len(m.Alerts) > 0 {
 		for _, e := range m.Alerts {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1724,7 +1724,7 @@ func (m *BuildDetectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*BuildDetectionRequest_Image); ok {
-				if unmarshal, ok := any(oneof.Image).(interface {
+				if unmarshal, ok := interface{}(oneof.Image).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1737,7 +1737,7 @@ func (m *BuildDetectionRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ContainerImage{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2020,7 +2020,7 @@ func (m *BuildDetectionResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2113,7 +2113,7 @@ func (m *DeployDetectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*DeployDetectionRequest_Deployment); ok {
-				if unmarshal, ok := any(oneof.Deployment).(interface {
+				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2126,7 +2126,7 @@ func (m *DeployDetectionRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2596,7 +2596,7 @@ func (m *DeployDetectionResponse_Run) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2987,7 +2987,7 @@ func (m *ResultAggregation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3114,7 +3114,7 @@ func (m *BuildDetectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*BuildDetectionRequest_Image); ok {
-				if unmarshal, ok := any(oneof.Image).(interface {
+				if unmarshal, ok := interface{}(oneof.Image).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3127,7 +3127,7 @@ func (m *BuildDetectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ContainerImage{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3426,7 +3426,7 @@ func (m *BuildDetectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3519,7 +3519,7 @@ func (m *DeployDetectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*DeployDetectionRequest_Deployment); ok {
-				if unmarshal, ok := any(oneof.Deployment).(interface {
+				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3532,7 +3532,7 @@ func (m *DeployDetectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4030,7 +4030,7 @@ func (m *DeployDetectionResponse_Run) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4437,7 +4437,7 @@ func (m *ResultAggregation) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

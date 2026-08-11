@@ -88,7 +88,7 @@ func (m *NetworkEndpoint) CloneVT() *NetworkEndpoint {
 	r.ContainerId = m.ContainerId
 	r.CloseTimestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CloseTimestamp).CloneVT())
 	if rhs := m.Originator; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.NetworkProcessUniqueKey
 		}); ok {
 			r.Originator = vtpb.CloneVT()
@@ -245,7 +245,7 @@ func (this *NetworkEndpoint) EqualVT(that *NetworkEndpoint) bool {
 	if !(*timestamppb1.Timestamp)(this.CloseTimestamp).EqualVT((*timestamppb1.Timestamp)(that.CloseTimestamp)) {
 		return false
 	}
-	if equal, ok := any(this.Originator).(interface {
+	if equal, ok := interface{}(this.Originator).(interface {
 		EqualVT(*storage.NetworkProcessUniqueKey) bool
 	}); ok {
 		if !equal.EqualVT(that.Originator) {
@@ -472,7 +472,7 @@ func (m *NetworkEndpoint) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Originator != nil {
-		if vtmsg, ok := any(m.Originator).(interface {
+		if vtmsg, ok := interface{}(m.Originator).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -671,7 +671,7 @@ func (m *NetworkEndpoint) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Originator != nil {
-		if size, ok := any(m.Originator).(interface {
+		if size, ok := interface{}(m.Originator).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1311,7 +1311,7 @@ func (m *NetworkEndpoint) UnmarshalVT(dAtA []byte) error {
 			if m.Originator == nil {
 				m.Originator = &storage.NetworkProcessUniqueKey{}
 			}
-			if unmarshal, ok := any(m.Originator).(interface {
+			if unmarshal, ok := interface{}(m.Originator).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2097,7 +2097,7 @@ func (m *NetworkEndpoint) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Originator == nil {
 				m.Originator = &storage.NetworkProcessUniqueKey{}
 			}
-			if unmarshal, ok := any(m.Originator).(interface {
+			if unmarshal, ok := interface{}(m.Originator).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

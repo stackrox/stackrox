@@ -28,7 +28,7 @@ func (m *PolicySync) CloneVT() *PolicySync {
 	if rhs := m.Policies; rhs != nil {
 		tmpContainer := make([]*storage.Policy, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Policy }); ok {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Policy }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Policy)
@@ -65,7 +65,7 @@ func (this *PolicySync) EqualVT(that *PolicySync) bool {
 			if q == nil {
 				q = &storage.Policy{}
 			}
-			if equal, ok := any(p).(interface{ EqualVT(*storage.Policy) bool }); ok {
+			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Policy) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -116,7 +116,7 @@ func (m *PolicySync) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Policies) > 0 {
 		for iNdEx := len(m.Policies) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Policies[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Policies[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -149,7 +149,7 @@ func (m *PolicySync) SizeVT() (n int) {
 	_ = l
 	if len(m.Policies) > 0 {
 		for _, e := range m.Policies {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -222,7 +222,7 @@ func (m *PolicySync) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.Policy{})
-			if unmarshal, ok := any(m.Policies[len(m.Policies)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Policies[len(m.Policies)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -315,7 +315,7 @@ func (m *PolicySync) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Policies = append(m.Policies, &storage.Policy{})
-			if unmarshal, ok := any(m.Policies[len(m.Policies)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Policies[len(m.Policies)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -233,7 +233,7 @@ func RegisterAlertServiceServer(s grpc.ServiceRegistrar, srv AlertServiceServer)
 	s.RegisterService(&AlertService_ServiceDesc, srv)
 }
 
-func _AlertService_GetAlert_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_GetAlert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -245,13 +245,13 @@ func _AlertService_GetAlert_Handler(srv any, ctx context.Context, dec func(any) 
 		Server:     srv,
 		FullMethod: AlertService_GetAlert_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).GetAlert(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_CountAlerts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_CountAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -263,13 +263,13 @@ func _AlertService_CountAlerts_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: AlertService_CountAlerts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).CountAlerts(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_ListAlerts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_ListAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAlertsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -281,13 +281,13 @@ func _AlertService_ListAlerts_Handler(srv any, ctx context.Context, dec func(any
 		Server:     srv,
 		FullMethod: AlertService_ListAlerts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).ListAlerts(ctx, req.(*ListAlertsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_GetAlertsGroup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_GetAlertsGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAlertsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -299,13 +299,13 @@ func _AlertService_GetAlertsGroup_Handler(srv any, ctx context.Context, dec func
 		Server:     srv,
 		FullMethod: AlertService_GetAlertsGroup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).GetAlertsGroup(ctx, req.(*ListAlertsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_GetAlertsCounts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_GetAlertsCounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetAlertsCountsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -317,13 +317,13 @@ func _AlertService_GetAlertsCounts_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: AlertService_GetAlertsCounts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).GetAlertsCounts(ctx, req.(*GetAlertsCountsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_GetAlertTimeseries_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_GetAlertTimeseries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListAlertsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -335,13 +335,13 @@ func _AlertService_GetAlertTimeseries_Handler(srv any, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: AlertService_GetAlertTimeseries_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).GetAlertTimeseries(ctx, req.(*ListAlertsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_ResolveAlert_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_ResolveAlert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResolveAlertRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -353,13 +353,13 @@ func _AlertService_ResolveAlert_Handler(srv any, ctx context.Context, dec func(a
 		Server:     srv,
 		FullMethod: AlertService_ResolveAlert_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).ResolveAlert(ctx, req.(*ResolveAlertRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_ResolveAlerts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_ResolveAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResolveAlertsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -371,13 +371,13 @@ func _AlertService_ResolveAlerts_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: AlertService_ResolveAlerts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).ResolveAlerts(ctx, req.(*ResolveAlertsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_DeleteAlerts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _AlertService_DeleteAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteAlertsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -389,7 +389,7 @@ func _AlertService_DeleteAlerts_Handler(srv any, ctx context.Context, dec func(a
 		Server:     srv,
 		FullMethod: AlertService_DeleteAlerts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AlertServiceServer).DeleteAlerts(ctx, req.(*DeleteAlertsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

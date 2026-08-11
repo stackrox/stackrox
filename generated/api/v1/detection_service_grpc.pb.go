@@ -126,7 +126,7 @@ func RegisterDetectionServiceServer(s grpc.ServiceRegistrar, srv DetectionServic
 	s.RegisterService(&DetectionService_ServiceDesc, srv)
 }
 
-func _DetectionService_DetectBuildTime_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DetectionService_DetectBuildTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BuildDetectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -138,13 +138,13 @@ func _DetectionService_DetectBuildTime_Handler(srv any, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: DetectionService_DetectBuildTime_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DetectionServiceServer).DetectBuildTime(ctx, req.(*BuildDetectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DetectionService_DetectDeployTime_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DetectionService_DetectDeployTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeployDetectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -156,13 +156,13 @@ func _DetectionService_DetectDeployTime_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: DetectionService_DetectDeployTime_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DetectionServiceServer).DetectDeployTime(ctx, req.(*DeployDetectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DetectionService_DetectDeployTimeFromYAML_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _DetectionService_DetectDeployTimeFromYAML_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeployYAMLDetectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -174,7 +174,7 @@ func _DetectionService_DetectDeployTimeFromYAML_Handler(srv any, ctx context.Con
 		Server:     srv,
 		FullMethod: DetectionService_DetectDeployTimeFromYAML_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DetectionServiceServer).DetectDeployTimeFromYAML(ctx, req.(*DeployYAMLDetectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)

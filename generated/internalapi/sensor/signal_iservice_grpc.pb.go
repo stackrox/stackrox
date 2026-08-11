@@ -96,7 +96,7 @@ func RegisterSignalServiceServer(s grpc.ServiceRegistrar, srv SignalServiceServe
 	s.RegisterService(&SignalService_ServiceDesc, srv)
 }
 
-func _SignalService_PushSignals_Handler(srv any, stream grpc.ServerStream) error {
+func _SignalService_PushSignals_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(SignalServiceServer).PushSignals(&grpc.GenericServerStream[SignalStreamMessage, v1.Empty]{ServerStream: stream})
 }
 

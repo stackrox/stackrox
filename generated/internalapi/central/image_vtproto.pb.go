@@ -50,7 +50,7 @@ func (m *ImageIntegrations) CloneVT() *ImageIntegrations {
 	if rhs := m.UpdatedIntegrations; rhs != nil {
 		tmpContainer := make([]*storage.ImageIntegration, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ImageIntegration
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -122,7 +122,7 @@ func (this *ImageIntegrations) EqualVT(that *ImageIntegrations) bool {
 			if q == nil {
 				q = &storage.ImageIntegration{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ImageIntegration) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -270,7 +270,7 @@ func (m *ImageIntegrations) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.UpdatedIntegrations) > 0 {
 		for iNdEx := len(m.UpdatedIntegrations) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.UpdatedIntegrations[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.UpdatedIntegrations[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -328,7 +328,7 @@ func (m *ImageIntegrations) SizeVT() (n int) {
 	_ = l
 	if len(m.UpdatedIntegrations) > 0 {
 		for _, e := range m.UpdatedIntegrations {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -577,7 +577,7 @@ func (m *ImageIntegrations) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedIntegrations = append(m.UpdatedIntegrations, &storage.ImageIntegration{})
-			if unmarshal, ok := any(m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1]).(interface {
+			if unmarshal, ok := interface{}(m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -901,7 +901,7 @@ func (m *ImageIntegrations) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdatedIntegrations = append(m.UpdatedIntegrations, &storage.ImageIntegration{})
-			if unmarshal, ok := any(m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1]).(interface {
+			if unmarshal, ok := interface{}(m.UpdatedIntegrations[len(m.UpdatedIntegrations)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

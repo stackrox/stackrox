@@ -84,7 +84,7 @@ func RegisterGRPCPreferencesServiceServer(s grpc.ServiceRegistrar, srv GRPCPrefe
 	s.RegisterService(&GRPCPreferencesService_ServiceDesc, srv)
 }
 
-func _GRPCPreferencesService_Get_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _GRPCPreferencesService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func _GRPCPreferencesService_Get_Handler(srv any, ctx context.Context, dec func(
 		Server:     srv,
 		FullMethod: GRPCPreferencesService_Get_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GRPCPreferencesServiceServer).Get(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

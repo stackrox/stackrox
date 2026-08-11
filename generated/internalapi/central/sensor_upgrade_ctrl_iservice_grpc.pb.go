@@ -101,7 +101,7 @@ func RegisterSensorUpgradeControlServiceServer(s grpc.ServiceRegistrar, srv Sens
 	s.RegisterService(&SensorUpgradeControlService_ServiceDesc, srv)
 }
 
-func _SensorUpgradeControlService_UpgradeCheckInFromUpgrader_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SensorUpgradeControlService_UpgradeCheckInFromUpgrader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpgradeCheckInFromUpgraderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -113,13 +113,13 @@ func _SensorUpgradeControlService_UpgradeCheckInFromUpgrader_Handler(srv any, ct
 		Server:     srv,
 		FullMethod: SensorUpgradeControlService_UpgradeCheckInFromUpgrader_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromUpgrader(ctx, req.(*UpgradeCheckInFromUpgraderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SensorUpgradeControlService_UpgradeCheckInFromSensor_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _SensorUpgradeControlService_UpgradeCheckInFromSensor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpgradeCheckInFromSensorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func _SensorUpgradeControlService_UpgradeCheckInFromSensor_Handler(srv any, ctx 
 		Server:     srv,
 		FullMethod: SensorUpgradeControlService_UpgradeCheckInFromSensor_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(SensorUpgradeControlServiceServer).UpgradeCheckInFromSensor(ctx, req.(*UpgradeCheckInFromSensorRequest))
 	}
 	return interceptor(ctx, in, info, handler)

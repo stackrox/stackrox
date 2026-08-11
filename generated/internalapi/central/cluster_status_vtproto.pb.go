@@ -69,7 +69,7 @@ func (m *ClusterStatusUpdate_Status) CloneVT() isClusterStatusUpdate_Msg {
 	}
 	r := new(ClusterStatusUpdate_Status)
 	if rhs := m.Status; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ClusterStatus }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ClusterStatus }); ok {
 			r.Status = vtpb.CloneVT()
 		} else {
 			r.Status = proto.Clone(rhs).(*storage.ClusterStatus)
@@ -93,7 +93,7 @@ func (m *RawClusterHealthInfo) CloneVT() *RawClusterHealthInfo {
 	}
 	r := new(RawClusterHealthInfo)
 	if rhs := m.CollectorHealthInfo; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.CollectorHealthInfo
 		}); ok {
 			r.CollectorHealthInfo = vtpb.CloneVT()
@@ -102,7 +102,7 @@ func (m *RawClusterHealthInfo) CloneVT() *RawClusterHealthInfo {
 		}
 	}
 	if rhs := m.AdmissionControlHealthInfo; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.AdmissionControlHealthInfo
 		}); ok {
 			r.AdmissionControlHealthInfo = vtpb.CloneVT()
@@ -111,7 +111,7 @@ func (m *RawClusterHealthInfo) CloneVT() *RawClusterHealthInfo {
 		}
 	}
 	if rhs := m.ScannerHealthInfo; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ScannerHealthInfo
 		}); ok {
 			r.ScannerHealthInfo = vtpb.CloneVT()
@@ -217,7 +217,7 @@ func (this *ClusterStatusUpdate_Status) EqualVT(thatIface isClusterStatusUpdate_
 		if q == nil {
 			q = &storage.ClusterStatus{}
 		}
-		if equal, ok := any(p).(interface {
+		if equal, ok := interface{}(p).(interface {
 			EqualVT(*storage.ClusterStatus) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -261,7 +261,7 @@ func (this *RawClusterHealthInfo) EqualVT(that *RawClusterHealthInfo) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.CollectorHealthInfo).(interface {
+	if equal, ok := interface{}(this.CollectorHealthInfo).(interface {
 		EqualVT(*storage.CollectorHealthInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.CollectorHealthInfo) {
@@ -270,7 +270,7 @@ func (this *RawClusterHealthInfo) EqualVT(that *RawClusterHealthInfo) bool {
 	} else if !proto.Equal(this.CollectorHealthInfo, that.CollectorHealthInfo) {
 		return false
 	}
-	if equal, ok := any(this.AdmissionControlHealthInfo).(interface {
+	if equal, ok := interface{}(this.AdmissionControlHealthInfo).(interface {
 		EqualVT(*storage.AdmissionControlHealthInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.AdmissionControlHealthInfo) {
@@ -279,7 +279,7 @@ func (this *RawClusterHealthInfo) EqualVT(that *RawClusterHealthInfo) bool {
 	} else if !proto.Equal(this.AdmissionControlHealthInfo, that.AdmissionControlHealthInfo) {
 		return false
 	}
-	if equal, ok := any(this.ScannerHealthInfo).(interface {
+	if equal, ok := interface{}(this.ScannerHealthInfo).(interface {
 		EqualVT(*storage.ScannerHealthInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.ScannerHealthInfo) {
@@ -406,7 +406,7 @@ func (m *ClusterStatusUpdate_Status) MarshalToVT(dAtA []byte) (int, error) {
 func (m *ClusterStatusUpdate_Status) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Status != nil {
-		if vtmsg, ok := any(m.Status).(interface {
+		if vtmsg, ok := interface{}(m.Status).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -487,7 +487,7 @@ func (m *RawClusterHealthInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.ScannerHealthInfo != nil {
-		if vtmsg, ok := any(m.ScannerHealthInfo).(interface {
+		if vtmsg, ok := interface{}(m.ScannerHealthInfo).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -509,7 +509,7 @@ func (m *RawClusterHealthInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		dAtA[i] = 0x1a
 	}
 	if m.AdmissionControlHealthInfo != nil {
-		if vtmsg, ok := any(m.AdmissionControlHealthInfo).(interface {
+		if vtmsg, ok := interface{}(m.AdmissionControlHealthInfo).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -531,7 +531,7 @@ func (m *RawClusterHealthInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		dAtA[i] = 0x12
 	}
 	if m.CollectorHealthInfo != nil {
-		if vtmsg, ok := any(m.CollectorHealthInfo).(interface {
+		if vtmsg, ok := interface{}(m.CollectorHealthInfo).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -624,7 +624,7 @@ func (m *ClusterStatusUpdate_Status) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Status != nil {
-		if size, ok := any(m.Status).(interface {
+		if size, ok := interface{}(m.Status).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -658,7 +658,7 @@ func (m *RawClusterHealthInfo) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.CollectorHealthInfo != nil {
-		if size, ok := any(m.CollectorHealthInfo).(interface {
+		if size, ok := interface{}(m.CollectorHealthInfo).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -668,7 +668,7 @@ func (m *RawClusterHealthInfo) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.AdmissionControlHealthInfo != nil {
-		if size, ok := any(m.AdmissionControlHealthInfo).(interface {
+		if size, ok := interface{}(m.AdmissionControlHealthInfo).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -678,7 +678,7 @@ func (m *RawClusterHealthInfo) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ScannerHealthInfo != nil {
-		if size, ok := any(m.ScannerHealthInfo).(interface {
+		if size, ok := interface{}(m.ScannerHealthInfo).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -843,7 +843,7 @@ func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*ClusterStatusUpdate_Status); ok {
-				if unmarshal, ok := any(oneof.Status).(interface {
+				if unmarshal, ok := interface{}(oneof.Status).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -856,7 +856,7 @@ func (m *ClusterStatusUpdate) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ClusterStatus{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -994,7 +994,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.CollectorHealthInfo == nil {
 				m.CollectorHealthInfo = &storage.CollectorHealthInfo{}
 			}
-			if unmarshal, ok := any(m.CollectorHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.CollectorHealthInfo).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1038,7 +1038,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.AdmissionControlHealthInfo == nil {
 				m.AdmissionControlHealthInfo = &storage.AdmissionControlHealthInfo{}
 			}
-			if unmarshal, ok := any(m.AdmissionControlHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.AdmissionControlHealthInfo).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1082,7 +1082,7 @@ func (m *RawClusterHealthInfo) UnmarshalVT(dAtA []byte) error {
 			if m.ScannerHealthInfo == nil {
 				m.ScannerHealthInfo = &storage.ScannerHealthInfo{}
 			}
-			if unmarshal, ok := any(m.ScannerHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.ScannerHealthInfo).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1313,7 +1313,7 @@ func (m *ClusterStatusUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*ClusterStatusUpdate_Status); ok {
-				if unmarshal, ok := any(oneof.Status).(interface {
+				if unmarshal, ok := interface{}(oneof.Status).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1326,7 +1326,7 @@ func (m *ClusterStatusUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ClusterStatus{}
-				if unmarshal, ok := any(v).(interface {
+				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1464,7 +1464,7 @@ func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.CollectorHealthInfo == nil {
 				m.CollectorHealthInfo = &storage.CollectorHealthInfo{}
 			}
-			if unmarshal, ok := any(m.CollectorHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.CollectorHealthInfo).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1508,7 +1508,7 @@ func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.AdmissionControlHealthInfo == nil {
 				m.AdmissionControlHealthInfo = &storage.AdmissionControlHealthInfo{}
 			}
-			if unmarshal, ok := any(m.AdmissionControlHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.AdmissionControlHealthInfo).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1552,7 +1552,7 @@ func (m *RawClusterHealthInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ScannerHealthInfo == nil {
 				m.ScannerHealthInfo = &storage.ScannerHealthInfo{}
 			}
-			if unmarshal, ok := any(m.ScannerHealthInfo).(interface {
+			if unmarshal, ok := interface{}(m.ScannerHealthInfo).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

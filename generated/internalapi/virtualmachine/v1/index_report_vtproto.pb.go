@@ -67,7 +67,7 @@ func (m *IndexReport) CloneVT() *IndexReport {
 	r.VsockCid = m.VsockCid
 	r.VmId = m.VmId
 	if rhs := m.IndexV4; rhs != nil {
-		if vtpb, ok := any(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
 			r.IndexV4 = vtpb.CloneVT()
 		} else {
 			r.IndexV4 = proto.Clone(rhs).(*v4.IndexReport)
@@ -161,7 +161,7 @@ func (this *IndexReport) EqualVT(that *IndexReport) bool {
 	if this.VsockCid != that.VsockCid {
 		return false
 	}
-	if equal, ok := any(this.IndexV4).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
+	if equal, ok := interface{}(this.IndexV4).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
 		if !equal.EqualVT(that.IndexV4) {
 			return false
 		}
@@ -349,7 +349,7 @@ func (m *IndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1a
 	}
 	if m.IndexV4 != nil {
-		if vtmsg, ok := any(m.IndexV4).(interface {
+		if vtmsg, ok := interface{}(m.IndexV4).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -482,7 +482,7 @@ func (m *IndexReport) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.IndexV4 != nil {
-		if size, ok := any(m.IndexV4).(interface {
+		if size, ok := interface{}(m.IndexV4).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -873,7 +873,7 @@ func (m *IndexReport) UnmarshalVT(dAtA []byte) error {
 			if m.IndexV4 == nil {
 				m.IndexV4 = &v4.IndexReport{}
 			}
-			if unmarshal, ok := any(m.IndexV4).(interface {
+			if unmarshal, ok := interface{}(m.IndexV4).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1422,7 +1422,7 @@ func (m *IndexReport) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.IndexV4 == nil {
 				m.IndexV4 = &v4.IndexReport{}
 			}
-			if unmarshal, ok := any(m.IndexV4).(interface {
+			if unmarshal, ok := interface{}(m.IndexV4).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

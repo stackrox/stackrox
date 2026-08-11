@@ -84,7 +84,7 @@ func (m *GetCollectionResponse) CloneVT() *GetCollectionResponse {
 	}
 	r := new(GetCollectionResponse)
 	if rhs := m.Collection; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ResourceCollection
 		}); ok {
 			r.Collection = vtpb.CloneVT()
@@ -95,7 +95,7 @@ func (m *GetCollectionResponse) CloneVT() *GetCollectionResponse {
 	if rhs := m.Deployments; rhs != nil {
 		tmpContainer := make([]*storage.ListDeployment, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ListDeployment
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -160,7 +160,7 @@ func (m *CreateCollectionRequest) CloneVT() *CreateCollectionRequest {
 	if rhs := m.ResourceSelectors; rhs != nil {
 		tmpContainer := make([]*storage.ResourceSelector, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ResourceSelector
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -192,7 +192,7 @@ func (m *CreateCollectionResponse) CloneVT() *CreateCollectionResponse {
 	}
 	r := new(CreateCollectionResponse)
 	if rhs := m.Collection; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ResourceCollection
 		}); ok {
 			r.Collection = vtpb.CloneVT()
@@ -222,7 +222,7 @@ func (m *UpdateCollectionRequest) CloneVT() *UpdateCollectionRequest {
 	if rhs := m.ResourceSelectors; rhs != nil {
 		tmpContainer := make([]*storage.ResourceSelector, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ResourceSelector
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -254,7 +254,7 @@ func (m *UpdateCollectionResponse) CloneVT() *UpdateCollectionResponse {
 	}
 	r := new(UpdateCollectionResponse)
 	if rhs := m.Collection; rhs != nil {
-		if vtpb, ok := any(rhs).(interface {
+		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.ResourceCollection
 		}); ok {
 			r.Collection = vtpb.CloneVT()
@@ -285,7 +285,7 @@ func (m *DryRunCollectionRequest) CloneVT() *DryRunCollectionRequest {
 	if rhs := m.ResourceSelectors; rhs != nil {
 		tmpContainer := make([]*storage.ResourceSelector, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ResourceSelector
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -319,7 +319,7 @@ func (m *DryRunCollectionResponse) CloneVT() *DryRunCollectionResponse {
 	if rhs := m.Deployments; rhs != nil {
 		tmpContainer := make([]*storage.ListDeployment, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ListDeployment
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -365,7 +365,7 @@ func (m *ListCollectionsResponse) CloneVT() *ListCollectionsResponse {
 	if rhs := m.Collections; rhs != nil {
 		tmpContainer := make([]*storage.ResourceCollection, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := any(v).(interface {
+			if vtpb, ok := interface{}(v).(interface {
 				CloneVT() *storage.ResourceCollection
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -461,7 +461,7 @@ func (this *GetCollectionResponse) EqualVT(that *GetCollectionResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Collection).(interface {
+	if equal, ok := interface{}(this.Collection).(interface {
 		EqualVT(*storage.ResourceCollection) bool
 	}); ok {
 		if !equal.EqualVT(that.Collection) {
@@ -482,7 +482,7 @@ func (this *GetCollectionResponse) EqualVT(that *GetCollectionResponse) bool {
 			if q == nil {
 				q = &storage.ListDeployment{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ListDeployment) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -565,7 +565,7 @@ func (this *CreateCollectionRequest) EqualVT(that *CreateCollectionRequest) bool
 			if q == nil {
 				q = &storage.ResourceSelector{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ResourceSelector) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -601,7 +601,7 @@ func (this *CreateCollectionResponse) EqualVT(that *CreateCollectionResponse) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Collection).(interface {
+	if equal, ok := interface{}(this.Collection).(interface {
 		EqualVT(*storage.ResourceCollection) bool
 	}); ok {
 		if !equal.EqualVT(that.Collection) {
@@ -647,7 +647,7 @@ func (this *UpdateCollectionRequest) EqualVT(that *UpdateCollectionRequest) bool
 			if q == nil {
 				q = &storage.ResourceSelector{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ResourceSelector) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -683,7 +683,7 @@ func (this *UpdateCollectionResponse) EqualVT(that *UpdateCollectionResponse) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := any(this.Collection).(interface {
+	if equal, ok := interface{}(this.Collection).(interface {
 		EqualVT(*storage.ResourceCollection) bool
 	}); ok {
 		if !equal.EqualVT(that.Collection) {
@@ -729,7 +729,7 @@ func (this *DryRunCollectionRequest) EqualVT(that *DryRunCollectionRequest) bool
 			if q == nil {
 				q = &storage.ResourceSelector{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ResourceSelector) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -780,7 +780,7 @@ func (this *DryRunCollectionResponse) EqualVT(that *DryRunCollectionResponse) bo
 			if q == nil {
 				q = &storage.ListDeployment{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ListDeployment) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -838,7 +838,7 @@ func (this *ListCollectionsResponse) EqualVT(that *ListCollectionsResponse) bool
 			if q == nil {
 				q = &storage.ResourceCollection{}
 			}
-			if equal, ok := any(p).(interface {
+			if equal, ok := interface{}(p).(interface {
 				EqualVT(*storage.ResourceCollection) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1036,7 +1036,7 @@ func (m *GetCollectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	}
 	if len(m.Deployments) > 0 {
 		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Deployments[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Deployments[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1059,7 +1059,7 @@ func (m *GetCollectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		}
 	}
 	if m.Collection != nil {
-		if vtmsg, ok := any(m.Collection).(interface {
+		if vtmsg, ok := interface{}(m.Collection).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1205,7 +1205,7 @@ func (m *CreateCollectionRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for iNdEx := len(m.ResourceSelectors) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ResourceSelectors[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ResourceSelectors[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1275,7 +1275,7 @@ func (m *CreateCollectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Collection != nil {
-		if vtmsg, ok := any(m.Collection).(interface {
+		if vtmsg, ok := interface{}(m.Collection).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1340,7 +1340,7 @@ func (m *UpdateCollectionRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for iNdEx := len(m.ResourceSelectors) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ResourceSelectors[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ResourceSelectors[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1417,7 +1417,7 @@ func (m *UpdateCollectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Collection != nil {
-		if vtmsg, ok := any(m.Collection).(interface {
+		if vtmsg, ok := interface{}(m.Collection).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1492,7 +1492,7 @@ func (m *DryRunCollectionRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for iNdEx := len(m.ResourceSelectors) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.ResourceSelectors[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.ResourceSelectors[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1570,7 +1570,7 @@ func (m *DryRunCollectionResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	if len(m.Deployments) > 0 {
 		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Deployments[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Deployments[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1670,7 +1670,7 @@ func (m *ListCollectionsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.Collections) > 0 {
 		for iNdEx := len(m.Collections) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := any(m.Collections[iNdEx]).(interface {
+			if vtmsg, ok := interface{}(m.Collections[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1753,7 +1753,7 @@ func (m *GetCollectionResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Collection != nil {
-		if size, ok := any(m.Collection).(interface {
+		if size, ok := interface{}(m.Collection).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1764,7 +1764,7 @@ func (m *GetCollectionResponse) SizeVT() (n int) {
 	}
 	if len(m.Deployments) > 0 {
 		for _, e := range m.Deployments {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1821,7 +1821,7 @@ func (m *CreateCollectionRequest) SizeVT() (n int) {
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for _, e := range m.ResourceSelectors {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1848,7 +1848,7 @@ func (m *CreateCollectionResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Collection != nil {
-		if size, ok := any(m.Collection).(interface {
+		if size, ok := interface{}(m.Collection).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1881,7 +1881,7 @@ func (m *UpdateCollectionRequest) SizeVT() (n int) {
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for _, e := range m.ResourceSelectors {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1908,7 +1908,7 @@ func (m *UpdateCollectionResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Collection != nil {
-		if size, ok := any(m.Collection).(interface {
+		if size, ok := interface{}(m.Collection).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1941,7 +1941,7 @@ func (m *DryRunCollectionRequest) SizeVT() (n int) {
 	}
 	if len(m.ResourceSelectors) > 0 {
 		for _, e := range m.ResourceSelectors {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1973,7 +1973,7 @@ func (m *DryRunCollectionResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Deployments) > 0 {
 		for _, e := range m.Deployments {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2009,7 +2009,7 @@ func (m *ListCollectionsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Collections) > 0 {
 		for _, e := range m.Collections {
-			if size, ok := any(e).(interface {
+			if size, ok := interface{}(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2393,7 +2393,7 @@ func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2435,7 +2435,7 @@ func (m *GetCollectionResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2749,7 +2749,7 @@ func (m *CreateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2876,7 +2876,7 @@ func (m *CreateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3065,7 +3065,7 @@ func (m *UpdateCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3192,7 +3192,7 @@ func (m *UpdateCollectionResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3381,7 +3381,7 @@ func (m *DryRunCollectionRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3542,7 +3542,7 @@ func (m *DryRunCollectionResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3722,7 +3722,7 @@ func (m *ListCollectionsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Collections = append(m.Collections, &storage.ResourceCollection{})
-			if unmarshal, ok := any(m.Collections[len(m.Collections)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Collections[len(m.Collections)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4134,7 +4134,7 @@ func (m *GetCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4176,7 +4176,7 @@ func (m *GetCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4498,7 +4498,7 @@ func (m *CreateCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4629,7 +4629,7 @@ func (m *CreateCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4830,7 +4830,7 @@ func (m *UpdateCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4961,7 +4961,7 @@ func (m *UpdateCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Collection == nil {
 				m.Collection = &storage.ResourceCollection{}
 			}
-			if unmarshal, ok := any(m.Collection).(interface {
+			if unmarshal, ok := interface{}(m.Collection).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -5162,7 +5162,7 @@ func (m *DryRunCollectionRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ResourceSelectors = append(m.ResourceSelectors, &storage.ResourceSelector{})
-			if unmarshal, ok := any(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
+			if unmarshal, ok := interface{}(m.ResourceSelectors[len(m.ResourceSelectors)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -5327,7 +5327,7 @@ func (m *DryRunCollectionResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -5507,7 +5507,7 @@ func (m *ListCollectionsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Collections = append(m.Collections, &storage.ResourceCollection{})
-			if unmarshal, ok := any(m.Collections[len(m.Collections)-1]).(interface {
+			if unmarshal, ok := interface{}(m.Collections[len(m.Collections)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

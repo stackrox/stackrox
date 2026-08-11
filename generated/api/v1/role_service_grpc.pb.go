@@ -503,7 +503,7 @@ func RegisterRoleServiceServer(s grpc.ServiceRegistrar, srv RoleServiceServer) {
 	s.RegisterService(&RoleService_ServiceDesc, srv)
 }
 
-func _RoleService_GetRoles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -515,13 +515,13 @@ func _RoleService_GetRoles_Handler(srv any, ctx context.Context, dec func(any) e
 		Server:     srv,
 		FullMethod: RoleService_GetRoles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetRoles(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetRole_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -533,13 +533,13 @@ func _RoleService_GetRole_Handler(srv any, ctx context.Context, dec func(any) er
 		Server:     srv,
 		FullMethod: RoleService_GetRole_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetRole(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetMyPermissions_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetMyPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -551,13 +551,13 @@ func _RoleService_GetMyPermissions_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: RoleService_GetMyPermissions_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetMyPermissions(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_CreateRole_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_CreateRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateRoleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -569,13 +569,13 @@ func _RoleService_CreateRole_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: RoleService_CreateRole_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).CreateRole(ctx, req.(*CreateRoleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_UpdateRole_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_UpdateRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.Role)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -587,13 +587,13 @@ func _RoleService_UpdateRole_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: RoleService_UpdateRole_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).UpdateRole(ctx, req.(*storage.Role))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_DeleteRole_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_DeleteRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -605,13 +605,13 @@ func _RoleService_DeleteRole_Handler(srv any, ctx context.Context, dec func(any)
 		Server:     srv,
 		FullMethod: RoleService_DeleteRole_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).DeleteRole(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetResources_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -623,13 +623,13 @@ func _RoleService_GetResources_Handler(srv any, ctx context.Context, dec func(an
 		Server:     srv,
 		FullMethod: RoleService_GetResources_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetResources(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetPermissionSet_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetPermissionSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -641,13 +641,13 @@ func _RoleService_GetPermissionSet_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: RoleService_GetPermissionSet_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetPermissionSet(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_ListPermissionSets_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_ListPermissionSets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -659,13 +659,13 @@ func _RoleService_ListPermissionSets_Handler(srv any, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: RoleService_ListPermissionSets_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).ListPermissionSets(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_PostPermissionSet_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_PostPermissionSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.PermissionSet)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -677,13 +677,13 @@ func _RoleService_PostPermissionSet_Handler(srv any, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: RoleService_PostPermissionSet_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).PostPermissionSet(ctx, req.(*storage.PermissionSet))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_PutPermissionSet_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_PutPermissionSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.PermissionSet)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -695,13 +695,13 @@ func _RoleService_PutPermissionSet_Handler(srv any, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: RoleService_PutPermissionSet_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).PutPermissionSet(ctx, req.(*storage.PermissionSet))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_DeletePermissionSet_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_DeletePermissionSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -713,13 +713,13 @@ func _RoleService_DeletePermissionSet_Handler(srv any, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: RoleService_DeletePermissionSet_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).DeletePermissionSet(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetSimpleAccessScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetSimpleAccessScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -731,13 +731,13 @@ func _RoleService_GetSimpleAccessScope_Handler(srv any, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: RoleService_GetSimpleAccessScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetSimpleAccessScope(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_ListSimpleAccessScopes_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_ListSimpleAccessScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -749,13 +749,13 @@ func _RoleService_ListSimpleAccessScopes_Handler(srv any, ctx context.Context, d
 		Server:     srv,
 		FullMethod: RoleService_ListSimpleAccessScopes_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).ListSimpleAccessScopes(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_PostSimpleAccessScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_PostSimpleAccessScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.SimpleAccessScope)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -767,13 +767,13 @@ func _RoleService_PostSimpleAccessScope_Handler(srv any, ctx context.Context, de
 		Server:     srv,
 		FullMethod: RoleService_PostSimpleAccessScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).PostSimpleAccessScope(ctx, req.(*storage.SimpleAccessScope))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_PutSimpleAccessScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_PutSimpleAccessScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(storage.SimpleAccessScope)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -785,13 +785,13 @@ func _RoleService_PutSimpleAccessScope_Handler(srv any, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: RoleService_PutSimpleAccessScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).PutSimpleAccessScope(ctx, req.(*storage.SimpleAccessScope))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_DeleteSimpleAccessScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_DeleteSimpleAccessScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -803,13 +803,13 @@ func _RoleService_DeleteSimpleAccessScope_Handler(srv any, ctx context.Context, 
 		Server:     srv,
 		FullMethod: RoleService_DeleteSimpleAccessScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).DeleteSimpleAccessScope(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_ComputeEffectiveAccessScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_ComputeEffectiveAccessScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ComputeEffectiveAccessScopeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -821,13 +821,13 @@ func _RoleService_ComputeEffectiveAccessScope_Handler(srv any, ctx context.Conte
 		Server:     srv,
 		FullMethod: RoleService_ComputeEffectiveAccessScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).ComputeEffectiveAccessScope(ctx, req.(*ComputeEffectiveAccessScopeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetClustersForPermissions_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetClustersForPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetClustersForPermissionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -839,13 +839,13 @@ func _RoleService_GetClustersForPermissions_Handler(srv any, ctx context.Context
 		Server:     srv,
 		FullMethod: RoleService_GetClustersForPermissions_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetClustersForPermissions(ctx, req.(*GetClustersForPermissionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RoleService_GetNamespacesForClusterAndPermissions_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
+func _RoleService_GetNamespacesForClusterAndPermissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNamespaceForClusterAndPermissionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -857,7 +857,7 @@ func _RoleService_GetNamespacesForClusterAndPermissions_Handler(srv any, ctx con
 		Server:     srv,
 		FullMethod: RoleService_GetNamespacesForClusterAndPermissions_FullMethodName,
 	}
-	handler := func(ctx context.Context, req any) (any, error) {
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RoleServiceServer).GetNamespacesForClusterAndPermissions(ctx, req.(*GetNamespaceForClusterAndPermissionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
