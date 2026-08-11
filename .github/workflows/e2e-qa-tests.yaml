@@ -112,7 +112,6 @@ jobs:
           hash_truncated="${hash:0:$hash_length}"
 
           cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
-          echo "name=${cluster_name}" >> "$GITHUB_OUTPUT"
           echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
       - name: Prepare infra args
