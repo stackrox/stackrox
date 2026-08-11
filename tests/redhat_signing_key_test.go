@@ -71,28 +71,19 @@ func TestRedHatSigningKey(t *testing.T) {
 
 func (s *RedHatSigningKeySuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
-	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
 
-	// Set once for the whole suite instead of per sub-test: every sub-test
-	// needs the watcher to poll quickly, and each Central restart costs
-	// ~30s, so sharing this one restart across sub-tests instead of paying
-	// it twice per sub-test saves several minutes of suite time.
+	// Deploy scripts (tests/e2e/lib.sh, deploy/common/k8sbased.sh) set
+	// watchIntervalEnv=5s at deploy time, so Central already polls quickly.
+	// This is a same-value no-op safety net for setups that deploy Central
+	// without the baked-in env var (e.g. local dev clusters).
 	ns := namespaces.StackRox
 	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
 	defer cancel()
-	s.logf("Setting %s=%s on central for the whole suite", watchIntervalEnv, shortWatchInterval)
+	s.logf("Ensuring %s=%s on central", watchIntervalEnv, shortWatchInterval)
 	s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
-}
 
-// TearDownSuite reverts the watch-interval override applied in SetupSuite.
-func (s *RedHatSigningKeySuite) TearDownSuite() {
-	ns := namespaces.StackRox
-	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
-	defer cancel()
-	s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-	s.mustDeleteDeploymentEnvVar(ctx, ns, "central", watchIntervalEnv)
-	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
+	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
 }
 
 func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient {

@@ -381,6 +381,9 @@ function launch_central {
         )
       fi
 
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
           --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
@@ -522,6 +525,9 @@ function launch_central {
       if [[ -n $MODULE_LOGLEVELS ]]; then
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
+
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      ${ORCH_CMD} -n stackrox set env deploy/central ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
