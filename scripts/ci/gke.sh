@@ -186,9 +186,9 @@ create_cluster() {
             --labels="${labels}" \
             ${PSP_ARG} \
             "${CLUSTER_NAME}" || status="$?"
+        local cluster_created="false"
         if [[ "${status}" == 0 ]]; then
-            success=1
-            break
+            cluster_created="true"
         elif [[ "${status}" == 124 ]]; then
             info "gcloud command timed out. Checking to see if cluster is still creating"
             if ! gcloud container clusters describe "${CLUSTER_NAME}" >/dev/null; then
@@ -196,7 +196,7 @@ create_cluster() {
             else
                 for i in {1..60}; do
                     if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format json | jq -r .status)" == "RUNNING" ]]; then
-                        success=1
+                        cluster_created="true"
                         break
                     fi
                     sleep 20
@@ -204,14 +204,41 @@ create_cluster() {
                 done
             fi
 
-            if [[ "${success}" == 1 ]]; then
+            if [[ "${cluster_created}" == "true" ]]; then
                 info "Successfully launched cluster ${CLUSTER_NAME}"
                 local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
                 ls -l "${kubeconfig}" || true
                 gcloud container clusters get-credentials "$CLUSTER_NAME"
                 ls -l "${kubeconfig}" || true
-                break
             fi
+        fi
+
+        if [[ "${cluster_created}" == "true" ]]; then
+            if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
+                info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
+                if timeout 300 gcloud beta container node-pools create spot-pool \
+                    --cluster "${CLUSTER_NAME}" \
+                    --machine-type "${MACHINE_TYPE}" \
+                    --num-nodes "$((NUM_NODES - 1))" \
+                    --spot \
+                    --disk-type=pd-ssd \
+                    --disk-size="${DISK_SIZE_GB}GB" \
+                    --image-type "${GCP_IMAGE_TYPE}" \
+                    --no-enable-autorepair \
+                    --no-enable-autoupgrade; then
+                    success=1
+                else
+                    info "Spot node pool creation failed. Deleting cluster and trying another zone..."
+                    gcloud container clusters delete "${CLUSTER_NAME}" --async || true
+                    continue
+                fi
+            else
+                success=1
+            fi
+            break
+        fi
+
+        if [[ "${status}" == 124 ]]; then
             info "Timed out"
             info "Attempting to delete the cluster before trying another zone"
             gcloud container clusters delete "${CLUSTER_NAME}" || {
@@ -224,20 +251,6 @@ create_cluster() {
     if [[ "${success}" == "0" ]]; then
         info "Cluster creation failed"
         return 1
-    fi
-
-    if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
-        info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
-        timeout 300 gcloud beta container node-pools create spot-pool \
-            --cluster "${CLUSTER_NAME}" \
-            --machine-type "${MACHINE_TYPE}" \
-            --num-nodes "$((NUM_NODES - 1))" \
-            --spot \
-            --disk-type=pd-ssd \
-            --disk-size="${DISK_SIZE_GB}GB" \
-            --image-type "${GCP_IMAGE_TYPE}" \
-            --no-enable-autorepair \
-            --no-enable-autoupgrade
     fi
 
     add_a_maintenance_exclusion
