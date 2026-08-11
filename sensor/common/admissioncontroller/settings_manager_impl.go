@@ -14,11 +14,13 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/gziputil"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/configmap"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -43,6 +45,8 @@ type settingsManager struct {
 	deployments store.DeploymentStore
 	pods        store.PodStore
 	namespaces  store.NamespaceStore
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 type clusterLabelsGetter interface {
@@ -54,7 +58,7 @@ type clusterIDWaiter interface {
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces store.NamespaceStore) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces store.NamespaceStore, pubSubDispatcher common.PubSubDispatcher) SettingsManager {
 	return &settingsManager{
 		configStream:                 concurrency.NewValueStream[*v1.ConfigMap](nil),
 		settingsStream:               concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
@@ -68,6 +72,8 @@ func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGe
 		deployments: deployments,
 		pods:        pods,
 		namespaces:  namespaces,
+
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }
 
@@ -149,15 +155,22 @@ func (p *settingsManager) FlushCache() {
 
 func (p *settingsManager) pushSettings(newSettings *sensor.AdmissionControlSettings) {
 	p.settingsStream.Push(newSettings)
-	if config, err := settingsToConfigMap(newSettings); err != nil {
+	config, err := settingsToConfigMap(newSettings)
+	if err != nil {
 		log.Errorf("failed to create config map: %v", err)
-	} else {
-		// the priority is the grpc messages (handled by consumers of the settingsStream)
-		// we make no guarantee the config map and the grpc messages will remain in sync.
-		// however, under normal operation, failures here or in persisting the config map
-		// are unlikely.
-		p.configStream.Push(config)
+		return
 	}
+	// the priority is the grpc messages (handled by consumers of the settingsStream)
+	// we make no guarantee the config map and the grpc messages will remain in sync.
+	// however, under normal operation, failures here or in persisting the config map
+	// are unlikely.
+	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
+		if err := p.pubSubDispatcher.Publish(&configmap.ConfigMapUpdatedEvent{ConfigMap: config}); err != nil {
+			log.Errorf("failed to publish config map update: %v", err)
+		}
+		return
+	}
+	p.configStream.Push(config)
 }
 
 // pushClusterLabelsIfChangedNoLock pushes cluster labels to admission control if they've changed.

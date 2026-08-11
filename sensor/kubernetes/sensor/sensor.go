@@ -95,7 +95,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.LabelBasedPolicyScoping.Enabled() {
 		namespaces = storeProvider.Namespaces()
 	}
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces)
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods(), namespaces, internalMessageDispatcher)
 	var factSettingsMgr *filesystem.FactSettingsManager
 	if features.SensitiveFileActivity.Enabled() {
 		factSettingsMgr = filesystem.NewFactSettingsManager()
@@ -253,6 +253,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 				sensorNamespace,
 				cfg.k8sClient.Kubernetes(),
 				admCtrlSettingsMgr.ConfigMapStream().Iterator(false),
+				internalMessageDispatcher,
 			),
 		)
 	}
@@ -264,6 +265,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 				sensorNamespace,
 				cfg.k8sClient.Kubernetes(),
 				factSettingsMgr.ConfigMapStream().Iterator(false),
+				nil,
 			),
 		)
 	}
