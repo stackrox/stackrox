@@ -214,7 +214,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
 		vmDial, err := vsockdialer.NewMultiDialer()
 		if err != nil {
-			log.Warnf("VSOCK pull mode disabled (kubevirt client): %v", err)
+			log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
 		} else {
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 			vmSender := &vmScraperSenderAdapter{handler: virtualMachineHandler}

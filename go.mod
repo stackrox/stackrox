@@ -543,11 +543,14 @@ replace (
 	gopkg.in/yaml.v3 => github.com/stackrox/yaml/v3 v3.0.0
 )
 
-// Temporary: simulate kubevirt upstream fixes via vikin91/client-go@acs
-// until kubevirt#18315 lands in a published kubevirt.io/client-go release.
+// Temporary compile-time stand-in until kubevirt#18315 lands in a published
+// kubevirt.io/client-go release. Personal-account fork is for local/CI build
+// only; do not merge this replace into master unless we deliberately adopt a
+// stackrox-owned or upstream-fixed module.
 replace kubevirt.io/client-go => github.com/vikin91/client-go v1.9.0-beta.0.0.20260811081631-6b0ebd4ea0cc
 
-// kubevirt.io/client-go still requires the nonexistent k8s.io/kube-openapi@v0.31.0 tag.
+// Transitive require of nonexistent k8s.io/kube-openapi@v0.31.0 from the
+// kubevirt client module; remove together with the client-go replace above.
 replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20260427204847-8949caaa1199
 
 // @stackrox/scanner
