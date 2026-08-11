@@ -68,7 +68,7 @@ func ClassifyVersion(self, remote productstreams.XYVersion) Compatibility {
 // or fewer if the backward walk cannot go far enough.
 func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstreams.XYVersion {
 	if n < 0 {
-		n = 0
+		panic("CompatibleVersionRange: n must be non-negative")
 	}
 
 	// If self is a phantom version (past a bump point), snap the backward
@@ -117,7 +117,7 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 // a custom skew tolerance n.
 func Classify(self, remote productstreams.XYVersion, n int) Compatibility {
 	if n < 0 {
-		n = 0
+		panic("Classify: n must be non-negative")
 	}
 	cmp := self.Compare(remote)
 	if cmp == 0 {

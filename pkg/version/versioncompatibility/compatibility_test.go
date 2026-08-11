@@ -128,11 +128,6 @@ func TestCompatibleVersionRange(t *testing.T) {
 			n:    0,
 			want: []productstreams.XYVersion{xy(4, 12)},
 		},
-		"negative n returns only self": {
-			self: xy(4, 5),
-			n:    -1,
-			want: []productstreams.XYVersion{xy(4, 5)},
-		},
 		"n=1": {
 			self: xy(5, 0),
 			n:    1,
@@ -242,10 +237,6 @@ func TestClassify(t *testing.T) {
 			},
 			"custom n=1 incompatible": {
 				self: xy(4, 5), remote: xy(4, 7), n: 1,
-				want: IncompatibleAhead,
-			},
-			"negative n treats any non-self as incompatible": {
-				self: xy(4, 5), remote: xy(4, 6), n: -1,
 				want: IncompatibleAhead,
 			},
 		})
@@ -384,4 +375,12 @@ func TestCompatibilityString(t *testing.T) {
 			assert.Equal(t, tt.want, tt.c.String())
 		})
 	}
+}
+
+func TestCompatibleVersionRangePanicsOnNegativeN(t *testing.T) {
+	assert.Panics(t, func() { CompatibleVersionRange(xy(4, 5), -1) })
+}
+
+func TestClassifyPanicsOnNegativeN(t *testing.T) {
+	assert.Panics(t, func() { Classify(xy(4, 5), xy(4, 6), -1) })
 }
