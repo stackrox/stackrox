@@ -71,6 +71,7 @@ jobs:
 
                 # We are in a PR context, job is not explicitly listed among the PR labels.
 
+                # TODO(ROX-21073): re-enable Konflux for all PR branches
                 if self.require_konflux_build and 'konflux-build' not in input.pr_labels:
                     return False
 
