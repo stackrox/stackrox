@@ -1,10 +1,8 @@
 name: Scanner updater bundle
-# This workflow assembles per-stream vulnerabilities.zip bundles from the
-# per-source exports produced by scanner-updater-schedule.yaml and stored in
-# GCS.  It is the second stage of the split vulnerability pipeline.
-# Auto-triggering directly from completed per-source exports is a future
-# concern; the bundler runs on its own schedule in the meantime.
-# This workflow writes to the test bucket while under validation.
+# Downloads per-source vulnerability data from GCS, validates each source,
+# and assembles vulnerabilities.zip for each bundle stream defined in
+# VULNERABILITY_BUNDLE_VERSION. Missing or empty sources are skipped with a
+# Slack notification; if no sources are valid the job fails.
 # TODO(ROX-36127): production cutover — update storage.bucket in
 # source-config.yaml to definitions.stackrox.io and remove the schedule from
 # scanner-versioned-definitions-update.yaml.
