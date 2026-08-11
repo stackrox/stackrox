@@ -216,7 +216,7 @@ create_cluster() {
         if [[ "${cluster_created}" == "true" ]]; then
             if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
                 info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
-                if gcloud beta container node-pools create spot-pool \
+                if timeout 120 gcloud beta container node-pools create spot-pool \
                     --cluster "${CLUSTER_NAME}" \
                     --machine-type "${MACHINE_TYPE}" \
                     --num-nodes "$((NUM_NODES - 1))" \
@@ -225,11 +225,19 @@ create_cluster() {
                     --disk-size="${DISK_SIZE_GB}GB" \
                     --image-type "${GCP_IMAGE_TYPE}" \
                     --no-enable-autorepair \
-                    --no-enable-autoupgrade \
-                    --async; then
-                    info "Spot node pool creation initiated"
+                    --no-enable-autoupgrade; then
+                    info "Spot node pool created successfully"
                 else
-                    info "WARNING: Spot node pool creation failed. Continuing with non-spot nodes only."
+                    info "WARNING: Spot node pool failed. Falling back to non-spot nodes."
+                    gcloud beta container node-pools create fallback-pool \
+                        --cluster "${CLUSTER_NAME}" \
+                        --machine-type "${MACHINE_TYPE}" \
+                        --num-nodes "$((NUM_NODES - 1))" \
+                        --disk-type=pd-ssd \
+                        --disk-size="${DISK_SIZE_GB}GB" \
+                        --image-type "${GCP_IMAGE_TYPE}" \
+                        --no-enable-autorepair \
+                        --no-enable-autoupgrade
                 fi
                 success=1
             else
