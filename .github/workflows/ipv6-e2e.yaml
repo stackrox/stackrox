@@ -221,6 +221,10 @@ jobs:
               -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
           done
 
+      - name: Generate proto classes
+        working-directory: qa-tests-backend
+        run: ./gradlew generateProto
+
       - name: "Run QA tests: ${{ matrix.name }}"
         working-directory: qa-tests-backend
         env:
@@ -310,7 +314,7 @@ jobs:
         run: |
           export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
           export ROX_PASSWORD="${ROX_ADMIN_PASSWORD}"
-          make -C tests e2e-tests 2>&1 | tee /tmp/nongroovy-e2e.log
+          tests/e2e/run.sh /tmp/e2e-test-logs 2>&1 | tee /tmp/nongroovy-e2e.log
 
       - name: Collect logs
         if: always()
