@@ -54,6 +54,10 @@ runs:
           kind create cluster --name "${{ inputs.cluster-name }}" "${KIND_ARGS[@]}"
 
           if [[ "${{ inputs.ip-family }}" == "ipv6" ]]; then
+            echo "Installing NAT64 DaemonSet (eBPF-based IPv6→IPv4 translation)"
+            kubectl apply -f "$GITHUB_ACTION_PATH/nat64.yaml"
+            kubectl -n kube-system rollout status daemonset/nat64 --timeout=60s
+
             echo "Configuring CoreDNS to use Google Public DNS64 for IPv6-only resolution"
             kubectl get configmap coredns -n kube-system -o yaml \
               | sed 's|forward \. /etc/resolv.conf|forward . 2001:4860:4860::6464 2001:4860:4860::64|' \
