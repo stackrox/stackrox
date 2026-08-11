@@ -100,8 +100,7 @@ func NewRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		manager,
 		[]byte(config.GetServiceAccount()),
 		config.GetWifEnabled(),
-		"https://www.googleapis.com/auth/cloud-platform",
-		"https://www.googleapis.com/auth/cloud-platform.read-only",
+		auth.GCPAuthScopes()...,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create token source")

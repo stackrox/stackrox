@@ -105,7 +105,7 @@ func (c *gcpCredentialsManagerImpl) GetCredentials(ctx context.Context) (*google
 		)
 	}
 
-	scopes := gcpAuthScopes
+	scopes := defaultGCPAuthScopes
 
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
