@@ -1,0 +1,159 @@
+name: Scanner updater bundle
+# This workflow assembles per-stream vulnerabilities.zip bundles from the
+# per-source exports produced by scanner-updater-schedule.yaml and stored in
+# GCS.  It is the second stage of the split vulnerability pipeline.
+# Auto-triggering directly from completed per-source exports is a future
+# concern; the bundler runs on its own schedule in the meantime.
+# This workflow writes to the test bucket while under validation.
+# TODO(ROX-36127): production cutover — update storage.bucket in
+# source-config.yaml to definitions.stackrox.io and remove the schedule from
+# scanner-versioned-definitions-update.yaml.
+
+on:
+  schedule:
+  - cron: "47 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-matrix:
+    if: github.repository_owner == 'stackrox'
+    runs-on: ubuntu-latest
+    outputs:
+      streams: ${{ steps.emit.outputs.streams }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Authenticate with GCS
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER.
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Build stream matrix
+      id: emit
+      run: |
+        set -euo pipefail
+        streams=$(./.github/workflows/scripts/scanner-get-released-tags.sh | jq -c '[.[].version]')
+        echo "streams=${streams}" >> "$GITHUB_OUTPUT"
+
+  bundle:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.11@sha256:cea78f2b3a5a38c9ccda678712daaed90b7c372d6b5df963feb758b32dccebe1
+      volumes:
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    strategy:
+      fail-fast: false
+      matrix:
+        stream: ${{ fromJson(needs.build-matrix.outputs.streams) }}
+    concurrency:
+      group: scanner-updater-bundle-${{ matrix.stream }}
+      cancel-in-progress: false
+    env:
+      STREAM: ${{ matrix.stream }}
+      SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Authenticate with GCS
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER.
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Download sources
+      run: |
+        set -euo pipefail
+
+        bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
+        prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
+
+        echo "GCS_BUCKET=$bucket" >> "$GITHUB_ENV"
+        echo "GCS_PREFIX=$prefix" >> "$GITHUB_ENV"
+
+        mkdir -p bundles
+        gcloud storage cp "gs://${bucket}/${prefix}/${STREAM}/sources/*.json.zst" bundles/
+
+    - name: Validate sources
+      id: download-validate
+      run: |
+        set -euo pipefail
+
+        valid_files=()
+        failed_sources=()
+        while IFS= read -r source; do
+            dest="bundles/${source}.json.zst"
+            if [ ! -f "$dest" ] || [ ! -s "$dest" ]; then
+                echo "::error::${source}: missing or empty"
+                failed_sources+=("$source")
+            else
+                echo "source '${source}': OK"
+                valid_files+=("$dest")
+            fi
+        done < <(yq ".bundles.${STREAM}[]" "$SOURCE_CONFIG")
+
+        ( IFS=','; echo "failed=${failed_sources[*]}" >> "$GITHUB_OUTPUT" )
+
+        if [ "${#valid_files[@]}" -eq 0 ]; then
+            echo "::error::no valid source files found for stream '${STREAM}'; cannot assemble bundle"
+            exit 1
+        fi
+
+        printf '%s\n' "${valid_files[@]}" > valid-files.txt
+        echo "Validated: ${#valid_files[@]} of $(( ${#valid_files[@]} + ${#failed_sources[@]} )) source(s) OK"
+
+    - name: Assemble and upload bundle
+      run: |
+        set -euo pipefail
+
+        zip vulnerabilities.zip -@ < valid-files.txt
+
+        bundle_obj="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/vulnerabilities.zip"
+        gcloud storage cp vulnerabilities.zip "$bundle_obj"
+        echo "Uploaded bundle for stream '${STREAM}' -> ${bundle_obj}"
+
+    - name: Notify on partial failure
+      if: always() && steps.download-validate.outcome == 'success'
+      env:
+        FAILED: ${{ steps.download-validate.outputs.failed }}
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        [ -n "$FAILED" ] || exit 0
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability bundler: validation failures for stream '${STREAM}' (sources: ${FAILED}): <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
+
+  notify:
+    needs: [bundle]
+    if: always() && needs.bundle.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify on failure
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"Vulnerability bundler failed: <${RUN_URL}|View logs>\"}" \
+          "$SLACK_WEBHOOK"
