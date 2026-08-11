@@ -128,7 +128,7 @@ jobs:
 
   # ── QA E2E: Groovy/Spock tests (BAT group) ────────────────────────
   qa-e2e:
-    name: "QA ${{ matrix.name }} (${{ matrix.ip-family }})"
+    name: "QA ${{ matrix.shard.name }} (${{ matrix.ip-family }})"
     needs: resolve-tag
     if: >
       inputs.suite == 'qa-e2e' || inputs.suite == 'all' ||
@@ -139,23 +139,15 @@ jobs:
       fail-fast: false
       matrix:
         ip-family: [ipv4, ipv6]
-        include:
-          - name: policy-config
-            tests: "--tests PolicyConfigurationTest"
-          - name: enforcement
-            tests: "--tests Enforcement"
-          - name: runtime
-            tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest"
-          - name: vuln-scan
-            tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest"
-          - name: network
-            tests: "--tests NetworkFlowTest --tests NetworkSimulator"
-          - name: deployment
-            tests: "--tests DeploymentCheck --tests DeploymentTest"
-          - name: auth
-            tests: "--tests AuthServiceTest --tests K8sRbacTest --tests ServiceAccountTest"
-          - name: integrations
-            tests: "--tests IntegrationsTest"
+        shard:
+          - { name: policy-config,  tests: "--tests PolicyConfigurationTest" }
+          - { name: enforcement,    tests: "--tests Enforcement" }
+          - { name: runtime,        tests: "--tests RuntimePolicyTest --tests RuntimeViolationLifecycleTest --tests AuditLogAlertsTest" }
+          - { name: vuln-scan,      tests: "--tests DefaultPoliciesTest --tests ImageManagementTest --tests ImageScanningTest" }
+          - { name: network,        tests: "--tests NetworkFlowTest --tests NetworkSimulator" }
+          - { name: deployment,     tests: "--tests DeploymentCheck --tests DeploymentTest" }
+          - { name: auth,           tests: "--tests AuthServiceTest --tests K8sRbacTest --tests ServiceAccountTest" }
+          - { name: integrations,   tests: "--tests IntegrationsTest" }
 
     env:
       CLUSTER_NAME: qa-${{ matrix.ip-family }}-${{ github.run_id }}-${{ strategy.job-index }}
@@ -230,7 +222,7 @@ jobs:
               -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
           done
 
-      - name: "Run QA tests: ${{ matrix.name }}"
+      - name: "Run QA tests: ${{ matrix.shard.name }}"
         working-directory: qa-tests-backend
         env:
           ROX_USERNAME: admin
@@ -262,7 +254,7 @@ jobs:
           SLACK_FIXABLE_VULNS_CHANNEL: "https://hooks.slack.com/services/disabled"
         run: |
           export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
-          ./gradlew testBAT ${{ matrix.tests }}
+          ./gradlew testBAT ${{ matrix.shard.tests }}
 
       - name: Collect logs
         if: always()
@@ -279,7 +271,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
         if: always()
         with:
-          name: qa-${{ matrix.name }}-${{ matrix.ip-family }}-${{ github.run_id }}
+          name: qa-${{ matrix.shard.name }}-${{ matrix.ip-family }}-${{ github.run_id }}
           path: /tmp/test-artifacts
           retention-days: 7
 
