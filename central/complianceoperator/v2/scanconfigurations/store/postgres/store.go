@@ -98,7 +98,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetScanConfigName(),
@@ -140,7 +140,7 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_ProfileName, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 		idx,
@@ -155,7 +155,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Profiles(batch *pgx.Batch, o
 
 func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, obj *storage.ComplianceOperatorScanConfigurationV2_Cluster, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 		idx,
@@ -170,7 +170,7 @@ func insertIntoComplianceOperatorScanConfigurationV2Clusters(batch *pgx.Batch, o
 
 func insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, complianceOperatorScanConfigurationV2ID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 		idx,
@@ -220,7 +220,7 @@ func copyFromComplianceOperatorScanConfigurationV2(ctx context.Context, s pgSear
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetScanConfigName(),
 			obj.GetModifiedBy().GetName(),
@@ -266,7 +266,7 @@ func copyFromComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, 
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 			idx,
 			obj.GetProfileName(),
@@ -299,7 +299,7 @@ func copyFromComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, 
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 			idx,
 			pgutils.NilOrUUID(obj.GetClusterId()),
@@ -332,7 +332,7 @@ func copyFromComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context,
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(complianceOperatorScanConfigurationV2ID),
 			idx,
 			obj.GetId(),

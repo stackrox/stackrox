@@ -56,7 +56,7 @@ func insertIntoInstallationInfos(ctx context.Context, tx *postgres.Tx, obj *stor
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		serialized,
 	}

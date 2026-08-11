@@ -94,7 +94,7 @@ func insertIntoComplianceOperatorScans(batch *pgx.Batch, obj *storage.Compliance
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromComplianceOperatorScans(ctx context.Context, s pgSearch.Deleter, tx
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

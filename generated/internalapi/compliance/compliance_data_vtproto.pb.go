@@ -177,7 +177,7 @@ func (m *ComplianceStandardResult) CloneVT() *ComplianceStandardResult {
 	if rhs := m.NodeCheckResults; rhs != nil {
 		tmpContainer := make(map[string]*storage.ComplianceResultValue, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ComplianceResultValue
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -190,7 +190,7 @@ func (m *ComplianceStandardResult) CloneVT() *ComplianceStandardResult {
 	if rhs := m.ClusterCheckResults; rhs != nil {
 		tmpContainer := make(map[string]*storage.ComplianceResultValue, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ComplianceResultValue
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -471,7 +471,7 @@ func (this *ComplianceStandardResult) EqualVT(that *ComplianceStandardResult) bo
 			if q == nil {
 				q = &storage.ComplianceResultValue{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ComplianceResultValue) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -497,7 +497,7 @@ func (this *ComplianceStandardResult) EqualVT(that *ComplianceStandardResult) bo
 			if q == nil {
 				q = &storage.ComplianceResultValue{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ComplianceResultValue) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -989,7 +989,7 @@ func (m *ComplianceStandardResult) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		for k := range m.ClusterCheckResults {
 			v := m.ClusterCheckResults[k]
 			baseI := i
-			if vtmsg, ok := interface{}(v).(interface {
+			if vtmsg, ok := any(v).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1023,7 +1023,7 @@ func (m *ComplianceStandardResult) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		for k := range m.NodeCheckResults {
 			v := m.NodeCheckResults[k]
 			baseI := i
-			if vtmsg, ok := interface{}(v).(interface {
+			if vtmsg, ok := any(v).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1359,7 +1359,7 @@ func (m *ComplianceStandardResult) SizeVT() (n int) {
 			_ = v
 			l = 0
 			if v != nil {
-				if size, ok := interface{}(v).(interface {
+				if size, ok := any(v).(interface {
 					SizeVT() int
 				}); ok {
 					l = size.SizeVT()
@@ -1378,7 +1378,7 @@ func (m *ComplianceStandardResult) SizeVT() (n int) {
 			_ = v
 			l = 0
 			if v != nil {
-				if size, ok := interface{}(v).(interface {
+				if size, ok := any(v).(interface {
 					SizeVT() int
 				}); ok {
 					l = size.SizeVT()
@@ -2452,7 +2452,7 @@ func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVT([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -2589,7 +2589,7 @@ func (m *ComplianceStandardResult) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVT([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -4300,7 +4300,7 @@ func (m *ComplianceStandardResult) UnmarshalVTUnsafe(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVTUnsafe([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -4441,7 +4441,7 @@ func (m *ComplianceStandardResult) UnmarshalVTUnsafe(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.ComplianceResultValue{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVTUnsafe([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {

@@ -97,7 +97,7 @@ func insertIntoTestShortCircuits(batch *pgx.Batch, obj *storage.TestShortCircuit
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetChildId(),
@@ -148,7 +148,7 @@ func copyFromTestShortCircuits(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetChildId(),
 			obj.GetG2GrandchildId(),

@@ -120,7 +120,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetPolicy().GetId(),
@@ -239,7 +239,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetPolicy().GetId(),
 			obj.GetPolicy().GetName(),

@@ -84,7 +84,7 @@ func RegisterCentralHealthServiceServer(s grpc.ServiceRegistrar, srv CentralHeal
 	s.RegisterService(&CentralHealthService_ServiceDesc, srv)
 }
 
-func _CentralHealthService_GetUpgradeStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CentralHealthService_GetUpgradeStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func _CentralHealthService_GetUpgradeStatus_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CentralHealthService_GetUpgradeStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CentralHealthServiceServer).GetUpgradeStatus(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

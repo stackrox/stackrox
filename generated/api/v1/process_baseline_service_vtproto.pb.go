@@ -27,7 +27,7 @@ func (m *GetProcessBaselineRequest) CloneVT() *GetProcessBaselineRequest {
 	}
 	r := new(GetProcessBaselineRequest)
 	if rhs := m.Key; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ProcessBaselineKey
 		}); ok {
 			r.Key = vtpb.CloneVT()
@@ -54,7 +54,7 @@ func (m *UpdateProcessBaselinesRequest) CloneVT() *UpdateProcessBaselinesRequest
 	if rhs := m.Keys; rhs != nil {
 		tmpContainer := make([]*storage.ProcessBaselineKey, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessBaselineKey
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -67,7 +67,7 @@ func (m *UpdateProcessBaselinesRequest) CloneVT() *UpdateProcessBaselinesRequest
 	if rhs := m.AddElements; rhs != nil {
 		tmpContainer := make([]*storage.BaselineItem, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.BaselineItem }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.BaselineItem }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.BaselineItem)
@@ -78,7 +78,7 @@ func (m *UpdateProcessBaselinesRequest) CloneVT() *UpdateProcessBaselinesRequest
 	if rhs := m.RemoveElements; rhs != nil {
 		tmpContainer := make([]*storage.BaselineItem, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.BaselineItem }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.BaselineItem }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.BaselineItem)
@@ -105,7 +105,7 @@ func (m *ProcessBaselinesResponse) CloneVT() *ProcessBaselinesResponse {
 	if rhs := m.Baselines; rhs != nil {
 		tmpContainer := make([]*storage.ProcessBaseline, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessBaseline
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -133,7 +133,7 @@ func (m *ProcessBaselineUpdateError) CloneVT() *ProcessBaselineUpdateError {
 	r := new(ProcessBaselineUpdateError)
 	r.Error = m.Error
 	if rhs := m.Key; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ProcessBaselineKey
 		}); ok {
 			r.Key = vtpb.CloneVT()
@@ -177,7 +177,7 @@ func (m *UpdateProcessBaselinesResponse) CloneVT() *UpdateProcessBaselinesRespon
 	if rhs := m.Baselines; rhs != nil {
 		tmpContainer := make([]*storage.ProcessBaseline, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessBaseline
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -214,7 +214,7 @@ func (m *LockProcessBaselinesRequest) CloneVT() *LockProcessBaselinesRequest {
 	if rhs := m.Keys; rhs != nil {
 		tmpContainer := make([]*storage.ProcessBaselineKey, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessBaselineKey
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -299,7 +299,7 @@ func (this *GetProcessBaselineRequest) EqualVT(that *GetProcessBaselineRequest) 
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Key).(interface {
+	if equal, ok := any(this.Key).(interface {
 		EqualVT(*storage.ProcessBaselineKey) bool
 	}); ok {
 		if !equal.EqualVT(that.Key) {
@@ -336,7 +336,7 @@ func (this *UpdateProcessBaselinesRequest) EqualVT(that *UpdateProcessBaselinesR
 			if q == nil {
 				q = &storage.ProcessBaselineKey{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessBaselineKey) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -359,7 +359,7 @@ func (this *UpdateProcessBaselinesRequest) EqualVT(that *UpdateProcessBaselinesR
 			if q == nil {
 				q = &storage.BaselineItem{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.BaselineItem) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -382,7 +382,7 @@ func (this *UpdateProcessBaselinesRequest) EqualVT(that *UpdateProcessBaselinesR
 			if q == nil {
 				q = &storage.BaselineItem{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.BaselineItem) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -421,7 +421,7 @@ func (this *ProcessBaselinesResponse) EqualVT(that *ProcessBaselinesResponse) bo
 			if q == nil {
 				q = &storage.ProcessBaseline{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessBaseline) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -451,7 +451,7 @@ func (this *ProcessBaselineUpdateError) EqualVT(that *ProcessBaselineUpdateError
 	if this.Error != that.Error {
 		return false
 	}
-	if equal, ok := interface{}(this.Key).(interface {
+	if equal, ok := any(this.Key).(interface {
 		EqualVT(*storage.ProcessBaselineKey) bool
 	}); ok {
 		if !equal.EqualVT(that.Key) {
@@ -507,7 +507,7 @@ func (this *UpdateProcessBaselinesResponse) EqualVT(that *UpdateProcessBaselines
 			if q == nil {
 				q = &storage.ProcessBaseline{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessBaseline) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -563,7 +563,7 @@ func (this *LockProcessBaselinesRequest) EqualVT(that *LockProcessBaselinesReque
 			if q == nil {
 				q = &storage.ProcessBaselineKey{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessBaselineKey) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -690,7 +690,7 @@ func (m *GetProcessBaselineRequest) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Key != nil {
-		if vtmsg, ok := interface{}(m.Key).(interface {
+		if vtmsg, ok := any(m.Key).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -746,7 +746,7 @@ func (m *UpdateProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.RemoveElements) > 0 {
 		for iNdEx := len(m.RemoveElements) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.RemoveElements[iNdEx]).(interface {
+			if vtmsg, ok := any(m.RemoveElements[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -770,7 +770,7 @@ func (m *UpdateProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.AddElements) > 0 {
 		for iNdEx := len(m.AddElements) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.AddElements[iNdEx]).(interface {
+			if vtmsg, ok := any(m.AddElements[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -794,7 +794,7 @@ func (m *UpdateProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.Keys) > 0 {
 		for iNdEx := len(m.Keys) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Keys[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Keys[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -851,7 +851,7 @@ func (m *ProcessBaselinesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	if len(m.Baselines) > 0 {
 		for iNdEx := len(m.Baselines) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Baselines[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Baselines[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -907,7 +907,7 @@ func (m *ProcessBaselineUpdateError) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Key != nil {
-		if vtmsg, ok := interface{}(m.Key).(interface {
+		if vtmsg, ok := any(m.Key).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1025,7 +1025,7 @@ func (m *UpdateProcessBaselinesResponse) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	if len(m.Baselines) > 0 {
 		for iNdEx := len(m.Baselines) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Baselines[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Baselines[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1092,7 +1092,7 @@ func (m *LockProcessBaselinesRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	}
 	if len(m.Keys) > 0 {
 		for iNdEx := len(m.Keys) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Keys[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Keys[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1271,7 +1271,7 @@ func (m *GetProcessBaselineRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Key != nil {
-		if size, ok := interface{}(m.Key).(interface {
+		if size, ok := any(m.Key).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1292,7 +1292,7 @@ func (m *UpdateProcessBaselinesRequest) SizeVT() (n int) {
 	_ = l
 	if len(m.Keys) > 0 {
 		for _, e := range m.Keys {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1304,7 +1304,7 @@ func (m *UpdateProcessBaselinesRequest) SizeVT() (n int) {
 	}
 	if len(m.AddElements) > 0 {
 		for _, e := range m.AddElements {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1316,7 +1316,7 @@ func (m *UpdateProcessBaselinesRequest) SizeVT() (n int) {
 	}
 	if len(m.RemoveElements) > 0 {
 		for _, e := range m.RemoveElements {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1338,7 +1338,7 @@ func (m *ProcessBaselinesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Baselines) > 0 {
 		for _, e := range m.Baselines {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1363,7 +1363,7 @@ func (m *ProcessBaselineUpdateError) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Key != nil {
-		if size, ok := interface{}(m.Key).(interface {
+		if size, ok := any(m.Key).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1397,7 +1397,7 @@ func (m *UpdateProcessBaselinesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Baselines) > 0 {
 		for _, e := range m.Baselines {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1425,7 +1425,7 @@ func (m *LockProcessBaselinesRequest) SizeVT() (n int) {
 	_ = l
 	if len(m.Keys) > 0 {
 		for _, e := range m.Keys {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1556,7 +1556,7 @@ func (m *GetProcessBaselineRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if unmarshal, ok := interface{}(m.Key).(interface {
+			if unmarshal, ok := any(m.Key).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1649,7 +1649,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if unmarshal, ok := interface{}(m.Keys[len(m.Keys)-1]).(interface {
+			if unmarshal, ok := any(m.Keys[len(m.Keys)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1691,7 +1691,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AddElements = append(m.AddElements, &storage.BaselineItem{})
-			if unmarshal, ok := interface{}(m.AddElements[len(m.AddElements)-1]).(interface {
+			if unmarshal, ok := any(m.AddElements[len(m.AddElements)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1733,7 +1733,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RemoveElements = append(m.RemoveElements, &storage.BaselineItem{})
-			if unmarshal, ok := interface{}(m.RemoveElements[len(m.RemoveElements)-1]).(interface {
+			if unmarshal, ok := any(m.RemoveElements[len(m.RemoveElements)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1826,7 +1826,7 @@ func (m *ProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1953,7 +1953,7 @@ func (m *ProcessBaselineUpdateError) UnmarshalVT(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if unmarshal, ok := interface{}(m.Key).(interface {
+			if unmarshal, ok := any(m.Key).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2117,7 +2117,7 @@ func (m *UpdateProcessBaselinesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2244,7 +2244,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if unmarshal, ok := interface{}(m.Keys[len(m.Keys)-1]).(interface {
+			if unmarshal, ok := any(m.Keys[len(m.Keys)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2667,7 +2667,7 @@ func (m *GetProcessBaselineRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if unmarshal, ok := interface{}(m.Key).(interface {
+			if unmarshal, ok := any(m.Key).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2760,7 +2760,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if unmarshal, ok := interface{}(m.Keys[len(m.Keys)-1]).(interface {
+			if unmarshal, ok := any(m.Keys[len(m.Keys)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2802,7 +2802,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AddElements = append(m.AddElements, &storage.BaselineItem{})
-			if unmarshal, ok := interface{}(m.AddElements[len(m.AddElements)-1]).(interface {
+			if unmarshal, ok := any(m.AddElements[len(m.AddElements)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2844,7 +2844,7 @@ func (m *UpdateProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.RemoveElements = append(m.RemoveElements, &storage.BaselineItem{})
-			if unmarshal, ok := interface{}(m.RemoveElements[len(m.RemoveElements)-1]).(interface {
+			if unmarshal, ok := any(m.RemoveElements[len(m.RemoveElements)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2937,7 +2937,7 @@ func (m *ProcessBaselinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3068,7 +3068,7 @@ func (m *ProcessBaselineUpdateError) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Key == nil {
 				m.Key = &storage.ProcessBaselineKey{}
 			}
-			if unmarshal, ok := interface{}(m.Key).(interface {
+			if unmarshal, ok := any(m.Key).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3232,7 +3232,7 @@ func (m *UpdateProcessBaselinesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3359,7 +3359,7 @@ func (m *LockProcessBaselinesRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Keys = append(m.Keys, &storage.ProcessBaselineKey{})
-			if unmarshal, ok := interface{}(m.Keys[len(m.Keys)-1]).(interface {
+			if unmarshal, ok := any(m.Keys[len(m.Keys)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

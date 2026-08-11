@@ -130,7 +130,7 @@ func RegisterAdministrationUsageServiceServer(s grpc.ServiceRegistrar, srv Admin
 	s.RegisterService(&AdministrationUsageService_ServiceDesc, srv)
 }
 
-func _AdministrationUsageService_GetCurrentSecuredUnitsUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdministrationUsageService_GetCurrentSecuredUnitsUsage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -142,13 +142,13 @@ func _AdministrationUsageService_GetCurrentSecuredUnitsUsage_Handler(srv interfa
 		Server:     srv,
 		FullMethod: AdministrationUsageService_GetCurrentSecuredUnitsUsage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AdministrationUsageServiceServer).GetCurrentSecuredUnitsUsage(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdministrationUsageService_GetMaxSecuredUnitsUsage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdministrationUsageService_GetMaxSecuredUnitsUsage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(TimeRange)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func _AdministrationUsageService_GetMaxSecuredUnitsUsage_Handler(srv interface{}
 		Server:     srv,
 		FullMethod: AdministrationUsageService_GetMaxSecuredUnitsUsage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AdministrationUsageServiceServer).GetMaxSecuredUnitsUsage(ctx, req.(*TimeRange))
 	}
 	return interceptor(ctx, in, info, handler)

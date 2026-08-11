@@ -217,7 +217,7 @@ func RegisterImageIntegrationServiceServer(s grpc.ServiceRegistrar, srv ImageInt
 	s.RegisterService(&ImageIntegrationService_ServiceDesc, srv)
 }
 
-func _ImageIntegrationService_GetImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_GetImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -229,13 +229,13 @@ func _ImageIntegrationService_GetImageIntegration_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: ImageIntegrationService_GetImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).GetImageIntegration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_GetImageIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_GetImageIntegrations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetImageIntegrationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -247,13 +247,13 @@ func _ImageIntegrationService_GetImageIntegrations_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ImageIntegrationService_GetImageIntegrations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).GetImageIntegrations(ctx, req.(*GetImageIntegrationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_PostImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_PostImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.ImageIntegration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -265,13 +265,13 @@ func _ImageIntegrationService_PostImageIntegration_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ImageIntegrationService_PostImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).PostImageIntegration(ctx, req.(*storage.ImageIntegration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_PutImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_PutImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.ImageIntegration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -283,13 +283,13 @@ func _ImageIntegrationService_PutImageIntegration_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: ImageIntegrationService_PutImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).PutImageIntegration(ctx, req.(*storage.ImageIntegration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_TestImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_TestImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.ImageIntegration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -301,13 +301,13 @@ func _ImageIntegrationService_TestImageIntegration_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ImageIntegrationService_TestImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).TestImageIntegration(ctx, req.(*storage.ImageIntegration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_DeleteImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_DeleteImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -319,13 +319,13 @@ func _ImageIntegrationService_DeleteImageIntegration_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: ImageIntegrationService_DeleteImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).DeleteImageIntegration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_UpdateImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_UpdateImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateImageIntegrationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -337,13 +337,13 @@ func _ImageIntegrationService_UpdateImageIntegration_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: ImageIntegrationService_UpdateImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).UpdateImageIntegration(ctx, req.(*UpdateImageIntegrationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageIntegrationService_TestUpdatedImageIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageIntegrationService_TestUpdatedImageIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateImageIntegrationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -355,7 +355,7 @@ func _ImageIntegrationService_TestUpdatedImageIntegration_Handler(srv interface{
 		Server:     srv,
 		FullMethod: ImageIntegrationService_TestUpdatedImageIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageIntegrationServiceServer).TestUpdatedImageIntegration(ctx, req.(*UpdateImageIntegrationRequest))
 	}
 	return interceptor(ctx, in, info, handler)

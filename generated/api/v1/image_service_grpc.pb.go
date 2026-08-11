@@ -345,7 +345,7 @@ func RegisterImageServiceServer(s grpc.ServiceRegistrar, srv ImageServiceServer)
 	s.RegisterService(&ImageService_ServiceDesc, srv)
 }
 
-func _ImageService_GetImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_GetImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -357,13 +357,13 @@ func _ImageService_GetImage_Handler(srv interface{}, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: ImageService_GetImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).GetImage(ctx, req.(*GetImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_CountImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_CountImages_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -375,13 +375,13 @@ func _ImageService_CountImages_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: ImageService_CountImages_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).CountImages(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_ListImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_ListImages_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -393,13 +393,13 @@ func _ImageService_ListImages_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: ImageService_ListImages_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).ListImages(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_ScanImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_ScanImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ScanImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -411,13 +411,13 @@ func _ImageService_ScanImage_Handler(srv interface{}, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: ImageService_ScanImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).ScanImage(ctx, req.(*ScanImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_ScanImageInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_ScanImageInternal_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ScanImageInternalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -429,13 +429,13 @@ func _ImageService_ScanImageInternal_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: ImageService_ScanImageInternal_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).ScanImageInternal(ctx, req.(*ScanImageInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_GetImageVulnerabilitiesInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_GetImageVulnerabilitiesInternal_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetImageVulnerabilitiesInternalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -447,13 +447,13 @@ func _ImageService_GetImageVulnerabilitiesInternal_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ImageService_GetImageVulnerabilitiesInternal_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).GetImageVulnerabilitiesInternal(ctx, req.(*GetImageVulnerabilitiesInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_EnrichLocalImageInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_EnrichLocalImageInternal_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(EnrichLocalImageInternalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -465,13 +465,13 @@ func _ImageService_EnrichLocalImageInternal_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: ImageService_EnrichLocalImageInternal_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).EnrichLocalImageInternal(ctx, req.(*EnrichLocalImageInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_UpdateLocalScanStatusInternal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_UpdateLocalScanStatusInternal_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateLocalScanStatusInternalRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -483,13 +483,13 @@ func _ImageService_UpdateLocalScanStatusInternal_Handler(srv interface{}, ctx co
 		Server:     srv,
 		FullMethod: ImageService_UpdateLocalScanStatusInternal_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).UpdateLocalScanStatusInternal(ctx, req.(*UpdateLocalScanStatusInternalRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_InvalidateScanAndRegistryCaches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_InvalidateScanAndRegistryCaches_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -501,13 +501,13 @@ func _ImageService_InvalidateScanAndRegistryCaches_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ImageService_InvalidateScanAndRegistryCaches_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).InvalidateScanAndRegistryCaches(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_DeleteImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_DeleteImages_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteImagesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -519,13 +519,13 @@ func _ImageService_DeleteImages_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: ImageService_DeleteImages_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).DeleteImages(ctx, req.(*DeleteImagesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_WatchImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_WatchImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(WatchImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -537,13 +537,13 @@ func _ImageService_WatchImage_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: ImageService_WatchImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).WatchImage(ctx, req.(*WatchImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_UnwatchImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_UnwatchImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UnwatchImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -555,13 +555,13 @@ func _ImageService_UnwatchImage_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: ImageService_UnwatchImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).UnwatchImage(ctx, req.(*UnwatchImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_GetWatchedImages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_GetWatchedImages_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -573,13 +573,13 @@ func _ImageService_GetWatchedImages_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: ImageService_GetWatchedImages_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).GetWatchedImages(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ImageService_ExportImages_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ImageService_ExportImages_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(ExportImageRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

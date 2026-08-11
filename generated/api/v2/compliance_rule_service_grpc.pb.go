@@ -86,7 +86,7 @@ func RegisterComplianceRuleServiceServer(s grpc.ServiceRegistrar, srv Compliance
 	s.RegisterService(&ComplianceRuleService_ServiceDesc, srv)
 }
 
-func _ComplianceRuleService_GetComplianceRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceRuleService_GetComplianceRule_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func _ComplianceRuleService_GetComplianceRule_Handler(srv interface{}, ctx conte
 		Server:     srv,
 		FullMethod: ComplianceRuleService_GetComplianceRule_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ComplianceRuleServiceServer).GetComplianceRule(ctx, req.(*RuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)

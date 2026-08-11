@@ -120,7 +120,7 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetPort(),
@@ -185,7 +185,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetPort(),
 			obj.GetProtocol(),

@@ -88,7 +88,7 @@ func RegisterVirtualMachineIndexReportServiceServer(s grpc.ServiceRegistrar, srv
 	s.RegisterService(&VirtualMachineIndexReportService_ServiceDesc, srv)
 }
 
-func _VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpsertVirtualMachineIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func _VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_Handler(s
 		Server:     srv,
 		FullMethod: VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VirtualMachineIndexReportServiceServer).UpsertVirtualMachineIndexReport(ctx, req.(*UpsertVirtualMachineIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)

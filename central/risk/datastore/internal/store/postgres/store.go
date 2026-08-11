@@ -119,7 +119,7 @@ func insertIntoRisks(batch *pgx.Batch, obj *storage.Risk) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetSubject().GetNamespace(),
@@ -174,7 +174,7 @@ func copyFromRisks(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetSubject().GetNamespace(),
 			pgutils.NilOrUUID(obj.GetSubject().GetClusterId()),

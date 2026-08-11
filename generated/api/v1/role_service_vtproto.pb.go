@@ -47,7 +47,7 @@ func (m *GetRolesResponse) CloneVT() *GetRolesResponse {
 	if rhs := m.Roles; rhs != nil {
 		tmpContainer := make([]*storage.Role, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Role }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Role }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Role)
@@ -118,7 +118,7 @@ func (m *ListPermissionSetsResponse) CloneVT() *ListPermissionSetsResponse {
 	if rhs := m.PermissionSets; rhs != nil {
 		tmpContainer := make([]*storage.PermissionSet, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.PermissionSet }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.PermissionSet }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.PermissionSet)
@@ -145,7 +145,7 @@ func (m *ListSimpleAccessScopesResponse) CloneVT() *ListSimpleAccessScopesRespon
 	if rhs := m.AccessScopes; rhs != nil {
 		tmpContainer := make([]*storage.SimpleAccessScope, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.SimpleAccessScope
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -257,7 +257,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) CloneVT() isCom
 	}
 	r := new(ComputeEffectiveAccessScopeRequest_Payload_SimpleRules)
 	if rhs := m.SimpleRules; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.SimpleAccessScope_Rules
 		}); ok {
 			r.SimpleRules = vtpb.CloneVT()
@@ -293,7 +293,7 @@ func (m *CreateRoleRequest) CloneVT() *CreateRoleRequest {
 	r := new(CreateRoleRequest)
 	r.Name = m.Name
 	if rhs := m.Role; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Role }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Role }); ok {
 			r.Role = vtpb.CloneVT()
 		} else {
 			r.Role = proto.Clone(rhs).(*storage.Role)
@@ -394,7 +394,7 @@ func (this *GetRolesResponse) EqualVT(that *GetRolesResponse) bool {
 			if q == nil {
 				q = &storage.Role{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Role) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Role) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -484,7 +484,7 @@ func (this *ListPermissionSetsResponse) EqualVT(that *ListPermissionSetsResponse
 			if q == nil {
 				q = &storage.PermissionSet{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.PermissionSet) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -523,7 +523,7 @@ func (this *ListSimpleAccessScopesResponse) EqualVT(that *ListSimpleAccessScopes
 			if q == nil {
 				q = &storage.SimpleAccessScope{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.SimpleAccessScope) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -678,7 +678,7 @@ func (this *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) EqualVT(that
 		if q == nil {
 			q = &storage.SimpleAccessScope_Rules{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.SimpleAccessScope_Rules) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -722,7 +722,7 @@ func (this *CreateRoleRequest) EqualVT(that *CreateRoleRequest) bool {
 	if this.Name != that.Name {
 		return false
 	}
-	if equal, ok := interface{}(this.Role).(interface{ EqualVT(*storage.Role) bool }); ok {
+	if equal, ok := any(this.Role).(interface{ EqualVT(*storage.Role) bool }); ok {
 		if !equal.EqualVT(that.Role) {
 			return false
 		}
@@ -872,7 +872,7 @@ func (m *GetRolesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Roles) > 0 {
 		for iNdEx := len(m.Roles) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Roles[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Roles[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1021,7 +1021,7 @@ func (m *ListPermissionSetsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.PermissionSets) > 0 {
 		for iNdEx := len(m.PermissionSets) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.PermissionSets[iNdEx]).(interface {
+			if vtmsg, ok := any(m.PermissionSets[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1078,7 +1078,7 @@ func (m *ListSimpleAccessScopesResponse) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	if len(m.AccessScopes) > 0 {
 		for iNdEx := len(m.AccessScopes) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.AccessScopes[iNdEx]).(interface {
+			if vtmsg, ok := any(m.AccessScopes[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1290,7 +1290,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) MarshalToVT(dAt
 func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.SimpleRules != nil {
-		if vtmsg, ok := interface{}(m.SimpleRules).(interface {
+		if vtmsg, ok := any(m.SimpleRules).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1396,7 +1396,7 @@ func (m *CreateRoleRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Role != nil {
-		if vtmsg, ok := interface{}(m.Role).(interface {
+		if vtmsg, ok := any(m.Role).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1553,7 +1553,7 @@ func (m *GetRolesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Roles) > 0 {
 		for _, e := range m.Roles {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1609,7 +1609,7 @@ func (m *ListPermissionSetsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.PermissionSets) > 0 {
 		for _, e := range m.PermissionSets {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1631,7 +1631,7 @@ func (m *ListSimpleAccessScopesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.AccessScopes) > 0 {
 		for _, e := range m.AccessScopes {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1715,7 +1715,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload_SimpleRules) SizeVT() (n int
 	var l int
 	_ = l
 	if m.SimpleRules != nil {
-		if size, ok := interface{}(m.SimpleRules).(interface {
+		if size, ok := any(m.SimpleRules).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1756,7 +1756,7 @@ func (m *CreateRoleRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Role != nil {
-		if size, ok := interface{}(m.Role).(interface {
+		if size, ok := any(m.Role).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1970,7 +1970,7 @@ func (m *GetRolesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.Role{})
-			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2310,7 +2310,7 @@ func (m *ListPermissionSetsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PermissionSets = append(m.PermissionSets, &storage.PermissionSet{})
-			if unmarshal, ok := interface{}(m.PermissionSets[len(m.PermissionSets)-1]).(interface {
+			if unmarshal, ok := any(m.PermissionSets[len(m.PermissionSets)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2403,7 +2403,7 @@ func (m *ListSimpleAccessScopesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AccessScopes = append(m.AccessScopes, &storage.SimpleAccessScope{})
-			if unmarshal, ok := interface{}(m.AccessScopes[len(m.AccessScopes)-1]).(interface {
+			if unmarshal, ok := any(m.AccessScopes[len(m.AccessScopes)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2781,7 +2781,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVT(dAtA []byte) er
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.RulesOpt.(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
-				if unmarshal, ok := interface{}(oneof.SimpleRules).(interface {
+				if unmarshal, ok := any(oneof.SimpleRules).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2794,7 +2794,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVT(dAtA []byte) er
 				}
 			} else {
 				v := &storage.SimpleAccessScope_Rules{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3029,7 +3029,7 @@ func (m *CreateRoleRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.Role{}
 			}
-			if unmarshal, ok := interface{}(m.Role).(interface {
+			if unmarshal, ok := any(m.Role).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3462,7 +3462,7 @@ func (m *GetRolesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Roles = append(m.Roles, &storage.Role{})
-			if unmarshal, ok := interface{}(m.Roles[len(m.Roles)-1]).(interface {
+			if unmarshal, ok := any(m.Roles[len(m.Roles)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3810,7 +3810,7 @@ func (m *ListPermissionSetsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.PermissionSets = append(m.PermissionSets, &storage.PermissionSet{})
-			if unmarshal, ok := interface{}(m.PermissionSets[len(m.PermissionSets)-1]).(interface {
+			if unmarshal, ok := any(m.PermissionSets[len(m.PermissionSets)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3903,7 +3903,7 @@ func (m *ListSimpleAccessScopesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AccessScopes = append(m.AccessScopes, &storage.SimpleAccessScope{})
-			if unmarshal, ok := interface{}(m.AccessScopes[len(m.AccessScopes)-1]).(interface {
+			if unmarshal, ok := any(m.AccessScopes[len(m.AccessScopes)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4289,7 +4289,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVTUnsafe(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.RulesOpt.(*ComputeEffectiveAccessScopeRequest_Payload_SimpleRules); ok {
-				if unmarshal, ok := interface{}(oneof.SimpleRules).(interface {
+				if unmarshal, ok := any(oneof.SimpleRules).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4302,7 +4302,7 @@ func (m *ComputeEffectiveAccessScopeRequest_Payload) UnmarshalVTUnsafe(dAtA []by
 				}
 			} else {
 				v := &storage.SimpleAccessScope_Rules{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4541,7 +4541,7 @@ func (m *CreateRoleRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Role == nil {
 				m.Role = &storage.Role{}
 			}
-			if unmarshal, ok := interface{}(m.Role).(interface {
+			if unmarshal, ok := any(m.Role).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -522,7 +522,7 @@ func Test_checkCertRenewal(t *testing.T) {
 			now:       "2021-02-11T11:59:00.000Z",
 			notBefore: "2021-02-11T23:59:59.000Z",
 			notAfter:  "2021-02-11T00:00:00.000Z",
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "certificate expires at 2021-02-11 00:00:00 +0000 UTC before it begins to be valid at 2021-02-11 23:59:59 +0000 UTC")
 			},
 		},
@@ -542,7 +542,7 @@ func Test_checkCertRenewal(t *testing.T) {
 			now:       "2021-02-11T12:00:00.000Z",
 			notBefore: "2021-02-11T00:00:00.000Z",
 			notAfter:  "2021-02-11T11:00:00.000Z",
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "certificate expired at 2021-02-11 11:00:00 +0000 UTC")
 			},
 		},
@@ -550,7 +550,7 @@ func Test_checkCertRenewal(t *testing.T) {
 			now:       "2021-02-11T12:00:00.000Z",
 			notBefore: "2021-02-11T22:00:00.000Z",
 			notAfter:  "2021-02-11T23:59:59.000Z",
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "certificate lifetime start 2021-02-11 22:00:00 +0000 UTC is in the future")
 			},
 		},
@@ -558,7 +558,7 @@ func Test_checkCertRenewal(t *testing.T) {
 			now:       "2021-02-11T12:00:00.000Z",
 			notBefore: "2021-02-11T00:00:00.000Z",
 			notAfter:  "2021-02-11T12:30:00.000Z",
-			wantErr: func(t assert.TestingT, err error, _ ...interface{}) bool {
+			wantErr: func(t assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "certificate is past half of its validity, 2021-02-11 06:15:00 +0000 UTC")
 			},
 		},

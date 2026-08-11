@@ -14,7 +14,7 @@ type DiffLeaf struct {
 }
 
 // DiffGenericMap computes a diff in the form of a generic map for two generic maps.
-// The values in the result map are either of type `map[string]interface{}` or `DiffLeaf`.
+// The values in the result map are either of type `map[string]any` or `DiffLeaf`.
 func DiffGenericMap(a map[string]any, b map[string]any) map[string]any {
 	keys := set.NewStringSet()
 	diffMap := make(map[string]any)

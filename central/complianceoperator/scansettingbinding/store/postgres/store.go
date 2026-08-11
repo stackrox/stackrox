@@ -94,7 +94,7 @@ func insertIntoComplianceOperatorScanSettingBindings(batch *pgx.Batch, obj *stor
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromComplianceOperatorScanSettingBindings(ctx context.Context, s pgSear
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

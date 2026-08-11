@@ -91,7 +91,7 @@ func RegisterComplianceServiceServer(s grpc.ServiceRegistrar, srv ComplianceServ
 	s.RegisterService(&ComplianceService_ServiceDesc, srv)
 }
 
-func _ComplianceService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ComplianceService_Communicate_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(ComplianceServiceServer).Communicate(&grpc.GenericServerStream[MsgFromCompliance, MsgToCompliance]{ServerStream: stream})
 }
 

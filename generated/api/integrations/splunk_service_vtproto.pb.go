@@ -66,7 +66,7 @@ func (m *SplunkViolation_ViolationInfo) CloneVT() *SplunkViolation_ViolationInfo
 	if rhs := m.ViolationMessageAttributes; rhs != nil {
 		tmpContainer := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.Alert_Violation_KeyValueAttrs_KeyValueAttr
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -123,7 +123,7 @@ func (m *SplunkViolation_ProcessInfo) CloneVT() *SplunkViolation_ProcessInfo {
 	if rhs := m.ProcessLineageInfo; rhs != nil {
 		tmpContainer := make([]*storage.ProcessSignal_LineageInfo, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessSignal_LineageInfo
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -166,7 +166,7 @@ func (m *SplunkViolation_DeploymentInfo) CloneVT() *SplunkViolation_DeploymentIn
 	if rhs := m.DeploymentContainers; rhs != nil {
 		tmpContainer := make([]*storage.Alert_Deployment_Container, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.Alert_Deployment_Container
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -184,7 +184,7 @@ func (m *SplunkViolation_DeploymentInfo) CloneVT() *SplunkViolation_DeploymentIn
 		r.DeploymentAnnotations = tmpContainer
 	}
 	if rhs := m.DeploymentImage; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ContainerImage
 		}); ok {
 			r.DeploymentImage = vtpb.CloneVT()
@@ -277,7 +277,7 @@ func (m *SplunkViolation_FileAccessInfo) CloneVT() *SplunkViolation_FileAccessIn
 	if rhs := m.AclEntries; rhs != nil {
 		tmpContainer := make([]*storage.AclEntry, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.AclEntry }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.AclEntry }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.AclEntry)
@@ -312,7 +312,7 @@ func (m *SplunkViolation) CloneVT() *SplunkViolation {
 		}).CloneVT()
 	}
 	if rhs := m.NetworkFlowInfo; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.Alert_Violation_NetworkFlowInfo
 		}); ok {
 			r.NetworkFlowInfo = vtpb.CloneVT()
@@ -409,7 +409,7 @@ func (this *SplunkViolation_ViolationInfo) EqualVT(that *SplunkViolation_Violati
 			if q == nil {
 				q = &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -521,7 +521,7 @@ func (this *SplunkViolation_ProcessInfo) EqualVT(that *SplunkViolation_ProcessIn
 			if q == nil {
 				q = &storage.ProcessSignal_LineageInfo{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessSignal_LineageInfo) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -593,7 +593,7 @@ func (this *SplunkViolation_DeploymentInfo) EqualVT(that *SplunkViolation_Deploy
 			if q == nil {
 				q = &storage.Alert_Deployment_Container{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.Alert_Deployment_Container) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -616,7 +616,7 @@ func (this *SplunkViolation_DeploymentInfo) EqualVT(that *SplunkViolation_Deploy
 			return false
 		}
 	}
-	if equal, ok := interface{}(this.DeploymentImage).(interface {
+	if equal, ok := any(this.DeploymentImage).(interface {
 		EqualVT(*storage.ContainerImage) bool
 	}); ok {
 		if !equal.EqualVT(that.DeploymentImage) {
@@ -772,7 +772,7 @@ func (this *SplunkViolation_FileAccessInfo) EqualVT(that *SplunkViolation_FileAc
 			if q == nil {
 				q = &storage.AclEntry{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.AclEntry) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.AclEntry) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -824,7 +824,7 @@ func (this *SplunkViolation) EqualVT(that *SplunkViolation) bool {
 	if !this.PolicyInfo.EqualVT(that.PolicyInfo) {
 		return false
 	}
-	if equal, ok := interface{}(this.NetworkFlowInfo).(interface {
+	if equal, ok := any(this.NetworkFlowInfo).(interface {
 		EqualVT(*storage.Alert_Violation_NetworkFlowInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.NetworkFlowInfo) {
@@ -1043,7 +1043,7 @@ func (m *SplunkViolation_ViolationInfo) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.ViolationMessageAttributes) > 0 {
 		for iNdEx := len(m.ViolationMessageAttributes) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.ViolationMessageAttributes[iNdEx]).(interface {
+			if vtmsg, ok := any(m.ViolationMessageAttributes[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1169,7 +1169,7 @@ func (m *SplunkViolation_ProcessInfo) MarshalToSizedBufferVT(dAtA []byte) (int, 
 	}
 	if len(m.ProcessLineageInfo) > 0 {
 		for iNdEx := len(m.ProcessLineageInfo) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.ProcessLineageInfo[iNdEx]).(interface {
+			if vtmsg, ok := any(m.ProcessLineageInfo[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1320,7 +1320,7 @@ func (m *SplunkViolation_DeploymentInfo) MarshalToSizedBufferVT(dAtA []byte) (in
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.DeploymentImage != nil {
-		if vtmsg, ok := interface{}(m.DeploymentImage).(interface {
+		if vtmsg, ok := any(m.DeploymentImage).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1366,7 +1366,7 @@ func (m *SplunkViolation_DeploymentInfo) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	if len(m.DeploymentContainers) > 0 {
 		for iNdEx := len(m.DeploymentContainers) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.DeploymentContainers[iNdEx]).(interface {
+			if vtmsg, ok := any(m.DeploymentContainers[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1677,7 +1677,7 @@ func (m *SplunkViolation_FileAccessInfo) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	if len(m.AclEntries) > 0 {
 		for iNdEx := len(m.AclEntries) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.AclEntries[iNdEx]).(interface {
+			if vtmsg, ok := any(m.AclEntries[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1843,7 +1843,7 @@ func (m *SplunkViolation) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x3a
 	}
 	if m.NetworkFlowInfo != nil {
-		if vtmsg, ok := interface{}(m.NetworkFlowInfo).(interface {
+		if vtmsg, ok := any(m.NetworkFlowInfo).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1989,7 +1989,7 @@ func (m *SplunkViolation_ViolationInfo) SizeVT() (n int) {
 	}
 	if len(m.ViolationMessageAttributes) > 0 {
 		for _, e := range m.ViolationMessageAttributes {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2095,7 +2095,7 @@ func (m *SplunkViolation_ProcessInfo) SizeVT() (n int) {
 	}
 	if len(m.ProcessLineageInfo) > 0 {
 		for _, e := range m.ProcessLineageInfo {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2153,7 +2153,7 @@ func (m *SplunkViolation_DeploymentInfo) SizeVT() (n int) {
 	}
 	if len(m.DeploymentContainers) > 0 {
 		for _, e := range m.DeploymentContainers {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2172,7 +2172,7 @@ func (m *SplunkViolation_DeploymentInfo) SizeVT() (n int) {
 		}
 	}
 	if m.DeploymentImage != nil {
-		if size, ok := interface{}(m.DeploymentImage).(interface {
+		if size, ok := any(m.DeploymentImage).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2316,7 +2316,7 @@ func (m *SplunkViolation_FileAccessInfo) SizeVT() (n int) {
 	}
 	if len(m.AclEntries) > 0 {
 		for _, e := range m.AclEntries {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -2360,7 +2360,7 @@ func (m *SplunkViolation) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.NetworkFlowInfo != nil {
-		if size, ok := interface{}(m.NetworkFlowInfo).(interface {
+		if size, ok := any(m.NetworkFlowInfo).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2645,7 +2645,7 @@ func (m *SplunkViolation_ViolationInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ViolationMessageAttributes = append(m.ViolationMessageAttributes, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{})
-			if unmarshal, ok := interface{}(m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1]).(interface {
+			if unmarshal, ok := any(m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3399,7 +3399,7 @@ func (m *SplunkViolation_ProcessInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessLineageInfo = append(m.ProcessLineageInfo, &storage.ProcessSignal_LineageInfo{})
-			if unmarshal, ok := interface{}(m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1]).(interface {
+			if unmarshal, ok := any(m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3843,7 +3843,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentContainers = append(m.DeploymentContainers, &storage.Alert_Deployment_Container{})
-			if unmarshal, ok := interface{}(m.DeploymentContainers[len(m.DeploymentContainers)-1]).(interface {
+			if unmarshal, ok := any(m.DeploymentContainers[len(m.DeploymentContainers)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4014,7 +4014,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVT(dAtA []byte) error {
 			if m.DeploymentImage == nil {
 				m.DeploymentImage = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := interface{}(m.DeploymentImage).(interface {
+			if unmarshal, ok := any(m.DeploymentImage).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5008,7 +5008,7 @@ func (m *SplunkViolation_FileAccessInfo) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AclEntries = append(m.AclEntries, &storage.AclEntry{})
-			if unmarshal, ok := interface{}(m.AclEntries[len(m.AclEntries)-1]).(interface {
+			if unmarshal, ok := any(m.AclEntries[len(m.AclEntries)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5320,7 +5320,7 @@ func (m *SplunkViolation) UnmarshalVT(dAtA []byte) error {
 			if m.NetworkFlowInfo == nil {
 				m.NetworkFlowInfo = &storage.Alert_Violation_NetworkFlowInfo{}
 			}
-			if unmarshal, ok := interface{}(m.NetworkFlowInfo).(interface {
+			if unmarshal, ok := any(m.NetworkFlowInfo).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5683,7 +5683,7 @@ func (m *SplunkViolation_ViolationInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ViolationMessageAttributes = append(m.ViolationMessageAttributes, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{})
-			if unmarshal, ok := interface{}(m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1]).(interface {
+			if unmarshal, ok := any(m.ViolationMessageAttributes[len(m.ViolationMessageAttributes)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6477,7 +6477,7 @@ func (m *SplunkViolation_ProcessInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ProcessLineageInfo = append(m.ProcessLineageInfo, &storage.ProcessSignal_LineageInfo{})
-			if unmarshal, ok := interface{}(m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1]).(interface {
+			if unmarshal, ok := any(m.ProcessLineageInfo[len(m.ProcessLineageInfo)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -6957,7 +6957,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.DeploymentContainers = append(m.DeploymentContainers, &storage.Alert_Deployment_Container{})
-			if unmarshal, ok := interface{}(m.DeploymentContainers[len(m.DeploymentContainers)-1]).(interface {
+			if unmarshal, ok := any(m.DeploymentContainers[len(m.DeploymentContainers)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -7136,7 +7136,7 @@ func (m *SplunkViolation_DeploymentInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.DeploymentImage == nil {
 				m.DeploymentImage = &storage.ContainerImage{}
 			}
-			if unmarshal, ok := interface{}(m.DeploymentImage).(interface {
+			if unmarshal, ok := any(m.DeploymentImage).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8214,7 +8214,7 @@ func (m *SplunkViolation_FileAccessInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AclEntries = append(m.AclEntries, &storage.AclEntry{})
-			if unmarshal, ok := interface{}(m.AclEntries[len(m.AclEntries)-1]).(interface {
+			if unmarshal, ok := any(m.AclEntries[len(m.AclEntries)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8530,7 +8530,7 @@ func (m *SplunkViolation) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.NetworkFlowInfo == nil {
 				m.NetworkFlowInfo = &storage.Alert_Violation_NetworkFlowInfo{}
 			}
-			if unmarshal, ok := interface{}(m.NetworkFlowInfo).(interface {
+			if unmarshal, ok := any(m.NetworkFlowInfo).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

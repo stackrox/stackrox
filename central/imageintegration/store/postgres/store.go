@@ -106,7 +106,7 @@ func insertIntoImageIntegrations(batch *pgx.Batch, obj *storage.ImageIntegration
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -157,7 +157,7 @@ func copyFromImageIntegrations(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),

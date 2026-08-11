@@ -19,7 +19,7 @@ func TestCentralStaticDefaults(t *testing.T) {
 		},
 		"non-empty defaults": {
 			defaults: &platform.CentralSpec{Egress: &platform.Egress{}},
-			errorCheck: func(t require.TestingT, err error, i ...interface{}) {
+			errorCheck: func(t require.TestingT, err error, i ...any) {
 				require.ErrorContains(t, err, "is not empty")
 			},
 		},

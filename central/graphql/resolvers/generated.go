@@ -2246,7 +2246,7 @@ func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_Violati
 }
 
 type alertEntityResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *alertResolver) Entity() *alertEntityResolver {
@@ -2789,7 +2789,7 @@ func (resolver *alert_ViolationResolver) Type(ctx context.Context) string {
 }
 
 type alert_ViolationMessageAttributesResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *alert_ViolationResolver) MessageAttributes() *alert_ViolationMessageAttributesResolver {
@@ -3686,7 +3686,7 @@ func (resolver *cVSSScoreResolver) Url(ctx context.Context) string {
 }
 
 type cVSSScoreCvssScoreResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *cVSSScoreResolver) CvssScore() *cVSSScoreCvssScoreResolver {
@@ -5886,7 +5886,7 @@ func (resolver *complianceResourceResolver) Node(ctx context.Context) (*complian
 }
 
 type complianceResourceResourceResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *complianceResourceResolver) Resource() *complianceResourceResourceResolver {
@@ -11187,7 +11187,7 @@ func (resolver *networkEntityInfoResolver) Type(ctx context.Context) string {
 }
 
 type networkEntityInfoDescResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver {
@@ -12097,7 +12097,7 @@ func (resolver *notifierResolver) UiEndpoint(ctx context.Context) string {
 }
 
 type notifierConfigResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *notifierResolver) Config() *notifierConfigResolver {
@@ -13587,7 +13587,7 @@ func (resolver *providerMetadataResolver) Zone(ctx context.Context) string {
 }
 
 type providerMetadataProviderResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *providerMetadataResolver) Provider() *providerMetadataProviderResolver {
@@ -14676,7 +14676,7 @@ func (resolver *secretDataFileResolver) Type(ctx context.Context) string {
 }
 
 type secretDataFileMetadataResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *secretDataFileResolver) Metadata() *secretDataFileMetadataResolver {
@@ -15414,7 +15414,7 @@ func (resolver *signatureResolver) Cosign(ctx context.Context) (*cosignSignature
 }
 
 type signatureSignatureResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *signatureResolver) Signature() *signatureSignatureResolver {
@@ -16089,7 +16089,7 @@ func (resolver *syslogResolver) TcpConfig(ctx context.Context) (*syslog_TCPConfi
 }
 
 type syslogEndpointResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *syslogResolver) Endpoint() *syslogEndpointResolver {
@@ -17016,7 +17016,7 @@ func (resolver *vulnerabilityRequest_ScopeResolver) ImageScope(ctx context.Conte
 }
 
 type vulnerabilityRequest_ScopeInfoResolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *vulnerabilityRequest_ScopeResolver) Info() *vulnerabilityRequest_ScopeInfoResolver {

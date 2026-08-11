@@ -56,7 +56,7 @@ func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		serialized,
 	}

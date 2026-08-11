@@ -98,7 +98,7 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -167,7 +167,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),

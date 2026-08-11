@@ -98,7 +98,7 @@ func insertIntoBlobs(batch *pgx.Batch, obj *storage.Blob) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetName(),
 		obj.GetLength(),
@@ -149,7 +149,7 @@ func copyFromBlobs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetName(),
 			obj.GetLength(),
 			protocompat.NilOrTime(obj.GetModifiedTime()),

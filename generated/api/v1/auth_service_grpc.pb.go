@@ -200,7 +200,7 @@ func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
 	s.RegisterService(&AuthService_ServiceDesc, srv)
 }
 
-func _AuthService_GetAuthStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_GetAuthStatus_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -212,13 +212,13 @@ func _AuthService_GetAuthStatus_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: AuthService_GetAuthStatus_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).GetAuthStatus(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_ListAuthMachineToMachineConfigs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_ListAuthMachineToMachineConfigs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -230,13 +230,13 @@ func _AuthService_ListAuthMachineToMachineConfigs_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: AuthService_ListAuthMachineToMachineConfigs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).ListAuthMachineToMachineConfigs(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_GetAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_GetAuthMachineToMachineConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -248,13 +248,13 @@ func _AuthService_GetAuthMachineToMachineConfig_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: AuthService_GetAuthMachineToMachineConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).GetAuthMachineToMachineConfig(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_AddAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_AddAuthMachineToMachineConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(AddAuthMachineToMachineConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -266,13 +266,13 @@ func _AuthService_AddAuthMachineToMachineConfig_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: AuthService_AddAuthMachineToMachineConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).AddAuthMachineToMachineConfig(ctx, req.(*AddAuthMachineToMachineConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_UpdateAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_UpdateAuthMachineToMachineConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateAuthMachineToMachineConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -284,13 +284,13 @@ func _AuthService_UpdateAuthMachineToMachineConfig_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: AuthService_UpdateAuthMachineToMachineConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).UpdateAuthMachineToMachineConfig(ctx, req.(*UpdateAuthMachineToMachineConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_DeleteAuthMachineToMachineConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_DeleteAuthMachineToMachineConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -302,13 +302,13 @@ func _AuthService_DeleteAuthMachineToMachineConfig_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: AuthService_DeleteAuthMachineToMachineConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).DeleteAuthMachineToMachineConfig(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthService_ExchangeAuthMachineToMachineToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthService_ExchangeAuthMachineToMachineToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ExchangeAuthMachineToMachineTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -320,7 +320,7 @@ func _AuthService_ExchangeAuthMachineToMachineToken_Handler(srv interface{}, ctx
 		Server:     srv,
 		FullMethod: AuthService_ExchangeAuthMachineToMachineToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthServiceServer).ExchangeAuthMachineToMachineToken(ctx, req.(*ExchangeAuthMachineToMachineTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)

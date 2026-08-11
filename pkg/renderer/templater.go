@@ -222,7 +222,7 @@ func standardizeWhitespace(instructions string) string {
 	return strings.TrimSpace(instructions) + "\n"
 }
 
-// EnvironmentMap returns the values of Environment in the form of a map[string]interface{}
+// EnvironmentMap returns the values of Environment in the form of a map[string]any
 // that can be used with sprig template functions.
 func (c Config) EnvironmentMap() map[string]any {
 	result := make(map[string]any, len(c.Environment))

@@ -54,7 +54,7 @@ func (m *GenerateTokenResponse) CloneVT() *GenerateTokenResponse {
 	r := new(GenerateTokenResponse)
 	r.Token = m.Token
 	if rhs := m.Metadata; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.TokenMetadata }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.TokenMetadata }); ok {
 			r.Metadata = vtpb.CloneVT()
 		} else {
 			r.Metadata = proto.Clone(rhs).(*storage.TokenMetadata)
@@ -109,7 +109,7 @@ func (m *GetAPITokensResponse) CloneVT() *GetAPITokensResponse {
 	if rhs := m.Tokens; rhs != nil {
 		tmpContainer := make([]*storage.TokenMetadata, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.TokenMetadata }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.TokenMetadata }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.TokenMetadata)
@@ -192,7 +192,7 @@ func (this *GenerateTokenResponse) EqualVT(that *GenerateTokenResponse) bool {
 	if this.Token != that.Token {
 		return false
 	}
-	if equal, ok := interface{}(this.Metadata).(interface {
+	if equal, ok := any(this.Metadata).(interface {
 		EqualVT(*storage.TokenMetadata) bool
 	}); ok {
 		if !equal.EqualVT(that.Metadata) {
@@ -274,7 +274,7 @@ func (this *GetAPITokensResponse) EqualVT(that *GetAPITokensResponse) bool {
 			if q == nil {
 				q = &storage.TokenMetadata{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.TokenMetadata) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -417,7 +417,7 @@ func (m *GenerateTokenResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Metadata != nil {
-		if vtmsg, ok := interface{}(m.Metadata).(interface {
+		if vtmsg, ok := any(m.Metadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -539,7 +539,7 @@ func (m *GetAPITokensResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	}
 	if len(m.Tokens) > 0 {
 		for iNdEx := len(m.Tokens) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Tokens[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Tokens[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -645,7 +645,7 @@ func (m *GenerateTokenResponse) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Metadata != nil {
-		if size, ok := interface{}(m.Metadata).(interface {
+		if size, ok := any(m.Metadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -688,7 +688,7 @@ func (m *GetAPITokensResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Tokens) > 0 {
 		for _, e := range m.Tokens {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -994,7 +994,7 @@ func (m *GenerateTokenResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.TokenMetadata{}
 			}
-			if unmarshal, ok := interface{}(m.Metadata).(interface {
+			if unmarshal, ok := any(m.Metadata).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1159,7 +1159,7 @@ func (m *GetAPITokensResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Tokens = append(m.Tokens, &storage.TokenMetadata{})
-			if unmarshal, ok := interface{}(m.Tokens[len(m.Tokens)-1]).(interface {
+			if unmarshal, ok := any(m.Tokens[len(m.Tokens)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1568,7 +1568,7 @@ func (m *GenerateTokenResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Metadata == nil {
 				m.Metadata = &storage.TokenMetadata{}
 			}
-			if unmarshal, ok := interface{}(m.Metadata).(interface {
+			if unmarshal, ok := any(m.Metadata).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1733,7 +1733,7 @@ func (m *GetAPITokensResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Tokens = append(m.Tokens, &storage.TokenMetadata{})
-			if unmarshal, ok := interface{}(m.Tokens[len(m.Tokens)-1]).(interface {
+			if unmarshal, ok := any(m.Tokens[len(m.Tokens)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

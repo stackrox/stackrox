@@ -154,7 +154,7 @@ func RegisterDebugServiceServer(s grpc.ServiceRegistrar, srv DebugServiceServer)
 	s.RegisterService(&DebugService_ServiceDesc, srv)
 }
 
-func _DebugService_GetLogLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DebugService_GetLogLevel_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetLogLevelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -166,13 +166,13 @@ func _DebugService_GetLogLevel_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: DebugService_GetLogLevel_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DebugServiceServer).GetLogLevel(ctx, req.(*GetLogLevelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DebugService_SetLogLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DebugService_SetLogLevel_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(LogLevelRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -184,13 +184,13 @@ func _DebugService_SetLogLevel_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: DebugService_SetLogLevel_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DebugServiceServer).SetLogLevel(ctx, req.(*LogLevelRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DebugService_StreamAuthzTraces_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _DebugService_StreamAuthzTraces_Handler(srv any, stream grpc.ServerStream) error {
 	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
@@ -201,7 +201,7 @@ func _DebugService_StreamAuthzTraces_Handler(srv interface{}, stream grpc.Server
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DebugService_StreamAuthzTracesServer = grpc.ServerStreamingServer[AuthorizationTraceResponse]
 
-func _DebugService_ResetDBStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DebugService_ResetDBStats_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -213,7 +213,7 @@ func _DebugService_ResetDBStats_Handler(srv interface{}, ctx context.Context, de
 		Server:     srv,
 		FullMethod: DebugService_ResetDBStats_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DebugServiceServer).ResetDBStats(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

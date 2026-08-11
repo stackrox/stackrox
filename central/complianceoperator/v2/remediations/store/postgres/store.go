@@ -119,7 +119,7 @@ func insertIntoComplianceOperatorRemediationV2(batch *pgx.Batch, obj *storage.Co
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -172,7 +172,7 @@ func copyFromComplianceOperatorRemediationV2(ctx context.Context, s pgSearch.Del
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			obj.GetComplianceCheckResultName(),

@@ -99,7 +99,7 @@ func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		protocompat.NilOrTime(obj.GetTimestamp()),
@@ -152,7 +152,7 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			protocompat.NilOrTime(obj.GetTimestamp()),
 			obj.GetNumNodes(),

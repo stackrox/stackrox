@@ -116,7 +116,7 @@ func RegisterComplianceManagementServiceServer(s grpc.ServiceRegistrar, srv Comp
 	s.RegisterService(&ComplianceManagementService_ServiceDesc, srv)
 }
 
-func _ComplianceManagementService_GetRecentRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceManagementService_GetRecentRuns_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetRecentComplianceRunsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -128,13 +128,13 @@ func _ComplianceManagementService_GetRecentRuns_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: ComplianceManagementService_GetRecentRuns_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ComplianceManagementServiceServer).GetRecentRuns(ctx, req.(*GetRecentComplianceRunsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceManagementService_TriggerRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceManagementService_TriggerRuns_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(TriggerComplianceRunsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -146,13 +146,13 @@ func _ComplianceManagementService_TriggerRuns_Handler(srv interface{}, ctx conte
 		Server:     srv,
 		FullMethod: ComplianceManagementService_TriggerRuns_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ComplianceManagementServiceServer).TriggerRuns(ctx, req.(*TriggerComplianceRunsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ComplianceManagementService_GetRunStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceManagementService_GetRunStatuses_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetComplianceRunStatusesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func _ComplianceManagementService_GetRunStatuses_Handler(srv interface{}, ctx co
 		Server:     srv,
 		FullMethod: ComplianceManagementService_GetRunStatuses_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ComplianceManagementServiceServer).GetRunStatuses(ctx, req.(*GetComplianceRunStatusesRequest))
 	}
 	return interceptor(ctx, in, info, handler)

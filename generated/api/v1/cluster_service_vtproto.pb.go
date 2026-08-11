@@ -67,7 +67,7 @@ func (m *ClusterResponse) CloneVT() *ClusterResponse {
 	r := new(ClusterResponse)
 	r.ClusterRetentionInfo = m.ClusterRetentionInfo.CloneVT()
 	if rhs := m.Cluster; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Cluster }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Cluster }); ok {
 			r.Cluster = vtpb.CloneVT()
 		} else {
 			r.Cluster = proto.Clone(rhs).(*storage.Cluster)
@@ -111,7 +111,7 @@ func (m *ClustersList) CloneVT() *ClustersList {
 	if rhs := m.Clusters; rhs != nil {
 		tmpContainer := make([]*storage.Cluster, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Cluster }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Cluster }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Cluster)
@@ -239,7 +239,7 @@ func (this *ClusterResponse) EqualVT(that *ClusterResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Cluster).(interface{ EqualVT(*storage.Cluster) bool }); ok {
+	if equal, ok := any(this.Cluster).(interface{ EqualVT(*storage.Cluster) bool }); ok {
 		if !equal.EqualVT(that.Cluster) {
 			return false
 		}
@@ -302,7 +302,7 @@ func (this *ClustersList) EqualVT(that *ClustersList) bool {
 			if q == nil {
 				q = &storage.Cluster{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Cluster) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Cluster) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -491,7 +491,7 @@ func (m *ClusterResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x12
 	}
 	if m.Cluster != nil {
-		if vtmsg, ok := interface{}(m.Cluster).(interface {
+		if vtmsg, ok := any(m.Cluster).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -626,7 +626,7 @@ func (m *ClustersList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Clusters) > 0 {
 		for iNdEx := len(m.Clusters) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Clusters[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Clusters[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -772,7 +772,7 @@ func (m *ClusterResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Cluster != nil {
-		if size, ok := interface{}(m.Cluster).(interface {
+		if size, ok := any(m.Cluster).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -818,7 +818,7 @@ func (m *ClustersList) SizeVT() (n int) {
 	_ = l
 	if len(m.Clusters) > 0 {
 		for _, e := range m.Clusters {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1025,7 +1025,7 @@ func (m *ClusterResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &storage.Cluster{}
 			}
-			if unmarshal, ok := interface{}(m.Cluster).(interface {
+			if unmarshal, ok := any(m.Cluster).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1289,7 +1289,7 @@ func (m *ClustersList) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &storage.Cluster{})
-			if unmarshal, ok := interface{}(m.Clusters[len(m.Clusters)-1]).(interface {
+			if unmarshal, ok := any(m.Clusters[len(m.Clusters)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1759,7 +1759,7 @@ func (m *ClusterResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Cluster == nil {
 				m.Cluster = &storage.Cluster{}
 			}
-			if unmarshal, ok := interface{}(m.Cluster).(interface {
+			if unmarshal, ok := any(m.Cluster).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2031,7 +2031,7 @@ func (m *ClustersList) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Clusters = append(m.Clusters, &storage.Cluster{})
-			if unmarshal, ok := interface{}(m.Clusters[len(m.Clusters)-1]).(interface {
+			if unmarshal, ok := any(m.Clusters[len(m.Clusters)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

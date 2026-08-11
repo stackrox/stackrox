@@ -120,7 +120,7 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -149,7 +149,7 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 
 func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secretID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(secretID),
 		idx,
@@ -175,7 +175,7 @@ func insertIntoSecretsFiles(batch *pgx.Batch, obj *storage.SecretDataFile, secre
 
 func insertIntoSecretsFilesRegistries(batch *pgx.Batch, obj *storage.ImagePullSecret_Registry, secretID string, secretFileIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(secretID),
 		secretFileIdx,
@@ -229,7 +229,7 @@ func copyFromSecrets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, o
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
@@ -273,7 +273,7 @@ func copyFromSecretsFiles(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(secretID),
 			idx,
 			obj.GetType(),
@@ -314,7 +314,7 @@ func copyFromSecretsFilesRegistries(ctx context.Context, s pgSearch.Deleter, tx 
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(secretID),
 			secretFileIdx,
 			idx,

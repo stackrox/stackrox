@@ -119,7 +119,7 @@ func insertIntoNetworkpolicies(batch *pgx.Batch, obj *storage.NetworkPolicy) err
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
@@ -170,7 +170,7 @@ func copyFromNetworkpolicies(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetNamespace(),

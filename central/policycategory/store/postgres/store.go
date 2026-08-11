@@ -97,7 +97,7 @@ func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) e
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -146,7 +146,7 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			serialized,

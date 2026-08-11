@@ -46,7 +46,7 @@ func (j *JWKSGetter) Key(id string) any {
 	j.fetchOnce.Do(j.fetch)
 	key := j.known[id]
 	if key == nil {
-		return nil // note this is NOT equivalent to returning `key`, which is (*JSONWebKey)(nil), not the nil interface{}.
+		return nil // note this is NOT equivalent to returning `key`, which is (*JSONWebKey)(nil), not the nil any.
 	}
 	return key
 }

@@ -94,7 +94,7 @@ func insertIntoComplianceConfigs(batch *pgx.Batch, obj *storage.ComplianceConfig
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetStandardId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromComplianceConfigs(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetStandardId(),
 			serialized,
 		}, nil

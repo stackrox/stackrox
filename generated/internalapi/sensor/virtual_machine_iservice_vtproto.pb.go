@@ -26,14 +26,14 @@ func (m *UpsertVirtualMachineIndexReportRequest) CloneVT() *UpsertVirtualMachine
 	}
 	r := new(UpsertVirtualMachineIndexReportRequest)
 	if rhs := m.IndexReport; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.IndexReport }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.IndexReport }); ok {
 			r.IndexReport = vtpb.CloneVT()
 		} else {
 			r.IndexReport = proto.Clone(rhs).(*v1.IndexReport)
 		}
 	}
 	if rhs := m.DiscoveredData; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.DiscoveredData }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.DiscoveredData }); ok {
 			r.DiscoveredData = vtpb.CloneVT()
 		} else {
 			r.DiscoveredData = proto.Clone(rhs).(*v1.DiscoveredData)
@@ -73,14 +73,14 @@ func (this *UpsertVirtualMachineIndexReportRequest) EqualVT(that *UpsertVirtualM
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.IndexReport).(interface{ EqualVT(*v1.IndexReport) bool }); ok {
+	if equal, ok := any(this.IndexReport).(interface{ EqualVT(*v1.IndexReport) bool }); ok {
 		if !equal.EqualVT(that.IndexReport) {
 			return false
 		}
 	} else if !proto.Equal(this.IndexReport, that.IndexReport) {
 		return false
 	}
-	if equal, ok := interface{}(this.DiscoveredData).(interface{ EqualVT(*v1.DiscoveredData) bool }); ok {
+	if equal, ok := any(this.DiscoveredData).(interface{ EqualVT(*v1.DiscoveredData) bool }); ok {
 		if !equal.EqualVT(that.DiscoveredData) {
 			return false
 		}
@@ -147,7 +147,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) MarshalToSizedBufferVT(dAtA []b
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.DiscoveredData != nil {
-		if vtmsg, ok := interface{}(m.DiscoveredData).(interface {
+		if vtmsg, ok := any(m.DiscoveredData).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -169,7 +169,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) MarshalToSizedBufferVT(dAtA []b
 		dAtA[i] = 0x12
 	}
 	if m.IndexReport != nil {
-		if vtmsg, ok := interface{}(m.IndexReport).(interface {
+		if vtmsg, ok := any(m.IndexReport).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -243,7 +243,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.IndexReport != nil {
-		if size, ok := interface{}(m.IndexReport).(interface {
+		if size, ok := any(m.IndexReport).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -253,7 +253,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.DiscoveredData != nil {
-		if size, ok := interface{}(m.DiscoveredData).(interface {
+		if size, ok := any(m.DiscoveredData).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -340,7 +340,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVT(dAtA []byte) error 
 			if m.IndexReport == nil {
 				m.IndexReport = &v1.IndexReport{}
 			}
-			if unmarshal, ok := interface{}(m.IndexReport).(interface {
+			if unmarshal, ok := any(m.IndexReport).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -384,7 +384,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVT(dAtA []byte) error 
 			if m.DiscoveredData == nil {
 				m.DiscoveredData = &v1.DiscoveredData{}
 			}
-			if unmarshal, ok := interface{}(m.DiscoveredData).(interface {
+			if unmarshal, ok := any(m.DiscoveredData).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -550,7 +550,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			if m.IndexReport == nil {
 				m.IndexReport = &v1.IndexReport{}
 			}
-			if unmarshal, ok := interface{}(m.IndexReport).(interface {
+			if unmarshal, ok := any(m.IndexReport).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -594,7 +594,7 @@ func (m *UpsertVirtualMachineIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) 
 			if m.DiscoveredData == nil {
 				m.DiscoveredData = &v1.DiscoveredData{}
 			}
-			if unmarshal, ok := interface{}(m.DiscoveredData).(interface {
+			if unmarshal, ok := any(m.DiscoveredData).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -373,7 +373,7 @@ func (m *MsgToSensor_UpdatedImage) CloneVT() isMsgToSensor_Msg {
 	}
 	r := new(MsgToSensor_UpdatedImage)
 	if rhs := m.UpdatedImage; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Image }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Image }); ok {
 			r.UpdatedImage = vtpb.CloneVT()
 		} else {
 			r.UpdatedImage = proto.Clone(rhs).(*storage.Image)
@@ -563,7 +563,7 @@ func (m *AuditLogSync) CloneVT() *AuditLogSync {
 	if rhs := m.NodeAuditLogFileStates; rhs != nil {
 		tmpContainer := make(map[string]*storage.AuditLogFileState, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.AuditLogFileState
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -592,7 +592,7 @@ func (m *AuditLogStatusInfo) CloneVT() *AuditLogStatusInfo {
 	if rhs := m.NodeAuditLogFileStates; rhs != nil {
 		tmpContainer := make(map[string]*storage.AuditLogFileState, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.AuditLogFileState
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -1599,7 +1599,7 @@ func (this *MsgToSensor_UpdatedImage) EqualVT(thatIface isMsgToSensor_Msg) bool 
 		if q == nil {
 			q = &storage.Image{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Image) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.Image) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -2021,7 +2021,7 @@ func (this *AuditLogSync) EqualVT(that *AuditLogSync) bool {
 			if q == nil {
 				q = &storage.AuditLogFileState{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.AuditLogFileState) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -2063,7 +2063,7 @@ func (this *AuditLogStatusInfo) EqualVT(that *AuditLogStatusInfo) bool {
 			if q == nil {
 				q = &storage.AuditLogFileState{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.AuditLogFileState) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -3114,7 +3114,7 @@ func (m *MsgToSensor_UpdatedImage) MarshalToVT(dAtA []byte) (int, error) {
 func (m *MsgToSensor_UpdatedImage) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.UpdatedImage != nil {
-		if vtmsg, ok := interface{}(m.UpdatedImage).(interface {
+		if vtmsg, ok := any(m.UpdatedImage).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3677,7 +3677,7 @@ func (m *AuditLogSync) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		for k := range m.NodeAuditLogFileStates {
 			v := m.NodeAuditLogFileStates[k]
 			baseI := i
-			if vtmsg, ok := interface{}(v).(interface {
+			if vtmsg, ok := any(v).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3744,7 +3744,7 @@ func (m *AuditLogStatusInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		for k := range m.NodeAuditLogFileStates {
 			v := m.NodeAuditLogFileStates[k]
 			baseI := i
-			if vtmsg, ok := interface{}(v).(interface {
+			if vtmsg, ok := any(v).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4468,7 +4468,7 @@ func (m *MsgToSensor_UpdatedImage) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.UpdatedImage != nil {
-		if size, ok := interface{}(m.UpdatedImage).(interface {
+		if size, ok := any(m.UpdatedImage).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -4733,7 +4733,7 @@ func (m *AuditLogSync) SizeVT() (n int) {
 			_ = v
 			l = 0
 			if v != nil {
-				if size, ok := interface{}(v).(interface {
+				if size, ok := any(v).(interface {
 					SizeVT() int
 				}); ok {
 					l = size.SizeVT()
@@ -4762,7 +4762,7 @@ func (m *AuditLogStatusInfo) SizeVT() (n int) {
 			_ = v
 			l = 0
 			if v != nil {
-				if size, ok := interface{}(v).(interface {
+				if size, ok := any(v).(interface {
 					SizeVT() int
 				}); ok {
 					l = size.SizeVT()
@@ -6425,7 +6425,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgToSensor_UpdatedImage); ok {
-				if unmarshal, ok := interface{}(oneof.UpdatedImage).(interface {
+				if unmarshal, ok := any(oneof.UpdatedImage).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6438,7 +6438,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Image{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7611,7 +7611,7 @@ func (m *AuditLogSync) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVT([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -7799,7 +7799,7 @@ func (m *AuditLogStatusInfo) UnmarshalVT(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVT([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -9834,7 +9834,7 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgToSensor_UpdatedImage); ok {
-				if unmarshal, ok := interface{}(oneof.UpdatedImage).(interface {
+				if unmarshal, ok := any(oneof.UpdatedImage).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -9847,7 +9847,7 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Image{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11044,7 +11044,7 @@ func (m *AuditLogSync) UnmarshalVTUnsafe(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVTUnsafe([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {
@@ -11236,7 +11236,7 @@ func (m *AuditLogStatusInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 						return io.ErrUnexpectedEOF
 					}
 					mapvalue = &storage.AuditLogFileState{}
-					if unmarshal, ok := interface{}(mapvalue).(interface {
+					if unmarshal, ok := any(mapvalue).(interface {
 						UnmarshalVTUnsafe([]byte) error
 					}); ok {
 						if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postmsgIndex]); err != nil {

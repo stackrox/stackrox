@@ -95,7 +95,7 @@ func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.Net
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		serialized,
@@ -142,7 +142,7 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			serialized,
 		}, nil

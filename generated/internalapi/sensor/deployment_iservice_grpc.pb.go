@@ -89,7 +89,7 @@ func RegisterDeploymentServiceServer(s grpc.ServiceRegistrar, srv DeploymentServ
 	s.RegisterService(&DeploymentService_ServiceDesc, srv)
 }
 
-func _DeploymentService_GetDeploymentForPod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DeploymentService_GetDeploymentForPod_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetDeploymentForPodRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func _DeploymentService_GetDeploymentForPod_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: DeploymentService_GetDeploymentForPod_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DeploymentServiceServer).GetDeploymentForPod(ctx, req.(*GetDeploymentForPodRequest))
 	}
 	return interceptor(ctx, in, info, handler)

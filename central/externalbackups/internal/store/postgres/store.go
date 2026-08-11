@@ -94,7 +94,7 @@ func insertIntoExternalBackups(batch *pgx.Batch, obj *storage.ExternalBackup) er
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromExternalBackups(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

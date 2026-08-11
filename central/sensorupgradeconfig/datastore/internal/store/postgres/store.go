@@ -56,7 +56,7 @@ func insertIntoSensorUpgradeConfigs(ctx context.Context, tx *postgres.Tx, obj *s
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		serialized,
 	}

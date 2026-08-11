@@ -92,7 +92,7 @@ func RegisterTokenServiceServer(s grpc.ServiceRegistrar, srv TokenServiceServer)
 	s.RegisterService(&TokenService_ServiceDesc, srv)
 }
 
-func _TokenService_GenerateTokenForPermissionsAndScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TokenService_GenerateTokenForPermissionsAndScope_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GenerateTokenForPermissionsAndScopeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func _TokenService_GenerateTokenForPermissionsAndScope_Handler(srv interface{}, 
 		Server:     srv,
 		FullMethod: TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(TokenServiceServer).GenerateTokenForPermissionsAndScope(ctx, req.(*GenerateTokenForPermissionsAndScopeRequest))
 	}
 	return interceptor(ctx, in, info, handler)

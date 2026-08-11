@@ -74,7 +74,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoTestNoSerializeds(batch *pgx.Batch, obj *storage.TestNoSerialized) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -113,7 +113,7 @@ func insertIntoTestNoSerializeds(batch *pgx.Batch, obj *storage.TestNoSerialized
 
 func insertIntoTestNoSerializedsLabels(batch *pgx.Batch, obj *storage.TestNoSerialized_Label, testNoSerializedID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(testNoSerializedID),
 		idx,
@@ -172,7 +172,7 @@ func copyFromTestNoSerializeds(ctx context.Context, s pgSearch.Deleter, tx *post
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			obj.GetDescription(),
@@ -226,7 +226,7 @@ func copyFromTestNoSerializedsLabels(ctx context.Context, s pgSearch.Deleter, tx
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(testNoSerializedID),
 			idx,
 			obj.GetKey(),

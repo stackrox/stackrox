@@ -151,7 +151,7 @@ func injectRelatedImageEnvVars(tree any) error {
 			}
 		}
 	case chartutil.Values:
-		// chartutil.Values is a named type over map[string]interface{}; convert
+		// chartutil.Values is a named type over map[string]any; convert
 		// and recurse so the map[string]any branch handles it uniformly.
 		return injectRelatedImageEnvVars(map[string]any(v))
 	case []any:

@@ -128,7 +128,7 @@ func insertIntoPods(batch *pgx.Batch, obj *storage.Pod) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -156,7 +156,7 @@ func insertIntoPods(batch *pgx.Batch, obj *storage.Pod) error {
 
 func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstance, podID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(podID),
 		idx,
@@ -208,7 +208,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
@@ -250,7 +250,7 @@ func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *post
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(podID),
 			idx,
 			obj.GetImageDigest(),

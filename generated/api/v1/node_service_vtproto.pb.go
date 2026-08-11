@@ -46,7 +46,7 @@ func (m *ListNodesResponse) CloneVT() *ListNodesResponse {
 	if rhs := m.Nodes; rhs != nil {
 		tmpContainer := make([]*storage.Node, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Node }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Node }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Node)
@@ -107,7 +107,7 @@ func (m *ExportNodeResponse) CloneVT() *ExportNodeResponse {
 	}
 	r := new(ExportNodeResponse)
 	if rhs := m.Node; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Node }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Node }); ok {
 			r.Node = vtpb.CloneVT()
 		} else {
 			r.Node = proto.Clone(rhs).(*storage.Node)
@@ -161,7 +161,7 @@ func (this *ListNodesResponse) EqualVT(that *ListNodesResponse) bool {
 			if q == nil {
 				q = &storage.Node{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Node) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Node) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -230,7 +230,7 @@ func (this *ExportNodeResponse) EqualVT(that *ExportNodeResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Node).(interface{ EqualVT(*storage.Node) bool }); ok {
+	if equal, ok := any(this.Node).(interface{ EqualVT(*storage.Node) bool }); ok {
 		if !equal.EqualVT(that.Node) {
 			return false
 		}
@@ -319,7 +319,7 @@ func (m *ListNodesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Nodes) > 0 {
 		for iNdEx := len(m.Nodes) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Nodes[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Nodes[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -467,7 +467,7 @@ func (m *ExportNodeResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Node != nil {
-		if vtmsg, ok := interface{}(m.Node).(interface {
+		if vtmsg, ok := any(m.Node).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -513,7 +513,7 @@ func (m *ListNodesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Nodes) > 0 {
 		for _, e := range m.Nodes {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -569,7 +569,7 @@ func (m *ExportNodeResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Node != nil {
-		if size, ok := interface{}(m.Node).(interface {
+		if size, ok := any(m.Node).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -724,7 +724,7 @@ func (m *ListNodesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nodes = append(m.Nodes, &storage.Node{})
-			if unmarshal, ok := interface{}(m.Nodes[len(m.Nodes)-1]).(interface {
+			if unmarshal, ok := any(m.Nodes[len(m.Nodes)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1036,7 +1036,7 @@ func (m *ExportNodeResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Node == nil {
 				m.Node = &storage.Node{}
 			}
-			if unmarshal, ok := interface{}(m.Node).(interface {
+			if unmarshal, ok := any(m.Node).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1216,7 +1216,7 @@ func (m *ListNodesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Nodes = append(m.Nodes, &storage.Node{})
-			if unmarshal, ok := interface{}(m.Nodes[len(m.Nodes)-1]).(interface {
+			if unmarshal, ok := any(m.Nodes[len(m.Nodes)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1540,7 +1540,7 @@ func (m *ExportNodeResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Node == nil {
 				m.Node = &storage.Node{}
 			}
-			if unmarshal, ok := interface{}(m.Node).(interface {
+			if unmarshal, ok := any(m.Node).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

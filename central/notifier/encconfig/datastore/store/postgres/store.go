@@ -56,7 +56,7 @@ func insertIntoNotifierEncConfigs(ctx context.Context, tx *postgres.Tx, obj *sto
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		serialized,
 	}

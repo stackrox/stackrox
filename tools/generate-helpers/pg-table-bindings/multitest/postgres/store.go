@@ -100,7 +100,7 @@ func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetKey1(),
 		obj.GetKey2(),
@@ -138,7 +138,7 @@ func insertIntoTestStructs(batch *pgx.Batch, obj *storage.TestStruct) error {
 
 func insertIntoTestStructsNesteds(batch *pgx.Batch, obj *storage.TestStruct_Nested, testStructKey1 string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		testStructKey1,
 		idx,
@@ -205,7 +205,7 @@ func copyFromTestStructs(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetKey1(),
 			obj.GetKey2(),
 			obj.GetStringSlice(),
@@ -262,7 +262,7 @@ func copyFromTestStructsNesteds(ctx context.Context, s pgSearch.Deleter, tx *pos
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			testStructKey1,
 			idx,
 			obj.GetNested(),

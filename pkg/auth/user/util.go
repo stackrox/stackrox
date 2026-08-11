@@ -52,9 +52,9 @@ func LogSuccessfulUserLogin(logger logging.Logger, user *v1.AuthStatus) {
 	logger.Warnw("User successfully logged in with user attributes", extractUserLogFields(user)...)
 }
 
-// The reason this function returns []interface{} instead of []zap.Field
-// is because log.Warnw accepts ...interface{} and []zap.Field does not convert automatically
-// to []interface{}.
+// The reason this function returns []any instead of []zap.Field
+// is because log.Warnw accepts ...any and []zap.Field does not convert automatically
+// to []any.
 func extractUserLogFields(user *v1.AuthStatus) []any {
 	serviceIDJSON := ""
 	if user.GetServiceId() != nil {

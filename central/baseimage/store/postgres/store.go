@@ -99,7 +99,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
@@ -130,7 +130,7 @@ func insertIntoBaseImages(batch *pgx.Batch, obj *storage.BaseImage) error {
 
 func insertIntoBaseImagesLayers(batch *pgx.Batch, obj *storage.BaseImageLayer, baseImageID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(baseImageID),
 		idx,
@@ -186,7 +186,7 @@ func copyFromBaseImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrString(obj.GetBaseImageRepositoryId()),
 			obj.GetRepository(),
@@ -232,7 +232,7 @@ func copyFromBaseImagesLayers(ctx context.Context, s pgSearch.Deleter, tx *postg
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(baseImageID),
 			idx,
 			obj.GetLayerDigest(),

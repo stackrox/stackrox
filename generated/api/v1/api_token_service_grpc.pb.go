@@ -163,7 +163,7 @@ func RegisterAPITokenServiceServer(s grpc.ServiceRegistrar, srv APITokenServiceS
 	s.RegisterService(&APITokenService_ServiceDesc, srv)
 }
 
-func _APITokenService_GetAPIToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _APITokenService_GetAPIToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -175,13 +175,13 @@ func _APITokenService_GetAPIToken_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: APITokenService_GetAPIToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(APITokenServiceServer).GetAPIToken(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _APITokenService_GetAPITokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _APITokenService_GetAPITokens_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetAPITokensRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -193,13 +193,13 @@ func _APITokenService_GetAPITokens_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: APITokenService_GetAPITokens_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(APITokenServiceServer).GetAPITokens(ctx, req.(*GetAPITokensRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _APITokenService_GenerateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _APITokenService_GenerateToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GenerateTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -211,13 +211,13 @@ func _APITokenService_GenerateToken_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: APITokenService_GenerateToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(APITokenServiceServer).GenerateToken(ctx, req.(*GenerateTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _APITokenService_RevokeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _APITokenService_RevokeToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -229,13 +229,13 @@ func _APITokenService_RevokeToken_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: APITokenService_RevokeToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(APITokenServiceServer).RevokeToken(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _APITokenService_ListAllowedTokenRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _APITokenService_ListAllowedTokenRoles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func _APITokenService_ListAllowedTokenRoles_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: APITokenService_ListAllowedTokenRoles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(APITokenServiceServer).ListAllowedTokenRoles(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

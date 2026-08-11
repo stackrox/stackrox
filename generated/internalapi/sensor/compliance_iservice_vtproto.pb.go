@@ -49,7 +49,7 @@ func (m *AuditEvents) CloneVT() *AuditEvents {
 	if rhs := m.Events; rhs != nil {
 		tmpContainer := make([]*storage.KubernetesEvent, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.KubernetesEvent
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -98,7 +98,7 @@ func (m *MsgFromCompliance_Return) CloneVT() isMsgFromCompliance_Msg {
 	}
 	r := new(MsgFromCompliance_Return)
 	if rhs := m.Return; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *compliance.ComplianceReturn
 		}); ok {
 			r.Return = vtpb.CloneVT()
@@ -124,7 +124,7 @@ func (m *MsgFromCompliance_NodeInventory) CloneVT() isMsgFromCompliance_Msg {
 	}
 	r := new(MsgFromCompliance_NodeInventory)
 	if rhs := m.NodeInventory; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.NodeInventory }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.NodeInventory }); ok {
 			r.NodeInventory = vtpb.CloneVT()
 		} else {
 			r.NodeInventory = proto.Clone(rhs).(*storage.NodeInventory)
@@ -139,7 +139,7 @@ func (m *MsgFromCompliance_IndexReport) CloneVT() isMsgFromCompliance_Msg {
 	}
 	r := new(MsgFromCompliance_IndexReport)
 	if rhs := m.IndexReport; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
 			r.IndexReport = vtpb.CloneVT()
 		} else {
 			r.IndexReport = proto.Clone(rhs).(*v4.IndexReport)
@@ -195,7 +195,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) CloneVT() *MsgT
 	r := new(MsgToCompliance_AuditLogCollectionRequest_StartRequest)
 	r.ClusterId = m.ClusterId
 	if rhs := m.CollectStartState; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.AuditLogFileState
 		}); ok {
 			r.CollectStartState = vtpb.CloneVT()
@@ -411,7 +411,7 @@ func (this *AuditEvents) EqualVT(that *AuditEvents) bool {
 			if q == nil {
 				q = &storage.KubernetesEvent{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.KubernetesEvent) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -481,7 +481,7 @@ func (this *MsgFromCompliance_Return) EqualVT(thatIface isMsgFromCompliance_Msg)
 		if q == nil {
 			q = &compliance.ComplianceReturn{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*compliance.ComplianceReturn) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -537,7 +537,7 @@ func (this *MsgFromCompliance_NodeInventory) EqualVT(thatIface isMsgFromComplian
 		if q == nil {
 			q = &storage.NodeInventory{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.NodeInventory) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -568,7 +568,7 @@ func (this *MsgFromCompliance_IndexReport) EqualVT(thatIface isMsgFromCompliance
 		if q == nil {
 			q = &v4.IndexReport{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -638,7 +638,7 @@ func (this *MsgToCompliance_AuditLogCollectionRequest_StartRequest) EqualVT(that
 	if this.ClusterId != that.ClusterId {
 		return false
 	}
-	if equal, ok := interface{}(this.CollectStartState).(interface {
+	if equal, ok := any(this.CollectStartState).(interface {
 		EqualVT(*storage.AuditLogFileState) bool
 	}); ok {
 		if !equal.EqualVT(that.CollectStartState) {
@@ -1033,7 +1033,7 @@ func (m *AuditEvents) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Events) > 0 {
 		for iNdEx := len(m.Events) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Events[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Events[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1115,7 +1115,7 @@ func (m *MsgFromCompliance_Return) MarshalToVT(dAtA []byte) (int, error) {
 func (m *MsgFromCompliance_Return) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Return != nil {
-		if vtmsg, ok := interface{}(m.Return).(interface {
+		if vtmsg, ok := any(m.Return).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1173,7 +1173,7 @@ func (m *MsgFromCompliance_NodeInventory) MarshalToVT(dAtA []byte) (int, error) 
 func (m *MsgFromCompliance_NodeInventory) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.NodeInventory != nil {
-		if vtmsg, ok := interface{}(m.NodeInventory).(interface {
+		if vtmsg, ok := any(m.NodeInventory).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1208,7 +1208,7 @@ func (m *MsgFromCompliance_IndexReport) MarshalToVT(dAtA []byte) (int, error) {
 func (m *MsgFromCompliance_IndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.IndexReport != nil {
-		if vtmsg, ok := interface{}(m.IndexReport).(interface {
+		if vtmsg, ok := any(m.IndexReport).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1363,7 +1363,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) MarshalToSizedB
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.CollectStartState != nil {
-		if vtmsg, ok := interface{}(m.CollectStartState).(interface {
+		if vtmsg, ok := any(m.CollectStartState).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1798,7 +1798,7 @@ func (m *AuditEvents) SizeVT() (n int) {
 	_ = l
 	if len(m.Events) > 0 {
 		for _, e := range m.Events {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1836,7 +1836,7 @@ func (m *MsgFromCompliance_Return) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Return != nil {
-		if size, ok := interface{}(m.Return).(interface {
+		if size, ok := any(m.Return).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1870,7 +1870,7 @@ func (m *MsgFromCompliance_NodeInventory) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.NodeInventory != nil {
-		if size, ok := interface{}(m.NodeInventory).(interface {
+		if size, ok := any(m.NodeInventory).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1890,7 +1890,7 @@ func (m *MsgFromCompliance_IndexReport) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.IndexReport != nil {
-		if size, ok := interface{}(m.IndexReport).(interface {
+		if size, ok := any(m.IndexReport).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1950,7 +1950,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) SizeVT() (n int
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.CollectStartState != nil {
-		if size, ok := interface{}(m.CollectStartState).(interface {
+		if size, ok := any(m.CollectStartState).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2311,7 +2311,7 @@ func (m *AuditEvents) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Events = append(m.Events, &storage.KubernetesEvent{})
-			if unmarshal, ok := interface{}(m.Events[len(m.Events)-1]).(interface {
+			if unmarshal, ok := any(m.Events[len(m.Events)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2436,7 +2436,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_Return); ok {
-				if unmarshal, ok := interface{}(oneof.Return).(interface {
+				if unmarshal, ok := any(oneof.Return).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2449,7 +2449,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2534,7 +2534,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_NodeInventory); ok {
-				if unmarshal, ok := interface{}(oneof.NodeInventory).(interface {
+				if unmarshal, ok := any(oneof.NodeInventory).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2547,7 +2547,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NodeInventory{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2591,7 +2591,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_IndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.IndexReport).(interface {
+				if unmarshal, ok := any(oneof.IndexReport).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2604,7 +2604,7 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &v4.IndexReport{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2938,7 +2938,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) UnmarshalVT(dAt
 			if m.CollectStartState == nil {
 				m.CollectStartState = &storage.AuditLogFileState{}
 			}
-			if unmarshal, ok := interface{}(m.CollectStartState).(interface {
+			if unmarshal, ok := any(m.CollectStartState).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3836,7 +3836,7 @@ func (m *AuditEvents) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Events = append(m.Events, &storage.KubernetesEvent{})
-			if unmarshal, ok := interface{}(m.Events[len(m.Events)-1]).(interface {
+			if unmarshal, ok := any(m.Events[len(m.Events)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3965,7 +3965,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_Return); ok {
-				if unmarshal, ok := interface{}(oneof.Return).(interface {
+				if unmarshal, ok := any(oneof.Return).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3978,7 +3978,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4063,7 +4063,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_NodeInventory); ok {
-				if unmarshal, ok := interface{}(oneof.NodeInventory).(interface {
+				if unmarshal, ok := any(oneof.NodeInventory).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4076,7 +4076,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NodeInventory{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4120,7 +4120,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Msg.(*MsgFromCompliance_IndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.IndexReport).(interface {
+				if unmarshal, ok := any(oneof.IndexReport).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4133,7 +4133,7 @@ func (m *MsgFromCompliance) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &v4.IndexReport{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4479,7 +4479,7 @@ func (m *MsgToCompliance_AuditLogCollectionRequest_StartRequest) UnmarshalVTUnsa
 			if m.CollectStartState == nil {
 				m.CollectStartState = &storage.AuditLogFileState{}
 			}
-			if unmarshal, ok := interface{}(m.CollectStartState).(interface {
+			if unmarshal, ok := any(m.CollectStartState).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

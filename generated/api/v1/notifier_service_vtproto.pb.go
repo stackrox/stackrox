@@ -45,7 +45,7 @@ func (m *GetNotifiersResponse) CloneVT() *GetNotifiersResponse {
 	if rhs := m.Notifiers; rhs != nil {
 		tmpContainer := make([]*storage.Notifier, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Notifier }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Notifier }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Notifier)
@@ -89,7 +89,7 @@ func (m *UpdateNotifierRequest) CloneVT() *UpdateNotifierRequest {
 	r := new(UpdateNotifierRequest)
 	r.UpdatePassword = m.UpdatePassword
 	if rhs := m.Notifier; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Notifier }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Notifier }); ok {
 			r.Notifier = vtpb.CloneVT()
 		} else {
 			r.Notifier = proto.Clone(rhs).(*storage.Notifier)
@@ -140,7 +140,7 @@ func (this *GetNotifiersResponse) EqualVT(that *GetNotifiersResponse) bool {
 			if q == nil {
 				q = &storage.Notifier{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Notifier) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Notifier) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -187,7 +187,7 @@ func (this *UpdateNotifierRequest) EqualVT(that *UpdateNotifierRequest) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Notifier).(interface{ EqualVT(*storage.Notifier) bool }); ok {
+	if equal, ok := any(this.Notifier).(interface{ EqualVT(*storage.Notifier) bool }); ok {
 		if !equal.EqualVT(that.Notifier) {
 			return false
 		}
@@ -272,7 +272,7 @@ func (m *GetNotifiersResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	}
 	if len(m.Notifiers) > 0 {
 		for iNdEx := len(m.Notifiers) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Notifiers[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Notifiers[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -388,7 +388,7 @@ func (m *UpdateNotifierRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		dAtA[i] = 0x10
 	}
 	if m.Notifier != nil {
-		if vtmsg, ok := interface{}(m.Notifier).(interface {
+		if vtmsg, ok := any(m.Notifier).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -430,7 +430,7 @@ func (m *GetNotifiersResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Notifiers) > 0 {
 		for _, e := range m.Notifiers {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -468,7 +468,7 @@ func (m *UpdateNotifierRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Notifier != nil {
-		if size, ok := interface{}(m.Notifier).(interface {
+		if size, ok := any(m.Notifier).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -594,7 +594,7 @@ func (m *GetNotifiersResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Notifiers = append(m.Notifiers, &storage.Notifier{})
-			if unmarshal, ok := interface{}(m.Notifiers[len(m.Notifiers)-1]).(interface {
+			if unmarshal, ok := any(m.Notifiers[len(m.Notifiers)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -792,7 +792,7 @@ func (m *UpdateNotifierRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Notifier == nil {
 				m.Notifier = &storage.Notifier{}
 			}
-			if unmarshal, ok := interface{}(m.Notifier).(interface {
+			if unmarshal, ok := any(m.Notifier).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -956,7 +956,7 @@ func (m *GetNotifiersResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Notifiers = append(m.Notifiers, &storage.Notifier{})
-			if unmarshal, ok := interface{}(m.Notifiers[len(m.Notifiers)-1]).(interface {
+			if unmarshal, ok := any(m.Notifiers[len(m.Notifiers)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1158,7 +1158,7 @@ func (m *UpdateNotifierRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Notifier == nil {
 				m.Notifier = &storage.Notifier{}
 			}
-			if unmarshal, ok := interface{}(m.Notifier).(interface {
+			if unmarshal, ok := any(m.Notifier).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

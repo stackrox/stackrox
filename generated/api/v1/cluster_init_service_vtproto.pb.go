@@ -60,7 +60,7 @@ func (m *InitBundleMeta) CloneVT() *InitBundleMeta {
 		r.ImpactedClusters = tmpContainer
 	}
 	if rhs := m.CreatedBy; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.User }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.User }); ok {
 			r.CreatedBy = vtpb.CloneVT()
 		} else {
 			r.CreatedBy = proto.Clone(rhs).(*storage.User)
@@ -88,7 +88,7 @@ func (m *CRSMeta) CloneVT() *CRSMeta {
 	r.ExpiresAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ExpiresAt).CloneVT())
 	r.MaxRegistrations = m.MaxRegistrations
 	if rhs := m.CreatedBy; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.User }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.User }); ok {
 			r.CreatedBy = vtpb.CloneVT()
 		} else {
 			r.CreatedBy = proto.Clone(rhs).(*storage.User)
@@ -468,7 +468,7 @@ func (this *InitBundleMeta) EqualVT(that *InitBundleMeta) bool {
 	if !(*timestamppb1.Timestamp)(this.CreatedAt).EqualVT((*timestamppb1.Timestamp)(that.CreatedAt)) {
 		return false
 	}
-	if equal, ok := interface{}(this.CreatedBy).(interface{ EqualVT(*storage.User) bool }); ok {
+	if equal, ok := any(this.CreatedBy).(interface{ EqualVT(*storage.User) bool }); ok {
 		if !equal.EqualVT(that.CreatedBy) {
 			return false
 		}
@@ -520,7 +520,7 @@ func (this *CRSMeta) EqualVT(that *CRSMeta) bool {
 	if !(*timestamppb1.Timestamp)(this.CreatedAt).EqualVT((*timestamppb1.Timestamp)(that.CreatedAt)) {
 		return false
 	}
-	if equal, ok := interface{}(this.CreatedBy).(interface{ EqualVT(*storage.User) bool }); ok {
+	if equal, ok := any(this.CreatedBy).(interface{ EqualVT(*storage.User) bool }); ok {
 		if !equal.EqualVT(that.CreatedBy) {
 			return false
 		}
@@ -1063,7 +1063,7 @@ func (m *InitBundleMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x2a
 	}
 	if m.CreatedBy != nil {
-		if vtmsg, ok := interface{}(m.CreatedBy).(interface {
+		if vtmsg, ok := any(m.CreatedBy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1175,7 +1175,7 @@ func (m *CRSMeta) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x2a
 	}
 	if m.CreatedBy != nil {
-		if vtmsg, ok := interface{}(m.CreatedBy).(interface {
+		if vtmsg, ok := any(m.CreatedBy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1949,7 +1949,7 @@ func (m *InitBundleMeta) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.CreatedBy != nil {
-		if size, ok := interface{}(m.CreatedBy).(interface {
+		if size, ok := any(m.CreatedBy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1991,7 +1991,7 @@ func (m *CRSMeta) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.CreatedBy != nil {
-		if size, ok := interface{}(m.CreatedBy).(interface {
+		if size, ok := any(m.CreatedBy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2562,7 +2562,7 @@ func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &storage.User{}
 			}
-			if unmarshal, ok := interface{}(m.CreatedBy).(interface {
+			if unmarshal, ok := any(m.CreatedBy).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2827,7 +2827,7 @@ func (m *CRSMeta) UnmarshalVT(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &storage.User{}
 			}
-			if unmarshal, ok := interface{}(m.CreatedBy).(interface {
+			if unmarshal, ok := any(m.CreatedBy).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4839,7 +4839,7 @@ func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &storage.User{}
 			}
-			if unmarshal, ok := interface{}(m.CreatedBy).(interface {
+			if unmarshal, ok := any(m.CreatedBy).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -5112,7 +5112,7 @@ func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.CreatedBy == nil {
 				m.CreatedBy = &storage.User{}
 			}
-			if unmarshal, ok := interface{}(m.CreatedBy).(interface {
+			if unmarshal, ok := any(m.CreatedBy).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

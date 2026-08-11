@@ -87,7 +87,7 @@ func RegisterCollectorServiceServer(s grpc.ServiceRegistrar, srv CollectorServic
 	s.RegisterService(&CollectorService_ServiceDesc, srv)
 }
 
-func _CollectorService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _CollectorService_Communicate_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(CollectorServiceServer).Communicate(&grpc.GenericServerStream[MsgFromCollector, MsgToCollector]{ServerStream: stream})
 }
 

@@ -180,7 +180,7 @@ func (m *GetReportResponse) CloneVT() *GetReportResponse {
 	r := new(GetReportResponse)
 	r.Unchanged = m.Unchanged
 	if rhs := m.IndexReport; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
 			r.IndexReport = vtpb.CloneVT()
 		} else {
 			r.IndexReport = proto.Clone(rhs).(*v4.IndexReport)
@@ -476,7 +476,7 @@ func (this *GetReportResponse) EqualVT(that *GetReportResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.IndexReport).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
+	if equal, ok := any(this.IndexReport).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
 		if !equal.EqualVT(that.IndexReport) {
 			return false
 		}
@@ -943,7 +943,7 @@ func (m *GetReportResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x10
 	}
 	if m.IndexReport != nil {
-		if vtmsg, ok := interface{}(m.IndexReport).(interface {
+		if vtmsg, ok := any(m.IndexReport).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1196,7 +1196,7 @@ func (m *GetReportResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.IndexReport != nil {
-		if size, ok := interface{}(m.IndexReport).(interface {
+		if size, ok := any(m.IndexReport).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -2242,7 +2242,7 @@ func (m *GetReportResponse) UnmarshalVT(dAtA []byte) error {
 			if m.IndexReport == nil {
 				m.IndexReport = &v4.IndexReport{}
 			}
-			if unmarshal, ok := interface{}(m.IndexReport).(interface {
+			if unmarshal, ok := any(m.IndexReport).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3562,7 +3562,7 @@ func (m *GetReportResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.IndexReport == nil {
 				m.IndexReport = &v4.IndexReport{}
 			}
-			if unmarshal, ok := interface{}(m.IndexReport).(interface {
+			if unmarshal, ok := any(m.IndexReport).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

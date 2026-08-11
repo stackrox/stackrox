@@ -122,7 +122,7 @@ func RegisterAdministrationEventServiceServer(s grpc.ServiceRegistrar, srv Admin
 	s.RegisterService(&AdministrationEventService_ServiceDesc, srv)
 }
 
-func _AdministrationEventService_CountAdministrationEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdministrationEventService_CountAdministrationEvents_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CountAdministrationEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -134,13 +134,13 @@ func _AdministrationEventService_CountAdministrationEvents_Handler(srv interface
 		Server:     srv,
 		FullMethod: AdministrationEventService_CountAdministrationEvents_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AdministrationEventServiceServer).CountAdministrationEvents(ctx, req.(*CountAdministrationEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdministrationEventService_GetAdministrationEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdministrationEventService_GetAdministrationEvent_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -152,13 +152,13 @@ func _AdministrationEventService_GetAdministrationEvent_Handler(srv interface{},
 		Server:     srv,
 		FullMethod: AdministrationEventService_GetAdministrationEvent_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AdministrationEventServiceServer).GetAdministrationEvent(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdministrationEventService_ListAdministrationEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdministrationEventService_ListAdministrationEvents_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ListAdministrationEventsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func _AdministrationEventService_ListAdministrationEvents_Handler(srv interface{
 		Server:     srv,
 		FullMethod: AdministrationEventService_ListAdministrationEvents_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AdministrationEventServiceServer).ListAdministrationEvents(ctx, req.(*ListAdministrationEventsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -56,7 +56,7 @@ func insertIntoConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.Config
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		serialized,
 	}

@@ -94,7 +94,7 @@ func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphCo
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *po
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

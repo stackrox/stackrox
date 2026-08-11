@@ -102,7 +102,7 @@ func insertIntoClusterInitBundles(batch *pgx.Batch, obj *storage.InitBundleMeta)
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -149,7 +149,7 @@ func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *pos
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

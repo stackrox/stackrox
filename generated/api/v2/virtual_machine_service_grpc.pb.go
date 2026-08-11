@@ -100,7 +100,7 @@ func RegisterVirtualMachineServiceServer(s grpc.ServiceRegistrar, srv VirtualMac
 	s.RegisterService(&VirtualMachineService_ServiceDesc, srv)
 }
 
-func _VirtualMachineService_GetVirtualMachine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VirtualMachineService_GetVirtualMachine_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetVirtualMachineRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -112,13 +112,13 @@ func _VirtualMachineService_GetVirtualMachine_Handler(srv interface{}, ctx conte
 		Server:     srv,
 		FullMethod: VirtualMachineService_GetVirtualMachine_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VirtualMachineServiceServer).GetVirtualMachine(ctx, req.(*GetVirtualMachineRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VirtualMachineService_ListVirtualMachines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VirtualMachineService_ListVirtualMachines_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ListVirtualMachinesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func _VirtualMachineService_ListVirtualMachines_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: VirtualMachineService_ListVirtualMachines_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VirtualMachineServiceServer).ListVirtualMachines(ctx, req.(*ListVirtualMachinesRequest))
 	}
 	return interceptor(ctx, in, info, handler)

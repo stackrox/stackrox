@@ -150,7 +150,7 @@ func RegisterSensorUpgradeServiceServer(s grpc.ServiceRegistrar, srv SensorUpgra
 	s.RegisterService(&SensorUpgradeService_ServiceDesc, srv)
 }
 
-func _SensorUpgradeService_GetSensorUpgradeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SensorUpgradeService_GetSensorUpgradeConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -162,13 +162,13 @@ func _SensorUpgradeService_GetSensorUpgradeConfig_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: SensorUpgradeService_GetSensorUpgradeConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SensorUpgradeServiceServer).GetSensorUpgradeConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SensorUpgradeService_UpdateSensorUpgradeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SensorUpgradeService_UpdateSensorUpgradeConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateSensorUpgradeConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -180,13 +180,13 @@ func _SensorUpgradeService_UpdateSensorUpgradeConfig_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: SensorUpgradeService_UpdateSensorUpgradeConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SensorUpgradeServiceServer).UpdateSensorUpgradeConfig(ctx, req.(*UpdateSensorUpgradeConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SensorUpgradeService_TriggerSensorUpgrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SensorUpgradeService_TriggerSensorUpgrade_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -198,13 +198,13 @@ func _SensorUpgradeService_TriggerSensorUpgrade_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: SensorUpgradeService_TriggerSensorUpgrade_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SensorUpgradeServiceServer).TriggerSensorUpgrade(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SensorUpgradeService_TriggerSensorCertRotation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SensorUpgradeService_TriggerSensorCertRotation_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ func _SensorUpgradeService_TriggerSensorCertRotation_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: SensorUpgradeService_TriggerSensorCertRotation_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SensorUpgradeServiceServer).TriggerSensorCertRotation(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

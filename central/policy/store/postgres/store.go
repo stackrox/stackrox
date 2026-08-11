@@ -98,7 +98,7 @@ func insertIntoPolicies(batch *pgx.Batch, obj *storage.Policy) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -167,7 +167,7 @@ func copyFromPolicies(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetDescription(),

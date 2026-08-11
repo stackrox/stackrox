@@ -97,7 +97,7 @@ func insertIntoAuthProviders(batch *pgx.Batch, obj *storage.AuthProvider) error 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -146,7 +146,7 @@ func copyFromAuthProviders(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			serialized,

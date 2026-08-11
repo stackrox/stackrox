@@ -95,7 +95,7 @@ func insertIntoBaseImageRepositories(batch *pgx.Batch, obj *storage.BaseImageRep
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetRepositoryPath(),
@@ -148,7 +148,7 @@ func copyFromBaseImageRepositories(ctx context.Context, s pgSearch.Deleter, tx *
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetRepositoryPath(),
 			obj.GetCreatedBy().GetId(),

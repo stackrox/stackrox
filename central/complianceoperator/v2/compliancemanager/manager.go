@@ -18,7 +18,7 @@ type Manager interface {
 	// ProcessComplianceOperatorInfo processes and stores the compliance operator metadata coming from sensor
 	ProcessComplianceOperatorInfo(ctx context.Context, complianceIntegration *storage.ComplianceIntegration) error
 
-	// TODO: update interface{} type to exact struct once API modeling is complete.
+	// TODO: update any type to exact struct once API modeling is complete.
 
 	// ProcessScanRequest processes a request to apply a compliance scan configuration to one or more Sensors.
 	ProcessScanRequest(ctx context.Context, scanRequest *storage.ComplianceOperatorScanConfigurationV2, clusters []string) (*storage.ComplianceOperatorScanConfigurationV2, error)

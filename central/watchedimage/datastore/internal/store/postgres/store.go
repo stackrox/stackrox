@@ -94,7 +94,7 @@ func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetName(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetName(),
 			serialized,
 		}, nil

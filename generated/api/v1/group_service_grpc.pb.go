@@ -165,7 +165,7 @@ func RegisterGroupServiceServer(s grpc.ServiceRegistrar, srv GroupServiceServer)
 	s.RegisterService(&GroupService_ServiceDesc, srv)
 }
 
-func _GroupService_GetGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_GetGroups_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetGroupsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -177,13 +177,13 @@ func _GroupService_GetGroups_Handler(srv interface{}, ctx context.Context, dec f
 		Server:     srv,
 		FullMethod: GroupService_GetGroups_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).GetGroups(ctx, req.(*GetGroupsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GroupService_GetGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_GetGroup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.GroupProperties)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -195,13 +195,13 @@ func _GroupService_GetGroup_Handler(srv interface{}, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: GroupService_GetGroup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).GetGroup(ctx, req.(*storage.GroupProperties))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GroupService_BatchUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_BatchUpdate_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GroupBatchUpdateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -213,13 +213,13 @@ func _GroupService_BatchUpdate_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: GroupService_BatchUpdate_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).BatchUpdate(ctx, req.(*GroupBatchUpdateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GroupService_CreateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_CreateGroup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.Group)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -231,13 +231,13 @@ func _GroupService_CreateGroup_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: GroupService_CreateGroup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).CreateGroup(ctx, req.(*storage.Group))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GroupService_UpdateGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_UpdateGroup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -249,13 +249,13 @@ func _GroupService_UpdateGroup_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: GroupService_UpdateGroup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).UpdateGroup(ctx, req.(*UpdateGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _GroupService_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _GroupService_DeleteGroup_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteGroupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func _GroupService_DeleteGroup_Handler(srv interface{}, ctx context.Context, dec
 		Server:     srv,
 		FullMethod: GroupService_DeleteGroup_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(GroupServiceServer).DeleteGroup(ctx, req.(*DeleteGroupRequest))
 	}
 	return interceptor(ctx, in, info, handler)

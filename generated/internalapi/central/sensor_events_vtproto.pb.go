@@ -52,7 +52,7 @@ func (m *AlertResults) CloneVT() *AlertResults {
 	if rhs := m.Alerts; rhs != nil {
 		tmpContainer := make([]*storage.Alert, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Alert }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Alert }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Alert)
@@ -153,7 +153,7 @@ func (m *SensorEvent_NetworkPolicy) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_NetworkPolicy)
 	if rhs := m.NetworkPolicy; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
 			r.NetworkPolicy = vtpb.CloneVT()
 		} else {
 			r.NetworkPolicy = proto.Clone(rhs).(*storage.NetworkPolicy)
@@ -168,7 +168,7 @@ func (m *SensorEvent_Deployment) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Deployment)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
@@ -183,7 +183,7 @@ func (m *SensorEvent_Pod) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Pod)
 	if rhs := m.Pod; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Pod }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Pod }); ok {
 			r.Pod = vtpb.CloneVT()
 		} else {
 			r.Pod = proto.Clone(rhs).(*storage.Pod)
@@ -198,7 +198,7 @@ func (m *SensorEvent_Namespace) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Namespace)
 	if rhs := m.Namespace; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NamespaceMetadata
 		}); ok {
 			r.Namespace = vtpb.CloneVT()
@@ -215,7 +215,7 @@ func (m *SensorEvent_Secret) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Secret)
 	if rhs := m.Secret; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Secret }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Secret }); ok {
 			r.Secret = vtpb.CloneVT()
 		} else {
 			r.Secret = proto.Clone(rhs).(*storage.Secret)
@@ -230,7 +230,7 @@ func (m *SensorEvent_Node) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Node)
 	if rhs := m.Node; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Node }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Node }); ok {
 			r.Node = vtpb.CloneVT()
 		} else {
 			r.Node = proto.Clone(rhs).(*storage.Node)
@@ -245,7 +245,7 @@ func (m *SensorEvent_NodeInventory) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_NodeInventory)
 	if rhs := m.NodeInventory; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.NodeInventory }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.NodeInventory }); ok {
 			r.NodeInventory = vtpb.CloneVT()
 		} else {
 			r.NodeInventory = proto.Clone(rhs).(*storage.NodeInventory)
@@ -260,7 +260,7 @@ func (m *SensorEvent_IndexReport) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_IndexReport)
 	if rhs := m.IndexReport; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
 			r.IndexReport = vtpb.CloneVT()
 		} else {
 			r.IndexReport = proto.Clone(rhs).(*v4.IndexReport)
@@ -275,7 +275,7 @@ func (m *SensorEvent_ServiceAccount) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ServiceAccount)
 	if rhs := m.ServiceAccount; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ServiceAccount
 		}); ok {
 			r.ServiceAccount = vtpb.CloneVT()
@@ -292,7 +292,7 @@ func (m *SensorEvent_Role) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Role)
 	if rhs := m.Role; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.K8SRole }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.K8SRole }); ok {
 			r.Role = vtpb.CloneVT()
 		} else {
 			r.Role = proto.Clone(rhs).(*storage.K8SRole)
@@ -307,7 +307,7 @@ func (m *SensorEvent_Binding) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_Binding)
 	if rhs := m.Binding; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.K8SRoleBinding
 		}); ok {
 			r.Binding = vtpb.CloneVT()
@@ -324,7 +324,7 @@ func (m *SensorEvent_ProcessIndicator) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ProcessIndicator)
 	if rhs := m.ProcessIndicator; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ProcessIndicator
 		}); ok {
 			r.ProcessIndicator = vtpb.CloneVT()
@@ -341,7 +341,7 @@ func (m *SensorEvent_ProviderMetadata) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ProviderMetadata)
 	if rhs := m.ProviderMetadata; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ProviderMetadata
 		}); ok {
 			r.ProviderMetadata = vtpb.CloneVT()
@@ -367,7 +367,7 @@ func (m *SensorEvent_OrchestratorMetadata) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_OrchestratorMetadata)
 	if rhs := m.OrchestratorMetadata; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.OrchestratorMetadata
 		}); ok {
 			r.OrchestratorMetadata = vtpb.CloneVT()
@@ -384,7 +384,7 @@ func (m *SensorEvent_ImageIntegration) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ImageIntegration)
 	if rhs := m.ImageIntegration; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ImageIntegration
 		}); ok {
 			r.ImageIntegration = vtpb.CloneVT()
@@ -419,7 +419,7 @@ func (m *SensorEvent_ComplianceOperatorResult) CloneVT() isSensorEvent_Resource 
 	}
 	r := new(SensorEvent_ComplianceOperatorResult)
 	if rhs := m.ComplianceOperatorResult; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceOperatorCheckResult
 		}); ok {
 			r.ComplianceOperatorResult = vtpb.CloneVT()
@@ -436,7 +436,7 @@ func (m *SensorEvent_ComplianceOperatorProfile) CloneVT() isSensorEvent_Resource
 	}
 	r := new(SensorEvent_ComplianceOperatorProfile)
 	if rhs := m.ComplianceOperatorProfile; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceOperatorProfile
 		}); ok {
 			r.ComplianceOperatorProfile = vtpb.CloneVT()
@@ -453,7 +453,7 @@ func (m *SensorEvent_ComplianceOperatorRule) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ComplianceOperatorRule)
 	if rhs := m.ComplianceOperatorRule; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceOperatorRule
 		}); ok {
 			r.ComplianceOperatorRule = vtpb.CloneVT()
@@ -470,7 +470,7 @@ func (m *SensorEvent_ComplianceOperatorScanSettingBinding) CloneVT() isSensorEve
 	}
 	r := new(SensorEvent_ComplianceOperatorScanSettingBinding)
 	if rhs := m.ComplianceOperatorScanSettingBinding; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceOperatorScanSettingBinding
 		}); ok {
 			r.ComplianceOperatorScanSettingBinding = vtpb.CloneVT()
@@ -487,7 +487,7 @@ func (m *SensorEvent_ComplianceOperatorScan) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_ComplianceOperatorScan)
 	if rhs := m.ComplianceOperatorScan; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceOperatorScan
 		}); ok {
 			r.ComplianceOperatorScan = vtpb.CloneVT()
@@ -504,7 +504,7 @@ func (m *SensorEvent_VirtualMachineIndexReport) CloneVT() isSensorEvent_Resource
 	}
 	r := new(SensorEvent_VirtualMachineIndexReport)
 	if rhs := m.VirtualMachineIndexReport; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.IndexReportEvent }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.IndexReportEvent }); ok {
 			r.VirtualMachineIndexReport = vtpb.CloneVT()
 		} else {
 			r.VirtualMachineIndexReport = proto.Clone(rhs).(*v1.IndexReportEvent)
@@ -519,7 +519,7 @@ func (m *SensorEvent_VirtualMachine) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_VirtualMachine)
 	if rhs := m.VirtualMachine; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v1.VirtualMachine }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *v1.VirtualMachine }); ok {
 			r.VirtualMachine = vtpb.CloneVT()
 		} else {
 			r.VirtualMachine = proto.Clone(rhs).(*v1.VirtualMachine)
@@ -779,7 +779,7 @@ func (m *ScrapeUpdate_ComplianceReturn) CloneVT() isScrapeUpdate_Update {
 	}
 	r := new(ScrapeUpdate_ComplianceReturn)
 	if rhs := m.ComplianceReturn; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *compliance.ComplianceReturn
 		}); ok {
 			r.ComplianceReturn = vtpb.CloneVT()
@@ -849,7 +849,7 @@ func (m *NetworkPoliciesCommand_Apply) CloneVT() *NetworkPoliciesCommand_Apply {
 	r := new(NetworkPoliciesCommand_Apply)
 	r.ApplyId = m.ApplyId
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -923,7 +923,7 @@ func (m *NetworkPoliciesResponse_Apply) CloneVT() *NetworkPoliciesResponse_Apply
 	r := new(NetworkPoliciesResponse_Apply)
 	r.ApplyId = m.ApplyId
 	if rhs := m.UndoModification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.UndoModification = vtpb.CloneVT()
@@ -1056,7 +1056,7 @@ func (this *AlertResults) EqualVT(that *AlertResults) bool {
 			if q == nil {
 				q = &storage.Alert{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Alert) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -1198,7 +1198,7 @@ func (this *SensorEvent_NetworkPolicy) EqualVT(thatIface isSensorEvent_Resource)
 		if q == nil {
 			q = &storage.NetworkPolicy{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.NetworkPolicy) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1229,7 +1229,7 @@ func (this *SensorEvent_Deployment) EqualVT(thatIface isSensorEvent_Resource) bo
 		if q == nil {
 			q = &storage.Deployment{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.Deployment) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1260,7 +1260,7 @@ func (this *SensorEvent_Namespace) EqualVT(thatIface isSensorEvent_Resource) boo
 		if q == nil {
 			q = &storage.NamespaceMetadata{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.NamespaceMetadata) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1291,7 +1291,7 @@ func (this *SensorEvent_Secret) EqualVT(thatIface isSensorEvent_Resource) bool {
 		if q == nil {
 			q = &storage.Secret{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Secret) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.Secret) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -1320,7 +1320,7 @@ func (this *SensorEvent_ProcessIndicator) EqualVT(thatIface isSensorEvent_Resour
 		if q == nil {
 			q = &storage.ProcessIndicator{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ProcessIndicator) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1351,7 +1351,7 @@ func (this *SensorEvent_Node) EqualVT(thatIface isSensorEvent_Resource) bool {
 		if q == nil {
 			q = &storage.Node{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Node) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.Node) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -1380,7 +1380,7 @@ func (this *SensorEvent_ProviderMetadata) EqualVT(thatIface isSensorEvent_Resour
 		if q == nil {
 			q = &storage.ProviderMetadata{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ProviderMetadata) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1436,7 +1436,7 @@ func (this *SensorEvent_OrchestratorMetadata) EqualVT(thatIface isSensorEvent_Re
 		if q == nil {
 			q = &storage.OrchestratorMetadata{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.OrchestratorMetadata) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1467,7 +1467,7 @@ func (this *SensorEvent_ImageIntegration) EqualVT(thatIface isSensorEvent_Resour
 		if q == nil {
 			q = &storage.ImageIntegration{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ImageIntegration) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1498,7 +1498,7 @@ func (this *SensorEvent_ServiceAccount) EqualVT(thatIface isSensorEvent_Resource
 		if q == nil {
 			q = &storage.ServiceAccount{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ServiceAccount) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1529,7 +1529,7 @@ func (this *SensorEvent_Role) EqualVT(thatIface isSensorEvent_Resource) bool {
 		if q == nil {
 			q = &storage.K8SRole{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.K8SRole) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -1558,7 +1558,7 @@ func (this *SensorEvent_Binding) EqualVT(thatIface isSensorEvent_Resource) bool 
 		if q == nil {
 			q = &storage.K8SRoleBinding{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.K8SRoleBinding) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1639,7 +1639,7 @@ func (this *SensorEvent_Pod) EqualVT(thatIface isSensorEvent_Resource) bool {
 		if q == nil {
 			q = &storage.Pod{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Pod) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.Pod) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -1668,7 +1668,7 @@ func (this *SensorEvent_ComplianceOperatorResult) EqualVT(thatIface isSensorEven
 		if q == nil {
 			q = &storage.ComplianceOperatorCheckResult{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ComplianceOperatorCheckResult) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1699,7 +1699,7 @@ func (this *SensorEvent_ComplianceOperatorProfile) EqualVT(thatIface isSensorEve
 		if q == nil {
 			q = &storage.ComplianceOperatorProfile{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ComplianceOperatorProfile) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1730,7 +1730,7 @@ func (this *SensorEvent_ComplianceOperatorRule) EqualVT(thatIface isSensorEvent_
 		if q == nil {
 			q = &storage.ComplianceOperatorRule{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ComplianceOperatorRule) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1761,7 +1761,7 @@ func (this *SensorEvent_ComplianceOperatorScanSettingBinding) EqualVT(thatIface 
 		if q == nil {
 			q = &storage.ComplianceOperatorScanSettingBinding{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ComplianceOperatorScanSettingBinding) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1792,7 +1792,7 @@ func (this *SensorEvent_ComplianceOperatorScan) EqualVT(thatIface isSensorEvent_
 		if q == nil {
 			q = &storage.ComplianceOperatorScan{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ComplianceOperatorScan) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -1823,7 +1823,7 @@ func (this *SensorEvent_NodeInventory) EqualVT(thatIface isSensorEvent_Resource)
 		if q == nil {
 			q = &storage.NodeInventory{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.NodeInventory) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -2046,7 +2046,7 @@ func (this *SensorEvent_IndexReport) EqualVT(thatIface isSensorEvent_Resource) b
 		if q == nil {
 			q = &v4.IndexReport{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -2075,7 +2075,7 @@ func (this *SensorEvent_VirtualMachineIndexReport) EqualVT(thatIface isSensorEve
 		if q == nil {
 			q = &v1.IndexReportEvent{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*v1.IndexReportEvent) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -2106,7 +2106,7 @@ func (this *SensorEvent_VirtualMachine) EqualVT(thatIface isSensorEvent_Resource
 		if q == nil {
 			q = &v1.VirtualMachine{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*v1.VirtualMachine) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*v1.VirtualMachine) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -2434,7 +2434,7 @@ func (this *ScrapeUpdate_ComplianceReturn) EqualVT(thatIface isScrapeUpdate_Upda
 		if q == nil {
 			q = &compliance.ComplianceReturn{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*compliance.ComplianceReturn) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -2544,7 +2544,7 @@ func (this *NetworkPoliciesCommand_Apply) EqualVT(that *NetworkPoliciesCommand_A
 	if this.ApplyId != that.ApplyId {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -2647,7 +2647,7 @@ func (this *NetworkPoliciesResponse_Apply) EqualVT(that *NetworkPoliciesResponse
 	if this.ApplyId != that.ApplyId {
 		return false
 	}
-	if equal, ok := interface{}(this.UndoModification).(interface {
+	if equal, ok := any(this.UndoModification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.UndoModification) {
@@ -2867,7 +2867,7 @@ func (m *AlertResults) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Alerts) > 0 {
 		for iNdEx := len(m.Alerts) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Alerts[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Alerts[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3074,7 +3074,7 @@ func (m *SensorEvent_NetworkPolicy) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_NetworkPolicy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.NetworkPolicy != nil {
-		if vtmsg, ok := interface{}(m.NetworkPolicy).(interface {
+		if vtmsg, ok := any(m.NetworkPolicy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3109,7 +3109,7 @@ func (m *SensorEvent_Deployment) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3144,7 +3144,7 @@ func (m *SensorEvent_Namespace) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Namespace) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Namespace != nil {
-		if vtmsg, ok := interface{}(m.Namespace).(interface {
+		if vtmsg, ok := any(m.Namespace).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3179,7 +3179,7 @@ func (m *SensorEvent_Secret) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Secret) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Secret != nil {
-		if vtmsg, ok := interface{}(m.Secret).(interface {
+		if vtmsg, ok := any(m.Secret).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3214,7 +3214,7 @@ func (m *SensorEvent_ProcessIndicator) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_ProcessIndicator) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ProcessIndicator != nil {
-		if vtmsg, ok := interface{}(m.ProcessIndicator).(interface {
+		if vtmsg, ok := any(m.ProcessIndicator).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3249,7 +3249,7 @@ func (m *SensorEvent_Node) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Node != nil {
-		if vtmsg, ok := interface{}(m.Node).(interface {
+		if vtmsg, ok := any(m.Node).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3284,7 +3284,7 @@ func (m *SensorEvent_ProviderMetadata) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_ProviderMetadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ProviderMetadata != nil {
-		if vtmsg, ok := interface{}(m.ProviderMetadata).(interface {
+		if vtmsg, ok := any(m.ProviderMetadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3342,7 +3342,7 @@ func (m *SensorEvent_OrchestratorMetadata) MarshalToVT(dAtA []byte) (int, error)
 func (m *SensorEvent_OrchestratorMetadata) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.OrchestratorMetadata != nil {
-		if vtmsg, ok := interface{}(m.OrchestratorMetadata).(interface {
+		if vtmsg, ok := any(m.OrchestratorMetadata).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3377,7 +3377,7 @@ func (m *SensorEvent_ImageIntegration) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_ImageIntegration) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ImageIntegration != nil {
-		if vtmsg, ok := interface{}(m.ImageIntegration).(interface {
+		if vtmsg, ok := any(m.ImageIntegration).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3412,7 +3412,7 @@ func (m *SensorEvent_ServiceAccount) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_ServiceAccount) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ServiceAccount != nil {
-		if vtmsg, ok := interface{}(m.ServiceAccount).(interface {
+		if vtmsg, ok := any(m.ServiceAccount).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3447,7 +3447,7 @@ func (m *SensorEvent_Role) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Role) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Role != nil {
-		if vtmsg, ok := interface{}(m.Role).(interface {
+		if vtmsg, ok := any(m.Role).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3482,7 +3482,7 @@ func (m *SensorEvent_Binding) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Binding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Binding != nil {
-		if vtmsg, ok := interface{}(m.Binding).(interface {
+		if vtmsg, ok := any(m.Binding).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3575,7 +3575,7 @@ func (m *SensorEvent_Pod) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_Pod) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Pod != nil {
-		if vtmsg, ok := interface{}(m.Pod).(interface {
+		if vtmsg, ok := any(m.Pod).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3614,7 +3614,7 @@ func (m *SensorEvent_ComplianceOperatorResult) MarshalToVT(dAtA []byte) (int, er
 func (m *SensorEvent_ComplianceOperatorResult) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceOperatorResult != nil {
-		if vtmsg, ok := interface{}(m.ComplianceOperatorResult).(interface {
+		if vtmsg, ok := any(m.ComplianceOperatorResult).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3653,7 +3653,7 @@ func (m *SensorEvent_ComplianceOperatorProfile) MarshalToVT(dAtA []byte) (int, e
 func (m *SensorEvent_ComplianceOperatorProfile) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceOperatorProfile != nil {
-		if vtmsg, ok := interface{}(m.ComplianceOperatorProfile).(interface {
+		if vtmsg, ok := any(m.ComplianceOperatorProfile).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3692,7 +3692,7 @@ func (m *SensorEvent_ComplianceOperatorRule) MarshalToVT(dAtA []byte) (int, erro
 func (m *SensorEvent_ComplianceOperatorRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceOperatorRule != nil {
-		if vtmsg, ok := interface{}(m.ComplianceOperatorRule).(interface {
+		if vtmsg, ok := any(m.ComplianceOperatorRule).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3731,7 +3731,7 @@ func (m *SensorEvent_ComplianceOperatorScanSettingBinding) MarshalToVT(dAtA []by
 func (m *SensorEvent_ComplianceOperatorScanSettingBinding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceOperatorScanSettingBinding != nil {
-		if vtmsg, ok := interface{}(m.ComplianceOperatorScanSettingBinding).(interface {
+		if vtmsg, ok := any(m.ComplianceOperatorScanSettingBinding).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3770,7 +3770,7 @@ func (m *SensorEvent_ComplianceOperatorScan) MarshalToVT(dAtA []byte) (int, erro
 func (m *SensorEvent_ComplianceOperatorScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceOperatorScan != nil {
-		if vtmsg, ok := interface{}(m.ComplianceOperatorScan).(interface {
+		if vtmsg, ok := any(m.ComplianceOperatorScan).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3809,7 +3809,7 @@ func (m *SensorEvent_NodeInventory) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_NodeInventory) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.NodeInventory != nil {
-		if vtmsg, ok := interface{}(m.NodeInventory).(interface {
+		if vtmsg, ok := any(m.NodeInventory).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4051,7 +4051,7 @@ func (m *SensorEvent_IndexReport) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_IndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.IndexReport != nil {
-		if vtmsg, ok := interface{}(m.IndexReport).(interface {
+		if vtmsg, ok := any(m.IndexReport).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4090,7 +4090,7 @@ func (m *SensorEvent_VirtualMachineIndexReport) MarshalToVT(dAtA []byte) (int, e
 func (m *SensorEvent_VirtualMachineIndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.VirtualMachineIndexReport != nil {
-		if vtmsg, ok := interface{}(m.VirtualMachineIndexReport).(interface {
+		if vtmsg, ok := any(m.VirtualMachineIndexReport).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4129,7 +4129,7 @@ func (m *SensorEvent_VirtualMachine) MarshalToVT(dAtA []byte) (int, error) {
 func (m *SensorEvent_VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.VirtualMachine != nil {
-		if vtmsg, ok := interface{}(m.VirtualMachine).(interface {
+		if vtmsg, ok := any(m.VirtualMachine).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4614,7 +4614,7 @@ func (m *ScrapeUpdate_ComplianceReturn) MarshalToVT(dAtA []byte) (int, error) {
 func (m *ScrapeUpdate_ComplianceReturn) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ComplianceReturn != nil {
-		if vtmsg, ok := interface{}(m.ComplianceReturn).(interface {
+		if vtmsg, ok := any(m.ComplianceReturn).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4798,7 +4798,7 @@ func (m *NetworkPoliciesCommand_Apply) MarshalToSizedBufferVT(dAtA []byte) (int,
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -4973,7 +4973,7 @@ func (m *NetworkPoliciesResponse_Apply) MarshalToSizedBufferVT(dAtA []byte) (int
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.UndoModification != nil {
-		if vtmsg, ok := interface{}(m.UndoModification).(interface {
+		if vtmsg, ok := any(m.UndoModification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -5206,7 +5206,7 @@ func (m *AlertResults) SizeVT() (n int) {
 	}
 	if len(m.Alerts) > 0 {
 		for _, e := range m.Alerts {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -5297,7 +5297,7 @@ func (m *SensorEvent_NetworkPolicy) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.NetworkPolicy != nil {
-		if size, ok := interface{}(m.NetworkPolicy).(interface {
+		if size, ok := any(m.NetworkPolicy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5317,7 +5317,7 @@ func (m *SensorEvent_Deployment) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5337,7 +5337,7 @@ func (m *SensorEvent_Namespace) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Namespace != nil {
-		if size, ok := interface{}(m.Namespace).(interface {
+		if size, ok := any(m.Namespace).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5357,7 +5357,7 @@ func (m *SensorEvent_Secret) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Secret != nil {
-		if size, ok := interface{}(m.Secret).(interface {
+		if size, ok := any(m.Secret).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5377,7 +5377,7 @@ func (m *SensorEvent_ProcessIndicator) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ProcessIndicator != nil {
-		if size, ok := interface{}(m.ProcessIndicator).(interface {
+		if size, ok := any(m.ProcessIndicator).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5397,7 +5397,7 @@ func (m *SensorEvent_Node) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Node != nil {
-		if size, ok := interface{}(m.Node).(interface {
+		if size, ok := any(m.Node).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5417,7 +5417,7 @@ func (m *SensorEvent_ProviderMetadata) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ProviderMetadata != nil {
-		if size, ok := interface{}(m.ProviderMetadata).(interface {
+		if size, ok := any(m.ProviderMetadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5451,7 +5451,7 @@ func (m *SensorEvent_OrchestratorMetadata) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.OrchestratorMetadata != nil {
-		if size, ok := interface{}(m.OrchestratorMetadata).(interface {
+		if size, ok := any(m.OrchestratorMetadata).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5471,7 +5471,7 @@ func (m *SensorEvent_ImageIntegration) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ImageIntegration != nil {
-		if size, ok := interface{}(m.ImageIntegration).(interface {
+		if size, ok := any(m.ImageIntegration).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5491,7 +5491,7 @@ func (m *SensorEvent_ServiceAccount) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ServiceAccount != nil {
-		if size, ok := interface{}(m.ServiceAccount).(interface {
+		if size, ok := any(m.ServiceAccount).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5511,7 +5511,7 @@ func (m *SensorEvent_Role) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Role != nil {
-		if size, ok := interface{}(m.Role).(interface {
+		if size, ok := any(m.Role).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5531,7 +5531,7 @@ func (m *SensorEvent_Binding) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Binding != nil {
-		if size, ok := interface{}(m.Binding).(interface {
+		if size, ok := any(m.Binding).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5579,7 +5579,7 @@ func (m *SensorEvent_Pod) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Pod != nil {
-		if size, ok := interface{}(m.Pod).(interface {
+		if size, ok := any(m.Pod).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5599,7 +5599,7 @@ func (m *SensorEvent_ComplianceOperatorResult) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceOperatorResult != nil {
-		if size, ok := interface{}(m.ComplianceOperatorResult).(interface {
+		if size, ok := any(m.ComplianceOperatorResult).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5619,7 +5619,7 @@ func (m *SensorEvent_ComplianceOperatorProfile) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceOperatorProfile != nil {
-		if size, ok := interface{}(m.ComplianceOperatorProfile).(interface {
+		if size, ok := any(m.ComplianceOperatorProfile).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5639,7 +5639,7 @@ func (m *SensorEvent_ComplianceOperatorRule) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceOperatorRule != nil {
-		if size, ok := interface{}(m.ComplianceOperatorRule).(interface {
+		if size, ok := any(m.ComplianceOperatorRule).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5659,7 +5659,7 @@ func (m *SensorEvent_ComplianceOperatorScanSettingBinding) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceOperatorScanSettingBinding != nil {
-		if size, ok := interface{}(m.ComplianceOperatorScanSettingBinding).(interface {
+		if size, ok := any(m.ComplianceOperatorScanSettingBinding).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5679,7 +5679,7 @@ func (m *SensorEvent_ComplianceOperatorScan) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceOperatorScan != nil {
-		if size, ok := interface{}(m.ComplianceOperatorScan).(interface {
+		if size, ok := any(m.ComplianceOperatorScan).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5699,7 +5699,7 @@ func (m *SensorEvent_NodeInventory) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.NodeInventory != nil {
-		if size, ok := interface{}(m.NodeInventory).(interface {
+		if size, ok := any(m.NodeInventory).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5826,7 +5826,7 @@ func (m *SensorEvent_IndexReport) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.IndexReport != nil {
-		if size, ok := interface{}(m.IndexReport).(interface {
+		if size, ok := any(m.IndexReport).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5846,7 +5846,7 @@ func (m *SensorEvent_VirtualMachineIndexReport) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.VirtualMachineIndexReport != nil {
-		if size, ok := interface{}(m.VirtualMachineIndexReport).(interface {
+		if size, ok := any(m.VirtualMachineIndexReport).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -5866,7 +5866,7 @@ func (m *SensorEvent_VirtualMachine) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.VirtualMachine != nil {
-		if size, ok := interface{}(m.VirtualMachine).(interface {
+		if size, ok := any(m.VirtualMachine).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -6076,7 +6076,7 @@ func (m *ScrapeUpdate_ComplianceReturn) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ComplianceReturn != nil {
-		if size, ok := interface{}(m.ComplianceReturn).(interface {
+		if size, ok := any(m.ComplianceReturn).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -6156,7 +6156,7 @@ func (m *NetworkPoliciesCommand_Apply) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -6224,7 +6224,7 @@ func (m *NetworkPoliciesResponse_Apply) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.UndoModification != nil {
-		if size, ok := interface{}(m.UndoModification).(interface {
+		if size, ok := any(m.UndoModification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -6483,7 +6483,7 @@ func (m *AlertResults) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6918,7 +6918,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_NetworkPolicy); ok {
-				if unmarshal, ok := interface{}(oneof.NetworkPolicy).(interface {
+				if unmarshal, ok := any(oneof.NetworkPolicy).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6931,7 +6931,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NetworkPolicy{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6975,7 +6975,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Deployment); ok {
-				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
+				if unmarshal, ok := any(oneof.Deployment).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6988,7 +6988,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7032,7 +7032,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Namespace); ok {
-				if unmarshal, ok := interface{}(oneof.Namespace).(interface {
+				if unmarshal, ok := any(oneof.Namespace).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7045,7 +7045,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NamespaceMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7089,7 +7089,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Secret); ok {
-				if unmarshal, ok := interface{}(oneof.Secret).(interface {
+				if unmarshal, ok := any(oneof.Secret).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7102,7 +7102,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Secret{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7146,7 +7146,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ProcessIndicator); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessIndicator).(interface {
+				if unmarshal, ok := any(oneof.ProcessIndicator).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7159,7 +7159,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProcessIndicator{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7203,7 +7203,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Node); ok {
-				if unmarshal, ok := interface{}(oneof.Node).(interface {
+				if unmarshal, ok := any(oneof.Node).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7216,7 +7216,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Node{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7260,7 +7260,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ProviderMetadata); ok {
-				if unmarshal, ok := interface{}(oneof.ProviderMetadata).(interface {
+				if unmarshal, ok := any(oneof.ProviderMetadata).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7273,7 +7273,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProviderMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7358,7 +7358,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_OrchestratorMetadata); ok {
-				if unmarshal, ok := interface{}(oneof.OrchestratorMetadata).(interface {
+				if unmarshal, ok := any(oneof.OrchestratorMetadata).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7371,7 +7371,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.OrchestratorMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7415,7 +7415,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ImageIntegration); ok {
-				if unmarshal, ok := interface{}(oneof.ImageIntegration).(interface {
+				if unmarshal, ok := any(oneof.ImageIntegration).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7428,7 +7428,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ImageIntegration{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7472,7 +7472,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ServiceAccount); ok {
-				if unmarshal, ok := interface{}(oneof.ServiceAccount).(interface {
+				if unmarshal, ok := any(oneof.ServiceAccount).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7485,7 +7485,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ServiceAccount{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7529,7 +7529,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Role); ok {
-				if unmarshal, ok := interface{}(oneof.Role).(interface {
+				if unmarshal, ok := any(oneof.Role).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7542,7 +7542,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.K8SRole{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7586,7 +7586,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Binding); ok {
-				if unmarshal, ok := interface{}(oneof.Binding).(interface {
+				if unmarshal, ok := any(oneof.Binding).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7599,7 +7599,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.K8SRoleBinding{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7725,7 +7725,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Pod); ok {
-				if unmarshal, ok := interface{}(oneof.Pod).(interface {
+				if unmarshal, ok := any(oneof.Pod).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7738,7 +7738,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Pod{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7782,7 +7782,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorResult).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorResult).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7795,7 +7795,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorCheckResult{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7839,7 +7839,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorProfile).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorProfile).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7852,7 +7852,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorProfile{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7896,7 +7896,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorRule).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorRule).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7909,7 +7909,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorRule{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7953,7 +7953,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScanSettingBinding).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorScanSettingBinding).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7966,7 +7966,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorScanSettingBinding{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8010,7 +8010,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScan).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorScan).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8023,7 +8023,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorScan{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8067,7 +8067,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_NodeInventory); ok {
-				if unmarshal, ok := interface{}(oneof.NodeInventory).(interface {
+				if unmarshal, ok := any(oneof.NodeInventory).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8080,7 +8080,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NodeInventory{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8431,7 +8431,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_IndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.IndexReport).(interface {
+				if unmarshal, ok := any(oneof.IndexReport).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8444,7 +8444,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &v4.IndexReport{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8488,7 +8488,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_VirtualMachineIndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.VirtualMachineIndexReport).(interface {
+				if unmarshal, ok := any(oneof.VirtualMachineIndexReport).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8501,7 +8501,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &v1.IndexReportEvent{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8545,7 +8545,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_VirtualMachine); ok {
-				if unmarshal, ok := interface{}(oneof.VirtualMachine).(interface {
+				if unmarshal, ok := any(oneof.VirtualMachine).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -8558,7 +8558,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &v1.VirtualMachine{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -9530,7 +9530,7 @@ func (m *ScrapeUpdate) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceReturn).(interface {
+				if unmarshal, ok := any(oneof.ComplianceReturn).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -9543,7 +9543,7 @@ func (m *ScrapeUpdate) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -9920,7 +9920,7 @@ func (m *NetworkPoliciesCommand_Apply) UnmarshalVT(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -10245,7 +10245,7 @@ func (m *NetworkPoliciesResponse_Apply) UnmarshalVT(dAtA []byte) error {
 			if m.UndoModification == nil {
 				m.UndoModification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.UndoModification).(interface {
+			if unmarshal, ok := any(m.UndoModification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -10783,7 +10783,7 @@ func (m *AlertResults) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Alerts = append(m.Alerts, &storage.Alert{})
-			if unmarshal, ok := interface{}(m.Alerts[len(m.Alerts)-1]).(interface {
+			if unmarshal, ok := any(m.Alerts[len(m.Alerts)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11234,7 +11234,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_NetworkPolicy); ok {
-				if unmarshal, ok := interface{}(oneof.NetworkPolicy).(interface {
+				if unmarshal, ok := any(oneof.NetworkPolicy).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11247,7 +11247,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NetworkPolicy{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11291,7 +11291,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Deployment); ok {
-				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
+				if unmarshal, ok := any(oneof.Deployment).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11304,7 +11304,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11348,7 +11348,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Namespace); ok {
-				if unmarshal, ok := interface{}(oneof.Namespace).(interface {
+				if unmarshal, ok := any(oneof.Namespace).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11361,7 +11361,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NamespaceMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11405,7 +11405,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Secret); ok {
-				if unmarshal, ok := interface{}(oneof.Secret).(interface {
+				if unmarshal, ok := any(oneof.Secret).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11418,7 +11418,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Secret{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11462,7 +11462,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ProcessIndicator); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessIndicator).(interface {
+				if unmarshal, ok := any(oneof.ProcessIndicator).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11475,7 +11475,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProcessIndicator{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11519,7 +11519,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Node); ok {
-				if unmarshal, ok := interface{}(oneof.Node).(interface {
+				if unmarshal, ok := any(oneof.Node).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11532,7 +11532,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Node{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11576,7 +11576,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ProviderMetadata); ok {
-				if unmarshal, ok := interface{}(oneof.ProviderMetadata).(interface {
+				if unmarshal, ok := any(oneof.ProviderMetadata).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11589,7 +11589,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProviderMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11674,7 +11674,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_OrchestratorMetadata); ok {
-				if unmarshal, ok := interface{}(oneof.OrchestratorMetadata).(interface {
+				if unmarshal, ok := any(oneof.OrchestratorMetadata).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11687,7 +11687,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.OrchestratorMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11731,7 +11731,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ImageIntegration); ok {
-				if unmarshal, ok := interface{}(oneof.ImageIntegration).(interface {
+				if unmarshal, ok := any(oneof.ImageIntegration).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11744,7 +11744,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ImageIntegration{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11788,7 +11788,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ServiceAccount); ok {
-				if unmarshal, ok := interface{}(oneof.ServiceAccount).(interface {
+				if unmarshal, ok := any(oneof.ServiceAccount).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11801,7 +11801,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ServiceAccount{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11845,7 +11845,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Role); ok {
-				if unmarshal, ok := interface{}(oneof.Role).(interface {
+				if unmarshal, ok := any(oneof.Role).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11858,7 +11858,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.K8SRole{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11902,7 +11902,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Binding); ok {
-				if unmarshal, ok := interface{}(oneof.Binding).(interface {
+				if unmarshal, ok := any(oneof.Binding).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -11915,7 +11915,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.K8SRoleBinding{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12041,7 +12041,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_Pod); ok {
-				if unmarshal, ok := interface{}(oneof.Pod).(interface {
+				if unmarshal, ok := any(oneof.Pod).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12054,7 +12054,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Pod{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12098,7 +12098,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorResult); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorResult).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorResult).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12111,7 +12111,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorCheckResult{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12155,7 +12155,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorProfile); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorProfile).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorProfile).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12168,7 +12168,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorProfile{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12212,7 +12212,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorRule); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorRule).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorRule).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12225,7 +12225,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorRule{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12269,7 +12269,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScanSettingBinding); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScanSettingBinding).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorScanSettingBinding).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12282,7 +12282,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorScanSettingBinding{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12326,7 +12326,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_ComplianceOperatorScan); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceOperatorScan).(interface {
+				if unmarshal, ok := any(oneof.ComplianceOperatorScan).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12339,7 +12339,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ComplianceOperatorScan{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12383,7 +12383,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_NodeInventory); ok {
-				if unmarshal, ok := interface{}(oneof.NodeInventory).(interface {
+				if unmarshal, ok := any(oneof.NodeInventory).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12396,7 +12396,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NodeInventory{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12747,7 +12747,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_IndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.IndexReport).(interface {
+				if unmarshal, ok := any(oneof.IndexReport).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12760,7 +12760,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &v4.IndexReport{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12804,7 +12804,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_VirtualMachineIndexReport); ok {
-				if unmarshal, ok := interface{}(oneof.VirtualMachineIndexReport).(interface {
+				if unmarshal, ok := any(oneof.VirtualMachineIndexReport).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12817,7 +12817,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &v1.IndexReportEvent{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12861,7 +12861,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*SensorEvent_VirtualMachine); ok {
-				if unmarshal, ok := interface{}(oneof.VirtualMachine).(interface {
+				if unmarshal, ok := any(oneof.VirtualMachine).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -12874,7 +12874,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &v1.VirtualMachine{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -13890,7 +13890,7 @@ func (m *ScrapeUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Update.(*ScrapeUpdate_ComplianceReturn); ok {
-				if unmarshal, ok := interface{}(oneof.ComplianceReturn).(interface {
+				if unmarshal, ok := any(oneof.ComplianceReturn).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -13903,7 +13903,7 @@ func (m *ScrapeUpdate) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &compliance.ComplianceReturn{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -14292,7 +14292,7 @@ func (m *NetworkPoliciesCommand_Apply) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -14621,7 +14621,7 @@ func (m *NetworkPoliciesResponse_Apply) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.UndoModification == nil {
 				m.UndoModification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.UndoModification).(interface {
+			if unmarshal, ok := any(m.UndoModification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

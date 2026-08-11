@@ -46,7 +46,7 @@ func getSummaryCounts(t *testing.T) summaryCountsResp {
 			deploymentCount
 			secretCount
 		}
-	`, map[string]interface{}{}, &resp, timeout)
+	`, map[string]any{}, &resp, timeout)
 	return resp
 }
 

@@ -50,7 +50,7 @@ func (m *NetworkPoliciesResponse) CloneVT() *NetworkPoliciesResponse {
 	if rhs := m.NetworkPolicies; rhs != nil {
 		tmpContainer := make([]*storage.NetworkPolicy, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.NetworkPolicy)
@@ -81,7 +81,7 @@ func (m *SendNetworkPolicyYamlRequest) CloneVT() *SendNetworkPolicyYamlRequest {
 		r.NotifierIds = tmpContainer
 	}
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -131,7 +131,7 @@ func (m *SimulateNetworkGraphRequest) CloneVT() *SimulateNetworkGraphRequest {
 	r.IncludeNodeDiff = m.IncludeNodeDiff
 	r.Scope = m.Scope.CloneVT()
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -157,7 +157,7 @@ func (m *ApplyNetworkPolicyYamlRequest) CloneVT() *ApplyNetworkPolicyYamlRequest
 	r := new(ApplyNetworkPolicyYamlRequest)
 	r.ClusterId = m.ClusterId
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -199,7 +199,7 @@ func (m *GetUndoModificationResponse) CloneVT() *GetUndoModificationResponse {
 	}
 	r := new(GetUndoModificationResponse)
 	if rhs := m.UndoRecord; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyApplicationUndoRecord
 		}); ok {
 			r.UndoRecord = vtpb.CloneVT()
@@ -225,14 +225,14 @@ func (m *NetworkPolicyInSimulation) CloneVT() *NetworkPolicyInSimulation {
 	r := new(NetworkPolicyInSimulation)
 	r.Status = m.Status
 	if rhs := m.Policy; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
 			r.Policy = vtpb.CloneVT()
 		} else {
 			r.Policy = proto.Clone(rhs).(*storage.NetworkPolicy)
 		}
 	}
 	if rhs := m.OldPolicy; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.NetworkPolicy }); ok {
 			r.OldPolicy = vtpb.CloneVT()
 		} else {
 			r.OldPolicy = proto.Clone(rhs).(*storage.NetworkPolicy)
@@ -403,7 +403,7 @@ func (m *GenerateNetworkPoliciesResponse) CloneVT() *GenerateNetworkPoliciesResp
 	}
 	r := new(GenerateNetworkPoliciesResponse)
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -447,7 +447,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) CloneVT() *GetBaseline
 	}
 	r := new(GetBaselineGeneratedPolicyForDeploymentResponse)
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -496,7 +496,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) CloneVT() *ApplyNetworkPoli
 	r := new(ApplyNetworkPolicyYamlForDeploymentRequest)
 	r.DeploymentId = m.DeploymentId
 	if rhs := m.Modification; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyModification
 		}); ok {
 			r.Modification = vtpb.CloneVT()
@@ -521,7 +521,7 @@ func (m *GetUndoModificationForDeploymentResponse) CloneVT() *GetUndoModificatio
 	}
 	r := new(GetUndoModificationForDeploymentResponse)
 	if rhs := m.UndoRecord; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkPolicyApplicationUndoRecord
 		}); ok {
 			r.UndoRecord = vtpb.CloneVT()
@@ -546,7 +546,7 @@ func (m *GetDiffFlowsReconciledFlow) CloneVT() *GetDiffFlowsReconciledFlow {
 	}
 	r := new(GetDiffFlowsReconciledFlow)
 	if rhs := m.Entity; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkEntityInfo
 		}); ok {
 			r.Entity = vtpb.CloneVT()
@@ -557,7 +557,7 @@ func (m *GetDiffFlowsReconciledFlow) CloneVT() *GetDiffFlowsReconciledFlow {
 	if rhs := m.Added; rhs != nil {
 		tmpContainer := make([]*storage.NetworkBaselineConnectionProperties, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.NetworkBaselineConnectionProperties
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -570,7 +570,7 @@ func (m *GetDiffFlowsReconciledFlow) CloneVT() *GetDiffFlowsReconciledFlow {
 	if rhs := m.Removed; rhs != nil {
 		tmpContainer := make([]*storage.NetworkBaselineConnectionProperties, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.NetworkBaselineConnectionProperties
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -583,7 +583,7 @@ func (m *GetDiffFlowsReconciledFlow) CloneVT() *GetDiffFlowsReconciledFlow {
 	if rhs := m.Unchanged; rhs != nil {
 		tmpContainer := make([]*storage.NetworkBaselineConnectionProperties, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.NetworkBaselineConnectionProperties
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -610,7 +610,7 @@ func (m *GetDiffFlowsGroupedFlow) CloneVT() *GetDiffFlowsGroupedFlow {
 	}
 	r := new(GetDiffFlowsGroupedFlow)
 	if rhs := m.Entity; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NetworkEntityInfo
 		}); ok {
 			r.Entity = vtpb.CloneVT()
@@ -621,7 +621,7 @@ func (m *GetDiffFlowsGroupedFlow) CloneVT() *GetDiffFlowsGroupedFlow {
 	if rhs := m.Properties; rhs != nil {
 		tmpContainer := make([]*storage.NetworkBaselineConnectionProperties, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.NetworkBaselineConnectionProperties
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -722,7 +722,7 @@ func (this *NetworkPoliciesResponse) EqualVT(that *NetworkPoliciesResponse) bool
 			if q == nil {
 				q = &storage.NetworkPolicy{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.NetworkPolicy) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -761,7 +761,7 @@ func (this *SendNetworkPolicyYamlRequest) EqualVT(that *SendNetworkPolicyYamlReq
 			return false
 		}
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -820,7 +820,7 @@ func (this *SimulateNetworkGraphRequest) EqualVT(that *SimulateNetworkGraphReque
 	if this.Query != that.Query {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -857,7 +857,7 @@ func (this *ApplyNetworkPolicyYamlRequest) EqualVT(that *ApplyNetworkPolicyYamlR
 	if this.ClusterId != that.ClusterId {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -901,7 +901,7 @@ func (this *GetUndoModificationResponse) EqualVT(that *GetUndoModificationRespon
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.UndoRecord).(interface {
+	if equal, ok := any(this.UndoRecord).(interface {
 		EqualVT(*storage.NetworkPolicyApplicationUndoRecord) bool
 	}); ok {
 		if !equal.EqualVT(that.UndoRecord) {
@@ -926,7 +926,7 @@ func (this *NetworkPolicyInSimulation) EqualVT(that *NetworkPolicyInSimulation) 
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Policy).(interface {
+	if equal, ok := any(this.Policy).(interface {
 		EqualVT(*storage.NetworkPolicy) bool
 	}); ok {
 		if !equal.EqualVT(that.Policy) {
@@ -938,7 +938,7 @@ func (this *NetworkPolicyInSimulation) EqualVT(that *NetworkPolicyInSimulation) 
 	if this.Status != that.Status {
 		return false
 	}
-	if equal, ok := interface{}(this.OldPolicy).(interface {
+	if equal, ok := any(this.OldPolicy).(interface {
 		EqualVT(*storage.NetworkPolicy) bool
 	}); ok {
 		if !equal.EqualVT(that.OldPolicy) {
@@ -1201,7 +1201,7 @@ func (this *GenerateNetworkPoliciesResponse) EqualVT(that *GenerateNetworkPolici
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -1251,7 +1251,7 @@ func (this *GetBaselineGeneratedPolicyForDeploymentResponse) EqualVT(that *GetBa
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -1312,7 +1312,7 @@ func (this *ApplyNetworkPolicyYamlForDeploymentRequest) EqualVT(that *ApplyNetwo
 	if this.DeploymentId != that.DeploymentId {
 		return false
 	}
-	if equal, ok := interface{}(this.Modification).(interface {
+	if equal, ok := any(this.Modification).(interface {
 		EqualVT(*storage.NetworkPolicyModification) bool
 	}); ok {
 		if !equal.EqualVT(that.Modification) {
@@ -1337,7 +1337,7 @@ func (this *GetUndoModificationForDeploymentResponse) EqualVT(that *GetUndoModif
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.UndoRecord).(interface {
+	if equal, ok := any(this.UndoRecord).(interface {
 		EqualVT(*storage.NetworkPolicyApplicationUndoRecord) bool
 	}); ok {
 		if !equal.EqualVT(that.UndoRecord) {
@@ -1362,7 +1362,7 @@ func (this *GetDiffFlowsReconciledFlow) EqualVT(that *GetDiffFlowsReconciledFlow
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Entity).(interface {
+	if equal, ok := any(this.Entity).(interface {
 		EqualVT(*storage.NetworkEntityInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.Entity) {
@@ -1383,7 +1383,7 @@ func (this *GetDiffFlowsReconciledFlow) EqualVT(that *GetDiffFlowsReconciledFlow
 			if q == nil {
 				q = &storage.NetworkBaselineConnectionProperties{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.NetworkBaselineConnectionProperties) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1406,7 +1406,7 @@ func (this *GetDiffFlowsReconciledFlow) EqualVT(that *GetDiffFlowsReconciledFlow
 			if q == nil {
 				q = &storage.NetworkBaselineConnectionProperties{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.NetworkBaselineConnectionProperties) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1429,7 +1429,7 @@ func (this *GetDiffFlowsReconciledFlow) EqualVT(that *GetDiffFlowsReconciledFlow
 			if q == nil {
 				q = &storage.NetworkBaselineConnectionProperties{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.NetworkBaselineConnectionProperties) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1456,7 +1456,7 @@ func (this *GetDiffFlowsGroupedFlow) EqualVT(that *GetDiffFlowsGroupedFlow) bool
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Entity).(interface {
+	if equal, ok := any(this.Entity).(interface {
 		EqualVT(*storage.NetworkEntityInfo) bool
 	}); ok {
 		if !equal.EqualVT(that.Entity) {
@@ -1477,7 +1477,7 @@ func (this *GetDiffFlowsGroupedFlow) EqualVT(that *GetDiffFlowsGroupedFlow) bool
 			if q == nil {
 				q = &storage.NetworkBaselineConnectionProperties{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.NetworkBaselineConnectionProperties) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1651,7 +1651,7 @@ func (m *NetworkPoliciesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.NetworkPolicies) > 0 {
 		for iNdEx := len(m.NetworkPolicies) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.NetworkPolicies[iNdEx]).(interface {
+			if vtmsg, ok := any(m.NetworkPolicies[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1707,7 +1707,7 @@ func (m *SendNetworkPolicyYamlRequest) MarshalToSizedBufferVT(dAtA []byte) (int,
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1875,7 +1875,7 @@ func (m *SimulateNetworkGraphRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		dAtA[i] = 0x20
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1944,7 +1944,7 @@ func (m *ApplyNetworkPolicyYamlRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2046,7 +2046,7 @@ func (m *GetUndoModificationResponse) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.UndoRecord != nil {
-		if vtmsg, ok := interface{}(m.UndoRecord).(interface {
+		if vtmsg, ok := any(m.UndoRecord).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2101,7 +2101,7 @@ func (m *NetworkPolicyInSimulation) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.OldPolicy != nil {
-		if vtmsg, ok := interface{}(m.OldPolicy).(interface {
+		if vtmsg, ok := any(m.OldPolicy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2128,7 +2128,7 @@ func (m *NetworkPolicyInSimulation) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		dAtA[i] = 0x10
 	}
 	if m.Policy != nil {
-		if vtmsg, ok := interface{}(m.Policy).(interface {
+		if vtmsg, ok := any(m.Policy).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2587,7 +2587,7 @@ func (m *GenerateNetworkPoliciesResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2697,7 +2697,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) MarshalToSizedBufferVT
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2797,7 +2797,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) MarshalToSizedBufferVT(dAtA
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Modification != nil {
-		if vtmsg, ok := interface{}(m.Modification).(interface {
+		if vtmsg, ok := any(m.Modification).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2859,7 +2859,7 @@ func (m *GetUndoModificationForDeploymentResponse) MarshalToSizedBufferVT(dAtA [
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.UndoRecord != nil {
-		if vtmsg, ok := interface{}(m.UndoRecord).(interface {
+		if vtmsg, ok := any(m.UndoRecord).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2915,7 +2915,7 @@ func (m *GetDiffFlowsReconciledFlow) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.Unchanged) > 0 {
 		for iNdEx := len(m.Unchanged) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Unchanged[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Unchanged[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2939,7 +2939,7 @@ func (m *GetDiffFlowsReconciledFlow) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.Removed) > 0 {
 		for iNdEx := len(m.Removed) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Removed[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Removed[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2963,7 +2963,7 @@ func (m *GetDiffFlowsReconciledFlow) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if len(m.Added) > 0 {
 		for iNdEx := len(m.Added) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Added[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Added[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2986,7 +2986,7 @@ func (m *GetDiffFlowsReconciledFlow) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		}
 	}
 	if m.Entity != nil {
-		if vtmsg, ok := interface{}(m.Entity).(interface {
+		if vtmsg, ok := any(m.Entity).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3042,7 +3042,7 @@ func (m *GetDiffFlowsGroupedFlow) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.Properties) > 0 {
 		for iNdEx := len(m.Properties) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Properties[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Properties[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3065,7 +3065,7 @@ func (m *GetDiffFlowsGroupedFlow) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		}
 	}
 	if m.Entity != nil {
-		if vtmsg, ok := interface{}(m.Entity).(interface {
+		if vtmsg, ok := any(m.Entity).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -3188,7 +3188,7 @@ func (m *NetworkPoliciesResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.NetworkPolicies) > 0 {
 		for _, e := range m.NetworkPolicies {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3219,7 +3219,7 @@ func (m *SendNetworkPolicyYamlRequest) SizeVT() (n int) {
 		}
 	}
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3272,7 +3272,7 @@ func (m *SimulateNetworkGraphRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3306,7 +3306,7 @@ func (m *ApplyNetworkPolicyYamlRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3340,7 +3340,7 @@ func (m *GetUndoModificationResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.UndoRecord != nil {
-		if size, ok := interface{}(m.UndoRecord).(interface {
+		if size, ok := any(m.UndoRecord).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3360,7 +3360,7 @@ func (m *NetworkPolicyInSimulation) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Policy != nil {
-		if size, ok := interface{}(m.Policy).(interface {
+		if size, ok := any(m.Policy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3373,7 +3373,7 @@ func (m *NetworkPolicyInSimulation) SizeVT() (n int) {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.Status))
 	}
 	if m.OldPolicy != nil {
-		if size, ok := interface{}(m.OldPolicy).(interface {
+		if size, ok := any(m.OldPolicy).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3560,7 +3560,7 @@ func (m *GenerateNetworkPoliciesResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3600,7 +3600,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3640,7 +3640,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Modification != nil {
-		if size, ok := interface{}(m.Modification).(interface {
+		if size, ok := any(m.Modification).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3660,7 +3660,7 @@ func (m *GetUndoModificationForDeploymentResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.UndoRecord != nil {
-		if size, ok := interface{}(m.UndoRecord).(interface {
+		if size, ok := any(m.UndoRecord).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3680,7 +3680,7 @@ func (m *GetDiffFlowsReconciledFlow) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Entity != nil {
-		if size, ok := interface{}(m.Entity).(interface {
+		if size, ok := any(m.Entity).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3691,7 +3691,7 @@ func (m *GetDiffFlowsReconciledFlow) SizeVT() (n int) {
 	}
 	if len(m.Added) > 0 {
 		for _, e := range m.Added {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3703,7 +3703,7 @@ func (m *GetDiffFlowsReconciledFlow) SizeVT() (n int) {
 	}
 	if len(m.Removed) > 0 {
 		for _, e := range m.Removed {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3715,7 +3715,7 @@ func (m *GetDiffFlowsReconciledFlow) SizeVT() (n int) {
 	}
 	if len(m.Unchanged) > 0 {
 		for _, e := range m.Unchanged {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3736,7 +3736,7 @@ func (m *GetDiffFlowsGroupedFlow) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Entity != nil {
-		if size, ok := interface{}(m.Entity).(interface {
+		if size, ok := any(m.Entity).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -3747,7 +3747,7 @@ func (m *GetDiffFlowsGroupedFlow) SizeVT() (n int) {
 	}
 	if len(m.Properties) > 0 {
 		for _, e := range m.Properties {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3995,7 +3995,7 @@ func (m *NetworkPoliciesResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NetworkPolicies = append(m.NetworkPolicies, &storage.NetworkPolicy{})
-			if unmarshal, ok := interface{}(m.NetworkPolicies[len(m.NetworkPolicies)-1]).(interface {
+			if unmarshal, ok := any(m.NetworkPolicies[len(m.NetworkPolicies)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4154,7 +4154,7 @@ func (m *SendNetworkPolicyYamlRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4484,7 +4484,7 @@ func (m *SimulateNetworkGraphRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4687,7 +4687,7 @@ func (m *ApplyNetworkPolicyYamlRequest) UnmarshalVT(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4865,7 +4865,7 @@ func (m *GetUndoModificationResponse) UnmarshalVT(dAtA []byte) error {
 			if m.UndoRecord == nil {
 				m.UndoRecord = &storage.NetworkPolicyApplicationUndoRecord{}
 			}
-			if unmarshal, ok := interface{}(m.UndoRecord).(interface {
+			if unmarshal, ok := any(m.UndoRecord).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4960,7 +4960,7 @@ func (m *NetworkPolicyInSimulation) UnmarshalVT(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.NetworkPolicy{}
 			}
-			if unmarshal, ok := interface{}(m.Policy).(interface {
+			if unmarshal, ok := any(m.Policy).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -5023,7 +5023,7 @@ func (m *NetworkPolicyInSimulation) UnmarshalVT(dAtA []byte) error {
 			if m.OldPolicy == nil {
 				m.OldPolicy = &storage.NetworkPolicy{}
 			}
-			if unmarshal, ok := interface{}(m.OldPolicy).(interface {
+			if unmarshal, ok := any(m.OldPolicy).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6316,7 +6316,7 @@ func (m *GenerateNetworkPoliciesResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6533,7 +6533,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) UnmarshalVT(dAtA []byt
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6745,7 +6745,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) UnmarshalVT(dAtA []byte) er
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6840,7 +6840,7 @@ func (m *GetUndoModificationForDeploymentResponse) UnmarshalVT(dAtA []byte) erro
 			if m.UndoRecord == nil {
 				m.UndoRecord = &storage.NetworkPolicyApplicationUndoRecord{}
 			}
-			if unmarshal, ok := interface{}(m.UndoRecord).(interface {
+			if unmarshal, ok := any(m.UndoRecord).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6935,7 +6935,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVT(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo{}
 			}
-			if unmarshal, ok := interface{}(m.Entity).(interface {
+			if unmarshal, ok := any(m.Entity).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -6977,7 +6977,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Added = append(m.Added, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Added[len(m.Added)-1]).(interface {
+			if unmarshal, ok := any(m.Added[len(m.Added)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7019,7 +7019,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Removed = append(m.Removed, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Removed[len(m.Removed)-1]).(interface {
+			if unmarshal, ok := any(m.Removed[len(m.Removed)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7061,7 +7061,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Unchanged = append(m.Unchanged, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Unchanged[len(m.Unchanged)-1]).(interface {
+			if unmarshal, ok := any(m.Unchanged[len(m.Unchanged)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7156,7 +7156,7 @@ func (m *GetDiffFlowsGroupedFlow) UnmarshalVT(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo{}
 			}
-			if unmarshal, ok := interface{}(m.Entity).(interface {
+			if unmarshal, ok := any(m.Entity).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7198,7 +7198,7 @@ func (m *GetDiffFlowsGroupedFlow) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Properties = append(m.Properties, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Properties[len(m.Properties)-1]).(interface {
+			if unmarshal, ok := any(m.Properties[len(m.Properties)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -7603,7 +7603,7 @@ func (m *NetworkPoliciesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NetworkPolicies = append(m.NetworkPolicies, &storage.NetworkPolicy{})
-			if unmarshal, ok := interface{}(m.NetworkPolicies[len(m.NetworkPolicies)-1]).(interface {
+			if unmarshal, ok := any(m.NetworkPolicies[len(m.NetworkPolicies)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -7770,7 +7770,7 @@ func (m *SendNetworkPolicyYamlRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8116,7 +8116,7 @@ func (m *SimulateNetworkGraphRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8323,7 +8323,7 @@ func (m *ApplyNetworkPolicyYamlRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8505,7 +8505,7 @@ func (m *GetUndoModificationResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.UndoRecord == nil {
 				m.UndoRecord = &storage.NetworkPolicyApplicationUndoRecord{}
 			}
-			if unmarshal, ok := interface{}(m.UndoRecord).(interface {
+			if unmarshal, ok := any(m.UndoRecord).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8600,7 +8600,7 @@ func (m *NetworkPolicyInSimulation) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Policy == nil {
 				m.Policy = &storage.NetworkPolicy{}
 			}
-			if unmarshal, ok := interface{}(m.Policy).(interface {
+			if unmarshal, ok := any(m.Policy).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -8663,7 +8663,7 @@ func (m *NetworkPolicyInSimulation) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.OldPolicy == nil {
 				m.OldPolicy = &storage.NetworkPolicy{}
 			}
-			if unmarshal, ok := interface{}(m.OldPolicy).(interface {
+			if unmarshal, ok := any(m.OldPolicy).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -9980,7 +9980,7 @@ func (m *GenerateNetworkPoliciesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10201,7 +10201,7 @@ func (m *GetBaselineGeneratedPolicyForDeploymentResponse) UnmarshalVTUnsafe(dAtA
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10417,7 +10417,7 @@ func (m *ApplyNetworkPolicyYamlForDeploymentRequest) UnmarshalVTUnsafe(dAtA []by
 			if m.Modification == nil {
 				m.Modification = &storage.NetworkPolicyModification{}
 			}
-			if unmarshal, ok := interface{}(m.Modification).(interface {
+			if unmarshal, ok := any(m.Modification).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10512,7 +10512,7 @@ func (m *GetUndoModificationForDeploymentResponse) UnmarshalVTUnsafe(dAtA []byte
 			if m.UndoRecord == nil {
 				m.UndoRecord = &storage.NetworkPolicyApplicationUndoRecord{}
 			}
-			if unmarshal, ok := interface{}(m.UndoRecord).(interface {
+			if unmarshal, ok := any(m.UndoRecord).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10607,7 +10607,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo{}
 			}
-			if unmarshal, ok := interface{}(m.Entity).(interface {
+			if unmarshal, ok := any(m.Entity).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10649,7 +10649,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Added = append(m.Added, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Added[len(m.Added)-1]).(interface {
+			if unmarshal, ok := any(m.Added[len(m.Added)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10691,7 +10691,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Removed = append(m.Removed, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Removed[len(m.Removed)-1]).(interface {
+			if unmarshal, ok := any(m.Removed[len(m.Removed)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10733,7 +10733,7 @@ func (m *GetDiffFlowsReconciledFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Unchanged = append(m.Unchanged, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Unchanged[len(m.Unchanged)-1]).(interface {
+			if unmarshal, ok := any(m.Unchanged[len(m.Unchanged)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10828,7 +10828,7 @@ func (m *GetDiffFlowsGroupedFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Entity == nil {
 				m.Entity = &storage.NetworkEntityInfo{}
 			}
-			if unmarshal, ok := interface{}(m.Entity).(interface {
+			if unmarshal, ok := any(m.Entity).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -10870,7 +10870,7 @@ func (m *GetDiffFlowsGroupedFlow) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Properties = append(m.Properties, &storage.NetworkBaselineConnectionProperties{})
-			if unmarshal, ok := interface{}(m.Properties[len(m.Properties)-1]).(interface {
+			if unmarshal, ok := any(m.Properties[len(m.Properties)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

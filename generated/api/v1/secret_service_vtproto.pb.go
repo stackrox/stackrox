@@ -28,7 +28,7 @@ func (m *SecretList) CloneVT() *SecretList {
 	if rhs := m.Secrets; rhs != nil {
 		tmpContainer := make([]*storage.Secret, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Secret }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Secret }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Secret)
@@ -55,7 +55,7 @@ func (m *ListSecretsResponse) CloneVT() *ListSecretsResponse {
 	if rhs := m.Secrets; rhs != nil {
 		tmpContainer := make([]*storage.ListSecret, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.ListSecret }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.ListSecret }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.ListSecret)
@@ -127,7 +127,7 @@ func (this *SecretList) EqualVT(that *SecretList) bool {
 			if q == nil {
 				q = &storage.Secret{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Secret) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Secret) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -164,7 +164,7 @@ func (this *ListSecretsResponse) EqualVT(that *ListSecretsResponse) bool {
 			if q == nil {
 				q = &storage.ListSecret{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ListSecret) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -258,7 +258,7 @@ func (m *SecretList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Secrets) > 0 {
 		for iNdEx := len(m.Secrets) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Secrets[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Secrets[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -315,7 +315,7 @@ func (m *ListSecretsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Secrets) > 0 {
 		for iNdEx := len(m.Secrets) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Secrets[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Secrets[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -439,7 +439,7 @@ func (m *SecretList) SizeVT() (n int) {
 	_ = l
 	if len(m.Secrets) > 0 {
 		for _, e := range m.Secrets {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -461,7 +461,7 @@ func (m *ListSecretsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Secrets) > 0 {
 		for _, e := range m.Secrets {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -564,7 +564,7 @@ func (m *SecretList) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.Secret{})
-			if unmarshal, ok := interface{}(m.Secrets[len(m.Secrets)-1]).(interface {
+			if unmarshal, ok := any(m.Secrets[len(m.Secrets)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -657,7 +657,7 @@ func (m *ListSecretsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.ListSecret{})
-			if unmarshal, ok := interface{}(m.Secrets[len(m.Secrets)-1]).(interface {
+			if unmarshal, ok := any(m.Secrets[len(m.Secrets)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -927,7 +927,7 @@ func (m *SecretList) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.Secret{})
-			if unmarshal, ok := interface{}(m.Secrets[len(m.Secrets)-1]).(interface {
+			if unmarshal, ok := any(m.Secrets[len(m.Secrets)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1020,7 +1020,7 @@ func (m *ListSecretsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Secrets = append(m.Secrets, &storage.ListSecret{})
-			if unmarshal, ok := interface{}(m.Secrets[len(m.Secrets)-1]).(interface {
+			if unmarshal, ok := any(m.Secrets[len(m.Secrets)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

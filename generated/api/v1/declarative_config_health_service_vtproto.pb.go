@@ -28,7 +28,7 @@ func (m *GetDeclarativeConfigHealthsResponse) CloneVT() *GetDeclarativeConfigHea
 	if rhs := m.Healths; rhs != nil {
 		tmpContainer := make([]*storage.DeclarativeConfigHealth, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.DeclarativeConfigHealth
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -67,7 +67,7 @@ func (this *GetDeclarativeConfigHealthsResponse) EqualVT(that *GetDeclarativeCon
 			if q == nil {
 				q = &storage.DeclarativeConfigHealth{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.DeclarativeConfigHealth) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -120,7 +120,7 @@ func (m *GetDeclarativeConfigHealthsResponse) MarshalToSizedBufferVT(dAtA []byte
 	}
 	if len(m.Healths) > 0 {
 		for iNdEx := len(m.Healths) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Healths[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Healths[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -153,7 +153,7 @@ func (m *GetDeclarativeConfigHealthsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Healths) > 0 {
 		for _, e := range m.Healths {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -226,7 +226,7 @@ func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Healths = append(m.Healths, &storage.DeclarativeConfigHealth{})
-			if unmarshal, ok := interface{}(m.Healths[len(m.Healths)-1]).(interface {
+			if unmarshal, ok := any(m.Healths[len(m.Healths)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -319,7 +319,7 @@ func (m *GetDeclarativeConfigHealthsResponse) UnmarshalVTUnsafe(dAtA []byte) err
 				return io.ErrUnexpectedEOF
 			}
 			m.Healths = append(m.Healths, &storage.DeclarativeConfigHealth{})
-			if unmarshal, ok := interface{}(m.Healths[len(m.Healths)-1]).(interface {
+			if unmarshal, ok := any(m.Healths[len(m.Healths)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

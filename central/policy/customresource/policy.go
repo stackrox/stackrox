@@ -171,7 +171,7 @@ func ConvertPolicyToCustomResource(p *storage.Policy) *CustomResource {
 	return &CustomResource{
 		APIVersion:         "config.stackrox.io/v1alpha1",
 		Kind:               "SecurityPolicy",
-		Metadata:           map[string]interface{}{"name": toDNSSubdomainName(p.GetName())},
+		Metadata:           map[string]any{"name": toDNSSubdomainName(p.GetName())},
 		SecurityPolicySpec: convertPolicy(p),
 	}
 }

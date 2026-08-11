@@ -120,7 +120,7 @@ func insertIntoComplianceOperatorClusterScanConfigStatuses(batch *pgx.Batch, obj
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
@@ -173,7 +173,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			pgutils.NilOrUUID(obj.GetScanConfigId()),

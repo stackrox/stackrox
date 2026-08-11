@@ -229,7 +229,7 @@ func (m *GetComplianceRunResultsResponse) CloneVT() *GetComplianceRunResultsResp
 	}
 	r := new(GetComplianceRunResultsResponse)
 	if rhs := m.Results; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ComplianceRunResults
 		}); ok {
 			r.Results = vtpb.CloneVT()
@@ -240,7 +240,7 @@ func (m *GetComplianceRunResultsResponse) CloneVT() *GetComplianceRunResultsResp
 	if rhs := m.FailedRuns; rhs != nil {
 		tmpContainer := make([]*storage.ComplianceRunMetadata, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ComplianceRunMetadata
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -561,7 +561,7 @@ func (this *GetComplianceRunResultsResponse) EqualVT(that *GetComplianceRunResul
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Results).(interface {
+	if equal, ok := any(this.Results).(interface {
 		EqualVT(*storage.ComplianceRunResults) bool
 	}); ok {
 		if !equal.EqualVT(that.Results) {
@@ -582,7 +582,7 @@ func (this *GetComplianceRunResultsResponse) EqualVT(that *GetComplianceRunResul
 			if q == nil {
 				q = &storage.ComplianceRunMetadata{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ComplianceRunMetadata) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -1214,7 +1214,7 @@ func (m *GetComplianceRunResultsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	}
 	if len(m.FailedRuns) > 0 {
 		for iNdEx := len(m.FailedRuns) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.FailedRuns[iNdEx]).(interface {
+			if vtmsg, ok := any(m.FailedRuns[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1237,7 +1237,7 @@ func (m *GetComplianceRunResultsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 		}
 	}
 	if m.Results != nil {
-		if vtmsg, ok := interface{}(m.Results).(interface {
+		if vtmsg, ok := any(m.Results).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1491,7 +1491,7 @@ func (m *GetComplianceRunResultsResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Results != nil {
-		if size, ok := interface{}(m.Results).(interface {
+		if size, ok := any(m.Results).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1502,7 +1502,7 @@ func (m *GetComplianceRunResultsResponse) SizeVT() (n int) {
 	}
 	if len(m.FailedRuns) > 0 {
 		for _, e := range m.FailedRuns {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -3065,7 +3065,7 @@ func (m *GetComplianceRunResultsResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Results == nil {
 				m.Results = &storage.ComplianceRunResults{}
 			}
-			if unmarshal, ok := interface{}(m.Results).(interface {
+			if unmarshal, ok := any(m.Results).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -3107,7 +3107,7 @@ func (m *GetComplianceRunResultsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FailedRuns = append(m.FailedRuns, &storage.ComplianceRunMetadata{})
-			if unmarshal, ok := interface{}(m.FailedRuns[len(m.FailedRuns)-1]).(interface {
+			if unmarshal, ok := any(m.FailedRuns[len(m.FailedRuns)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -4758,7 +4758,7 @@ func (m *GetComplianceRunResultsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Results == nil {
 				m.Results = &storage.ComplianceRunResults{}
 			}
-			if unmarshal, ok := interface{}(m.Results).(interface {
+			if unmarshal, ok := any(m.Results).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -4800,7 +4800,7 @@ func (m *GetComplianceRunResultsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.FailedRuns = append(m.FailedRuns, &storage.ComplianceRunMetadata{})
-			if unmarshal, ok := interface{}(m.FailedRuns[len(m.FailedRuns)-1]).(interface {
+			if unmarshal, ok := any(m.FailedRuns[len(m.FailedRuns)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

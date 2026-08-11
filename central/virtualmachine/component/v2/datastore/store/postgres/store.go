@@ -98,7 +98,7 @@ func insertIntoVirtualMachineComponentV2(batch *pgx.Batch, obj *storage.VirtualM
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetVmScanId()),
@@ -157,7 +157,7 @@ func copyFromVirtualMachineComponentV2(ctx context.Context, s pgSearch.Deleter, 
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetVmScanId()),
 			obj.GetName(),

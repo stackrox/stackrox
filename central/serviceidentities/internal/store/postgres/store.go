@@ -94,7 +94,7 @@ func insertIntoServiceIdentities(batch *pgx.Batch, obj *storage.ServiceIdentity)
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetSerialStr(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromServiceIdentities(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetSerialStr(),
 			serialized,
 		}, nil

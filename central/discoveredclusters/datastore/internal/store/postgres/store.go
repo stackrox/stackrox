@@ -99,7 +99,7 @@ func insertIntoDiscoveredClusters(batch *pgx.Batch, obj *storage.DiscoveredClust
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetMetadata().GetName(),
@@ -158,7 +158,7 @@ func copyFromDiscoveredClusters(ctx context.Context, s pgSearch.Deleter, tx *pos
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetMetadata().GetName(),
 			obj.GetMetadata().GetType(),

@@ -98,7 +98,7 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetInfo().GetId(),
 		pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
@@ -151,7 +151,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetInfo().GetId(),
 			pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
 			obj.GetInfo().GetExternalSource().GetDefault(),

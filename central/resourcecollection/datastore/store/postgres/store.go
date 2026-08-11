@@ -97,7 +97,7 @@ func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) er
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -124,7 +124,7 @@ func insertIntoCollections(batch *pgx.Batch, obj *storage.ResourceCollection) er
 
 func insertIntoCollectionsEmbeddedCollections(batch *pgx.Batch, obj *storage.ResourceCollection_EmbeddedResourceCollection, collectionID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		collectionID,
 		idx,
@@ -175,7 +175,7 @@ func copyFromCollections(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetCreatedBy().GetName(),
@@ -216,7 +216,7 @@ func copyFromCollectionsEmbeddedCollections(ctx context.Context, s pgSearch.Dele
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			collectionID,
 			idx,
 			obj.GetId(),

@@ -46,7 +46,7 @@ func MarshalTextString(m proto.Message) string {
 	return prototext.MarshalOptions{Multiline: true}.Format(m)
 }
 
-// MarshalMap marshals a proto message to a map[string]interface{} type.
+// MarshalMap marshals a proto message to a map[string]any type.
 func MarshalMap(m proto.Message) (map[string]any, error) {
 	marshalledProto, err := protojson.Marshal(m)
 	if err != nil {

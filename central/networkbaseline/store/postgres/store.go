@@ -119,7 +119,7 @@ func insertIntoNetworkBaselines(batch *pgx.Batch, obj *storage.NetworkBaseline) 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetDeploymentId()),
 		pgutils.NilOrUUID(obj.GetClusterId()),
@@ -170,7 +170,7 @@ func copyFromNetworkBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetDeploymentId()),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			obj.GetNamespace(),

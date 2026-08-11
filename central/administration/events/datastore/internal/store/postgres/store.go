@@ -99,7 +99,7 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetType(),
@@ -160,7 +160,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetType(),
 			obj.GetLevel(),

@@ -97,7 +97,7 @@ func insertIntoTestG3GrandChild1(batch *pgx.Batch, obj *storage.TestG3GrandChild
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetVal(),
@@ -146,7 +146,7 @@ func copyFromTestG3GrandChild1(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetVal(),
 			serialized,

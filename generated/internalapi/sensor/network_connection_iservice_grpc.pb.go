@@ -95,7 +95,7 @@ func RegisterNetworkConnectionInfoServiceServer(s grpc.ServiceRegistrar, srv Net
 	s.RegisterService(&NetworkConnectionInfoService_ServiceDesc, srv)
 }
 
-func _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler(srv any, stream grpc.ServerStream) error {
 	return srv.(NetworkConnectionInfoServiceServer).PushNetworkConnectionInfo(&grpc.GenericServerStream[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]{ServerStream: stream})
 }
 

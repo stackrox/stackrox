@@ -100,7 +100,7 @@ func insertIntoTestSingleUUIDKeyStructs(batch *pgx.Batch, obj *storage.TestSingl
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetKey()),
 		obj.GetName(),
@@ -169,7 +169,7 @@ func copyFromTestSingleUUIDKeyStructs(ctx context.Context, s pgSearch.Deleter, t
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetKey()),
 			obj.GetName(),
 			obj.GetStringSlice(),

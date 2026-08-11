@@ -100,7 +100,7 @@ func RegisterServiceAccountServiceServer(s grpc.ServiceRegistrar, srv ServiceAcc
 	s.RegisterService(&ServiceAccountService_ServiceDesc, srv)
 }
 
-func _ServiceAccountService_GetServiceAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceAccountService_GetServiceAccount_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -112,13 +112,13 @@ func _ServiceAccountService_GetServiceAccount_Handler(srv interface{}, ctx conte
 		Server:     srv,
 		FullMethod: ServiceAccountService_GetServiceAccount_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ServiceAccountServiceServer).GetServiceAccount(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ServiceAccountService_ListServiceAccounts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceAccountService_ListServiceAccounts_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func _ServiceAccountService_ListServiceAccounts_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: ServiceAccountService_ListServiceAccounts_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ServiceAccountServiceServer).ListServiceAccounts(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)

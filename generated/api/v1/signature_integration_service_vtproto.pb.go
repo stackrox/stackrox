@@ -28,7 +28,7 @@ func (m *ListSignatureIntegrationsResponse) CloneVT() *ListSignatureIntegrations
 	if rhs := m.Integrations; rhs != nil {
 		tmpContainer := make([]*storage.SignatureIntegration, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.SignatureIntegration
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -67,7 +67,7 @@ func (this *ListSignatureIntegrationsResponse) EqualVT(that *ListSignatureIntegr
 			if q == nil {
 				q = &storage.SignatureIntegration{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.SignatureIntegration) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -120,7 +120,7 @@ func (m *ListSignatureIntegrationsResponse) MarshalToSizedBufferVT(dAtA []byte) 
 	}
 	if len(m.Integrations) > 0 {
 		for iNdEx := len(m.Integrations) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Integrations[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Integrations[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -153,7 +153,7 @@ func (m *ListSignatureIntegrationsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Integrations) > 0 {
 		for _, e := range m.Integrations {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -226,7 +226,7 @@ func (m *ListSignatureIntegrationsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Integrations = append(m.Integrations, &storage.SignatureIntegration{})
-			if unmarshal, ok := interface{}(m.Integrations[len(m.Integrations)-1]).(interface {
+			if unmarshal, ok := any(m.Integrations[len(m.Integrations)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -319,7 +319,7 @@ func (m *ListSignatureIntegrationsResponse) UnmarshalVTUnsafe(dAtA []byte) error
 				return io.ErrUnexpectedEOF
 			}
 			m.Integrations = append(m.Integrations, &storage.SignatureIntegration{})
-			if unmarshal, ok := interface{}(m.Integrations[len(m.Integrations)-1]).(interface {
+			if unmarshal, ok := any(m.Integrations[len(m.Integrations)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

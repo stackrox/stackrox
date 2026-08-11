@@ -99,7 +99,7 @@ func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
 		obj.GetScanConfigurationId(),
@@ -132,7 +132,7 @@ func insertIntoComplianceOperatorReportSnapshotV2(batch *pgx.Batch, obj *storage
 
 func insertIntoComplianceOperatorReportSnapshotV2Scans(batch *pgx.Batch, obj *storage.ComplianceOperatorReportSnapshotV2_Scan, complianceOperatorReportSnapshotV2ReportId string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
 		idx,
@@ -190,7 +190,7 @@ func copyFromComplianceOperatorReportSnapshotV2(ctx context.Context, s pgSearch.
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetReportId()),
 			obj.GetScanConfigurationId(),
 			obj.GetName(),
@@ -238,7 +238,7 @@ func copyFromComplianceOperatorReportSnapshotV2Scans(ctx context.Context, s pgSe
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(complianceOperatorReportSnapshotV2ReportId),
 			idx,
 			obj.GetScanRefId(),

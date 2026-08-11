@@ -97,7 +97,7 @@ func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfigu
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -126,7 +126,7 @@ func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfigu
 
 func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.NotifierConfiguration, reportConfigurationID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		reportConfigurationID,
 		idx,
@@ -179,7 +179,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetType(),
@@ -222,7 +222,7 @@ func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Delet
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			reportConfigurationID,
 			idx,
 			obj.GetId(),

@@ -46,7 +46,7 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneVT() *VulnMgmtExportWorkloadsResp
 	r := new(VulnMgmtExportWorkloadsResponse)
 	r.LivePods = m.LivePods
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
@@ -55,7 +55,7 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneVT() *VulnMgmtExportWorkloadsResp
 	if rhs := m.Images; rhs != nil {
 		tmpContainer := make([]*storage.Image, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.Image }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.Image }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.Image)
@@ -102,7 +102,7 @@ func (this *VulnMgmtExportWorkloadsResponse) EqualVT(that *VulnMgmtExportWorkloa
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Deployment).(interface {
+	if equal, ok := any(this.Deployment).(interface {
 		EqualVT(*storage.Deployment) bool
 	}); ok {
 		if !equal.EqualVT(that.Deployment) {
@@ -123,7 +123,7 @@ func (this *VulnMgmtExportWorkloadsResponse) EqualVT(that *VulnMgmtExportWorkloa
 			if q == nil {
 				q = &storage.Image{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Image) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.Image) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -227,7 +227,7 @@ func (m *VulnMgmtExportWorkloadsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	}
 	if len(m.Images) > 0 {
 		for iNdEx := len(m.Images) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Images[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Images[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -250,7 +250,7 @@ func (m *VulnMgmtExportWorkloadsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 		}
 	}
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -298,7 +298,7 @@ func (m *VulnMgmtExportWorkloadsResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -309,7 +309,7 @@ func (m *VulnMgmtExportWorkloadsResponse) SizeVT() (n int) {
 	}
 	if len(m.Images) > 0 {
 		for _, e := range m.Images {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -489,7 +489,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -531,7 +531,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Images = append(m.Images, &storage.Image{})
-			if unmarshal, ok := interface{}(m.Images[len(m.Images)-1]).(interface {
+			if unmarshal, ok := any(m.Images[len(m.Images)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -751,7 +751,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -793,7 +793,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Images = append(m.Images, &storage.Image{})
-			if unmarshal, ok := interface{}(m.Images[len(m.Images)-1]).(interface {
+			if unmarshal, ok := any(m.Images[len(m.Images)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -92,7 +92,7 @@ func RegisterCredentialExpiryServiceServer(s grpc.ServiceRegistrar, srv Credenti
 	s.RegisterService(&CredentialExpiryService_ServiceDesc, srv)
 }
 
-func _CredentialExpiryService_GetCertExpiry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CredentialExpiryService_GetCertExpiry_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetCertExpiry_Request)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func _CredentialExpiryService_GetCertExpiry_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CredentialExpiryService_GetCertExpiry_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CredentialExpiryServiceServer).GetCertExpiry(ctx, req.(*GetCertExpiry_Request))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -122,7 +122,7 @@ func RegisterServiceIdentityServiceServer(s grpc.ServiceRegistrar, srv ServiceId
 	s.RegisterService(&ServiceIdentityService_ServiceDesc, srv)
 }
 
-func _ServiceIdentityService_GetServiceIdentities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceIdentityService_GetServiceIdentities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -134,13 +134,13 @@ func _ServiceIdentityService_GetServiceIdentities_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: ServiceIdentityService_GetServiceIdentities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ServiceIdentityServiceServer).GetServiceIdentities(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ServiceIdentityService_CreateServiceIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceIdentityService_CreateServiceIdentity_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CreateServiceIdentityRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -152,13 +152,13 @@ func _ServiceIdentityService_CreateServiceIdentity_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ServiceIdentityService_CreateServiceIdentity_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ServiceIdentityServiceServer).CreateServiceIdentity(ctx, req.(*CreateServiceIdentityRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ServiceIdentityService_GetAuthorities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ServiceIdentityService_GetAuthorities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func _ServiceIdentityService_GetAuthorities_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: ServiceIdentityService_GetAuthorities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ServiceIdentityServiceServer).GetAuthorities(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

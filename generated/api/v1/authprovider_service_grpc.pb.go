@@ -213,7 +213,7 @@ func RegisterAuthProviderServiceServer(s grpc.ServiceRegistrar, srv AuthProvider
 	s.RegisterService(&AuthProviderService_ServiceDesc, srv)
 }
 
-func _AuthProviderService_ListAvailableProviderTypes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_ListAvailableProviderTypes_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -225,13 +225,13 @@ func _AuthProviderService_ListAvailableProviderTypes_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: AuthProviderService_ListAvailableProviderTypes_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).ListAvailableProviderTypes(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_GetAuthProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_GetAuthProvider_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetAuthProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -243,13 +243,13 @@ func _AuthProviderService_GetAuthProvider_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: AuthProviderService_GetAuthProvider_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).GetAuthProvider(ctx, req.(*GetAuthProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_GetLoginAuthProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_GetLoginAuthProviders_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -261,13 +261,13 @@ func _AuthProviderService_GetLoginAuthProviders_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: AuthProviderService_GetLoginAuthProviders_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).GetLoginAuthProviders(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_GetAuthProviders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_GetAuthProviders_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetAuthProvidersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -279,13 +279,13 @@ func _AuthProviderService_GetAuthProviders_Handler(srv interface{}, ctx context.
 		Server:     srv,
 		FullMethod: AuthProviderService_GetAuthProviders_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).GetAuthProviders(ctx, req.(*GetAuthProvidersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_PostAuthProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_PostAuthProvider_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PostAuthProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -297,13 +297,13 @@ func _AuthProviderService_PostAuthProvider_Handler(srv interface{}, ctx context.
 		Server:     srv,
 		FullMethod: AuthProviderService_PostAuthProvider_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).PostAuthProvider(ctx, req.(*PostAuthProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_UpdateAuthProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_UpdateAuthProvider_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateAuthProviderRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -315,13 +315,13 @@ func _AuthProviderService_UpdateAuthProvider_Handler(srv interface{}, ctx contex
 		Server:     srv,
 		FullMethod: AuthProviderService_UpdateAuthProvider_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).UpdateAuthProvider(ctx, req.(*UpdateAuthProviderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_PutAuthProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_PutAuthProvider_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.AuthProvider)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -333,13 +333,13 @@ func _AuthProviderService_PutAuthProvider_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: AuthProviderService_PutAuthProvider_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).PutAuthProvider(ctx, req.(*storage.AuthProvider))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_DeleteAuthProvider_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_DeleteAuthProvider_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteByIDWithForce)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -351,13 +351,13 @@ func _AuthProviderService_DeleteAuthProvider_Handler(srv interface{}, ctx contex
 		Server:     srv,
 		FullMethod: AuthProviderService_DeleteAuthProvider_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).DeleteAuthProvider(ctx, req.(*DeleteByIDWithForce))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthProviderService_ExchangeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuthProviderService_ExchangeToken_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ExchangeTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -369,7 +369,7 @@ func _AuthProviderService_ExchangeToken_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: AuthProviderService_ExchangeToken_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(AuthProviderServiceServer).ExchangeToken(ctx, req.(*ExchangeTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)

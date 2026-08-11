@@ -88,7 +88,7 @@ func RegisterImageServiceServer(s grpc.ServiceRegistrar, srv ImageServiceServer)
 	s.RegisterService(&ImageService_ServiceDesc, srv)
 }
 
-func _ImageService_GetImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ImageService_GetImage_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetImageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func _ImageService_GetImage_Handler(srv interface{}, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: ImageService_GetImage_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ImageServiceServer).GetImage(ctx, req.(*GetImageRequest))
 	}
 	return interceptor(ctx, in, info, handler)

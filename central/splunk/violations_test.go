@@ -751,7 +751,7 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 
 	firstData := []struct {
 		key   string
-		value interface{}
+		value any
 	}{
 		// source
 		{key: ".violationInfo.violationTime", value: "2021-03-21T21:50:46.600080752Z"},
@@ -769,7 +769,7 @@ func (s *violationsTestSuite) TestNetworkAlert() {
 
 	secondData := []struct {
 		key   string
-		value interface{}
+		value any
 	}{
 		// source
 		{key: ".violationInfo.violationTime", value: "2021-03-21T21:50:46.741573591Z"},
@@ -1029,16 +1029,16 @@ func (s *violationsTestSuite) TestProcessAlertNotMatchingDeploymentInfo() {
 }
 
 // getViolations extracts "violations" attribute as a slice for later querying them with JSONPath.
-func (s *violationsTestSuite) getViolations(body map[string]interface{}) []interface{} {
+func (s *violationsTestSuite) getViolations(body map[string]any) []any {
 	violations := s.extr(body, ".violations")
 	if violations == nil {
 		return nil
 	}
-	return violations.([]interface{})
+	return violations.([]any)
 }
 
 // extr extracts value from input according to provided jsonPath. Returns nil if given attribute does not exist.
-func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface{} {
+func (s *violationsTestSuite) extr(input any, jsonPath string) any {
 	jp := jsonpath.New("")
 
 	err := jp.Parse("{" + jsonPath + "}")
@@ -1053,13 +1053,13 @@ func (s *violationsTestSuite) extr(input interface{}, jsonPath string) interface
 	return val[0][0].Interface()
 }
 
-func (s *violationsTestSuite) assertPresent(violation interface{}, prefix string, attributes ...string) {
+func (s *violationsTestSuite) assertPresent(violation any, prefix string, attributes ...string) {
 	for _, attr := range attributes {
 		s.NotEmpty(s.extr(violation, prefix+attr))
 	}
 }
 
-func (s *violationsTestSuite) checkViolationInfo(violation interface{}, extraAttrs ...string) {
+func (s *violationsTestSuite) checkViolationInfo(violation any, extraAttrs ...string) {
 	s.assertPresent(violation, ".violationInfo",
 		".violationId",
 		".violationMessage",
@@ -1068,12 +1068,12 @@ func (s *violationsTestSuite) checkViolationInfo(violation interface{}, extraAtt
 	s.assertPresent(violation, ".violationInfo", extraAttrs...)
 }
 
-func (s *violationsTestSuite) checkAlertInfo(violation interface{}, extraAttrs ...string) {
+func (s *violationsTestSuite) checkAlertInfo(violation any, extraAttrs ...string) {
 	s.assertPresent(violation, ".alertInfo", ".alertId")
 	s.assertPresent(violation, ".alertInfo", extraAttrs...)
 }
 
-func (s *violationsTestSuite) checkProcessInfo(violation interface{}) {
+func (s *violationsTestSuite) checkProcessInfo(violation any) {
 	s.assertPresent(violation, ".processInfo",
 		".processViolationId",
 		".processSignalId",
@@ -1085,7 +1085,7 @@ func (s *violationsTestSuite) checkProcessInfo(violation interface{}) {
 		".processLineageInfo")
 }
 
-func (s *violationsTestSuite) checkDeploymentInfo(violation interface{}) {
+func (s *violationsTestSuite) checkDeploymentInfo(violation any) {
 	s.assertPresent(violation, ".deploymentInfo",
 		".deploymentId",
 		".deploymentName",
@@ -1099,7 +1099,7 @@ func (s *violationsTestSuite) checkDeploymentInfo(violation interface{}) {
 		".deploymentAnnotations")
 }
 
-func (s *violationsTestSuite) checkResourceInfo(violation interface{}) {
+func (s *violationsTestSuite) checkResourceInfo(violation any) {
 	s.assertPresent(violation, ".resourceInfo",
 		".resourceType",
 		".name",
@@ -1107,7 +1107,7 @@ func (s *violationsTestSuite) checkResourceInfo(violation interface{}) {
 		".namespace")
 }
 
-func (s *violationsTestSuite) checkPolicy(violation interface{}) {
+func (s *violationsTestSuite) checkPolicy(violation any) {
 	s.assertPresent(violation, ".policyInfo",
 		".policyId",
 		".policyName",
@@ -1135,7 +1135,7 @@ func (s *violationsTestSuite) TestResponsePagination() {
 		}
 		for _, c := range cases {
 			s.Run(fmt.Sprintf("%v", c), func() {
-				violationsPaginated := make([]interface{}, 0, len(violationsNoPagination))
+				violationsPaginated := make([]any, 0, len(violationsNoPagination))
 				checkpoint := "2020-01-01T00:00:00Z"
 				iterations := 0
 				for ; ; iterations++ {
@@ -1166,7 +1166,7 @@ func (s *violationsTestSuite) TestCheckpointIteration() {
 	s.NotEmpty(violationsNoPagination)
 	s.sortViolationsByID(violationsNoPagination)
 
-	violationsPaginated := make([]interface{}, 0, len(violationsNoPagination))
+	violationsPaginated := make([]any, 0, len(violationsNoPagination))
 
 	// Get a part of violations from the first three alerts initially.
 	checkpoint := "2021-01-01T00:00:00Z__2021-02-15T19:04:36.712345678Z" // ToTimestamp in the middle of k8sAlert violations
@@ -1187,7 +1187,7 @@ func (s *violationsTestSuite) TestCheckpointIteration() {
 	s.Equal(violationsNoPagination, violationsPaginated)
 }
 
-func (s *violationsTestSuite) sortViolationsByID(violations []interface{}) {
+func (s *violationsTestSuite) sortViolationsByID(violations []any) {
 	sort.Slice(violations, func(i, j int) bool {
 		return s.extr(violations[i], ".violationInfo.violationId").(string) < s.extr(violations[j], ".violationInfo.violationId").(string)
 	})
@@ -1510,12 +1510,12 @@ func (rb *requestBuilder) runRequest(responseWriter http.ResponseWriter) {
 
 	handler.ServeHTTP(responseWriter, r)
 }
-func (rb *requestBuilder) runRequestAndGetBody() map[string]interface{} {
+func (rb *requestBuilder) runRequestAndGetBody() map[string]any {
 	w := httptest.NewRecorder()
 	rb.runRequest(w)
 	assert.Equal(rb.t, http.StatusOK, w.Code)
 
-	var parsed map[string]interface{}
+	var parsed map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &parsed)
 	assert.NoError(rb.t, err)
 

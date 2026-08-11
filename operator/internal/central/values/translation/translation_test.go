@@ -49,9 +49,9 @@ func TestTranslate(t *testing.T) {
 	configAsCodeComponentEnabled := platform.ConfigAsCodeComponentEnabled
 	telemetryEndpoint := "endpoint"
 	telemetryKey := "key"
-	telemetryDisabledKey := map[string]interface{}{
+	telemetryDisabledKey := map[string]any{
 		"enabled": false,
-		"storage": map[string]interface{}{"key": phonehome.DisabledKey}}
+		"storage": map[string]any{"key": phonehome.DisabledKey}}
 	dirtyVersion := "1.2.3-dirty"
 	releaseVersion := "1.2.3"
 
@@ -85,16 +85,16 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -122,22 +122,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
 				},
 			},
@@ -158,22 +158,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
 				},
 			},
@@ -194,22 +194,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": true,
 				},
 			},
@@ -225,16 +225,16 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -253,18 +253,18 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -282,18 +282,18 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{{ObjectMeta: metav1.ObjectMeta{Name: extensions.DefaultCentralDBPVCName}}},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -574,30 +574,30 @@ func TestTranslate(t *testing.T) {
 				),
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"additionalCAs": map[string]interface{}{
+				"additionalCAs": map[string]any{
 					"ca1-name": "ca1-content",
 					"ca2-name": "ca2-content",
 				},
-				"central": map[string]interface{}{
-					"defaultTLS": map[string]interface{}{
+				"central": map[string]any{
+					"defaultTLS": map[string]any{
 						"reference": "my-default-tls-secret",
 					},
-					"exposure": map[string]interface{}{
-						"loadBalancer": map[string]interface{}{
+					"exposure": map[string]any{
+						"loadBalancer": map[string]any{
 							"enabled": true,
 							"ip":      "1.1.1.1",
 							"port":    int32(12345),
 						},
-						"nodePort": map[string]interface{}{
+						"nodePort": map[string]any{
 							"enabled": true,
 							"port":    int32(23456),
 						},
-						"route": map[string]interface{}{
+						"route": map[string]any{
 							"enabled": true,
 						},
 					},
@@ -605,7 +605,7 @@ func TestTranslate(t *testing.T) {
 						"central-node-selector-label1": "central-node-selector-value1",
 						"central-node-selector-label2": "central-node-selector-value2",
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -616,32 +616,32 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": true,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "10",
 							"memory": "20",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "30",
 							"memory": "40",
 						},
 					},
-					"telemetry": map[string]interface{}{
+					"telemetry": map[string]any{
 						"enabled": true,
-						"storage": map[string]interface{}{
+						"storage": map[string]any{
 							"endpoint": "endpoint",
 							"key":      "key",
 						},
 					},
-					"declarativeConfiguration": map[string]interface{}{
-						"mounts": map[string]interface{}{
+					"declarativeConfiguration": map[string]any{
+						"mounts": map[string]any{
 							"configMaps": []string{
 								"config-map-1",
 								"config-map-2",
@@ -652,20 +652,20 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 					},
-					"notifierSecretsEncryption": map[string]interface{}{
+					"notifierSecretsEncryption": map[string]any{
 						"enabled": true,
 					},
 				},
-				"env": map[string]interface{}{
+				"env": map[string]any{
 					"offlineMode": true,
 				},
-				"imagePullSecrets": map[string]interface{}{
+				"imagePullSecrets": map[string]any{
 					"useExisting": []string{
 						"image-pull-secrets-secret1",
 						"image-pull-secrets-secret2",
 					},
 				},
-				"customize": map[string]interface{}{
+				"customize": map[string]any{
 					"annotations": map[string]string{
 						"customize-annotation1": "customize-annotation1-value",
 						"customize-annotation2": "customize-annotation2-value",
@@ -674,19 +674,19 @@ func TestTranslate(t *testing.T) {
 						"customize-label1": "customize-label1-value",
 						"customize-label2": "customize-label2-value",
 					},
-					"envVars": map[string]interface{}{
-						"customize-env-var1": map[string]interface{}{
+					"envVars": map[string]any{
+						"customize-env-var1": map[string]any{
 							"value": "customize-env-var1-value",
 						},
-						"customize-env-var2": map[string]interface{}{
+						"customize-env-var2": map[string]any{
 							"value": "customize-env-var2-value",
 						},
 					},
 				},
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"disable":  false,
 					"replicas": int32(7),
-					"autoscaling": map[string]interface{}{
+					"autoscaling": map[string]any{
 						"disable":     false,
 						"minReplicas": int32(6),
 						"maxReplicas": int32(8),
@@ -695,7 +695,7 @@ func TestTranslate(t *testing.T) {
 						"scanner-node-selector-label1": "scanner-node-selector-value1",
 						"scanner-node-selector-label2": "scanner-node-selector-value2",
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -709,7 +709,7 @@ func TestTranslate(t *testing.T) {
 						"scanner-db-node-selector-label1": "scanner-db-node-selector-value1",
 						"scanner-db-node-selector-label2": "scanner-db-node-selector-value2",
 					},
-					"dbTolerations": []map[string]interface{}{
+					"dbTolerations": []map[string]any{
 						{
 							"key":      "node.stackrox.io",
 							"operator": "Equal",
@@ -719,43 +719,43 @@ func TestTranslate(t *testing.T) {
 							"operator": "Exists",
 						},
 					},
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "50",
 							"memory": "60",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "70",
 							"memory": "80",
 						},
 					},
-					"dbResources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"dbResources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "90",
 							"memory": "100",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "110",
 							"memory": "120",
 						},
 					},
 					"exposeMonitoring": true,
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
-					"indexer": map[string]interface{}{
-						"autoscaling": map[string]interface{}{
+					"indexer": map[string]any{
+						"autoscaling": map[string]any{
 							"disable":     false,
 							"minReplicas": int32(6),
 							"maxReplicas": int32(8),
 						},
 						"replicas": int32(7),
-						"resources": map[string]interface{}{
-							"limits": map[string]interface{}{
+						"resources": map[string]any{
+							"limits": map[string]any{
 								"cpu":    "90",
 								"memory": "100",
 							},
-							"requests": map[string]interface{}{
+							"requests": map[string]any{
 								"cpu":    "110",
 								"memory": "120",
 							},
@@ -763,23 +763,23 @@ func TestTranslate(t *testing.T) {
 						"nodeSelector": map[string]string{
 							"scanner-v4-indexer-node-selector": "test",
 						},
-						"tolerations": []map[string]interface{}{
+						"tolerations": []map[string]any{
 							{"key": "scanner-v4-indexer-toleration", "operator": "Exists"},
 						},
 					},
-					"matcher": map[string]interface{}{
-						"autoscaling": map[string]interface{}{
+					"matcher": map[string]any{
+						"autoscaling": map[string]any{
 							"disable":     false,
 							"minReplicas": int32(6),
 							"maxReplicas": int32(8),
 						},
 						"replicas": int32(7),
-						"resources": map[string]interface{}{
-							"limits": map[string]interface{}{
+						"resources": map[string]any{
+							"limits": map[string]any{
 								"cpu":    "90",
 								"memory": "100",
 							},
-							"requests": map[string]interface{}{
+							"requests": map[string]any{
 								"cpu":    "110",
 								"memory": "120",
 							},
@@ -787,17 +787,17 @@ func TestTranslate(t *testing.T) {
 						"nodeSelector": map[string]string{
 							"scanner-v4-matcher-node-selector": "test",
 						},
-						"tolerations": []map[string]interface{}{
+						"tolerations": []map[string]any{
 							{"key": "scanner-v4-matcher-toleration", "operator": "Exists"},
 						},
 					},
-					"db": map[string]interface{}{
-						"resources": map[string]interface{}{
-							"limits": map[string]interface{}{
+					"db": map[string]any{
+						"resources": map[string]any{
+							"limits": map[string]any{
 								"cpu":    "90",
 								"memory": "100",
 							},
-							"requests": map[string]interface{}{
+							"requests": map[string]any{
 								"cpu":    "110",
 								"memory": "120",
 							},
@@ -805,11 +805,11 @@ func TestTranslate(t *testing.T) {
 						"nodeSelector": map[string]string{
 							"scanner-v4-db-node-selector": "test",
 						},
-						"tolerations": []map[string]interface{}{
+						"tolerations": []map[string]any{
 							{"key": "scanner-v4-db-toleration", "operator": "Exists"},
 						},
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":   "scanner-v4-db-pvc",
 								"createClaim": true,
 							},
@@ -817,7 +817,7 @@ func TestTranslate(t *testing.T) {
 					},
 					"exposeMonitoring": true,
 				},
-				"configAsCode": map[string]interface{}{
+				"configAsCode": map[string]any{
 					"enabled": true,
 				},
 			},
@@ -859,32 +859,32 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"configAsCode": map[string]interface{}{
+				"configAsCode": map[string]any{
 					"enabled": true,
 				},
-				"configController": map[string]interface{}{
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+				"configController": map[string]any{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "2",
 							"memory": "4Gi",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "500m",
 							"memory": "1Gi",
 						},
@@ -892,7 +892,7 @@ func TestTranslate(t *testing.T) {
 					"nodeSelector": map[string]string{
 						"node-type": "infra",
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node-role.kubernetes.io/infra",
 							"operator": "Exists",
@@ -939,30 +939,30 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"centralWorker": map[string]interface{}{
+				"centralWorker": map[string]any{
 					"enabled": true,
-					"resources": map[string]interface{}{
-						"limits": map[string]interface{}{
+					"resources": map[string]any{
+						"limits": map[string]any{
 							"cpu":    "2",
 							"memory": "4Gi",
 						},
-						"requests": map[string]interface{}{
+						"requests": map[string]any{
 							"cpu":    "500m",
 							"memory": "1Gi",
 						},
@@ -970,7 +970,7 @@ func TestTranslate(t *testing.T) {
 					"nodeSelector": map[string]string{
 						"node-type": "infra",
 					},
-					"tolerations": []map[string]interface{}{
+					"tolerations": []map[string]any{
 						{
 							"key":      "node-role.kubernetes.io/infra",
 							"operator": "Exists",
@@ -995,23 +995,23 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"centralWorker": map[string]interface{}{
+				"centralWorker": map[string]any{
 					"enabled": false,
 				},
 			},
@@ -1029,17 +1029,17 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -1077,17 +1077,17 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
 							"_backup": true,
-							"persistentVolumeClaim": map[string]interface{}{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":   "central-db-custom",
 								"createClaim": false,
 							},
@@ -1127,16 +1127,16 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":   "central-db-test",
 								"createClaim": false,
 							},
@@ -1177,19 +1177,19 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":   "central-db-test",
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -1219,19 +1219,19 @@ func TestTranslate(t *testing.T) {
 			},
 
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"claimName":   "central-db-test",
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -1260,22 +1260,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"scanner": map[string]interface{}{
+				"scanner": map[string]any{
 					"exposeMonitoring": false,
 				},
 			},
@@ -1301,22 +1301,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
-					"exposure": map[string]interface{}{
-						"route": map[string]interface{}{
+				"central": map[string]any{
+					"exposure": map[string]any{
+						"route": map[string]any{
 							"enabled": true,
 							"host":    "custom-route.stackrox.io",
 						},
 					},
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -1353,18 +1353,18 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
-					"exposure": map[string]interface{}{
-						"route": map[string]interface{}{
+				"central": map[string]any{
+					"exposure": map[string]any{
+						"route": map[string]any{
 							"enabled": true,
-							"reencrypt": map[string]interface{}{
+							"reencrypt": map[string]any{
 								"host": "custom-route.stackrox.io",
-								"tls": map[string]interface{}{
+								"tls": map[string]any{
 									"caCertificate":            "custom CA",
 									"certificate":              "custom cert",
 									"destinationCACertificate": "custom dest CA",
@@ -1374,9 +1374,9 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -1396,22 +1396,22 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"env": map[string]interface{}{
+				"env": map[string]any{
 					"managedServices": true,
 				},
 			},
@@ -1434,17 +1434,17 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -1463,19 +1463,19 @@ func TestTranslate(t *testing.T) {
 				version: dirtyVersion,
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"telemetry":        telemetryDisabledKey,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -1503,25 +1503,25 @@ func TestTranslate(t *testing.T) {
 				version: dirtyVersion,
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"telemetry": map[string]interface{}{
+					"telemetry": map[string]any{
 						"enabled": true,
-						"storage": map[string]interface{}{
+						"storage": map[string]any{
 							"endpoint": "endpoint",
 							"key":      "key",
 						},
 					},
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -1544,18 +1544,18 @@ func TestTranslate(t *testing.T) {
 				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
@@ -1575,22 +1575,22 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": false,
 				},
 			},
@@ -1609,22 +1609,22 @@ func TestTranslate(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
 					},
 				},
-				"monitoring": map[string]interface{}{
-					"openshift": map[string]interface{}{
+				"monitoring": map[string]any{
+					"openshift": map[string]any{
 						"enabled": true,
 					},
 				},
-				"scannerV4": map[string]interface{}{
+				"scannerV4": map[string]any{
 					"disable": true,
 				},
 			},
@@ -1857,12 +1857,12 @@ func TestTranslatePartialMatch(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"rolloutStrategy":  "RollingUpdate",
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},
@@ -1884,12 +1884,12 @@ func TestTranslatePartialMatch(t *testing.T) {
 				},
 			},
 			want: chartutil.Values{
-				"central": map[string]interface{}{
+				"central": map[string]any{
 					"exposeMonitoring": false,
 					"rolloutStrategy":  "Recreate",
-					"db": map[string]interface{}{
-						"persistence": map[string]interface{}{
-							"persistentVolumeClaim": map[string]interface{}{
+					"db": map[string]any{
+						"persistence": map[string]any{
+							"persistentVolumeClaim": map[string]any{
 								"createClaim": false,
 							},
 						},

@@ -153,7 +153,7 @@ func RegisterSignatureIntegrationServiceServer(s grpc.ServiceRegistrar, srv Sign
 	s.RegisterService(&SignatureIntegrationService_ServiceDesc, srv)
 }
 
-func _SignatureIntegrationService_ListSignatureIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_ListSignatureIntegrations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -165,13 +165,13 @@ func _SignatureIntegrationService_ListSignatureIntegrations_Handler(srv interfac
 		Server:     srv,
 		FullMethod: SignatureIntegrationService_ListSignatureIntegrations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SignatureIntegrationServiceServer).ListSignatureIntegrations(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SignatureIntegrationService_GetSignatureIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_GetSignatureIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -183,13 +183,13 @@ func _SignatureIntegrationService_GetSignatureIntegration_Handler(srv interface{
 		Server:     srv,
 		FullMethod: SignatureIntegrationService_GetSignatureIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SignatureIntegrationServiceServer).GetSignatureIntegration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SignatureIntegrationService_PostSignatureIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_PostSignatureIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.SignatureIntegration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -201,13 +201,13 @@ func _SignatureIntegrationService_PostSignatureIntegration_Handler(srv interface
 		Server:     srv,
 		FullMethod: SignatureIntegrationService_PostSignatureIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SignatureIntegrationServiceServer).PostSignatureIntegration(ctx, req.(*storage.SignatureIntegration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SignatureIntegrationService_PutSignatureIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_PutSignatureIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(storage.SignatureIntegration)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -219,13 +219,13 @@ func _SignatureIntegrationService_PutSignatureIntegration_Handler(srv interface{
 		Server:     srv,
 		FullMethod: SignatureIntegrationService_PutSignatureIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SignatureIntegrationServiceServer).PutSignatureIntegration(ctx, req.(*storage.SignatureIntegration))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SignatureIntegrationService_DeleteSignatureIntegration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SignatureIntegrationService_DeleteSignatureIntegration_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -237,7 +237,7 @@ func _SignatureIntegrationService_DeleteSignatureIntegration_Handler(srv interfa
 		Server:     srv,
 		FullMethod: SignatureIntegrationService_DeleteSignatureIntegration_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SignatureIntegrationServiceServer).DeleteSignatureIntegration(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

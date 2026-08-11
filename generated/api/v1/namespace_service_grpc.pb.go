@@ -100,7 +100,7 @@ func RegisterNamespaceServiceServer(s grpc.ServiceRegistrar, srv NamespaceServic
 	s.RegisterService(&NamespaceService_ServiceDesc, srv)
 }
 
-func _NamespaceService_GetNamespaces_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NamespaceService_GetNamespaces_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetNamespaceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -112,13 +112,13 @@ func _NamespaceService_GetNamespaces_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: NamespaceService_GetNamespaces_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(NamespaceServiceServer).GetNamespaces(ctx, req.(*GetNamespaceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NamespaceService_GetNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NamespaceService_GetNamespace_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func _NamespaceService_GetNamespace_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: NamespaceService_GetNamespace_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(NamespaceServiceServer).GetNamespace(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

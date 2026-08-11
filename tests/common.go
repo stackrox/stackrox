@@ -1424,13 +1424,13 @@ type collectT struct {
 	c *assert.CollectT
 }
 
-func (c *collectT) Fatalf(format string, args ...interface{}) {
+func (c *collectT) Fatalf(format string, args ...any) {
 	if c.t != nil {
 		c.t.Fatalf(format, args...)
 	}
 }
 
-func (c *collectT) Errorf(format string, args ...interface{}) {
+func (c *collectT) Errorf(format string, args ...any) {
 	if c.c != nil {
 		c.c.Errorf(format, args...)
 	}
@@ -1442,7 +1442,7 @@ func (c *collectT) FailNow() {
 	}
 }
 
-func (c *collectT) Logf(format string, values ...interface{}) {
+func (c *collectT) Logf(format string, values ...any) {
 	if c.t != nil {
 		c.t.Logf(format, values...)
 	}

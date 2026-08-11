@@ -119,7 +119,7 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetNamespace(),
@@ -174,7 +174,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetNamespace(),
 			obj.GetName(),

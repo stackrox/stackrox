@@ -99,7 +99,7 @@ func insertIntoClusterHealthStatuses(batch *pgx.Batch, obj *storage.ClusterHealt
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetSensorHealthStatus(),
@@ -158,7 +158,7 @@ func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetSensorHealthStatus(),
 			obj.GetCollectorHealthStatus(),

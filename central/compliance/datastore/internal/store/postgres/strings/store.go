@@ -94,7 +94,7 @@ func insertIntoComplianceStrings(batch *pgx.Batch, obj *storage.ComplianceString
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromComplianceStrings(ctx context.Context, s pgSearch.Deleter, tx *post
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil

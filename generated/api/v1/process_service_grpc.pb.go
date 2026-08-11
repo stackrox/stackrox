@@ -144,7 +144,7 @@ func RegisterProcessServiceServer(s grpc.ServiceRegistrar, srv ProcessServiceSer
 	s.RegisterService(&ProcessService_ServiceDesc, srv)
 }
 
-func _ProcessService_CountProcesses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProcessService_CountProcesses_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -156,13 +156,13 @@ func _ProcessService_CountProcesses_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: ProcessService_CountProcesses_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ProcessServiceServer).CountProcesses(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessService_GetProcessesByDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProcessService_GetProcessesByDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetProcessesByDeploymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -174,13 +174,13 @@ func _ProcessService_GetProcessesByDeployment_Handler(srv interface{}, ctx conte
 		Server:     srv,
 		FullMethod: ProcessService_GetProcessesByDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ProcessServiceServer).GetProcessesByDeployment(ctx, req.(*GetProcessesByDeploymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessService_GetGroupedProcessByDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProcessService_GetGroupedProcessByDeployment_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetProcessesByDeploymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -192,13 +192,13 @@ func _ProcessService_GetGroupedProcessByDeployment_Handler(srv interface{}, ctx 
 		Server:     srv,
 		FullMethod: ProcessService_GetGroupedProcessByDeployment_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ProcessServiceServer).GetGroupedProcessByDeployment(ctx, req.(*GetProcessesByDeploymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProcessService_GetGroupedProcessByDeploymentAndContainer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ProcessService_GetGroupedProcessByDeploymentAndContainer_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetProcessesByDeploymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -210,7 +210,7 @@ func _ProcessService_GetGroupedProcessByDeploymentAndContainer_Handler(srv inter
 		Server:     srv,
 		FullMethod: ProcessService_GetGroupedProcessByDeploymentAndContainer_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ProcessServiceServer).GetGroupedProcessByDeploymentAndContainer(ctx, req.(*GetProcessesByDeploymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)

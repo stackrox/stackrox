@@ -29,7 +29,7 @@ func (m *ServiceIdentityResponse) CloneVT() *ServiceIdentityResponse {
 	if rhs := m.Identities; rhs != nil {
 		tmpContainer := make([]*storage.ServiceIdentity, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ServiceIdentity
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -74,7 +74,7 @@ func (m *CreateServiceIdentityResponse) CloneVT() *CreateServiceIdentityResponse
 	}
 	r := new(CreateServiceIdentityResponse)
 	if rhs := m.Identity; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ServiceIdentity
 		}); ok {
 			r.Identity = vtpb.CloneVT()
@@ -165,7 +165,7 @@ func (this *ServiceIdentityResponse) EqualVT(that *ServiceIdentityResponse) bool
 			if q == nil {
 				q = &storage.ServiceIdentity{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ServiceIdentity) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -214,7 +214,7 @@ func (this *CreateServiceIdentityResponse) EqualVT(that *CreateServiceIdentityRe
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Identity).(interface {
+	if equal, ok := any(this.Identity).(interface {
 		EqualVT(*storage.ServiceIdentity) bool
 	}); ok {
 		if !equal.EqualVT(that.Identity) {
@@ -323,7 +323,7 @@ func (m *ServiceIdentityResponse) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.Identities) > 0 {
 		for iNdEx := len(m.Identities) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Identities[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Identities[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -438,7 +438,7 @@ func (m *CreateServiceIdentityResponse) MarshalToSizedBufferVT(dAtA []byte) (int
 		dAtA[i] = 0x12
 	}
 	if m.Identity != nil {
-		if vtmsg, ok := interface{}(m.Identity).(interface {
+		if vtmsg, ok := any(m.Identity).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -555,7 +555,7 @@ func (m *ServiceIdentityResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Identities) > 0 {
 		for _, e := range m.Identities {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -593,7 +593,7 @@ func (m *CreateServiceIdentityResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Identity != nil {
-		if size, ok := interface{}(m.Identity).(interface {
+		if size, ok := any(m.Identity).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -703,7 +703,7 @@ func (m *ServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Identities = append(m.Identities, &storage.ServiceIdentity{})
-			if unmarshal, ok := interface{}(m.Identities[len(m.Identities)-1]).(interface {
+			if unmarshal, ok := any(m.Identities[len(m.Identities)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -900,7 +900,7 @@ func (m *CreateServiceIdentityResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Identity == nil {
 				m.Identity = &storage.ServiceIdentity{}
 			}
-			if unmarshal, ok := interface{}(m.Identity).(interface {
+			if unmarshal, ok := any(m.Identity).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1231,7 +1231,7 @@ func (m *ServiceIdentityResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Identities = append(m.Identities, &storage.ServiceIdentity{})
-			if unmarshal, ok := interface{}(m.Identities[len(m.Identities)-1]).(interface {
+			if unmarshal, ok := any(m.Identities[len(m.Identities)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1432,7 +1432,7 @@ func (m *CreateServiceIdentityResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Identity == nil {
 				m.Identity = &storage.ServiceIdentity{}
 			}
-			if unmarshal, ok := interface{}(m.Identity).(interface {
+			if unmarshal, ok := any(m.Identity).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

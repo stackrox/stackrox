@@ -94,7 +94,7 @@ func insertIntoRoles(batch *pgx.Batch, obj *storage.Role) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetName(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetName(),
 			serialized,
 		}, nil

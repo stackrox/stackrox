@@ -219,7 +219,7 @@ func RegisterConfigServiceServer(s grpc.ServiceRegistrar, srv ConfigServiceServe
 	s.RegisterService(&ConfigService_ServiceDesc, srv)
 }
 
-func _ConfigService_GetPublicConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetPublicConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -231,13 +231,13 @@ func _ConfigService_GetPublicConfig_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: ConfigService_GetPublicConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetPublicConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetPrivateConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetPrivateConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -249,13 +249,13 @@ func _ConfigService_GetPrivateConfig_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: ConfigService_GetPrivateConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetPrivateConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetVulnerabilityExceptionConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetVulnerabilityExceptionConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -267,13 +267,13 @@ func _ConfigService_GetVulnerabilityExceptionConfig_Handler(srv interface{}, ctx
 		Server:     srv,
 		FullMethod: ConfigService_GetVulnerabilityExceptionConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetVulnerabilityExceptionConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_UpdateVulnerabilityExceptionConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_UpdateVulnerabilityExceptionConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateVulnerabilityExceptionConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -285,13 +285,13 @@ func _ConfigService_UpdateVulnerabilityExceptionConfig_Handler(srv interface{}, 
 		Server:     srv,
 		FullMethod: ConfigService_UpdateVulnerabilityExceptionConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).UpdateVulnerabilityExceptionConfig(ctx, req.(*UpdateVulnerabilityExceptionConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetPlatformComponentConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetPlatformComponentConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -303,13 +303,13 @@ func _ConfigService_GetPlatformComponentConfig_Handler(srv interface{}, ctx cont
 		Server:     srv,
 		FullMethod: ConfigService_GetPlatformComponentConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetPlatformComponentConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_UpdatePlatformComponentConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_UpdatePlatformComponentConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PutPlatformComponentConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -321,13 +321,13 @@ func _ConfigService_UpdatePlatformComponentConfig_Handler(srv interface{}, ctx c
 		Server:     srv,
 		FullMethod: ConfigService_UpdatePlatformComponentConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).UpdatePlatformComponentConfig(ctx, req.(*PutPlatformComponentConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -339,13 +339,13 @@ func _ConfigService_GetConfig_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: ConfigService_GetConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_PutConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_PutConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(PutConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -357,13 +357,13 @@ func _ConfigService_PutConfig_Handler(srv interface{}, ctx context.Context, dec 
 		Server:     srv,
 		FullMethod: ConfigService_PutConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).PutConfig(ctx, req.(*PutConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ConfigService_GetDefaultRedHatLayeredProductsRegex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ConfigService_GetDefaultRedHatLayeredProductsRegex_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -375,7 +375,7 @@ func _ConfigService_GetDefaultRedHatLayeredProductsRegex_Handler(srv interface{}
 		Server:     srv,
 		FullMethod: ConfigService_GetDefaultRedHatLayeredProductsRegex_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ConfigServiceServer).GetDefaultRedHatLayeredProductsRegex(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -94,7 +94,7 @@ func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetProps().GetId(),
 		obj.GetProps().GetAuthProviderId(),
@@ -149,7 +149,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetProps().GetId(),
 			obj.GetProps().GetAuthProviderId(),
 			obj.GetProps().GetKey(),

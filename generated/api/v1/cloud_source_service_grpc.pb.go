@@ -194,7 +194,7 @@ func RegisterCloudSourcesServiceServer(s grpc.ServiceRegistrar, srv CloudSources
 	s.RegisterService(&CloudSourcesService_ServiceDesc, srv)
 }
 
-func _CloudSourcesService_CountCloudSources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_CountCloudSources_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CountCloudSourcesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -206,13 +206,13 @@ func _CloudSourcesService_CountCloudSources_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CloudSourcesService_CountCloudSources_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).CountCloudSources(ctx, req.(*CountCloudSourcesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_GetCloudSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_GetCloudSource_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetCloudSourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -224,13 +224,13 @@ func _CloudSourcesService_GetCloudSource_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: CloudSourcesService_GetCloudSource_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).GetCloudSource(ctx, req.(*GetCloudSourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_ListCloudSources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_ListCloudSources_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ListCloudSourcesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -242,13 +242,13 @@ func _CloudSourcesService_ListCloudSources_Handler(srv interface{}, ctx context.
 		Server:     srv,
 		FullMethod: CloudSourcesService_ListCloudSources_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).ListCloudSources(ctx, req.(*ListCloudSourcesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_CreateCloudSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_CreateCloudSource_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CreateCloudSourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -260,13 +260,13 @@ func _CloudSourcesService_CreateCloudSource_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CloudSourcesService_CreateCloudSource_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).CreateCloudSource(ctx, req.(*CreateCloudSourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_UpdateCloudSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_UpdateCloudSource_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateCloudSourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -278,13 +278,13 @@ func _CloudSourcesService_UpdateCloudSource_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CloudSourcesService_UpdateCloudSource_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).UpdateCloudSource(ctx, req.(*UpdateCloudSourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_DeleteCloudSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_DeleteCloudSource_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DeleteCloudSourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -296,13 +296,13 @@ func _CloudSourcesService_DeleteCloudSource_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: CloudSourcesService_DeleteCloudSource_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).DeleteCloudSource(ctx, req.(*DeleteCloudSourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CloudSourcesService_TestCloudSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudSourcesService_TestCloudSource_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(TestCloudSourceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -314,7 +314,7 @@ func _CloudSourcesService_TestCloudSource_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: CloudSourcesService_TestCloudSource_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CloudSourcesServiceServer).TestCloudSource(ctx, req.(*TestCloudSourceRequest))
 	}
 	return interceptor(ctx, in, info, handler)

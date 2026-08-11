@@ -296,7 +296,7 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     }
     {{end}}
 
-    values := []interface{} {
+    values := []any {
         // parent primary keys start
         {{- template "insertValues" $schema }}
     }
@@ -373,7 +373,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         }
         {{end}}
 
-        return []interface{}{
+        return []any{
             {{- template "insertValues" $schema }}
         }, nil
     })

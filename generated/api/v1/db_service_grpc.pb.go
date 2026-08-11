@@ -132,7 +132,7 @@ func RegisterDBServiceServer(s grpc.ServiceRegistrar, srv DBServiceServer) {
 	s.RegisterService(&DBService_ServiceDesc, srv)
 }
 
-func _DBService_GetExportCapabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DBService_GetExportCapabilities_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -144,13 +144,13 @@ func _DBService_GetExportCapabilities_Handler(srv interface{}, ctx context.Conte
 		Server:     srv,
 		FullMethod: DBService_GetExportCapabilities_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DBServiceServer).GetExportCapabilities(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DBService_GetActiveRestoreProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DBService_GetActiveRestoreProcess_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -162,13 +162,13 @@ func _DBService_GetActiveRestoreProcess_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: DBService_GetActiveRestoreProcess_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DBServiceServer).GetActiveRestoreProcess(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DBService_InterruptRestoreProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DBService_InterruptRestoreProcess_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(InterruptDBRestoreProcessRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -180,13 +180,13 @@ func _DBService_InterruptRestoreProcess_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: DBService_InterruptRestoreProcess_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DBServiceServer).InterruptRestoreProcess(ctx, req.(*InterruptDBRestoreProcessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DBService_CancelRestoreProcess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DBService_CancelRestoreProcess_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -198,7 +198,7 @@ func _DBService_CancelRestoreProcess_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: DBService_CancelRestoreProcess_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DBServiceServer).CancelRestoreProcess(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

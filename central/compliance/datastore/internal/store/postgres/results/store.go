@@ -120,7 +120,7 @@ func insertIntoComplianceRunResults(batch *pgx.Batch, obj *storage.ComplianceRun
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetRunMetadata().GetRunId(),
 		obj.GetRunMetadata().GetStandardId(),
@@ -173,7 +173,7 @@ func copyFromComplianceRunResults(ctx context.Context, s pgSearch.Deleter, tx *p
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetRunMetadata().GetRunId(),
 			obj.GetRunMetadata().GetStandardId(),
 			pgutils.NilOrUUID(obj.GetRunMetadata().GetClusterId()),

@@ -98,7 +98,7 @@ func insertIntoNodeCves(batch *pgx.Batch, obj *storage.NodeCVE) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetCveBaseInfo().GetCve(),
@@ -171,7 +171,7 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),

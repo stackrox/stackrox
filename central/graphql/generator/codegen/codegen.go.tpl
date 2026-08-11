@@ -149,7 +149,7 @@ func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}(ctx context.Cont
 {{end}}
 {{- range $ud := $td.Data.UnionData}}
 type {{lower $td.Data.Name}}{{$ud.Name}}Resolver struct {
-	resolver interface{}
+	resolver any
 }
 
 func (resolver *{{lower $td.Data.Name}}Resolver) {{$ud.Name}}() *{{lower $td.Data.Name}}{{$ud.Name}}Resolver {

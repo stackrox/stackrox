@@ -28,7 +28,7 @@ func (m *BaselineSync) CloneVT() *BaselineSync {
 	if rhs := m.Baselines; rhs != nil {
 		tmpContainer := make([]*storage.ProcessBaseline, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ProcessBaseline
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -67,7 +67,7 @@ func (this *BaselineSync) EqualVT(that *BaselineSync) bool {
 			if q == nil {
 				q = &storage.ProcessBaseline{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ProcessBaseline) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -120,7 +120,7 @@ func (m *BaselineSync) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Baselines) > 0 {
 		for iNdEx := len(m.Baselines) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Baselines[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Baselines[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -153,7 +153,7 @@ func (m *BaselineSync) SizeVT() (n int) {
 	_ = l
 	if len(m.Baselines) > 0 {
 		for _, e := range m.Baselines {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -226,7 +226,7 @@ func (m *BaselineSync) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -319,7 +319,7 @@ func (m *BaselineSync) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Baselines = append(m.Baselines, &storage.ProcessBaseline{})
-			if unmarshal, ok := interface{}(m.Baselines[len(m.Baselines)-1]).(interface {
+			if unmarshal, ok := any(m.Baselines[len(m.Baselines)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

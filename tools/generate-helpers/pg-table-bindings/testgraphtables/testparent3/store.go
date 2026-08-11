@@ -97,7 +97,7 @@ func insertIntoTestParent3(batch *pgx.Batch, obj *storage.TestParent3) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetParentId(),
@@ -148,7 +148,7 @@ func copyFromTestParent3(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetParentId(),
 			obj.GetVal(),

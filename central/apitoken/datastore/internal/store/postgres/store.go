@@ -98,7 +98,7 @@ func insertIntoAPITokens(batch *pgx.Batch, obj *storage.TokenMetadata) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		protocompat.NilOrTime(obj.GetExpiration()),
@@ -149,7 +149,7 @@ func copyFromAPITokens(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			protocompat.NilOrTime(obj.GetExpiration()),
 			obj.GetRevoked(),

@@ -95,7 +95,7 @@ func insertIntoBaseImageTags(batch *pgx.Batch, obj *storage.BaseImageTag) error 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetBaseImageRepositoryId()),
@@ -146,7 +146,7 @@ func copyFromBaseImageTags(ctx context.Context, s pgSearch.Deleter, tx *postgres
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			pgutils.NilOrUUID(obj.GetBaseImageRepositoryId()),
 			obj.GetTag(),

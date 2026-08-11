@@ -119,7 +119,7 @@ func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -151,7 +151,7 @@ func insertIntoRoleBindings(batch *pgx.Batch, obj *storage.K8SRoleBinding) error
 
 func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, roleBindingID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(roleBindingID),
 		idx,
@@ -208,7 +208,7 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			obj.GetNamespace(),
@@ -255,7 +255,7 @@ func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *p
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(roleBindingID),
 			idx,
 			obj.GetKind(),

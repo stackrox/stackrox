@@ -932,7 +932,7 @@ func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.Test
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetKey(),
 		obj.GetName(),
@@ -957,7 +957,7 @@ func insertIntoTestSingleKeyStructsWithCache(batch *pgx.Batch, obj *storage.Test
 // copied from tools/generate-helpers/pg-table-bindings/test/postgres/store.go
 func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...*storage.TestSingleKeyStruct) error {
 	batchSize := min(len(objs), MaxBatchSize)
-	inputRows := make([][]interface{}, 0, batchSize)
+	inputRows := make([][]any, 0, batchSize)
 
 	// This is a copy, so first we must delete the rows and re-add them
 	// Which is essentially the desired behaviour of an upsert.
@@ -989,7 +989,7 @@ func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *p
 			return marshalErr
 		}
 
-		inputRows = append(inputRows, []interface{}{
+		inputRows = append(inputRows, []any{
 			obj.GetKey(),
 			obj.GetName(),
 			obj.GetStringSlice(),

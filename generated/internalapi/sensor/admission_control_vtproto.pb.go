@@ -35,7 +35,7 @@ func (m *AdmissionControlSettings) CloneVT() *AdmissionControlSettings {
 	r.ClusterId = m.ClusterId
 	r.FlattenImageData = m.FlattenImageData
 	if rhs := m.ClusterConfig; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.DynamicClusterConfig
 		}); ok {
 			r.ClusterConfig = vtpb.CloneVT()
@@ -44,14 +44,14 @@ func (m *AdmissionControlSettings) CloneVT() *AdmissionControlSettings {
 		}
 	}
 	if rhs := m.EnforcedDeployTimePolicies; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.PolicyList }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.PolicyList }); ok {
 			r.EnforcedDeployTimePolicies = vtpb.CloneVT()
 		} else {
 			r.EnforcedDeployTimePolicies = proto.Clone(rhs).(*storage.PolicyList)
 		}
 	}
 	if rhs := m.RuntimePolicies; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.PolicyList }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.PolicyList }); ok {
 			r.RuntimePolicies = vtpb.CloneVT()
 		} else {
 			r.RuntimePolicies = proto.Clone(rhs).(*storage.PolicyList)
@@ -99,7 +99,7 @@ func (m *AdmissionControlAlerts) CloneVT() *AdmissionControlAlerts {
 	if rhs := m.AlertResults; rhs != nil {
 		tmpContainer := make([]*central.AlertResults, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *central.AlertResults }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *central.AlertResults }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*central.AlertResults)
@@ -162,7 +162,7 @@ func (m *AdmCtrlUpdateResourceRequest_Deployment) CloneVT() isAdmCtrlUpdateResou
 	}
 	r := new(AdmCtrlUpdateResourceRequest_Deployment)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
@@ -177,7 +177,7 @@ func (m *AdmCtrlUpdateResourceRequest_Pod) CloneVT() isAdmCtrlUpdateResourceRequ
 	}
 	r := new(AdmCtrlUpdateResourceRequest_Pod)
 	if rhs := m.Pod; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Pod }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Pod }); ok {
 			r.Pod = vtpb.CloneVT()
 		} else {
 			r.Pod = proto.Clone(rhs).(*storage.Pod)
@@ -192,7 +192,7 @@ func (m *AdmCtrlUpdateResourceRequest_Namespace) CloneVT() isAdmCtrlUpdateResour
 	}
 	r := new(AdmCtrlUpdateResourceRequest_Namespace)
 	if rhs := m.Namespace; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.NamespaceMetadata
 		}); ok {
 			r.Namespace = vtpb.CloneVT()
@@ -229,7 +229,7 @@ func (m *AdmCtrlImageCacheInvalidation) CloneVT() *AdmCtrlImageCacheInvalidation
 	if rhs := m.ImageKeys; rhs != nil {
 		tmpContainer := make([]*central.ImageKey, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *central.ImageKey }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *central.ImageKey }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*central.ImageKey)
@@ -254,7 +254,7 @@ func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.ClusterConfig).(interface {
+	if equal, ok := any(this.ClusterConfig).(interface {
 		EqualVT(*storage.DynamicClusterConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.ClusterConfig) {
@@ -263,7 +263,7 @@ func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bo
 	} else if !proto.Equal(this.ClusterConfig, that.ClusterConfig) {
 		return false
 	}
-	if equal, ok := interface{}(this.EnforcedDeployTimePolicies).(interface {
+	if equal, ok := any(this.EnforcedDeployTimePolicies).(interface {
 		EqualVT(*storage.PolicyList) bool
 	}); ok {
 		if !equal.EqualVT(that.EnforcedDeployTimePolicies) {
@@ -284,7 +284,7 @@ func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bo
 	if this.ClusterId != that.ClusterId {
 		return false
 	}
-	if equal, ok := interface{}(this.RuntimePolicies).(interface {
+	if equal, ok := any(this.RuntimePolicies).(interface {
 		EqualVT(*storage.PolicyList) bool
 	}); ok {
 		if !equal.EqualVT(that.RuntimePolicies) {
@@ -352,7 +352,7 @@ func (this *AdmissionControlAlerts) EqualVT(that *AdmissionControlAlerts) bool {
 			if q == nil {
 				q = &central.AlertResults{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*central.AlertResults) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -438,7 +438,7 @@ func (this *AdmCtrlUpdateResourceRequest_Deployment) EqualVT(thatIface isAdmCtrl
 		if q == nil {
 			q = &storage.Deployment{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.Deployment) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -469,7 +469,7 @@ func (this *AdmCtrlUpdateResourceRequest_Pod) EqualVT(thatIface isAdmCtrlUpdateR
 		if q == nil {
 			q = &storage.Pod{}
 		}
-		if equal, ok := interface{}(p).(interface{ EqualVT(*storage.Pod) bool }); ok {
+		if equal, ok := any(p).(interface{ EqualVT(*storage.Pod) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -498,7 +498,7 @@ func (this *AdmCtrlUpdateResourceRequest_Namespace) EqualVT(thatIface isAdmCtrlU
 		if q == nil {
 			q = &storage.NamespaceMetadata{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.NamespaceMetadata) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -579,7 +579,7 @@ func (this *AdmCtrlImageCacheInvalidation) EqualVT(that *AdmCtrlImageCacheInvali
 			if q == nil {
 				q = &central.ImageKey{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*central.ImageKey) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*central.ImageKey) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -639,7 +639,7 @@ func (m *AdmissionControlSettings) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x40
 	}
 	if m.RuntimePolicies != nil {
-		if vtmsg, ok := interface{}(m.RuntimePolicies).(interface {
+		if vtmsg, ok := any(m.RuntimePolicies).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -692,7 +692,7 @@ func (m *AdmissionControlSettings) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x1a
 	}
 	if m.EnforcedDeployTimePolicies != nil {
-		if vtmsg, ok := interface{}(m.EnforcedDeployTimePolicies).(interface {
+		if vtmsg, ok := any(m.EnforcedDeployTimePolicies).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -714,7 +714,7 @@ func (m *AdmissionControlSettings) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		dAtA[i] = 0x12
 	}
 	if m.ClusterConfig != nil {
-		if vtmsg, ok := interface{}(m.ClusterConfig).(interface {
+		if vtmsg, ok := any(m.ClusterConfig).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -822,7 +822,7 @@ func (m *AdmissionControlAlerts) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	}
 	if len(m.AlertResults) > 0 {
 		for iNdEx := len(m.AlertResults) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.AlertResults[iNdEx]).(interface {
+			if vtmsg, ok := any(m.AlertResults[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -935,7 +935,7 @@ func (m *AdmCtrlUpdateResourceRequest_Deployment) MarshalToVT(dAtA []byte) (int,
 func (m *AdmCtrlUpdateResourceRequest_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -970,7 +970,7 @@ func (m *AdmCtrlUpdateResourceRequest_Pod) MarshalToVT(dAtA []byte) (int, error)
 func (m *AdmCtrlUpdateResourceRequest_Pod) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Pod != nil {
-		if vtmsg, ok := interface{}(m.Pod).(interface {
+		if vtmsg, ok := any(m.Pod).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1005,7 +1005,7 @@ func (m *AdmCtrlUpdateResourceRequest_Namespace) MarshalToVT(dAtA []byte) (int, 
 func (m *AdmCtrlUpdateResourceRequest_Namespace) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Namespace != nil {
-		if vtmsg, ok := interface{}(m.Namespace).(interface {
+		if vtmsg, ok := any(m.Namespace).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1110,7 +1110,7 @@ func (m *AdmCtrlImageCacheInvalidation) MarshalToSizedBufferVT(dAtA []byte) (int
 	}
 	if len(m.ImageKeys) > 0 {
 		for iNdEx := len(m.ImageKeys) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.ImageKeys[iNdEx]).(interface {
+			if vtmsg, ok := any(m.ImageKeys[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1142,7 +1142,7 @@ func (m *AdmissionControlSettings) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ClusterConfig != nil {
-		if size, ok := interface{}(m.ClusterConfig).(interface {
+		if size, ok := any(m.ClusterConfig).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1152,7 +1152,7 @@ func (m *AdmissionControlSettings) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.EnforcedDeployTimePolicies != nil {
-		if size, ok := interface{}(m.EnforcedDeployTimePolicies).(interface {
+		if size, ok := any(m.EnforcedDeployTimePolicies).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1178,7 +1178,7 @@ func (m *AdmissionControlSettings) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.RuntimePolicies != nil {
-		if size, ok := interface{}(m.RuntimePolicies).(interface {
+		if size, ok := any(m.RuntimePolicies).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1220,7 +1220,7 @@ func (m *AdmissionControlAlerts) SizeVT() (n int) {
 	_ = l
 	if len(m.AlertResults) > 0 {
 		for _, e := range m.AlertResults {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1267,7 +1267,7 @@ func (m *AdmCtrlUpdateResourceRequest_Deployment) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1287,7 +1287,7 @@ func (m *AdmCtrlUpdateResourceRequest_Pod) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Pod != nil {
-		if size, ok := interface{}(m.Pod).(interface {
+		if size, ok := any(m.Pod).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1307,7 +1307,7 @@ func (m *AdmCtrlUpdateResourceRequest_Namespace) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Namespace != nil {
-		if size, ok := interface{}(m.Namespace).(interface {
+		if size, ok := any(m.Namespace).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1356,7 +1356,7 @@ func (m *AdmCtrlImageCacheInvalidation) SizeVT() (n int) {
 	_ = l
 	if len(m.ImageKeys) > 0 {
 		for _, e := range m.ImageKeys {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1431,7 +1431,7 @@ func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error {
 			if m.ClusterConfig == nil {
 				m.ClusterConfig = &storage.DynamicClusterConfig{}
 			}
-			if unmarshal, ok := interface{}(m.ClusterConfig).(interface {
+			if unmarshal, ok := any(m.ClusterConfig).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1475,7 +1475,7 @@ func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error {
 			if m.EnforcedDeployTimePolicies == nil {
 				m.EnforcedDeployTimePolicies = &storage.PolicyList{}
 			}
-			if unmarshal, ok := interface{}(m.EnforcedDeployTimePolicies).(interface {
+			if unmarshal, ok := any(m.EnforcedDeployTimePolicies).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1651,7 +1651,7 @@ func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error {
 			if m.RuntimePolicies == nil {
 				m.RuntimePolicies = &storage.PolicyList{}
 			}
-			if unmarshal, ok := interface{}(m.RuntimePolicies).(interface {
+			if unmarshal, ok := any(m.RuntimePolicies).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1942,7 +1942,7 @@ func (m *AdmissionControlAlerts) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AlertResults = append(m.AlertResults, &central.AlertResults{})
-			if unmarshal, ok := interface{}(m.AlertResults[len(m.AlertResults)-1]).(interface {
+			if unmarshal, ok := any(m.AlertResults[len(m.AlertResults)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2105,7 +2105,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Deployment); ok {
-				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
+				if unmarshal, ok := any(oneof.Deployment).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2118,7 +2118,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2162,7 +2162,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Pod); ok {
-				if unmarshal, ok := interface{}(oneof.Pod).(interface {
+				if unmarshal, ok := any(oneof.Pod).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2175,7 +2175,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Pod{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2219,7 +2219,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Namespace); ok {
-				if unmarshal, ok := interface{}(oneof.Namespace).(interface {
+				if unmarshal, ok := any(oneof.Namespace).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2232,7 +2232,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NamespaceMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2409,7 +2409,7 @@ func (m *AdmCtrlImageCacheInvalidation) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ImageKeys = append(m.ImageKeys, &central.ImageKey{})
-			if unmarshal, ok := interface{}(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
+			if unmarshal, ok := any(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2504,7 +2504,7 @@ func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.ClusterConfig == nil {
 				m.ClusterConfig = &storage.DynamicClusterConfig{}
 			}
-			if unmarshal, ok := interface{}(m.ClusterConfig).(interface {
+			if unmarshal, ok := any(m.ClusterConfig).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2548,7 +2548,7 @@ func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.EnforcedDeployTimePolicies == nil {
 				m.EnforcedDeployTimePolicies = &storage.PolicyList{}
 			}
-			if unmarshal, ok := interface{}(m.EnforcedDeployTimePolicies).(interface {
+			if unmarshal, ok := any(m.EnforcedDeployTimePolicies).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2736,7 +2736,7 @@ func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.RuntimePolicies == nil {
 				m.RuntimePolicies = &storage.PolicyList{}
 			}
-			if unmarshal, ok := interface{}(m.RuntimePolicies).(interface {
+			if unmarshal, ok := any(m.RuntimePolicies).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3035,7 +3035,7 @@ func (m *AdmissionControlAlerts) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.AlertResults = append(m.AlertResults, &central.AlertResults{})
-			if unmarshal, ok := interface{}(m.AlertResults[len(m.AlertResults)-1]).(interface {
+			if unmarshal, ok := any(m.AlertResults[len(m.AlertResults)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3198,7 +3198,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Deployment); ok {
-				if unmarshal, ok := interface{}(oneof.Deployment).(interface {
+				if unmarshal, ok := any(oneof.Deployment).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3211,7 +3211,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Deployment{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3255,7 +3255,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Pod); ok {
-				if unmarshal, ok := interface{}(oneof.Pod).(interface {
+				if unmarshal, ok := any(oneof.Pod).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3268,7 +3268,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.Pod{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3312,7 +3312,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_Namespace); ok {
-				if unmarshal, ok := interface{}(oneof.Namespace).(interface {
+				if unmarshal, ok := any(oneof.Namespace).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3325,7 +3325,7 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.NamespaceMetadata{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3502,7 +3502,7 @@ func (m *AdmCtrlImageCacheInvalidation) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ImageKeys = append(m.ImageKeys, &central.ImageKey{})
-			if unmarshal, ok := interface{}(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
+			if unmarshal, ok := any(m.ImageKeys[len(m.ImageKeys)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

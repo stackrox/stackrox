@@ -45,7 +45,7 @@ func (m *Signal_ProcessSignal) CloneVT() isSignal_Signal {
 	}
 	r := new(Signal_ProcessSignal)
 	if rhs := m.ProcessSignal; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.ProcessSignal }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.ProcessSignal }); ok {
 			r.ProcessSignal = vtpb.CloneVT()
 		} else {
 			r.ProcessSignal = proto.Clone(rhs).(*storage.ProcessSignal)
@@ -98,7 +98,7 @@ func (this *Signal_ProcessSignal) EqualVT(thatIface isSignal_Signal) bool {
 		if q == nil {
 			q = &storage.ProcessSignal{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.ProcessSignal) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -161,7 +161,7 @@ func (m *Signal_ProcessSignal) MarshalToVT(dAtA []byte) (int, error) {
 func (m *Signal_ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.ProcessSignal != nil {
-		if vtmsg, ok := interface{}(m.ProcessSignal).(interface {
+		if vtmsg, ok := any(m.ProcessSignal).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -208,7 +208,7 @@ func (m *Signal_ProcessSignal) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.ProcessSignal != nil {
-		if size, ok := interface{}(m.ProcessSignal).(interface {
+		if size, ok := any(m.ProcessSignal).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -280,7 +280,7 @@ func (m *Signal) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Signal.(*Signal_ProcessSignal); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessSignal).(interface {
+				if unmarshal, ok := any(oneof.ProcessSignal).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -293,7 +293,7 @@ func (m *Signal) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProcessSignal{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -388,7 +388,7 @@ func (m *Signal) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Signal.(*Signal_ProcessSignal); ok {
-				if unmarshal, ok := interface{}(oneof.ProcessSignal).(interface {
+				if unmarshal, ok := any(oneof.ProcessSignal).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -401,7 +401,7 @@ func (m *Signal) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.ProcessSignal{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

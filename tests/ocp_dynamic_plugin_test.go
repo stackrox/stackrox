@@ -242,7 +242,7 @@ func (s *OCPPluginSuite) TestPluginManifest() {
 
 		bodyBytes, err := io.ReadAll(resp.Body)
 		require.NoError(c, err, "reading plugin manifest response body")
-		var manifest map[string]interface{}
+		var manifest map[string]any
 		require.NoError(c, json.Unmarshal(bodyBytes, &manifest), "unmarshaling plugin manifest JSON")
 		assert.Contains(c, manifest, "name", "plugin manifest must contain a 'name' field")
 		assert.Contains(c, manifest, "version", "plugin manifest must contain a 'version' field")

@@ -97,7 +97,7 @@ func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetVal(),
@@ -124,7 +124,7 @@ func insertIntoTestGrandparents(batch *pgx.Batch, obj *storage.TestGrandparent) 
 
 func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded, testGrandparentID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		testGrandparentID,
 		idx,
@@ -149,7 +149,7 @@ func insertIntoTestGrandparentsEmbeddeds(batch *pgx.Batch, obj *storage.TestGran
 
 func insertIntoTestGrandparentsEmbeddedsEmbedded2(batch *pgx.Batch, obj *storage.TestGrandparent_Embedded_Embedded2, testGrandparentID string, testGrandparentEmbeddedIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		testGrandparentID,
 		testGrandparentEmbeddedIdx,
@@ -201,7 +201,7 @@ func copyFromTestGrandparents(ctx context.Context, s pgSearch.Deleter, tx *postg
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetVal(),
 			obj.GetPriority(),
@@ -242,7 +242,7 @@ func copyFromTestGrandparentsEmbeddeds(ctx context.Context, s pgSearch.Deleter, 
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			testGrandparentID,
 			idx,
 			obj.GetVal(),
@@ -282,7 +282,7 @@ func copyFromTestGrandparentsEmbeddedsEmbedded2(ctx context.Context, s pgSearch.
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			testGrandparentID,
 			testGrandparentEmbeddedIdx,
 			idx,

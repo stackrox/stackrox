@@ -100,7 +100,7 @@ func insertIntoTestSingleKeyStructs(batch *pgx.Batch, obj *storage.TestSingleKey
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetKey(),
 		obj.GetName(),
@@ -169,7 +169,7 @@ func copyFromTestSingleKeyStructs(ctx context.Context, s pgSearch.Deleter, tx *p
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetKey(),
 			obj.GetName(),
 			obj.GetStringSlice(),

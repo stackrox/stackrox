@@ -146,7 +146,7 @@ type Rows struct {
 }
 
 // NewRows allows Rows to be created from a
-// sql interface{} slice or from the CSV string and
+// sql any slice or from the CSV string and
 // to be used as sql driver.Rows.
 // Use Sqlmock.NewRows instead if using a custom converter
 func NewRows(columns []string) *Rows {
@@ -180,7 +180,7 @@ func (r *Rows) RowError(row int, err error) *Rows {
 	return r
 }
 
-// AddRow composed of database interface{} slice
+// AddRow composed of database any slice
 // return the same instance to perform subsequent actions.
 // Note that the number of values must match the number
 // of columns

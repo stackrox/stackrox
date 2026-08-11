@@ -28,7 +28,7 @@ func (m *ListMitreAttackVectorsResponse) CloneVT() *ListMitreAttackVectorsRespon
 	if rhs := m.MitreAttackVectors; rhs != nil {
 		tmpContainer := make([]*storage.MitreAttackVector, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.MitreAttackVector
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -55,7 +55,7 @@ func (m *GetMitreVectorResponse) CloneVT() *GetMitreVectorResponse {
 	}
 	r := new(GetMitreVectorResponse)
 	if rhs := m.MitreAttackVector; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.MitreAttackVector
 		}); ok {
 			r.MitreAttackVector = vtpb.CloneVT()
@@ -92,7 +92,7 @@ func (this *ListMitreAttackVectorsResponse) EqualVT(that *ListMitreAttackVectors
 			if q == nil {
 				q = &storage.MitreAttackVector{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.MitreAttackVector) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -119,7 +119,7 @@ func (this *GetMitreVectorResponse) EqualVT(that *GetMitreVectorResponse) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.MitreAttackVector).(interface {
+	if equal, ok := any(this.MitreAttackVector).(interface {
 		EqualVT(*storage.MitreAttackVector) bool
 	}); ok {
 		if !equal.EqualVT(that.MitreAttackVector) {
@@ -170,7 +170,7 @@ func (m *ListMitreAttackVectorsResponse) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	if len(m.MitreAttackVectors) > 0 {
 		for iNdEx := len(m.MitreAttackVectors) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.MitreAttackVectors[iNdEx]).(interface {
+			if vtmsg, ok := any(m.MitreAttackVectors[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -226,7 +226,7 @@ func (m *GetMitreVectorResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.MitreAttackVector != nil {
-		if vtmsg, ok := interface{}(m.MitreAttackVector).(interface {
+		if vtmsg, ok := any(m.MitreAttackVector).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -258,7 +258,7 @@ func (m *ListMitreAttackVectorsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.MitreAttackVectors) > 0 {
 		for _, e := range m.MitreAttackVectors {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -279,7 +279,7 @@ func (m *GetMitreVectorResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.MitreAttackVector != nil {
-		if size, ok := interface{}(m.MitreAttackVector).(interface {
+		if size, ok := any(m.MitreAttackVector).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -351,7 +351,7 @@ func (m *ListMitreAttackVectorsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MitreAttackVectors = append(m.MitreAttackVectors, &storage.MitreAttackVector{})
-			if unmarshal, ok := interface{}(m.MitreAttackVectors[len(m.MitreAttackVectors)-1]).(interface {
+			if unmarshal, ok := any(m.MitreAttackVectors[len(m.MitreAttackVectors)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -446,7 +446,7 @@ func (m *GetMitreVectorResponse) UnmarshalVT(dAtA []byte) error {
 			if m.MitreAttackVector == nil {
 				m.MitreAttackVector = &storage.MitreAttackVector{}
 			}
-			if unmarshal, ok := interface{}(m.MitreAttackVector).(interface {
+			if unmarshal, ok := any(m.MitreAttackVector).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -539,7 +539,7 @@ func (m *ListMitreAttackVectorsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.MitreAttackVectors = append(m.MitreAttackVectors, &storage.MitreAttackVector{})
-			if unmarshal, ok := interface{}(m.MitreAttackVectors[len(m.MitreAttackVectors)-1]).(interface {
+			if unmarshal, ok := any(m.MitreAttackVectors[len(m.MitreAttackVectors)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -634,7 +634,7 @@ func (m *GetMitreVectorResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.MitreAttackVector == nil {
 				m.MitreAttackVector = &storage.MitreAttackVector{}
 			}
-			if unmarshal, ok := interface{}(m.MitreAttackVector).(interface {
+			if unmarshal, ok := any(m.MitreAttackVector).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

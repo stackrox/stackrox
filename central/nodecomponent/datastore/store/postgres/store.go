@@ -97,7 +97,7 @@ func insertIntoNodeComponents(batch *pgx.Batch, obj *storage.NodeComponent) erro
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetName(),
@@ -156,7 +156,7 @@ func copyFromNodeComponents(ctx context.Context, s pgSearch.Deleter, tx *postgre
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetName(),
 			obj.GetVersion(),

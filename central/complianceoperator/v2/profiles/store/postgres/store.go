@@ -119,7 +119,7 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetProfileId(),
@@ -151,7 +151,7 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 
 func insertIntoComplianceOperatorProfileV2Rules(batch *pgx.Batch, obj *storage.ComplianceOperatorProfileV2_Rule, complianceOperatorProfileV2ID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		complianceOperatorProfileV2ID,
 		idx,
@@ -207,7 +207,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetProfileId(),
 			obj.GetName(),
@@ -253,7 +253,7 @@ func copyFromComplianceOperatorProfileV2Rules(ctx context.Context, s pgSearch.De
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			complianceOperatorProfileV2ID,
 			idx,
 			obj.GetRuleName(),

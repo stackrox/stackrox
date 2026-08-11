@@ -86,7 +86,7 @@ func RegisterComplianceIntegrationServiceServer(s grpc.ServiceRegistrar, srv Com
 	s.RegisterService(&ComplianceIntegrationService_ServiceDesc, srv)
 }
 
-func _ComplianceIntegrationService_ListComplianceIntegrations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ComplianceIntegrationService_ListComplianceIntegrations_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func _ComplianceIntegrationService_ListComplianceIntegrations_Handler(srv interf
 		Server:     srv,
 		FullMethod: ComplianceIntegrationService_ListComplianceIntegrations_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ComplianceIntegrationServiceServer).ListComplianceIntegrations(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)

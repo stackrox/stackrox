@@ -90,7 +90,7 @@ func RegisterListeningEndpointsServiceServer(s grpc.ServiceRegistrar, srv Listen
 	s.RegisterService(&ListeningEndpointsService_ServiceDesc, srv)
 }
 
-func _ListeningEndpointsService_GetListeningEndpoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ListeningEndpointsService_GetListeningEndpoints_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetProcessesListeningOnPortsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func _ListeningEndpointsService_GetListeningEndpoints_Handler(srv interface{}, c
 		Server:     srv,
 		FullMethod: ListeningEndpointsService_GetListeningEndpoints_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ListeningEndpointsServiceServer).GetListeningEndpoints(ctx, req.(*GetProcessesListeningOnPortsRequest))
 	}
 	return interceptor(ctx, in, info, handler)

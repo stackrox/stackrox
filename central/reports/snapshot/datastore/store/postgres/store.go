@@ -99,7 +99,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
 		pgutils.NilOrString(obj.GetReportConfigurationId()),
@@ -166,7 +166,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetReportId()),
 			pgutils.NilOrString(obj.GetReportConfigurationId()),
 			obj.GetName(),

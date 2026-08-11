@@ -95,7 +95,7 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, obj *storage.AuthMa
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetIssuer(),
@@ -120,7 +120,7 @@ func insertIntoAuthMachineToMachineConfigs(batch *pgx.Batch, obj *storage.AuthMa
 
 func insertIntoAuthMachineToMachineConfigsMappings(batch *pgx.Batch, obj *storage.AuthMachineToMachineConfig_Mapping, authMachineToMachineConfigID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(authMachineToMachineConfigID),
 		idx,
@@ -169,7 +169,7 @@ func copyFromAuthMachineToMachineConfigs(ctx context.Context, s pgSearch.Deleter
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetIssuer(),
 			serialized,
@@ -208,7 +208,7 @@ func copyFromAuthMachineToMachineConfigsMappings(ctx context.Context, s pgSearch
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(authMachineToMachineConfigID),
 			idx,
 			obj.GetRole(),

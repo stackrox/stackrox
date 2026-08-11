@@ -122,7 +122,7 @@ func RegisterDiscoveredClustersServiceServer(s grpc.ServiceRegistrar, srv Discov
 	s.RegisterService(&DiscoveredClustersService_ServiceDesc, srv)
 }
 
-func _DiscoveredClustersService_CountDiscoveredClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DiscoveredClustersService_CountDiscoveredClusters_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CountDiscoveredClustersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -134,13 +134,13 @@ func _DiscoveredClustersService_CountDiscoveredClusters_Handler(srv interface{},
 		Server:     srv,
 		FullMethod: DiscoveredClustersService_CountDiscoveredClusters_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DiscoveredClustersServiceServer).CountDiscoveredClusters(ctx, req.(*CountDiscoveredClustersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveredClustersService_GetDiscoveredCluster_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DiscoveredClustersService_GetDiscoveredCluster_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetDiscoveredClusterRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -152,13 +152,13 @@ func _DiscoveredClustersService_GetDiscoveredCluster_Handler(srv interface{}, ct
 		Server:     srv,
 		FullMethod: DiscoveredClustersService_GetDiscoveredCluster_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DiscoveredClustersServiceServer).GetDiscoveredCluster(ctx, req.(*GetDiscoveredClusterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DiscoveredClustersService_ListDiscoveredClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _DiscoveredClustersService_ListDiscoveredClusters_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ListDiscoveredClustersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func _DiscoveredClustersService_ListDiscoveredClusters_Handler(srv interface{}, 
 		Server:     srv,
 		FullMethod: DiscoveredClustersService_ListDiscoveredClusters_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(DiscoveredClustersServiceServer).ListDiscoveredClusters(ctx, req.(*ListDiscoveredClustersRequest))
 	}
 	return interceptor(ctx, in, info, handler)

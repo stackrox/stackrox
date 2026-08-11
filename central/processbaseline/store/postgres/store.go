@@ -128,7 +128,7 @@ func insertIntoProcessBaselines(batch *pgx.Batch, obj *storage.ProcessBaseline) 
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		pgutils.NilOrUUID(obj.GetKey().GetDeploymentId()),
@@ -181,7 +181,7 @@ func copyFromProcessBaselines(ctx context.Context, s pgSearch.Deleter, tx *postg
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			pgutils.NilOrUUID(obj.GetKey().GetDeploymentId()),
 			pgutils.NilOrUUID(obj.GetKey().GetClusterId()),

@@ -67,7 +67,7 @@ func clearAdmissionWebhookDefaultFields(obj *unstructured.Unstructured) {
 	for _, webhookInterface := range webhooks {
 		webhook, ok := webhookInterface.(map[string]any)
 		if !ok {
-			log.Errorf("Webhook %+v was not a map[string]interface{}", webhook)
+			log.Errorf("Webhook %+v was not a map[string]any", webhook)
 			return
 		}
 		deleteValueIfMatching(webhook, "timeoutSeconds", int64(30))
@@ -84,7 +84,7 @@ func clearAdmissionWebhookDefaultFields(obj *unstructured.Unstructured) {
 			for _, r := range rules {
 				typedRule, ok := r.(map[string]any)
 				if !ok {
-					log.Errorf("Rule in webhook %+v was not a map[string]interface{}", webhook)
+					log.Errorf("Rule in webhook %+v was not a map[string]any", webhook)
 					return
 				}
 				deleteValueIfMatching(typedRule, "scope", "*")

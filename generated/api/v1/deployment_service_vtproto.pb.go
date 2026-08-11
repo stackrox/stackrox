@@ -78,7 +78,7 @@ func (m *ListDeploymentsResponse) CloneVT() *ListDeploymentsResponse {
 	if rhs := m.Deployments; rhs != nil {
 		tmpContainer := make([]*storage.ListDeployment, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ListDeployment
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -122,7 +122,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Clone
 	}
 	r := new(ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.ListDeployment
 		}); ok {
 			r.Deployment = vtpb.CloneVT()
@@ -133,7 +133,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Clone
 	if rhs := m.BaselineStatuses; rhs != nil {
 		tmpContainer := make([]*storage.ContainerNameAndBaselineStatus, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface {
+			if vtpb, ok := any(v).(interface {
 				CloneVT() *storage.ContainerNameAndBaselineStatus
 			}); ok {
 				tmpContainer[k] = vtpb.CloneVT()
@@ -183,14 +183,14 @@ func (m *GetDeploymentWithRiskResponse) CloneVT() *GetDeploymentWithRiskResponse
 	}
 	r := new(GetDeploymentWithRiskResponse)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
 		}
 	}
 	if rhs := m.Risk; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Risk }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Risk }); ok {
 			r.Risk = vtpb.CloneVT()
 		} else {
 			r.Risk = proto.Clone(rhs).(*storage.Risk)
@@ -231,7 +231,7 @@ func (m *ExportDeploymentResponse) CloneVT() *ExportDeploymentResponse {
 	}
 	r := new(ExportDeploymentResponse)
 	if rhs := m.Deployment; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
+		if vtpb, ok := any(rhs).(interface{ CloneVT() *storage.Deployment }); ok {
 			r.Deployment = vtpb.CloneVT()
 		} else {
 			r.Deployment = proto.Clone(rhs).(*storage.Deployment)
@@ -336,7 +336,7 @@ func (this *ListDeploymentsResponse) EqualVT(that *ListDeploymentsResponse) bool
 			if q == nil {
 				q = &storage.ListDeployment{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ListDeployment) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -382,7 +382,7 @@ func (this *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Eq
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Deployment).(interface {
+	if equal, ok := any(this.Deployment).(interface {
 		EqualVT(*storage.ListDeployment) bool
 	}); ok {
 		if !equal.EqualVT(that.Deployment) {
@@ -403,7 +403,7 @@ func (this *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Eq
 			if q == nil {
 				q = &storage.ContainerNameAndBaselineStatus{}
 			}
-			if equal, ok := interface{}(p).(interface {
+			if equal, ok := any(p).(interface {
 				EqualVT(*storage.ContainerNameAndBaselineStatus) bool
 			}); ok {
 				if !equal.EqualVT(q) {
@@ -463,7 +463,7 @@ func (this *GetDeploymentWithRiskResponse) EqualVT(that *GetDeploymentWithRiskRe
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Deployment).(interface {
+	if equal, ok := any(this.Deployment).(interface {
 		EqualVT(*storage.Deployment) bool
 	}); ok {
 		if !equal.EqualVT(that.Deployment) {
@@ -472,7 +472,7 @@ func (this *GetDeploymentWithRiskResponse) EqualVT(that *GetDeploymentWithRiskRe
 	} else if !proto.Equal(this.Deployment, that.Deployment) {
 		return false
 	}
-	if equal, ok := interface{}(this.Risk).(interface{ EqualVT(*storage.Risk) bool }); ok {
+	if equal, ok := any(this.Risk).(interface{ EqualVT(*storage.Risk) bool }); ok {
 		if !equal.EqualVT(that.Risk) {
 			return false
 		}
@@ -517,7 +517,7 @@ func (this *ExportDeploymentResponse) EqualVT(that *ExportDeploymentResponse) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Deployment).(interface {
+	if equal, ok := any(this.Deployment).(interface {
 		EqualVT(*storage.Deployment) bool
 	}); ok {
 		if !equal.EqualVT(that.Deployment) {
@@ -674,7 +674,7 @@ func (m *ListDeploymentsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	}
 	if len(m.Deployments) > 0 {
 		for iNdEx := len(m.Deployments) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Deployments[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Deployments[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -769,7 +769,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Marsh
 	}
 	if len(m.BaselineStatuses) > 0 {
 		for iNdEx := len(m.BaselineStatuses) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.BaselineStatuses[iNdEx]).(interface {
+			if vtmsg, ok := any(m.BaselineStatuses[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -792,7 +792,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Marsh
 		}
 	}
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -892,7 +892,7 @@ func (m *GetDeploymentWithRiskResponse) MarshalToSizedBufferVT(dAtA []byte) (int
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Risk != nil {
-		if vtmsg, ok := interface{}(m.Risk).(interface {
+		if vtmsg, ok := any(m.Risk).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -914,7 +914,7 @@ func (m *GetDeploymentWithRiskResponse) MarshalToSizedBufferVT(dAtA []byte) (int
 		dAtA[i] = 0x12
 	}
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1014,7 +1014,7 @@ func (m *ExportDeploymentResponse) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.Deployment != nil {
-		if vtmsg, ok := interface{}(m.Deployment).(interface {
+		if vtmsg, ok := any(m.Deployment).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -1091,7 +1091,7 @@ func (m *ListDeploymentsResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Deployments) > 0 {
 		for _, e := range m.Deployments {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1125,7 +1125,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) SizeV
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1136,7 +1136,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) SizeV
 	}
 	if len(m.BaselineStatuses) > 0 {
 		for _, e := range m.BaselineStatuses {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -1173,7 +1173,7 @@ func (m *GetDeploymentWithRiskResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1183,7 +1183,7 @@ func (m *GetDeploymentWithRiskResponse) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.Risk != nil {
-		if size, ok := interface{}(m.Risk).(interface {
+		if size, ok := any(m.Risk).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1220,7 +1220,7 @@ func (m *ExportDeploymentResponse) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Deployment != nil {
-		if size, ok := interface{}(m.Deployment).(interface {
+		if size, ok := any(m.Deployment).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -1587,7 +1587,7 @@ func (m *ListDeploymentsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1752,7 +1752,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Unmar
 			if m.Deployment == nil {
 				m.Deployment = &storage.ListDeployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1794,7 +1794,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Unmar
 				return io.ErrUnexpectedEOF
 			}
 			m.BaselineStatuses = append(m.BaselineStatuses, &storage.ContainerNameAndBaselineStatus{})
-			if unmarshal, ok := interface{}(m.BaselineStatuses[len(m.BaselineStatuses)-1]).(interface {
+			if unmarshal, ok := any(m.BaselineStatuses[len(m.BaselineStatuses)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1974,7 +1974,7 @@ func (m *GetDeploymentWithRiskResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2018,7 +2018,7 @@ func (m *GetDeploymentWithRiskResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Risk == nil {
 				m.Risk = &storage.Risk{}
 			}
-			if unmarshal, ok := interface{}(m.Risk).(interface {
+			if unmarshal, ok := any(m.Risk).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2215,7 +2215,7 @@ func (m *ExportDeploymentResponse) UnmarshalVT(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -2615,7 +2615,7 @@ func (m *ListDeploymentsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Deployments = append(m.Deployments, &storage.ListDeployment{})
-			if unmarshal, ok := interface{}(m.Deployments[len(m.Deployments)-1]).(interface {
+			if unmarshal, ok := any(m.Deployments[len(m.Deployments)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2780,7 +2780,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Unmar
 			if m.Deployment == nil {
 				m.Deployment = &storage.ListDeployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -2822,7 +2822,7 @@ func (m *ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo) Unmar
 				return io.ErrUnexpectedEOF
 			}
 			m.BaselineStatuses = append(m.BaselineStatuses, &storage.ContainerNameAndBaselineStatus{})
-			if unmarshal, ok := interface{}(m.BaselineStatuses[len(m.BaselineStatuses)-1]).(interface {
+			if unmarshal, ok := any(m.BaselineStatuses[len(m.BaselineStatuses)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3002,7 +3002,7 @@ func (m *GetDeploymentWithRiskResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3046,7 +3046,7 @@ func (m *GetDeploymentWithRiskResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Risk == nil {
 				m.Risk = &storage.Risk{}
 			}
-			if unmarshal, ok := interface{}(m.Risk).(interface {
+			if unmarshal, ok := any(m.Risk).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -3247,7 +3247,7 @@ func (m *ExportDeploymentResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if m.Deployment == nil {
 				m.Deployment = &storage.Deployment{}
 			}
-			if unmarshal, ok := interface{}(m.Deployment).(interface {
+			if unmarshal, ok := any(m.Deployment).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

@@ -73,7 +73,7 @@ func GetCustomize(customizeSpec *platform.CustomizeSpec) *ValuesBuilder {
 		}
 
 		// We need the content of the env var without the name for the Helm charts. We cannot set the name to "",
-		// since it doesn't have an omitempty tag. We could create a `map[string]interface{}` with `Value` and
+		// since it doesn't have an omitempty tag. We could create a `map[string]any` with `Value` and
 		// `ValueFrom` ported over, but that would break if Kubernetes ever adds to the corev1.EnvVar type.
 		// Hence, rely on unstructured conversion.
 		unstructuredEnvVar, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&envVar)

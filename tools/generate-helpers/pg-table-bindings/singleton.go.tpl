@@ -72,7 +72,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgr
         return marshalErr
     }
 
-    values := []interface{} {
+    values := []any {
         // parent primary keys start
         {{- range $field := $schema.DBColumnFields -}}
         {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}

@@ -129,7 +129,7 @@ func (v *ValuesBuilder) validateKey(key string) error {
 
 // Typed value setters follow.
 // Note: if setter for some type is missing, please add it.
-// Do not create SetAny(key string, value interface{}) method because its use may lead to unwanted errors in the calling
+// Do not create SetAny(key string, value any) method because its use may lead to unwanted errors in the calling
 // code, e.g. accidentally passing a function closure as a value.
 
 // SetBool adds bool value, if present, under the given key. Records error on attempt to overwrite key.

@@ -108,7 +108,7 @@ func RegisterNodeCVEServiceServer(s grpc.ServiceRegistrar, srv NodeCVEServiceSer
 	s.RegisterService(&NodeCVEService_ServiceDesc, srv)
 }
 
-func _NodeCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NodeCVEService_SuppressCVEs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SuppressCVERequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -120,13 +120,13 @@ func _NodeCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, 
 		Server:     srv,
 		FullMethod: NodeCVEService_SuppressCVEs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(NodeCVEServiceServer).SuppressCVEs(ctx, req.(*SuppressCVERequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NodeCVEService_UnsuppressCVEs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UnsuppressCVERequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func _NodeCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context
 		Server:     srv,
 		FullMethod: NodeCVEService_UnsuppressCVEs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(NodeCVEServiceServer).UnsuppressCVEs(ctx, req.(*UnsuppressCVERequest))
 	}
 	return interceptor(ctx, in, info, handler)
@@ -254,7 +254,7 @@ func RegisterClusterCVEServiceServer(s grpc.ServiceRegistrar, srv ClusterCVEServ
 	s.RegisterService(&ClusterCVEService_ServiceDesc, srv)
 }
 
-func _ClusterCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterCVEService_SuppressCVEs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SuppressCVERequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -266,13 +266,13 @@ func _ClusterCVEService_SuppressCVEs_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: ClusterCVEService_SuppressCVEs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterCVEServiceServer).SuppressCVEs(ctx, req.(*SuppressCVERequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterCVEService_UnsuppressCVEs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UnsuppressCVERequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -284,7 +284,7 @@ func _ClusterCVEService_UnsuppressCVEs_Handler(srv interface{}, ctx context.Cont
 		Server:     srv,
 		FullMethod: ClusterCVEService_UnsuppressCVEs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterCVEServiceServer).UnsuppressCVEs(ctx, req.(*UnsuppressCVERequest))
 	}
 	return interceptor(ctx, in, info, handler)

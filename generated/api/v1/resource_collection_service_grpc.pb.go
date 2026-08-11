@@ -196,7 +196,7 @@ func RegisterCollectionServiceServer(s grpc.ServiceRegistrar, srv CollectionServ
 	s.RegisterService(&CollectionService_ServiceDesc, srv)
 }
 
-func _CollectionService_ListCollectionSelectors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_ListCollectionSelectors_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -208,13 +208,13 @@ func _CollectionService_ListCollectionSelectors_Handler(srv interface{}, ctx con
 		Server:     srv,
 		FullMethod: CollectionService_ListCollectionSelectors_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).ListCollectionSelectors(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_GetCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_GetCollection_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetCollectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -226,13 +226,13 @@ func _CollectionService_GetCollection_Handler(srv interface{}, ctx context.Conte
 		Server:     srv,
 		FullMethod: CollectionService_GetCollection_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).GetCollection(ctx, req.(*GetCollectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_GetCollectionCount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_GetCollectionCount_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(GetCollectionCountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -244,13 +244,13 @@ func _CollectionService_GetCollectionCount_Handler(srv interface{}, ctx context.
 		Server:     srv,
 		FullMethod: CollectionService_GetCollectionCount_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).GetCollectionCount(ctx, req.(*GetCollectionCountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_CreateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_CreateCollection_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CreateCollectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -262,13 +262,13 @@ func _CollectionService_CreateCollection_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: CollectionService_CreateCollection_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).CreateCollection(ctx, req.(*CreateCollectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_UpdateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_UpdateCollection_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateCollectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -280,13 +280,13 @@ func _CollectionService_UpdateCollection_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: CollectionService_UpdateCollection_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).UpdateCollection(ctx, req.(*UpdateCollectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_ListCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_ListCollections_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ListCollectionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -298,13 +298,13 @@ func _CollectionService_ListCollections_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: CollectionService_ListCollections_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).ListCollections(ctx, req.(*ListCollectionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_DeleteCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_DeleteCollection_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -316,13 +316,13 @@ func _CollectionService_DeleteCollection_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: CollectionService_DeleteCollection_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).DeleteCollection(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectionService_DryRunCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CollectionService_DryRunCollection_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DryRunCollectionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -334,7 +334,7 @@ func _CollectionService_DryRunCollection_Handler(srv interface{}, ctx context.Co
 		Server:     srv,
 		FullMethod: CollectionService_DryRunCollection_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(CollectionServiceServer).DryRunCollection(ctx, req.(*DryRunCollectionRequest))
 	}
 	return interceptor(ctx, in, info, handler)

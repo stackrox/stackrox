@@ -129,7 +129,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		obj.GetName(),
@@ -179,7 +179,7 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 
 func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, deploymentID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		idx,
@@ -234,7 +234,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 
 func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, obj *storage.ContainerConfig_EnvironmentConfig, deploymentID string, deploymentContainerIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		deploymentContainerIdx,
@@ -252,7 +252,7 @@ func insertIntoDeploymentsContainersEnvs(batch *pgx.Batch, obj *storage.Containe
 
 func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, obj *storage.Volume, deploymentID string, deploymentContainerIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		deploymentContainerIdx,
@@ -272,7 +272,7 @@ func insertIntoDeploymentsContainersVolumes(batch *pgx.Batch, obj *storage.Volum
 
 func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, obj *storage.EmbeddedSecret, deploymentID string, deploymentContainerIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		deploymentContainerIdx,
@@ -289,7 +289,7 @@ func insertIntoDeploymentsContainersSecrets(batch *pgx.Batch, obj *storage.Embed
 
 func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deploymentID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		idx,
@@ -316,7 +316,7 @@ func insertIntoDeploymentsPorts(batch *pgx.Batch, obj *storage.PortConfig, deplo
 
 func insertIntoDeploymentsPortsExposureInfos(batch *pgx.Batch, obj *storage.PortConfig_ExposureInfo, deploymentID string, deploymentPortIdx int, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(deploymentID),
 		deploymentPortIdx,
@@ -388,7 +388,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			obj.GetName(),
 			obj.GetHash(),
@@ -461,7 +461,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			idx,
 			obj.GetImage().GetId(),
@@ -523,7 +523,7 @@ func copyFromDeploymentsContainersEnvs(ctx context.Context, s pgSearch.Deleter, 
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			deploymentContainerIdx,
 			idx,
@@ -564,7 +564,7 @@ func copyFromDeploymentsContainersVolumes(ctx context.Context, s pgSearch.Delete
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			deploymentContainerIdx,
 			idx,
@@ -604,7 +604,7 @@ func copyFromDeploymentsContainersSecrets(ctx context.Context, s pgSearch.Delete
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			deploymentContainerIdx,
 			idx,
@@ -641,7 +641,7 @@ func copyFromDeploymentsPorts(ctx context.Context, s pgSearch.Deleter, tx *postg
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			idx,
 			obj.GetContainerPort(),
@@ -688,7 +688,7 @@ func copyFromDeploymentsPortsExposureInfos(ctx context.Context, s pgSearch.Delet
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(deploymentID),
 			deploymentPortIdx,
 			idx,

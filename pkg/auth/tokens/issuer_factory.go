@@ -66,7 +66,7 @@ func (f *issuerFactory) encode(claims *Claims) (string, error) {
 	return f.builder.Claims(&claims.Claims).Claims(&claims.RoxClaims).Claims(translateExtra(claims.Extra)).Serialize()
 }
 
-// translateExtra converts a map[string]json.RawMessage to a map[string]interface{} expected by go-jose.
+// translateExtra converts a map[string]json.RawMessage to a map[string]any expected by go-jose.
 func translateExtra(extra map[string]json.RawMessage) map[string]any {
 	if extra == nil {
 		return nil

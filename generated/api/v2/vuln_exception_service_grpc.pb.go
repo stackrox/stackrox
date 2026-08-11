@@ -262,7 +262,7 @@ func RegisterVulnerabilityExceptionServiceServer(s grpc.ServiceRegistrar, srv Vu
 	s.RegisterService(&VulnerabilityExceptionService_ServiceDesc, srv)
 }
 
-func _VulnerabilityExceptionService_GetVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_GetVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -274,13 +274,13 @@ func _VulnerabilityExceptionService_GetVulnerabilityException_Handler(srv interf
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_GetVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).GetVulnerabilityException(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_ListVulnerabilityExceptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_ListVulnerabilityExceptions_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -292,13 +292,13 @@ func _VulnerabilityExceptionService_ListVulnerabilityExceptions_Handler(srv inte
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_ListVulnerabilityExceptions_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).ListVulnerabilityExceptions(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_CreateDeferVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_CreateDeferVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CreateDeferVulnerabilityExceptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -310,13 +310,13 @@ func _VulnerabilityExceptionService_CreateDeferVulnerabilityException_Handler(sr
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_CreateDeferVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).CreateDeferVulnerabilityException(ctx, req.(*CreateDeferVulnerabilityExceptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CreateFalsePositiveVulnerabilityExceptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -328,13 +328,13 @@ func _VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException_Ha
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_CreateFalsePositiveVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).CreateFalsePositiveVulnerabilityException(ctx, req.(*CreateFalsePositiveVulnerabilityExceptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_ApproveVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_ApproveVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ApproveVulnerabilityExceptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -346,13 +346,13 @@ func _VulnerabilityExceptionService_ApproveVulnerabilityException_Handler(srv in
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_ApproveVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).ApproveVulnerabilityException(ctx, req.(*ApproveVulnerabilityExceptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_DenyVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_DenyVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(DenyVulnerabilityExceptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -364,13 +364,13 @@ func _VulnerabilityExceptionService_DenyVulnerabilityException_Handler(srv inter
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_DenyVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).DenyVulnerabilityException(ctx, req.(*DenyVulnerabilityExceptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_UpdateVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_UpdateVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(UpdateVulnerabilityExceptionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -382,13 +382,13 @@ func _VulnerabilityExceptionService_UpdateVulnerabilityException_Handler(srv int
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_UpdateVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).UpdateVulnerabilityException(ctx, req.(*UpdateVulnerabilityExceptionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_CancelVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_CancelVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -400,13 +400,13 @@ func _VulnerabilityExceptionService_CancelVulnerabilityException_Handler(srv int
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_CancelVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).CancelVulnerabilityException(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _VulnerabilityExceptionService_DeleteVulnerabilityException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnerabilityExceptionService_DeleteVulnerabilityException_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(ResourceByID)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -418,7 +418,7 @@ func _VulnerabilityExceptionService_DeleteVulnerabilityException_Handler(srv int
 		Server:     srv,
 		FullMethod: VulnerabilityExceptionService_DeleteVulnerabilityException_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(VulnerabilityExceptionServiceServer).DeleteVulnerabilityException(ctx, req.(*ResourceByID))
 	}
 	return interceptor(ctx, in, info, handler)

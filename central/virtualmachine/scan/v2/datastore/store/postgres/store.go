@@ -99,7 +99,7 @@ func insertIntoVirtualMachineScanV2(batch *pgx.Batch, obj *storage.VirtualMachin
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetVmV2Id()),

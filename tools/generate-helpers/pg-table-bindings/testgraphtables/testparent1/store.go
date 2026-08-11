@@ -97,7 +97,7 @@ func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		obj.GetParentId(),
@@ -124,7 +124,7 @@ func insertIntoTestParent1(batch *pgx.Batch, obj *storage.TestParent1) error {
 
 func insertIntoTestParent1Childrens(batch *pgx.Batch, obj *storage.TestParent1_Child1Ref, testParent1ID string, idx int) error {
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		testParent1ID,
 		idx,
@@ -175,7 +175,7 @@ func copyFromTestParent1(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			obj.GetParentId(),
 			obj.GetVal(),
@@ -216,7 +216,7 @@ func copyFromTestParent1Childrens(ctx context.Context, s pgSearch.Deleter, tx *p
 		obj := objs[idx]
 		idx++
 
-		return []interface{}{
+		return []any{
 			testParent1ID,
 			idx,
 			obj.GetChildId(),

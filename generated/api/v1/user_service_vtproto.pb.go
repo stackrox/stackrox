@@ -29,7 +29,7 @@ func (m *GetUsersResponse) CloneVT() *GetUsersResponse {
 	if rhs := m.Users; rhs != nil {
 		tmpContainer := make([]*storage.User, len(rhs))
 		for k, v := range rhs {
-			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.User }); ok {
+			if vtpb, ok := any(v).(interface{ CloneVT() *storage.User }); ok {
 				tmpContainer[k] = vtpb.CloneVT()
 			} else {
 				tmpContainer[k] = proto.Clone(v).(*storage.User)
@@ -108,7 +108,7 @@ func (this *GetUsersResponse) EqualVT(that *GetUsersResponse) bool {
 			if q == nil {
 				q = &storage.User{}
 			}
-			if equal, ok := interface{}(p).(interface{ EqualVT(*storage.User) bool }); ok {
+			if equal, ok := any(p).(interface{ EqualVT(*storage.User) bool }); ok {
 				if !equal.EqualVT(q) {
 					return false
 				}
@@ -217,7 +217,7 @@ func (m *GetUsersResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	if len(m.Users) > 0 {
 		for iNdEx := len(m.Users) - 1; iNdEx >= 0; iNdEx-- {
-			if vtmsg, ok := interface{}(m.Users[iNdEx]).(interface {
+			if vtmsg, ok := any(m.Users[iNdEx]).(interface {
 				MarshalToSizedBufferVT([]byte) (int, error)
 			}); ok {
 				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -349,7 +349,7 @@ func (m *GetUsersResponse) SizeVT() (n int) {
 	_ = l
 	if len(m.Users) > 0 {
 		for _, e := range m.Users {
-			if size, ok := interface{}(e).(interface {
+			if size, ok := any(e).(interface {
 				SizeVT() int
 			}); ok {
 				l = size.SizeVT()
@@ -460,7 +460,7 @@ func (m *GetUsersResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Users = append(m.Users, &storage.User{})
-			if unmarshal, ok := interface{}(m.Users[len(m.Users)-1]).(interface {
+			if unmarshal, ok := any(m.Users[len(m.Users)-1]).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -785,7 +785,7 @@ func (m *GetUsersResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Users = append(m.Users, &storage.User{})
-			if unmarshal, ok := interface{}(m.Users[len(m.Users)-1]).(interface {
+			if unmarshal, ok := any(m.Users[len(m.Users)-1]).(interface {
 				UnmarshalVTUnsafe([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

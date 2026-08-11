@@ -302,7 +302,7 @@ func (o *oneOfImplementation) isOneOf() {}
 // validateStructTagsOnType returns error if any one of the following is true:
 // - a non-string struct field type has tag scrub:always
 // - a non-boolean field has tag scrub:disableDependentIfTrue
-// - if struct field is of type interface{}
+// - if struct field is of type any
 func validateStructTagsOnType(ty reflect.Type) error {
 	visited := make(map[reflect.Type]struct{})
 	return validateStructTagsOnTypeHelper(ty, visited)

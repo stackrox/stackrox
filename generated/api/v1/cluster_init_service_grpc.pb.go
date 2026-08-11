@@ -230,7 +230,7 @@ func RegisterClusterInitServiceServer(s grpc.ServiceRegistrar, srv ClusterInitSe
 	s.RegisterService(&ClusterInitService_ServiceDesc, srv)
 }
 
-func _ClusterInitService_RevokeInitBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_RevokeInitBundle_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(InitBundleRevokeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -242,13 +242,13 @@ func _ClusterInitService_RevokeInitBundle_Handler(srv interface{}, ctx context.C
 		Server:     srv,
 		FullMethod: ClusterInitService_RevokeInitBundle_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).RevokeInitBundle(ctx, req.(*InitBundleRevokeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_RevokeCRS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_RevokeCRS_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CRSRevokeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -260,13 +260,13 @@ func _ClusterInitService_RevokeCRS_Handler(srv interface{}, ctx context.Context,
 		Server:     srv,
 		FullMethod: ClusterInitService_RevokeCRS_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).RevokeCRS(ctx, req.(*CRSRevokeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GetCAConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GetCAConfig_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -278,13 +278,13 @@ func _ClusterInitService_GetCAConfig_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: ClusterInitService_GetCAConfig_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GetCAConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GetInitBundles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GetInitBundles_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -296,13 +296,13 @@ func _ClusterInitService_GetInitBundles_Handler(srv interface{}, ctx context.Con
 		Server:     srv,
 		FullMethod: ClusterInitService_GetInitBundles_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GetInitBundles(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GetCRSs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GetCRSs_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -314,13 +314,13 @@ func _ClusterInitService_GetCRSs_Handler(srv interface{}, ctx context.Context, d
 		Server:     srv,
 		FullMethod: ClusterInitService_GetCRSs_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GetCRSs(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GenerateInitBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GenerateInitBundle_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(InitBundleGenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -332,13 +332,13 @@ func _ClusterInitService_GenerateInitBundle_Handler(srv interface{}, ctx context
 		Server:     srv,
 		FullMethod: ClusterInitService_GenerateInitBundle_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GenerateInitBundle(ctx, req.(*InitBundleGenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GenerateCRS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GenerateCRS_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CRSGenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -350,13 +350,13 @@ func _ClusterInitService_GenerateCRS_Handler(srv interface{}, ctx context.Contex
 		Server:     srv,
 		FullMethod: ClusterInitService_GenerateCRS_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GenerateCRS(ctx, req.(*CRSGenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ClusterInitService_GenerateCRSExtended_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ClusterInitService_GenerateCRSExtended_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(CRSGenRequestExtended)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -368,7 +368,7 @@ func _ClusterInitService_GenerateCRSExtended_Handler(srv interface{}, ctx contex
 		Server:     srv,
 		FullMethod: ClusterInitService_GenerateCRSExtended_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(ClusterInitServiceServer).GenerateCRSExtended(ctx, req.(*CRSGenRequestExtended))
 	}
 	return interceptor(ctx, in, info, handler)

@@ -95,7 +95,7 @@ func insertIntoDeclarativeConfigHealths(batch *pgx.Batch, obj *storage.Declarati
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		serialized,
@@ -142,7 +142,7 @@ func copyFromDeclarativeConfigHealths(ctx context.Context, s pgSearch.Deleter, t
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			pgutils.NilOrUUID(obj.GetId()),
 			serialized,
 		}, nil

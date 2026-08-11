@@ -116,7 +116,7 @@ func RegisterSearchServiceServer(s grpc.ServiceRegistrar, srv SearchServiceServe
 	s.RegisterService(&SearchService_ServiceDesc, srv)
 }
 
-func _SearchService_Search_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SearchService_Search_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawSearchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -128,13 +128,13 @@ func _SearchService_Search_Handler(srv interface{}, ctx context.Context, dec fun
 		Server:     srv,
 		FullMethod: SearchService_Search_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SearchServiceServer).Search(ctx, req.(*RawSearchRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SearchService_Options_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SearchService_Options_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(SearchOptionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -146,13 +146,13 @@ func _SearchService_Options_Handler(srv interface{}, ctx context.Context, dec fu
 		Server:     srv,
 		FullMethod: SearchService_Options_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SearchServiceServer).Options(ctx, req.(*SearchOptionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SearchService_Autocomplete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _SearchService_Autocomplete_Handler(srv any, ctx context.Context, dec func(any) error, interceptor grpc.UnaryServerInterceptor) (any, error) {
 	in := new(RawSearchRequest)
 	if err := dec(in); err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func _SearchService_Autocomplete_Handler(srv interface{}, ctx context.Context, d
 		Server:     srv,
 		FullMethod: SearchService_Autocomplete_FullMethodName,
 	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+	handler := func(ctx context.Context, req any) (any, error) {
 		return srv.(SearchServiceServer).Autocomplete(ctx, req.(*RawSearchRequest))
 	}
 	return interceptor(ctx, in, info, handler)

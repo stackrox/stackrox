@@ -84,7 +84,7 @@ func (m *IssueSecuredClusterCertsResponse_Certificates) CloneVT() isIssueSecured
 	}
 	r := new(IssueSecuredClusterCertsResponse_Certificates)
 	if rhs := m.Certificates; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
+		if vtpb, ok := any(rhs).(interface {
 			CloneVT() *storage.TypedServiceCertificateSet
 		}); ok {
 			r.Certificates = vtpb.CloneVT()
@@ -194,7 +194,7 @@ func (this *IssueSecuredClusterCertsResponse_Certificates) EqualVT(thatIface isI
 		if q == nil {
 			q = &storage.TypedServiceCertificateSet{}
 		}
-		if equal, ok := interface{}(p).(interface {
+		if equal, ok := any(p).(interface {
 			EqualVT(*storage.TypedServiceCertificateSet) bool
 		}); ok {
 			if !equal.EqualVT(q) {
@@ -376,7 +376,7 @@ func (m *IssueSecuredClusterCertsResponse_Certificates) MarshalToVT(dAtA []byte)
 func (m *IssueSecuredClusterCertsResponse_Certificates) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	if m.Certificates != nil {
-		if vtmsg, ok := interface{}(m.Certificates).(interface {
+		if vtmsg, ok := any(m.Certificates).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -482,7 +482,7 @@ func (m *IssueSecuredClusterCertsResponse_Certificates) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.Certificates != nil {
-		if size, ok := interface{}(m.Certificates).(interface {
+		if size, ok := any(m.Certificates).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
@@ -798,7 +798,7 @@ func (m *IssueSecuredClusterCertsResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Response.(*IssueSecuredClusterCertsResponse_Certificates); ok {
-				if unmarshal, ok := interface{}(oneof.Certificates).(interface {
+				if unmarshal, ok := any(oneof.Certificates).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -811,7 +811,7 @@ func (m *IssueSecuredClusterCertsResponse) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				v := &storage.TypedServiceCertificateSet{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
@@ -1193,7 +1193,7 @@ func (m *IssueSecuredClusterCertsResponse) UnmarshalVTUnsafe(dAtA []byte) error 
 				return io.ErrUnexpectedEOF
 			}
 			if oneof, ok := m.Response.(*IssueSecuredClusterCertsResponse_Certificates); ok {
-				if unmarshal, ok := interface{}(oneof.Certificates).(interface {
+				if unmarshal, ok := any(oneof.Certificates).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
@@ -1206,7 +1206,7 @@ func (m *IssueSecuredClusterCertsResponse) UnmarshalVTUnsafe(dAtA []byte) error 
 				}
 			} else {
 				v := &storage.TypedServiceCertificateSet{}
-				if unmarshal, ok := interface{}(v).(interface {
+				if unmarshal, ok := any(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {

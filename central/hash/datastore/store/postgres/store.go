@@ -94,7 +94,7 @@ func insertIntoHashes(batch *pgx.Batch, obj *storage.Hash) error {
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetClusterId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromHashes(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetClusterId(),
 			serialized,
 		}, nil

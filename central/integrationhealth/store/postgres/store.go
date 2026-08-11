@@ -94,7 +94,7 @@ func insertIntoIntegrationHealths(batch *pgx.Batch, obj *storage.IntegrationHeal
 		return marshalErr
 	}
 
-	values := []interface{}{
+	values := []any{
 		// parent primary keys start
 		obj.GetId(),
 		serialized,
@@ -141,7 +141,7 @@ func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *pos
 			return nil, marshalErr
 		}
 
-		return []interface{}{
+		return []any{
 			obj.GetId(),
 			serialized,
 		}, nil
