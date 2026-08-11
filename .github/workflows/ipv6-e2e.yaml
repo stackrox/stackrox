@@ -166,16 +166,6 @@ jobs:
           quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-      - uses: ./.github/actions/deploy-stackrox
-        with:
-          tag: ${{ needs.resolve-tag.outputs.tag }}
-          exposure: none
-          scanner: v2
-          background: "true"
-          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -185,21 +175,21 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Copy scanner protos
+      - name: Copy scanner protos + generate proto classes
         working-directory: qa-tests-backend
         run: |
           go mod download github.com/stackrox/scanner
           scripts/copy_scanner_protos.sh
+          ./gradlew generateProto
 
-      - name: Wait for Central API
-        run: |
-          for _ in $(seq 1 450); do [ -s /tmp/rox-auth-token ] && break; sleep 2; done
-          if [ ! -s /tmp/rox-auth-token ]; then
-            echo "::error::Auth token not generated after 15 minutes"
-            tail -80 /tmp/deploy-stackrox.log 2>/dev/null || true
-            kubectl -n stackrox get pods --no-headers 2>/dev/null || true
-            exit 1
-          fi
+      - uses: ./.github/actions/deploy-stackrox
+        with:
+          tag: ${{ needs.resolve-tag.outputs.tag }}
+          exposure: none
+          scanner: v2
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Add registry integration + pull secrets
         env:
@@ -231,10 +221,6 @@ jobs:
             kubectl -n "$ns" patch serviceaccount default \
               -p '{"imagePullSecrets":[{"name":"quay-pull-secret"}]}' 2>/dev/null || true
           done
-
-      - name: Generate proto classes
-        working-directory: qa-tests-backend
-        run: ./gradlew generateProto
 
       - name: "Run QA tests: ${{ matrix.name }}"
         working-directory: qa-tests-backend
@@ -319,18 +305,11 @@ jobs:
 
       - name: Run non-groovy e2e tests
         env:
-          ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
           API_ENDPOINT: localhost:8443
-          CLUSTER_TYPE: K8S
-          KUBECONFIG: /home/runner/.kube/config
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          ROX_PASSWORD: ""
         run: |
-          export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
-          export ROX_PASSWORD="${ROX_ADMIN_PASSWORD}"
-          tests/e2e/run.sh /tmp/e2e-test-logs 2>&1 | tee /tmp/nongroovy-e2e.log
+          export ROX_PASSWORD="$(cat /tmp/rox-admin-password)"
+          make -C tests 2>&1 | tee /tmp/nongroovy-e2e.log
 
       - name: Collect logs
         if: always()
