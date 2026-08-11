@@ -111,18 +111,6 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	return result, nil
 }
 
-// GetBumpPointFor returns the bump point for v's major if v is a phantom
-// version (past the bump point). For example, if the bump is 4.11→5.0 and
-// v is 4.14, it returns (4.11, true). If v is at or before the bump point,
-// or no bump exists for v's major, it returns (XYVersion{}, false).
-func GetBumpPointFor(v XYVersion) (XYVersion, bool) {
-	b, ok := findBumpFrom(v.X)
-	if ok && v.Y > b.From.Y {
-		return b.From, true
-	}
-	return XYVersion{}, false
-}
-
 func findBumpFrom(major int) (parsedBump, bool) {
 	for _, b := range parsedBumps {
 		if b.From.X == major {
@@ -192,10 +180,16 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 }
 
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.
-// If minor > 0, the previous Y-stream is simply major.(minor-1).
-// If minor == 0, it looks up the major version bump history from major_version_bumps.yaml.
-// By definition, major version bumps always target X.0 (never X.N with N>0).
+// If v is a phantom version (past a bump point in the same major), it snaps
+// back to the bump point directly. For example, with bump 4.11→5.0,
+// GetPreviousYStream(4.14) returns 4.11.
+// If minor == 0, it crosses back via the bump history.
+// Otherwise, the previous Y-stream is simply major.(minor-1).
 func GetPreviousYStream(v XYVersion) (XYVersion, error) {
+	b, ok := findBumpFrom(v.X)
+	if ok && v.Y > b.From.Y {
+		return b.From, nil
+	}
 	if v.Y > 0 {
 		return XYVersion{X: v.X, Y: v.Y - 1}, nil
 	}

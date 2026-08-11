@@ -300,6 +300,18 @@ func TestGetPreviousYStream(t *testing.T) {
 			input: XYVersion{X: 5, Y: 0},
 			want:  XYVersion{X: 4, Y: 11},
 		},
+		"phantom snaps to bump point": {
+			input: XYVersion{X: 4, Y: 14},
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"phantom one past bump point": {
+			input: XYVersion{X: 4, Y: 12},
+			want:  XYVersion{X: 4, Y: 11},
+		},
+		"at bump point is not phantom": {
+			input: XYVersion{X: 4, Y: 11},
+			want:  XYVersion{X: 4, Y: 10},
+		},
 		"unknown major": {
 			input:   XYVersion{X: 99, Y: 0},
 			wantErr: "don't know the previous Y-Stream for 99.0",

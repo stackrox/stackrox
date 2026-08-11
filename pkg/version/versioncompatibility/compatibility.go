@@ -71,23 +71,9 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 		panic("CompatibleVersionRange: n must be non-negative")
 	}
 
-	// If self is a phantom version (past a bump point), snap the backward
-	// walk to the bump point. The bump point is included in the backward
-	// list and phantom intermediates between it and self are skipped.
-	// For example, with bump 4.11→5.0 and self=4.14, n=3:
-	//   backward starts at 4.11: [4.11, 4.10, 4.9]
-	//   result: [4.9, 4.10, 4.11, 4.14, 5.0, 5.1, 5.2]
-	backwardStart := self
 	backward := make([]productstreams.XYVersion, 0, n)
-	if n > 0 {
-		if bp, ok := productstreams.GetBumpPointFor(self); ok {
-			backwardStart = bp
-			backward = append(backward, bp)
-		}
-	}
-
-	cur := backwardStart
-	for len(backward) < n {
+	cur := self
+	for range n {
 		prev, err := productstreams.GetPreviousYStream(cur)
 		if err != nil {
 			log.Errorf("Failed to compute previous Y-stream for %s: %v", cur, err)
