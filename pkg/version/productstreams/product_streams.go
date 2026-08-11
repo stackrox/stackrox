@@ -148,35 +148,22 @@ func GetNextYStream(v XYVersion) XYVersion {
 
 // ParseXYFromVersionString extracts the major.minor (X.Y) components from
 // a full version string. It accepts formats such as "4.11", "4.11.2",
-// "4.11.0-rc.1", "4.11.x-123-gabcdef1234", and the legacy 4-component
-// format "3.0.61.1" (where parts[1] is the marketing minor, skipped).
+// "4.11.0-rc.1", and "4.11.x-123-gabcdef1234".
 func ParseXYFromVersionString(version string) (XYVersion, error) {
 	before, _, _ := strings.Cut(version, "-")
 	parts := strings.Split(before, ".")
-	switch len(parts) {
-	case 4:
-		major, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
-		}
-		minor, err := strconv.Atoi(parts[2])
-		if err != nil {
-			return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[2], version, err)
-		}
-		return XYVersion{X: major, Y: minor}, nil
-	case 2, 3:
-		major, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
-		}
-		minor, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[1], version, err)
-		}
-		return XYVersion{X: major, Y: minor}, nil
-	default:
-		return XYVersion{}, fmt.Errorf("expected major.minor[.patch[.build]] format, got %q", version)
+	if len(parts) < 2 || len(parts) > 3 {
+		return XYVersion{}, fmt.Errorf("expected major.minor[.patch] format, got %q", version)
 	}
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return XYVersion{}, fmt.Errorf("invalid major %q in version %q: %w", parts[0], version, err)
+	}
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return XYVersion{}, fmt.Errorf("invalid minor %q in version %q: %w", parts[1], version, err)
+	}
+	return XYVersion{X: major, Y: minor}, nil
 }
 
 // GetPreviousYStream returns the previous Y-stream version for a given major.minor.

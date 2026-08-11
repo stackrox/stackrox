@@ -229,13 +229,9 @@ func TestParseXYFromVersionString(t *testing.T) {
 			input: "4.11.x-123-gabcdef1234",
 			want:  XYVersion{X: 4, Y: 11},
 		},
-		"legacy 4-component format": {
-			input: "3.0.61.1",
-			want:  XYVersion{X: 3, Y: 61},
-		},
-		"legacy 4-component with x patch": {
-			input: "3.0.49.x-1-ga0897a21ee",
-			want:  XYVersion{X: 3, Y: 49},
+		"four components rejected": {
+			input:   "3.0.61.1",
+			wantErr: "expected major.minor",
 		},
 		"five components rejected": {
 			input:   "1.2.3.4.5",
