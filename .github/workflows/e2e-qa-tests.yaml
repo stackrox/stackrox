@@ -95,7 +95,7 @@ jobs:
             *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
           esac
 
-          if [[ ${#CLUSTER_NAME_PREFIX} -gt $CLUSTER_NAME_PREFIX_MAX ]]; then
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
             echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
             exit 1
           fi
