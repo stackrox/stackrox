@@ -191,6 +191,28 @@ jobs:
           registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
+      - name: Patch Scanner V4 for IPv6 dual-stack listen
+        if: matrix.ip-family == 'ipv6'
+        run: |
+          for cm in scanner-v4-indexer-config scanner-v4-matcher-config; do
+            if kubectl -n stackrox get configmap "$cm" &>/dev/null; then
+              echo "Patching $cm: 0.0.0.0 → dual-stack"
+              kubectl -n stackrox get configmap "$cm" -o yaml \
+                | sed 's/0\.0\.0\.0:/:/g' \
+                | kubectl apply -f -
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout restart deploy/"$deploy"
+            fi
+          done
+          for deploy in scanner-v4-indexer scanner-v4-matcher; do
+            if kubectl -n stackrox get deploy "$deploy" &>/dev/null; then
+              kubectl -n stackrox rollout status deploy/"$deploy" --timeout=3m
+            fi
+          done
+
       - name: Add registry integration + pull secrets
         env:
           QUAY_USER: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
