@@ -183,8 +183,6 @@ jobs:
             fi
           done <<< "$EXTRA_ENV_VARS"
 
-      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
-
       - name: Install roxctl
         uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
         with:
@@ -205,6 +203,9 @@ jobs:
           curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz \
             | tar xz -C /usr/local/bin oc
           oc version --client
+
+      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+        if: inputs.cluster-provisioning-method == 'infra'
 
       - name: Wait for infra cluster and get kubeconfig
         if: inputs.cluster-provisioning-method == 'infra'
