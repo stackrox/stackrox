@@ -91,7 +91,7 @@ jobs:
           registry-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           registry-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
-      - name: Verify IPv6-only networking
+      - name: Verify IPv6-only networking + NAT64
         run: |
           kubectl get nodes -o wide
           kubectl -n stackrox get pods -o wide
@@ -101,6 +101,13 @@ jobs:
             exit 1
           fi
           echo "All pods are using IPv6 addresses"
+
+          echo "=== NAT64 DaemonSet ==="
+          kubectl -n kube-system get ds nat64 || { echo "ERROR: NAT64 DaemonSet not found"; exit 1; }
+
+          echo "=== Testing external connectivity via NAT64 ==="
+          CENTRAL_POD=$(kubectl -n stackrox get pods -l app=central -o name | head -1)
+          kubectl -n stackrox exec "$CENTRAL_POD" -- curl -sk --connect-timeout 10 https://quay.io/health/instance && echo "NAT64: quay.io reachable" || echo "WARNING: NAT64 may not be working — quay.io unreachable"
 
       - name: Smoke test — Central API + Sensor
         run: |
