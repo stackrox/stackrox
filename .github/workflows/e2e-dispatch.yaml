@@ -104,21 +104,21 @@ jobs:
         for k, v in vars(input).items():
             print(f'{k} = {v}')
 
+        jobs_registry = [
+            Job(name='e2e-byodb-tests'),
+            Job(name='e2e-db-backup-restore-test'),
+            Job(name='e2e-gke-upgrade-tests'),
+            Job(name='e2e-nongroovy-tests'),
+            Job(name='e2e-qa-tests-gke', require_pr_label=True),
+            Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
+            Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
+        ]
+
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
             def write(job, val):
                 line = f'{job}={val}'
                 print(line)
                 file.write(line + '\n')
-
-            jobs_registry = [
-                Job(name='e2e-byodb-tests'),
-                Job(name='e2e-db-backup-restore-test'),
-                Job(name='e2e-gke-upgrade-tests'),
-                Job(name='e2e-nongroovy-tests'),
-                Job(name='e2e-qa-tests-gke', require_pr_label=True),
-                Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
-                Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
-            ]
 
             jobs_to_run = [job for job in jobs_registry if job.should_run(input)]
             jobs = {job.name: True for job in jobs_to_run}
