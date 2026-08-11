@@ -14,10 +14,13 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -34,12 +37,13 @@ var (
 type handlerImpl struct {
 	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC(), Send() [reader].
-	lock         *sync.RWMutex
-	stopper      concurrency.Stopper
-	toCentral    <-chan *message.ExpiringMessage
-	toCompliance chan common.MessageToComplianceWithAddress
-	indexReports chan *v1.IndexReport
-	store        VirtualMachineStore
+	lock             *sync.RWMutex
+	stopper          concurrency.Stopper
+	toCentral        <-chan *message.ExpiringMessage
+	toCompliance     chan common.MessageToComplianceWithAddress
+	indexReports     chan *v1.IndexReport
+	store            VirtualMachineStore
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -286,6 +290,13 @@ func (h *handlerImpl) forwardToCompliance(
 		log.Debugf("Dropping VM ACK/NACK (resourceID=%s) during shutdown", resourceID)
 		return
 	default:
+	}
+
+	if features.SensorInternalPubSub.Enabled() && h.pubSubDispatcher != nil {
+		if err := h.pubSubDispatcher.Publish(&compliance.ComplianceAckEvent{Msg: msg}); err != nil {
+			logging.GetRateLimitedLogger().ErrorL("vm-compliance-ack-publish", "Failed to publish VM compliance ack event: %v", err)
+		}
+		return
 	}
 
 	select {

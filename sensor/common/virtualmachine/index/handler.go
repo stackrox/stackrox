@@ -28,11 +28,12 @@ type VirtualMachineStore interface {
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.
-func NewHandler(store VirtualMachineStore) Handler {
+func NewHandler(store VirtualMachineStore, pubSubDispatcher common.PubSubDispatcher) Handler {
 	return &handlerImpl{
-		centralReady: concurrency.NewSignal(),
-		lock:         &sync.RWMutex{},
-		stopper:      concurrency.NewStopper(),
-		store:        store,
+		centralReady:     concurrency.NewSignal(),
+		lock:             &sync.RWMutex{},
+		stopper:          concurrency.NewStopper(),
+		store:            store,
+		pubSubDispatcher: pubSubDispatcher,
 	}
 }

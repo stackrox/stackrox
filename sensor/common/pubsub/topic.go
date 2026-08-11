@@ -18,6 +18,9 @@ const (
 	ResolvedResourceEventTopic
 	SoftRestartTopic
 	ResourceSyncFinishedTopic
+	NodeInventoryTopic
+	IndexReportWrapTopic
+	ComplianceAckTopic
 )
 
 var (
@@ -37,6 +40,9 @@ var (
 		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
 		SoftRestartTopic:                "SoftRestart",
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
+		NodeInventoryTopic:              "NodeInventory",
+		IndexReportWrapTopic:            "IndexReportWrap",
+		ComplianceAckTopic:              "ComplianceAck",
 	}
 )
 
