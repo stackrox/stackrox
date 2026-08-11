@@ -3,15 +3,14 @@ package versioncompatibility
 import (
 	"slices"
 
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	once            sync.Once
 	selfXY          productstreams.XYVersion
 	compatibleRange []productstreams.XYVersion
@@ -20,17 +19,18 @@ var (
 
 func initialize() (productstreams.XYVersion, []productstreams.XYVersion, error) {
 	once.Do(func() {
-		selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
-		if initErr != nil {
-			log.Errorf("Failed to parse version %q: %v", version.GetMainVersion(), initErr)
-			return
-		}
-		compatibleRange, initErr = CompatibleVersionRange(selfXY, DefaultSkew)
-		if initErr != nil {
-			log.Errorf("Failed to compute compatible version range for %s: %v", selfXY, initErr)
-		}
+		utils.Should(computeCompatibleRange())
 	})
 	return selfXY, compatibleRange, initErr
+}
+
+func computeCompatibleRange() error {
+	selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
+	if initErr != nil {
+		return errors.Wrapf(initErr, "failed to parse version %q", version.GetMainVersion())
+	}
+	compatibleRange, initErr = CompatibleVersionRange(selfXY, DefaultSkew)
+	return initErr
 }
 
 // DefaultSkew is the number of minor version steps for the supported
