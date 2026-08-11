@@ -1,13 +1,17 @@
 package compliance
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -18,9 +22,17 @@ var _ common.ComplianceComponent = (*Multiplexer)(nil)
 type Multiplexer struct {
 	unimplemented.Receiver
 
-	mp         channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
-	components []common.ComplianceComponent
-	stopper    concurrency.Stopper
+	mp               channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
+	components       []common.ComplianceComponent
+	stopper          concurrency.Stopper
+	pubSubDispatcher common.PubSubDispatcher
+	// pubSubIn receives ComplianceAckEvents published by producers migrated to PubSub (eg. the
+	// Node Inventory Handler); it is folded into the same fan-in mix as any legacy ComplianceC()
+	// channel, so producers still on raw channels (eg. the VM Handler) keep working unchanged.
+	pubSubIn chan common.MessageToComplianceWithAddress
+	// cancel stops the underlying channelmultiplexer's fan-in goroutines; without it Stop() would
+	// leave them running forever.
+	cancel context.CancelFunc
 }
 
 func (c *Multiplexer) Name() string {
@@ -33,11 +45,15 @@ func (c *Multiplexer) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 // NewMultiplexer creates a Multiplexer of type T, wrapped up as a sensor component
-func NewMultiplexer() *Multiplexer {
+func NewMultiplexer(pubSubDispatcher common.PubSubDispatcher) *Multiplexer {
+	ctx, cancel := context.WithCancel(context.Background())
 	multiplexer := Multiplexer{
-		mp:         *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](),
-		components: []common.ComplianceComponent{},
-		stopper:    concurrency.NewStopper(),
+		mp:               *channelmultiplexer.NewMultiplexer[common.MessageToComplianceWithAddress](channelmultiplexer.WithContext[common.MessageToComplianceWithAddress](ctx)),
+		components:       []common.ComplianceComponent{},
+		stopper:          concurrency.NewStopper(),
+		pubSubDispatcher: pubSubDispatcher,
+		pubSubIn:         make(chan common.MessageToComplianceWithAddress),
+		cancel:           cancel,
 	}
 	return &multiplexer
 }
@@ -57,13 +73,40 @@ func (c *Multiplexer) run() error {
 	for _, comp := range c.components {
 		c.addChannel(comp.ComplianceC())
 	}
+	if features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil {
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceMultiplexerAckConsumer,
+			pubsub.ComplianceAckTopic,
+			pubsub.ComplianceAckLane,
+			c.handleComplianceAckEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance multiplexer ack consumer")
+		}
+		c.addChannel(c.pubSubIn)
+	}
 	c.mp.Run()
+	return nil
+}
+
+// handleComplianceAckEvent bridges a PubSub-published ComplianceAckEvent into the legacy
+// channel-based fan-in, so producers still on raw channels and producers already migrated to
+// PubSub feed the same ComplianceC() output stream.
+func (c *Multiplexer) handleComplianceAckEvent(event pubsub.Event) error {
+	ackEvent, ok := event.(*ComplianceAckEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	select {
+	case <-c.stopper.Client().Stopped().Done():
+	case c.pubSubIn <- ackEvent.Msg:
+	}
 	return nil
 }
 
 // Stop stops the component
 func (c *Multiplexer) Stop() {
 	c.stopper.Client().Stop()
+	c.cancel()
 }
 
 // Capabilities is unimplemented, part of the component interface

@@ -15,12 +15,15 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -45,8 +48,11 @@ type nodeInventoryHandlerImpl struct {
 	reportWraps  <-chan *index.IndexReportWrap
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
-	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
-	acksFromCentral  chan common.MessageToComplianceWithAddress
+	// ch2Central is the same channel exposed read-only as toCentral; kept as a field so both
+	// the legacy select loop (run()) and the PubSub event handlers can write to it. It is never
+	// closed: PubSub callbacks can still be invoked after Stop() (the dispatcher has no
+	// per-consumer unregistration), and writing to it must stay safe for the process lifetime.
+	ch2Central       chan *message.ExpiringMessage
 	toCompliance     chan common.MessageToComplianceWithAddress
 	nodeMatcher      NodeIDMatcher
 	nodeRHCOSMatcher NodeRHCOSMatcher
@@ -55,7 +61,8 @@ type nodeInventoryHandlerImpl struct {
 	stopper concurrency.Stopper
 	// archCache stores an architecture per node, so that it can be used in the index report for
 	// the 'rhcos' package. The arch is discovered once and then reused for subsequent scans.
-	archCache map[string]string
+	archCache        map[string]string
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (c *nodeInventoryHandlerImpl) Name() string {
@@ -90,6 +97,27 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	defer c.lock.Unlock()
 	if c.toCentral != nil || c.toCompliance != nil {
 		return errStartMoreThanOnce
+	}
+	// Created here (before consumer registration) so handleNodeInventoryEvent/handleNodeIndexEvent
+	// never observe a nil channel if a PubSub event is delivered before run() would otherwise create it.
+	c.ch2Central = make(chan *message.ExpiringMessage)
+	if features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil {
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.NodeInventoryHandlerNodeInventoryConsumer,
+			pubsub.NodeInventoryTopic,
+			pubsub.NodeInventoryIntakeLane,
+			c.handleNodeInventoryEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register node inventory consumer")
+		}
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.NodeInventoryHandlerIndexReportConsumer,
+			pubsub.IndexReportWrapTopic,
+			pubsub.NodeInventoryIntakeLane,
+			c.handleNodeIndexEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register index report consumer")
+		}
 	}
 	c.toCompliance = make(chan common.MessageToComplianceWithAddress)
 	c.toCentral = c.run()
@@ -233,15 +261,12 @@ func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeI
 	return nil
 }
 
-// run handles the messages from Compliance and forwards them to Central
-// This is the only goroutine that writes into the toCentral channel, thus it is responsible for creating and closing that chan
+// run handles the messages from Compliance and forwards them to Central. It is one of possibly
+// several writers into the toCentral channel (PubSub event handlers are the others); it never
+// closes that channel since it cannot guarantee no PubSub handler will write after it returns.
 func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
-	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
-		defer func() {
-			c.stopper.Flow().ReportStopped()
-			close(ch2Central)
-		}()
+		defer c.stopper.Flow().ReportStopped()
 		log.Debugf("NodeInventory/NodeIndex handler is running")
 		for {
 			select {
@@ -252,17 +277,37 @@ func (c *nodeInventoryHandlerImpl) run() (toCentral <-chan *message.ExpiringMess
 					c.stopper.Flow().StopWithError(errInventoryInputChanClosed)
 					return
 				}
-				c.handleNodeInventory(inventory, ch2Central)
+				c.handleNodeInventory(inventory, c.ch2Central)
 			case wrap, ok := <-c.reportWraps:
 				if !ok {
 					c.stopper.Flow().StopWithError(errIndexInputChanClosed)
 					return
 				}
-				c.handleNodeIndex(wrap, ch2Central)
+				c.handleNodeIndex(wrap, c.ch2Central)
 			}
 		}
 	}()
-	return ch2Central
+	return c.ch2Central
+}
+
+// handleNodeInventoryEvent adapts a PubSub NodeInventoryEvent to handleNodeInventory.
+func (c *nodeInventoryHandlerImpl) handleNodeInventoryEvent(event pubsub.Event) error {
+	inventoryEvent, ok := event.(*NodeInventoryEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.handleNodeInventory(inventoryEvent.Inventory, c.ch2Central)
+	return nil
+}
+
+// handleNodeIndexEvent adapts a PubSub IndexReportWrapEvent to handleNodeIndex.
+func (c *nodeInventoryHandlerImpl) handleNodeIndexEvent(event pubsub.Event) error {
+	wrapEvent, ok := event.(*IndexReportWrapEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.handleNodeIndex(wrapEvent.Wrap, c.ch2Central)
+	return nil
 }
 
 func (c *nodeInventoryHandlerImpl) handleNodeInventory(
@@ -351,11 +396,7 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAck(
 	reason string,
 	metricReason metrics.AckReason,
 ) {
-	select {
-	case <-c.stopper.Flow().StopRequested():
-		log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
-			messageType, action, resourceID, reason)
-	case c.toCompliance <- common.MessageToComplianceWithAddress{
+	msg := common.MessageToComplianceWithAddress{
 		Msg: &sensor.MsgToCompliance{
 			Msg: &sensor.MsgToCompliance_ComplianceAck{
 				ComplianceAck: &sensor.MsgToCompliance_ComplianceACK{
@@ -368,18 +409,33 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAck(
 		},
 		Hostname:  resourceID, // For node-based messages, resourceID is the node name
 		Broadcast: resourceID == "",
-	}:
-		log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
-			messageType, action, resourceID, reason)
-
-		// Record old metric for compatibility.
-		metrics.ObserveNodeScanningAck(resourceID,
-			action.String(),
-			messageType.String(),
-			metrics.AckOperationSend,
-			metricReason,
-			metrics.AckOriginSensor)
 	}
+
+	if features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil {
+		if err := c.pubSubDispatcher.Publish(&ComplianceAckEvent{Msg: msg}); err != nil {
+			logging.GetRateLimitedLogger().ErrorL("compliance-ack-publish", "Failed to publish compliance ack event: %v", err)
+			return
+		}
+	} else {
+		select {
+		case <-c.stopper.Flow().StopRequested():
+			log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
+				messageType, action, resourceID, reason)
+			return
+		case c.toCompliance <- msg:
+		}
+	}
+
+	log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
+		messageType, action, resourceID, reason)
+
+	// Record old metric for compatibility.
+	metrics.ObserveNodeScanningAck(resourceID,
+		action.String(),
+		messageType.String(),
+		metrics.AckOperationSend,
+		metricReason,
+		metrics.AckOriginSensor)
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.ExpiringMessage, inventory *storage.NodeInventory) {
@@ -418,36 +474,34 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 	}
 	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
 
+	irWrapperFunc := noop
+	arch := c.archCache[indexWrap.NodeName]
+	if isRHCOS {
+		if _, ok := c.archCache[indexWrap.NodeName]; !ok {
+			arch = extractArch(indexWrap.IndexReport)
+			c.archCache[indexWrap.NodeName] = arch
+		}
+		log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+		irWrapperFunc = attachRPMtoRHCOS
+	}
+
 	select {
 	case <-c.stopper.Flow().StopRequested():
-	default:
-		defer func() {
-			log.Debugf("Sent IndexReport to Central")
-			metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
-		}()
-		irWrapperFunc := noop
-		arch := c.archCache[indexWrap.NodeName]
-		if isRHCOS {
-			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
-				arch = extractArch(indexWrap.IndexReport)
-				c.archCache[indexWrap.NodeName] = arch
-			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
-			irWrapperFunc = attachRPMtoRHCOS
-		}
-		toC <- message.New(&central.MsgFromSensor{
-			Msg: &central.MsgFromSensor_Event{
-				Event: &central.SensorEvent{
-					Id: indexWrap.NodeID,
-					// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
-					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
-					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
-					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
-					},
+	case toC <- message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id: indexWrap.NodeID,
+				// ResourceAction_UNSET_ACTION_RESOURCE is the only one supported by Central 4.6 and older.
+				// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
+				Resource: &central.SensorEvent_IndexReport{
+					IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
 				},
 			},
-		})
+		},
+	}):
+		log.Debugf("Sent IndexReport to Central")
+		metrics.ObserveNodeScan(indexWrap.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationSendToCentral)
 	}
 }
 
