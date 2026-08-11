@@ -502,7 +502,7 @@ type gateSender struct {
 	sent    []*v4.IndexReport
 }
 
-func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport, _ time.Time) error {
 	g.mu.Lock()
 	g.n++
 	n := g.n
