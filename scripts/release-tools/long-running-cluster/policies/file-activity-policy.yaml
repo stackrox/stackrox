@@ -5,7 +5,7 @@ metadata:
   namespace: stackrox
 spec:
   policyName: "Long Running Cluster File Activity"
-  description: "Detects file open operations under /tmp/data to exercise file activity policy evaluation against berserker file activity load."
+  description: "Detects file creation under /tmp/data to exercise file activity policy evaluation against berserker file activity load."
   categories:
   - Anomalous Activity
   lifecycleStages:
@@ -19,4 +19,4 @@ spec:
       - value: "/tmp/data/**"
     - fieldName: File Operation
       values:
-      - value: "OPEN"
+      - value: "CREATE"
