@@ -37,18 +37,30 @@ func RemoveGuestRPMPackage(ctx context.Context, virt Virtctl, namespace, vm, pkg
 	})
 }
 
-// WaitForScanMissingComponent polls Central until scan_time advances past
-// after and the named component is absent from the scan. That proves a
-// periodic rescan observed a live RPM DB change without restarting the agent.
+// WaitForScanMissingComponent polls Central until the named package is absent
+// from a scan whose scan_time has advanced at least minScanAdvances times past
+// after.
+//
+// minScanAdvances should be at least 2 when waiting on a periodic rescan: the
+// first post-removal agent cycle can still observe the pre-removal RPM DB if
+// it overlapped the erase, and Sensor needs a scrape after each agent cycle
+// before Central's scan_time moves.
 func WaitForScanMissingComponent(
 	ctx context.Context,
 	client v2.VirtualMachineServiceClient,
 	opts WaitOptions,
 	id, packageName string,
 	after time.Time,
+	minScanAdvances int,
 ) (*v2.VirtualMachine, error) {
+	if minScanAdvances < 1 {
+		minScanAdvances = 1
+	}
+	advances := 0
+	lastSeen := after
 	return waitForVMCondition(ctx, client, opts, id,
-		fmt.Sprintf("scan missing package %q after %s (id=%q)", packageName, after.UTC().Format(time.RFC3339), id),
+		fmt.Sprintf("scan missing package %q after %d scan_time advance(s) past %s (id=%q)",
+			packageName, minScanAdvances, after.UTC().Format(time.RFC3339), id),
 		func(vm *v2.VirtualMachine) (bool, string) {
 			scan := vm.GetScan()
 			if scan == nil {
@@ -59,17 +71,21 @@ func WaitForScanMissingComponent(
 				return false, "scan_time is nil"
 			}
 			scanTime := st.AsTime()
-			if !scanTime.After(after) {
-				return false, fmt.Sprintf("scan_time=%s not after %s (components=%d)",
-					scanTime.UTC().Format(time.RFC3339), after.UTC().Format(time.RFC3339), len(scan.GetComponents()))
+			if scanTime.After(lastSeen) {
+				advances++
+				lastSeen = scanTime
+			}
+			if advances < minScanAdvances {
+				return false, fmt.Sprintf("scan_time advances=%d/%d last=%s (components=%d)",
+					advances, minScanAdvances, scanTime.UTC().Format(time.RFC3339), len(scan.GetComponents()))
 			}
 			for _, c := range scan.GetComponents() {
 				if c.GetName() == packageName {
-					return false, fmt.Sprintf("scan_time advanced to %s but package %q still present (components=%d)",
-						scanTime.UTC().Format(time.RFC3339), packageName, len(scan.GetComponents()))
+					return false, fmt.Sprintf("scan_time advances=%d but package %q still present (components=%d)",
+						advances, packageName, len(scan.GetComponents()))
 				}
 			}
-			return true, fmt.Sprintf("scan_time=%s package %q gone (components=%d)",
-				scanTime.UTC().Format(time.RFC3339), packageName, len(scan.GetComponents()))
+			return true, fmt.Sprintf("scan_time advances=%d package %q gone (components=%d)",
+				advances, packageName, len(scan.GetComponents()))
 		})
 }

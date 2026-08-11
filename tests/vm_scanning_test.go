@@ -80,7 +80,7 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			})
 
 			// Regression test for ROX-36273: after a change to the RPM database (package removal), the agent should
-			// detect the change on the next periodic rescan without being restarted.
+			// detect the change on a later periodic rescan without being restarted.
 			t.Run("Changes to RPM DB are detected by periodic rescan", func(t *testing.T) {
 				require.NotNil(t, first.GetScan().GetScanTime())
 				baselineScanTime := first.GetScan().GetScanTime().AsTime()
@@ -95,15 +95,22 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NoError(t, err)
 
 				require.NoError(t, vmhelpers.RemoveGuestRPMPackage(s.ctx, virt, vm.Namespace, vm.Name, removed))
-				t.Logf("removed package %q; waiting for periodic rescan to drop it (baseline components=%d scan_time=%s)",
-					removed, baselineCount, baselineScanTime.UTC().Format(time.RFC3339))
+				// Two Central scan_time advances past the baseline: the first
+				// post-removal agent cycle can still race the erase, and each
+				// agent cycle also needs a Sensor scrape (1m in VM e2e) before
+				// Central moves scan_time.
+				const minScanAdvances = 2
+				waitTimeout := max(s.cfg.ScanTimeout, 2*vmhelpers.E2ERescanInterval+2*vmhelpers.E2EScraperPollInterval+3*time.Minute)
+				t.Logf("removed package %q; waiting for %d scan_time advances (rescan=%s scraper=%s timeout=%s; baseline components=%d scan_time=%s)",
+					removed, minScanAdvances, vmhelpers.E2ERescanInterval, vmhelpers.E2EScraperPollInterval, waitTimeout,
+					baselineCount, baselineScanTime.UTC().Format(time.RFC3339))
 
 				updated, err := vmhelpers.WaitForScanMissingComponent(
 					s.ctx, s.vmClient, vmhelpers.WaitOptions{
-						Timeout:      s.cfg.ScanTimeout,
+						Timeout:      waitTimeout,
 						PollInterval: s.cfg.ScanPollInterval,
 						Logf:         s.logf,
-					}, first.GetId(), removed, baselineScanTime)
+					}, first.GetId(), removed, baselineScanTime, minScanAdvances)
 				require.NoError(t, err)
 				require.Equal(t, baselineCount-1, len(updated.GetScan().GetComponents()),
 					"exactly one component should disappear after removing %q", removed)

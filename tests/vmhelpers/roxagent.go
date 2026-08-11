@@ -14,10 +14,13 @@ const (
 	DefaultRoxagentInstallPath = "/usr/local/bin/roxagent"
 	roxagentStagingPath        = "/tmp/roxagent"
 	roxagentServePort          = "818"
-	// e2eRescanInterval is the minimum serve --rescan-interval. Short enough
-	// for the package-freshness e2e to observe a post-start RPM change without
-	// reactive watching or restarting the agent.
-	e2eRescanInterval = "5m"
+	// E2ERescanInterval is passed to serve --rescan-interval. It is the
+	// minimum allowed interval and keeps the package-freshness e2e within a
+	// reasonable wall-clock budget without reactive watching or restarts.
+	E2ERescanInterval = 5 * time.Minute
+	// E2EScraperPollInterval is the Sensor pull-mode scrape cadence used by
+	// the VM e2e suite - floored at 1m.
+	E2EScraperPollInterval = time.Minute
 	// Transient systemd unit started by EnsureRoxagentServing (systemd-run --unit=...).
 	roxagentE2EUnit            = "roxagent-e2e.service"
 	roxagentE2EUnitName        = "roxagent-e2e"
@@ -121,7 +124,7 @@ func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm
 			DefaultRoxagentInstallPath, "serve",
 			"--port", roxagentServePort,
 			"--host-path", "/",
-			"--rescan-interval", e2eRescanInterval,
+			"--rescan-interval", E2ERescanInterval.String(),
 			"--repo-cpe-url", repo2cpeURL,
 		)
 		if err != nil {
