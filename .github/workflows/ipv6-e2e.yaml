@@ -181,6 +181,14 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Copy scanner protos
+        working-directory: qa-tests-backend
+        run: scripts/copy_scanner_protos.sh
+
       - name: Wait for Central API
         run: |
           for _ in $(seq 1 300); do [ -s /tmp/rox-auth-token ] && break; sleep 2; done
@@ -311,6 +319,7 @@ jobs:
           ROX_ADMIN_PASSWORD_FILE: /tmp/rox-admin-password
           API_ENDPOINT: localhost:8443
           CLUSTER_TYPE: K8S
+          KUBECONFIG: /home/runner/.kube/config
         run: |
           export ROX_ADMIN_PASSWORD="$(cat "$ROX_ADMIN_PASSWORD_FILE")"
           export ROX_PASSWORD="${ROX_ADMIN_PASSWORD}"
