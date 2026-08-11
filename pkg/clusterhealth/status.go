@@ -1,6 +1,7 @@
 package clusterhealth
 
 import (
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -154,19 +155,11 @@ func PopulateOverallClusterStatus(clusterHealth *storage.ClusterHealthStatus) st
 		return sensorStatus
 	}
 
-	// Scanner is optional (only deployed when local image scanning is enabled),
-	// so it only contributes to overall health when not UNINITIALIZED.
-	scannerActive := scannerStatus != storage.ClusterHealthStatus_UNINITIALIZED
-
-	if collectorStatus == storage.ClusterHealthStatus_UNHEALTHY ||
-		admissionControlStatus == storage.ClusterHealthStatus_UNHEALTHY ||
-		(scannerActive && scannerStatus == storage.ClusterHealthStatus_UNHEALTHY) {
+	if isUnhealthy(collectorStatus, admissionControlStatus, scannerStatus) {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 
-	if collectorStatus == storage.ClusterHealthStatus_DEGRADED ||
-		admissionControlStatus == storage.ClusterHealthStatus_DEGRADED ||
-		(scannerActive && scannerStatus == storage.ClusterHealthStatus_DEGRADED) {
+	if isDegraded(collectorStatus, admissionControlStatus, scannerStatus) {
 		if sensorStatus == storage.ClusterHealthStatus_UNHEALTHY {
 			return storage.ClusterHealthStatus_UNHEALTHY
 		}
@@ -174,4 +167,12 @@ func PopulateOverallClusterStatus(clusterHealth *storage.ClusterHealthStatus) st
 	}
 
 	return sensorStatus
+}
+
+func isUnhealthy(statuses ...storage.ClusterHealthStatus_HealthStatusLabel) bool {
+	return slices.Contains(statuses, storage.ClusterHealthStatus_UNHEALTHY)
+}
+
+func isDegraded(statuses ...storage.ClusterHealthStatus_HealthStatusLabel) bool {
+	return slices.Contains(statuses, storage.ClusterHealthStatus_DEGRADED)
 }
