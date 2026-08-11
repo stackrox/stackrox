@@ -64,6 +64,19 @@ runs:
               | kubectl apply -f -
             kubectl -n kube-system rollout restart deploy/coredns
             kubectl -n kube-system rollout status deploy/coredns --timeout=60s
+
+            echo "Verifying DNS64+NAT64 from pod network..."
+            NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+            for i in $(seq 1 30); do
+              if [[ -n "$NAT64_POD" ]] && kubectl -n kube-system exec "$NAT64_POD" -- \
+                wget -qO /dev/null --timeout=10 http://quay.io/health/instance 2>/dev/null; then
+                echo "DNS64+NAT64 verified (attempt $i)"
+                break
+              fi
+              NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+              echo "DNS64+NAT64 not ready yet (attempt $i/30)"
+              sleep 5
+            done
           fi
 
           docker update --memory "${{ inputs.memory-limit }}" \
