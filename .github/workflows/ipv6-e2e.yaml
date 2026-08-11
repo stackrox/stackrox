@@ -182,6 +182,23 @@ jobs:
           scripts/copy_scanner_protos.sh
           ./gradlew generateProto
 
+      - name: Wait for DNS64+NAT64 readiness
+        if: matrix.ip-family == 'ipv6'
+        run: |
+          echo "Waiting for KinD cluster + DNS64 + NAT64..."
+          for _ in $(seq 1 120); do kubectl cluster-info &>/dev/null && break; sleep 2; done
+          NAT64_POD=""
+          for i in $(seq 1 60); do
+            NAT64_POD=$(kubectl -n kube-system get pods -l app=nat64 -o name 2>/dev/null | head -1)
+            if [[ -n "$NAT64_POD" ]] && kubectl -n kube-system exec "$NAT64_POD" -- \
+              wget -qO /dev/null --timeout=10 http://quay.io/health/instance 2>/dev/null; then
+              echo "DNS64+NAT64 verified (attempt $i)"
+              break
+            fi
+            echo "DNS64+NAT64 not ready (attempt $i/60)"
+            sleep 5
+          done
+
       - uses: ./.github/actions/deploy-stackrox
         with:
           tag: ${{ needs.resolve-tag.outputs.tag }}
