@@ -1,22 +1,22 @@
-# Quadlet Deployment for roxagent (Pull Mode)
+# Quadlet Deployment for roxagent
 
-Deploy roxagent as a long-running VSOCK server on RHEL VMs using Podman Quadlet.
+Run roxagent on RHEL VMs with Podman Quadlet: a systemd-managed container that serves index reports to Sensor over VSOCK.
 
 ## Overview
 
-This deployment uses [Podman Quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) to run `roxagent serve` from a container image as a systemd service. The agent starts once, scans installed packages, caches the report, and listens on a VSOCK port for Sensor to pull results on demand. Periodic rescans happen internally (default: every 4 hours).
+[Podman Quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) turns `roxagent.container` into a systemd unit that runs `roxagent serve`. The agent scans installed packages, caches the report, and listens on a VSOCK port. Sensor dials in when it needs a report. The agent rescans on its own schedule (default: every 4 hours).
 
 ### Components
 
 | File | Description |
 |------|-------------|
 | `roxagent.container` | Quadlet container unit that runs `roxagent serve` |
-| `roxagent-prep.service` | Copies RPM database to a writable location |
+| `roxagent-prep.service` | Copies the RPM database to a writable location |
 | `install.sh` | Installation script for local or remote deployment |
 
 ## Prerequisites
 
-* RHEL 8, 9, or 10 VM running on KubeVirt with vsock enabled
+* RHEL 8, 9, or 10 VM running on KubeVirt with VSOCK enabled
 * Podman installed (`dnf install -y podman`)
 * StackRox deployed with VM scanning enabled (`ROX_VIRTUAL_MACHINES=true`)
 * Network access to pull the StackRox main image
@@ -25,13 +25,11 @@ This deployment uses [Podman Quadlet](https://docs.podman.io/en/latest/markdown/
 
 ### 1. Configure the Image Tag
 
-Edit `roxagent.container` and set the correct image tag:
+Edit `roxagent.container` and set the image tag to match your StackRox Secured Cluster deployments:
 
 ```ini
 Image=quay.io/stackrox-io/main:4.11.0
 ```
-
-Use the same version as your StackRox Central deployment.
 
 ### 2. Install the Units
 
@@ -75,17 +73,16 @@ sudo systemctl restart roxagent.service
 │ RHEL VM                                                     │
 │  ┌─────────────────┐         ┌────────────────────────┐     │
 │  │ roxagent-prep   │ ──────▶ │ roxagent container     │     │
-│  │ (copy RPM db)   │         │ - roxagent serve       │     │
-│  └─────────────────┘         │ - listens on VSOCK     │     │
-│                              │ - rescans every 4h     │     │
+│  │ (copy RPM db)   │         │ - listens on VSOCK     │     │
+│  └─────────────────┘         │ - rescans every 4h     │     │
 │                              └───────────┬────────────┘     │
 └──────────────────────────────────────────┼──────────────────┘
-                                           │ vsock (pull)
+                                           ▲ vsock
 ┌──────────────────────────────────────────┼─────────────────┐
-│ Kubernetes Host                          ▼                 │
+│ Kubernetes Host                          │                 │
 │  ┌────────────────────────────────────────────┐            │
 │  │ Sensor                                     │            │
-│  │ - pulls reports via VSOCK on demand        │            │
+│  │ - connects over VSOCK and fetches reports  │            │
 │  │ - forwards to Central                      │            │
 │  └────────────────────────────────────────────┘            │
 └────────────────────────────────────────────────────────────┘
@@ -93,15 +90,15 @@ sudo systemctl restart roxagent.service
 
 ### Why Copy the RPM Database?
 
-The `roxagent-prep.service` copies `/var/lib/rpm` to `/tmp/roxagent-rpm` before the container starts. This is required because SQLite WAL mode (used by RHEL 9+) requires write access even for read-only queries. The copy also provides safety and a consistent point-in-time snapshot.
+`roxagent-prep.service` copies `/var/lib/rpm` to `/tmp/roxagent-rpm` before the container starts. SQLite WAL mode (used by RHEL 9+) needs write access even for read-only queries, so a writable copy is required. The copy is also a point-in-time snapshot of the package database.
 
-In pull mode, the copy happens once at container start. A container restart (manual or via `Restart=on-failure`) triggers a fresh copy.
+The copy runs once at container start. A container restart (manual or via `Restart=on-failure`) triggers a fresh copy.
 
 ## Configuration
 
 ### Rescan Interval
 
-The agent rescans internally. To change the interval, edit the `Exec=` line in `roxagent.container`:
+To change how often the agent rescans, edit the `Exec=` line in `roxagent.container`:
 
 ```ini
 Exec=serve --host-path /host --rescan-interval 2h
@@ -117,25 +114,27 @@ The port must match the StackRox Sensor configuration.
 
 ## Troubleshooting
 
-### No packages found
+### No Packages Found
 
-Check if the RPM database copy succeeded:
+Check whether the RPM database copy succeeded:
 
 ```bash
 ls -la /tmp/roxagent-rpm/
 sudo journalctl -u roxagent-prep.service
 ```
 
-### vsock connection failed
+Make sure that your VM guest OS is activated and has executed at least a single DNF transaction (e.g., dnf install, dnf update).
 
-Verify vsock is enabled in the VM:
+### VSOCK Connection Failed
+
+Verify VSOCK is enabled in the VM:
 
 ```bash
 ls -la /dev/vsock
 lsmod | grep vsock
 ```
 
-### Container fails to start
+### Container Fails to Start
 
 Check Quadlet generation:
 
@@ -144,7 +143,7 @@ Check Quadlet generation:
 sudo journalctl -u roxagent.service
 ```
 
-### VM not appearing in Central
+### VM Not Appearing in Central
 
 1. Verify `ROX_VIRTUAL_MACHINES=true` is set on Central and Sensor
 2. Check Sensor logs for VSOCK scraper activity

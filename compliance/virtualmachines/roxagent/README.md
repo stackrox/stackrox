@@ -1,8 +1,10 @@
 # roxagent
 
-Runs inside KubeVirt VMs to scan for vulnerabilities and serve index reports to Sensor over VSOCK (pull mode). It lives under `compliance/` because it reuses the Scanner V4 node indexer for RPM/DNF package databases; it is not part of the Compliance Operator.
+roxagent runs inside KubeVirt VMs. It scans installed packages for vulnerabilities and serves index reports to Sensor over VSOCK.
 
-The only supported command is `roxagent serve`. Sensor's VM scraper dials the agent, pulls a cached report, and forwards it to Central for vulnerability matching.
+Sensor's VM scraper dials the agent, pulls a cached report, and forwards it to Central for vulnerability matching. Start the agent with `roxagent serve`.
+
+The sources live under `compliance/` because the agent reuses the Scanner V4 node indexer for RPM/DNF package databases.
 
 ## What it does
 
@@ -27,17 +29,19 @@ sudo ./roxagent serve --port 818 --host-path / --rescan-interval 4h
 |------|---------|-------|
 | `--port` | `818` | VSOCK listen port |
 | `--host-path` | `/` | Root filesystem path for package indexing |
-| `--repo-cpe-url` | Red Hat metrics URL | Repository-to-CPE mapping download URL |
+| `--repo-cpe-url` | Red Hat security data URL | Repository-to-CPE mapping download URL |
 | `--rescan-interval` | `4h` | Must be between `5m` and `168h` (7d) |
 | `--ca-fetch-timeout` | `10s` | Timeout for one KubeVirt CA fetch over VSOCK |
 | `--conn-deadline` | `30s` | Max time for one connection's TLS handshake plus request/response (`5s`-`5m`) |
 
 ## How it works
 
-1. **Mapping file:** Startup blocks on an initial download to a local cache file. Scans always read that file; a later download failure keeps the last good cache and does not fail the scan.
+1. **Mapping file:** On startup the agent downloads the repository-to-CPE mapping into a local cache and blocks until that succeeds. Every scan reads from that file. If a later refresh fails, the agent keeps the last good cache and continues scanning.
+
+   The default `--repo-cpe-url` is `https://security.access.redhat.com/data/metrics/repository-to-cpe.json`, so the VM needs outbound HTTPS to that host (or a proxy that can reach it). On isolated networks, host a copy of `repository-to-cpe.json` somewhere the VM can reach and point `--repo-cpe-url` at that URL.
 2. **Initial scan:** Indexes `--host-path`, stores the report and discovered VM facts in an in-memory cache, then starts the VSOCK server and the rescan loop.
-3. **Pull protocol:** Sensor connects; the agent serves the cached report (and can omit the payload when Sensor's known generation still matches).
-4. **Rescan:** On `--rescan-interval`, re-indexes and swaps the cache, bumping the generation.
+3. **Serving reports:** Sensor connects and the agent serves the cached report. If Sensor already has the current generation, the agent omits the payload.
+4. **Rescan:** On `--rescan-interval`, re-indexes the rpm/dnf database and swaps the cache, bumping the generation.
 
 ### TLS (mandatory)
 
