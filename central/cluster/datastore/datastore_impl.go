@@ -58,7 +58,6 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 )
@@ -942,11 +941,6 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 }
 
 func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage.Cluster) {
-	centralXY, err := productstreams.ParseXYFromVersionString(version.GetMainVersion())
-	if err != nil {
-		log.Warnf("Failed to parse central version for sensor compatibility check: %v", err)
-		return
-	}
 	for _, cluster := range clusters {
 		if cluster.GetStatus() == nil {
 			continue
@@ -956,7 +950,12 @@ func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage
 			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 			continue
 		}
-		cluster.Status.SensorVersionCompatibility = compatibilityToProto(versioncompatibility.ClassifyVersion(centralXY, sensorXY))
+		compat, err := versioncompatibility.ClassifyVersion(sensorXY)
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		cluster.Status.SensorVersionCompatibility = compatibilityToProto(compat)
 	}
 }
 

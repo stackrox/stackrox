@@ -4,10 +4,30 @@ import (
 	"slices"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+
+	once            sync.Once
+	selfXY          productstreams.XYVersion
+	compatibleRange []productstreams.XYVersion
+	initErr         error
+)
+
+func initialize() (productstreams.XYVersion, []productstreams.XYVersion, error) {
+	once.Do(func() {
+		selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
+		if initErr != nil {
+			return
+		}
+		compatibleRange = CompatibleVersionRange(selfXY, DefaultSkew)
+	})
+	return selfXY, compatibleRange, initErr
+}
 
 // DefaultSkew is the number of minor version steps for the supported
 // version compatibility range (N +/- DefaultSkew).
@@ -46,22 +66,26 @@ func (c Compatibility) String() string {
 	}
 }
 
-// CompatibleVersions returns the compatible version range for self using
-// the default skew tolerance (DefaultSkew).
-func CompatibleVersions(self productstreams.XYVersion) []productstreams.XYVersion {
-	return CompatibleVersionRange(self, DefaultSkew)
+// CompatibleVersions returns the cached compatible version range for the
+// running binary's version, computed once on first call.
+func CompatibleVersions() ([]productstreams.XYVersion, error) {
+	_, versions, err := initialize()
+	return versions, err
 }
 
-// ClassifyVersion classifies remote relative to self using the default
-// skew tolerance (DefaultSkew).
-func ClassifyVersion(self, remote productstreams.XYVersion) Compatibility {
-	return Classify(self, remote, DefaultSkew)
+// ClassifyVersion classifies remote relative to the running binary's
+// version, using the cached compatible range.
+func ClassifyVersion(remote productstreams.XYVersion) (Compatibility, error) {
+	self, versions, err := initialize()
+	if err != nil {
+		return Unknown, err
+	}
+	return classify(self, versions, remote), nil
 }
 
 // CompatibleVersionRange computes the range of X.Y versions compatible with
 // self, spanning n minor versions in each direction. It correctly crosses
-// major version boundaries using the bump history embedded in the
-// majorversions package.
+// major version boundaries using the bump history.
 //
 // Returns the ordered list of compatible versions from oldest to newest,
 // including self. The list contains 2*n+1 elements when all steps succeed,
@@ -99,18 +123,12 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 	return result
 }
 
-// Classify determines the compatibility of remote relative to self with
-// a custom skew tolerance n.
-func Classify(self, remote productstreams.XYVersion, n int) Compatibility {
-	if n < 0 {
-		panic("Classify: n must be non-negative")
-	}
+func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {
 	cmp := self.Compare(remote)
 	if cmp == 0 {
 		return Matched
 	}
 
-	versions := CompatibleVersionRange(self, n)
 	if slices.Contains(versions, remote) {
 		if cmp > 0 {
 			return CompatibleBehind

@@ -147,17 +147,6 @@ func TestCompatibleVersionRange(t *testing.T) {
 	}
 }
 
-func TestCompatibleVersions(t *testing.T) {
-	overrideTestBumps(t)
-	got := CompatibleVersions(xy(4, 11))
-	want := []productstreams.XYVersion{
-		xy(4, 8), xy(4, 9), xy(4, 10),
-		xy(4, 11),
-		xy(5, 0), xy(5, 1), xy(5, 2),
-	}
-	assert.Equal(t, want, got)
-}
-
 func TestClassify(t *testing.T) {
 	type testCase struct {
 		self   productstreams.XYVersion
@@ -169,7 +158,7 @@ func TestClassify(t *testing.T) {
 	runCases := func(t *testing.T, tests map[string]testCase) {
 		for name, tt := range tests {
 			t.Run(name, func(t *testing.T) {
-				got := Classify(tt.self, tt.remote, tt.n)
+				got := classify(tt.self, CompatibleVersionRange(tt.self, tt.n), tt.remote)
 				assert.Equal(t, tt.want, got)
 			})
 		}
@@ -347,15 +336,6 @@ func TestClassify(t *testing.T) {
 	})
 }
 
-func TestClassifyVersion(t *testing.T) {
-	overrideTestBumps(t)
-	assert.Equal(t, Matched, ClassifyVersion(xy(4, 11), xy(4, 11)))
-	assert.Equal(t, CompatibleBehind, ClassifyVersion(xy(4, 11), xy(4, 9)))
-	assert.Equal(t, CompatibleAhead, ClassifyVersion(xy(4, 11), xy(5, 2)))
-	assert.Equal(t, IncompatibleBehind, ClassifyVersion(xy(4, 11), xy(4, 7)))
-	assert.Equal(t, IncompatibleAhead, ClassifyVersion(xy(4, 11), xy(5, 3)))
-}
-
 func TestCompatibilityString(t *testing.T) {
 	tests := map[string]struct {
 		c    Compatibility
@@ -379,8 +359,4 @@ func TestCompatibilityString(t *testing.T) {
 
 func TestCompatibleVersionRangePanicsOnNegativeN(t *testing.T) {
 	assert.Panics(t, func() { CompatibleVersionRange(xy(4, 5), -1) })
-}
-
-func TestClassifyPanicsOnNegativeN(t *testing.T) {
-	assert.Panics(t, func() { Classify(xy(4, 5), xy(4, 6), -1) })
 }
