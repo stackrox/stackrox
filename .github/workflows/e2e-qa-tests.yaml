@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       should-run:
-        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
         required: true
         type: boolean
       tag:
@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       ci-job-name:
-        description: "Unique job name, e.g. gke-qa-e2e-tests"
+        description: "Unique job name, e.g. gke-qa-e2e-tests."
         required: true
         type: string
       cluster-name-prefix:
@@ -20,45 +20,45 @@ on:
         required: true
         type: string
       cluster-provisioning-method:
-        description: "Selects cluster provisioning method to use (supported: direct-gke, infra)"
+        description: "Selects cluster provisioning method to use (supported: direct-gke, infra)."
         type: string
         default: "direct-gke"
       extra-env-vars:
-        description: "Flavor-specific env vars as multi-line KEY=VALUE pairs"
+        description: "Flavor-specific env vars as multi-line KEY=VALUE pairs."
         required: false
         type: string
       infra-flavor:
-        description: "Infra cluster flavor, e.g. gke-default, ocp-4"
+        description: "Infra cluster flavor, e.g. gke-default, ocp-4."
         type: string
         default: "gke-default"
       infra-args:
-        description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line"
+        description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line."
         type: string
         default: |
           nodes=3
           machine-type=e2-standard-8
       infra-lifespan:
-        description: "Infra cluster lifespan (auto-deleted after expiry)"
+        description: "Infra cluster lifespan (auto-deleted after expiry)."
         type: string
         default: "5h"
       cluster-wait-timeout-minutes:
-        description: "Timeout for waiting on cluster provisioning (OCP needs longer)"
+        description: "Timeout for waiting on cluster provisioning (OCP needs longer)."
         type: number
         default: 25
       job-timeout-minutes:
-        description: "Overall job timeout"
+        description: "Overall job timeout."
         type: number
         default: 361
       part1-timeout-minutes:
-        description: "Part 1 test timeout"
+        description: "Part 1 test timeout."
         type: number
         default: 245
       part2-timeout-minutes:
-        description: "Part 2 test timeout"
+        description: "Part 2 test timeout."
         type: number
         default: 35
       db-backup-restore-timeout-minutes:
-        description: "DB backup and restore test timeout"
+        description: "DB backup and restore test timeout."
         type: number
         default: 30
 
