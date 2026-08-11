@@ -231,7 +231,7 @@ create_cluster() {
                     info "Spot node pool created successfully"
                 else
                     info "WARNING: Spot node pool failed. Falling back to non-spot nodes."
-                    gcloud beta container node-pools create fallback-pool \
+                    if ! gcloud beta container node-pools create fallback-pool \
                         --cluster "${CLUSTER_NAME}" \
                         --machine-type "${MACHINE_TYPE}" \
                         --num-nodes "$((NUM_NODES - 1))" \
@@ -239,7 +239,10 @@ create_cluster() {
                         --disk-size="${DISK_SIZE_GB}GB" \
                         --image-type "${GCP_IMAGE_TYPE}" \
                         --no-enable-autorepair \
-                        --no-enable-autoupgrade
+                        --no-enable-autoupgrade; then
+                        info "Fallback node pool also failed. Cluster does not have enough nodes."
+                        return 1
+                    fi
                 fi
                 success=1
             else
