@@ -8,6 +8,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
+const rhcosFullName = "Red Hat Enterprise Linux CoreOS"
+
 var rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([0-9.-]+)`)
 
 // NodeIDMatcher helps finding NodeWrap by name
