@@ -60,6 +60,7 @@ jobs:
             name: str
             require_pr_label: bool = False
             require_konflux_build: bool = False
+
             def should_run(self, input):
                 if input.is_fork == 'true':
                     return False
