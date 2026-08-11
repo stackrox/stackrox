@@ -142,29 +142,36 @@ func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInf
 	return storage.ClusterHealthStatus_HEALTHY
 }
 
-// PopulateOverallClusterStatus returns overall cluster status based on sensor status and collector status.
+// PopulateOverallClusterStatus returns overall cluster status based on sensor, collector,
+// admission control, and local scanner status.
 func PopulateOverallClusterStatus(clusterHealth *storage.ClusterHealthStatus) storage.ClusterHealthStatus_HealthStatusLabel {
 	sensorStatus := clusterHealth.GetSensorHealthStatus()
 	collectorStatus := clusterHealth.GetCollectorHealthStatus()
 	admissionControlStatus := clusterHealth.GetAdmissionControlHealthStatus()
+	scannerStatus := clusterHealth.GetScannerHealthStatus()
 
-	// Collector having states other than default state when sensor is in default state is unlikely, but still check it first.
 	if sensorStatus == storage.ClusterHealthStatus_UNINITIALIZED {
 		return sensorStatus
 	}
 
+	// Scanner is optional (only deployed when local image scanning is enabled),
+	// so it only contributes to overall health when not UNINITIALIZED.
+	scannerActive := scannerStatus != storage.ClusterHealthStatus_UNINITIALIZED
+
 	if collectorStatus == storage.ClusterHealthStatus_UNHEALTHY ||
-		admissionControlStatus == storage.ClusterHealthStatus_UNHEALTHY {
+		admissionControlStatus == storage.ClusterHealthStatus_UNHEALTHY ||
+		(scannerActive && scannerStatus == storage.ClusterHealthStatus_UNHEALTHY) {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 
-	if collectorStatus == storage.ClusterHealthStatus_DEGRADED || admissionControlStatus == storage.ClusterHealthStatus_DEGRADED {
+	if collectorStatus == storage.ClusterHealthStatus_DEGRADED ||
+		admissionControlStatus == storage.ClusterHealthStatus_DEGRADED ||
+		(scannerActive && scannerStatus == storage.ClusterHealthStatus_DEGRADED) {
 		if sensorStatus == storage.ClusterHealthStatus_UNHEALTHY {
 			return storage.ClusterHealthStatus_UNHEALTHY
 		}
 		return storage.ClusterHealthStatus_DEGRADED
 	}
 
-	// If we are here it means collector and admission controller is not unhealthy or degraded. Overall cluster health is determined by sensor status.
 	return sensorStatus
 }
