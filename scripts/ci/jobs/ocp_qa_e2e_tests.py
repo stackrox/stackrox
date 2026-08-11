@@ -21,6 +21,5 @@ enable_sfa_for_ocp()
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
-os.environ["SCANNER_V4_VULN_READINESS_TIMEOUT"] = "7200"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
