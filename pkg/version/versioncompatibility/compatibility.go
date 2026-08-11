@@ -22,9 +22,13 @@ func initialize() (productstreams.XYVersion, []productstreams.XYVersion, error) 
 	once.Do(func() {
 		selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
 		if initErr != nil {
+			log.Errorf("Failed to parse version %q: %v", version.GetMainVersion(), initErr)
 			return
 		}
-		compatibleRange = CompatibleVersionRange(selfXY, DefaultSkew)
+		compatibleRange, initErr = CompatibleVersionRange(selfXY, DefaultSkew)
+		if initErr != nil {
+			log.Errorf("Failed to compute compatible version range for %s: %v", selfXY, initErr)
+		}
 	})
 	return selfXY, compatibleRange, initErr
 }
@@ -90,7 +94,7 @@ func ClassifyVersion(remote productstreams.XYVersion) (Compatibility, error) {
 // Returns the ordered list of compatible versions from oldest to newest,
 // including self. The list contains 2*n+1 elements when all steps succeed,
 // or fewer if the backward walk cannot go far enough.
-func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstreams.XYVersion {
+func CompatibleVersionRange(self productstreams.XYVersion, n int) ([]productstreams.XYVersion, error) {
 	if n < 0 {
 		panic("CompatibleVersionRange: n must be non-negative")
 	}
@@ -100,8 +104,7 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 	for range n {
 		prev, err := productstreams.GetPreviousYStream(cur)
 		if err != nil {
-			log.Errorf("Failed to compute previous Y-stream for %s: %v", cur, err)
-			break
+			return nil, err
 		}
 		backward = append(backward, prev)
 		cur = prev
@@ -120,7 +123,7 @@ func CompatibleVersionRange(self productstreams.XYVersion, n int) []productstrea
 	result = append(result, backward...)
 	result = append(result, self)
 	result = append(result, forward...)
-	return result
+	return result, nil
 }
 
 func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {

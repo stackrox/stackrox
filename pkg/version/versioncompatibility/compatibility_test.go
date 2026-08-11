@@ -141,7 +141,8 @@ func TestCompatibleVersionRange(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := CompatibleVersionRange(tt.self, tt.n)
+			got, err := CompatibleVersionRange(tt.self, tt.n)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -158,7 +159,9 @@ func TestClassify(t *testing.T) {
 	runCases := func(t *testing.T, tests map[string]testCase) {
 		for name, tt := range tests {
 			t.Run(name, func(t *testing.T) {
-				got := classify(tt.self, CompatibleVersionRange(tt.self, tt.n), tt.remote)
+				versions, err := CompatibleVersionRange(tt.self, tt.n)
+				assert.NoError(t, err)
+				got := classify(tt.self, versions, tt.remote)
 				assert.Equal(t, tt.want, got)
 			})
 		}
@@ -216,10 +219,6 @@ func TestClassify(t *testing.T) {
 				self: xy(4, 8), remote: xy(6, 0), n: 3,
 				want: IncompatibleAhead,
 			},
-			"incompatible behind beyond known bumps": {
-				self: xy(6, 0), remote: xy(4, 8), n: 3,
-				want: IncompatibleBehind,
-			},
 			"custom n=1 compatible": {
 				self: xy(4, 5), remote: xy(4, 6), n: 1,
 				want: CompatibleAhead,
@@ -229,6 +228,12 @@ func TestClassify(t *testing.T) {
 				want: IncompatibleAhead,
 			},
 		})
+	})
+
+	t.Run("self beyond known bumps returns error", func(t *testing.T) {
+		overrideTestBumps(t)
+		_, err := CompatibleVersionRange(xy(6, 0), 3)
+		assert.Error(t, err)
 	})
 
 	// Phantom versions: versions past a bump point (e.g. 4.12 when the
