@@ -109,6 +109,11 @@ deploy_earlier_postgres_central() {
          --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
          --set scanner.resources.limits.memory="6Gi"
 
+    if kubectl get nodes -l cloud.google.com/gke-spot=true --no-headers 2>/dev/null | grep -q .; then
+        info "Spot nodes detected. Patching central-db to prefer non-spot nodes."
+        kubectl -n stackrox patch deploy/central-db --type=strategic -p '{"spec":{"template":{"spec":{"affinity":{"nodeAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":100,"preference":{"matchExpressions":[{"key":"cloud.google.com/gke-preemptible","operator":"DoesNotExist"}]}}]}}}}}}'
+    fi
+
     # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
     # the scripts.  So we will give it a minute for things to get started before we proceed
     sleep 60
