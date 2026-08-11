@@ -86,6 +86,9 @@ jobs:
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
 
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
+
     - name: Run pre-test
       shell: python
       env:
@@ -228,6 +231,9 @@ jobs:
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
 
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
+
     - name: Run pre-test
       shell: python
       env:
@@ -368,6 +374,9 @@ jobs:
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
+
+    - name: Create artifact directory
+      run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Run pre-test
       shell: python
