@@ -204,16 +204,18 @@ create_cluster() {
                 done
             fi
 
-            if [[ "${cluster_created}" == "true" ]]; then
-                info "Successfully launched cluster ${CLUSTER_NAME}"
-                local kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
-                ls -l "${kubeconfig}" || true
-                gcloud container clusters get-credentials "$CLUSTER_NAME"
-                ls -l "${kubeconfig}" || true
+            if [[ "${cluster_created}" != "true" ]]; then
+                info "Timed out"
+                info "Attempting to delete the cluster before trying another zone"
+                gcloud container clusters delete "${CLUSTER_NAME}" || {
+                    info "An error occurred deleting the cluster: $?"
+                    true
+                }
             fi
         fi
 
         if [[ "${cluster_created}" == "true" ]]; then
+            gcloud container clusters get-credentials "$CLUSTER_NAME"
             if [[ "${use_spot}" == "true" && "${NUM_NODES}" -gt 1 ]]; then
                 info "Adding spot node pool with $((NUM_NODES - 1)) nodes"
                 if timeout 300 gcloud beta container node-pools create spot-pool \
@@ -244,15 +246,6 @@ create_cluster() {
                 success=1
             fi
             break
-        fi
-
-        if [[ "${status}" == 124 ]]; then
-            info "Timed out"
-            info "Attempting to delete the cluster before trying another zone"
-            gcloud container clusters delete "${CLUSTER_NAME}" || {
-                info "An error occurred deleting the cluster: $?"
-                true
-            }
         fi
     done
 
