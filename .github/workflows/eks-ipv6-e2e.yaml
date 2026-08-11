@@ -88,6 +88,10 @@ jobs:
             region: $AWS_REGION
           kubernetesNetworkConfig:
             ipFamily: IPv6
+          addons:
+            - name: vpc-cni
+            - name: coredns
+            - name: kube-proxy
           managedNodeGroups:
             - name: workers
               instanceType: m5.xlarge
