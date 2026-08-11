@@ -321,7 +321,6 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	// Verify the feature flag env var is set on all components that need it.
 	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
-	s.mustVerifyContainerEnvVar(ctx, "daemonset", "collector", "compliance", ns, wantEnv)
 	s.mustVerifySensorVSOCKRBAC(ctx)
 }
 
@@ -351,8 +350,8 @@ func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 
 // mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
 // has the given environment variable set to a truthy value ("true", "1", etc.).
-// This catches deployment misconfigurations where a feature flag reaches Central but not
-// the workload containers that also need it.
+// This catches deployment misconfigurations where a feature flag reaches one component
+// but not another that also needs it.
 func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, name, containerName, ns, envName string) {
 	t := s.T()
 	t.Helper()
@@ -379,14 +378,13 @@ func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, n
 			if e.Name == envName {
 				val := strings.ToLower(strings.TrimSpace(e.Value))
 				require.Truef(t, val == "true" || val == "1",
-					"%s %s/%s container %q has %s=%q which is not truthy; "+
-						"the VSOCK relay will not start without this flag",
+					"%s %s/%s container %q has %s=%q which is not truthy",
 					kind, ns, name, containerName, envName, e.Value)
 				return
 			}
 		}
 		require.Failf(t, fmt.Sprintf("%s %s/%s container %q is missing env var %s", kind, ns, name, containerName, envName),
-			"the feature flag must be set on all components that need it (Central, Sensor, compliance); "+
+			"the feature flag must be set on Central and Sensor for pull-mode VM scanning; "+
 				"present env vars: %s", formatContainerEnvNames(c.Env))
 	}
 	require.Failf(t, fmt.Sprintf("container %q not found in %s %s/%s", containerName, kind, ns, name),
