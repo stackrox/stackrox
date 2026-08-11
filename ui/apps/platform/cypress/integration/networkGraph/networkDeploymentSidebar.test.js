@@ -6,6 +6,7 @@ import {
     selectDeployment,
     selectNamespace,
     visitNetworkGraph,
+    waitForDeploymentNodeInGraph,
 } from './networkGraph.helpers';
 import { networkGraphSelectors } from './networkGraph.selectors';
 
@@ -21,10 +22,7 @@ describe('Network Graph deployment sidebar', () => {
         selectNamespace('stackrox');
         selectDeployment('collector');
 
-        // confirm that the graph only contains collector and other StackRox deployments it communiticates with
-        cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`
-        );
+        waitForDeploymentNodeInGraph('sensor');
 
         // With the addition of the compliance node indexer, it is possible for a flow to exist between central and collector
         // https://github.com/stackrox/stackrox/pull/12573

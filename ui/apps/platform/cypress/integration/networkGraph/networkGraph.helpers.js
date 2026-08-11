@@ -55,6 +55,26 @@ export function selectDeployment(deployment) {
     }, routeMatcherMapForClusterInNetworkGraph);
 }
 
+export function waitForDeploymentNodeInGraph(deploymentName, maxRetries = 5, delay = 3000) {
+    const selector = networkGraphSelectors.deploymentNode(deploymentName);
+    cy.get('body').then(($body) => {
+        if ($body.find(selector).length > 0) {
+            return;
+        }
+        if (maxRetries <= 0) {
+            cy.get(selector);
+            return;
+        }
+        cy.wait(delay);
+        cy.intercept(routeMatcherMapForClusterInNetworkGraph[networkGraphClusterAlias]).as(
+            networkGraphClusterAlias
+        );
+        cy.reload();
+        cy.wait(`@${networkGraphClusterAlias}`);
+        waitForDeploymentNodeInGraph(deploymentName, maxRetries - 1, delay);
+    });
+}
+
 export function selectFilter(filterKey, filterValue) {
     cy.get('.react-select__value-container').click();
     cy.get(`.react-select__menu-list .react-select__option:contains("${filterKey}")`).click();
