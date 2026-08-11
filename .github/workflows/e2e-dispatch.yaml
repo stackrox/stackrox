@@ -92,18 +92,17 @@ jobs:
             key.removeprefix('input__'): val
             for (key, val) in os.environ.items()
             if key.startswith('input__')})
-        for k, v in vars(input).items():
-            print(f'{k} = {v}')
 
         if input.event_name != 'pull_request':
-            all_labels = []
+            input.pr_labels = []
         else:
             p = subprocess.run(
                 ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
                 check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
-            all_labels = p.stdout.strip().splitlines()
-        input.pr_labels = all_labels
-        print(f'all_labels = {", ".join(all_labels)}')
+            input.pr_labels = p.stdout.strip().splitlines()
+
+        for k, v in vars(input).items():
+            print(f'{k} = {v}')
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
             def write(job, val):
