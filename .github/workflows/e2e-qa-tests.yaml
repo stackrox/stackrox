@@ -95,7 +95,7 @@ jobs:
             *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
           esac
 
-          if [[ ${#CLUSTER_NAME_PREFIX} -gt $CLUSTER_NAME_PREFIX_MAX ]]; then
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
             echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
             exit 1
           fi
@@ -113,7 +113,6 @@ jobs:
 
       - name: Compute cluster name for infra-provisioned cluster
         if: inputs.cluster-provisioning-method == 'infra'
-        id: cluster-name
         # infractl enforces a 28-char limit for cluster names.
         run: |
           cluster_name_max=28
@@ -124,7 +123,6 @@ jobs:
           hash_truncated="${hash:0:$hash_length}"
 
           cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
-          echo "name=${cluster_name}" >> "$GITHUB_OUTPUT"
           echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
 
       - name: Prepare infra args
