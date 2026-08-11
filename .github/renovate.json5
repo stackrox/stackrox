@@ -63,14 +63,16 @@
     ],
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
-      "* 0-8 * * *",
+      // Between 0a.m. and 7:59a.m. every day.
+      "* 0-7 * * *",
     ],
   },
   "rpm-lockfile": {
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
       // Note that MintMaker will create security updates outside of schedule.
-      "* 0-8 * * *",
+      // Between 0a.m. and 7:59a.m. every day.
+      "* 0-7 * * *",
     ],
   },
   "enabledManagers": [
