@@ -41,7 +41,7 @@ defaults:
 
 env:
   CLUSTER_NAME: acs-ipv6-${{ github.run_id }}
-  AWS_REGION: ${{ inputs.region }}
+  AWS_REGION: ${{ inputs.region || 'us-east-1' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
@@ -307,7 +307,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
         if: always()
         with:
-          name: eks-ipv6-${{ inputs.suite }}-${{ github.run_id }}
+          name: eks-ipv6-${{ inputs.suite || 'smoke' }}-${{ github.run_id }}
           path: /tmp/test-artifacts
           retention-days: 7
 
