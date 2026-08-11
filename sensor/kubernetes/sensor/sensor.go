@@ -211,16 +211,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
 
 		var pullChecker vmIndex.PullActiveChecker
-		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
-			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
-			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
+		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+		vmDial, err := vsockdialer.NewMultiDialer()
+		if err != nil {
+			log.Warnf("VSOCK pull mode disabled (kubevirt client): %v", err)
+		} else {
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 			vmSender := &vmScraperSenderAdapter{handler: virtualMachineHandler}
 			scraper := vmscraper.New(storeProvider.VirtualMachines(), vmSender, vmDial, vmProtoClient)
 			pullChecker = scraper
 			components = append(components, scraper)
-		} else {
-			log.Warn("VSOCK pull mode disabled (no REST config available)")
 		}
 		vmService = vmIndex.NewService(virtualMachineHandler, pullChecker)
 	}
