@@ -9,7 +9,21 @@ import (
 
 const (
 	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
-	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
+	// Matches all valid IPv6 forms: full (8 groups), abbreviated (::),
+	// and mixed IPv4-mapped (::ffff:1.2.3.4). Uses a permissive pattern
+	// that accepts any sequence of hex groups separated by colons with
+	// at most one :: abbreviation.
+	ipv6Regex = "(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}" + // full form
+		"|(?:[0-9A-Fa-f]{1,4}:){1,7}:" + // trailing ::
+		"|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}" + // :: with 1 group after
+		"|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}" +
+		"|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}" +
+		"|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}" +
+		"|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}" +
+		"|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}" +
+		"|:(?::[0-9A-Fa-f]{1,4}){1,7}" + // ::x...
+		"|::(?:[fF]{4}:)?(?:\\d{1,3}\\.){3}\\d{1,3}" + // ::ffff:IPv4
+		"|::" // bare ::
 )
 
 var (

@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"net"
 	"sort"
@@ -176,10 +175,11 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	if server == "" {
 		return "", errors.Errorf("failed to retrieve server from endpoint %s", endpoint)
 	}
-	if strings.Contains(server, ":") {
+	_, _, err := net.SplitHostPort(server)
+	if err == nil {
 		return server, nil
 	}
-	return fmt.Sprintf("%s:443", server), nil
+	return net.JoinHostPort(server, "443"), nil
 }
 
 func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
