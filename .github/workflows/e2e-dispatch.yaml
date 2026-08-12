@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
-      image_suffix: ${{ steps.build-tag.outputs.image_suffix }}
+      tag_suffix: ${{ steps.build-tag.outputs.tag_suffix }}
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
@@ -169,27 +169,27 @@ jobs:
         OPERATOR_IMAGE_PREFIX="stackrox-"
         echo "OPERATOR_IMAGE_PREFIX=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
 
-        IMAGE_SUFFIX=""
-        echo "IMAGE_SUFFIX=${IMAGE_SUFFIX}" | tee -a "$GITHUB_ENV"
-        echo "image_suffix=${IMAGE_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
+        TAG_SUFFIX=""
+        echo "TAG_SUFFIX=${TAG_SUFFIX}" | tee -a "$GITHUB_ENV"
+        echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         image: &stackrox-required-images |
-          rhacs-eng/${{ env.IMAGE_PREFIX }}central-db:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}collector:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}fact:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}main:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}roxctl:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db-slim:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-slim:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4-db:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner:${{ env.IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator-bundle:v${{ env.OPERATOR_IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
-          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator:${{ env.OPERATOR_IMAGE_TAG }}${{ env.IMAGE_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}central-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}collector:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}fact:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}main:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}roxctl:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator-bundle:v${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator:${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
@@ -197,7 +197,7 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
-      image_suffix: ${{ steps.build-tag.outputs.image_suffix }}
+      tag_suffix: ${{ steps.build-tag.outputs.tag_suffix }}
 
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
@@ -234,14 +234,14 @@ jobs:
         # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
         source_branch="${GITHUB_HEAD_REF:-}"
         target_branch="${GITHUB_BASE_REF:-${GITHUB_REF}}"
-        IMAGE_SUFFIX=""
+        TAG_SUFFIX=""
         if [[ "${source_branch}" == *konflux-release-like* ]]; then
           echo "Source branch contains 'konflux-release-like', suppressing suffix."
         elif ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${target_branch}"; then
-          IMAGE_SUFFIX="-fast"
+          TAG_SUFFIX="-fast"
         fi
-        echo "IMAGE_SUFFIX=${IMAGE_SUFFIX}" | tee -a "$GITHUB_ENV"
-        echo "image_suffix=${IMAGE_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
+        echo "TAG_SUFFIX=${TAG_SUFFIX}" | tee -a "$GITHUB_ENV"
+        echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
 
     - name: Wait for Konflux images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
@@ -320,7 +320,7 @@ jobs:
     needs: [ wait-for-konflux-images, should-dispatch ]
     uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
     with:
-      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.image_suffix }}
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke-konflux }}
     secrets: inherit
     concurrency:
