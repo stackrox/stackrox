@@ -42,7 +42,7 @@ func ConvertBindingsToSimpleAccessScope(
 				}
 
 				namespaces = append(namespaces, &storage.SimpleAccessScope_Rules_Namespace{
-					ClusterName: binding.Cluster,
+					ClusterName:   binding.Cluster,
 					NamespaceName: ns,
 				})
 			}
@@ -53,7 +53,7 @@ func ConvertBindingsToSimpleAccessScope(
 	return &storage.SimpleAccessScope{
 		Id: uuid.NewV4().String(),
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters: clusterSet.AsSlice(),
+			IncludedClusters:   clusterSet.AsSlice(),
 			IncludedNamespaces: namespaces,
 		},
 	}
