@@ -8,45 +8,102 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// BenchmarkAdd measures performance of adding process indicators
 func BenchmarkAdd(b *testing.B) {
-	filter := NewFilter(100, 1000, []int{100, 100, 100})
-
-	// Create test data
-	indicators := make([]*storage.ProcessIndicator, 1000)
-	for i := range indicators {
-		indicators[i] = &storage.ProcessIndicator{
-			DeploymentId:  fmt.Sprintf("dep%d", i%10),
-			ContainerName: "container",
-			Signal: &storage.ProcessSignal{
-				ContainerId:  fmt.Sprintf("id%d", i%10),
-				ExecFilePath: fmt.Sprintf("/usr/bin/process%d", i%100),
-				Args:         fmt.Sprintf("arg1 arg2 arg3 iteration%d", i),
-			},
-		}
-	}
-
-	for i := 0; b.Loop(); i++ {
-		filter.Add(indicators[i%len(indicators)])
-	}
-}
-
-// BenchmarkAddMemory measures memory allocations
-func BenchmarkAddMemory(b *testing.B) {
-	filter := NewFilter(100, 1000, []int{100, 100, 100})
-
-	pi := &storage.ProcessIndicator{
-		DeploymentId:  "deployment",
-		ContainerName: "container",
-		Signal: &storage.ProcessSignal{
-			ContainerId:  "containerid",
-			ExecFilePath: "/usr/bin/process",
-			Args:         "arg1 arg2 arg3",
+	cases := []struct {
+		name           string
+		fanOut         []int
+		maxExact       int
+		maxUnique      int
+		numIndicators  int
+		numDeployments int
+		numProcesses   int
+	}{
+		{
+			name:           "default_fanout",
+			fanOut:         []int{8, 6, 4, 2},
+			maxExact:       5,
+			maxUnique:      5000,
+			numIndicators:  1000,
+			numDeployments: 10,
+			numProcesses:   100,
+		},
+		{
+			name:           "high_fanout",
+			fanOut:         []int{100, 100, 100},
+			maxExact:       100,
+			maxUnique:      1000,
+			numIndicators:  1000,
+			numDeployments: 10,
+			numProcesses:   100,
 		},
 	}
 
-	for b.Loop() {
-		filter.Add(pi)
+	for _, tc := range cases {
+		b.Run(tc.name, func(b *testing.B) {
+			filter := NewFilter(tc.maxExact, tc.maxUnique, tc.fanOut)
+
+			indicators := make([]*storage.ProcessIndicator, tc.numIndicators)
+			for i := range indicators {
+				indicators[i] = &storage.ProcessIndicator{
+					DeploymentId:  fmt.Sprintf("dep%d", i%tc.numDeployments),
+					ContainerName: "container",
+					Signal: &storage.ProcessSignal{
+						ContainerId:  fmt.Sprintf("id%d", i%tc.numDeployments),
+						ExecFilePath: fmt.Sprintf("/usr/bin/process%d", i%tc.numProcesses),
+						Args:         fmt.Sprintf("arg1 arg2 arg3 iteration%d", i),
+					},
+				}
+			}
+
+			for i := 0; b.Loop(); i++ {
+				filter.Add(indicators[i%len(indicators)])
+			}
+		})
+	}
+}
+
+func BenchmarkLookupInFullLevel(b *testing.B) {
+	cases := []struct {
+		name    string
+		fanOut  []int
+		numArgs int
+	}{
+		{name: "fanout_8", fanOut: []int{8}, numArgs: 8},
+		{name: "fanout_20", fanOut: []int{20}, numArgs: 20},
+		{name: "fanout_100", fanOut: []int{100}, numArgs: 100},
+		{name: "fanout_255", fanOut: []int{255}, numArgs: 255},
+	}
+
+	for _, tc := range cases {
+		b.Run(tc.name, func(b *testing.B) {
+			filter := NewFilter(tc.numArgs+1, 5000, tc.fanOut)
+
+			for i := range tc.numArgs {
+				filter.Add(&storage.ProcessIndicator{
+					DeploymentId:  "dep",
+					ContainerName: "container",
+					Signal: &storage.ProcessSignal{
+						ContainerId:  "id",
+						ExecFilePath: "/usr/bin/proc",
+						Args:         fmt.Sprintf("arg%d", i),
+					},
+				})
+			}
+
+			last := &storage.ProcessIndicator{
+				DeploymentId:  "dep",
+				ContainerName: "container",
+				Signal: &storage.ProcessSignal{
+					ContainerId:  "id",
+					ExecFilePath: "/usr/bin/proc",
+					Args:         fmt.Sprintf("arg%d", tc.numArgs-1),
+				},
+			}
+
+			for b.Loop() {
+				filter.Add(last)
+			}
+		})
 	}
 }
 
