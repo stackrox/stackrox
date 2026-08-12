@@ -2088,6 +2088,7 @@ func (x *VMCVEDetail) GetTopCvss() float32 {
 type GetVMCVEDetailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CveId         string                 `protobuf:"bytes,1,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
+	Query         *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2127,6 +2128,13 @@ func (x *GetVMCVEDetailRequest) GetCveId() string {
 		return x.CveId
 	}
 	return ""
+}
+
+func (x *GetVMCVEDetailRequest) GetQuery() *RawQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
 }
 
 type VMCVEAffectedVMRow struct {
@@ -2494,9 +2502,10 @@ const file_api_v2_virtual_machine_v2_service_proto_rawDesc = "" +
 	"\x17affected_guest_os_count\x18\t \x01(\x05R\x14affectedGuestOsCount\x12E\n" +
 	"\x12vm_severity_counts\x18\n" +
 	" \x01(\v2\x17.v2.VulnCountBySeverityR\x10vmSeverityCounts\x12\x19\n" +
-	"\btop_cvss\x18\v \x01(\x02R\atopCvss\".\n" +
+	"\btop_cvss\x18\v \x01(\x02R\atopCvss\"R\n" +
 	"\x15GetVMCVEDetailRequest\x12\x15\n" +
-	"\x06cve_id\x18\x01 \x01(\tR\x05cveId\"\x81\x02\n" +
+	"\x06cve_id\x18\x01 \x01(\tR\x05cveId\x12\"\n" +
+	"\x05query\x18\x02 \x01(\v2\f.v2.RawQueryR\x05query\"\x81\x02\n" +
 	"\x12VMCVEAffectedVMRow\x12\x13\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x04vmId\x12\x17\n" +
 	"\avm_name\x18\x02 \x01(\tR\x06vmName\x125\n" +
@@ -2658,34 +2667,35 @@ var file_api_v2_virtual_machine_v2_service_proto_depIdxs = []int32{
 	38, // 42: v2.VMCVEDetail.published_on:type_name -> google.protobuf.Timestamp
 	38, // 43: v2.VMCVEDetail.first_discovered:type_name -> google.protobuf.Timestamp
 	6,  // 44: v2.VMCVEDetail.vm_severity_counts:type_name -> v2.VulnCountBySeverity
-	40, // 45: v2.VMCVEAffectedVMRow.severity:type_name -> v2.VulnerabilitySeverity
-	39, // 46: v2.ListVMCVEAffectedVMsRequest.query:type_name -> v2.RawQuery
-	32, // 47: v2.ListVMCVEAffectedVMsResponse.vms:type_name -> v2.VMCVEAffectedVMRow
-	18, // 48: v2.VirtualMachineV2Service.GetVM:input_type -> v2.GetVMRequest
-	20, // 49: v2.VirtualMachineV2Service.GetVMVulnSummary:input_type -> v2.GetVMVulnSummaryRequest
-	22, // 50: v2.VirtualMachineV2Service.ListVMCVEsByVM:input_type -> v2.ListVMCVEsByVMRequest
-	25, // 51: v2.VirtualMachineV2Service.GetVMCVEComponents:input_type -> v2.GetVMCVEComponentsRequest
-	28, // 52: v2.VirtualMachineV2Service.ListVMComponents:input_type -> v2.ListVMComponentsRequest
-	9,  // 53: v2.VirtualMachineV2Service.ListVMs:input_type -> v2.ListVMsRequest
-	12, // 54: v2.VirtualMachineV2Service.ListVMCVEs:input_type -> v2.ListVMCVEsRequest
-	14, // 55: v2.VirtualMachineV2Service.GetVMDashboardCounts:input_type -> v2.VMDashboardCountsRequest
-	31, // 56: v2.VirtualMachineV2Service.GetVMCVEDetail:input_type -> v2.GetVMCVEDetailRequest
-	33, // 57: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:input_type -> v2.ListVMCVEAffectedVMsRequest
-	17, // 58: v2.VirtualMachineV2Service.GetVM:output_type -> v2.VMDetail
-	19, // 59: v2.VirtualMachineV2Service.GetVMVulnSummary:output_type -> v2.VMVulnSummary
-	23, // 60: v2.VirtualMachineV2Service.ListVMCVEsByVM:output_type -> v2.ListVMCVEsByVMResponse
-	26, // 61: v2.VirtualMachineV2Service.GetVMCVEComponents:output_type -> v2.GetVMCVEComponentsResponse
-	29, // 62: v2.VirtualMachineV2Service.ListVMComponents:output_type -> v2.ListVMComponentsResponse
-	10, // 63: v2.VirtualMachineV2Service.ListVMs:output_type -> v2.ListVMsResponse
-	13, // 64: v2.VirtualMachineV2Service.ListVMCVEs:output_type -> v2.ListVMCVEsResponse
-	15, // 65: v2.VirtualMachineV2Service.GetVMDashboardCounts:output_type -> v2.VMDashboardCountsResponse
-	30, // 66: v2.VirtualMachineV2Service.GetVMCVEDetail:output_type -> v2.VMCVEDetail
-	34, // 67: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:output_type -> v2.ListVMCVEAffectedVMsResponse
-	58, // [58:68] is the sub-list for method output_type
-	48, // [48:58] is the sub-list for method input_type
-	48, // [48:48] is the sub-list for extension type_name
-	48, // [48:48] is the sub-list for extension extendee
-	0,  // [0:48] is the sub-list for field type_name
+	39, // 45: v2.GetVMCVEDetailRequest.query:type_name -> v2.RawQuery
+	40, // 46: v2.VMCVEAffectedVMRow.severity:type_name -> v2.VulnerabilitySeverity
+	39, // 47: v2.ListVMCVEAffectedVMsRequest.query:type_name -> v2.RawQuery
+	32, // 48: v2.ListVMCVEAffectedVMsResponse.vms:type_name -> v2.VMCVEAffectedVMRow
+	18, // 49: v2.VirtualMachineV2Service.GetVM:input_type -> v2.GetVMRequest
+	20, // 50: v2.VirtualMachineV2Service.GetVMVulnSummary:input_type -> v2.GetVMVulnSummaryRequest
+	22, // 51: v2.VirtualMachineV2Service.ListVMCVEsByVM:input_type -> v2.ListVMCVEsByVMRequest
+	25, // 52: v2.VirtualMachineV2Service.GetVMCVEComponents:input_type -> v2.GetVMCVEComponentsRequest
+	28, // 53: v2.VirtualMachineV2Service.ListVMComponents:input_type -> v2.ListVMComponentsRequest
+	9,  // 54: v2.VirtualMachineV2Service.ListVMs:input_type -> v2.ListVMsRequest
+	12, // 55: v2.VirtualMachineV2Service.ListVMCVEs:input_type -> v2.ListVMCVEsRequest
+	14, // 56: v2.VirtualMachineV2Service.GetVMDashboardCounts:input_type -> v2.VMDashboardCountsRequest
+	31, // 57: v2.VirtualMachineV2Service.GetVMCVEDetail:input_type -> v2.GetVMCVEDetailRequest
+	33, // 58: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:input_type -> v2.ListVMCVEAffectedVMsRequest
+	17, // 59: v2.VirtualMachineV2Service.GetVM:output_type -> v2.VMDetail
+	19, // 60: v2.VirtualMachineV2Service.GetVMVulnSummary:output_type -> v2.VMVulnSummary
+	23, // 61: v2.VirtualMachineV2Service.ListVMCVEsByVM:output_type -> v2.ListVMCVEsByVMResponse
+	26, // 62: v2.VirtualMachineV2Service.GetVMCVEComponents:output_type -> v2.GetVMCVEComponentsResponse
+	29, // 63: v2.VirtualMachineV2Service.ListVMComponents:output_type -> v2.ListVMComponentsResponse
+	10, // 64: v2.VirtualMachineV2Service.ListVMs:output_type -> v2.ListVMsResponse
+	13, // 65: v2.VirtualMachineV2Service.ListVMCVEs:output_type -> v2.ListVMCVEsResponse
+	15, // 66: v2.VirtualMachineV2Service.GetVMDashboardCounts:output_type -> v2.VMDashboardCountsResponse
+	30, // 67: v2.VirtualMachineV2Service.GetVMCVEDetail:output_type -> v2.VMCVEDetail
+	34, // 68: v2.VirtualMachineV2Service.ListVMCVEAffectedVMs:output_type -> v2.ListVMCVEAffectedVMsResponse
+	59, // [59:69] is the sub-list for method output_type
+	49, // [49:59] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_virtual_machine_v2_service_proto_init() }

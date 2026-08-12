@@ -41,9 +41,9 @@ slack_triage_report() {
 
     local line
     if [[ "$prev" -eq 0 ]]; then
-        line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues"
+        line="<!subteam^S0BLP724AG2> There are ${curr} untriaged issues"
     else
-        line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues (not including ${prev} leftovers from previous duty)"
+        line="<!subteam^S0BLP724AG2> There are ${curr} untriaged issues (not including ${prev} leftovers from previous duty)"
     fi
 
     local body

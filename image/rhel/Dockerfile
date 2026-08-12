@@ -96,8 +96,7 @@ COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
-    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

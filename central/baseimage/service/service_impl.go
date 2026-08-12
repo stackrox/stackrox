@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/integration"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -102,7 +101,7 @@ func (s *serviceImpl) UpdateBaseImageTagPattern(ctx context.Context, req *v2.Upd
 	}
 
 	_, err := s.datastore.UpdateConfiguration(ctx, req.GetId(), repository.ConfigUpdate{
-		TagPattern: pointers.String(req.GetBaseImageTagPattern()),
+		TagPattern: new(req.GetBaseImageTagPattern()),
 	})
 	if err != nil {
 		if errors.Is(err, repository.ErrScanInProgress) {

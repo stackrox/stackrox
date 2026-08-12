@@ -170,72 +170,103 @@ func podsReady(num int32) *storage.CollectorHealthInfo_TotalReadyPods {
 }
 
 func TestOverallHealth(t *testing.T) {
-	cases := []struct {
-		name     string
+	cases := map[string]struct {
 		health   *storage.ClusterHealthStatus
 		expected storage.ClusterHealthStatus_HealthStatusLabel
 	}{
-		{
-			name: "sensor degraded, collector unhealthy",
+		"sensor degraded, collector unhealthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
-		{
-			name: "sensor unhealthy, collector degraded",
+		"sensor unhealthy, collector degraded": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 			},
 			expected: storage.ClusterHealthStatus_UNHEALTHY,
 		},
-		{
-			name: "sensor degraded, collector healthy",
+		"sensor degraded, collector healthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
-		{
-			name: "sensor healthy, collector degraded",
+		"sensor healthy, collector degraded": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
 			},
 			expected: storage.ClusterHealthStatus_DEGRADED,
 		},
-		{
-			name: "sensor healthy, collector unavailable",
+		"sensor healthy, collector unavailable": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
 			},
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
-		{
-			name: "sensor healthy, collector healthy",
+		"sensor healthy, collector healthy": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
 				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_HEALTHY,
 		},
-		{
-			name: "sensor unintialized, collector unhealthy: unexpected states",
+		"sensor uninitialized, collector unhealthy: unexpected states": {
 			health: &storage.ClusterHealthStatus{
 				SensorHealthStatus:    storage.ClusterHealthStatus_UNINITIALIZED,
 				CollectorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
 			},
 			expected: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
+		"scanner uninitialized does not affect overall health": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_UNINITIALIZED,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"scanner healthy does not degrade overall health": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_HEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_HEALTHY,
+		},
+		"scanner unhealthy makes overall unhealthy": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
+		"scanner degraded makes overall degraded": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_DEGRADED,
+		},
+		"scanner degraded with sensor unhealthy makes overall unhealthy": {
+			health: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				ScannerHealthStatus:   storage.ClusterHealthStatus_DEGRADED,
+			},
+			expected: storage.ClusterHealthStatus_UNHEALTHY,
+		},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, c.expected, PopulateOverallClusterStatus(c.health))
 		})
 	}
-
 }

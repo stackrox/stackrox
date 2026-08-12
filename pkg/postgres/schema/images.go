@@ -45,6 +45,7 @@ var (
 		schema.SetSearchScope([]v1.SearchCategory{
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
+			v1.SearchCategory_IMAGES,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,

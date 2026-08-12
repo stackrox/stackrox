@@ -1,5 +1,6 @@
 import { Grid, GridItem } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { Cluster } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
@@ -21,6 +22,9 @@ export function ClusterSummaryGrid({
     clusterRetentionInfo,
     clusterInfo,
 }: ClusterSummaryGridProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
+
     return (
         <Grid hasGutter>
             {clusterInfo.status && (
@@ -30,7 +34,7 @@ export function ClusterSummaryGrid({
                     </ClusterHealthPanel>
                 </GridItem>
             )}
-            {clusterInfo.status && (
+            {clusterInfo.status && !isSensorCompatStatusEnabled && (
                 <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
                     <SensorUpgradePanel
                         centralVersion={centralVersion}

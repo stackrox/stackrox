@@ -90,7 +90,7 @@ When the user needs to add a new column to an existing database table:
 
 **IMPORTANT: Schema-only changes do NOT require a migration.** Adding columns or tables
 is handled automatically by GORM AutoMigrate on every Central startup. Indexes are managed
-by the code generator and applied outside of GORM (see `migrator/MIGRATIONS_GUIDE.md`).
+by the code generator and applied outside of GORM (see `migrator/README.md`).
 Simply update the proto definition (add field, add search/sql tags) and regenerate the
 schema code. A migration is ONLY needed when existing data must be backfilled or transformed.
 If the new column can tolerate its zero value until normal operation populates it, no
