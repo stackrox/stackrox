@@ -392,40 +392,11 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	if result.Unchanged {
-		// Backward-compat fallback: against a current roxagent that honors
-		// knownEpoch, an epoch mismatch is already resolved in the response
-		// above (Unchanged would be false), so this branch is effectively
-		// dead code. It only matters against an agent that predates the
-		// knownEpoch request field and ignores it, where roxagent's
-		// generation-only comparison can produce a false "unchanged" right
-		// after a restart (report_generation resets to 1 and coincidentally
-		// re-matches Sensor's cached value).
-		//
-		// mandatoryRefreshDue is deliberately not re-checked here: when
-		// true, the call above already requested ifNewerThan=0, so a
-		// current roxagent can only report Unchanged for a reason other
-		// than the mandatory refresh — i.e. an epoch mismatch below.
-		epoch := result.Meta.GetEpoch()
-		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
-		if !epochMismatch {
-			next := s.scheduleAfterAttempt(key, scrapeOK)
-			log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
-			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
-			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
-			return true
-		}
-		log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
-			key, snap.lastEpoch, epoch, snap.lastGeneration)
-		result, outcome = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
-		if outcome != scrapeOK {
-			next := s.scheduleAfterAttempt(key, outcome)
-			kind := "retryable"
-			if outcome == scrapeNonRetryable {
-				kind = "non-retryable"
-			}
-			log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
-			return false
-		}
+		next := s.scheduleAfterAttempt(key, scrapeOK)
+		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
+		log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
+		return true
 	}
 
 	viable, warning := reportcheck.IsViable(result.IndexReport, s.warnMaxBytes)
