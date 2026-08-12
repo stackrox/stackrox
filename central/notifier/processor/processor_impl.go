@@ -184,13 +184,15 @@ func matchString(actual, pattern string) bool {
 	if pattern == "" {
 		return true
 	}
-	// Exact match or regex-style prefix match
+	// Strip exact-match quotes added by search.ExactMatchString
+	if len(pattern) >= 2 && pattern[0] == '"' && pattern[len(pattern)-1] == '"' {
+		pattern = pattern[1 : len(pattern)-1]
+	}
 	if actual == pattern {
 		return true
 	}
-	// Handle "r/..." regex patterns from collection rules
 	if len(pattern) > 2 && pattern[:2] == "r/" {
-		return false // regex matching would require a regex engine; fall back to not matching
+		return false
 	}
 	return false
 }
