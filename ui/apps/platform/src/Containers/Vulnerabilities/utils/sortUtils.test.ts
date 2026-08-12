@@ -140,12 +140,14 @@ describe('getWorkloadCveOverviewSortFields', () => {
         expect(cveFields).toContain('Image Sha');
     });
 
-    it('should return single Severity field for non-CVE tabs when useUnifiedView is true', () => {
+    it('should omit Severity from Image and Deployment tabs when useUnifiedView is true', () => {
         const imageFields = getWorkloadCveOverviewSortFields('Image', true);
-        expect(imageFields).toContain('Severity');
+        expect(imageFields).not.toContain('Severity');
+        expect(imageFields).toContain('Image');
 
         const deploymentFields = getWorkloadCveOverviewSortFields('Deployment', true);
-        expect(deploymentFields).toContain('Severity');
+        expect(deploymentFields).not.toContain('Severity');
+        expect(deploymentFields).toContain('Deployment');
     });
 
     it('should preserve non-severity fields across all tabs', () => {
@@ -166,12 +168,11 @@ describe('getWorkloadCveOverviewDefaultSortOption', () => {
         });
     });
 
-    it('should return severity sort for Image tab when useUnifiedView is true', () => {
+    it('should return alphabetical sort for Image tab when useUnifiedView is true', () => {
         const sortOption = getWorkloadCveOverviewDefaultSortOption('Image', {}, true);
         expect(sortOption).toEqual({
-            field: 'Severity',
-            direction: 'desc',
-            aggregateBy: { aggregateFunc: 'max' },
+            field: 'Image',
+            direction: 'asc',
         });
     });
 

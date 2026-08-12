@@ -55,8 +55,14 @@ export function getWorkloadCveOverviewSortFields(
             }
             return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
+            if (useUnifiedView) {
+                return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
+            }
             return ['Image', severityFields, 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
+            if (useUnifiedView) {
+                return ['Deployment', 'Cluster', 'Namespace', 'Created'];
+            }
             return ['Deployment', severityFields, 'Cluster', 'Namespace', 'Created'];
         default:
             return ensureExhaustive(entityTab);
@@ -83,11 +89,7 @@ export function getWorkloadCveOverviewDefaultSortOption(
                     aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
                 };
             case 'Image':
-                return {
-                    field: 'Severity',
-                    direction: 'desc',
-                    aggregateBy: { aggregateFunc: 'max' },
-                };
+                return { field: 'Image', direction: 'asc' };
             case 'Deployment':
                 return { field: 'Deployment', direction: 'asc' };
             default:

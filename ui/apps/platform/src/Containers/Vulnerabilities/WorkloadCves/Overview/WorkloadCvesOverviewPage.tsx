@@ -153,7 +153,7 @@ function WorkloadCvesOverviewPage() {
     const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
 
     const [activeSeverityTab] = useURLStringUnion('severityTab', severityTabValues);
-    const useSeverityTabs = useUnifiedView && isViewingWithCves && activeEntityTabKey === 'CVE';
+    const useSeverityTabs = useUnifiedView && isViewingWithCves;
 
     const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
@@ -471,13 +471,13 @@ function WorkloadCvesOverviewPage() {
                         rowActions: hideColumnIf(!showDeferralUI),
                     }}
                     imageTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                        cvesBySeverity: hideColumnIf(!isViewingWithCves || useSeverityTabs),
                         rowActions: hideColumnIf(
                             !hasWriteAccessForWatchedImage && !hasWriteAccessForImage
                         ),
                     }}
                     deploymentTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                        cvesBySeverity: hideColumnIf(!isViewingWithCves || useSeverityTabs),
                     }}
                 />
                 <WatchedImagesModal
