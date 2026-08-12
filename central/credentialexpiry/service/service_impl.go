@@ -179,7 +179,11 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	if err == nil {
 		return server, nil
 	}
-	return net.JoinHostPort(server, "443"), nil
+	// server may be a bare hostname ("scanner.stackrox.svc") or a
+	// bracketed IPv6 address ("[::1]") from URL parsing. Strip brackets
+	// before JoinHostPort to avoid double-bracketing.
+	host := strings.TrimRight(strings.TrimLeft(server, "["), "]")
+	return net.JoinHostPort(host, "443"), nil
 }
 
 func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
