@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -28,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/tlsutils"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
@@ -171,19 +171,15 @@ func ensureTLSAndReturnAddr(endpoint string) (string, error) {
 	if !strings.HasPrefix(endpoint, "https://") {
 		return "", errors.Errorf("endpoint %s is not an HTTPS endpoint", endpoint)
 	}
-	server := urlfmt.GetServerFromURL(endpoint)
-	if server == "" {
-		return "", errors.Errorf("failed to retrieve server from endpoint %s", endpoint)
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Hostname() == "" {
+		return "", errors.Errorf("failed to parse endpoint %s", endpoint)
 	}
-	_, _, err := net.SplitHostPort(server)
-	if err == nil {
-		return server, nil
+	port := u.Port()
+	if port == "" {
+		port = "443"
 	}
-	// server may be a bare hostname ("scanner.stackrox.svc") or a
-	// bracketed IPv6 address ("[::1]") from URL parsing. Strip brackets
-	// before JoinHostPort to avoid double-bracketing.
-	host := strings.TrimRight(strings.TrimLeft(server, "["), "]")
-	return net.JoinHostPort(host, "443"), nil
+	return net.JoinHostPort(u.Hostname(), port), nil
 }
 
 func maybeGetExpiryFromScannerAt(ctx context.Context, subject mtls.Subject, tlsConfig *tls.Config, endpoint string) (*time.Time, error) {
