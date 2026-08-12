@@ -1,4 +1,4 @@
-import type { ComponentClass, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
@@ -8,17 +8,18 @@ import {
     CardTitle,
     Flex,
     FlexItem,
-    Icon,
     pluralize,
 } from '@patternfly/react-core';
-import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
 import { sensorCompatibilityMap } from 'Containers/Clusters/cluster.helpers';
+import type { SensorCompatibilityInfo } from 'Containers/Clusters/cluster.helpers';
 import { clustersBasePath } from 'routePaths';
 import type { Cluster } from 'types/cluster.proto';
 
+import { ErrorIcon, SpinnerIcon, healthIconMap } from '../CardHeaderIcons';
+import type { HealthVariant } from '../CardHeaderIcons';
 import { TdTotal } from './ClustersHealthTable';
 
 const dataLabelMatched = 'Matched';
@@ -81,7 +82,7 @@ function TdCompatibilityCount({
 }: {
     count: number;
     dataLabel: string;
-    style: { Icon: ComponentClass<{ className?: string }>; fgColor: string };
+    style: SensorCompatibilityInfo;
 }): ReactElement {
     const { Icon, fgColor } = style;
     return (
@@ -95,25 +96,35 @@ function TdCompatibilityCount({
     );
 }
 
-function SensorCompatibilityHeader({
-    counts,
-}: {
-    counts: SensorCompatibilityCounts | null;
-}): ReactElement {
-    const isIncompatible = counts && counts.INCOMPATIBLE > 0;
-    const phrase = isIncompatible
+// Danger, if any sensors are incompatible; otherwise success.
+function getSensorCompatibilityVariant(counts: SensorCompatibilityCounts): HealthVariant {
+    return counts.INCOMPATIBLE !== 0 ? 'danger' : 'success';
+}
+
+function getSensorCompatibilityPhrase(counts: SensorCompatibilityCounts): string {
+    return counts.INCOMPATIBLE !== 0
         ? pluralize(counts.INCOMPATIBLE, 'incompatible sensor')
         : 'No incompatible sensors';
-    const StatusIcon = isIncompatible ? ExclamationCircleIcon : CheckCircleIcon;
-    const status = isIncompatible ? 'danger' : 'success';
+}
+
+function SensorCompatibilityHeader({
+    counts,
+    isFetchingInitialRequest,
+}: {
+    counts: SensorCompatibilityCounts | null;
+    isFetchingInitialRequest: boolean;
+}): ReactElement {
+    const icon = isFetchingInitialRequest
+        ? SpinnerIcon
+        : !counts
+          ? ErrorIcon
+          : healthIconMap[getSensorCompatibilityVariant(counts)];
+
+    const phrase = counts === null ? '' : getSensorCompatibilityPhrase(counts);
 
     return (
-        <Flex className="pf-v6-u-flex-grow-1">
-            <FlexItem>
-                <Icon status={status}>
-                    <StatusIcon />
-                </Icon>
-            </FlexItem>
+        <Flex grow={{ default: 'grow' }}>
+            <FlexItem>{icon}</FlexItem>
             <FlexItem>
                 <CardTitle component="h2">Sensor compatibility status</CardTitle>
             </FlexItem>
@@ -144,7 +155,10 @@ function SensorCompatibilityCard({
     return (
         <Card isCompact>
             <CardHeader>
-                <SensorCompatibilityHeader counts={counts} />
+                <SensorCompatibilityHeader
+                    counts={counts}
+                    isFetchingInitialRequest={isFetchingInitialRequest}
+                />
             </CardHeader>
             {errorMessageFetching ? (
                 <CardBody>

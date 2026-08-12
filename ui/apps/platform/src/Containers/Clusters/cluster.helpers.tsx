@@ -234,6 +234,9 @@ export const sensorCompatibilityMap = {
     },
 } as const;
 
+export type SensorCompatibilityInfo =
+    (typeof sensorCompatibilityMap)[keyof typeof sensorCompatibilityMap];
+
 type UpgradeState = {
     displayValue: string;
     type: string;
