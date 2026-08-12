@@ -59,13 +59,3 @@ class PreSystemTests:
         )
 
 
-class CollectionMethodOverridePreTest:
-    """
-    CollectionPreTest - allows finer control over collection method
-    for individual test jobs
-    """
-    def __init__(self, method):
-        self._collection_method = method
-
-    def run(self):
-        os.environ['COLLECTION_METHOD'] = self._collection_method

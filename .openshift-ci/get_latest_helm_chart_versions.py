@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Looks up N previous releases and outputs a Helm chart version for the most
+Looks up supported releases and outputs a product version for the most
 recent patch for each found release.
 """
 
@@ -46,11 +46,13 @@ PRODUCT_LIFECYCLES_API = "https://access.redhat.com/product-life-cycles/api/v1/p
 # with the current cadence and support period.
 NUM_RELEASES_DEFAULT = 3
 
-# For support exceptions we may need to get the latest patch for a specific
-# release that is not within the last N versions. In that case
-# get_latest_helm_chart_version_for_specific_release will provide the latest
-# patch of the input release.
-sample_support_exception = Release(major=3, minor=74)
+# From this release onward the stackrox-operator chart is used instead of the
+# per-component legacy charts (stackrox-central-services,
+# stackrox-secured-cluster-services), which are not published for new releases.
+# TODO: Drop legacy chart inspection once 4.10 goes EOL.
+OPERATOR_CHART_FIRST_RELEASE = Release(major=4, minor=11)
+
+OPERATOR_CHART_NAME = "stackrox-operator"
 
 
 def main(argv):
@@ -60,23 +62,27 @@ def main(argv):
         "stackrox-secured-cluster-services", num_releases
     )
     logging.info(
-        f"Helm chart versions for the latest {num_releases} releases:")
+        f"Product versions for the latest {num_releases} releases:")
 
     logging.info("\n".join(helm_versions))
-    helm_version_specific = get_latest_helm_chart_version_for_specific_release(
-        "stackrox-secured-cluster-services", sample_support_exception
-    )
-    logging.info(
-        f"Latest chart version for the {sample_support_exception} "
-        f"releases is {helm_version_specific}"
-    )
     supported_versions_string = [[f"{version.major}.{version.minor}"] for version in get_supported_releases()]
     supported_central_versions_from_api, supported_sensor_versions_from_api = get_supported_helm_chart_versions()
     logging.info(
         f"\nThe product lifecycles API denotes support for the following versions: {supported_versions_string}\n"
-        f"Found helm charts for the following supported versions: "
+        f"Found product versions for the following supported versions: "
         f"central{supported_central_versions_from_api} - sensor{supported_sensor_versions_from_api}"
     )
+
+
+def _is_legacy_release(release: Release) -> bool:
+    """Returns True for releases that use per-component charts (pre-4.11)."""
+    return release < OPERATOR_CHART_FIRST_RELEASE
+
+
+def _chart_to_product_version(chart: dict) -> str:
+    """Return a product version string (e.g. '4.9.3') from a chart dict."""
+    av = chart["parsed_app_version"]
+    return f"{av.major}.{av.minor}.{av.patch}"
 
 
 def get_latest_helm_chart_versions(chart_name, num_releases=NUM_RELEASES_DEFAULT):
@@ -110,22 +116,42 @@ def __get_supported_helm_chart_versions():
     supported_central_versions = []
     supported_sensor_versions = []
 
+    charts = read_charts()  # one helm search, reused for all releases
+
     supported_releases = get_supported_releases()
     for release in supported_releases:
-        if __does_chart_exist("stackrox-central-services", release):
-            supported_central_versions.append(__get_latest_helm_chart_version_for_specific_release(
-                "stackrox-central-services", release)
-            )
+        if _is_legacy_release(release):
+            # Pre-4.11: separate charts for central and sensor.
+            for chart_name, version_list in [
+                ("stackrox-central-services", supported_central_versions),
+                ("stackrox-secured-cluster-services", supported_sensor_versions),
+            ]:
+                filtered = filter_charts_by_name(charts, chart_name)
+                if any(version_to_release(c["parsed_app_version"]) == release
+                       for c in filtered):
+                    chart = get_latest_chart_for_specific_release(filtered, release)
+                    version_list.append(_chart_to_product_version(chart))
+                else:
+                    logging.debug(
+                        f"Supported version \"{release.major}.{release.minor}\" has no "
+                        f"corresponding chart for {chart_name}."
+                    )
         else:
-            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
-                          f"stackrox-central-services.")
-        if __does_chart_exist("stackrox-secured-cluster-services", release):
-            supported_sensor_versions.append(__get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", release)
-            )
-        else:
-            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
-                          f"stackrox-secured-cluster-services.")
+            # 4.11+: one operator chart covers both central and sensor.
+            filtered = filter_charts_by_name(charts, OPERATOR_CHART_NAME)
+            if any(version_to_release(c["parsed_app_version"]) == release
+                   for c in filtered):
+                chart = get_latest_chart_for_specific_release(filtered, release)
+                version = _chart_to_product_version(chart)
+                supported_central_versions.append(version)
+                supported_sensor_versions.append(version)
+            else:
+                logging.warning(
+                    f"Supported version \"{release.major}.{release.minor}\" has no "
+                    f"corresponding chart for {OPERATOR_CHART_NAME}. "
+                    f"This release will be skipped in compatibility testing."
+                )
+
     return supported_central_versions, supported_sensor_versions
 
 
@@ -164,15 +190,6 @@ def __get_data_from_product_lifecycles_api():
     return []
 
 
-def __does_chart_exist(chart_name, release):
-    charts = read_charts()
-    filtered_charts = filter_charts_by_name(charts, chart_name)
-    for fchart in filtered_charts:
-        if version_to_release(fchart["parsed_app_version"]) == release:
-            return True
-    return False
-
-
 def __get_latest_helm_chart_versions(chart_name, num_releases):
     charts = read_charts()
     logging.info(f"Discovered total {len(charts)} charts")
@@ -187,8 +204,7 @@ def __get_latest_helm_chart_versions(chart_name, num_releases):
     logging.debug(
         f"Identified these charts as {num_releases} latest: {latest_charts}")
 
-    # Specifically remove 400.1.6 which is affected by a max message size bug, but is no longer supported.
-    return [c["version"] for c in latest_charts if c["version"] != "400.1.6"]
+    return [_chart_to_product_version(c) for c in latest_charts]
 
 
 def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
@@ -204,7 +220,7 @@ def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
     logging.debug(
         f"Identified {latest_chart} as latest version of release {release}")
 
-    return latest_chart["version"]
+    return _chart_to_product_version(latest_chart)
 
 
 def read_charts():
