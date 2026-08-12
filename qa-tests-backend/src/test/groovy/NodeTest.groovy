@@ -1,6 +1,3 @@
-import org.javers.core.Javers
-import org.javers.core.JaversBuilder
-
 import io.stackrox.proto.storage.NodeOuterClass
 
 import services.ClusterService
@@ -29,8 +26,7 @@ class NodeTest extends BaseSpecification {
             if (stackroxNode.labelsMap != orchestratorNode.labels) {
                 log.info "There is a node label difference"
                 // Javers helps provide an useful error in the test log
-                Javers javers = JaversBuilder.javers().build()
-                def diff = javers.compare(stackroxNode.labelsMap, orchestratorNode.labels)
+                def diff = JAVERS.compare(stackroxNode.labelsMap, orchestratorNode.labels)
                 assert diff.changes.size() == 0
                 assert diff.changes.size() != 0 // should not get here
             }

@@ -1,6 +1,7 @@
 package clusterhealth
 
 import (
+	"slices"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -142,29 +143,36 @@ func PopulateLocalScannerStatus(localScannerHealthInfo *storage.ScannerHealthInf
 	return storage.ClusterHealthStatus_HEALTHY
 }
 
-// PopulateOverallClusterStatus returns overall cluster status based on sensor status and collector status.
+// PopulateOverallClusterStatus returns overall cluster status based on sensor, collector,
+// admission control, and local scanner status.
 func PopulateOverallClusterStatus(clusterHealth *storage.ClusterHealthStatus) storage.ClusterHealthStatus_HealthStatusLabel {
 	sensorStatus := clusterHealth.GetSensorHealthStatus()
 	collectorStatus := clusterHealth.GetCollectorHealthStatus()
 	admissionControlStatus := clusterHealth.GetAdmissionControlHealthStatus()
+	scannerStatus := clusterHealth.GetScannerHealthStatus()
 
-	// Collector having states other than default state when sensor is in default state is unlikely, but still check it first.
 	if sensorStatus == storage.ClusterHealthStatus_UNINITIALIZED {
 		return sensorStatus
 	}
 
-	if collectorStatus == storage.ClusterHealthStatus_UNHEALTHY ||
-		admissionControlStatus == storage.ClusterHealthStatus_UNHEALTHY {
+	if isUnhealthy(collectorStatus, admissionControlStatus, scannerStatus) {
 		return storage.ClusterHealthStatus_UNHEALTHY
 	}
 
-	if collectorStatus == storage.ClusterHealthStatus_DEGRADED || admissionControlStatus == storage.ClusterHealthStatus_DEGRADED {
+	if isDegraded(collectorStatus, admissionControlStatus, scannerStatus) {
 		if sensorStatus == storage.ClusterHealthStatus_UNHEALTHY {
 			return storage.ClusterHealthStatus_UNHEALTHY
 		}
 		return storage.ClusterHealthStatus_DEGRADED
 	}
 
-	// If we are here it means collector and admission controller is not unhealthy or degraded. Overall cluster health is determined by sensor status.
 	return sensorStatus
+}
+
+func isUnhealthy(statuses ...storage.ClusterHealthStatus_HealthStatusLabel) bool {
+	return slices.Contains(statuses, storage.ClusterHealthStatus_UNHEALTHY)
+}
+
+func isDegraded(statuses ...storage.ClusterHealthStatus_HealthStatusLabel) bool {
+	return slices.Contains(statuses, storage.ClusterHealthStatus_DEGRADED)
 }

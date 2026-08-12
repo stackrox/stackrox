@@ -1,7 +1,8 @@
-# ACK Model for Node and VM Scanning in ACS
+# ACK Model for Node Scanning in ACS
 
-This document describes the ACK model ACS uses for node scanning and is extending to VM scanning for 4.11.
-It treats the 4.11 behavior as the reference design, then calls out the small VM-specific gap that is still being closed in [#20118](https://github.com/stackrox/stackrox/pull/20118) and [#20107](https://github.com/stackrox/stackrox/pull/20107).
+This document describes the ACK model ACS uses for node scanning.
+
+For the VM index report ACK/retry design, see `sensor/common/virtualmachine/ACK_MODEL.md`.
 
 ## Summary for Busy Readers
 
@@ -9,9 +10,6 @@ It treats the 4.11 behavior as the reference design, then calls out the small VM
   - `SensorACK` for `Central -> Sensor`
   - `ComplianceACK` for `Sensor -> Compliance`
 - ACKs were introduced for node scanning so Compliance could retry expensive periodic node scans instead of waiting for the next normal interval when only delivery had failed.
-- For 4.11, VM scanning follows the same delivery-tracking idea: the relay sends once, a VM-specific UMH tracks ACK/NACK, and the last payload can be retransmitted while it remains cached.
-- VM ACK correlation uses `vmID:vsockCID`, which avoids CID reuse ambiguity while still matching the relay's CID-based state.
-- Even in this design, ACS still cannot tell `roxagent` to run a fresh guest-side scan on demand. It can only retransmit the last cached report while that payload is still available.
 
 ## Design Overview
 
@@ -98,101 +96,3 @@ sequenceDiagram
         C->>S: resend cached last scan
     end
 ```
-
-This is the baseline that the VM flow is meant to follow.
-
-## VM Scanning
-
-VM scanning reuses the same ACK model, but the producer is different.
-
-The report originates inside the guest VM in `roxagent`, is sent over vsock to the host, passes through the relay running in the Compliance container, then goes through Sensor and Central.
-
-In the 4.11 design:
-
-- the relay hands the report off once instead of doing long blocking inline retries
-- a VM-specific UMH tracks whether delivery has been confirmed
-- the relay keeps the last payload in a bounded cache
-- on retry, that cached payload can be retransmitted immediately
-
-```mermaid
-sequenceDiagram
-    participant A as roxagent inside VM
-    participant R as VM relay
-    participant U as VM UMH + payload cache
-    participant S as Sensor VM handler
-    participant X as Central VM pipeline
-
-    A->>R: periodic VM report
-    R->>U: cache payload + ObserveSending(CID)
-    R->>S: single send attempt
-    S->>S: resolve CID to VM ID
-    S->>X: SensorEvent(vmID, index report)
-    X-->>S: SensorACK(vmID:vsockCID, ACK|NACK, reason)
-    S-->>U: ComplianceACK(mapped back to relay resource)
-
-    alt ACK
-        U-->>R: confirm delivery
-        R->>U: remove cached payload
-    else NACK or ACK timeout
-        U-->>R: RetryCommand(CID)
-        alt cached payload present
-            R->>S: resend cached payload
-        else cache miss or payload expired
-            Note over R,A: wait for next periodic report from roxagent
-        end
-    end
-```
-
-The design also adds two host-side controls:
-
-- per-VSOCK rate limiting, so one noisy VM cannot monopolize the host relay path
-- stale-ACK detection, so the system can distinguish ordinary back-pressure from "we have not seen an ACK for too long"
-
-## Why the VM `resource_id` Uses `vmID:vsockCID`
-
-For node scanning, the resource ID can simply be the node name because the sender and retry owner are both node-local.
-
-VM scanning needs more than that.
-
-Using only the vsock CID is unsafe because a CID can later be reused by a different VM. Using only the VM ID is also not ideal because the relay naturally knows the report by CID.
-
-So the intended correlation key is:
-
-```text
-vmID:vsockCID
-```
-
-This gives both sides what they need:
-
-- `vmID` avoids cross-VM ambiguity if a CID is reused
-- `vsockCID` preserves the relay-visible identifier
-- Sensor can still extract the VM ID portion to route the ACK back toward the right host-side connection
-
-One limitation remains: `vmID:vsockCID` is still not a per-report unique ID. Multiple in-flight reports from the same VM with the same CID are still not fully distinguishable.
-
-## What This Still Does Not Change
-
-Even in the 4.11 design, ACS still cannot tell `roxagent` to perform a fresh scan on demand.
-
-So the improvement is limited to delivery retry:
-
-- ACS can retransmit the last known VM report while it is cached.
-
-But ACS still cannot:
-
-- trigger a brand new guest-side rescan immediately after a NACK.
-
-## Status Note
-
-The document above is ahead of the current implementation only in the VM-specific retry pieces.
-
-What already matches this design:
-
-- the generic ACK message types
-- the node ACK/retry loop
-- the VM ACK correlation direction using `vmID:vsockCID`
-
-What is still landing:
-
-- [#20118](https://github.com/stackrox/stackrox/pull/20118): connect VM ACK/NACK handling to the VM-specific retry state and move the relay away from long inline retry behavior
-- [#20107](https://github.com/stackrox/stackrox/pull/20107): add the relay payload cache so the retry path can retransmit the last report instead of only waiting for the next periodic submission

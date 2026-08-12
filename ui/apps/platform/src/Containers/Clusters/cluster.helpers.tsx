@@ -201,7 +201,7 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
-const sensorCompatibilityMap = {
+export const sensorCompatibilityMap = {
     SENSOR_VERSION_COMPATIBILITY_MATCHED: {
         displayValue: 'Matched',
         Icon: CheckCircleIcon,
@@ -233,6 +233,9 @@ const sensorCompatibilityMap = {
         fgColor: 'pf-v6-u-icon-color-subtle',
     },
 } as const;
+
+export type SensorCompatibilityInfo =
+    (typeof sensorCompatibilityMap)[keyof typeof sensorCompatibilityMap];
 
 type UpgradeState = {
     displayValue: string;
