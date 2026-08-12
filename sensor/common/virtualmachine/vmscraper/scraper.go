@@ -251,7 +251,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
-	cycleStart := s.now()
+	tickStart := s.now()
 	reconcile := forceReconcile
 	if !reconcile {
 		concurrency.WithLock(&s.mu, func() {
@@ -264,12 +264,10 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
-	if reconcile {
-		metrics.PullCyclesTotal.Inc()
-		concurrency.WithLock(&s.mu, func() {
-			metrics.PullVMsInCycle.Set(float64(len(s.vmState)))
-		})
-	}
+	metrics.PullTicksTotal.Inc()
+	concurrency.WithLock(&s.mu, func() {
+		metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
+	})
 
 	var successCount atomic.Int32
 	g, gCtx := errgroup.WithContext(ctx)
@@ -285,11 +283,9 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 	_ = g.Wait()
 
-	elapsed := s.now().Sub(cycleStart)
-	if reconcile {
-		log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
-		metrics.PullCycleDurationSeconds.Observe(elapsed.Seconds())
-	}
+	elapsed := s.now().Sub(tickStart)
+	log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
+	metrics.PullTickDurationSeconds.Observe(elapsed.Seconds())
 }
 
 func (s *VMScraper) reconcile() {
