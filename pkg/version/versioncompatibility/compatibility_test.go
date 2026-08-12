@@ -21,7 +21,7 @@ func xy(x, y int) productstreams.XYVersion {
 	return productstreams.XYVersion{X: x, Y: y}
 }
 
-func TestCompatibleVersionRange(t *testing.T) {
+func TestMakeCompatibleVersionRange(t *testing.T) {
 	overrideTestBumps(t)
 	tests := map[string]struct {
 		self productstreams.XYVersion
@@ -141,7 +141,7 @@ func TestCompatibleVersionRange(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := CompatibleVersionRange(tt.self, tt.n)
+			got, err := makeCompatibleVersionRange(tt.self, tt.n)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -159,7 +159,7 @@ func TestClassify(t *testing.T) {
 	runCases := func(t *testing.T, tests map[string]testCase) {
 		for name, tt := range tests {
 			t.Run(name, func(t *testing.T) {
-				versions, err := CompatibleVersionRange(tt.self, tt.n)
+				versions, err := makeCompatibleVersionRange(tt.self, tt.n)
 				assert.NoError(t, err)
 				got := classify(tt.self, versions, tt.remote)
 				assert.Equal(t, tt.want, got)
@@ -232,7 +232,7 @@ func TestClassify(t *testing.T) {
 
 	t.Run("self beyond known bumps returns error", func(t *testing.T) {
 		overrideTestBumps(t)
-		_, err := CompatibleVersionRange(xy(6, 0), 3)
+		_, err := makeCompatibleVersionRange(xy(6, 0), 3)
 		assert.Error(t, err)
 	})
 
@@ -363,5 +363,5 @@ func TestCompatibilityString(t *testing.T) {
 }
 
 func TestCompatibleVersionRangePanicsOnNegativeN(t *testing.T) {
-	assert.Panics(t, func() { _, _ = CompatibleVersionRange(xy(4, 5), -1) })
+	assert.Panics(t, func() { _, _ = makeCompatibleVersionRange(xy(4, 5), -1) })
 }
