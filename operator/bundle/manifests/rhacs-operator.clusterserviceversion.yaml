@@ -1615,7 +1615,7 @@ spec:
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:select:Enabled
               - urn:alm:descriptor:com.tectonic.ui:select:Disabled
-          - description: Settings for the virtual machine scraper.
+          - description: Settings for the virtual machine scraper running in Sensor.
             displayName: Scraper
             path: virtualMachines.scraper
           - description: |-
@@ -1625,14 +1625,14 @@ spec:
             path: virtualMachines.scraper.concurrency
           - description: |-
               Maximum response size in KB from a virtual machine agent.
-              Responses larger than this are rejected; that virtual machine is skipped until the next poll.
+              Responses larger than this are rejected and that virtual machine is skipped until the next poll.
               The default is: 16384.
             displayName: Max Response Size KB
             path: virtualMachines.scraper.maxResponseSizeKB
           - description: |-
               How often the scraper polls virtual machines for new reports.
               Minimum interval is 1m; shorter values are rounded up.
-              Shorter intervals refresh scans more often but increase API server load.
+              Shorter intervals refresh scans more often but increase the load on kubevirt API server.
               The default is: 5m.
             displayName: Poll Interval
             path: virtualMachines.scraper.pollInterval
