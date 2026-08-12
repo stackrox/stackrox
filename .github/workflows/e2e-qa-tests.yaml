@@ -309,8 +309,6 @@ jobs:
               check_stackrox_logs=True,
               artifact_destination_prefix="part-1",
           )
-          if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
-              post.openshift_namespaces = []
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run Part 2 tests
@@ -331,8 +329,6 @@ jobs:
               check_stackrox_logs=True,
               artifact_destination_prefix="part-2",
           )
-          if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
-              post.openshift_namespaces = []
           post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run DB backup and restore test
