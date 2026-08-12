@@ -24,7 +24,7 @@ on:
         type: string
         default: "direct-gke"
       extra-env-vars:
-        description: "Flavor-specific env vars as multi-line KEY=VALUE pairs."
+        description: "Environment variables for this flavor of QA E2E tests, as multi-line KEY=VALUE pairs"
         required: false
         type: string
       infra-flavor:
