@@ -96,26 +96,6 @@ deploy_earlier_postgres_central() {
     ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
-    if kubectl get nodes -l cloud.google.com/gke-spot=true --no-headers 2>/dev/null | grep -q .; then
-        local db_template="/tmp/early-stackrox-central-services-chart/templates/01-central-12-central-db.yaml"
-        if [[ -f "${db_template}" ]]; then
-            info "Spot nodes detected. Replacing central-db affinity with required anti-spot rule."
-            # Remove existing preferred anti-preemptible affinity block and replace
-            # with a required rule so the scheduler cannot place central-db on spot.
-            sed -i '/^      affinity:$/,/operator: DoesNotExist$/d' "${db_template}"
-            sed -i '/^    spec:$/a\
-\      affinity:\
-\        nodeAffinity:\
-\          requiredDuringSchedulingIgnoredDuringExecution:\
-\            nodeSelectorTerms:\
-\            - matchExpressions:\
-\              - key: cloud.google.com/gke-spot\
-\                operator: NotIn\
-\                values:\
-\                - "true"' "${db_template}"
-        fi
-    fi
-
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
          --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
