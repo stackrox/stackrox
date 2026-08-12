@@ -86,6 +86,8 @@ jobs:
           metadata:
             name: $CLUSTER_NAME
             region: $AWS_REGION
+          iam:
+            withOIDC: true
           kubernetesNetworkConfig:
             ipFamily: IPv6
           addons:
