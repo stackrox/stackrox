@@ -34,12 +34,17 @@ var (
 // to a storage.PermissionSet.
 //
 // The function maps:
+//
 //   - Core Kubernetes resources (namespaces, secrets, serviceaccounts) to their ACS equivalents
+//
 //   - RBAC resources (roles, clusterroles, rolebindings, clusterrolebindings) to their ACS equivalents
+//
 //   - Stackrox API resources (*.api.stackrox.io) to their ACS equivalents
 //
 //   - Read verbs (get, list, watch) to storage.Access_READ_ACCESS
+//
 //   - Write verbs (create, update, patch, delete, deletecollection) to storage,Access_READ_WRITE_ACCESS
+//
 //   - Wildcard verbs (*) to storage.Access_READ_WRITE_ACCESS (most permissive)
 //
 // Only supported resources that have ACS equivalents are included in the results.
@@ -93,7 +98,7 @@ func ConvertClusterRoleToPermissionSet(
 	}
 
 	return &storage.PermissionSet{
-		Id: uuid.NewV4().String(),
+		Id:               uuid.NewV4().String(),
 		ResourceToAccess: resourceToAccess,
 	}
 }
