@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -46,7 +47,20 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorACKSupport}
 }
 
-func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (h *handlerImpl) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
+	if vm == nil {
+		return errors.New("virtual machine info is nil")
+	}
+	var cidStr string
+	if vm.VSOCKCID != nil {
+		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
+	}
+	indexReport := &v1.IndexReport{
+		VsockCid: cidStr,
+		VmId:     string(vm.ID),
+		IndexV4:  report,
+	}
+
 	if h.stopper.Client().Stopped().IsDone() {
 		return errox.InvariantViolation.CausedBy(errInputChanClosed)
 	}
@@ -54,7 +68,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 	if !h.centralReady.IsDone() {
-		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", vm.GetVsockCid())
+		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", indexReport.GetVsockCid())
 		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
@@ -77,7 +91,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	select {
 	case <-ctx.Done():
 		// Handled in the next select statement
-	case h.indexReports <- vm:
+	case h.indexReports <- indexReport:
 		return nil
 	default:
 		blocked = true
@@ -93,7 +107,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		}
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
-	case h.indexReports <- vm:
+	case h.indexReports <- indexReport:
 		return nil
 	}
 }
@@ -245,10 +259,7 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
 }
 
-// resolveVM finds the VirtualMachine for an index report. Prefer vm_id when
-// Sensor already knows the Kubernetes UID (pull path). Otherwise resolve via
-// vsock_cid, used by synthetic/local-sensor load-generated reports that only
-// know the CID.
+// resolveVM prefers vm_id; vsock_cid is only used when the report has no UID.
 func (h *handlerImpl) resolveVM(indexReport *v1.IndexReport) (*virtualmachine.Info, string, error) {
 	if vmID := indexReport.GetVmId(); vmID != "" {
 		vmInfo := h.store.Get(virtualmachine.VMID(vmID))

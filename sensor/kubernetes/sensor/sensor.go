@@ -3,13 +3,10 @@ package sensor
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -50,7 +47,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
-	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
@@ -212,8 +208,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
 			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			vmSender := &vmScraperSenderAdapter{handler: virtualMachineHandler}
-			scraper := vmscraper.New(storeProvider.VirtualMachines(), vmSender, vmDial, vmProtoClient)
+			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
 			components = append(components, scraper)
 		} else {
 			log.Warn("VSOCK pull mode disabled (no REST config available)")
@@ -323,31 +318,4 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	s.AddAPIServices(apiServices...)
 	return s, nil
-}
-
-// vmScraperSenderAdapter adapts vmIndex.Handler to vmscraper.IndexReportSender.
-// It constructs the v1.IndexReport envelope that the handler expects.
-// Pull mode sets vm_id from the Kubernetes UID so the handler can forward
-// without requiring vsock_cid. vsock_cid is still included when known for
-// ACK correlation.
-type vmScraperSenderAdapter struct {
-	handler vmIndex.Handler
-}
-
-func (a *vmScraperSenderAdapter) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
-	if vm == nil {
-		return errors.New("virtual machine info is nil")
-	}
-	var cidStr string
-	if vm.VSOCKCID != nil {
-		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
-	}
-	if err := a.handler.Send(ctx, &v1.IndexReport{
-		VsockCid: cidStr,
-		VmId:     string(vm.ID),
-		IndexV4:  report,
-	}); err != nil {
-		return errors.Wrap(err, "sending index report")
-	}
-	return nil
 }

@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
@@ -129,17 +129,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, vm, report)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, vm, report any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm, report)
 }
 
 // Start mocks base method.
