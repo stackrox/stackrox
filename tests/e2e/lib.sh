@@ -669,9 +669,8 @@ deploy_sensor_via_operator() {
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
     local vm_mode_setting="Disabled"
-    # CR default (matches operator static defaulting). Overridden below when
-    # ROX_VIRTUAL_MACHINES=true so VM e2e does not wait on the 5m production poll.
-    local vm_scraper_poll_interval="5m"
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -705,10 +704,6 @@ deploy_sensor_via_operator() {
 
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
         vm_mode_setting="Enabled"
-        # Shorten scraper cadence so VM e2e does not wait on the
-        # production default (5m) between Sensor polls of guest agents.
-        # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
-        vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     fi
 
     customize_envVars=""
