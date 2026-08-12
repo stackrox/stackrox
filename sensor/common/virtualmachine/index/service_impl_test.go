@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -142,8 +143,8 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_PushSuppressedForA
 
 	var sendCalled bool
 	mockHandler := mocks.NewMockHandler(s.ctrl)
-	mockHandler.EXPECT().Send(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ *v1.IndexReport) error {
+	mockHandler.EXPECT().Send(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, _ *v1.IndexReport, _ time.Time) error {
 			sendCalled = true
 			return nil
 		},

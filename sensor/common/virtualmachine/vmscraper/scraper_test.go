@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // --- Mocks ---
@@ -105,11 +106,13 @@ func (m *mockProtocolClient) reset() {
 }
 
 type mockSender struct {
-	sent []*v4.IndexReport
+	sent            []*v4.IndexReport
+	sentGeneratedAt []time.Time
 }
 
-func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport, generatedAt time.Time) error {
 	m.sent = append(m.sent, report)
+	m.sentGeneratedAt = append(m.sentGeneratedAt, generatedAt)
 	return nil
 }
 
@@ -131,6 +134,19 @@ func makeReport(gen uint32) *vsockclient.GetReportResult {
 		},
 		Meta: &pb.ResponseMeta{
 			ReportGeneration: gen,
+		},
+	}
+}
+
+func makeReactiveReport(gen uint32, generatedAt time.Time) *vsockclient.GetReportResult {
+	return &vsockclient.GetReportResult{
+		IndexReport: &v4.IndexReport{
+			State: "IndexFinished",
+		},
+		Meta: &pb.ResponseMeta{
+			ReportGeneration:  gen,
+			Facts:             map[string]string{"scan_trigger": "reactive"},
+			ReportGeneratedAt: timestamppb.New(generatedAt),
 		},
 	}
 }
@@ -486,7 +502,7 @@ type gateSender struct {
 	sent    []*v4.IndexReport
 }
 
-func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport, _ time.Time) error {
 	g.mu.Lock()
 	g.n++
 	n := g.n
@@ -693,6 +709,39 @@ func cachedGeneration(t *testing.T, s *VMScraper, key string) uint32 {
 	})
 }
 
+func TestVMScraper_PassesGeneratedAtForReactiveTrigger(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	generatedAt := time.Now().Add(-2 * time.Second)
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReactiveReport(1, generatedAt)},
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 1)
+	require.Len(t, sender.sentGeneratedAt, 1)
+	assert.WithinDuration(t, generatedAt, sender.sentGeneratedAt[0], time.Second)
+}
+
+func TestVMScraper_DefaultsToZeroGeneratedAtWhenTriggerFactAbsent(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)}, // no facts set
+	}
+
+	s := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 1)
+	require.Len(t, sender.sentGeneratedAt, 1)
+	assert.True(t, sender.sentGeneratedAt[0].IsZero(), "should pass a zero generatedAt when scan_trigger is absent")
+}
+
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
 	return &VMScraper{
 		store:                 store,
@@ -755,7 +804,7 @@ type safeSender struct {
 	sent int
 }
 
-func (s *safeSender) Send(_ context.Context, _ *virtualmachine.Info, _ *v4.IndexReport) error {
+func (s *safeSender) Send(_ context.Context, _ *virtualmachine.Info, _ *v4.IndexReport, _ time.Time) error {
 	s.mu.Lock()
 	s.sent++
 	s.mu.Unlock()

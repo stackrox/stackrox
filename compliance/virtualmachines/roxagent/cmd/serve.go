@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/discovery"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
+	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/watch"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/sync"
@@ -52,6 +53,12 @@ const (
 	// in-flight-connection slot (see vsockserver.WithConnDeadline).
 	minConnDeadline = 5 * time.Second
 	maxConnDeadline = 5 * time.Minute
+)
+
+// scan_trigger fact values shared with Sensor's vmscraper/facts.go.
+const (
+	scanTriggerScheduled = "scheduled"
+	scanTriggerReactive  = "reactive"
 )
 
 // ServeCmd returns the "serve" cobra subcommand for pull-mode operation.
@@ -122,11 +129,22 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	cache := &vsockserver.ReportCache{}
 	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
 
+	// Reactive scanning is best-effort: if the watcher can't start (e.g. no
+	// watchable RPM directory, inotify limit hit), roxagent logs a warning
+	// and falls back to periodic-only scanning rather than failing startup.
+	rpmWatcher, watchErr := watch.New(cfg.hostPath)
+	if watchErr != nil {
+		log.Warnf("Reactive DNF/RPM scanning disabled, falling back to periodic-only scanning: %v", watchErr)
+	} else {
+		defer func() { _ = rpmWatcher.Close() }()
+		vmRescanner.reactiveCh = rpmWatcher.Triggered()
+	}
+
 	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
 	if err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
+	cache.SetReport(report, discoverFacts(cfg.hostPath, scanTriggerScheduled))
 	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
 
 	handler := vsockserver.NewHandler(cache, agentVersion)
@@ -196,13 +214,17 @@ func scan(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexRepor
 	return index.NewNodeIndexer(cfg).IndexNode(ctx)
 }
 
-func discoverFacts(hostPath string) map[string]string {
+// discoverFacts probes hostPath for DiscoveredData and converts it to the
+// flat string map cache.SetReport expects. trigger is stamped onto the
+// returned facts so Sensor can tell a reactive rescan from a scheduled one.
+func discoverFacts(hostPath, trigger string) map[string]string {
 	d := discovery.DiscoverVMData(hostPath)
 	return map[string]string{
 		"detected_os":         d.GetDetectedOs().String(),
 		"os_version":          d.GetOsVersion(),
 		"activation_status":   d.GetActivationStatus().String(),
 		"dnf_metadata_status": d.GetDnfMetadataStatus().String(),
+		"scan_trigger":        trigger,
 	}
 }
 

@@ -22,7 +22,7 @@ import (
 // a safe default.
 func testRescanner() *rescanner {
 	r := newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
-	r.factsFn = func(string) map[string]string { return nil }
+	r.factsFn = func(string, string) map[string]string { return nil }
 	return r
 }
 
@@ -137,6 +137,44 @@ func TestRescanner_Run(t *testing.T) {
 
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "the failed rescan was never retried")
 			assert.Equal(t, r.interval, ticker.lastReset(), "a successful rescan should reschedule after the full interval, resetting backoff")
+		})
+	})
+
+	t.Run("should rescan immediately when the reactive channel fires, tagged as reactive", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			r := testRescanner()
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			reactiveCh := make(chan struct{}, 1)
+			r.reactiveCh = reactiveCh
+			var mu sync.Mutex
+			var triggers []string
+			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
+				return &v4.IndexReport{HashId: "ok"}, nil
+			}
+			r.factsFn = func(_, trigger string) map[string]string {
+				concurrency.WithLock(&mu, func() { triggers = append(triggers, trigger) })
+				return nil
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait() // Run is blocked waiting for the first tick
+
+			reactiveCh <- struct{}{}
+			synctest.Wait()
+			assert.Equal(t, []string{scanTriggerReactive}, concurrency.WithLock1(&mu, func() []string { return triggers }))
+			assert.Equal(t, r.interval, ticker.lastReset(), "a reactive rescan should reset the periodic delay too")
+
+			ticker.fire()
+			synctest.Wait()
+			assert.Equal(t, []string{scanTriggerReactive, scanTriggerScheduled},
+				concurrency.WithLock1(&mu, func() []string { return triggers }))
 		})
 	})
 

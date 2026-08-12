@@ -38,8 +38,30 @@ type handlerImpl struct {
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
 	toCompliance chan common.MessageToComplianceWithAddress
-	indexReports chan *v1.IndexReport
+	indexReports chan *slot
 	store        VirtualMachineStore
+
+	// slotsMu guards pending. Separate from lock (which guards
+	// Start/Stop/Send channel lifecycle) since it protects independent
+	// state that is accessed far more frequently.
+	slotsMu sync.Mutex
+	// pending tracks, per vsock CID, the slot currently queued in
+	// indexReports for that VM (if any). It exists purely to support
+	// coalescing (see slot doc comment) and never holds more entries than
+	// indexReports has capacity for, since a VM can only be in this map
+	// while it also occupies a slot in the channel.
+	pending map[string]*slot
+}
+
+// slot is the unit carried through indexReports. It is a pointer so that a
+// coalescing Send can mutate an already-queued entry in place instead of
+// enqueuing a second one for the same VM. That's what gives delivery its
+// Fair FIFO property: a VM's position in the queue never changes once
+// queued, only the contents of its slot can, right up until it's consumed.
+type slot struct {
+	vsockCID    string
+	report      *v1.IndexReport
+	generatedAt time.Time // zero for scheduled reports
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -55,7 +77,49 @@ func (h *handlerImpl) ComplianceC() <-chan common.MessageToComplianceWithAddress
 	return h.toCompliance
 }
 
-func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
+// Send enqueues report for delivery to Central, keeping delivery Fair FIFO
+// across VMs while coalescing per VM: see the Handler.Send doc comment.
+func (h *handlerImpl) Send(ctx context.Context, report *v1.IndexReport, generatedAt time.Time) error {
+	if err := h.checkSendPreconditions(report.GetVsockCid()); err != nil {
+		return err
+	}
+
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+
+	cid := report.GetVsockCid()
+	var newSlot *slot
+	concurrency.WithLock(&h.slotsMu, func() {
+		if s := h.pending[cid]; s != nil {
+			// Coalesce: this VM already has a slot queued. Mutate it in
+			// place so the newest report wins, without moving its position
+			// in indexReports.
+			s.report, s.generatedAt = report, generatedAt
+			return
+		}
+		newSlot = &slot{vsockCID: cid, report: report, generatedAt: generatedAt}
+		h.pending[cid] = newSlot
+	})
+	if newSlot == nil {
+		return nil
+	}
+
+	if err := h.enqueueScheduled(ctx, newSlot); err != nil {
+		// The slot never made it into indexReports, so nothing will ever
+		// clear this map entry. Free it now so a future Send for this VM
+		// isn't silently coalesced into a slot that will never be
+		// delivered.
+		concurrency.WithLock(&h.slotsMu, func() {
+			if h.pending[cid] == newSlot {
+				delete(h.pending, cid)
+			}
+		})
+		return err
+	}
+	return nil
+}
+
+func (h *handlerImpl) checkSendPreconditions(vsockCID string) error {
 	if h.stopper.Client().Stopped().IsDone() {
 		return errox.InvariantViolation.CausedBy(errInputChanClosed)
 	}
@@ -63,14 +127,16 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 	if !h.centralReady.IsDone() {
-		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", vm.GetVsockCid())
+		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", vsockCID)
 		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
+	return nil
+}
 
-	h.lock.RLock()
-	defer h.lock.RUnlock()
-
+// enqueueScheduled enqueues a slot onto the bounded indexReports channel,
+// blocking up to ctx's deadline and recording backpressure metrics.
+func (h *handlerImpl) enqueueScheduled(ctx context.Context, s *slot) error {
 	blockingStart := time.Now()
 	blocked := false
 	outcome := metrics.IndexReportEnqueueOutcomeSuccess
@@ -86,7 +152,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 	select {
 	case <-ctx.Done():
 		// Handled in the next select statement
-	case h.indexReports <- vm:
+	case h.indexReports <- s:
 		return nil
 	default:
 		blocked = true
@@ -102,7 +168,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		}
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
-	case h.indexReports <- vm:
+	case h.indexReports <- s:
 		return nil
 	}
 }
@@ -167,7 +233,8 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil || h.toCompliance != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.indexReports = make(chan *slot, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.pending = make(map[string]*slot)
 	h.toCompliance = make(chan common.MessageToComplianceWithAddress, 1)
 	h.toCentral = h.run(h.indexReports)
 	return nil
@@ -191,12 +258,16 @@ func (h *handlerImpl) Stop() {
 		close(h.indexReports)
 		h.indexReports = nil
 	}
+	// h.pending is intentionally left as-is: Start() always reinitializes it
+	// unconditionally, and nil-ing it here would race with an in-flight
+	// Send() that already passed checkSendPreconditions before Stop() ran
+	// (it re-checks h.stopper only, not h.pending), causing a nil-map write.
 }
 
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(indexReports <-chan *slot) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -208,12 +279,22 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case indexReport, ok := <-indexReports:
+			case s, ok := <-indexReports:
 				if !ok {
 					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				h.handleIndexReport(ch2Central, indexReport)
+				var report *v1.IndexReport
+				var generatedAt time.Time
+				concurrency.WithLock(&h.slotsMu, func() {
+					report, generatedAt = s.report, s.generatedAt
+					// Clearing the map entry here (before delivery) lets
+					// this VM queue a fresh slot immediately, rather than
+					// waiting for a potentially slow downstream delivery
+					// to finish.
+					delete(h.pending, s.vsockCID)
+				})
+				h.handleIndexReport(ch2Central, report, generatedAt)
 			}
 		}
 	}()
@@ -298,6 +379,7 @@ func (h *handlerImpl) forwardToCompliance(
 func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
 	indexReport *v1.IndexReport,
+	generatedAt time.Time,
 ) {
 	startTime := time.Now()
 	outcome := metrics.IndexReportHandlingMessageToCentralSuccess
@@ -324,6 +406,10 @@ func (h *handlerImpl) handleIndexReport(
 	}
 	h.sendIndexReportEvent(toCentral, msg)
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
+
+	if !generatedAt.IsZero() {
+		metrics.VirtualMachineReactiveIndexReportLatencySeconds.Observe(time.Since(generatedAt).Seconds())
+	}
 }
 
 func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
