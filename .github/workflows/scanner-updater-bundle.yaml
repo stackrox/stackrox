@@ -138,7 +138,8 @@ jobs:
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
         [ -n "$FAILED" ] || exit 0
-        curl -X POST -H 'Content-type: application/json' \
+        curl --fail --show-error --max-time 10 \
+          -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Vulnerability bundler: validation failures for stream '${STREAM}' (sources: ${FAILED}): <${RUN_URL}|View logs>\"}" \
           "$SLACK_WEBHOOK"
 
@@ -152,6 +153,7 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
-        curl -X POST -H 'Content-type: application/json' \
+        curl --fail --show-error --max-time 10 \
+          -X POST -H 'Content-type: application/json' \
           --data "{\"text\":\"Vulnerability bundler failed: <${RUN_URL}|View logs>\"}" \
           "$SLACK_WEBHOOK"
