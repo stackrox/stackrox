@@ -459,11 +459,12 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
+	totalElapsed := s.now().Sub(totalStart)
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
 		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
-		time.Since(totalStart).Truncate(time.Millisecond))
+		totalElapsed.Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
-	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
+	metrics.PullTotalDurationSeconds.Observe(totalElapsed.Seconds())
 	return true
 }
 
@@ -518,7 +519,7 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Info, key string, port, ifNewerThan, knownEpoch uint32) (*vsockclient.GetReportResult, scrapeOutcome) {
 	dialStart := s.now()
 	stream, err := s.dialer.Dial(ctx, vm.Namespace, vm.Name, port, true)
-	metrics.PullDialDurationSeconds.Observe(time.Since(dialStart).Seconds())
+	metrics.PullDialDurationSeconds.Observe(s.now().Sub(dialStart).Seconds())
 	if err != nil {
 		if ctx.Err() != nil {
 			log.Warnf("VMScraper: dialing roxagent on %q timed out: %v", key, err)
@@ -537,7 +538,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 
 	readStart := s.now()
 	result, err := s.client.GetReport(ctx, stream, ifNewerThan, knownEpoch)
-	metrics.PullReadDurationSeconds.Observe(time.Since(readStart).Seconds())
+	metrics.PullReadDurationSeconds.Observe(s.now().Sub(readStart).Seconds())
 	if err != nil {
 		return nil, s.handleGetReportError(ctx, key, err)
 	}
