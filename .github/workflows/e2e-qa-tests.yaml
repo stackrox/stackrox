@@ -311,7 +311,7 @@ jobs:
           )
           if os.environ.get("ORCHESTRATOR_FLAVOR") == "k8s":
               post.openshift_namespaces = []
-          post.run(['/tmp/qa-part1-misc-logs', os.environ.get('ARTIFACT_DIR', './junit-reports/')])
+          post.run([os.environ['ARTIFACT_DIR']])
 
       - name: Run Part 2 tests
         id: run-part-2
