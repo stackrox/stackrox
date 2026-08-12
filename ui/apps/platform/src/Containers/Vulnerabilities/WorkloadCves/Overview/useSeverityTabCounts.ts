@@ -1,5 +1,7 @@
 import { gql, useQuery } from '@apollo/client';
 
+import type { VulnerabilitySeverity } from 'types/cve.proto';
+
 import { getRegexScopedQueryString } from '../../utils/searchUtils';
 import { severityTabValues } from '../../types';
 import type { QuerySearchFilter, SeverityTab } from '../../types';
@@ -20,7 +22,12 @@ const severityTabCountsQuery = gql`
     }
 `;
 
-const severityConfig: { tab: SeverityTab; queryValue: string; varKey: string; resKey: string }[] = [
+const severityConfig: {
+    tab: SeverityTab;
+    queryValue: VulnerabilitySeverity;
+    varKey: string;
+    resKey: string;
+}[] = [
     {
         tab: 'Critical',
         queryValue: 'CRITICAL_VULNERABILITY_SEVERITY',
