@@ -52,6 +52,10 @@ export const defaultColumns = {
         title: 'CVEs by severity',
         isShownByDefault: true,
     },
+    matchingCveCount: {
+        title: 'Matching CVEs',
+        isShownByDefault: true,
+    },
     operatingSystem: {
         title: 'Operating system',
         isShownByDefault: true,
@@ -264,6 +268,12 @@ function ImageOverviewTable({
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    <TooltipTh
+                        className={getVisibilityClass('matchingCveCount')}
+                        tooltip="Total CVEs in this image matching the active severity and filters"
+                    >
+                        Matching CVEs
+                    </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Image OS')}
@@ -438,6 +448,16 @@ function ImageOverviewTable({
                                                 filteredSeverities={filteredSeverities}
                                             />
                                         )}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Matching CVEs"
+                                        className={getVisibilityClass('matchingCveCount')}
+                                    >
+                                        {criticalCount +
+                                            importantCount +
+                                            moderateCount +
+                                            lowCount +
+                                            unknownCount}
                                     </Td>
                                     <Td
                                         dataLabel="Operating system"

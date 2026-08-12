@@ -33,6 +33,10 @@ export const defaultColumns = {
         title: 'CVEs by severity',
         isShownByDefault: true,
     },
+    matchingCveCount: {
+        title: 'Matching CVEs',
+        isShownByDefault: true,
+    },
     cluster: {
         title: 'Cluster',
         isShownByDefault: true,
@@ -147,6 +151,12 @@ function DeploymentOverviewTable({
                         CVEs by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    <TooltipTh
+                        className={getVisibilityClass('matchingCveCount')}
+                        tooltip="Total CVEs in this deployment matching the active severity and filters"
+                    >
+                        Matching CVEs
+                    </TooltipTh>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
@@ -230,6 +240,16 @@ function DeploymentOverviewTable({
                                                 filteredSeverities={filteredSeverities}
                                             />
                                         )}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Matching CVEs"
+                                        className={getVisibilityClass('matchingCveCount')}
+                                    >
+                                        {criticalCount +
+                                            importantCount +
+                                            moderateCount +
+                                            lowCount +
+                                            unknownCount}
                                     </Td>
                                     <Td
                                         dataLabel="Cluster"

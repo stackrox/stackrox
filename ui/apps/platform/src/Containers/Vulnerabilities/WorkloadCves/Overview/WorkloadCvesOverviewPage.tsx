@@ -472,12 +472,14 @@ function WorkloadCvesOverviewPage() {
                     }}
                     imageTableColumnOverrides={{
                         cvesBySeverity: hideColumnIf(!isViewingWithCves || useSeverityTabs),
+                        matchingCveCount: hideColumnIf(!useSeverityTabs),
                         rowActions: hideColumnIf(
                             !hasWriteAccessForWatchedImage && !hasWriteAccessForImage
                         ),
                     }}
                     deploymentTableColumnOverrides={{
                         cvesBySeverity: hideColumnIf(!isViewingWithCves || useSeverityTabs),
+                        matchingCveCount: hideColumnIf(!useSeverityTabs),
                     }}
                 />
                 <WatchedImagesModal
