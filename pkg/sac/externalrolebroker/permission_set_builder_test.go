@@ -1,6 +1,5 @@
 package externalrolebroker
 
-
 import (
 	"testing"
 
