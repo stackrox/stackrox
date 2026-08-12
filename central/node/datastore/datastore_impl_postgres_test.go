@@ -4,8 +4,12 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
@@ -76,6 +80,91 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 func (suite *NodePostgresDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 	suite.db.Close()
+}
+
+// TestConcurrentUpsertNode_KeyedMutexPreventsRegression is the datastore-layer counterpart of
+// store_test.go's TestStore_ConcurrentUpsert_BypassingOuterLock. That test proves the store layer alone has
+// a check-then-act race in isUpdated(): the read-old-scan-and-decide step isn't covered by the store's own
+// keyFence lock. This test calls the same workload through UpsertNode instead, i.e. through the
+// production call path, which wraps the entire call (read, decide, and write) in a per-node-ID
+// keyedMutex (see UpsertNode in datastore_impl.go). Since every real caller in this codebase reaches the
+// store exclusively through UpsertNode, and the customer's Central runs as a single replica (confirmed
+// from their diagnostic bundle: one Deployment, replicas: 1, one Central pod), this is the path that
+// actually matters for reproducing their bug. If scan_time never regresses here even under heavy
+// concurrency, the "ccp-fc-ogob01a" symptom is not explained by an in-process concurrency race, and the
+// remaining suspects are either something specific to their exact payload/environment or a defect outside
+// what this workload exercises.
+func (suite *NodePostgresDataStoreTestSuite) TestConcurrentUpsertNode_KeyedMutexPreventsRegression() {
+	allowAllCtx := sac.WithAllAccess(context.Background())
+
+	node := getTestNodeForPostgres(fixtureconsts.Node1, "concurrent-node")
+	baseTime := time.Now().Add(-24 * time.Hour)
+	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&baseTime)
+	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, node))
+
+	const iterations = 2000
+	const freshWriters = 4
+	const metaWriters = 4
+	var wg sync.WaitGroup
+
+	// Simulates the nodeindex pipeline: always a fresh, monotonically increasing ScanTime.
+	for w := range freshWriters {
+		wg.Go(func() {
+			for i := range iterations {
+				fresh := node.CloneVT()
+				t := baseTime.Add(time.Duration(w*iterations+i+1) * time.Millisecond)
+				fresh.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&t)
+				_ = suite.datastore.UpsertNode(allowAllCtx, fresh)
+			}
+		})
+	}
+
+	// Simulates the nodes pipeline: frequent metadata-only churn, Scan explicitly nil.
+	for w := range metaWriters {
+		wg.Go(func() {
+			for i := range iterations {
+				metaOnly := node.CloneVT()
+				metaOnly.Scan = nil
+				metaOnly.Labels = map[string]string{"writer": fmt.Sprintf("%d-%d", w, i)}
+				_ = suite.datastore.UpsertNode(allowAllCtx, metaOnly)
+			}
+		})
+	}
+
+	var regressions atomic.Int64
+	stop := make(chan struct{})
+	var pollWG sync.WaitGroup
+	for range 4 {
+		pollWG.Go(func() {
+			lastSeen := baseTime
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+				}
+				current, exists, err := suite.datastore.GetNode(allowAllCtx, node.GetId())
+				if err == nil && exists {
+					st := current.GetScan().GetScanTime().AsTime()
+					if st.Before(lastSeen) {
+						regressions.Add(1)
+					} else {
+						lastSeen = st
+					}
+				}
+			}
+		})
+	}
+
+	wg.Wait()
+	close(stop)
+	pollWG.Wait()
+
+	suite.Zero(regressions.Load(),
+		"scan_time must never regress through UpsertNode, since every real caller (nodeindex and nodes "+
+			"pipelines alike) goes through the per-node-ID keyedMutex that wraps the entire read-decide-write "+
+			"sequence; a non-zero count here would mean the keyedMutex itself has a bug, not just the store "+
+			"layer's already-known gap")
 }
 
 func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
