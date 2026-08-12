@@ -529,6 +529,12 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	// We skip rewriting components and vulnerabilities if the node scan is older.
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
+		log.Warnf("Rejecting incoming node scan for node %s (%s) as not newer than the stored one: "+
+			"stored scan_time=%s, incoming scan_time=%s. The incoming scan and its component/CVE data will "+
+			"be discarded and the previously stored scan will be kept.",
+			node.GetId(), node.GetName(),
+			protocompat.ConvertTimestampToString(oldNode.GetScan().GetScanTime(), time.RFC3339Nano),
+			protocompat.ConvertTimestampToString(node.GetScan().GetScanTime(), time.RFC3339Nano))
 		node.Scan = oldNode.GetScan()
 		node.RiskScore = oldNode.GetRiskScore()
 		node.SetComponents = oldNode.GetSetComponents()
