@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"hash"
 	"strings"
 	"unsafe"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // BinaryHash represents a 64-bit hash for memory-efficient key storage.
@@ -95,23 +97,33 @@ type Filter interface {
 	DeleteByPod(pod *storage.Pod)
 }
 
+type child struct {
+	hash BinaryHash
+	node *level
+}
+
 type level struct {
 	hits     int
-	children map[BinaryHash]*level
+	children []child
 }
 
 func newLevel() *level {
 	return &level{}
 }
 
-func makeChildren() map[BinaryHash]*level {
-	return make(map[BinaryHash]*level)
+func (l *level) findChild(h BinaryHash) *level {
+	for _, c := range l.children {
+		if c.hash == h {
+			return c.node
+		}
+	}
+	return nil
 }
 
 type filterImpl struct {
-	maxExactPathMatches int // maximum number of exact path (same pod + container and same process and args) matches to tolerate
-	maxUniqueProcesses  int // maximum number of unique process exec file paths
-	maxFanOut           []uint8
+	maxExactPathMatches int     // maximum number of exact path (same pod + container and same process and args) matches to tolerate
+	maxUniqueProcesses  int     // maximum number of unique process exec file paths
+	maxFanOut           []uint8 // maximum fan out starting at the process level
 
 	containersInDeployment map[string]map[string]*level
 	rootLock               sync.Mutex
@@ -140,17 +152,14 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
 	argHash := hashString(f.h, truncated)
 
-	nextLevel := level.children[argHash]
+	nextLevel := level.findChild(argHash)
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
 		if len(level.children) >= int(f.maxFanOut[levelNum]) {
 			return false
 		}
 		nextLevel = newLevel()
-		if level.children == nil {
-			level.children = makeChildren()
-		}
-		level.children[argHash] = nextLevel
+		level.children = append(level.children, child{hash: argHash, node: nextLevel})
 	}
 
 	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
@@ -158,17 +167,19 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 
 // NewFilter returns an empty filter to start loading processes into
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
-	fo := make([]uint8, len(fanOut))
+	maxFanOut := make([]uint8, len(fanOut))
 	for i, v := range fanOut {
 		if v > 255 {
+			utils.Should(fmt.Errorf("fanOut[%d]=%d exceeds uint8 max, clamping to 255", i, v))
 			v = 255
 		}
-		fo[i] = uint8(v)
+		maxFanOut[i] = uint8(v)
 	}
 	return &filterImpl{
-		maxExactPathMatches:    maxExactPathMatches,
-		maxUniqueProcesses:     maxUniqueProcesses,
-		maxFanOut:              fo,
+		maxExactPathMatches: maxExactPathMatches,
+		maxUniqueProcesses:  maxUniqueProcesses,
+		maxFanOut:           maxFanOut,
+
 		containersInDeployment: make(map[string]map[string]*level),
 		h:                      xxhash.New(),
 	}
@@ -203,16 +214,13 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	execFilePathHash := hashString(f.h, execFilePath)
 
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.children[execFilePathHash]
+	processLevel := rootLevel.findChild(execFilePathHash)
 	if processLevel == nil {
 		if len(rootLevel.children) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		if rootLevel.children == nil {
-			rootLevel.children = make(map[BinaryHash]*level)
-		}
-		rootLevel.children[execFilePathHash] = processLevel
+		rootLevel.children = append(rootLevel.children, child{hash: execFilePathHash, node: processLevel})
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
