@@ -20,6 +20,6 @@ enable_sfa_for_ocp()
 
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
-os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "debian,epss,manual,nvd,rhel-vex,stackrox-rhel-csaf,ubuntu"
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "debian,epss,manual,nvd,osv,rhel-vex,stackrox-rhel-csaf,ubuntu"
 
 make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
