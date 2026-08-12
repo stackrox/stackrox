@@ -119,9 +119,13 @@ func (m *mockProtocolClient) reset() {
 
 type mockSender struct {
 	sent []*v4.IndexReport
+	err  error
 }
 
 func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	if m.err != nil {
+		return m.err
+	}
 	m.sent = append(m.sent, report)
 	return nil
 }
@@ -890,6 +894,52 @@ func TestVMScraper_RetryableFailureSchedulesBackoff(t *testing.T) {
 	assert.Equal(t, 2*initialBackoff, cachedBackoff(t, s, "ns1/vm-a"), "a second consecutive failure doubles the backoff")
 }
 
+// TestVMScraper_SchedulesByOutcome pins send-error short backoff vs
+// permanent-failure poll cadence (no backoff growth).
+func TestVMScraper_SchedulesByOutcome(t *testing.T) {
+	const key = "ns1/vm-a"
+	cases := map[string]struct {
+		client      *mockProtocolClient
+		sender      *mockSender
+		wantBackoff time.Duration
+		wantGap     time.Duration
+	}{
+		"send failure should retry using backoff": {
+			client:      &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}},
+			sender:      &mockSender{err: errors.New("central unavailable")},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"ErrUnknownMethod should not retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrUnknownMethod}},
+			sender:      &mockSender{},
+			wantBackoff: 0,
+			wantGap:     5 * time.Minute, // matches newTestScraper interval
+		},
+		"invalid report should not retry using backoff": {
+			client: &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{{
+				Meta: &pb.ResponseMeta{ReportGeneration: 1},
+			}}},
+			sender:      &mockSender{},
+			wantBackoff: 0,
+			wantGap:     5 * time.Minute,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			s, clock := newTestScraper(
+				&mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}},
+				tc.sender, &mockDialer{}, tc.client,
+			)
+			start := clock.Now()
+			s.pollOnce(context.Background())
+
+			assert.Equal(t, tc.wantBackoff, cachedBackoff(t, s, key))
+			assert.Equal(t, tc.wantGap, cachedNextAttemptAt(t, s, key).Sub(start))
+		})
+	}
+}
+
 // TestVMScraper_NonForcedTickSkipsReconcileWhenNotDue verifies that the
 // production ticker's non-forced tick only reconciles (calling ListRunning)
 // once lastReconcile is at least reconcileEvery old, keeping ListRunning off
@@ -919,6 +969,15 @@ func cachedBackoff(t *testing.T, s *VMScraper, key string) time.Duration {
 		st, ok := s.vmState[key]
 		require.True(t, ok, "no cached state for %q", key)
 		return st.backoff
+	})
+}
+
+func cachedNextAttemptAt(t *testing.T, s *VMScraper, key string) time.Time {
+	t.Helper()
+	return concurrency.WithLock1(&s.mu, func() time.Time {
+		st, ok := s.vmState[key]
+		require.True(t, ok, "no cached state for %q", key)
+		return st.nextAttemptAt
 	})
 }
 
