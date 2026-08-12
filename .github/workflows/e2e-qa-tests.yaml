@@ -345,7 +345,6 @@ jobs:
 
       - name: Run final-post
         if: always()
-        env: *test_env
         shell: python
         run: |
           import sys
