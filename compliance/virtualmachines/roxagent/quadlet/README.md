@@ -117,10 +117,15 @@ The port must match the StackRox Sensor configuration.
 
 ### No Packages Found
 
-Confirm the live RPM database is mounted and readable in the container:
+Confirm the live RPM database is mounted and readable inside the container (host path is `/var/lib/rpm`, container path is `/host/var/lib/rpm`):
 
 ```bash
-ls -la /var/lib/rpm/
+sudo podman exec systemd-roxagent ls -la /host/var/lib/rpm/
+```
+
+Check agent logs on the host:
+
+```bash
 sudo journalctl -u roxagent.service
 ```
 
