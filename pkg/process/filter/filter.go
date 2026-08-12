@@ -109,9 +109,9 @@ func makeChildren() map[BinaryHash]*level {
 }
 
 type filterImpl struct {
-	maxExactPathMatches int   // maximum number of exact path (same pod + container and same process and args) matches to tolerate
-	maxUniqueProcesses  int   // maximum number of unique process exec file paths
-	maxFanOut           []int // maximum fan out starting at the process level
+	maxExactPathMatches int // maximum number of exact path (same pod + container and same process and args) matches to tolerate
+	maxUniqueProcesses  int // maximum number of unique process exec file paths
+	maxFanOut           []uint8
 
 	containersInDeployment map[string]map[string]*level
 	rootLock               sync.Mutex
@@ -143,7 +143,7 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 	nextLevel := level.children[argHash]
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
-		if len(level.children) >= f.maxFanOut[levelNum] {
+		if len(level.children) >= int(f.maxFanOut[levelNum]) {
 			return false
 		}
 		nextLevel = newLevel()
@@ -158,11 +158,17 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 
 // NewFilter returns an empty filter to start loading processes into
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
+	fo := make([]uint8, len(fanOut))
+	for i, v := range fanOut {
+		if v > 255 {
+			v = 255
+		}
+		fo[i] = uint8(v)
+	}
 	return &filterImpl{
-		maxExactPathMatches: maxExactPathMatches,
-		maxUniqueProcesses:  maxUniqueProcesses,
-		maxFanOut:           fanOut,
-
+		maxExactPathMatches:    maxExactPathMatches,
+		maxUniqueProcesses:     maxUniqueProcesses,
+		maxFanOut:              fo,
 		containersInDeployment: make(map[string]map[string]*level),
 		h:                      xxhash.New(),
 	}
