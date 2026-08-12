@@ -199,7 +199,12 @@ function WorkloadCvesOverviewPage() {
 
     const getDefaultSortOption = isViewingWithCves
         ? (tab: WorkloadEntityTab, filter?: SearchFilter) =>
-              getWorkloadCveOverviewDefaultSortOption(tab, filter, useUnifiedView)
+              getWorkloadCveOverviewDefaultSortOption(
+                  tab,
+                  filter,
+                  useUnifiedView,
+                  activeSeverityTab
+              )
         : getDefaultZeroCveSortOption;
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
@@ -239,7 +244,7 @@ function WorkloadCvesOverviewPage() {
 
     function onSeverityTabChange() {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption('CVE', searchFilter));
+        sort.setSortOption(getDefaultSortOption(activeEntityTabKey, searchFilter));
     }
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {

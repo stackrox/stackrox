@@ -6,7 +6,7 @@ import type { SortAggregate, SortOption } from 'types/table';
 import type { FieldOption } from 'hooks/useURLSort';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { vulnerabilitySeverityLabels } from '../types';
-import type { VulnerabilitySeverityLabel, WorkloadEntityTab } from '../types';
+import type { SeverityTab, VulnerabilitySeverityLabel, WorkloadEntityTab } from '../types';
 import { getAppliedSeverities } from './searchUtils';
 
 // ROX-27906 Image CVEs view cannot use search fields as sort options without providing aggregates
@@ -38,15 +38,14 @@ export function getWorkloadCveOverviewSortFields(
     entityTab: WorkloadEntityTab,
     useUnifiedView = false
 ): (string | string[])[] {
-    const severityFields: string | string[] = useUnifiedView
-        ? 'Severity'
-        : [
-              'Critical Severity Count',
-              'Important Severity Count',
-              'Moderate Severity Count',
-              'Low Severity Count',
-              'Unknown Severity Count',
-          ];
+    const severityCountFields = [
+        'Critical Severity Count',
+        'Important Severity Count',
+        'Moderate Severity Count',
+        'Low Severity Count',
+        'Unknown Severity Count',
+    ];
+    const severityFields: string | string[] = useUnifiedView ? 'Severity' : severityCountFields;
 
     switch (entityTab) {
         case 'CVE':
@@ -56,12 +55,18 @@ export function getWorkloadCveOverviewSortFields(
             return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
             if (useUnifiedView) {
-                return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
+                return [
+                    'Image',
+                    severityCountFields,
+                    'Image OS',
+                    'Image Created Time',
+                    'Image Scan Time',
+                ];
             }
             return ['Image', severityFields, 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             if (useUnifiedView) {
-                return ['Deployment', 'Cluster', 'Namespace', 'Created'];
+                return ['Deployment', severityCountFields, 'Cluster', 'Namespace', 'Created'];
             }
             return ['Deployment', severityFields, 'Cluster', 'Namespace', 'Created'];
         default:
@@ -78,9 +83,14 @@ export function getWorkloadCveOverviewSortFields(
 export function getWorkloadCveOverviewDefaultSortOption(
     entityTab: WorkloadEntityTab,
     searchFilter?: SearchFilter,
-    useUnifiedView = false
+    useUnifiedView = false,
+    activeSeverityTab?: SeverityTab
 ): SortOption | NonEmptyArray<SortOption> {
     if (useUnifiedView) {
+        const severityCveCountSort: SortOption = {
+            field: severitySortMap[activeSeverityTab ?? 'Critical'],
+            direction: 'desc',
+        };
         switch (entityTab) {
             case 'CVE':
                 return {
@@ -89,9 +99,8 @@ export function getWorkloadCveOverviewDefaultSortOption(
                     aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
                 };
             case 'Image':
-                return { field: 'Image', direction: 'asc' };
             case 'Deployment':
-                return { field: 'Deployment', direction: 'asc' };
+                return severityCveCountSort;
             default:
                 return ensureExhaustive(entityTab);
         }

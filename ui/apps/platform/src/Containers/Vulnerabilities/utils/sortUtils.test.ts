@@ -140,13 +140,15 @@ describe('getWorkloadCveOverviewSortFields', () => {
         expect(cveFields).toContain('Image Sha');
     });
 
-    it('should omit Severity from Image and Deployment tabs when useUnifiedView is true', () => {
+    it('should include severity count fields for Image and Deployment tabs when useUnifiedView is true', () => {
         const imageFields = getWorkloadCveOverviewSortFields('Image', true);
-        expect(imageFields).not.toContain('Severity');
+        expect(imageFields).toContainEqual(expect.arrayContaining(['Critical Severity Count']));
         expect(imageFields).toContain('Image');
 
         const deploymentFields = getWorkloadCveOverviewSortFields('Deployment', true);
-        expect(deploymentFields).not.toContain('Severity');
+        expect(deploymentFields).toContainEqual(
+            expect.arrayContaining(['Critical Severity Count'])
+        );
         expect(deploymentFields).toContain('Deployment');
     });
 
@@ -168,11 +170,11 @@ describe('getWorkloadCveOverviewDefaultSortOption', () => {
         });
     });
 
-    it('should return alphabetical sort for Image tab when useUnifiedView is true', () => {
-        const sortOption = getWorkloadCveOverviewDefaultSortOption('Image', {}, true);
+    it('should return severity CVE count sort for Image tab when useUnifiedView is true', () => {
+        const sortOption = getWorkloadCveOverviewDefaultSortOption('Image', {}, true, 'Critical');
         expect(sortOption).toEqual({
-            field: 'Image',
-            direction: 'asc',
+            field: 'Critical Severity Count',
+            direction: 'desc',
         });
     });
 
