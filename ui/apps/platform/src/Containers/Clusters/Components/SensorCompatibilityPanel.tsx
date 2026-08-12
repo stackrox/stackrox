@@ -17,7 +17,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
-import { getSensorCompatibilityInfo } from '../cluster.helpers';
+import { getSensorCompatibilityInfo, shouldShowSensorVersionRangeChart } from '../cluster.helpers';
 import SensorVersionRangeChart from './SensorVersionRangeChart';
 
 // TODO: add documentation link for guidance text
@@ -138,9 +138,7 @@ function SensorCompatibilityPanel({
                     version: ['Version', sensorVersion],
                     range: [
                         'Version range',
-                        compatibleVersions.length > 0 &&
-                        compatibility &&
-                        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' ? (
+                        shouldShowSensorVersionRangeChart(compatibility, compatibleVersions) ? (
                             <SensorVersionRangeChart
                                 compatibleVersions={compatibleVersions}
                                 sensorVersion={sensorVersion ?? ''}

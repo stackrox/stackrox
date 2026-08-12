@@ -160,7 +160,8 @@ describe('computeVersionRangeData', () => {
     describe('marker/compatibility contradiction', () => {
         // Sensor 4.8 is at index 1, which is behind central (index 3),
         // but the backend says "ahead". The parsed position contradicts
-        // the enum, so we discard it and fall back to the enum-based position.
+        // the enum, so we discard it and fall back to the enum-based
+        // position: the middle of the compatible-ahead zone.
         it('discards the parsed position and falls back when it contradicts the compatibility enum', () => {
             const result = computeVersionRangeData(
                 versions,
@@ -169,8 +170,9 @@ describe('computeVersionRangeData', () => {
                 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD'
             );
 
-            const fallbackRight = ((totalUnits - 0.5) / totalUnits) * 100;
-            expect(result!.markerPercent).toBeCloseTo(fallbackRight);
+            const aheadCount = versions.length - centralIndex - 1;
+            const fallbackAhead = ((1 + centralIndex + 1 + aheadCount / 2) / totalUnits) * 100;
+            expect(result!.markerPercent).toBeCloseTo(fallbackAhead);
         });
     });
 });

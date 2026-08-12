@@ -609,6 +609,19 @@ export function getSensorCompatibilityInfo(compatibility: SensorVersionCompatibi
         : defaultSensorCompatibility;
 }
 
+// The version range chart can only be rendered when the compatibility state is
+// known and Central has advertised a compatible sensor version range.
+export function shouldShowSensorVersionRangeChart(
+    compatibility: SensorVersionCompatibility | undefined,
+    compatibleVersions: string[]
+): boolean {
+    return (
+        compatibility !== undefined &&
+        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' &&
+        compatibleVersions.length > 0
+    );
+}
+
 export default {
     runtimeOptions,
     clusterTypeOptions,

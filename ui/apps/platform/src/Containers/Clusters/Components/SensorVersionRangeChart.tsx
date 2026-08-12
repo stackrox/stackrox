@@ -240,8 +240,9 @@ function SensorVersionRangeChart({
             className="pf-v6-u-font-size-xs pf-v6-u-text-align-center pf-v6-u-pb-lg"
         >
             <Flex gap={{ default: 'gapNone' }}>
-                {versionLabels.map((v) => (
-                    <FlexItem key={v} flex={{ default: 'flex_1' }}>
+                {versionLabels.map((v, i) => (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <FlexItem key={i} flex={{ default: 'flex_1' }}>
                         {v}
                     </FlexItem>
                 ))}

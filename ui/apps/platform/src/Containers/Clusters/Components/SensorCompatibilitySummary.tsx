@@ -8,6 +8,7 @@ import {
 import useMetadata from 'hooks/useMetadata';
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
 
+import { shouldShowSensorVersionRangeChart } from '../cluster.helpers';
 import SensorVersionRangeChart from './SensorVersionRangeChart';
 
 type SensorCompatibilitySummaryProps = {
@@ -23,10 +24,7 @@ function SensorCompatibilitySummary({
 }: SensorCompatibilitySummaryProps) {
     const { compatibleSensorVersions = [] } = useMetadata();
 
-    const showChart =
-        compatibility !== undefined &&
-        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' &&
-        compatibleSensorVersions.length > 0;
+    const showChart = shouldShowSensorVersionRangeChart(compatibility, compatibleSensorVersions);
 
     return (
         <DescriptionList>
