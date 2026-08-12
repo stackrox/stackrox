@@ -209,8 +209,11 @@ install_from_stage_dir() {
     echo "Reloading systemd..."
     sudo systemctl daemon-reload
 
-    echo "Enabling and starting roxagent service..."
-    sudo systemctl enable --now roxagent.service
+    # Quadlet writes the unit under /run/systemd/generator/, which systemd
+    # treats as generated: `systemctl enable` is rejected. Boot start comes from
+    # [Install] WantedBy= in roxagent.container (the generator applies it).
+    echo "Starting roxagent service..."
+    sudo systemctl start roxagent.service
 
     if ! sudo systemctl is-active --quiet roxagent.service; then
         echo "roxagent.service failed to become active" >&2

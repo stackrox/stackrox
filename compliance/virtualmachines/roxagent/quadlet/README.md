@@ -153,7 +153,9 @@ sudo journalctl -u roxagent.service
 ## Uninstallation
 
 ```bash
-sudo systemctl disable --now roxagent.service
+sudo systemctl stop roxagent.service
 sudo rm /etc/containers/systemd/roxagent.container
 sudo systemctl daemon-reload
 ```
+
+Quadlet units are generated under `/run/systemd/generator/`, so `systemctl enable` / `disable` do not apply. Boot start comes from `[Install] WantedBy=multi-user.target` in `roxagent.container`; removing that file and reloading drops the service.
