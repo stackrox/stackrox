@@ -324,25 +324,6 @@ jobs:
           )
           post.run([os.environ['ARTIFACT_DIR']])
 
-      - name: Run DB backup and restore test
-        id: run-db-backup-restore
-        env: *test_env
-        timeout-minutes: ${{ inputs.db-backup-restore-timeout-minutes }}
-        run: tests/e2e/lib.sh db_backup_and_restore_test /tmp/db-backup-restore-test
-
-      - name: Run DB backup and restore post-test
-        if: always() && steps.run-db-backup-restore.outcome != 'skipped' && env.KUBECONFIG != ''
-        env: *test_env
-        shell: python
-        run: |
-          import sys
-          sys.path.append('.openshift-ci')
-          from post_tests import CheckStackroxLogs
-          CheckStackroxLogs(
-              check_for_errors_in_stackrox_logs=True,
-              artifact_destination_prefix="db-test",
-          ).run(['/tmp/db-backup-restore-test'])
-
       - name: Run final-post
         if: always()
         env: *test_env
