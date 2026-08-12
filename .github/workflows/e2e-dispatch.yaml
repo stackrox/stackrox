@@ -120,8 +120,7 @@ jobs:
                 print(line)
                 file.write(line + '\n')
 
-            jobs_to_run = [job for job in jobs_registry if job.should_run(input)]
-            jobs = {job.name: True for job in jobs_to_run}
+            jobs = {job.name: job.should_run(input) for job in jobs_registry}
 
             write('jobs', json.dumps(jobs))
 
