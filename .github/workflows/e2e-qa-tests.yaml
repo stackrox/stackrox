@@ -145,10 +145,7 @@ jobs:
           args: ${{ steps.prepare-infra-args.outputs.args }}
           wait: false
 
-      - name: Set up Cloud SDK
-        if: |
-          inputs.cluster-provisioning-method == 'direct-gke' ||
-          startsWith(inputs.infra-flavor, 'gke')
+      - name: Set up GCloud SDK
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin,beta"
