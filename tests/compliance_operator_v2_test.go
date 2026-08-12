@@ -1179,3 +1179,107 @@ func TestComplianceV2GetComplianceRule(t *testing.T) {
 		assert.Equal(t, v2.ComplianceRule_OPERATOR_KIND_UNSPECIFIED, resp.GetOperatorKind())
 	})
 }
+
+// TestComplianceV2ExternalSSBObserver verifies that externally-created
+// ScanSettingBindings (not managed by ACS) are discovered and reported
+// through the observer model endpoints.
+func TestComplianceV2ExternalSSBObserver(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	dynClient := createDynamicClient(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	scanConfigService := v2.NewComplianceScanConfigurationServiceClient(conn)
+	serviceCluster := v1.NewClustersServiceClient(conn)
+	clusters, err := serviceCluster.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Greater(t, len(clusters.GetClusters()), 0)
+	clusterID := clusters.GetClusters()[0].GetId()
+
+	testID := fmt.Sprintf("ext-ssb-%s", uuid.NewV4().String())
+
+	// Create an external SSB directly via the K8s API, bypassing Central.
+	// This simulates what gitops/ArgoCD/terraform would do.
+	ssb := &complianceoperatorv1.ScanSettingBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testID,
+			Namespace: coNamespaceV2,
+		},
+		Profiles: []complianceoperatorv1.NamedObjectReference{
+			{Name: "ocp4-moderate", Kind: "Profile", APIGroup: "compliance.openshift.io/v1alpha1"},
+		},
+		SettingsRef: &complianceoperatorv1.NamedObjectReference{
+			Name:     "default",
+			Kind:     "ScanSetting",
+			APIGroup: "compliance.openshift.io/v1alpha1",
+		},
+	}
+	require.NoError(t, dynClient.Create(ctx, ssb))
+	t.Cleanup(func() {
+		deleteResource[complianceoperatorv1.ScanSettingBinding](ctx, t, dynClient, testID, coNamespaceV2)
+	})
+
+	t.Run("discovered in overviews", func(t *testing.T) {
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := scanConfigService.ListComplianceScanConfigOverviews(ctx, &v2.RawQuery{})
+			require.NoError(c, err)
+
+			var found *v2.ComplianceScanConfigOverview
+			for _, cfg := range resp.GetConfigs() {
+				if cfg.GetScanConfigName() == testID {
+					found = cfg
+					break
+				}
+			}
+			require.NotNilf(c, found, "external SSB %q not found in overviews", testID)
+			assert.False(c, found.GetIsManaged(), "external SSB should not be marked as managed")
+			assert.Contains(c, found.GetClusterIds(), clusterID)
+			assert.Contains(c, found.GetProfileNames(), "ocp4-moderate")
+		}, defaultTimeout, defaultInterval)
+	})
+
+	// Wait for the compliance suite to complete so results exist.
+	waitForComplianceSuiteToComplete(t, dynClient, testID, waitForDoneInterval, waitForDoneTimeout)
+
+	t.Run("profiles from external SSB", func(t *testing.T) {
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := scanConfigService.ListComplianceScanConfigProfiles(ctx,
+				&v2.RawQuery{Query: "Compliance Scan Config Name:" + testID})
+			require.NoError(c, err)
+			require.Greater(c, len(resp.GetProfiles()), 0, "expected profiles from external SSB")
+
+			var foundModerate bool
+			for _, p := range resp.GetProfiles() {
+				if p.GetName() == "ocp4-moderate" {
+					foundModerate = true
+					break
+				}
+			}
+			assert.True(c, foundModerate, "ocp4-moderate profile should be listed for external SSB")
+		}, defaultTimeout, defaultInterval)
+	})
+
+	t.Run("cluster scan stats include external SSB", func(t *testing.T) {
+		statsService := v2.NewComplianceResultsStatsServiceClient(conn)
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			resp, err := statsService.GetComplianceClusterScanStats(ctx,
+				&v2.ComplianceScanClusterRequest{
+					ClusterId: clusterID,
+					Query:     &v2.RawQuery{},
+				})
+			require.NoError(c, err)
+
+			var found bool
+			for _, stat := range resp.GetScanStats() {
+				if stat.GetScanStats().GetScanName() == testID {
+					found = true
+					assert.Empty(c, stat.GetScanStats().GetScanConfigId(),
+						"external SSB should have empty scan config ID")
+					assert.Greater(c, len(stat.GetScanStats().GetCheckStats()), 0,
+						"expected check stats from external SSB scan")
+					break
+				}
+			}
+			require.True(c, found, "scan stats for external SSB %q not found", testID)
+		}, defaultTimeout, defaultInterval)
+	})
+}

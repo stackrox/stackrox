@@ -98,6 +98,7 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
+
     const { complianceReportSnapshots, isLoading: isLoadingSnapshots } =
         useWatchLastSnapshotForComplianceReports(listData?.configurations);
 
@@ -155,13 +156,13 @@ function ScanConfigsTablePage({
                     type: 'success',
                     title: 'Successfully triggered a re-scan',
                 });
-                refetch(); // TODO verify is lastExecutedTime expected to change?
+                refetch();
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not trigger a re-scan',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             });
     }
@@ -179,11 +180,11 @@ function ScanConfigsTablePage({
                     title: 'Successfully requested to send a report',
                 });
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not send a report',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             });
     }
@@ -201,11 +202,11 @@ function ScanConfigsTablePage({
                     title: 'The report generation has started and will be available for download once complete',
                 });
             })
-            .catch((error) => {
+            .catch((err) => {
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not generate a report',
-                    children: getAxiosErrorMessage(error),
+                    children: getAxiosErrorMessage(err),
                 });
             });
     }
@@ -226,7 +227,11 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Name">
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
-                    <Td dataLabel="Schedule">{formatRecurringSchedule(scanConfig.scanSchedule)}</Td>
+                    <Td dataLabel="Schedule">
+                        {scanConfig.scanSchedule
+                            ? formatRecurringSchedule(scanConfig.scanSchedule)
+                            : '—'}
+                    </Td>
                     <Td dataLabel="Last scanned">
                         {lastExecutedTime
                             ? getTimeWithHourMinuteFromISO8601(lastExecutedTime)

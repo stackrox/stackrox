@@ -44,7 +44,7 @@ import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup/ProfilesToggleGroup';
 
 function ClusterDetailsPage() {
-    const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
+    const { scanConfigOverviewsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
     const { clusterId, profileName } = useParams() as { clusterId: string; profileName: string };
     const { generatePathWithScanConfig, navigateWithScanConfigQuery } = useScanConfigRouter();
@@ -152,8 +152,8 @@ function ClusterDetailsPage() {
             </PageSection>
             <PageSection>
                 <ScanConfigurationSelect
-                    isLoading={scanConfigurationsQuery.isLoading}
-                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    isLoading={scanConfigOverviewsQuery.isLoading}
+                    scanConfigs={scanConfigOverviewsQuery.response.configs}
                     selectedScanConfigName={selectedScanConfigName}
                     isScanConfigDisabled={(config) =>
                         isScanConfigurationDisabled(config, { clusterId })

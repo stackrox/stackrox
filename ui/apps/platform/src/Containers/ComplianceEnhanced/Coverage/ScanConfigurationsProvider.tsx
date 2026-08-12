@@ -2,14 +2,17 @@ import { createContext, useCallback } from 'react';
 import type { ReactNode } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
-import { listComplianceScanConfigurations } from 'services/ComplianceScanConfigurationService';
-import type { ListComplianceScanConfigurationsResponse } from 'services/ComplianceScanConfigurationService';
+import { listComplianceScanConfigOverviews } from 'services/ComplianceScanConfigurationService';
+import type {
+    ComplianceScanConfigOverview,
+    ListComplianceScanConfigOverviewsResponse,
+} from 'services/ComplianceScanConfigurationService';
 import useURLParameter from 'hooks/useURLParameter';
 import type { HistoryAction } from 'hooks/useURLParameter';
 
 type ScanConfigurationsContextValue = {
-    scanConfigurationsQuery: {
-        response: ListComplianceScanConfigurationsResponse;
+    scanConfigOverviewsQuery: {
+        response: ListComplianceScanConfigOverviewsResponse;
         isLoading: boolean;
         error: Error | undefined;
     };
@@ -20,13 +23,13 @@ type ScanConfigurationsContextValue = {
     ) => void;
 };
 
-const defaultResponse: ListComplianceScanConfigurationsResponse = {
-    configurations: [],
+const defaultResponse: ListComplianceScanConfigOverviewsResponse = {
+    configs: [],
     totalCount: 0,
 };
 
 const defaultContextValue: ScanConfigurationsContextValue = {
-    scanConfigurationsQuery: {
+    scanConfigOverviewsQuery: {
         response: defaultResponse,
         isLoading: true,
         error: undefined,
@@ -38,18 +41,16 @@ const defaultContextValue: ScanConfigurationsContextValue = {
 export const ScanConfigurationsContext =
     createContext<ScanConfigurationsContextValue>(defaultContextValue);
 
+export type { ComplianceScanConfigOverview };
+
 function ScanConfigurationsProvider({ children }: { children: ReactNode }) {
     const [selectedScanConfigName, setSelectedScanConfigName] = useURLParameter(
         'scanSchedule',
         undefined
     );
 
-    const fetchScanConfigurations = useCallback(() => listComplianceScanConfigurations(), []);
-    const {
-        data: scanConfigurationsResponse,
-        isLoading,
-        error,
-    } = useRestQuery(fetchScanConfigurations);
+    const fetchOverviews = useCallback(() => listComplianceScanConfigOverviews(), []);
+    const { data: overviewsResponse, isLoading, error } = useRestQuery(fetchOverviews);
 
     const selectedScanConfigNameString =
         typeof selectedScanConfigName === 'string' ? selectedScanConfigName : undefined;
@@ -61,19 +62,17 @@ function ScanConfigurationsProvider({ children }: { children: ReactNode }) {
         setSelectedScanConfigName(scanConfigName, historyAction);
     };
 
-    const effectiveScanConfigurationsResponse = scanConfigurationsResponse ?? defaultResponse;
+    const effectiveResponse = overviewsResponse ?? defaultResponse;
 
-    const { configurations } = effectiveScanConfigurationsResponse;
-
-    const sortedScanConfigurations = configurations.sort((a, b) =>
-        a.scanName.localeCompare(b.scanName)
+    const sortedConfigs = [...effectiveResponse.configs].sort((a, b) =>
+        a.scanConfigName.localeCompare(b.scanConfigName)
     );
 
     const contextValue: ScanConfigurationsContextValue = {
-        scanConfigurationsQuery: {
+        scanConfigOverviewsQuery: {
             response: {
-                configurations: sortedScanConfigurations,
-                totalCount: effectiveScanConfigurationsResponse.totalCount,
+                configs: sortedConfigs,
+                totalCount: effectiveResponse.totalCount,
             },
             isLoading,
             error,

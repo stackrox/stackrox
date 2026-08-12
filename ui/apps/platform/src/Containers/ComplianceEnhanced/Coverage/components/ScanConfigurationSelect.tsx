@@ -14,15 +14,15 @@ import {
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesCircleIcon } from '@patternfly/react-icons';
 
-import type { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
+import type { ComplianceScanConfigOverview } from 'services/ComplianceScanConfigurationService';
 
 const ALL_SCAN_SCHEDULES_OPTION = 'All scan schedules';
 
 type ScanConfigurationSelectProps = {
     isLoading: boolean;
-    scanConfigs: ComplianceScanConfigurationStatus[];
+    scanConfigs: ComplianceScanConfigOverview[];
     selectedScanConfigName: string | undefined;
-    isScanConfigDisabled?: (config: ComplianceScanConfigurationStatus) => boolean;
+    isScanConfigDisabled?: (config: ComplianceScanConfigOverview) => boolean;
     setSelectedScanConfigName: (value: string | undefined) => void;
 };
 
@@ -76,29 +76,29 @@ function ScanConfigurationSelect({
                         </SelectList>
                     </SelectGroup>
                     <Divider />
-                    <SelectGroup label="Filter results by a schedule">
-                        <SelectList>
-                            {isLoading ? (
+                    {isLoading ? (
+                        <SelectGroup label="Filter results by a schedule">
+                            <SelectList>
                                 <SelectOption isLoading value="loader" isDisabled>
                                     <Spinner size="lg" />
                                 </SelectOption>
-                            ) : (
-                                <>
-                                    {scanConfigs.map((config) => {
-                                        return (
-                                            <SelectOption
-                                                key={config.id}
-                                                value={config.scanName}
-                                                isDisabled={isScanConfigDisabled(config)}
-                                            >
-                                                {config.scanName}
-                                            </SelectOption>
-                                        );
-                                    })}
-                                </>
-                            )}
-                        </SelectList>
-                    </SelectGroup>
+                            </SelectList>
+                        </SelectGroup>
+                    ) : (
+                        <SelectGroup label="Scan schedules">
+                            <SelectList>
+                                {scanConfigs.map((config) => (
+                                    <SelectOption
+                                        key={config.scanConfigName}
+                                        value={config.scanConfigName}
+                                        isDisabled={isScanConfigDisabled(config)}
+                                    >
+                                        {config.scanConfigName}
+                                    </SelectOption>
+                                ))}
+                            </SelectList>
+                        </SelectGroup>
+                    )}
                 </>
             </Select>
             <Button

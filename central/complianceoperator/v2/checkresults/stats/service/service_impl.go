@@ -256,7 +256,9 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 			if err != nil {
 				return nil, errors.Errorf("Unable to retrieve valid compliance scan configuration for results from %v", request)
 			}
-			scanConfigToIDs[result.ScanConfigName] = config.GetId()
+			if config != nil {
+				scanConfigToIDs[result.ScanConfigName] = config.GetId()
+			}
 		}
 	}
 

@@ -162,8 +162,9 @@ export function convertScanConfigToFormik(
     const { id, scanName, scanConfig, clusterStatus } = existingConfig;
     const { description = '', notifiers, profiles, scanSchedule } = scanConfig;
 
-    const { intervalType, time, daysOfWeek, daysOfMonth } =
-        convertScheduleToFormikParameters(scanSchedule);
+    const { intervalType, time, daysOfWeek, daysOfMonth } = scanSchedule
+        ? convertScheduleToFormikParameters(scanSchedule)
+        : { intervalType: 'UNSET' as const, time: '00:00', daysOfWeek: [], daysOfMonth: [] };
 
     return {
         id,

@@ -368,6 +368,10 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
 			return nil
 		}
+		if errors.Is(err, watcher.ErrScanConfigNotFound) {
+			log.Debugf("Scan %s has no managed scan configuration, skipping report watcher", scan.GetScanName())
+			return nil
+		}
 		return err
 	}
 	numChecks, err := watcher.GetExpectedNumChecks(scan)
@@ -465,6 +469,10 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
 			return err
+		}
+		if errors.Is(err, watcher.ErrScanConfigNotFound) {
+			log.Debugf("Check result %s has no managed scan configuration, skipping report watcher", result.GetCheckName())
+			return nil
 		}
 		return err
 	}
