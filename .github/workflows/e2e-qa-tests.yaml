@@ -197,7 +197,7 @@ jobs:
           version: "v${{ steps.roxie-version.outputs.version }}"
 
       - name: Install oc
-        if: inputs.infra-flavor == 'openshift-4'
+        if: startsWith(inputs.infra-flavor, 'openshift')
         run: |
           curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz \
             | tar xz -C /usr/local/bin oc
