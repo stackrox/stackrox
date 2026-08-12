@@ -20,24 +20,15 @@ func FilterUserPermissionsForSupportedK8sResources(
 	filtered := make([]clusterviewv1alpha1.UserPermission, 0, len(permissions))
 
 	for _, permission := range permissions {
-		if hasSupportedK8sResources(&permission) {
+		if slices.ContainsFunc(
+			permission.Status.ClusterRoleDefinition.Rules,
+			ruleHasSupportedK8sResource,
+		) {
 			filtered = append(filtered, permission)
 		}
 	}
 
 	return filtered
-}
-
-// hasSupportedK8sResources checks if the ClusterRoleDefinition within a UserPermission
-// contains rules that reference any of the supported Kubernetes resources.
-func hasSupportedK8sResources(permission *clusterviewv1alpha1.UserPermission) bool {
-	if permission == nil {
-		return false
-	}
-	return slices.ContainsFunc(
-		permission.Status.ClusterRoleDefinition.Rules,
-		ruleHasSupportedK8sResource,
-	)
 }
 
 // ruleHasSupportedK8sResource checks if a PolicyRule includes any of
