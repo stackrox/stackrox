@@ -128,6 +128,9 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		}()
 	}
 
+	// Collect all responses. The timeout breaks the loop so the Assert
+	// below reports the actual vs expected count — do not fail inside
+	// the select; that would abort before the diagnostic assertion.
 	totalResponses := 0
 	for range numGoroutines * numVMsPerGoroutine {
 		select {
@@ -163,6 +166,7 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 
 	wg.Wait()
 
+	// No message should be forwarded when the VM cannot be resolved.
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
@@ -271,6 +275,7 @@ func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
 }
 
 func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
+	// Simulate an older Central that lacks VirtualMachinesSupported.
 	centralcaps.Set(nil)
 
 	err := s.handler.Send(context.Background(), &virtualmachine.Info{ID: "vm-1"}, &v4.IndexReport{})
