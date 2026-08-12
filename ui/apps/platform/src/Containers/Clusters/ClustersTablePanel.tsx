@@ -26,6 +26,7 @@ import useAnalytics, {
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -79,6 +80,11 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSensorCompatibilityStatusEnabled = isFeatureFlagEnabled(
+        'ROX_SENSOR_COMPATIBILITY_STATUS'
+    );
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -386,24 +392,27 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             }
                         />
                         <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
-                            {hasWriteAccessForAdministration && (
-                                <ToolbarItem className="pf-v6-u-align-self-center">
-                                    <AutoUpgradeToggle />
-                                </ToolbarItem>
-                            )}
-                            {hasWriteAccessForAdministration && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={upgradeSelectedClusters}
-                                        isDisabled={
-                                            upgradableClusters.length === 0 || !!selectedClusterId
-                                        }
-                                    >
-                                        {`Upgrade (${upgradableClusters.length})`}
-                                    </Button>
-                                </ToolbarItem>
-                            )}
+                            {!isSensorCompatibilityStatusEnabled &&
+                                hasWriteAccessForAdministration && (
+                                    <ToolbarItem className="pf-v6-u-align-self-center">
+                                        <AutoUpgradeToggle />
+                                    </ToolbarItem>
+                                )}
+                            {!isSensorCompatibilityStatusEnabled &&
+                                hasWriteAccessForAdministration && (
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={upgradeSelectedClusters}
+                                            isDisabled={
+                                                upgradableClusters.length === 0 ||
+                                                !!selectedClusterId
+                                            }
+                                        >
+                                            {`Upgrade (${upgradableClusters.length})`}
+                                        </Button>
+                                    </ToolbarItem>
+                                )}
                             {hasWriteAccessForCluster && (
                                 <ToolbarItem>
                                     <Button
