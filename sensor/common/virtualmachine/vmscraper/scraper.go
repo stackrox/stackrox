@@ -212,7 +212,7 @@ func (s *VMScraper) findKeyByVMID(vmID string) string {
 	if vm == nil || !vm.Running {
 		return ""
 	}
-	return vmKey(vm)
+	return vm.Key()
 }
 
 // vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
@@ -285,7 +285,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 	_ = g.Wait()
 
-	elapsed := time.Since(cycleStart)
+	elapsed := s.now().Sub(cycleStart)
 	if reconcile {
 		log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
 		metrics.PullCycleDurationSeconds.Observe(elapsed.Seconds())
@@ -298,7 +298,7 @@ func (s *VMScraper) reconcile() {
 	concurrency.WithLock(&s.mu, func() {
 		now := s.now()
 		for _, vm := range vms {
-			key := vmKey(vm)
+			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
@@ -363,7 +363,7 @@ func (s *VMScraper) scrapeKey(ctx context.Context, key string) bool {
 }
 
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool {
-	key := vmKey(vm)
+	key := vm.Key()
 	snap := s.snapshotVMState(key)
 	reason, backoff := s.scrapeScheduleHint(key)
 	log.Infof("VMScraper: scraping %q (reason=%s backoff=%s)", key, reason, backoff)
@@ -451,8 +451,10 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
-		next := s.scheduleAfterAttempt(key, scrapeNonRetryable)
-		log.Infof("VMScraper: scrape %q failed non-retryable next=%s", key, next)
+		// Send failures are typically a transient Central connection issue, so
+		// retry on the short backoff rather than waiting a full poll interval.
+		next := s.scheduleAfterAttempt(key, scrapeRetryable)
+		log.Infof("VMScraper: scrape %q failed retryable next=%s", key, next)
 		return false
 	}
 
@@ -500,15 +502,12 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 		}
 		now := s.now()
 		switch outcome {
-		case scrapeOK:
-			st.backoff = 0
-			st.nextAttemptAt = now.Add(s.interval)
-			return s.interval
 		case scrapeRetryable:
 			st.backoff = nextBackoff(st.backoff, s.interval)
 			st.nextAttemptAt = now.Add(st.backoff)
 			return st.backoff
-		case scrapeNonRetryable:
+		case scrapeOK, scrapeNonRetryable:
+			// Both return to the normal poll cadence without growing backoff.
 			st.backoff = 0
 			st.nextAttemptAt = now.Add(s.interval)
 			return s.interval
@@ -585,16 +584,10 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	default:
 		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
-		if isRetryable(err) {
-			return scrapeRetryable
-		}
-		return scrapeNonRetryable
+		// ErrUnknownMethod, the only permanent sentinel, is handled above, so
+		// any error reaching here is treated as transient.
+		return scrapeRetryable
 	}
-}
-
-// vmKey returns the identifier used for vmState lookups.
-func vmKey(vm *virtualmachine.Info) string {
-	return vm.Namespace + "/" + vm.Name
 }
 
 type vmStateSnapshot struct {
@@ -607,8 +600,10 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 	return concurrency.WithLock1(&s.mu, func() vmStateSnapshot {
 		st, ok := s.vmState[key]
 		if !ok {
-			st = &vmState{nextAttemptAt: s.now()}
-			s.vmState[key] = st
+			// reconcile and scrapeKey own vmState membership; a missing key here
+			// means the VM was removed concurrently, so return the zero snapshot
+			// instead of resurrecting a slot for it.
+			return vmStateSnapshot{}
 		}
 		return vmStateSnapshot{
 			lastGeneration:  st.lastGeneration,

@@ -24,6 +24,12 @@ type Info struct {
 	CDRomDisks []string
 }
 
+// Key returns the identifier ("namespace/name") used to correlate this VM
+// across Sensor's virtual-machine components.
+func (v *Info) Key() string {
+	return v.Namespace + "/" + v.Name
+}
+
 // Copy returns a copy of the VirtualMachineInfo
 func (v *Info) Copy() *Info {
 	if v == nil {

@@ -1,12 +1,9 @@
 package vmscraper
 
 import (
-	"errors"
-	"io"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,6 +34,11 @@ func TestNextBackoff(t *testing.T) {
 			poll:    time.Hour,
 			want:    maxBackoffCap,
 		},
+		"first failure is capped when poll is below initial backoff": {
+			current: 0,
+			poll:    5 * time.Second,
+			want:    5 * time.Second,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -49,13 +51,4 @@ func TestReconcilePeriod(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, reconcilePeriod(5*time.Minute))
 	assert.Equal(t, 5*time.Minute, reconcilePeriod(time.Hour))
 	assert.Equal(t, time.Minute, reconcilePeriod(time.Minute))
-}
-
-func TestIsRetryable(t *testing.T) {
-	assert.True(t, isRetryable(io.EOF))
-	assert.True(t, isRetryable(vsockclient.ErrNotReady))
-	assert.True(t, isRetryable(vsockclient.ErrInternal))
-	assert.True(t, isRetryable(errors.New("dial failed")))
-	assert.False(t, isRetryable(vsockclient.ErrUnknownMethod))
-	assert.False(t, isRetryable(nil))
 }

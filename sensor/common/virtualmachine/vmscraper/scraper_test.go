@@ -27,10 +27,23 @@ import (
 // --- Mocks ---
 
 type mockStore struct {
-	vms []*virtualmachine.Info
+	vms              []*virtualmachine.Info
+	listRunningCalls int
 }
 
-func (m *mockStore) ListRunning() []*virtualmachine.Info { return m.vms }
+// ListRunning mirrors the production store's contract of only returning VMs
+// with Running set, so tests exercise reconcile pruning rather than the
+// scrapeKey nil-VM guard when a VM stops running.
+func (m *mockStore) ListRunning() []*virtualmachine.Info {
+	m.listRunningCalls++
+	var out []*virtualmachine.Info
+	for _, vm := range m.vms {
+		if vm.Running {
+			out = append(out, vm)
+		}
+	}
+	return out
+}
 
 func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	for _, vm := range m.vms {
@@ -705,10 +718,29 @@ func TestVMScraper_GetReportTimeoutClassified(t *testing.T) {
 	cancel()
 	_, outcome := s.dialAndGetReport(ctx, vm, "ns1/vm-a", 1, 0, 0)
 
-	assert.NotEqual(t, scrapeOK, outcome)
+	assert.Equal(t, scrapeNonRetryable, outcome,
+		"parent cancellation must not schedule a retry on the short tick")
 	assert.Equal(t, timeoutBefore+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout)))
 	assert.Equal(t, readErrBefore, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError)),
 		"timed-out read must not be counted as a protocol/read error")
+}
+
+// TestVMScraper_GetReportDeadlineExceededClassified covers a per-VM timeout
+// (context.DeadlineExceeded), which is retried on the short tick, unlike the
+// parent-cancellation case above.
+func TestVMScraper_GetReportDeadlineExceededClassified(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	client := &mockProtocolClient{
+		errQueue: []error{errors.New("i/o timeout")},
+	}
+	s, _ := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+	defer cancel()
+	<-ctx.Done()
+	_, outcome := s.dialAndGetReport(ctx, vm, "ns1/vm-a", 1, 0, 0)
+
+	assert.Equal(t, scrapeRetryable, outcome, "a per-VM deadline is retried on the short tick")
 }
 
 // TestVMScraper_GetReportBusyClassified verifies busy is counted separately
@@ -869,21 +901,11 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 	dialer := &delayDialer{delay: dialDelay}
 	client := &safeProtocolClient{gen: 1}
 
-	s := &VMScraper{
-		store:          store,
-		sender:         sender,
-		dialer:         dialer,
-		client:         client,
-		interval:       5 * time.Minute,
-		tickInterval:   initialBackoff,
-		reconcileEvery: reconcilePeriod(5 * time.Minute),
-		perVMTimeout:   10 * time.Second,
-		concurrency:    concurrency,
-		warnMaxBytes:   8 << 20,
-		vmState:        make(map[string]*vmState),
-		inFlight:       set.NewStringSet(),
-		now:            time.Now,
-	}
+	s, _ := newTestScraper(store, sender, dialer, client)
+	s.concurrency = concurrency
+	// This test measures real dial overlap via delayDialer's timers, so it
+	// needs the wall clock rather than the fake test clock.
+	s.now = time.Now
 
 	s.pollOnce(context.Background())
 
@@ -911,6 +933,7 @@ func TestVMScraper_RetryableFailureSchedulesBackoff(t *testing.T) {
 	assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"))
 
 	client.reset()
+	client.errQueue = nil
 	client.resultQueue = []*vsockclient.GetReportResult{makeReport(1)}
 	s.pollOnce(context.Background())
 	assert.Len(t, client.calls, 0, "should skip while backoff has not elapsed")
@@ -918,6 +941,44 @@ func TestVMScraper_RetryableFailureSchedulesBackoff(t *testing.T) {
 	clock.Advance(initialBackoff)
 	s.pollOnce(context.Background())
 	assert.Len(t, client.calls, 1)
+	assert.Zero(t, cachedBackoff(t, s, "ns1/vm-a"), "success resets the backoff")
+
+	// A second consecutive retryable failure doubles the backoff.
+	client.reset()
+	client.errQueue = []error{vsockclient.ErrNotReady}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+	require.Len(t, client.calls, 1)
+	assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"))
+
+	client.reset()
+	client.errQueue = []error{vsockclient.ErrNotReady}
+	clock.Advance(initialBackoff)
+	s.pollOnce(context.Background())
+	assert.Equal(t, 2*initialBackoff, cachedBackoff(t, s, "ns1/vm-a"), "a second consecutive failure doubles the backoff")
+}
+
+// TestVMScraper_NonForcedTickSkipsReconcileWhenNotDue verifies that the
+// production ticker's non-forced tick only reconciles (calling ListRunning)
+// once lastReconcile is at least reconcileEvery old, keeping ListRunning off
+// the hot per-tick path.
+func TestVMScraper_NonForcedTickSkipsReconcileWhenNotDue(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1), makeReport(1)},
+	}
+	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+
+	s.pollOnce(context.Background())
+	require.Equal(t, 1, store.listRunningCalls, "pollOnce forces exactly one reconcile")
+
+	clock.Advance(s.reconcileEvery / 2)
+	s.tick(context.Background(), false)
+	assert.Equal(t, 1, store.listRunningCalls, "reconcile is not yet due")
+
+	clock.Advance(s.reconcileEvery / 2)
+	s.tick(context.Background(), false)
+	assert.Equal(t, 2, store.listRunningCalls, "reconcile becomes due once reconcileEvery has elapsed")
 }
 
 func cachedBackoff(t *testing.T, s *VMScraper, key string) time.Duration {

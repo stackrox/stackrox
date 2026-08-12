@@ -1,10 +1,7 @@
 package vmscraper
 
 import (
-	"errors"
 	"time"
-
-	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 )
 
 const (
@@ -28,11 +25,4 @@ func nextBackoff(current, pollInterval time.Duration) time.Duration {
 		return min(initialBackoff, cap)
 	}
 	return min(current*2, cap)
-}
-
-// isRetryable reports whether a GetReport/dial error should grow backoff.
-// UnknownMethod is permanent; everything else (including ErrInternal / NotReady /
-// EOF / dial failures, and ErrBusy when that sentinel exists) is retryable.
-func isRetryable(err error) bool {
-	return err != nil && !errors.Is(err, vsockclient.ErrUnknownMethod)
 }
