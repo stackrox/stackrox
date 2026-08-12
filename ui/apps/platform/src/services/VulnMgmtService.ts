@@ -43,8 +43,8 @@ function appendSortParams(params: URLSearchParams, sortOption: ApiSortOption | u
     }
     if (opt.aggregateBy) {
         params.set(
-            'pagination.sortOption.aggregateBy.aggregateFunc',
-            opt.aggregateBy.aggregateFunc
+            'pagination.sortOption.aggregateBy.aggrFunc',
+            opt.aggregateBy.aggregateFunc.toUpperCase()
         );
         if (opt.aggregateBy.distinct) {
             params.set('pagination.sortOption.aggregateBy.distinct', 'true');
