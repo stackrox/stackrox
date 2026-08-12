@@ -37,7 +37,7 @@ import useURLSort from 'hooks/useURLSort';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
-import { isVulnMgmtLocalStorage, workloadEntityTabValues } from '../../types';
+import { isVulnMgmtLocalStorage, severityTabValues, workloadEntityTabValues } from '../../types';
 import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
 import { normalizeLocalStorageKeys } from '../../utils/localStorageUtils';
 import {
@@ -45,6 +45,7 @@ import {
     getRegexScopedQueryString,
     normalizeSearchFilterKeys,
     parseQuerySearchFilter,
+    severityLabelToSeverity,
 } from '../../utils/searchUtils';
 import {
     getDefaultZeroCveSortOption,
@@ -149,6 +150,11 @@ function WorkloadCvesOverviewPage() {
         isViewingWithCves ? 'CVE' : 'Image'
     );
 
+    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
+
+    const [activeSeverityTab] = useURLStringUnion('severityTab', severityTabValues);
+    const useSeverityTabs = useUnifiedView && isViewingWithCves && activeEntityTabKey === 'CVE';
+
     const [localStorageValue, setStoredValue] = useLocalStorage(
         'vulnerabilityManagement',
         defaultStorage,
@@ -184,10 +190,13 @@ function WorkloadCvesOverviewPage() {
               'Image CVE Count': ['0'],
           };
 
+    if (useSeverityTabs) {
+        workloadCvesScopedSearchFilter.Severity = [severityLabelToSeverity(activeSeverityTab)];
+    }
+
     // For request and view-based report.
     const workloadCvesScopedQueryString = getRegexScopedQueryString(workloadCvesScopedSearchFilter);
 
-    const useUnifiedView = isFeatureFlagEnabled('ROX_VULN_MGMT_UNIFIED_CVE_VIEW');
     const getDefaultSortOption = isViewingWithCves
         ? (tab: WorkloadEntityTab, filter?: SearchFilter) =>
               getWorkloadCveOverviewDefaultSortOption(tab, filter, useUnifiedView)
@@ -226,6 +235,11 @@ function WorkloadCvesOverviewPage() {
                 page: 'Overview',
             },
         });
+    }
+
+    function onSeverityTabChange() {
+        pagination.setPage(1);
+        sort.setSortOption(getDefaultSortOption('CVE', searchFilter));
     }
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
@@ -381,6 +395,8 @@ function WorkloadCvesOverviewPage() {
                     sort={sort}
                     currentVulnerabilityState={currentVulnerabilityState}
                     isViewingWithCves={isViewingWithCves}
+                    useSeverityTabs={useSeverityTabs}
+                    onSeverityTabChange={onSeverityTabChange}
                     onWatchImage={(imageName) => {
                         setDefaultWatchedImageName(imageName);
                         watchedImagesModalToggle.openSelect();
@@ -448,6 +464,7 @@ function WorkloadCvesOverviewPage() {
                     showDeferralUI={showDeferralUI}
                     cveTableColumnOverrides={{
                         cveSelection: hideColumnIf(!showDeferralUI),
+                        imagesBySeverity: hideColumnIf(useSeverityTabs),
                         topNvdCvss: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
                         epssProbability: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
                         requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),

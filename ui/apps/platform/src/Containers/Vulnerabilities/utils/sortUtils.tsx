@@ -50,6 +50,9 @@ export function getWorkloadCveOverviewSortFields(
 
     switch (entityTab) {
         case 'CVE':
+            if (useUnifiedView) {
+                return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
+            }
             return ['CVE', severityFields, 'CVSS', 'Image Sha', 'CVE Created Time'];
         case 'Image':
             return ['Image', severityFields, 'Image OS', 'Image Created Time', 'Image Scan Time'];
@@ -74,6 +77,11 @@ export function getWorkloadCveOverviewDefaultSortOption(
     if (useUnifiedView) {
         switch (entityTab) {
             case 'CVE':
+                return {
+                    field: 'Image Sha',
+                    direction: 'desc',
+                    aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
+                };
             case 'Image':
                 return {
                     field: 'Severity',

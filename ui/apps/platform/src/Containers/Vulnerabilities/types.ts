@@ -75,6 +75,10 @@ export const workloadEntityTabValues = ['CVE', 'Image', 'Deployment'] as const;
 
 export type WorkloadEntityTab = (typeof workloadEntityTabValues)[number];
 
+export const severityTabValues = ['Critical', 'Important', 'Moderate', 'Low', 'Unknown'] as const;
+
+export type SeverityTab = (typeof severityTabValues)[number];
+
 export const nodeEntityTabValues = ['CVE', 'Node'] as const;
 
 export type NodeEntityTab = (typeof nodeEntityTabValues)[number];

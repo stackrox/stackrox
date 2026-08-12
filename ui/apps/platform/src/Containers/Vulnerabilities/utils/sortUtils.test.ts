@@ -1,6 +1,7 @@
 import {
     getScoreVersionsForTopCVSS,
     getSeveritySortOptions,
+    getWorkloadCveOverviewDefaultSortOption,
     getWorkloadCveOverviewSortFields,
     sortCveDistroList,
     syncSeveritySortOption,
@@ -132,11 +133,14 @@ describe('getWorkloadCveOverviewSortFields', () => {
         ]);
     });
 
-    it('should return single Severity field when useUnifiedView is true', () => {
+    it('should omit Severity from CVE tab when useUnifiedView is true', () => {
         const cveFields = getWorkloadCveOverviewSortFields('CVE', true);
-        expect(cveFields).toContain('Severity');
+        expect(cveFields).not.toContain('Severity');
         expect(cveFields).not.toContainEqual(expect.arrayContaining(['Critical Severity Count']));
+        expect(cveFields).toContain('Image Sha');
+    });
 
+    it('should return single Severity field for non-CVE tabs when useUnifiedView is true', () => {
         const imageFields = getWorkloadCveOverviewSortFields('Image', true);
         expect(imageFields).toContain('Severity');
 
@@ -149,6 +153,31 @@ describe('getWorkloadCveOverviewSortFields', () => {
         expect(getWorkloadCveOverviewSortFields('CVE', true)).toContain('CVSS');
         expect(getWorkloadCveOverviewSortFields('Image', true)).toContain('Image');
         expect(getWorkloadCveOverviewSortFields('Deployment', true)).toContain('Deployment');
+    });
+});
+
+describe('getWorkloadCveOverviewDefaultSortOption', () => {
+    it('should return affected images sort for CVE tab when useUnifiedView is true', () => {
+        const sortOption = getWorkloadCveOverviewDefaultSortOption('CVE', {}, true);
+        expect(sortOption).toEqual({
+            field: 'Image Sha',
+            direction: 'desc',
+            aggregateBy: { aggregateFunc: 'count', distinct: 'true' },
+        });
+    });
+
+    it('should return severity sort for Image tab when useUnifiedView is true', () => {
+        const sortOption = getWorkloadCveOverviewDefaultSortOption('Image', {}, true);
+        expect(sortOption).toEqual({
+            field: 'Severity',
+            direction: 'desc',
+            aggregateBy: { aggregateFunc: 'max' },
+        });
+    });
+
+    it('should return severity count sort for CVE tab when useUnifiedView is false', () => {
+        const sortOption = getWorkloadCveOverviewDefaultSortOption('CVE', {});
+        expect(Array.isArray(sortOption)).toBe(true);
     });
 });
 

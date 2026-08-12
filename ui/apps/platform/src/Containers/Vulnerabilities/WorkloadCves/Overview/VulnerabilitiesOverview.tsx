@@ -14,7 +14,14 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import type { DefaultFilters, QuerySearchFilter, WorkloadEntityTab } from '../../types';
+import type {
+    DefaultFilters,
+    QuerySearchFilter,
+    SeverityTab,
+    WorkloadEntityTab,
+} from '../../types';
+import SeverityTabs from '../components/SeverityTabs';
+import { useSeverityTabCounts } from './useSeverityTabCounts';
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer from './ImagesTableContainer';
@@ -61,6 +68,8 @@ type VulnerabilitiesOverviewProps = {
     onUnwatchImage: (imageName: string) => void;
     activeEntityTabKey: WorkloadEntityTab;
     onEntityTabChange: (entityTab: WorkloadEntityTab) => void;
+    useSeverityTabs?: boolean;
+    onSeverityTabChange?: (severity: SeverityTab) => void;
     additionalToolbarItems: ReactNode;
     additionalHeaderItems: ReactNode;
     showDeferralUI: boolean;
@@ -84,6 +93,8 @@ function VulnerabilitiesOverview({
     onUnwatchImage,
     activeEntityTabKey,
     onEntityTabChange,
+    useSeverityTabs,
+    onSeverityTabChange,
     additionalToolbarItems,
     additionalHeaderItems,
     showDeferralUI,
@@ -98,6 +109,13 @@ function VulnerabilitiesOverview({
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const { baseSearchFilter, overviewEntityTabs } = useWorkloadCveViewContext();
+
+    const severityTabBaseFilter = {
+        ...baseSearchFilter,
+        ...querySearchFilter,
+        'Vulnerability State': [currentVulnerabilityState],
+    };
+    const severityTabCounts = useSeverityTabCounts(severityTabBaseFilter, !!useSeverityTabs);
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
 
@@ -133,7 +151,7 @@ function VulnerabilitiesOverview({
                 pagination.setPage(1);
                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
             }}
-            includeCveSeverityFilters={isViewingWithCves}
+            includeCveSeverityFilters={isViewingWithCves && !useSeverityTabs}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
         >
@@ -159,6 +177,9 @@ function VulnerabilitiesOverview({
                 >
                     {additionalHeaderItems}
                 </Flex>
+            )}
+            {useSeverityTabs && (
+                <SeverityTabs counts={severityTabCounts} onChange={onSeverityTabChange} />
             )}
             {activeEntityTabKey === 'CVE' && (
                 <CVEsTableContainer
