@@ -38,7 +38,12 @@ import type { VulnerabilityState } from 'types/cve.proto';
 
 import { searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import { isVulnMgmtLocalStorage, severityTabValues, workloadEntityTabValues } from '../../types';
-import type { DefaultFilters, VulnMgmtLocalStorage, WorkloadEntityTab } from '../../types';
+import type {
+    DefaultFilters,
+    SeverityTab,
+    VulnMgmtLocalStorage,
+    WorkloadEntityTab,
+} from '../../types';
 import { normalizeLocalStorageKeys } from '../../utils/localStorageUtils';
 import {
     getNamespaceViewPagePath,
@@ -242,9 +247,16 @@ function WorkloadCvesOverviewPage() {
         });
     }
 
-    function onSeverityTabChange() {
+    function onSeverityTabChange(newSeverity: SeverityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(activeEntityTabKey, searchFilter));
+        sort.setSortOption(
+            getWorkloadCveOverviewDefaultSortOption(
+                activeEntityTabKey,
+                searchFilter,
+                useUnifiedView,
+                newSeverity
+            )
+        );
     }
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {

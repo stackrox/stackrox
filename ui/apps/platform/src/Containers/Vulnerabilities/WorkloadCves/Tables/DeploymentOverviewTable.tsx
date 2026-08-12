@@ -154,6 +154,10 @@ function DeploymentOverviewTable({
                     <TooltipTh
                         className={getVisibilityClass('matchingCveCount')}
                         tooltip="Total CVEs in this deployment matching the active severity and filters"
+                        sort={getSortParams(
+                            'Matching CVEs',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         Matching CVEs
                     </TooltipTh>

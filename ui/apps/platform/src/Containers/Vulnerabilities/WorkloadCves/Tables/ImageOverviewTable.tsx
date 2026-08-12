@@ -271,6 +271,10 @@ function ImageOverviewTable({
                     <TooltipTh
                         className={getVisibilityClass('matchingCveCount')}
                         tooltip="Total CVEs in this image matching the active severity and filters"
+                        sort={getSortParams(
+                            'Matching CVEs',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
                     >
                         Matching CVEs
                     </TooltipTh>
