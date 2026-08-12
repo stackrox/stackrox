@@ -4,7 +4,9 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: Image tag to test.
+        description: |
+          Image tag to test. The caller needs to make sure that the tag carries the
+          "-fast" Konflux suffix if required (e.g. for development builds).
         type: string
         required: true
       should-run:
@@ -14,7 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Image tag to test.
+        description: |
+          Image tag to test. You need to make sure that the tag carries the
+          "-fast" Konflux suffix if required (e.g. for development builds).
         type: string
         required: true
 
