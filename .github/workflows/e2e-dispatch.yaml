@@ -138,9 +138,6 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
-      operator_image_tag: ${{ steps.build-tag.outputs.operator_image_tag }}
-      image_prefix: ${{ steps.build-tag.outputs.image_prefix }}
-      operator_image_prefix: ${{ steps.build-tag.outputs.operator_image_prefix }}
       image_suffix: ${{ steps.build-tag.outputs.image_suffix }}
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
@@ -165,15 +162,12 @@ jobs:
 
         OPERATOR_IMAGE_TAG="$(BUILD_TAG="${IMAGE_TAG}" make -C operator --quiet --no-print-directory tag)"
         echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
-        echo "operator_image_tag=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_OUTPUT"
 
         IMAGE_PREFIX=""
         echo "IMAGE_PREFIX=${IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-        echo "image_prefix=${IMAGE_PREFIX}" | tee -a "$GITHUB_OUTPUT"
 
         OPERATOR_IMAGE_PREFIX="stackrox-"
         echo "OPERATOR_IMAGE_PREFIX=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-        echo "operator_image_prefix=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_OUTPUT"
 
         IMAGE_SUFFIX=""
         echo "IMAGE_SUFFIX=${IMAGE_SUFFIX}" | tee -a "$GITHUB_ENV"
@@ -203,9 +197,6 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
-      operator_image_tag: ${{ steps.build-tag.outputs.operator_image_tag }}
-      image_prefix: ${{ steps.build-tag.outputs.image_prefix }}
-      operator_image_prefix: ${{ steps.build-tag.outputs.operator_image_prefix }}
       image_suffix: ${{ steps.build-tag.outputs.image_suffix }}
 
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
@@ -233,15 +224,12 @@ jobs:
 
         OPERATOR_IMAGE_TAG="${IMAGE_TAG}"
         echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
-        echo "operator_image_tag=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_OUTPUT"
 
         IMAGE_PREFIX="release-"
         echo "IMAGE_PREFIX=${IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-        echo "image_prefix=${IMAGE_PREFIX}" | tee -a "$GITHUB_OUTPUT"
 
         OPERATOR_IMAGE_PREFIX="release-"
         echo "OPERATOR_IMAGE_PREFIX=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-        echo "operator_image_prefix=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_OUTPUT"
 
         # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
         source_branch="${GITHUB_HEAD_REF:-}"
