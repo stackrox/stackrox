@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -48,9 +48,10 @@ func clampPollInterval(interval time.Duration) time.Duration {
 	return interval
 }
 
-// RunningVMStore provides the list of running VMs.
+// RunningVMStore provides lookups of running VMs.
 type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
+	Get(id virtualmachine.VMID) *virtualmachine.Info
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -83,9 +84,8 @@ type VMScraper struct {
 	started               atomic.Bool
 	now                   func() time.Time
 
-	mu        sync.Mutex
-	vmState   map[string]*vmState
-	activeVMs set.StringSet
+	mu      sync.Mutex
+	vmState map[string]*vmState
 }
 
 type vmState struct {
@@ -112,18 +112,8 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		// being rejected at that limit.
 		warnMaxBytes: env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
-}
-
-// IsActivelyScraped reports whether the given VM is actively scraped via pull
-// mode. Accepts either a "namespace/name" key or a vsock CID string.
-// Used to suppress duplicate push-mode reports during the push→pull transition.
-func (s *VMScraper) IsActivelyScraped(key string) bool {
-	return concurrency.WithLock1(&s.mu, func() bool {
-		return s.activeVMs.Contains(key)
-	})
 }
 
 func (s *VMScraper) Name() string { return "virtualmachine.vmscraper" }
@@ -143,10 +133,76 @@ func (s *VMScraper) Stop() {
 
 func (s *VMScraper) Capabilities() []centralsensor.SensorCapability { return nil }
 func (s *VMScraper) Notify(_ common.SensorComponentEvent)           {}
-func (s *VMScraper) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+
+// Accepts reports whether this component wants to see SensorACK messages
+// for VM index reports.
+func (s *VMScraper) Accepts(msg *central.MsgToSensor) bool {
+	sensorAck := msg.GetSensorAck()
+	return sensorAck != nil && sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
+}
+
+// ProcessMessage handles SensorACK/NACK for pull-mode VM index reports.
+func (s *VMScraper) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
+	sensorAck := msg.GetSensorAck()
+	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
+		return nil
+	}
+
+	// Record all action types for debuggability; label cardinality risk is accepted.
+	metrics.IndexReportAcksReceived.WithLabelValues(sensorAck.GetAction().String()).Inc()
+
+	switch sensorAck.GetAction() {
+	case central.SensorACK_ACK:
+		log.Debugf("VMScraper: received acknowledgement for resource_id=%q", sensorAck.GetResourceId())
+	case central.SensorACK_NACK:
+		s.handleNACK(sensorAck.GetResourceId())
+	default:
+		log.Debugf("VMScraper: received unknown SensorACK action %v for resource_id=%q", sensorAck.GetAction(), sensorAck.GetResourceId())
+	}
 	return nil
 }
-func (s *VMScraper) Accepts(_ *central.MsgToSensor) bool         { return false }
+
+// handleNACK clears the cached generation so the next poll resends a full report.
+func (s *VMScraper) handleNACK(resourceID string) {
+	key := s.findKeyByVMID(vmIDFromResourceID(resourceID))
+	if key == "" {
+		log.Debugf("VMScraper: could not resolve VM for NACKed resource_id=%q; nothing to reset", resourceID)
+		return
+	}
+
+	reset := concurrency.WithLock1(&s.mu, func() bool {
+		state, ok := s.vmState[key]
+		if !ok {
+			return false
+		}
+		state.lastGeneration = 0
+		return true
+	})
+	if reset {
+		log.Debugf("VMScraper: reset cached generation for %q after NACK for resource_id=%q", key, resourceID)
+	}
+}
+
+// findKeyByVMID returns the vmState key ("namespace/name") for the currently
+// running VM with the given ID, or "" if none matches.
+func (s *VMScraper) findKeyByVMID(vmID string) string {
+	if vmID == "" {
+		return ""
+	}
+	vm := s.store.Get(virtualmachine.VMID(vmID))
+	if vm == nil || !vm.Running {
+		return ""
+	}
+	return vmKey(vm)
+}
+
+// vmIDFromResourceID extracts the VM ID from a composite ACK resource ID
+// (format "vmID:vsockCID"; see central/sensor/service/common.VMIndexACKResourceID).
+func vmIDFromResourceID(resourceID string) string {
+	vmID, _, _ := strings.Cut(resourceID, ":")
+	return vmID
+}
+
 func (s *VMScraper) ResponsesC() <-chan *message.ExpiringMessage { return nil }
 
 func (s *VMScraper) run() {
@@ -176,10 +232,6 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	metrics.PullCyclesTotal.Inc()
 	metrics.PullVMsInCycle.Set(float64(len(vms)))
 
-	// Build a new activeVMs set during the cycle. The old set remains in
-	// effect for IsActivelyScraped callers, preventing a suppression gap
-	// while scraping is in progress.
-	scrapedVMs := set.NewStringSet()
 	var successCount atomic.Int32
 
 	liveKeys := set.NewStringSet()
@@ -189,7 +241,7 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	for _, vm := range vms {
 		liveKeys.Add(vmKey(vm))
 		g.Go(func() error {
-			if s.scrapeVM(gCtx, vm, scrapedVMs) {
+			if s.scrapeVM(gCtx, vm) {
 				successCount.Add(1)
 			}
 			return nil
@@ -197,19 +249,15 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	}
 	_ = g.Wait()
 
-	concurrency.WithLock(&s.mu, func() {
-		s.activeVMs = scrapedVMs
-	})
-
 	s.pruneStaleVMState(liveKeys)
 	elapsed := time.Since(cycleStart)
 	log.Infof("VMScraper: cycle done: %d/%d VMs scraped successfully in %s", successCount.Load(), len(vms), elapsed.Truncate(time.Millisecond))
 	metrics.PullCycleDurationSeconds.Observe(elapsed.Seconds())
 }
 
-func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrapedVMs set.StringSet) bool {
+func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool {
 	key := vmKey(vm)
-	state := s.getOrCreateState(key)
+	snap := s.snapshotVMState(key)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
@@ -221,8 +269,8 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	// can make before dialing at all, so request the full report on this
 	// first (and only) round trip instead of asking "anything newer?" and
 	// re-dialing once told no.
-	ifNewerThan, knownEpoch := state.lastGeneration, state.lastEpoch
-	mandatoryRefreshDue := s.now().Sub(state.lastForwardedAt) > s.mandatoryRefreshAfter
+	ifNewerThan, knownEpoch := snap.lastGeneration, snap.lastEpoch
+	mandatoryRefreshDue := s.now().Sub(snap.lastForwardedAt) > s.mandatoryRefreshAfter
 	if mandatoryRefreshDue {
 		ifNewerThan, knownEpoch = 0, 0
 	}
@@ -252,15 +300,14 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		// current roxagent can only report Unchanged for a reason other
 		// than the mandatory refresh — i.e. an epoch mismatch below.
 		epoch := result.Meta.GetEpoch()
-		epochMismatch := epoch != 0 && epoch != state.lastEpoch
+		epochMismatch := epoch != 0 && epoch != snap.lastEpoch
 		if !epochMismatch {
-			s.registerScrapedVM(scrapedVMs, vm)
-			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, state.lastGeneration)
+			log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
 			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
 			return true
 		}
 		log.Infof("VMScraper: roxagent on %q restarted (epoch changed from %d to %d, generation coincidentally matched cached value %d) — forcing full report",
-			key, state.lastEpoch, epoch, state.lastGeneration)
+			key, snap.lastEpoch, epoch, snap.lastGeneration)
 		result, ok = s.dialAndGetReport(vmCtx, vm, key, port, 0, 0)
 		if !ok {
 			return false
@@ -279,6 +326,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 	reportSize := proto.Size(result.IndexReport)
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
+	recordVMDiscoveredData(result.Meta.GetFacts())
 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
@@ -286,13 +334,11 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info, scrap
 		return false
 	}
 
-	state.lastGeneration = result.Meta.GetReportGeneration()
-	state.lastEpoch = result.Meta.GetEpoch()
-	state.lastForwardedAt = s.now()
-	s.registerScrapedVM(scrapedVMs, vm)
+	newGen := result.Meta.GetReportGeneration()
+	s.commitVMState(key, newGen, result.Meta.GetEpoch())
 
 	log.Debugf("VMScraper: successfully pulled report for %q: generation=%d, packages=%d, size=%d bytes, total=%s",
-		key, state.lastGeneration, len(result.IndexReport.GetContents().GetPackages()), reportSize,
+		key, newGen, len(result.IndexReport.GetContents().GetPackages()), reportSize,
 		time.Since(totalStart).Truncate(time.Millisecond))
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(time.Since(totalStart).Seconds())
@@ -359,41 +405,61 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	case errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF):
 		log.Debugf("VMScraper: roxagent on %q connection closed (agent may be down or restarting): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
+	case errors.Is(err, vsockclient.ErrBusy):
+		log.Infof("VMScraper: roxagent on %q is busy with another request: %v", key, err)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy).Inc()
 	default:
 		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
 	}
 }
 
-// vmKey returns the identifier used for vmState and activeVMs lookups.
+// vmKey returns the identifier used for vmState lookups.
 func vmKey(vm *virtualmachine.Info) string {
 	return vm.Namespace + "/" + vm.Name
 }
 
-func (s *VMScraper) registerScrapedVM(scrapedVMs set.StringSet, vm *virtualmachine.Info) {
-	key := vmKey(vm)
-	// Register both identifiers so IsActivelyScraped works whether the
-	// caller uses "namespace/name" (pull path) or a CID string (push path).
-	concurrency.WithLock(&s.mu, func() {
-		scrapedVMs.Add(key)
-		if vm.VSOCKCID != nil {
-			scrapedVMs.Add(strconv.FormatUint(uint64(*vm.VSOCKCID), 10))
-		}
-	})
+type vmStateSnapshot struct {
+	lastGeneration  uint32
+	lastEpoch       uint32
+	lastForwardedAt time.Time
 }
 
-// getOrCreateState returns the vmState for key, creating it if absent.
-// The returned pointer is mutated outside the lock — this is safe because
-// each VM key is processed by exactly one goroutine per poll cycle
-// (the VM list contains unique entries, and errgroup assigns one goroutine each).
-func (s *VMScraper) getOrCreateState(key string) *vmState {
-	return concurrency.WithLock1(&s.mu, func() *vmState {
+func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
+	return concurrency.WithLock1(&s.mu, func() vmStateSnapshot {
 		st, ok := s.vmState[key]
 		if !ok {
 			st = &vmState{}
 			s.vmState[key] = st
 		}
-		return st
+		return vmStateSnapshot{
+			lastGeneration:  st.lastGeneration,
+			lastEpoch:       st.lastEpoch,
+			lastForwardedAt: st.lastForwardedAt,
+		}
+	})
+}
+
+// commitVMState records the generation/epoch from a just-sent report as key's cached scrape state.
+//
+// Race: If a NACK arrives from Central faster than this function completes, for example, due to:
+//   - a scheduling delay on the caller's goroutine between Send returning and this function
+//     acquiring `s.mu` (a GC pause, CPU throttling, or GOMAXPROCS contention),
+//   - contention on `s.mu` itself, from other concurrent scrapes or NACKs delaying this
+//     function's lock acquisition,
+//
+// then the NACK will overwrite lastGeneration to 0, and then this code will set it back to
+// `newGen`, which cancels the NACK.
+// However, this race is really unlikely to happen in practice, thus we accept the risk and not protect against it.
+func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
+	concurrency.WithLock(&s.mu, func() {
+		state, ok := s.vmState[key]
+		if !ok {
+			return
+		}
+		state.lastGeneration = newGen
+		state.lastEpoch = newEpoch
+		state.lastForwardedAt = s.now()
 	})
 }
 
@@ -405,4 +471,14 @@ func (s *VMScraper) pruneStaleVMState(liveKeys set.StringSet) {
 			delete(s.vmState, key)
 		}
 	}
+}
+
+// recordVMDiscoveredData increments VMDiscoveredData from ResponseMeta.facts
+// keys written by roxagent (detected_os, activation_status, dnf_metadata_status).
+func recordVMDiscoveredData(facts map[string]string) {
+	metrics.VMDiscoveredData.WithLabelValues(
+		facts["detected_os"],
+		facts["activation_status"],
+		facts["dnf_metadata_status"],
+	).Inc()
 }

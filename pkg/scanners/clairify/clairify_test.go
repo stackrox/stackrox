@@ -8,6 +8,10 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) {
@@ -39,6 +43,21 @@ func getTestScan() (*clairV1.LayerEnvelope, *storage.ImageScan, *storage.Image) 
 		},
 	}
 	return &env, protoScan, image
+}
+
+func TestClairifyClose_NilConnection(t *testing.T) {
+	scanner := &clairify{}
+	assert.NoError(t, scanner.Close())
+}
+
+func TestClairifyClose_ClosesGRPCConnection(t *testing.T) {
+	conn, err := grpc.Dial("localhost:0", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	require.NoError(t, err)
+
+	scanner := &clairify{gRPCConnection: conn}
+	require.NoError(t, scanner.Close())
+
+	assert.Equal(t, connectivity.Shutdown, conn.GetState())
 }
 
 func TestConvertLayerToImageScan(t *testing.T) {

@@ -7,12 +7,14 @@ import (
 	"io"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -28,6 +30,15 @@ type mockStore struct {
 }
 
 func (m *mockStore) ListRunning() []*virtualmachine.Info { return m.vms }
+
+func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
+	for _, vm := range m.vms {
+		if vm.ID == id {
+			return vm
+		}
+	}
+	return nil
+}
 
 type mockDialer struct {
 	err      error
@@ -103,13 +114,11 @@ func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.
 
 // --- Helpers ---
 
-func ptr32(v uint32) *uint32 { return &v }
-
 func makeVM(ns, name string, cid uint32) *virtualmachine.Info {
 	return &virtualmachine.Info{
 		Namespace: ns,
 		Name:      name,
-		VSOCKCID:  ptr32(cid),
+		VSOCKCID:  new(cid),
 		Running:   true,
 	}
 }
@@ -121,6 +130,11 @@ func makeReport(gen uint32) *vsockclient.GetReportResult {
 		},
 		Meta: &pb.ResponseMeta{
 			ReportGeneration: gen,
+			Facts: map[string]string{
+				"detected_os":         "RHEL",
+				"activation_status":   "ACTIVE",
+				"dnf_metadata_status": "AVAILABLE",
+			},
 		},
 	}
 }
@@ -166,10 +180,12 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	}
 
 	s := newTestScraper(store, sender, dialer, client)
+	discoveredBefore := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE"))
 	s.pollOnce(context.Background())
 
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
+	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
@@ -192,31 +208,6 @@ func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
 	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
 	s.pollOnce(context.Background())
 	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
-}
-
-func TestVMScraper_RemainsActiveAcrossUnchangedPolls(t *testing.T) {
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-	}}
-	sender := &mockSender{}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
-	}
-
-	s := newTestScraper(store, sender, dialer, client)
-
-	s.pollOnce(context.Background())
-	require.True(t, s.IsActivelyScraped("ns1/vm-a"))
-	require.True(t, s.IsActivelyScraped("100"))
-
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResult()}
-	s.pollOnce(context.Background())
-
-	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
-	assert.True(t, s.IsActivelyScraped("ns1/vm-a"))
-	assert.True(t, s.IsActivelyScraped("100"))
 }
 
 func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
@@ -365,6 +356,181 @@ func TestVMScraper_ForwardsOnGenerationChange(t *testing.T) {
 	assert.Len(t, sender.sent, 2, "should forward on generation change")
 }
 
+// TestVMScraper_NACK reproduces a scenario where Central NACKs a report
+// (e.g. Scanner was still starting up). Without resetting the cached
+// generation, the next poll would see roxagent report "unchanged"
+// (report_generation didn't change) and skip resending, stranding the VM
+// until mandatoryRefreshAfter (4h) instead of retrying on the next poll
+// interval. It also verifies that a NACK is a no-op when it doesn't resolve
+// to a currently-running, known VM (unrelated VM ID, malformed resource ID,
+// or a VM that stopped running), and that an ACK never touches the cached
+// generation.
+func TestVMScraper_NACK(t *testing.T) {
+	cases := map[string]struct {
+		ackAction                  central.SensorACK_Action
+		nackResourceID             string
+		vmRunning                  bool
+		pollResultAfterNack        *vsockclient.GetReportResult
+		wantIfNewerThanOnRetryPoll uint32
+		wantTotalSent              int
+	}{
+		"resets generation and forces an immediate resend when NACK matches the running VM": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  true,
+			pollResultAfterNack:        makeReport(1),
+			wantIfNewerThanOnRetryPoll: 0, // on the second poll, the scraper should ask for a full report
+			wantTotalSent:              2,
+		},
+		"is a no-op when NACK references an unrelated VM ID": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "unknown-vm-id:999",
+			vmRunning:                  true,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1, // on the second poll, the scraper should keep trusting the old generation
+			wantTotalSent:              1,
+		},
+		"is a no-op when the resource ID has no vsockCID suffix": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "vm-a-id-with-no-colon",
+			vmRunning:                  true,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
+			wantTotalSent:              1,
+		},
+		"is a no-op when the NACKed VM is no longer running": {
+			ackAction:                  central.SensorACK_NACK,
+			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  false,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
+			wantTotalSent:              1,
+		},
+		"is a no-op for an ACK": {
+			ackAction:                  central.SensorACK_ACK,
+			nackResourceID:             "vm-a-id:100",
+			vmRunning:                  true,
+			pollResultAfterNack:        unchangedResult(),
+			wantIfNewerThanOnRetryPoll: 1,
+			wantTotalSent:              1,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			vmA := makeVM("ns1", "vm-a", 100)
+			vmA.ID = "vm-a-id"
+			store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+			sender := &mockSender{}
+			dialer := &mockDialer{}
+			client := &mockProtocolClient{
+				resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+			}
+
+			s := newTestScraper(store, sender, dialer, client)
+			s.pollOnce(context.Background())
+			require.Len(t, sender.sent, 1)
+
+			// Flip Running only after the first poll, so the VM is scraped normally
+			// once before the ACK/NACK under test is delivered.
+			vmA.Running = tc.vmRunning
+
+			acksBefore := testutil.ToFloat64(metrics.IndexReportAcksReceived.WithLabelValues(tc.ackAction.String()))
+			err := s.ProcessMessage(context.Background(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{
+					SensorAck: &central.SensorACK{
+						MessageType: central.SensorACK_VM_INDEX_REPORT,
+						Action:      tc.ackAction,
+						ResourceId:  tc.nackResourceID,
+					},
+				},
+			})
+			require.NoError(t, err)
+			assert.Equal(t, acksBefore+1, testutil.ToFloat64(metrics.IndexReportAcksReceived.WithLabelValues(tc.ackAction.String())))
+
+			client.reset()
+			client.resultQueue = []*vsockclient.GetReportResult{tc.pollResultAfterNack}
+			s.pollOnce(context.Background())
+
+			require.Len(t, client.calls, 1)
+			assert.Equal(t, tc.wantIfNewerThanOnRetryPoll, client.calls[0].ifNewerThan,
+				"generation the scraper requests on the poll following the NACK")
+			assert.Len(t, sender.sent, tc.wantTotalSent, "total reports handed to the sender across both polls")
+		})
+	}
+}
+
+// gateSender blocks the Nth Send (1-based) until release is closed.
+type gateSender struct {
+	blockAt int
+	release chan struct{}
+	mu      sync.Mutex
+	n       int
+	sent    []*v4.IndexReport
+}
+
+func (g *gateSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	g.mu.Lock()
+	g.n++
+	n := g.n
+	g.sent = append(g.sent, report)
+	g.mu.Unlock()
+	if n == g.blockAt {
+		<-g.release
+	}
+	return nil
+}
+
+// TestVMScraper_InFlightSendCanOverwriteNACKReset exercises a known race involving
+// an unusually slow execution of `commitVMState` and a quick NACK from Central.
+func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		vmA := makeVM("ns1", "vm-a", 100)
+		vmA.ID = "vm-a-id"
+		store := &mockStore{vms: []*virtualmachine.Info{vmA}}
+		client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}}
+		s := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+
+		s.pollOnce(t.Context())
+		require.Equal(t, uint32(1), cachedGeneration(t, s, "ns1/vm-a"))
+
+		gate := &gateSender{
+			blockAt: 1,
+			release: make(chan struct{}),
+		}
+		s.sender = gate
+		client.reset()
+		client.resultQueue = []*vsockclient.GetReportResult{makeReport(2)}
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			s.pollOnce(t.Context())
+		}()
+
+		// Block until the scrape goroutine is durably blocked inside Send,
+		// i.e. the report has been handed off but not yet committed.
+		synctest.Wait()
+
+		require.NoError(t, s.ProcessMessage(t.Context(), &central.MsgToSensor{
+			Msg: &central.MsgToSensor_SensorAck{
+				SensorAck: &central.SensorACK{
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					Action:      central.SensorACK_NACK,
+					ResourceId:  "vm-a-id:100",
+				},
+			},
+		}))
+		assert.Equal(t, uint32(0), cachedGeneration(t, s, "ns1/vm-a"),
+			"NACK applies immediately while the send it targets is still in flight")
+
+		close(gate.release)
+		<-done
+		assert.Equal(t, uint32(2), cachedGeneration(t, s, "ns1/vm-a"),
+			"the in-flight send's commit runs after the NACK reset and overwrites it unconditionally")
+	})
+}
+
 func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 	vms := []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
@@ -452,6 +618,26 @@ func TestVMScraper_GetReportTimeoutClassified(t *testing.T) {
 		"timed-out read must not be counted as a protocol/read error")
 }
 
+// TestVMScraper_GetReportBusyClassified verifies busy is counted separately
+// from generic read/protocol errors.
+func TestVMScraper_GetReportBusyClassified(t *testing.T) {
+	vm := makeVM("ns1", "vm-a", 100)
+	client := &mockProtocolClient{
+		errQueue: []error{vsockclient.ErrBusy},
+	}
+	s := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+
+	busyBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy))
+	readErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError))
+
+	_, ok := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
+
+	assert.False(t, ok)
+	assert.Equal(t, busyBefore+1, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy)))
+	assert.Equal(t, readErrBefore, testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError)),
+		"a busy response must not be counted as a generic protocol/read error")
+}
+
 func TestVMScraper_PrunesStaleState(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
@@ -466,7 +652,6 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	s := newTestScraper(store, sender, dialer, client)
 	s.pollOnce(context.Background())
 	assert.Len(t, s.vmState, 2)
-	assert.True(t, s.activeVMs.Contains("ns1/vm-a"))
 
 	// Remove vm-a from running set
 	store.vms = []*virtualmachine.Info{makeVM("ns2", "vm-b", 200)}
@@ -475,8 +660,17 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	s.pollOnce(context.Background())
 
 	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
-	assert.False(t, s.activeVMs.Contains("ns1/vm-a"), "vm-a should no longer be active")
-	assert.True(t, s.activeVMs.Contains("ns2/vm-b"))
+}
+
+// cachedGeneration reads a VM's cached generation under s.mu, so the read is
+// race-safe regardless of what locking handleNACK or commitVMState use internally.
+func cachedGeneration(t *testing.T, s *VMScraper, key string) uint32 {
+	t.Helper()
+	return concurrency.WithLock1(&s.mu, func() uint32 {
+		st, ok := s.vmState[key]
+		require.True(t, ok, "no cached state for %q", key)
+		return st.lastGeneration
+	})
 }
 
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) *VMScraper {
@@ -493,7 +687,6 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
 		warnMaxBytes: 8 << 20,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
 }
@@ -575,7 +768,6 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 		concurrency:  concurrency,
 		warnMaxBytes: 8 << 20,
 		vmState:      make(map[string]*vmState),
-		activeVMs:    set.NewStringSet(),
 		now:          time.Now,
 	}
 

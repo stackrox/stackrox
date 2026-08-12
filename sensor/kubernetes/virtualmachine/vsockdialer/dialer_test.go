@@ -19,13 +19,13 @@ func TestBuildWSURL(t *testing.T) {
 		wantURL string
 		wantErr string // substring to match against the error; empty means no error expected
 	}{
-		"should rewrite https to wss": {
+		"should keep https for client-go websocket RoundTripper": {
 			host:    "https://api.example.com:6443",
-			wantURL: "wss://api.example.com:6443/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
+			wantURL: "https://api.example.com:6443/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
 		},
-		"should rewrite http to ws": {
+		"should keep http for client-go websocket RoundTripper": {
 			host:    "http://localhost:8080",
-			wantURL: "ws://localhost:8080/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
+			wantURL: "http://localhost:8080/apis/subresources.kubevirt.io/v1/namespaces/ns1/virtualmachineinstances/vm-a/vsock?port=1024&tls=true",
 		},
 		"should reject unsupported scheme": {
 			host:    "ftp://api.example.com",

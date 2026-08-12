@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install roxagent on VMs using the native binary method.
+# Install roxagent serve on VMs using the native binary method.
 #
 # Builds the roxagent binary from source and deploys via virtctl scp.
 # Always overwrites (binary has no version info; binary is small).
@@ -62,64 +62,75 @@ build_agent() {
     echo "$output"
 }
 
-# Prints a systemd unit (to stdout) for the main roxagent service.
-# Args: host paths that exist on the VM (from NATIVE_MOUNT_CANDIDATES).
-# Each path is bind-mounted read-only into the /tmp/roxroot sandbox so
-# roxagent can inspect host OS metadata without full root access.
-create_native_service_file() {
+# Prints a systemd unit (to stdout) for the long-running roxagent serve service.
+create_native_serve_file() {
     local mount_path
 
     cat <<'EOF'
 [Unit]
-Description=StackRox VM Agent (native)
+Description=StackRox VM Agent - VSOCK pull server
 After=network.target roxagent-prep.service
 Requires=roxagent-prep.service
 
 [Service]
-Type=oneshot
+Type=simple
 User=root
+Restart=on-failure
+RestartSec=5s
 BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
 EOF
 
-    for mount_path in "$@"; do
-        printf 'BindReadOnlyPaths=%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
+    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
+        printf 'BindReadOnlyPaths=-%s:/tmp/roxroot%s\n' "$mount_path" "$mount_path"
     done
 
     cat <<'EOF'
-ExecStart=/usr/local/bin/roxagent --host-path /tmp/roxroot
+ExecStart=/usr/local/bin/roxagent serve --port 818 --host-path /tmp/roxroot
 StandardOutput=journal
 StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
 EOF
 }
 
 SYSTEMD_DIR="$SCRIPT_DIR/systemd"
 
-# Checks whether roxagent is healthy on $1 (vm_name) by SSHing in and
-# querying systemd. Returns 0 only if the last service run succeeded,
-# the timer is enabled, and the timer is active.
+# Runs virtctl with _ssh_opts. On failure records vm_name as failed and returns 1.
+# Args: vm_name, short failure label for logs, then virtctl subcommand + args.
+native_virtctl_or_fail() {
+    local vm_name="$1" what="$2"
+    shift 2
+    if ! virtctl "${_ssh_opts[@]}" "$@"; then
+        echo "  Failed to ${what} on ${vm_name}" >&2
+        NATIVE_AGENT_FAILED_VMS+=("$vm_name")
+        return 1
+    fi
+}
+
+# Checks whether roxagent-serve is healthy on $1 (vm_name) by SSHing in and
+# querying systemd. Returns 0 only if the serve service is enabled and active.
 native_agent_service_verified() {
     local vm_name="$1"
     build_ssh_opts
 
     local status_output
     status_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command "service_result=\"\$(systemctl show roxagent.service -p Result --value 2>/dev/null || true)\";
-timer_enabled=\"\$(systemctl is-enabled roxagent.timer 2>/dev/null || true)\";
-timer_active=\"\$(systemctl is-active roxagent.timer 2>/dev/null || true)\";
-printf \"%s\\n%s\\n%s\\n\" \"\$service_result\" \"\$timer_enabled\" \"\$timer_active\"" \
+        --command "serve_enabled=\"\$(systemctl is-enabled roxagent-serve.service 2>/dev/null || true)\";
+serve_active=\"\$(systemctl is-active roxagent-serve.service 2>/dev/null || true)\";
+printf \"%s\\n%s\\n\" \"\$serve_enabled\" \"\$serve_active\"" \
         "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true)"
 
     mapfile -t status_lines <<< "$status_output"
 
-    [[ "${status_lines[0]:-}" == "success" &&
-        "${status_lines[1]:-}" == "enabled" &&
-        "${status_lines[2]:-}" == "active" ]]
+    [[ "${status_lines[0]:-}" == "enabled" &&
+        "${status_lines[1]:-}" == "active" ]]
 }
 
 # Deploys roxagent onto a single VM ($1) using the pre-built binary ($2).
-# Steps: probe which host paths exist -> scp binary + systemd units ->
-# install and enable via SSH -> run once and verify health.
+# Steps: scp binary + systemd units -> install and enable via SSH -> verify.
 # Appends the VM name to NATIVE_AGENT_READY_VMS or NATIVE_AGENT_FAILED_VMS.
+# Install/copy failures record the VM as failed and return so the batch continues.
 install_on_vm() {
     local vm_name="$1" binary_path="$2"
 
@@ -127,73 +138,63 @@ install_on_vm() {
 
     build_ssh_opts
 
-    echo "  Probing host inputs for curated roxroot mount set..."
-    local probe_cmd mount_path
-    probe_cmd="for path in"
-    for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do
-        probe_cmd+=" ${mount_path}"
-    done
-    probe_cmd+="; do [ -e \"\$path\" ] && printf \"%s\\n\" \"\$path\"; done"
-
-    local -a available_mounts=()
-    while IFS= read -r mount_path; do
-        [[ -n "$mount_path" ]] && available_mounts+=("$mount_path")
-    done < <(
-        virtctl ssh "${_ssh_opts[@]}" \
-            --command "$probe_cmd" \
-            "${SSH_USER}@vmi/${vm_name}" 2>/dev/null || true
-    )
-
     echo "  Copying binary..."
-    virtctl scp "${_ssh_opts[@]}" \
+    native_virtctl_or_fail "$vm_name" "copy binary" scp \
         "$binary_path" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent"
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent" || return
 
     echo "  Installing systemd units..."
-    local service_file prep_service_file timer_file
-    service_file="$(mktemp)"
-    create_native_service_file "${available_mounts[@]}" > "$service_file"
+    local serve_service_file prep_service_file
+    serve_service_file="$(mktemp)"
+    create_native_serve_file > "$serve_service_file"
     prep_service_file="$SYSTEMD_DIR/roxagent-prep.service"
-    timer_file="$SYSTEMD_DIR/roxagent.timer"
 
-    virtctl scp "${_ssh_opts[@]}" \
+    if ! native_virtctl_or_fail "$vm_name" "copy prep unit" scp \
         "$prep_service_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"
-    virtctl scp "${_ssh_opts[@]}" \
-        "$service_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.service"
-    virtctl scp "${_ssh_opts[@]}" \
-        "$timer_file" \
-        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent.timer"
-    rm -f "$service_file"
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-prep.service"; then
+        rm -f "$serve_service_file"
+        return
+    fi
+    if ! native_virtctl_or_fail "$vm_name" "copy serve unit" scp \
+        "$serve_service_file" \
+        "${SSH_USER}@vmi/${vm_name}:/tmp/roxagent-serve.service"; then
+        rm -f "$serve_service_file"
+        return
+    fi
+    rm -f "$serve_service_file"
 
-    virtctl ssh "${_ssh_opts[@]}" \
+    native_virtctl_or_fail "$vm_name" "install roxagent" ssh \
         --command 'set -e
 sudo install -m 0755 /tmp/roxagent /usr/local/bin/roxagent
 sudo restorecon -v /usr/local/bin/roxagent 2>/dev/null || true
 rm -f /tmp/roxagent
 sudo cp /tmp/roxagent-prep.service /etc/systemd/system/roxagent-prep.service
-sudo cp /tmp/roxagent.service /etc/systemd/system/roxagent.service
-sudo cp /tmp/roxagent.timer /etc/systemd/system/roxagent.timer
-sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent.service /etc/systemd/system/roxagent.timer 2>/dev/null || true
+sudo cp /tmp/roxagent-serve.service /etc/systemd/system/roxagent-serve.service
+sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service /etc/systemd/system/roxagent-serve.service 2>/dev/null || true
 sudo systemctl daemon-reload
-sudo systemctl enable --now roxagent.timer
+sudo systemctl enable --now roxagent-serve.service
 echo "NATIVE_INSTALL_OK"' \
-        "${SSH_USER}@vmi/${vm_name}"
+        "${SSH_USER}@vmi/${vm_name}" || return
 
     echo "  Installed on $vm_name."
     echo "  Verifying agent status on $vm_name..."
     local verify_output
     verify_output="$(virtctl ssh "${_ssh_opts[@]}" \
-        --command 'sudo systemctl start roxagent.service; echo "---"; sudo systemctl status roxagent.timer --no-pager; echo "---"; sudo journalctl -u roxagent.service --no-pager -n 20' \
+        --command 'echo "---"; sudo systemctl status roxagent-serve.service --no-pager; echo "---"; sudo journalctl -u roxagent-serve.service --no-pager -n 20' \
         "${SSH_USER}@vmi/${vm_name}" 2>&1 || true)"
     printf '%s\n' "$verify_output"
 
-    if native_agent_service_verified "$vm_name"; then
-        NATIVE_AGENT_READY_VMS+=("$vm_name")
-    else
-        NATIVE_AGENT_FAILED_VMS+=("$vm_name")
-    fi
+    local retries=12
+    local delay_secs=5
+    while ! native_agent_service_verified "$vm_name"; do
+        ((retries--))
+        if ((retries == 0)); then
+            NATIVE_AGENT_FAILED_VMS+=("$vm_name")
+            return
+        fi
+        sleep "$delay_secs"
+    done
+    NATIVE_AGENT_READY_VMS+=("$vm_name")
 }
 
 # Top-level entry point: builds the agent once, installs on each VM.

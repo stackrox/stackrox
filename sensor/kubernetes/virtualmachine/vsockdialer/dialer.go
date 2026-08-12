@@ -109,11 +109,10 @@ func buildWSURL(config *rest.Config, resource, namespace, name, subresource stri
 		return "", fmt.Errorf("parsing host: %w", err)
 	}
 
+	// Keep http/https: client-go's websocket RoundTripper rewrites to ws/wss
+	// itself and rejects a pre-rewritten wss/ws scheme with "unknown url scheme".
 	switch u.Scheme {
-	case "https":
-		u.Scheme = "wss"
-	case "http":
-		u.Scheme = "ws"
+	case "https", "http":
 	default:
 		return "", fmt.Errorf("unsupported scheme %q", u.Scheme)
 	}
