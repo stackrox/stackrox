@@ -3,9 +3,10 @@ package openshift
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/globaldb"
 	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	rolePkg "github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	postgresSimpleAccessScopeStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -26,6 +27,7 @@ import (
 const (
 	authProviderID  = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80f"
 	permissionSetID = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80e"
+	accessScopeID   = "b3070020-ecc3-4f34-a3f6-ad28ffc9b80c"
 
 	// Auth provider is hidden from the login screen but visible in Access Control.
 	// It trusts the Kubernetes client CA from extension-apiserver-authentication,
@@ -34,6 +36,9 @@ const (
 	authProviderName  = "OpenShift Platform Client Certificates"
 	roleName          = "OpenShift Prometheus Metrics Reader"
 	permissionSetName = "OpenShift Prometheus Metrics Reader"
+	accessScopeName   = "OpenShift Central Cluster"
+
+	centralColocatedLabelKey = "stackrox.io/central-colocated"
 )
 
 var log = logging.LoggerForModule()
@@ -41,17 +46,29 @@ var log = logging.LoggerForModule()
 // SeedMetricsAuthProvider ensures that the userpki auth provider, permission set, role,
 // and group mapping required for OpenShift Prometheus to scrape /metrics exist.
 //
-// The auth provider uses the Kubernetes client CA from the
-// extension-apiserver-authentication ConfigMap (same CA that signs Prometheus client
-// certs). A ConfigMap watcher keeps the CA current across rotations.
+// The access scope, permission set, and role have static content with no dependency on
+// the client CA, so they are seeded unconditionally at startup. The auth provider's
+// config and the group's auth-provider reference, however, need the Kubernetes client CA
+// from the extension-apiserver-authentication ConfigMap (same CA that signs Prometheus
+// client certs), which may not be available yet; a ConfigMap watcher keeps the CA current
+// across rotations.
 //
-// All seeded objects use IMPERATIVE origin. Ideally they would be DEFAULT
-// (non-user-modifiable), but the auth provider datastore rejects non-IMPERATIVE
-// origins through the normal creation path (see CanModifyResource).
+// The access scope uses DEFAULT origin (not user-modifiable) and is seeded the same way
+// as the other built-in DEFAULT access scopes (Unrestricted, Deny All): an idempotent
+// upsert straight to the underlying store, self-healing across restarts and upgrades.
+// The auth provider and group also use DEFAULT origin: the group can't be repointed to a
+// different role or deleted, which in turn keeps the role permanently referenced so it
+// can't be deleted either. Role and permission set use IMPERATIVE origin so operators can
+// still adjust their permissions or which access scope the role grants; they are only
+// created if missing, never overwritten.
 func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registry, roleDS roleDataStore.DataStore, groupDS groupDataStore.DataStore) {
 	if !tlsconfig.OpenShiftTLSConfigured() {
 		return
 	}
+
+	seedAccessScope(ctx)
+	ensurePermissionSet(ctx, roleDS)
+	ensureRole(ctx, roleDS)
 
 	clientset, err := newK8sClient()
 	if err != nil {
@@ -60,9 +77,9 @@ func SeedMetricsAuthProvider(ctx context.Context, registry authproviders.Registr
 	}
 
 	onCA := func(caPEM string) {
-		ensurePermissionSet(ctx, roleDS)
-		ensureRole(ctx, roleDS)
-		ensureAuthProvider(ctx, registry, caPEM)
+		// Auth provider uses DEFAULT origin.
+		defaultCtx := declarativeconfig.WithModifyDefaultResource(ctx)
+		ensureAuthProvider(defaultCtx, registry, caPEM)
 		ensureGroup(ctx, groupDS)
 	}
 
@@ -132,6 +149,39 @@ func refreshCA(ctx context.Context, registry authproviders.Registry, provider au
 	}
 }
 
+// seedAccessScope upserts the OpenShift metrics access scope directly into the
+// underlying store, the same way the built-in DEFAULT access scopes (Unrestricted, Deny
+// All) are seeded in central/role/datastore/singleton.go. This keeps the scope's content
+// always in sync with the code (self-healing across restarts and upgrades) without going
+// through the datastore's DEFAULT-origin write protection, which is meant to guard
+// against API callers, not this kind of internal, static, boot-time seeding.
+func seedAccessScope(ctx context.Context) {
+	scope := &storage.SimpleAccessScope{
+		Id:          accessScopeID,
+		Name:        accessScopeName,
+		Description: "Scoped to clusters labeled stackrox.io/central-colocated (set automatically by the operator)",
+		Traits: &storage.Traits{
+			Origin: storage.Traits_DEFAULT,
+		},
+		Rules: &storage.SimpleAccessScope_Rules{
+			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+				{
+					Requirements: []*storage.SetBasedLabelSelector_Requirement{
+						{
+							Key: centralColocatedLabelKey,
+							Op:  storage.SetBasedLabelSelector_EXISTS,
+						},
+					},
+				},
+			},
+		},
+	}
+	store := postgresSimpleAccessScopeStore.New(globaldb.GetPostgres())
+	if err := store.Upsert(ctx, scope); err != nil {
+		log.Warnf("Failed to seed OpenShift metrics access scope: %v", err)
+	}
+}
+
 func ensurePermissionSet(ctx context.Context, roleDS roleDataStore.DataStore) {
 	if _, exists, err := roleDS.GetPermissionSet(ctx, permissionSetID); err != nil {
 		log.Warnf("Failed to check OpenShift metrics permission set: %v", err)
@@ -165,7 +215,7 @@ func ensureRole(ctx context.Context, roleDS roleDataStore.DataStore) {
 		Name:            roleName,
 		Description:     "Maps OpenShift Prometheus service account to /metrics read access",
 		PermissionSetId: permissionSetID,
-		AccessScopeId:   rolePkg.AccessScopeIncludeAll.GetId(),
+		AccessScopeId:   accessScopeID,
 	}
 	if err := roleDS.AddRole(ctx, role); err != nil {
 		log.Warnf("Failed to create OpenShift metrics role: %v", err)

@@ -306,7 +306,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 			want: chartutil.Values{
-				"clusterName":   "test-cluster",
+				"clusterName": "test-cluster",
+				"clusterLabels": map[string]interface{}{
+					centralColocatedLabelKey: "true",
+				},
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
 				"scanner": map[string]interface{}{
