@@ -137,8 +137,8 @@ jobs:
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-slim
     outputs:
-      tag: ${{ steps.build-tag.outputs.tag }}
-      tag_suffix: ${{ steps.build-tag.outputs.tag_suffix }}
+      tag: ${{ steps.image-references.outputs.tag }}
+      tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
@@ -153,8 +153,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
+    - name: Determine image references
+      id: image-references
       run: |
         IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
         echo "IMAGE_TAG=$IMAGE_TAG" | tee -a "$GITHUB_ENV"
@@ -196,8 +196,8 @@ jobs:
     if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-slim
     outputs:
-      tag: ${{ steps.build-tag.outputs.tag }}
-      tag_suffix: ${{ steps.build-tag.outputs.tag_suffix }}
+      tag: ${{ steps.image-references.outputs.tag }}
+      tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
 
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
@@ -213,8 +213,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
+    - name: Determine image references
+      id: image-references
       run: |
         # Critical difference to upstream images:
         # For Konflux-built images we need to use the semver-compatible "operator tag" for all images.
