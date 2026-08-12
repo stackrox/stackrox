@@ -33,15 +33,10 @@ var (
 		"images.api.stackrox.io":                           resources.Image,
 		"imageadministration.api.stackrox.io":              resources.ImageAdministration,
 		"integrations.api.stackrox.io":                     resources.Integration,
-		"k8sroles.api.stackrox.io":                         resources.K8sRole,
-		"k8srolebindings.api.stackrox.io":                  resources.K8sRoleBinding,
 		"k8ssubjects.api.stackrox.io":                      resources.K8sSubject,
-		"namespaces.api.stackrox.io":                       resources.Namespace,
 		"networkgraphs.api.stackrox.io":                    resources.NetworkGraph,
 		"networkpolicies.api.stackrox.io":                  resources.NetworkPolicy,
 		"nodes.api.stackrox.io":                            resources.Node,
-		"secrets.api.stackrox.io":                          resources.Secret,
-		"serviceaccounts.api.stackrox.io":                  resources.ServiceAccount,
 		"virtualmachines.api.stackrox.io":                  resources.VirtualMachine,
 		"vulnerabilitymanagementapprovals.api.stackrox.io": resources.VulnerabilityManagementApprovals,
 		"vulnerabilitymanagementrequests.api.stackrox.io":  resources.VulnerabilityManagementRequests,
@@ -52,6 +47,8 @@ var (
 	supportedK8sAPIGroups = listSupportedK8sAPIGroups(resourceMapping)
 
 	supportedK8sResources = listSupportedK8sResources(resourceMapping)
+
+	supportedK8sRawResources = listSupportedK8sRawResources(resourceMapping)
 )
 
 func listSupportedK8sAPIGroups(mapping map[string]permissions.ResourceMetadata) set.StringSet {
@@ -72,5 +69,17 @@ func listSupportedK8sResources(mapping map[string]permissions.ResourceMetadata) 
 		output = append(output, k)
 	}
 	slices.Sort(output)
+	return output
+}
+
+func listSupportedK8sRawResources(mapping map[string]permissions.ResourceMetadata) set.StringSet {
+	output := set.NewStringSet()
+	for k := range mapping {
+		resource, _, found := strings.Cut(k, ".")
+		if !found {
+			continue
+		}
+		output.Add(resource)
+	}
 	return output
 }
