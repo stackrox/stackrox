@@ -32,8 +32,8 @@ jobs:
     needs: [ detect-changes ]
     runs-on: ubuntu-slim
     outputs:
-      dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
-      dispatch-any-konflux: ${{ steps.determine.outputs.dispatch-any-konflux }}
+      wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
+      wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
       jobs: ${{ steps.determine.outputs.jobs }}
     steps:
     - name: Determine whether should dispatch workflows
@@ -124,20 +124,17 @@ jobs:
 
             write('jobs', json.dumps(jobs))
 
-            # dispatch_any==False is a shortcut to prevent executing the further workflow for draft PRs which don't
-            # qualify for running any actual e2e jobs.
-            # We must make sure that dispatch_any is True for non-drafts even if no actual jobs are to be dispatched
-            # (the case of UI-only PRs) because this lets GHA enter the corresponding workflows and skip the test jobs
-            # inside them "in proper way" that allows to satisfy branch protection rules.
-            dispatch_any = len(jobs_to_run) > 0 or input.is_draft != 'true'
-            write('dispatch-any', str(dispatch_any).lower())
+            # Find out when we can complete the workflow early by not even waiting for GHA-built images.
+            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
+            write('wait-for-gha-images', str(wait_for_gha_images).lower())
 
-            dispatch_any_konflux = any(job.require_konflux_build for job in jobs_to_run)
-            write('dispatch-any-konflux', str(dispatch_any_konflux).lower())
+            # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
+            wait_for_konflux_images = input.event_name != 'pull_request' or ('konflux-build' in input.pr_labels and any(jobs.values()))
+            write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
 
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.dispatch-any == 'true'
+    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
@@ -202,7 +199,7 @@ jobs:
 
   wait-for-konflux-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.dispatch-any-konflux == 'true'
+    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-slim
     outputs:
       tag: ${{ steps.build-tag.outputs.tag }}
