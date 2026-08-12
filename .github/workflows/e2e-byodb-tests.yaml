@@ -150,7 +150,7 @@ jobs:
       run: tests/byodb/run.sh /tmp/byodb-test-logs
 
     - name: Persist env vars for post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
@@ -158,7 +158,7 @@ jobs:
         echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       shell: python
       env:
         ROX_USERNAME: admin

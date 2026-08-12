@@ -187,7 +187,7 @@ write_github_summary() {
     append_summary_list "### Skipped VMs (inaccessible)" "${SKIPPED_VMS[@]}"
 
     {
-        echo "### Native agent service verification"
+        echo "### Native agent service verification (\`roxagent-serve.service\`)"
         echo ""
     } >> "$GITHUB_STEP_SUMMARY"
     append_summary_list "Successfully started on:" "${NATIVE_AGENT_READY_VMS[@]}"

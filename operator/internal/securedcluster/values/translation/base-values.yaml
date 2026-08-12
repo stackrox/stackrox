@@ -10,6 +10,9 @@ meta:
   useLookup: false
 allowNonstandardReleaseName: true
 allowNonstandardNamespace: true
+scanner:
+  dbPassword:
+    generate: false
 scannerV4:
   indexer:
     serviceTLS:
