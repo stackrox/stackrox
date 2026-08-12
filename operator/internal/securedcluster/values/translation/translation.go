@@ -618,6 +618,7 @@ func getProcessIndicatorsValues(processIndicators *platform.ProcessIndicatorsSpe
 }
 
 func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.ValuesBuilder {
+	// VirtualMachines is always set by static defaulting; this guard is defensive.
 	if vm == nil {
 		return nil
 	}
@@ -632,6 +633,7 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 			return cv.SetError(fmt.Errorf("invalid virtual machines mode %q", *vm.Mode))
 		}
 	}
+	// Scraper is always set by static defaulting; omit helm values when unset.
 	if vm.Scraper != nil {
 		sv := translation.NewValuesBuilder()
 		sv.SetInt32("concurrency", vm.Scraper.Concurrency)
