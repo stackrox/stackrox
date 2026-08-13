@@ -236,7 +236,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.OrphanedCVEsKeepAlive.BooleanSetting() {
 		g.pruneOrphanedNodeCVEs()
 	}
-	if features.FlattenImageData.Enabled() {
+	if features.FlattenImageData.Enabled() && env.PruneV1Images.BooleanSetting() {
 		g.pruneImageV1s()
 	}
 
