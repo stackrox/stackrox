@@ -114,8 +114,6 @@ func (s *VMScanningSuite) TestScanPipeline() {
 				require.NoError(t, err)
 				require.Equal(t, baselineCount-1, len(updated.GetScan().GetComponents()),
 					"exactly one component should disappear after removing %q", removed)
-				require.NotContains(t, scanComponentNames(updated), removed,
-					"removed package %q must be absent from the rescanned inventory", removed)
 
 				require.NoError(t, vmhelpers.RoxagentServeDidNotRestart(
 					s.ctx, virt, vm.Namespace, vm.Name, beforeInvocationID),

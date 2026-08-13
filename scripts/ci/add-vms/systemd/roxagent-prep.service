@@ -4,6 +4,7 @@ Description=Prepare native StackRox VM Agent inputs
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# Directory skeleton only; the serve unit bind-mounts live paths over these.
 ExecStartPre=/bin/rm -rf /tmp/roxroot
 ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/pki/entitlement
 ExecStartPre=/bin/mkdir -p /tmp/roxroot/etc/yum.repos.d /tmp/roxroot/etc/yum/repos.d /tmp/roxroot/etc/distro.repos.d
@@ -12,5 +13,4 @@ ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/lib/rpm
 ExecStartPre=/bin/mkdir -p /tmp/roxroot/usr/lib/sysimage/libdnf5
 ExecStartPre=/bin/mkdir -p /tmp/roxroot/var/cache/dnf
 ExecStartPre=/bin/touch /tmp/roxroot/etc/os-release /tmp/roxroot/etc/redhat-release /tmp/roxroot/etc/system-release-cpe
-# Skeleton only: live /var/lib/rpm and DNF paths are bind-mounted read-only.
 ExecStart=/bin/true
