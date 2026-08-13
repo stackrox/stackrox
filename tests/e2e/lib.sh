@@ -356,8 +356,11 @@ export_test_environment() {
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
-    # AWS CLBs don't support IPv6; use route on IPv6-primary clusters
-    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]] || kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+    # OCP IPv6-primary clusters need route (AWS CLBs don't support IPv6).
+    # EKS doesn't have Routes, so keep lb there (tests use port-forward).
+    if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+        _lb_default="route"
+    elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
         _lb_default="route"
     fi
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
