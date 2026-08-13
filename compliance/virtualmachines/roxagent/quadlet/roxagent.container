@@ -8,6 +8,8 @@ Image=quay.io/stackrox-io/main:latest
 Pull=newer
 Exec=serve --host-path /host
 Network=host
+# Pass NOTIFY_SOCKET into the container so roxagent can READY=1 after VSOCK listen.
+Notify=true
 
 # Privileged for vsock access
 # Use PodmanArgs for entrypoint (RHEL 8 Quadlet doesn't support Entrypoint key)
