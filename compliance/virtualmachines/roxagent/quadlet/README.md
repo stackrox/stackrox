@@ -11,7 +11,6 @@ Run roxagent on RHEL VMs with Podman Quadlet: a systemd-managed container that s
 | File | Description |
 |------|-------------|
 | `roxagent.container` | Quadlet container unit that runs `roxagent serve` |
-| `roxagent-prep.service` | Copies the RPM database to a writable location |
 | `install.sh` | Installation script for local or remote deployment |
 
 ## Prerequisites
@@ -71,14 +70,16 @@ sudo systemctl restart roxagent.service
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ RHEL VM                                                     │
-│  ┌─────────────────┐         ┌────────────────────────┐     │
-│  │ roxagent-prep   │ ──────▶ │ roxagent container     │     │
-│  │ (copy RPM db)   │         │ - listens on VSOCK     │     │
-│  └─────────────────┘         │ - rescans every 4h     │     │
-│                              └───────────┬────────────┘     │
-└──────────────────────────────────────────┼──────────────────┘
-                                           ▲ vsock
-┌──────────────────────────────────────────┼─────────────────┐
+│  ┌────────────────────────┐                                 │
+│  │ roxagent container     │                                 │
+│  │ - mounts live RPM/DNF  │                                 │
+│  │   DBs read-only        │                                 │
+│  │ - listens on VSOCK     │                                 │
+│  │ - rescans every 4h     │                                 │
+│  └───────────┬────────────┘                                 │
+└──────────────┼──────────────────────────────────────────────┘
+               ▲ vsock
+┌──────────────┼─────────────────────────────────────────────┐
 │ Kubernetes Host                          │                 │
 │  ┌────────────────────────────────────────────┐            │
 │  │ Sensor                                     │            │
@@ -88,11 +89,11 @@ sudo systemctl restart roxagent.service
 └────────────────────────────────────────────────────────────┘
 ```
 
-### Why Copy the RPM Database?
+### Why Mount the RPM Database Read-Only?
 
-`roxagent-prep.service` copies `/var/lib/rpm` to `/tmp/roxagent-rpm` before the container starts. SQLite WAL mode (used by RHEL 9+) needs write access even for read-only queries, so a writable copy is required. The copy is also a point-in-time snapshot of the package database.
+The container bind-mounts the live host `/var/lib/rpm` (and DNF history paths) read-only under `/host`. Claircore copies each SQLite DB to a temp spool before opening it with `query_only`, so WAL sidecars are created next to the spool inside the container, never on the host. That keeps package inventory fresh across rescans without copying the DB at start, and without giving the agent a writable host RPM directory.
 
-The copy runs once at container start. A container restart (manual or via `Restart=on-failure`) triggers a fresh copy.
+Optional DNF paths (`/var/lib/dnf`, `/usr/lib/sysimage/libdnf5`, `/var/cache/dnf`, repo dirs) are stripped by `install.sh` when missing on the guest.
 
 ## Configuration
 
@@ -116,11 +117,16 @@ The port must match the StackRox Sensor configuration.
 
 ### No Packages Found
 
-Check whether the RPM database copy succeeded:
+Confirm the live RPM database is mounted and readable inside the container (host path is `/var/lib/rpm`, container path is `/host/var/lib/rpm`):
 
 ```bash
-ls -la /tmp/roxagent-rpm/
-sudo journalctl -u roxagent-prep.service
+sudo podman exec systemd-roxagent ls -la /host/var/lib/rpm/
+```
+
+Check agent logs on the host:
+
+```bash
+sudo journalctl -u roxagent.service
 ```
 
 Make sure that your VM guest OS is activated and has executed at least a single DNF transaction (e.g., dnf install, dnf update).
@@ -152,8 +158,9 @@ sudo journalctl -u roxagent.service
 ## Uninstallation
 
 ```bash
-sudo systemctl disable --now roxagent.service
+sudo systemctl stop roxagent.service
 sudo rm /etc/containers/systemd/roxagent.container
-sudo rm /etc/systemd/system/roxagent-prep.service
 sudo systemctl daemon-reload
 ```
+
+Quadlet units are generated under `/run/systemd/generator/`, so `systemctl enable` / `disable` do not apply. Boot start comes from `[Install] WantedBy=multi-user.target` in `roxagent.container`; removing that file and reloading drops the service.
