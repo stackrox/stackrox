@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "ListeningEndpointsService"
+      "name": "ListeningEndpointsService",
+      "description": "ListeningEndpointsService API can be used to list listening endpoints and the processes that opened them."
     }
   ],
   "consumes": [

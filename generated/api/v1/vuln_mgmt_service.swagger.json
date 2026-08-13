@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "VulnMgmtService"
+      "name": "VulnMgmtService",
+      "description": "VulnMgmtService APIs are used to manage workload vulnerabilities."
     }
   ],
   "consumes": [
@@ -183,7 +184,7 @@
         "UNKNOWN"
       ],
       "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+      "description": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
     "LabelSelectorRequirement": {
       "type": "object",
@@ -1395,7 +1396,7 @@
         "CLUSTER_ADMIN"
       ],
       "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+      "description": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
     },
     "storagePortConfig": {
       "type": "object",

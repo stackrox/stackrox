@@ -150,7 +150,7 @@
         "UNHEALTHY"
       ],
       "default": "HEALTHY",
-      "title": "Represents the status of compliance operator"
+      "description": "Represents the status of compliance operator"
     },
     "v2ClusterPlatformType": {
       "type": "string",

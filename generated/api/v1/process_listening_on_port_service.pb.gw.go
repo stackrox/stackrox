@@ -43,9 +43,6 @@ func request_ListeningEndpointsService_GetListeningEndpoints_0(ctx context.Conte
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["deployment_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "deployment_id")
@@ -59,6 +56,9 @@ func request_ListeningEndpointsService_GetListeningEndpoints_0(ctx context.Conte
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ListeningEndpointsService_GetListeningEndpoints_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetListeningEndpoints(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
