@@ -15,7 +15,21 @@ import (
 func SerializeSchema(schema *walker.Schema, varName string) string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("%s = &walker.Schema{\n", varName))
+	b.WriteString(fmt.Sprintf("%s = ", varName))
+	writeSchemaHeader(schema, nil, &b)
+
+	serializeChildren(schema, varName, "", &b)
+
+	writeSchemaFields(schema, varName, &b)
+
+	return b.String()
+}
+
+func writeSchemaHeader(schema *walker.Schema, parentVarName *string, b *strings.Builder) {
+	b.WriteString("&walker.Schema{\n")
+	if parentVarName != nil {
+		b.WriteString(fmt.Sprintf("\tParent: %s,\n", *parentVarName))
+	}
 	b.WriteString(fmt.Sprintf("\tTable: %s,\n", strconv.Quote(schema.Table)))
 	b.WriteString(fmt.Sprintf("\tType: %s,\n", strconv.Quote(schema.Type)))
 	b.WriteString(fmt.Sprintf("\tTypeName: %s,\n", strconv.Quote(schema.TypeName)))
@@ -38,58 +52,27 @@ func SerializeSchema(schema *walker.Schema, varName string) string {
 		b.WriteString("\t},\n")
 	}
 	b.WriteString("}\n")
+}
 
-	serializeChildren(schema, varName, "", &b)
-
+func writeSchemaFields(schema *walker.Schema, varName string, b *strings.Builder) {
 	b.WriteString(fmt.Sprintf("%s.Fields = []walker.Field{\n", varName))
 	for _, field := range schema.Fields {
-		serializeField(&field, varName, &b)
+		serializeField(&field, varName, b)
 	}
 	b.WriteString("}\n")
-
-	serializeFieldReferences(schema, varName, &b)
-
-	return b.String()
+	serializeFieldReferences(schema, varName, b)
 }
 
 func serializeChildren(schema *walker.Schema, parentVarName, prefix string, b *strings.Builder) {
 	for i, child := range schema.Children {
 		childVarName := fmt.Sprintf("%schild%d", prefix, i)
 
-		b.WriteString(fmt.Sprintf("%s := &walker.Schema{\n", childVarName))
-		b.WriteString(fmt.Sprintf("\tParent: %s,\n", parentVarName))
-		b.WriteString(fmt.Sprintf("\tTable: %s,\n", strconv.Quote(child.Table)))
-		b.WriteString(fmt.Sprintf("\tType: %s,\n", strconv.Quote(child.Type)))
-		b.WriteString(fmt.Sprintf("\tTypeName: %s,\n", strconv.Quote(child.TypeName)))
-		if child.ObjectGetter != "" {
-			b.WriteString(fmt.Sprintf("\tObjectGetter: %s,\n", strconv.Quote(child.ObjectGetter)))
-		}
-		if child.NoSerialized {
-			b.WriteString("\tNoSerialized: true,\n")
-		}
-		if len(child.SubMessages) > 0 {
-			b.WriteString("\tSubMessages: map[string]string{\n")
-			keys := make([]string, 0, len(child.SubMessages))
-			for k := range child.SubMessages {
-				keys = append(keys, k)
-			}
-			slices.Sort(keys)
-			for _, k := range keys {
-				b.WriteString(fmt.Sprintf("\t\t%s: %s,\n", strconv.Quote(k), strconv.Quote(child.SubMessages[k])))
-			}
-			b.WriteString("\t},\n")
-		}
-		b.WriteString("}\n")
+		b.WriteString(fmt.Sprintf("%s := ", childVarName))
+		writeSchemaHeader(child, &parentVarName, b)
 
 		serializeChildren(child, childVarName, childVarName+"_", b)
 
-		b.WriteString(fmt.Sprintf("%s.Fields = []walker.Field{\n", childVarName))
-		for _, field := range child.Fields {
-			serializeField(&field, childVarName, b)
-		}
-		b.WriteString("}\n")
-
-		serializeFieldReferences(child, childVarName, b)
+		writeSchemaFields(child, childVarName, b)
 	}
 
 	if len(schema.Children) > 0 {
