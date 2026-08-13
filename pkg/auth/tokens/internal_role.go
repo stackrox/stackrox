@@ -198,6 +198,7 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 	}
 }
 
+//go:generate mockgen-wrapper
 type ClusterResolver interface {
 	GetClusterID(ctx context.Context, name string) (string, bool, error)
 }
