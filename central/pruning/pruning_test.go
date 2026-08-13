@@ -2976,6 +2976,9 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 	if !features.FlattenImageData.Enabled() {
 		s.T().Skip("V1 image pruning only runs when FlattenImageData is enabled")
 	}
+	if !env.PruneV1Images.BooleanSetting() {
+		s.T().Skip("V1 image pruning is disabled")
+	}
 
 	ctx := sac.WithAllAccess(context.Background())
 	images, imagesV2, depDS, watchedDS := s.generateImageV1PruningDataStructures()
@@ -3079,6 +3082,9 @@ func (s *PruningTestSuite) TestPruneImageV1Batch() {
 func (s *PruningTestSuite) TestPruneImageV1BatchCursor() {
 	if !features.FlattenImageData.Enabled() {
 		s.T().Skip("V1 image pruning only runs when FlattenImageData is enabled")
+	}
+	if !env.PruneV1Images.BooleanSetting() {
+		s.T().Skip("V1 image pruning is disabled")
 	}
 
 	ctx := sac.WithAllAccess(context.Background())
