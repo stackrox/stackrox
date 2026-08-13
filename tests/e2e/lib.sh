@@ -668,6 +668,9 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
+    local vm_mode_setting="Disabled"
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -699,16 +702,11 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    customize_envVars=""
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
-        customize_envVars+=$'\n      value: "true"'
+        vm_mode_setting="Enabled"
     fi
-    # For VM e2e tests that may send multiple index reports per minute.
-    if [[ -n "${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE:-}" ]]; then
-        customize_envVars+=$'\n    - name: ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE'
-        customize_envVars+=$'\n      value: "'"${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE}"'"'
-    fi
+
+    customize_envVars=""
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -733,6 +731,8 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
+      vm_mode_setting="$vm_mode_setting" \
+      vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
       scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
@@ -1592,7 +1592,7 @@ wait_for_scanner_V4() {
         info "Listing available storage classes:"
         kubectl describe storageclasses 2>/dev/null || true
 
-        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-2400}
+        matcher_max_seconds=${SCANNER_V4_VULN_READINESS_TIMEOUT:-3600}
         info "Waiting ${matcher_max_seconds}s for matcher vulnerability readiness..."
     fi
 

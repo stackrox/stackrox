@@ -272,6 +272,8 @@ func buildEmbeddedVulnerability(ccVuln *v4.VulnerabilityReport_Vulnerability, en
 		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 		Epss:                  epss(ccVuln.GetEpssMetrics()),
+		Exploit:               cisaKevExploit(ccVuln),
+		CisaKev:               cisaKevEnabled(ccVuln),
 		FixAvailableTimestamp: ccVuln.GetFixedDate(),
 		Datasource:            vulnDataSource(ccVuln, envOS),
 	}
@@ -340,6 +342,30 @@ func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
 		EpssProbability: epssDetail.GetProbability(),
 		EpssPercentile:  epssDetail.GetPercentile(),
 	}
+}
+
+func exploit(e *v4.VulnerabilityReport_Vulnerability_CISAExploit) *storage.Exploit {
+	if e == nil {
+		return nil
+	}
+	return &storage.Exploit{
+		DateAdded:                  e.GetDateAdded(),
+		ShortDescription:           e.GetShortDescription(),
+		RequiredAction:             e.GetRequiredAction(),
+		DueDate:                    e.GetDueDate(),
+		KnownRansomwareCampaignUse: e.GetKnownRansomwareCampaignUse(),
+	}
+}
+
+func cisaKevExploit(ccVuln *v4.VulnerabilityReport_Vulnerability) *storage.Exploit {
+	if !features.KnownExploitedVulnerabilities.Enabled() {
+		return nil
+	}
+	return exploit(ccVuln.GetExploit())
+}
+
+func cisaKevEnabled(ccVuln *v4.VulnerabilityReport_Vulnerability) bool {
+	return features.KnownExploitedVulnerabilities.Enabled() && ccVuln.GetExploit() != nil
 }
 
 func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
@@ -748,4 +774,6 @@ func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	dst.Link = src.GetLink()
 	dst.PublishedOn = src.GetPublishedOn()
 	dst.Epss = src.GetEpss()
+	dst.Exploit = src.GetExploit()
+	dst.CisaKev = src.GetExploit() != nil
 }

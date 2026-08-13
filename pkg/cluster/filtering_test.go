@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +41,7 @@ func TestNamespaceFilter(t *testing.T) {
 
 				cluster.DynamicConfig.ProcessIndicators.ExcludeNamespaceFilter = "test-.*"
 			},
-			expectedFilter: pointers.String("test-.*"),
+			expectedFilter: new("test-.*"),
 		},
 		"No openshift": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -50,7 +49,7 @@ func TestNamespaceFilter(t *testing.T) {
 
 				cluster.DynamicConfig.ProcessIndicators.ExcludeOpenshiftNs = true
 			},
-			expectedFilter: pointers.String("^openshift$|^openshift-.*"),
+			expectedFilter: new("^openshift$|^openshift-.*"),
 		},
 		"Custom filter and no openshift": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -60,7 +59,7 @@ func TestNamespaceFilter(t *testing.T) {
 				cluster.DynamicConfig.ProcessIndicators.ExcludeNamespaceFilter = "test-.*"
 				cluster.DynamicConfig.ProcessIndicators.ExcludeOpenshiftNs = true
 			},
-			expectedFilter: pointers.String("test-.*|^openshift$|^openshift-.*"),
+			expectedFilter: new("test-.*|^openshift$|^openshift-.*"),
 		},
 		"Custom filter and no persistence": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -70,7 +69,7 @@ func TestNamespaceFilter(t *testing.T) {
 				cluster.DynamicConfig.ProcessIndicators.ExcludeNamespaceFilter = "test-.*"
 				cluster.DynamicConfig.ProcessIndicators.NoPersistence = true
 			},
-			expectedFilter: pointers.String(".*"),
+			expectedFilter: new(".*"),
 		},
 		"No persistence and no openshift": {
 			configureClusterFn: func(cluster *storage.Cluster) {
@@ -80,7 +79,7 @@ func TestNamespaceFilter(t *testing.T) {
 				cluster.DynamicConfig.ProcessIndicators.ExcludeOpenshiftNs = true
 				cluster.DynamicConfig.ProcessIndicators.NoPersistence = true
 			},
-			expectedFilter: pointers.String(".*"),
+			expectedFilter: new(".*"),
 		},
 	}
 

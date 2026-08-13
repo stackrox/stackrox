@@ -3,10 +3,8 @@ package watcher
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/pkg/errors"
-	resultsDataStore "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -29,47 +27,6 @@ var (
 // GetScanConfigFromScan returns the ScanConfiguration associated with the given scan
 func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, scanConfigDS scanConfigurationDS.DataStore) (*storage.ComplianceOperatorScanConfigurationV2, error) {
 	return scanConfigDS.GetScanConfigurationByName(ctx, scan.GetScanConfigName())
-}
-
-func DeleteOldResultsFromMissingScans(ctx context.Context, results *ScanConfigWatcherResults, profileDataStore profileDatastore.DataStore, scanDataStore scanDataStore.DataStore, resultsDataStore resultsDataStore.DataStore) error {
-	if results == nil {
-		return errors.New("unable to delete old CheckResults from an nil ScanConfigWatcherResults")
-	}
-	scans, err := GetScansFromScanConfiguration(ctx, results.ScanConfig, profileDataStore, scanDataStore)
-	if err != nil {
-		return err
-	}
-	for _, scanResults := range results.ScanResults {
-		scans.Remove(fmt.Sprintf("%s:%s", scanResults.Scan.GetClusterId(), scanResults.Scan.GetId()))
-	}
-	if scans.Cardinality() == 0 {
-		return nil
-	}
-	log.Warnf("Deleting old check results from %d scans that did not report results for scan config %s (missing: %v)",
-		scans.Cardinality(), results.ScanConfig.GetScanConfigName(), scans.AsSlice())
-	errList := errorhelpers.NewErrorList("delete old CheckResults from missing scans")
-	for scanWatcherID := range scans {
-		parts := strings.Split(scanWatcherID, ":")
-		if len(parts) != 2 {
-			errList.AddError(errors.Errorf("unable to parse ScanID from %q", scanWatcherID))
-			continue
-		}
-		scan, found, err := scanDataStore.GetScan(ctx, parts[1])
-		if err != nil {
-			errList.AddError(err)
-			continue
-		}
-		if !found {
-			errList.AddError(errors.Errorf("unable to find Scan with ID %q", parts[1]))
-			continue
-		}
-		log.Warnf("Deleting all check results for missing scan %s (scanRefId: %s, cluster: %s)",
-			scan.GetScanName(), scan.GetScanRefId(), parts[0])
-		if err := resultsDataStore.DeleteOldResults(ctx, scan.GetLastStartedTime(), scan.GetScanRefId(), true); err != nil {
-			errList.AddError(err)
-		}
-	}
-	return errList.ToError()
 }
 
 // ScanConfigWatcher determines if a ScanConfiguration has running scans or has completed
@@ -228,16 +185,39 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 				return
 			}
 		}
-		if concurrency.WithLock1[bool](&w.resultsLock, func() bool {
-			if w.totalResults != 0 && w.totalResults == len(w.scanConfigResults.ScanResults) {
-				w.readyQueue.Push(w.scanConfigResults)
-				return true
-			}
-			return false
-		}) {
+		if w.checkCompletion() {
 			return
 		}
 	}
+}
+
+// checkCompletion verifies all expected scans have been received. When scansToWait is empty,
+// it re-queries the database to catch scan resources that were created after the initial query
+// (e.g., the CO may still be creating scan resources when the first results arrive).
+func (w *scanConfigWatcherImpl) checkCompletion() bool {
+	if w.totalResults == 0 || w.scansToWait.Cardinality() > 0 {
+		return false
+	}
+	newScans, err := GetScansFromScanConfiguration(w.ctx, w.scanConfigResults.ScanConfig, w.profileDS, w.scanDS)
+	if err != nil {
+		log.Warnf("Unable to re-query scans for completion check: %v", err)
+		return false
+	}
+	concurrency.WithLock(&w.resultsLock, func() {
+		for key := range w.scanConfigResults.ScanResults {
+			newScans.Remove(key)
+		}
+	})
+	if newScans.Cardinality() > 0 {
+		log.Infof("Scan config %s: found %d additional scans after re-query, continuing to wait", w.scanConfigName(), newScans.Cardinality())
+		w.scansToWait = newScans
+		w.totalResults += newScans.Cardinality()
+		return false
+	}
+	return concurrency.WithLock1[bool](&w.resultsLock, func() bool {
+		w.readyQueue.Push(w.scanConfigResults)
+		return true
+	})
 }
 
 func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) error {
@@ -253,7 +233,7 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 	}
 	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
-	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
+	if found := w.scansToWait.Remove(scanResultKey); !found {
 		newScanResult := result.Scan
 		var timestampCmpResult int
 		concurrency.WithLock(&w.resultsLock, func() {
@@ -265,12 +245,39 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 			// We already handled a newer scan, so we can ignore this scan.
 			return nil
 		}
+		// The scan ID is not in scansToWait — the CO may have recycled the scan resource
+		// with a new ID. Re-query to refresh scansToWait with current IDs from the DB.
+		if freshScans, err := GetScansFromScanConfiguration(w.ctx, w.scanConfigResults.ScanConfig, w.profileDS, w.scanDS); err == nil {
+			w.scansToWait = freshScans
+			w.totalResults = len(w.scansToWait)
+			w.scansToWait.Remove(scanResultKey)
+			concurrency.WithLock(&w.resultsLock, func() {
+				for key := range w.scanConfigResults.ScanResults {
+					w.scansToWait.Remove(key)
+				}
+			})
+		}
 	}
+	// Remove any stale result for the same scan name on the same cluster (CO may recycle scan
+	// resources with new IDs). This prevents inflating ScanResults and keeps scansToWait accurate.
+	w.removeStaleResult(result.Scan.GetClusterId(), result.Scan.GetScanName(), scanResultKey)
 	concurrency.WithLock(&w.resultsLock, func() {
 		w.scanConfigResults.ScanResults[scanResultKey] = result
 	})
 
 	return w.appendScanToSnapshots(w.ctx, result.Scan)
+}
+
+func (w *scanConfigWatcherImpl) removeStaleResult(clusterID, scanName, currentKey string) {
+	concurrency.WithLock(&w.resultsLock, func() {
+		for key, existing := range w.scanConfigResults.ScanResults {
+			if key != currentKey && existing.Scan.GetClusterId() == clusterID && existing.Scan.GetScanName() == scanName {
+				log.Debugf("Removing stale scan result %s (replaced by %s)", key, currentKey)
+				delete(w.scanConfigResults.ScanResults, key)
+				w.scansToWait.Remove(key)
+			}
+		}
+	})
 }
 
 func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {

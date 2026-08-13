@@ -359,20 +359,23 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
-deps: $(shell find $(BASE_DIR) -name "go.sum")
-	@echo "+ $@"
-	$(SILENT)touch deps
-
-%/go.sum: %/go.mod
-	$(SILENT)cd $*
-	@echo "+ $@"
-	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-endif
+# In CI, go.mod/go.sum must be committed — not auto-updated.
+# go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
+deps:
+	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)" >&2
+else
+deps: go.mod
+	@echo "+ $@"
+	$(SILENT)GOMOCK_REFLECT_DIRS=$$(find . -type d -name 'gomock_reflect_*'); \
+	if [ -n "$$GOMOCK_REFLECT_DIRS" ]; then \
+		echo "Found leftover gomock directories. Please remove them and rerun make deps!"; \
+		echo "$$GOMOCK_REFLECT_DIRS"; \
+		exit 1; \
+	fi
+	$(SILENT)go mod tidy
 	$(SILENT)touch $@
+endif
 
 .PHONY: clean-deps
 clean-deps:

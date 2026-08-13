@@ -2,9 +2,7 @@ import axios from 'services/instance';
 import type { VulnerabilitySeverity } from 'types/cve.proto';
 import type { ScanComponent, SourceType } from 'types/scanComponent.proto';
 import type { SearchQueryOptions } from 'types/search';
-import { applyRegexSearchModifiers } from 'utils/searchUtils';
-
-import { buildNestedRawQueryParams } from './ComplianceCommon';
+import { applyRegexSearchModifiers, buildNestedRawQueryParams } from 'utils/searchUtils';
 
 // Legacy API (v2/virtualmachines)
 
@@ -179,6 +177,49 @@ export type ListVMComponentsResponse = {
     totalCount: number;
 };
 
+export type VirtualMachineV2State = 'VM_STATE_UNKNOWN' | 'VM_STATE_STOPPED' | 'VM_STATE_RUNNING';
+
+export type VMScanNote =
+    | 'VM_SCAN_NOTE_UNSET'
+    | 'VM_SCAN_NOTE_OS_UNKNOWN'
+    | 'VM_SCAN_NOTE_OS_UNSUPPORTED';
+
+export type VMNote =
+    | 'VM_NOTE_MISSING_METADATA'
+    | 'VM_NOTE_MISSING_SCAN_DATA'
+    | 'VM_NOTE_MISSING_SIGNATURE'
+    | 'VM_NOTE_MISSING_SIGNATURE_VERIFICATION_DATA'
+    | 'VM_NOTE_MISSING_SCANNER'
+    | 'VM_NOTE_SCAN_FAILED';
+
+export type AgentStatus = 'AGENT_STATUS_UNKNOWN' | 'AGENT_STATUS_ACTIVE';
+
+export type VMScanInfo = {
+    scanId: string;
+    scanOs: string;
+    scanTime?: string;
+    topCvss: number;
+    scanNotes: VMScanNote[];
+};
+
+export type VMDetail = {
+    id: string;
+    name: string;
+    namespace: string;
+    clusterId: string;
+    clusterName: string;
+    guestOs: string;
+    state: VirtualMachineV2State;
+    lastUpdated?: string;
+    facts: Record<string, string>;
+    annotations: Record<string, string>;
+    labels: Record<string, string>;
+    vsockCid: number;
+    notes: VMNote[];
+    latestScan?: VMScanInfo;
+    agentStatus: AgentStatus;
+};
+
 export function listVMs({
     sortOption,
     page,
@@ -242,4 +283,8 @@ export function listVMComponents(
     return axios
         .get<ListVMComponentsResponse>(`/v2/virtualmachines/${vmId}/components?${params}`)
         .then((response) => response.data);
+}
+
+export function getVM(vmId: string): Promise<VMDetail> {
+    return axios.get<VMDetail>(`/v2/virtualmachines/vms/${vmId}`).then((response) => response.data);
 }

@@ -378,14 +378,22 @@ func (w *WorkloadManager) sendOneIndexReport(
 		return
 	}
 
-	report := reportGen.GenerateV1IndexReport(vsockCID)
-
 	if w.vmIndexReportHandler == nil {
 		log.Debugf("VM index report handler not set, skipping report for VM %d", vsockCID)
 		return
 	}
+	if w.vmStore == nil {
+		log.Debugf("VM store not set, skipping report for VM %d", vsockCID)
+		return
+	}
 
-	if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
+	vm := w.vmStore.GetFromCID(vsockCID)
+	if vm == nil {
+		log.Debugf("VM with vsockCID %d not found in store, skipping index report", vsockCID)
+		return
+	}
+
+	if err := w.vmIndexReportHandler.Send(ctx, vm, reportGen.GenerateV4IndexReport()); err != nil {
 		// Don't log errors during shutdown
 		if ctx.Err() == nil {
 			log.Debugf("Failed to send index report for VM %d: %v", vsockCID, err)

@@ -421,7 +421,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKWithVMIDAndVsockCIDResourceID() 
 	suite.Require().NotNil(ack)
 	suite.Equal(central.SensorACK_ACK, ack.GetAction())
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for relay correlation")
+	suite.Equal(vmID+":"+vsockCID, ack.GetResourceId(), "expected ACK resource_id to match VMID:CID pair for VMID:CID resource ID correlation")
 	suite.Empty(ack.GetReason())
 }
 

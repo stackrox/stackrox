@@ -7,8 +7,6 @@ source "$ROOT/scripts/ci/lib.sh"
 set -euo pipefail
 export SHELLOPTS
 
-go mod tidy
-
 FAIL_FLAG="/tmp/fail"
 
 # This scripts consists of separate checks, each implemented in the form of a separate shell functions.
@@ -44,6 +42,27 @@ FAIL_FLAG="/tmp/fail"
 #
 #   1. errexit behavior throughout the script.
 #   2. a single point for handling errors after each check.
+
+# shellcheck disable=SC2016
+info 'Check: go.mod/go.sum files are tidy. If this fails, run `go mod tidy` in the affected module and commit the result.'
+function check-go-mod-tidy() {
+    github_group 'Running go mod tidy across all modules'
+    for gomod in $(git ls-files '*/go.mod' 'go.mod'); do
+        (cd "$(dirname "$gomod")" && go mod tidy) || exit 1
+    done
+    github_endgroup
+
+    echo 'Checking for diffs after go mod tidy...'
+    git diff --exit-code HEAD
+}
+export -f check-go-mod-tidy
+bash -c check-go-mod-tidy || {
+    save_junit_failure "Check_Go_Mod_Tidy" \
+        "go.mod/go.sum files are not tidy" \
+        "$(git diff HEAD || true)"
+    git reset --hard HEAD
+    echo check-go-mod-tidy >> "$FAIL_FLAG"
+}
 
 # shellcheck disable=SC2016
 info 'Check: Generated files are up to date. If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
