@@ -43,6 +43,11 @@ import spock.lang.Specification
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
+    static final Javers JAVERS = JaversBuilder.javers()
+            .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+            .withPrintProBanner(false)
+            .build()
+
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
     static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3@$TEST_IMAGE_SHA"
@@ -339,12 +344,8 @@ class BaseSpecification extends Specification {
     }
 
     private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
-        Javers javers = JaversBuilder.javers()
-                .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                .build()
-
         List<String> namespaces = orchestrator.getNamespaces()
-        Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
+        Diff diff = JAVERS.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
             LOG.info "There is a difference in namespaces between the start and end of this test run:"
             LOG.info diff.prettyPrint()
@@ -354,7 +355,7 @@ class BaseSpecification extends Specification {
 
         List<String> deployments = orchestrator.getDeployments("default") +
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
-        diff = javers.compare(resourceRecord["deployments"], deployments)
+        diff = JAVERS.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
             LOG.info "There is a difference in deployments between the start and end of this test run"
             LOG.info diff.prettyPrint()

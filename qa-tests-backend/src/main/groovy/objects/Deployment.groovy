@@ -56,6 +56,7 @@ class Deployment {
     Boolean automountServiceAccountToken = true
     Boolean livenessProbeDefined = false
     Boolean readinessProbeDefined = false
+    Integer readinessProbeTcpPort = null
     String serviceName
     String serviceAccountName
     List<Map<String, Object>> initContainers = []
@@ -325,6 +326,11 @@ class Deployment {
 
     Deployment setReadinessProbeDefined(Boolean probeDefined) {
         this.readinessProbeDefined = probeDefined
+        return this
+    }
+
+    Deployment setReadinessProbeTcpPort(Integer port) {
+        this.readinessProbeTcpPort = port
         return this
     }
 

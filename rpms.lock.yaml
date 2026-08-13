@@ -74,13 +74,13 @@ arches:
     name: golang-src
     evr: 1.26.5-1.el9_8
     sourcerpm: golang-1.26.5-1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.36.1.el9_8.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/k/kernel-headers-5.14.0-687.39.1.el9_8.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
-    size: 2864573
-    checksum: sha256:aa680c8c0622822ce53d2ffdc3341d3083d897f6c1f8102e8a0729b6376f0d3e
+    size: 2866853
+    checksum: sha256:fb3b89778b21461f4f4610fbb3068e7a62d0b250cc7f5c243acfe50015aff179
     name: kernel-headers
-    evr: 5.14.0-687.36.1.el9_8
-    sourcerpm: kernel-5.14.0-687.36.1.el9_8.src.rpm
+    evr: 5.14.0-687.39.1.el9_8
+    sourcerpm: kernel-5.14.0-687.39.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/Packages/l/libasan-11.5.0-14.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 409047
@@ -1279,12 +1279,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.36.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.39.1.el9_8.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 152382286
-    checksum: sha256:c57c1b970d690b22348675c3983ace878fcf457ad4b580018e08ec4b689be0b1
+    size: 152374943
+    checksum: sha256:7002d750cf1966a61a9131f2b5b24887816d989509efd27e5a4ed0dc8243e002
     name: kernel
-    evr: 5.14.0-687.36.1.el9_8
+    evr: 5.14.0-687.39.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 150790
@@ -1622,10 +1622,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/98cdaf12c221c4c84a6687fd346ba35058493137723fe3b9740d658b9f705feb-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/d44a2c433f2cd4a0703fb8ce1603b1560ca59acc7b1df0ee8199b6e4d3020863-modules.yaml.gz
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 63691
-    checksum: sha256:98cdaf12c221c4c84a6687fd346ba35058493137723fe3b9740d658b9f705feb
+    checksum: sha256:d44a2c433f2cd4a0703fb8ce1603b1560ca59acc7b1df0ee8199b6e4d3020863
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/c/cpp-11.5.0-14.el9.ppc64le.rpm
@@ -1698,13 +1698,13 @@ arches:
     name: golang-src
     evr: 1.26.5-1.el9_8
     sourcerpm: golang-1.26.5-1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.36.1.el9_8.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/k/kernel-headers-5.14.0-687.39.1.el9_8.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
-    size: 2888373
-    checksum: sha256:d85604148f93687cd6093797aaff2b557e197a326430d09b28aeae2c8d3923ee
+    size: 2890621
+    checksum: sha256:0214763708cdc25b5a92387531ba51bca96f3094e30dc919d40813ba2c70f653
     name: kernel-headers
-    evr: 5.14.0-687.36.1.el9_8
-    sourcerpm: kernel-5.14.0-687.36.1.el9_8.src.rpm
+    evr: 5.14.0-687.39.1.el9_8
+    sourcerpm: kernel-5.14.0-687.39.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/l/libasan-11.5.0-14.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 440756
@@ -2910,12 +2910,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.36.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.39.1.el9_8.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 152382286
-    checksum: sha256:c57c1b970d690b22348675c3983ace878fcf457ad4b580018e08ec4b689be0b1
+    size: 152374943
+    checksum: sha256:7002d750cf1966a61a9131f2b5b24887816d989509efd27e5a4ed0dc8243e002
     name: kernel
-    evr: 5.14.0-687.36.1.el9_8
+    evr: 5.14.0-687.39.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 150790
@@ -3259,10 +3259,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/c43e2abc09576b180ffdba3e74dc14be5e4ecea0ccf28ce65a18cf3c4f63f8a6-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/1a7f5453bb06d3f2930c0794635f46be8706275e01de12e9120ded41f2e4d0b1-modules.yaml.gz
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 63468
-    checksum: sha256:c43e2abc09576b180ffdba3e74dc14be5e4ecea0ccf28ce65a18cf3c4f63f8a6
+    checksum: sha256:1a7f5453bb06d3f2930c0794635f46be8706275e01de12e9120ded41f2e4d0b1
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/c/cpp-11.5.0-14.el9.s390x.rpm
@@ -3335,13 +3335,13 @@ arches:
     name: golang-src
     evr: 1.26.5-1.el9_8
     sourcerpm: golang-1.26.5-1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/k/kernel-headers-5.14.0-687.36.1.el9_8.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/k/kernel-headers-5.14.0-687.39.1.el9_8.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
-    size: 2894625
-    checksum: sha256:f77cd5c090bfe49a2af0dd41d85dd0b6523ed79e367d443dfc747b3ad5f70ca0
+    size: 2896829
+    checksum: sha256:d709861af2dce7bface9aa0106f30694a80600ef047e627b4b4bcf0e79aea3c5
     name: kernel-headers
-    evr: 5.14.0-687.36.1.el9_8
-    sourcerpm: kernel-5.14.0-687.36.1.el9_8.src.rpm
+    evr: 5.14.0-687.39.1.el9_8
+    sourcerpm: kernel-5.14.0-687.39.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/l/libasan-11.5.0-14.el9.s390x.rpm
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 412888
@@ -4534,12 +4534,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.36.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.39.1.el9_8.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 152382286
-    checksum: sha256:c57c1b970d690b22348675c3983ace878fcf457ad4b580018e08ec4b689be0b1
+    size: 152374943
+    checksum: sha256:7002d750cf1966a61a9131f2b5b24887816d989509efd27e5a4ed0dc8243e002
     name: kernel
-    evr: 5.14.0-687.36.1.el9_8
+    evr: 5.14.0-687.39.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 150790
@@ -4877,10 +4877,10 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/37d7553405f9de3aeca95217b09fd7bc0f7fb34101dc9e5826c238b87f9fec28-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/2d6f70458852c7c7e6286f62a25c379b526aef0b62d6edc4dfa64e40b8cfcd57-modules.yaml.gz
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 61860
-    checksum: sha256:37d7553405f9de3aeca95217b09fd7bc0f7fb34101dc9e5826c238b87f9fec28
+    checksum: sha256:2d6f70458852c7c7e6286f62a25c379b526aef0b62d6edc4dfa64e40b8cfcd57
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/c/cpp-11.5.0-14.el9.x86_64.rpm
@@ -4960,13 +4960,13 @@ arches:
     name: golang-src
     evr: 1.26.5-1.el9_8
     sourcerpm: golang-1.26.5-1.el9_8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/k/kernel-headers-5.14.0-687.36.1.el9_8.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/k/kernel-headers-5.14.0-687.39.1.el9_8.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
-    size: 2903853
-    checksum: sha256:aa8f8d4579635787d6dda7323d472de1f2f630f97d694ebf5e0208791b76555c
+    size: 2906125
+    checksum: sha256:978a5d84f2c2e74a7ec915f71eea4dd5fb3a72a15fe9aea192cc47be32e7f671
     name: kernel-headers
-    evr: 5.14.0-687.36.1.el9_8
-    sourcerpm: kernel-5.14.0-687.36.1.el9_8.src.rpm
+    evr: 5.14.0-687.39.1.el9_8
+    sourcerpm: kernel-5.14.0-687.39.1.el9_8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/l/libmpc-1.2.1-4.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 66075
@@ -6144,12 +6144,12 @@ arches:
     checksum: sha256:c4c76ebfd66ba6d00edf672797d7f077b29d279b7866a04e05258a257a5bc306
     name: json-c
     evr: 0.14-11.el9
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.36.1.el9_8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/kernel-5.14.0-687.39.1.el9_8.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 152382286
-    checksum: sha256:c57c1b970d690b22348675c3983ace878fcf457ad4b580018e08ec4b689be0b1
+    size: 152374943
+    checksum: sha256:7002d750cf1966a61a9131f2b5b24887816d989509efd27e5a4ed0dc8243e002
     name: kernel
-    evr: 5.14.0-687.36.1.el9_8
+    evr: 5.14.0-687.39.1.el9_8
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/k/keyutils-1.6.3-1.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 150790
@@ -6487,7 +6487,7 @@ arches:
     name: zstd
     evr: 1.5.5-1.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/4b318bd8815359778940acba8bf66bc594c6560aaf872afc8f8264fddba24da4-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/5bb1f049a3edb6bdef623ba66d03f91a361af683164ce0aa64d2a6b89b06e184-modules.yaml.gz
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 65787
-    checksum: sha256:4b318bd8815359778940acba8bf66bc594c6560aaf872afc8f8264fddba24da4
+    checksum: sha256:5bb1f049a3edb6bdef623ba66d03f91a361af683164ce0aa64d2a6b89b06e184

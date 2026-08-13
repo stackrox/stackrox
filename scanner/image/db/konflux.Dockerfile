@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:b32a079646b6a8d6181a6dab72e62c4fc7f7d6261f3b0f95921ee96e22249650
+FROM registry.redhat.io/rhel9/postgresql-15:latest@sha256:1ce97000d1619e734f659d3b106aecd8454be4ff479ed979d921d876c44059ba
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
