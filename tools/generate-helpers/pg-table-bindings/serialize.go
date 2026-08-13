@@ -195,11 +195,11 @@ func serializeFieldReferences(schema *walker.Schema, schemaVarName string, b *st
 				field.RefRestrictDelete(),
 				field.RefDirectional(),
 				field.RefNullable()))
-		} else if field.Options.Reference != nil && field.Options.Reference.OtherSchema != nil {
+		} else if field.RefOtherSchema() != nil {
 			b.WriteString(fmt.Sprintf("%s.Fields[%d].SetParentReference(%s, %s)\n",
 				schemaVarName, i,
-				getSchemaVarName(schema, field.Options.Reference.OtherSchema),
-				strconv.Quote(field.Options.Reference.ColumnName)))
+				getSchemaVarName(schema, field.RefOtherSchema()),
+				strconv.Quote(field.RefColumnName())))
 		}
 	}
 }

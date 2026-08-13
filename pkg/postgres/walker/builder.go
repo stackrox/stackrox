@@ -78,3 +78,17 @@ func (f *Field) RefNullable() bool {
 	}
 	return f.Options.Reference.Nullable
 }
+
+func (f *Field) RefOtherSchema() *Schema {
+	if f.Options.Reference == nil {
+		return nil
+	}
+	return f.Options.Reference.OtherSchema
+}
+
+func (f *Field) RefColumnName() string {
+	if f.Options.Reference == nil {
+		return ""
+	}
+	return f.Options.Reference.ColumnName
+}
