@@ -23,7 +23,7 @@ type scanConfigTestEvent func(*testing.T, ScanConfigWatcher)
 
 func handleInitialScanResults(id string, scanDS *scanMocks.MockDataStore, profileDS *profileDatastore.MockDataStore, numOfScans int) scanConfigTestEvent {
 	return func(t *testing.T, watcher ScanConfigWatcher) {
-		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(2).
 			DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorProfileV2, error) {
 				return []*storage.ComplianceOperatorProfileV2{
 					{
@@ -31,19 +31,21 @@ func handleInitialScanResults(id string, scanDS *scanMocks.MockDataStore, profil
 					},
 				}, nil
 			})
-		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(2).
 			DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 				ret := make([]*storage.ComplianceOperatorScanV2, numOfScans)
 				for i := 0; i < numOfScans; i++ {
 					ret[i] = &storage.ComplianceOperatorScanV2{
-						Id: fmt.Sprintf("scan-%d", i),
+						Id:       fmt.Sprintf("scan-%d", i),
+						ScanName: fmt.Sprintf("scan-%d", i),
 					}
 				}
 				return ret, nil
 			})
 		err := watcher.PushScanResults(&ScanWatcherResults{
 			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
+				Id:       id,
+				ScanName: id,
 			},
 		})
 		require.NoError(t, err)
@@ -54,7 +56,8 @@ func handleScanResults(id string) scanConfigTestEvent {
 	return func(t *testing.T, watcher ScanConfigWatcher) {
 		err := watcher.PushScanResults(&ScanWatcherResults{
 			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
+				Id:       id,
+				ScanName: id,
 			},
 		})
 		require.NoError(t, err)
@@ -65,7 +68,8 @@ func handleScanResultsWithError(id string) scanConfigTestEvent {
 	return func(t *testing.T, watcher ScanConfigWatcher) {
 		err := watcher.PushScanResults(&ScanWatcherResults{
 			Scan: &storage.ComplianceOperatorScanV2{
-				Id: id,
+				Id:       id,
+				ScanName: id,
 			},
 			Error: errors.New("some error in the scan"),
 		})
@@ -183,8 +187,10 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{{Id: "p"}}, nil)
+	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{{Id: "scan-0"}, {Id: "scan-1"}}, nil)
 	scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
-	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
 	cancel()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
@@ -212,8 +218,10 @@ func TestScanConfigWatcherStop(t *testing.T) {
 		Id: watcherID,
 	}
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{{Id: "p"}}, nil)
+	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{{Id: "scan-0"}, {Id: "scan-1"}}, nil)
 	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
-	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
 	scanConfigWatcher.Stop()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
@@ -278,8 +286,10 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		readyQueue:  resultQueue,
 		scansToWait: set.NewStringSet(),
 	}
+	profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{{Id: "p"}}, nil)
+	scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{{Id: "scan-0"}, {Id: "scan-1"}}, nil)
 	go scanConfigWatcher.run(timeout)
-	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	handleScanResults("scan-0")(t, scanConfigWatcher)
 	timeoutC <- time.Now()
 	select {
 	case <-scanConfigWatcher.Finished().Done():
