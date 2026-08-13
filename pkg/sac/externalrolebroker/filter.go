@@ -77,16 +77,10 @@ func matches(resource string, apiGroup string) bool {
 		return true
 	}
 	if apiGroup == "*" {
-		if supportedK8sRawResources.Contains(resource) {
-			return true
-		}
-		return false
+		return supportedK8sRawResources.Contains(resource)
 	}
 	if resource == "*" {
-		if supportedK8sAPIGroups.Contains(apiGroup) {
-			return true
-		}
-		return false
+		return supportedK8sAPIGroups.Contains(apiGroup)
 	}
 	resourceWithApiGroup := strings.Join([]string{resource, apiGroup}, ".")
 	if _, found := resourceMapping[resourceWithApiGroup]; found {

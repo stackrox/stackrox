@@ -1,7 +1,6 @@
 package externalrolebroker
 
 import (
-	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -46,8 +45,6 @@ var (
 
 	supportedK8sAPIGroups = listSupportedK8sAPIGroups(resourceMapping)
 
-	supportedK8sResources = listSupportedK8sResources(resourceMapping)
-
 	supportedK8sRawResources = listSupportedK8sRawResources(resourceMapping)
 )
 
@@ -60,15 +57,6 @@ func listSupportedK8sAPIGroups(mapping map[string]permissions.ResourceMetadata) 
 		}
 		output.Add(after)
 	}
-	return output
-}
-
-func listSupportedK8sResources(mapping map[string]permissions.ResourceMetadata) []string {
-	output := make([]string, 0, len(mapping))
-	for k := range mapping {
-		output = append(output, k)
-	}
-	slices.Sort(output)
 	return output
 }
 
