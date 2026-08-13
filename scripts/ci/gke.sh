@@ -223,6 +223,7 @@ create_cluster() {
                     --machine-type "${MACHINE_TYPE}" \
                     --num-nodes "$((NUM_NODES - 1))" \
                     --spot \
+                    --node-taints=cloud.google.com/gke-spot=true:PreferNoSchedule \
                     --disk-type=pd-ssd \
                     --disk-size="${DISK_SIZE_GB}GB" \
                     --image-type "${GCP_IMAGE_TYPE}" \
