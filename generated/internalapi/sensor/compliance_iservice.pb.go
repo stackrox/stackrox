@@ -75,7 +75,6 @@ type MsgToCompliance_ComplianceACK_MessageType int32
 const (
 	MsgToCompliance_ComplianceACK_NODE_INVENTORY    MsgToCompliance_ComplianceACK_MessageType = 0 // v2 node scanning (being deprecated)
 	MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT MsgToCompliance_ComplianceACK_MessageType = 1 // v4 node scanning
-	MsgToCompliance_ComplianceACK_VM_INDEX_REPORT   MsgToCompliance_ComplianceACK_MessageType = 2 // VM vulnerability scanning
 )
 
 // Enum value maps for MsgToCompliance_ComplianceACK_MessageType.
@@ -83,12 +82,10 @@ var (
 	MsgToCompliance_ComplianceACK_MessageType_name = map[int32]string{
 		0: "NODE_INVENTORY",
 		1: "NODE_INDEX_REPORT",
-		2: "VM_INDEX_REPORT",
 	}
 	MsgToCompliance_ComplianceACK_MessageType_value = map[string]int32{
 		"NODE_INVENTORY":    0,
 		"NODE_INDEX_REPORT": 1,
-		"VM_INDEX_REPORT":   2,
 	}
 )
 
@@ -749,12 +746,12 @@ func (*MsgToCompliance_AuditLogCollectionRequest_StopReq) isMsgToCompliance_Audi
 }
 
 // ComplianceACK is a generic acknowledgement message from Sensor to Compliance
-// for any compliance-originated message (node inventory, node index, VM index, etc.)
+// for any compliance-originated message (node inventory, node index, etc.)
 type MsgToCompliance_ComplianceACK struct {
 	state         protoimpl.MessageState                    `protogen:"open.v1"`
 	Action        MsgToCompliance_ComplianceACK_Action      `protobuf:"varint,1,opt,name=action,proto3,enum=sensor.MsgToCompliance_ComplianceACK_Action" json:"action,omitempty"`
 	MessageType   MsgToCompliance_ComplianceACK_MessageType `protobuf:"varint,2,opt,name=message_type,json=messageType,proto3,enum=sensor.MsgToCompliance_ComplianceACK_MessageType" json:"message_type,omitempty"`
-	ResourceId    string                                    `protobuf:"bytes,3,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"` // Resource identifier (node name, VM ID, etc.)
+	ResourceId    string                                    `protobuf:"bytes,3,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"` // Resource identifier (node name, etc.)
 	Reason        string                                    `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                           // Optional reason for NACK (e.g., "rate limit exceeded")
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -978,7 +975,7 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12?\n" +
 	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryH\x00R\rnodeInventory\x12<\n" +
 	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReportB\x05\n" +
-	"\x03msg\"\xaf\f\n" +
+	"\x03msg\"\xb1\f\n" +
 	"\x0fMsgToCompliance\x12>\n" +
 	"\x06config\x18\x01 \x01(\v2$.sensor.MsgToCompliance.ScrapeConfigH\x00R\x06config\x12>\n" +
 	"\atrigger\x18\x02 \x01(\v2\".sensor.MsgToCompliance.TriggerRunH\x00R\atrigger\x12t\n" +
@@ -1000,7 +997,7 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12J\n" +
 	"\x13collect_start_state\x18\x02 \x01(\v2\x1a.storage.AuditLogFileStateR\x11collectStartState\x1a\r\n" +
 	"\vStopRequestB\x05\n" +
-	"\x03req\x1a\xd0\x02\n" +
+	"\x03req\x1a\xd2\x02\n" +
 	"\rComplianceACK\x12D\n" +
 	"\x06action\x18\x01 \x01(\x0e2,.sensor.MsgToCompliance.ComplianceACK.ActionR\x06action\x12T\n" +
 	"\fmessage_type\x18\x02 \x01(\x0e21.sensor.MsgToCompliance.ComplianceACK.MessageTypeR\vmessageType\x12\x1f\n" +
@@ -1009,11 +1006,10 @@ const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x1b\n" +
 	"\x06Action\x12\a\n" +
 	"\x03ACK\x10\x00\x12\b\n" +
-	"\x04NACK\x10\x01\"M\n" +
+	"\x04NACK\x10\x01\"O\n" +
 	"\vMessageType\x12\x12\n" +
 	"\x0eNODE_INVENTORY\x10\x00\x12\x15\n" +
-	"\x11NODE_INDEX_REPORT\x10\x01\x12\x13\n" +
-	"\x0fVM_INDEX_REPORT\x10\x02\x1a\x87\x02\n" +
+	"\x11NODE_INDEX_REPORT\x10\x01\"\x04\b\x02\x10\x02*\x0fVM_INDEX_REPORT\x1a\x87\x02\n" +
 	"\x10NodeInventoryACK\x12G\n" +
 	"\x06action\x18\x01 \x01(\x0e2/.sensor.MsgToCompliance.NodeInventoryACK.ActionR\x06action\x12V\n" +
 	"\vmessageType\x18\x02 \x01(\x0e24.sensor.MsgToCompliance.NodeInventoryACK.MessageTypeR\vmessageType\"\x1b\n" +

@@ -70,23 +70,15 @@ func fakeNodeIndex(arch string) *v4.IndexReport {
 	}
 }
 
-func fakeDeprecatedNodeIndex(arch string) *v4.IndexReport {
-	return &v4.IndexReport{
-		HashId:  fmt.Sprintf("sha256:%s", strings.Repeat("a", 64)),
-		Success: true,
-		Contents: &v4.Contents{
-			PackagesDEPRECATED: []*v4.Package{
-				exemplaryPackage("0", "vim-minimal", arch),
-				exemplaryPackage("1", "vim-minimal-noarch", "noarch"),
-				exemplaryPackage("2", "vim-minimal-empty-arch", ""),
-			},
-			RepositoriesDEPRECATED: []*v4.Repository{
-				exemplaryRepo("0"),
-				exemplaryRepo("1"),
-				exemplaryRepo("2"),
-			},
-		},
+func fakeNodeIndexWithRHCOS(arch string) *v4.IndexReport {
+	ir := fakeNodeIndex(arch)
+	ir.Contents.Packages["rhcos-pkg"] = &v4.Package{
+		Id:      "rhcos-pkg",
+		Name:    "rhcos",
+		Version: "9.6.20260324-0",
+		Arch:    arch,
 	}
+	return ir
 }
 
 func exemplaryPackage(id, name, arch string) *v4.Package {
@@ -126,92 +118,6 @@ type NodeInventoryHandlerTestSuite struct {
 
 func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 	goleak.AssertNoGoroutineLeaks(s.T())
-}
-
-func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
-	cases := map[string]struct {
-		rpmArch      string
-		expectedArch string
-	}{
-		"noarch": {
-			rpmArch:      "noarch",
-			expectedArch: "",
-		},
-		"empty-arch": {
-			rpmArch:      "",
-			expectedArch: "",
-		},
-		"x86_64": {
-			rpmArch:      "x86_64",
-			expectedArch: "x86_64",
-		},
-		"foobar": {
-			rpmArch:      "foobar",
-			expectedArch: "foobar",
-		},
-	}
-	for name, tc := range cases {
-		s.Run(name, func() {
-			got := extractArch(fakeNodeIndex(tc.rpmArch))
-			s.Equal(tc.expectedArch, got)
-			got = extractArch(fakeDeprecatedNodeIndex(tc.rpmArch))
-			s.Equal(tc.expectedArch, got)
-		})
-	}
-}
-
-func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
-	arch := "x86_64"
-	rpmIR := fakeNodeIndex(arch)
-	got := attachRPMtoRHCOS("417.94.202501071621-0", arch, rpmIR)
-
-	s.Lenf(got.GetContents().GetPackages(), len(rpmIR.GetContents().GetPackages())+1, "IR should have 1 extra package")
-	s.Lenf(got.GetContents().GetEnvironments(), len(rpmIR.GetContents().GetEnvironments())+1, "IR should have 1 extra envinronment")
-	s.Lenf(got.GetContents().GetRepositories(), len(rpmIR.GetContents().GetRepositories())+1, "IR should have 1 extra repository")
-
-	var rhcosPKG *v4.Package
-	for _, p := range got.GetContents().GetPackages() {
-		if p.GetName() == "rhcos" {
-			rhcosPKG = p
-			break
-		}
-	}
-	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
-	s.Equal("rhcos", rhcosPKG.GetName())
-	s.Equal(arch, rhcosPKG.GetArch())
-	s.Equal("600", rhcosPKG.GetId())
-	for _, p := range got.GetContents().GetPackagesDEPRECATED() {
-		if p.GetName() == "rhcos" {
-			rhcosPKG = p
-			break
-		}
-	}
-	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
-	s.Equal("rhcos", rhcosPKG.GetName())
-	s.Equal(arch, rhcosPKG.GetArch())
-	s.Equal("600", rhcosPKG.GetId())
-
-	var rhcosRepo *v4.Repository
-	for _, r := range got.GetContents().GetRepositories() {
-		if r.GetId() == "600" {
-			rhcosRepo = r
-			break
-		}
-	}
-	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
-	s.Equal(goldenKey, rhcosRepo.GetKey())
-	s.Equal(goldenName, rhcosRepo.GetName())
-	s.Equal(goldenURI, rhcosRepo.GetUri())
-	for _, r := range got.GetContents().GetRepositoriesDEPRECATED() {
-		if r.GetId() == "600" {
-			rhcosRepo = r
-			break
-		}
-	}
-	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
-	s.Equal(goldenKey, rhcosRepo.GetKey())
-	s.Equal(goldenName, rhcosRepo.GetName())
-	s.Equal(goldenURI, rhcosRepo.GetUri())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
@@ -869,6 +775,76 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(h.Stopped().Wait())
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestSendNodeIndex_RHCOSDetection() {
+	cases := []struct {
+		name           string
+		indexReport    *v4.IndexReport
+		rhcosMatcher   NodeRHCOSMatcher
+		expectRHCOSPkg bool
+	}{
+		{
+			name:           "compliance already added rhcos",
+			indexReport:    fakeNodeIndexWithRHCOS("x86_64"),
+			rhcosMatcher:   &mockRHCOSNodeMatcher{},
+			expectRHCOSPkg: true,
+		},
+		{
+			name:           "no rhcos + osImage=RHCOS - warning logged, no modification",
+			indexReport:    fakeNodeIndex("x86_64"),
+			rhcosMatcher:   &mockRHCOSNodeMatcher{},
+			expectRHCOSPkg: false,
+		},
+		{
+			name:           "no rhcos + non-RHCOS osImage - no modification",
+			indexReport:    fakeNodeIndex("x86_64"),
+			rhcosMatcher:   &mockNonRHCOSNodeMatcher{},
+			expectRHCOSPkg: false,
+		},
+	}
+
+	for _, tc := range cases {
+		s.Run(tc.name, func() {
+			inventories := make(chan *storage.NodeInventory)
+			defer close(inventories)
+			reports := make(chan *index.IndexReportWrap)
+			defer close(reports)
+
+			h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, tc.rhcosMatcher)
+			s.NoError(h.Start())
+			h.Notify(common.SensorComponentEventCentralReachable)
+
+			go func() {
+				reports <- &index.IndexReportWrap{
+					NodeName:    "test-node",
+					NodeID:      "test-node-id",
+					IndexReport: tc.indexReport,
+				}
+			}()
+
+			select {
+			case msg := <-h.ResponsesC():
+				result := msg.GetEvent().GetIndexReport()
+				s.Require().NotNil(result)
+
+				var hasRHCOS bool
+				for _, p := range result.GetContents().GetPackages() {
+					if p.GetName() == "rhcos" {
+						hasRHCOS = true
+						break
+					}
+				}
+				s.Equal(tc.expectRHCOSPkg, hasRHCOS, "rhcos package presence")
+
+			case <-time.After(5 * time.Second):
+				s.Fail("timeout waiting for response")
+			}
+
+			h.Stop()
+			s.NoError(h.Stopped().Wait())
+		})
+	}
+}
+
 // mockAlwaysHitNodeIDMatcher always finds a node when GetNodeResource is called
 type mockAlwaysHitNodeIDMatcher struct{}
 
@@ -885,10 +861,82 @@ func (c *mockNeverHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "", errors.New("cannot find node")
 }
 
-// mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
+// mockRHCOSNodeMatcher always identifies as RHCOS and provides a valid version
 type mockRHCOSNodeMatcher struct{}
 
-// GetRHCOSVersion always identifies as RHCOS and provides a valid version
 func (c *mockRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
 	return true, "417.94.202412120651-0", nil
+}
+
+// mockNonRHCOSNodeMatcher always identifies as non-RHCOS
+type mockNonRHCOSNodeMatcher struct{}
+
+func (c *mockNonRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
+	return false, "", nil
+}
+
+func TestHasRHCOSPackage(t *testing.T) {
+	tests := []struct {
+		name     string
+		report   *v4.IndexReport
+		expected bool
+	}{
+		{
+			name:     "nil report",
+			report:   nil,
+			expected: false,
+		},
+		{
+			name: "empty report",
+			report: &v4.IndexReport{
+				Contents: &v4.Contents{},
+			},
+			expected: false,
+		},
+		{
+			name: "no rhcos package",
+			report: &v4.IndexReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"1": {Name: "bash"},
+						"2": {Name: "vim"},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "rhcos in packages",
+			report: &v4.IndexReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"1":         {Name: "bash"},
+						"rhcos-pkg": {Name: "rhcos"},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "rhcos in deprecated packages only - should not match",
+			report: &v4.IndexReport{
+				Contents: &v4.Contents{
+					PackagesDEPRECATED: []*v4.Package{
+						{Name: "bash"},
+						{Name: "rhcos"},
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := hasRHCOSPackage(tt.report)
+			if result != tt.expected {
+				t.Errorf("hasRHCOSPackage() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
 }

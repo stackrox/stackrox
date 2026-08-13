@@ -14,7 +14,7 @@ import type {
     ViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
-import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { buildNestedRawQueryParams, getPaginationParams } from 'utils/searchUtils';
 import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import { sanitizeFilename } from 'utils/fileUtils';
 
@@ -144,14 +144,9 @@ export function fetchViewBasedReportHistory({
     sortOption,
     showMyHistory,
 }: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
-    const params = queryString.stringify(
-        {
-            reportParamQuery: {
-                query: getRequestQueryStringForSearchFilter(searchFilter),
-                pagination: getPaginationParams({ page, perPage, sortOption }),
-            },
-        },
-        { arrayFormat: 'repeat', allowDots: true }
+    const params = buildNestedRawQueryParams(
+        { searchFilter, page, perPage, sortOption },
+        'reportParamQuery'
     );
 
     const endpoint = showMyHistory

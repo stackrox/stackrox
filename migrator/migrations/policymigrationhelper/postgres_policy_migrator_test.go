@@ -88,7 +88,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnrelatedPolicyIsNotUpdated() {
 	policiesToMigrate := map[string]PolicyChanges{
 		"0000-0000-0000-0000": {
 			FieldsToCompare: []FieldComparator{DescriptionComparator},
-			ToChange:        PolicyUpdates{Description: strPtr("this is a new description")},
+			ToChange:        PolicyUpdates{Description: new("this is a new description")},
 		},
 	}
 
@@ -112,7 +112,7 @@ func (s *postgresPolicyMigratorTestSuite) TestUnmodifiedAndMatchingPolicyIsUpdat
 	policiesToMigrate := map[string]PolicyChanges{
 		policyID: {
 			FieldsToCompare: []FieldComparator{DescriptionComparator},
-			ToChange:        PolicyUpdates{Description: strPtr("this is a new description")},
+			ToChange:        PolicyUpdates{Description: new("this is a new description")},
 		},
 	}
 
@@ -155,7 +155,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 				comparisonPolicies[policy.GetId()] = comparisonPolicy
 				policiesToMigrate[policy.GetId()] = PolicyChanges{
 					FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},
-					ToChange:        PolicyUpdates{Description: strPtr(fmt.Sprintf("%s new description", policy.GetId()))}, // give them all a new description
+					ToChange:        PolicyUpdates{Description: new(fmt.Sprintf("%s new description", policy.GetId()))}, // give them all a new description
 				}
 			}
 

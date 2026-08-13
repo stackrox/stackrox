@@ -31,9 +31,10 @@ func (v mockRoxValidator) Validate(ctx context.Context, token string) (*tokens.T
 
 func tokenWithIssuer(issuer string) string {
 	claims := fmt.Sprintf(`{"iss":"%s"}`, issuer)
-	return fmt.Sprintf("%s.%s.signature",
+	return fmt.Sprintf("%s.%s.%s",
 		base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`)),
-		base64.RawURLEncoding.EncodeToString([]byte(claims)))
+		base64.RawURLEncoding.EncodeToString([]byte(claims)),
+		base64.RawURLEncoding.EncodeToString([]byte("fake-signature")))
 }
 
 func TestM2MValidator(t *testing.T) {

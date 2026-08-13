@@ -185,6 +185,7 @@ func TestProcessEvent_OpenSCAPTailoredProfileUsesStatusID(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 	assert.Equal(t, "xccdf_compliance.openshift.io_profile_tp-openscap", profile.GetProfileId())
 }
@@ -218,6 +219,7 @@ func TestProcessEvent_CELTailoredProfileUsesK8sName(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 	// Must match what CO puts in ComplianceScan.Spec.Profile for CEL TPs
 	assert.Equal(t, "my-cel-tp", profile.GetProfileId())
@@ -326,6 +328,37 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	assert.Nil(t, event)
+}
+
+// TestProcessEvent_UnknownScannerType verifies that a TP with an unrecognised scanner-type
+// falls back to Status.ID as ProfileId (so the dispatcher doesn't silently break).
+func TestProcessEvent_UnknownScannerType(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "future-tp",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ScannerTypeAnnotation: "WASM", // hypothetical future type
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_future-tp",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+	// Falls back to Status.ID — a Warn log is emitted by the dispatcher
+	assert.Equal(t, "xccdf_compliance.openshift.io_profile_future-tp", profile.GetProfileId())
 }
 
 // TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped

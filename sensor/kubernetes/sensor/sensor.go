@@ -48,6 +48,8 @@ import (
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
@@ -61,6 +63,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
+	"github.com/stackrox/rox/sensor/kubernetes/virtualmachine/vsockdialer"
 )
 
 var log = logging.LoggerForModule()
@@ -200,7 +203,16 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
-		complianceMultiplexer.AddComponentWithComplianceC(virtualMachineHandler)
+
+		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
+			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
+			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
+			components = append(components, scraper)
+		} else {
+			log.Warn("VSOCK pull mode disabled (no REST config available)")
+		}
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -298,10 +310,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
-	}
-
-	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {

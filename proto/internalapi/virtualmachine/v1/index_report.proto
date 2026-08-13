@@ -51,6 +51,9 @@ enum DnfMetadataStatus {
 message IndexReport {
   string vsock_cid = 1;
   scanner.v4.IndexReport index_v4 = 2;
+  // Kubernetes VirtualMachine resource UID. Set by Sensor when the UID is
+  // already known.
+  string vm_id = 3;
 }
 
 // The index report event is sent to Central and contains additional information

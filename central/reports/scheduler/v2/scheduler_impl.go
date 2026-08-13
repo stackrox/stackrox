@@ -18,9 +18,11 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/sac"
@@ -79,8 +81,9 @@ type scheduler struct {
 	// NOTE: Lock only one mutex at a time. Do not lock another mutex when one is already held.
 	//      If you need to lock another mutex, you must free the locked one first.
 
-	cron            *cron.Cron
-	concurrencySema *semaphore.Weighted
+	cron                *cron.Cron
+	concurrencySema     *semaphore.Weighted
+	advisoryLockRelease func()
 }
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
@@ -124,18 +127,31 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 
 /* Concurrency and scheduling functions */
 
-// Start scheduler. A scheduler instance can only be started once. It cannot be re-started once stopped.
-// This func will log errors if the scheduler fails to start.
-func (s *scheduler) Start() {
+// Start acquires a PostgreSQL advisory lock and starts the scheduler.
+// If the lock is already held by another process, the scheduler is not started.
+// A scheduler instance can only be started once and cannot be re-started once stopped.
+func (s *scheduler) Start(db postgres.DB) {
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(scheduledCtx, db, dblock.ReportSchedulerLockID)
+	if err != nil {
+		log.Errorf("Report scheduler: failed to acquire advisory lock: %v", err)
+		return
+	}
+	if !acquired {
+		log.Info("Report scheduler: advisory lock held by another process, not starting")
+		return
+	}
 	if s.isStopped.Load() {
+		release()
 		log.Error("Scheduler already stopped. It cannot be re-started once stopped.")
 		return
 	}
 	swapped := s.isStarted.CompareAndSwap(false, true)
 	if !swapped {
+		release()
 		log.Error("Scheduler already running")
 		return
 	}
+	s.advisoryLockRelease = release
 	s.queuePendingReports()
 	s.recoverMissedSchedules()
 	s.queueScheduledReports()
@@ -157,6 +173,9 @@ func (s *scheduler) Stop() {
 	err := s.stopper.Client().Stopped().Wait()
 	if err != nil {
 		log.Errorf("Error stopping vulnerability report scheduler : %v", err)
+	}
+	if s.advisoryLockRelease != nil {
+		s.advisoryLockRelease()
 	}
 }
 

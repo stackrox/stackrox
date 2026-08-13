@@ -2,12 +2,14 @@ package v2
 
 import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	"github.com/stackrox/rox/central/globaldb"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -18,9 +20,11 @@ var (
 
 func initialize() {
 	scheduler := schedulerV2.Singleton()
-	// Start() also queues previously pending reports and scheduled reports, so running it in a separate routine to prevent
-	// blocking main routine
-	go scheduler.Start()
+	if !env.CentralWorkerEnabled.BooleanSetting() {
+		go scheduler.Start(globaldb.GetPostgres())
+	} else {
+		log.Info("Report scheduling is managed by central-worker, skipping start in Central")
+	}
 	collectionDatastore, _ := collectionDS.Singleton()
 	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton(), scheduler,
 		blobDS.Singleton(), validation.Singleton())

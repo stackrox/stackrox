@@ -3,8 +3,8 @@
 package tests
 
 import (
-	"context"
 	"testing"
+	"time"
 
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/tests/vmhelpers"
@@ -23,28 +23,17 @@ func (s *VMScanningSuite) TestScanPipeline() {
 
 		s.T().Run(vm.Name, func(t *testing.T) {
 			var first *v2.VirtualMachine
-			var metricsBefore pipelineMetricsSnapshot
-			metricsChecksEnabled := true
 			roxagentOK := false
 
-			// Capture the shared cumulative metrics before the two roxagent runs so
-			// the final pipeline assertion can check this VM's expected deltas.
-			if ok := t.Run("MetricsBaseline", func(t *testing.T) {
-				metricsBefore = s.mustScrapePipelineMetrics(s.ctx, t, vm.NodeName)
-			}); !ok {
-				t.Log("skipping PipelineMetrics: baseline metric scrape failed")
-				metricsChecksEnabled = false
-			}
-
-			t.Run("RunRoxagent", func(t *testing.T) {
-				t.Logf("running roxagent: sudo env ROXAGENT_REPO2CPE_URL=%s %s --verbose",
-					s.cfg.Repo2CPEURL, vmhelpers.DefaultRoxagentInstallPath)
-				err := s.ensureCanonicalScan(s.ctx, vm)
+			t.Run("EnsureRoxagentServing", func(t *testing.T) {
+				t.Logf("ensuring pull-mode agent: sudo %s serve --port 818 --host-path / --rescan-interval 5m --repo-cpe-url %s",
+					vmhelpers.DefaultRoxagentInstallPath, s.cfg.Repo2CPEURL)
+				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true
 			})
 			if !roxagentOK {
-				t.Log("skipping remaining subtests: roxagent invocation failed")
+				t.Log("skipping remaining subtests: roxagent serve failed to become ready")
 				return
 			}
 
@@ -84,43 +73,63 @@ func (s *VMScanningSuite) TestScanPipeline() {
 					"scan.operating_system should be populated via Sensor DiscoveredData")
 			})
 
-			beforeTime := s.mustGetScanTimestamp(first.GetId())
-			var rescan *v2.VirtualMachine
+			t.Run("ConsistencyCheck", func(t *testing.T) {
+				fetched := s.mustGetVM(first.GetId())
+				require.Equal(t, first.GetId(), fetched.GetId(),
+					"VM ID should remain stable after pull-mode scan")
+			})
 
-			t.Run("Rescan", func(t *testing.T) {
-				err := s.ensureCanonicalScan(s.ctx, vm)
+			// Regression test for ROX-36273: after a change to the RPM database (package removal), the agent should
+			// detect the change on a later periodic rescan without being restarted.
+			t.Run("Changes to RPM DB are detected by periodic rescan", func(t *testing.T) {
+				require.NotNil(t, first.GetScan().GetScanTime())
+				baselineScanTime := first.GetScan().GetScanTime().AsTime()
+				baselineCount := len(first.GetScan().GetComponents())
+				// bc is installed by stackrox/vm-images into every VM
+				// container-disk so this test has a known removable probe package.
+				removed := vmhelpers.VMImageProbePackage
+				require.Contains(t, scanComponentNames(first), removed,
+					"baseline scan must include %q from the VM image build", removed)
+
+				beforeInvocationID, err := vmhelpers.RoxagentServeInvocationID(s.ctx, virt, vm.Namespace, vm.Name)
 				require.NoError(t, err)
 
-				waitCtx, cancel := context.WithTimeout(s.ctx, s.cfg.ScanTimeout)
-				defer cancel()
-				rescan, err = vmhelpers.WaitForScanTimestampAfter(
-					waitCtx, s.vmClient,
-					vmhelpers.WaitOptions{
-						Timeout:      s.cfg.ScanTimeout,
+				require.NoError(t, vmhelpers.RemoveGuestRPMPackage(s.ctx, virt, vm.Namespace, vm.Name, removed))
+				// Two Central scan_time advances past the baseline: the first
+				// post-removal agent cycle can still race the erase, and each
+				// agent cycle also needs a Sensor scrape (1m in VM e2e) before
+				// Central moves scan_time.
+				const minScanAdvances = 2
+				waitTimeout := max(s.cfg.ScanTimeout, 2*vmhelpers.E2ERescanInterval+2*vmhelpers.E2EScraperPollInterval+3*time.Minute)
+				t.Logf("removed package %q; waiting for %d scan_time advances (rescan=%s scraper=%s timeout=%s; baseline components=%d scan_time=%s)",
+					removed, minScanAdvances, vmhelpers.E2ERescanInterval, vmhelpers.E2EScraperPollInterval, waitTimeout,
+					baselineCount, baselineScanTime.UTC().Format(time.RFC3339))
+
+				updated, err := vmhelpers.WaitForScanMissingComponent(
+					s.ctx, s.vmClient, vmhelpers.WaitOptions{
+						Timeout:      waitTimeout,
 						PollInterval: s.cfg.ScanPollInterval,
 						Logf:         s.logf,
-					},
-					vm.ID, beforeTime.AsTime(),
-				)
-				require.NoError(t, err, "rescan should produce a newer scan_time than %v", beforeTime.AsTime())
-			})
-			if rescan == nil {
-				t.Log("skipping remaining subtests: rescan did not produce a newer scan_time")
-				return
-			}
+					}, first.GetId(), removed, baselineScanTime, minScanAdvances)
+				require.NoError(t, err)
+				require.Equal(t, baselineCount-1, len(updated.GetScan().GetComponents()),
+					"exactly one component should disappear after removing %q", removed)
 
-			t.Run("PipelineMetrics", func(t *testing.T) {
-				if !metricsChecksEnabled {
-					t.Skip("metric prerequisite scrape failed earlier in this VM scenario")
-				}
-				s.assertPipelineMetrics(s.ctx, t, vm.NodeName, metricsBefore)
-			})
-
-			t.Run("ConsistencyCheck", func(t *testing.T) {
-				fetched := s.mustGetVM(rescan.GetId())
-				require.Equal(t, first.GetId(), fetched.GetId(),
-					"VM ID should remain stable across rescans")
+				require.NoError(t, vmhelpers.RoxagentServeDidNotRestart(
+					s.ctx, virt, vm.Namespace, vm.Name, beforeInvocationID),
+					"roxagent should not restart while waiting for the periodic rescan")
 			})
 		})
 	}
+}
+
+func scanComponentNames(vm *v2.VirtualMachine) []string {
+	comps := vm.GetScan().GetComponents()
+	names := make([]string, 0, len(comps))
+	for _, c := range comps {
+		if name := c.GetName(); name != "" {
+			names = append(names, name)
+		}
+	}
+	return names
 }

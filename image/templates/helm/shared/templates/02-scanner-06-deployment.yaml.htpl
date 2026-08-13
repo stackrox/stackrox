@@ -27,7 +27,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "scanner") | nindent 8 }}
@@ -189,7 +188,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: scanner-db
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "scanner-db") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "scanner-db") | nindent 8 }}
