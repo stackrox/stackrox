@@ -172,6 +172,27 @@ func createOpenshiftConnectorForACMAccessControlDelegation(config map[string]str
 	return openshiftConnector, nil
 }
 
+func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (callbackAndRefreshConnector, error) {
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
+	if err != nil {
+		return nil, err
+	}
+
+	dexCfg := dexconnector.Config{
+		Issuer:          openshiftAPIUrl,
+		ClientID:        config[ClientNameConfigKey],
+		ClientSecret:    config[ClientSecretConfigKey],
+		TrustedCertPool: certPool,
+	}
+
+	openshiftConnector, err := dexCfg.Open()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+	}
+
+	return openshiftConnector, nil
+}
+
 // There is no config but static settings instead.
 func (b *backend) Config() map[string]string {
 	if features.ACMAccessControlDelegation.Enabled() {
