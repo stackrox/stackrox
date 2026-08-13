@@ -151,6 +151,9 @@ var (
 
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
 	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+
+	// OPPAccessControl enables AuthProviders with role lookup delegation to ACM / OPP access control information.
+	OPPAccessControl = registerFeature("Enable ACS access control information lookup from OPP", "ROX_OPP_ACCESS_CONTROL")
 )
 
 // The following feature flags are related to Scanner V4.
