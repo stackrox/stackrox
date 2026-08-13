@@ -23,13 +23,13 @@ import {
     updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
