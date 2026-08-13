@@ -27,14 +27,10 @@ var fileActivityDirs = []string{
 
 func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 	defer w.wg.Done()
-	if w.workload.FileActivityWorkload.ActivityInterval == 0 {
-		return
-	}
+	w.sanitizeFileActivityParams()
 
 	ticker := time.NewTicker(w.workload.FileActivityWorkload.ActivityInterval)
 	defer ticker.Stop()
-
-	w.sanitizeFileActivityParams()
 	paths := generateFileActivityPaths(w.workload.FileActivityWorkload.NumPaths)
 
 	var nodeNames []string
@@ -182,10 +178,15 @@ func (w *WorkloadManager) sanitizeFileActivityParams() {
 		log.Infof("FileActivityWorkload: batchSize=%d is invalid, defaulting to %d", fa.BatchSize, defaultBatchSize)
 		fa.BatchSize = defaultBatchSize
 	}
-	if fa.NodeEventPercent < 0 {
+	if fa.NodeEventPercent < 0 || fa.NodeEventPercent > 100 {
 		defaultNodeEventPercent := 50
 		log.Infof("FileActivityWorkload: nodeEventPercent=%d is invalid, defaulting to %d", fa.NodeEventPercent, defaultNodeEventPercent)
 		fa.NodeEventPercent = defaultNodeEventPercent
+	}
+	if fa.ActivityInterval <= 0 {
+		defaultActivityInterval := 50 * time.Millisecond
+		log.Infof("FileActivityWorkload: activityInterval=%s is invalid, defaulting to %s", fa.ActivityInterval, defaultActivityInterval)
+		fa.ActivityInterval = defaultActivityInterval
 	}
 }
 
