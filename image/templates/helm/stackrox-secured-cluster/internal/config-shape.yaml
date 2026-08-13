@@ -212,6 +212,10 @@ system:
   enablePodSecurityPolicies: null # bool
 virtualMachines:
   enabled: null # bool
+  scraper:
+    concurrency: null          # int
+    maxResponseSizeKB: null    # int
+    pollInterval: null         # string (duration)
 crs:
   file: null # string
 consolePlugin:

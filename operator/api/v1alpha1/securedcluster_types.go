@@ -115,6 +115,10 @@ type SecuredClusterSpec struct {
 	// Per-namespace filtering configuration for process indicators.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=ProcessIndicators,order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ProcessIndicators *ProcessIndicatorsSpec `json:"processIndicators,omitempty"`
+
+	// Settings for virtual machine scanning (VSOCK RBAC and scraper).
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=18,displayName="Virtual Machines Settings"
+	VirtualMachines *VirtualMachinesSpec `json:"virtualMachines,omitempty"`
 }
 
 // ProcessBaselinesAutoLockMode is a type for values of spec.processBaselineAutoLockMode.
@@ -539,6 +543,56 @@ const (
 // Pointer returns the given config value as a pointer, needed in k8s resource structs.
 func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 	return &v
+}
+
+// VirtualMachinesSpec configures VM scanning and VSOCK RBAC.
+type VirtualMachinesSpec struct {
+	// Whether virtual machine scanning and VSOCK RBAC are enabled.
+	// The default is: Disabled.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled","urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	Mode *VirtualMachinesMode `json:"mode,omitempty"`
+
+	// Settings for the virtual machine scraper running in Sensor.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	Scraper *VirtualMachinesScraperSpec `json:"scraper,omitempty"`
+}
+
+// VirtualMachinesMode is the type for spec.virtualMachines.mode.
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type VirtualMachinesMode string
+
+const (
+	VirtualMachinesModeEnabled  VirtualMachinesMode = "Enabled"
+	VirtualMachinesModeDisabled VirtualMachinesMode = "Disabled"
+)
+
+// Pointer returns the given mode value as a pointer, needed in k8s resource structs.
+func (v VirtualMachinesMode) Pointer() *VirtualMachinesMode {
+	return &v
+}
+
+// VirtualMachinesScraperSpec tunes the virtual machine scraper.
+type VirtualMachinesScraperSpec struct {
+	// Maximum number of virtual machines scraped concurrently in each poll cycle.
+	// The default is: 20.
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	Concurrency *int32 `json:"concurrency,omitempty"`
+
+	// Maximum response size in KB from a virtual machine agent.
+	// Responses larger than this are rejected and that virtual machine is skipped until the next poll.
+	// The default is: 16384.
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	MaxResponseSizeKB *int32 `json:"maxResponseSizeKB,omitempty"`
+
+	// How often the scraper polls virtual machines for new reports.
+	// Minimum interval is 1m; shorter values are rounded up.
+	// Shorter intervals refresh scans more often but increase the load on kubevirt API server.
+	// The default is: 5m.
+	//+kubebuilder:validation:Pattern=`^[0-9]+(m|h)$`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	PollInterval *string `json:"pollInterval,omitempty"`
 }
 
 // -------------------------------------------------------------

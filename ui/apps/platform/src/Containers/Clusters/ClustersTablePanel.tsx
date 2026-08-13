@@ -18,14 +18,19 @@ import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import {
+    getSearchFilterConfigWithFeatureFlagDependency,
+    updateSearchFilter,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
     CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -69,6 +74,7 @@ export type ClustersTablePanelProps = {
 function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -79,6 +85,11 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isSensorCompatibilityStatusEnabled = isFeatureFlagEnabled(
+        'ROX_SENSOR_COMPATIBILITY_STATUS'
+    );
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -94,6 +105,16 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const metadata = useMetadata();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
+
+    const filteredSearchFilterConfig = useMemo(
+        () =>
+            getSearchFilterConfigWithFeatureFlagDependency(
+                isFeatureFlagEnabled,
+                searchFilterConfig
+            ),
+
+        [isFeatureFlagEnabled]
+    );
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
@@ -378,7 +399,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
-                            config={searchFilterConfig}
+                            config={filteredSearchFilterConfig}
                             defaultEntity="Cluster"
                             searchFilter={searchFilter}
                             onSearch={(payload) =>
@@ -386,24 +407,27 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             }
                         />
                         <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
-                            {hasWriteAccessForAdministration && (
-                                <ToolbarItem className="pf-v6-u-align-self-center">
-                                    <AutoUpgradeToggle />
-                                </ToolbarItem>
-                            )}
-                            {hasWriteAccessForAdministration && (
-                                <ToolbarItem>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={upgradeSelectedClusters}
-                                        isDisabled={
-                                            upgradableClusters.length === 0 || !!selectedClusterId
-                                        }
-                                    >
-                                        {`Upgrade (${upgradableClusters.length})`}
-                                    </Button>
-                                </ToolbarItem>
-                            )}
+                            {!isSensorCompatibilityStatusEnabled &&
+                                hasWriteAccessForAdministration && (
+                                    <ToolbarItem className="pf-v6-u-align-self-center">
+                                        <AutoUpgradeToggle />
+                                    </ToolbarItem>
+                                )}
+                            {!isSensorCompatibilityStatusEnabled &&
+                                hasWriteAccessForAdministration && (
+                                    <ToolbarItem>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={upgradeSelectedClusters}
+                                            isDisabled={
+                                                upgradableClusters.length === 0 ||
+                                                !!selectedClusterId
+                                            }
+                                        >
+                                            {`Upgrade (${upgradableClusters.length})`}
+                                        </Button>
+                                    </ToolbarItem>
+                                )}
                             {hasWriteAccessForCluster && (
                                 <ToolbarItem>
                                     <Button
@@ -421,7 +445,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         <ToolbarGroup className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
-                                config={searchFilterConfig}
+                                config={filteredSearchFilterConfig}
                                 onFilterChange={setSearchFilter}
                                 searchFilter={searchFilter}
                             />

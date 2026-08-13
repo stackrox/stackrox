@@ -47,6 +47,7 @@ import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.PreferredSchedulingTerm
 import io.fabric8.kubernetes.api.model.Probe
+import io.fabric8.kubernetes.api.model.TCPSocketAction
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
@@ -2411,7 +2412,14 @@ class Kubernetes {
             )
             container.setLivenessProbe(livenessProbe)
         }
-        if (deployment.readinessProbeDefined) {
+        if (deployment.readinessProbeTcpPort != null) {
+            Probe readinessProbe = new Probe(
+                    tcpSocket: new TCPSocketAction(port: new IntOrString(deployment.readinessProbeTcpPort)),
+                    initialDelaySeconds: 30,
+                    periodSeconds: 10,
+            )
+            container.setReadinessProbe(readinessProbe)
+        } else if (deployment.readinessProbeDefined) {
             Probe readinessProbe = new Probe(
                     exec: new ExecAction(command: ["touch", "/tmp/ready"]),
                     periodSeconds: 5,

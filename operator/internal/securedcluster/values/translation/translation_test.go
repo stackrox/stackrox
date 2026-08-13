@@ -1075,6 +1075,153 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
+		"virtual machines enabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Mode: platform.VirtualMachinesModeEnabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"enabled": true,
+				},
+			},
+		},
+		"virtual machines disabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Mode: platform.VirtualMachinesModeDisabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"enabled": false,
+				},
+			},
+		},
+		// Unreachable in production: static.go's defaulting flow always fills in
+		// Mode: Disabled before translate() runs. Kept to pin translate()'s own
+		// nil-handling in isolation.
+		"virtual machines unset": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+		"virtual machines with scraper config": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Mode: platform.VirtualMachinesModeEnabled.Pointer(),
+							Scraper: &platform.VirtualMachinesScraperSpec{
+								Concurrency:       new(int32(5)),
+								MaxResponseSizeKB: new(int32(1024)),
+								PollInterval:      new("1m"),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"enabled": true,
+					"scraper": map[string]interface{}{
+						"concurrency":       int32(5),
+						"maxResponseSizeKB": int32(1024),
+						"pollInterval":      "1m",
+					},
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {
