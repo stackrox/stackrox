@@ -119,11 +119,11 @@ tests:
           listenOnEvents: false
           namespaceSelector:
             matchExpressions:
-            - key: namespace.metadata.stackrox.io/name
+            - key: kubernetes.io/metadata.name
               operator: NotIn
               values:
                 - default
-            - key: namespace.metadata.stackrox.io/name
+            - key: kubernetes.io/metadata.name
               operator: NotIn
               values:
                 - stackrox2
