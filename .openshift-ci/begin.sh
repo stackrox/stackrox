@@ -35,6 +35,11 @@ if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     if [[ "${JOB_NAME:-}" =~ vm-scanning ]]; then
         # Selecting nodes with KVM support
         set_ci_shared_export WORKER_NODE_TYPE n2-standard-8
+    elif [[ "${JOB_NAME:-}" =~ qa-e2e ]]; then
+        # Larger nodes for qa-e2e: Scanner V4 adds 3 pods (matcher, indexer, db)
+        # that cause memory pressure on e2-standard-8 (32GB) nodes during
+        # vulnerability bundle loading.
+        set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
     else
         set_ci_shared_export WORKER_NODE_TYPE e2-standard-8
     fi
