@@ -1,6 +1,7 @@
 import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
 import type { SensorVersionCompatibility } from 'types/cluster.proto';
+import { getVersionMajorMinor } from 'utils/versioning';
 import { getSensorCompatibilityInfo } from '../cluster.helpers';
 
 export type CompatibilityZone = {
@@ -25,11 +26,6 @@ const compatibilityRangeColor = {
     matched: 'var(--pf-t--global--color--status--success--default)',
     marker: 'var(--pf-t--global--text--color--regular)',
 };
-
-function parseSensorVersionXY(version: string): string | null {
-    const match = version.match(/^(\d+\.\d+)/);
-    return match ? match[1] : null;
-}
 
 function getExpectedDirection(
     compatibility: SensorVersionCompatibility | undefined
@@ -68,7 +64,7 @@ function computeMarkerPercent(
     const toPercent = (position: number) => (position / totalUnits) * 100;
 
     // Offset: +1 for the left incompatible zone, +0.5 to center within the unit
-    const sensorXY = parseSensorVersionXY(sensorVersion);
+    const sensorXY = getVersionMajorMinor(sensorVersion);
     if (sensorXY) {
         const sensorIndex = compatibleVersions.indexOf(sensorXY);
         if (sensorIndex !== -1) {
@@ -156,7 +152,7 @@ export function computeVersionRangeData(
         return null;
     }
 
-    const centralXY = parseSensorVersionXY(centralVersion);
+    const centralXY = getVersionMajorMinor(centralVersion);
     if (!centralXY) {
         return null;
     }
