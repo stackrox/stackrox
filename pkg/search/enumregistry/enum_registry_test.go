@@ -231,9 +231,10 @@ func TestAddValuesRoundTrip(t *testing.T) {
 				assert.Equal(t, expected.result, actual, "Get(%q, %q) should match", tc.path, expected.query)
 			}
 
-			// Note: Lookup will NOT match because snapshot loses original case
-			// This is expected - AddValues needs original case in its input
-			// For true round-trip, we'd need to preserve original case somewhere
+			for _, expected := range expectedLookupResults {
+				actual := Lookup(tc.path, expected.value)
+				assert.Equal(t, expected.result, actual, "Lookup(%q, %d) should match", tc.path, expected.value)
+			}
 		})
 	}
 }

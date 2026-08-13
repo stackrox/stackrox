@@ -18,7 +18,6 @@ import (
 // the output of walker.Walk. This ensures static schemas will match reflection-based ones.
 func TestGeneratedSchemasMatchWalker(t *testing.T) {
 	for tableName, rt := range registeredTables {
-		rt := rt
 		t.Run(tableName, func(t *testing.T) {
 			// Skip schemas without a valid proto Type
 			if rt.Schema.Type == "" {
@@ -49,7 +48,6 @@ func TestGeneratedSchemasMatchWalker(t *testing.T) {
 // the output of search.Walk. This ensures static search options will match reflection-based ones.
 func TestGeneratedSearchOptionsMatch(t *testing.T) {
 	for tableName, rt := range registeredTables {
-		rt := rt
 		t.Run(tableName, func(t *testing.T) {
 			// Skip schemas without an OptionsMap
 			if rt.Schema.OptionsMap == nil {
