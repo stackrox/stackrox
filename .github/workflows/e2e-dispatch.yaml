@@ -194,7 +194,7 @@ jobs:
   wait-for-konflux-images:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.image-references.outputs.tag }}
       tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
