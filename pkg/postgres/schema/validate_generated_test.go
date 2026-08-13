@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package schema
 
 import (
@@ -10,16 +8,23 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestGeneratedSchemasMatchWalker validates that registered schemas match
-// the output of walker.Walk. This ensures static schemas will match reflection-based ones.
+var manuallyMaintainedTables = map[string]bool{
+	"network_flows_v2":              true,
+	"background_migration_versions": true,
+}
+
 func TestGeneratedSchemasMatchWalker(t *testing.T) {
 	for tableName, rt := range registeredTables {
 		t.Run(tableName, func(t *testing.T) {
-			// Skip schemas without a valid proto Type
+			if manuallyMaintainedTables[tableName] {
+				t.Skip("manually maintained schema")
+				return
+			}
 			if rt.Schema.Type == "" {
 				t.Skip("schema has no Type field")
 				return
@@ -35,10 +40,12 @@ func TestGeneratedSchemasMatchWalker(t *testing.T) {
 				return
 			}
 
-			// Generate ground truth schema using walker.Walk
-			groundTruth := walker.Walk(protoType, tableName)
+			var opts []walker.WalkOption
+			if rt.Schema.NoSerialized {
+				opts = append(opts, walker.WithNoSerialized())
+			}
+			groundTruth := walker.Walk(protoType, tableName, opts...)
 
-			// Compare the schemas
 			compareSchemas(t, tableName, rt.Schema, groundTruth)
 		})
 	}
@@ -49,7 +56,10 @@ func TestGeneratedSchemasMatchWalker(t *testing.T) {
 func TestGeneratedSearchOptionsMatch(t *testing.T) {
 	for tableName, rt := range registeredTables {
 		t.Run(tableName, func(t *testing.T) {
-			// Skip schemas without an OptionsMap
+			if manuallyMaintainedTables[tableName] {
+				t.Skip("manually maintained schema")
+				return
+			}
 			if rt.Schema.OptionsMap == nil {
 				t.Skip("schema has no OptionsMap")
 				return
@@ -85,6 +95,60 @@ func TestGeneratedSearchOptionsMatch(t *testing.T) {
 
 			// Compare the OptionsMaps
 			compareOptionsMaps(t, tableName, rt.Schema.OptionsMap, groundTruth)
+		})
+	}
+}
+
+// TestGeneratedEnumRegistryMatch validates that static AddValues calls in generated
+// schema files produce the same enum registry entries as search.Walk would.
+func TestGeneratedEnumRegistryMatch(t *testing.T) {
+	for tableName, rt := range registeredTables {
+		t.Run(tableName, func(t *testing.T) {
+			if manuallyMaintainedTables[tableName] {
+				t.Skip("manually maintained schema")
+				return
+			}
+			if rt.Schema.OptionsMap == nil {
+				t.Skip("schema has no OptionsMap")
+				return
+			}
+			if rt.Schema.Type == "" {
+				t.Skip("schema has no Type field")
+				return
+			}
+
+			typeName := strings.TrimPrefix(rt.Schema.Type, "*")
+			protoType := protoutils.MessageType(typeName)
+			if protoType == nil {
+				t.Skipf("cannot resolve proto type %q", typeName)
+				return
+			}
+
+			before := enumregistry.Snapshot()
+
+			protoInstance := reflect.New(protoType.Elem()).Interface()
+			parts := strings.Split(typeName, ".")
+			prefix := strings.ToLower(parts[len(parts)-1])
+			category := rt.Schema.OptionsMap.PrimaryCategory()
+			search.Walk(category, prefix, protoInstance)
+
+			after := enumregistry.Snapshot()
+
+			for path, afterValues := range after {
+				beforeValues, existed := before[path]
+				if !existed {
+					t.Errorf("enum path %q was added by search.Walk but not by static AddValues", path)
+					continue
+				}
+				for name, num := range afterValues {
+					beforeNum, ok := beforeValues[name]
+					if !ok {
+						t.Errorf("enum path %q: value %q=%d added by search.Walk but missing from static AddValues", path, name, num)
+						continue
+					}
+					assert.Equal(t, num, beforeNum, "enum path %q: value %q number mismatch", path, name)
+				}
+			}
 		})
 	}
 }
@@ -144,6 +208,8 @@ func compareFields(t *testing.T, schemaPath string, registered, groundTruth *wal
 	assert.Equal(t, groundTruth.Options.Unique, registered.Options.Unique, "%s: Options.Unique mismatch", fieldPath)
 	assert.Equal(t, groundTruth.Options.Ignored, registered.Options.Ignored, "%s: Options.Ignored mismatch", fieldPath)
 	assert.Equal(t, groundTruth.Options.ColumnType, registered.Options.ColumnType, "%s: Options.ColumnType mismatch", fieldPath)
+	assert.Equal(t, groundTruth.Options.RepeatedStrategy, registered.Options.RepeatedStrategy, "%s: Options.RepeatedStrategy mismatch", fieldPath)
+	assert.Equal(t, groundTruth.Derived, registered.Derived, "%s: Derived mismatch", fieldPath)
 
 	// Compare DerivedSearchFields (order-insensitive)
 	if len(groundTruth.DerivedSearchFields) > 0 || len(registered.DerivedSearchFields) > 0 {
