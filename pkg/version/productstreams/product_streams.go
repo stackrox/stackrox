@@ -111,15 +111,6 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	return result, nil
 }
 
-func findBumpFrom(major int) (parsedBump, bool) {
-	for _, b := range parsedBumps {
-		if b.From.X == major {
-			return b, true
-		}
-	}
-	return parsedBump{}, false
-}
-
 // OverrideBumpsForTesting replaces the parsed bump data with the given YAML
 // for the duration of the test, restoring the original data on cleanup.
 func OverrideBumpsForTesting(t interface {
@@ -173,17 +164,19 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 // If minor == 0, it crosses back via the bump history.
 // Otherwise, the previous Y-stream is simply major.(minor-1).
 func GetPreviousYStream(v XYVersion) (XYVersion, error) {
-	b, ok := findBumpFrom(v.X)
-	if ok && v.Y > b.From.Y {
-		return b.From, nil
-	}
-	if v.Y > 0 {
-		return XYVersion{X: v.X, Y: v.Y - 1}, nil
-	}
 	for _, b := range parsedBumps {
-		if b.To.X == v.X {
+		// Phantom version: snap back to the bump point (e.g. 4.14 → 4.11).
+		if b.From.X == v.X && v.Y > b.From.Y {
 			return b.From, nil
 		}
+		// Major boundary: cross back via bump history (e.g. 5.0 → 4.11).
+		if b.To.X == v.X && v.Y == 0 {
+			return b.From, nil
+		}
+	}
+	// Normal decrement (e.g. 4.10 → 4.9).
+	if v.Y > 0 {
+		return XYVersion{X: v.X, Y: v.Y - 1}, nil
 	}
 	return XYVersion{}, fmt.Errorf("don't know the previous Y-Stream for %s", v)
 }

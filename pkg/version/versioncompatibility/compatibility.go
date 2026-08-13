@@ -10,48 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/version/productstreams"
 )
 
-var (
-	once            sync.Once
-	selfXY          productstreams.XYVersion
-	compatibleRange []productstreams.XYVersion
-	initErr         error
-)
-
-func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
-	once.Do(func() {
-		utils.Should(computeCompatibleRange())
-	})
-	return selfXY, compatibleRange, initErr
-}
-
-// OverrideForTesting recomputes the singleton using the current main version.
-// Call after testutils.SetMainVersion.
-func OverrideForTesting(t interface{ Cleanup(func()) }) {
-	old := struct {
-		selfXY          productstreams.XYVersion
-		compatibleRange []productstreams.XYVersion
-		initErr         error
-	}{selfXY, compatibleRange, initErr}
-	initErr = computeCompatibleRange()
-	t.Cleanup(func() {
-		selfXY = old.selfXY
-		compatibleRange = old.compatibleRange
-		initErr = old.initErr
-	})
-}
-
-func computeCompatibleRange() error {
-	selfXY, initErr = productstreams.ParseXYFromVersionString(version.GetMainVersion())
-	if initErr != nil {
-		return errors.Wrapf(initErr, "failed to parse version %q", version.GetMainVersion())
-	}
-	compatibleRange, initErr = makeCompatibleVersionRange(selfXY, DefaultSkew)
-	return initErr
-}
-
-// DefaultSkew is the number of minor version steps for the supported
-// version compatibility range (N +/- DefaultSkew).
-const DefaultSkew = 3
+// AllowedSkew is the number of minor version steps for the supported
+// version compatibility range (N +/- AllowedSkew).
+const AllowedSkew = 3
 
 // Compatibility represents the version compatibility classification between
 // two components (e.g., Central and Sensor, or roxctl and Central).
@@ -86,6 +47,46 @@ func (c Compatibility) String() string {
 	}
 }
 
+var (
+	once            sync.Once
+	mainXY          productstreams.XYVersion
+	compatibleRange []productstreams.XYVersion
+	initErr         error
+)
+
+func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
+	once.Do(func() {
+		mainXY, compatibleRange, initErr = computeCompatibleRange()
+		utils.Should(initErr)
+	})
+	return mainXY, compatibleRange, initErr
+}
+
+// OverrideForTesting recomputes the singleton using the current main version.
+// Call after testutils.SetMainVersion.
+func OverrideForTesting(t interface{ Cleanup(func()) }) {
+	old := struct {
+		mainXY          productstreams.XYVersion
+		compatibleRange []productstreams.XYVersion
+		initErr         error
+	}{mainXY, compatibleRange, initErr}
+	mainXY, compatibleRange, initErr = computeCompatibleRange()
+	t.Cleanup(func() {
+		mainXY = old.mainXY
+		compatibleRange = old.compatibleRange
+		initErr = old.initErr
+	})
+}
+
+func computeCompatibleRange() (productstreams.XYVersion, []productstreams.XYVersion, error) {
+	xy, err := productstreams.ParseXYFromVersionString(version.GetMainVersion())
+	if err != nil {
+		return productstreams.XYVersion{}, nil, errors.Wrapf(err, "parsing version %q", version.GetMainVersion())
+	}
+	versions, err := makeCompatibleVersionRange(xy, AllowedSkew)
+	return xy, versions, err
+}
+
 // CompatibleVersions returns the cached compatible version range for the
 // running binary's version, computed once on first call.
 func CompatibleVersions() ([]productstreams.XYVersion, error) {
@@ -101,6 +102,29 @@ func ClassifyVersion(remote productstreams.XYVersion) (Compatibility, error) {
 		return Unknown, err
 	}
 	return classify(self, versions, remote), nil
+}
+
+func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {
+	cmp := self.Compare(remote)
+	if cmp == 0 {
+		return Matched
+	}
+	// Remote is compatible if it falls within the bounds of the compatible
+	// range. This naturally handles phantom versions (e.g. 4.12 between
+	// 4.11 and 5.0) without explicit gap-checking.
+	if cmp > 0 {
+		if remote.Compare(versions[0]) >= 0 {
+			return CompatibleBehind
+		}
+		return IncompatibleBehind
+	}
+	if cmp < 0 {
+		if remote.Compare(versions[len(versions)-1]) <= 0 {
+			return CompatibleAhead
+		}
+		return IncompatibleAhead
+	}
+	return Matched
 }
 
 // makeCompatibleVersionRange computes the range of X.Y versions compatible
@@ -139,24 +163,4 @@ func makeCompatibleVersionRange(self productstreams.XYVersion, n int) ([]product
 	result = append(result, self)
 	result = append(result, forward...)
 	return result, nil
-}
-
-func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {
-	cmp := self.Compare(remote)
-	if cmp == 0 {
-		return Matched
-	}
-	// Remote is compatible if it falls within the bounds of the compatible
-	// range. This naturally handles phantom versions (e.g. 4.12 between
-	// 4.11 and 5.0) without explicit gap-checking.
-	if cmp > 0 {
-		if remote.Compare(versions[0]) >= 0 {
-			return CompatibleBehind
-		}
-		return IncompatibleBehind
-	}
-	if remote.Compare(versions[len(versions)-1]) <= 0 {
-		return CompatibleAhead
-	}
-	return IncompatibleAhead
 }
