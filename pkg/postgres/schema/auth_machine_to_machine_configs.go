@@ -4,9 +4,7 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,7 +28,32 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AuthMachineToMachineConfig)(nil)), "auth_machine_to_machine_configs")
+		schema = &walker.Schema{
+			Table:    "auth_machine_to_machine_configs",
+			Type:     "*storage.AuthMachineToMachineConfig",
+			TypeName: "AuthMachineToMachineConfig",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "auth_machine_to_machine_configs_mappings",
+			Type:         "*storage.AuthMachineToMachineConfig_Mapping",
+			TypeName:     "AuthMachineToMachineConfig_Mapping",
+			ObjectGetter: "GetMappings()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "authMachineToMachineConfigID", ProtoBufName: "", ColumnName: "auth_machine_to_machine_configs_Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("authMachineToMachineConfigID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "Role", ProtoBufName: "role", ColumnName: "Role", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetRole()", false)},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("Role", "name", false, true, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Issuer", ProtoBufName: "issuer", ColumnName: "Issuer", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetIssuer()", false), Options: walker.PostgresOptions{Unique: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Role": RolesSchema,
 		}

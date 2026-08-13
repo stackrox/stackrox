@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -28,8 +28,35 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.AdministrationEvent)(nil)), "administration_events")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_ADMINISTRATION_EVENTS, "administrationevent", (*storage.AdministrationEvent)(nil)))
+		schema = &walker.Schema{
+			Table:    "administration_events",
+			Type:     "*storage.AdministrationEvent",
+			TypeName: "AdministrationEvent",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Type", Type: "storage.AdministrationEventType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.AdministrationEventType", ObjectGetter: walker.MakeObjectGetter("GetType()", false), Search: walker.SearchField{FieldName: "Event Type", Enabled: true}},
+			{Schema: schema, Name: "Level", ProtoBufName: "level", ColumnName: "Level", Type: "storage.AdministrationEventLevel", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.AdministrationEventLevel", ObjectGetter: walker.MakeObjectGetter("GetLevel()", false), Search: walker.SearchField{FieldName: "Event Level", Enabled: true}},
+			{Schema: schema, Name: "Domain", ProtoBufName: "domain", ColumnName: "Domain", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetDomain()", false), Search: walker.SearchField{FieldName: "Event Domain", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Resource_Type", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetResource().GetType()", false), Search: walker.SearchField{FieldName: "Resource Type", Enabled: true}},
+			{Schema: schema, Name: "NumOccurrences", ProtoBufName: "num_occurrences", ColumnName: "NumOccurrences", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetNumOccurrences()", false), Search: walker.SearchField{FieldName: "Event Occurrence", Enabled: true}},
+			{Schema: schema, Name: "LastOccurredAt", ProtoBufName: "last_occurred_at", ColumnName: "LastOccurredAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastOccurredAt()", false), Search: walker.SearchField{FieldName: "Last Updated", Enabled: true}},
+			{Schema: schema, Name: "CreatedAt", ProtoBufName: "created_at", ColumnName: "CreatedAt", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetCreatedAt()", false), Search: walker.SearchField{FieldName: "Created Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_EVENTS, map[search.FieldLabel]*search.Field{
+			"Created Time":     {FieldPath: "administrationevent.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Event Domain":     {FieldPath: "administrationevent.domain", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Event Level":      {FieldPath: "administrationevent.level", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Event Occurrence": {FieldPath: "administrationevent.num_occurrences", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Event Type":       {FieldPath: "administrationevent.type", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Last Updated":     {FieldPath: "administrationevent.last_occurred_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+			"Resource Type":    {FieldPath: "administrationevent.resource.type", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
+		}))
+		enumregistry.AddValues("administrationevent.level", map[string]int32{"ADMINISTRATION_EVENT_LEVEL_ERROR": 4, "ADMINISTRATION_EVENT_LEVEL_INFO": 1, "ADMINISTRATION_EVENT_LEVEL_SUCCESS": 2, "ADMINISTRATION_EVENT_LEVEL_UNKNOWN": 0, "ADMINISTRATION_EVENT_LEVEL_WARNING": 3})
+		enumregistry.AddValues("administrationevent.type", map[string]int32{"ADMINISTRATION_EVENT_TYPE_GENERIC": 1, "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE": 2, "ADMINISTRATION_EVENT_TYPE_UNKNOWN": 0})
+
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)

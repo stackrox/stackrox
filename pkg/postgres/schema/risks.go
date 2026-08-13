@@ -3,14 +3,13 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -30,8 +29,28 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.Risk)(nil)), "risks")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_RISKS, "risk", (*storage.Risk)(nil)))
+		schema = &walker.Schema{
+			Table:    "risks",
+			Type:     "*storage.Risk",
+			TypeName: "Risk",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Namespace", ProtoBufName: "namespace", ColumnName: "Subject_Namespace", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSubject().GetNamespace()", false), Search: walker.SearchField{FieldName: "Namespace", Enabled: true}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "Subject_ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetSubject().GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "Type", ProtoBufName: "type", ColumnName: "Subject_Type", Type: "storage.RiskSubjectType", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.RiskSubjectType", ObjectGetter: walker.MakeObjectGetter("GetSubject().GetType()", false), Search: walker.SearchField{FieldName: "Risk Subject Type", Enabled: true}},
+			{Schema: schema, Name: "Score", ProtoBufName: "score", ColumnName: "Score", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetScore()", false), Search: walker.SearchField{FieldName: "Risk Score", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_RISKS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":        {FieldPath: "risk.subject.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_RISKS},
+			"Namespace":         {FieldPath: "risk.subject.namespace", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_RISKS},
+			"Risk Score":        {FieldPath: "risk.score", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_RISKS},
+			"Risk Subject Type": {FieldPath: "risk.subject.type", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_RISKS},
+		}))
+		enumregistry.AddValues("risk.subject.type", map[string]int32{"CLUSTER": 3, "DEPLOYMENT": 1, "IMAGE": 4, "IMAGE_COMPONENT": 6, "NAMESPACE": 2, "NODE": 7, "NODE_COMPONENT": 8, "SERVICEACCOUNT": 5, "UNKNOWN": 0})
+
 		schema.ScopingResource = resources.DeploymentExtension
 		RegisterTable(schema, CreateTableRisksStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, schema)

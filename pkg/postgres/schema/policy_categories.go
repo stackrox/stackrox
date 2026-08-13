@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,20 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategory)(nil)), "policy_categories")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_POLICY_CATEGORIES, "policycategory", (*storage.PolicyCategory)(nil)))
+		schema = &walker.Schema{
+			Table:    "policy_categories",
+			Type:     "*storage.PolicyCategory",
+			TypeName: "PolicyCategory",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Policy Category", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_POLICY_CATEGORIES, map[search.FieldLabel]*search.Field{
+			"Policy Category": {FieldPath: "policycategory.name", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_POLICY_CATEGORIES},
+		}))
 		schema.ScopingResource = resources.WorkflowAdministration
 		RegisterTable(schema, CreateTablePolicyCategoriesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORIES, schema)
