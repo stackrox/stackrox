@@ -24,6 +24,11 @@ const (
 	roxTokenExpiration = 5 * time.Minute
 )
 
+const (
+	ClientNameConfigKey   = "client_name"
+	ClientSecretConfigKey = "client_secret"
+)
+
 // This is the location for CA files which shall be used for certificate validation within
 // openshift auth. In addition to the CA files here, the system's trusted root CAs will be used as well.
 // The path may or may not exist depending on cluster state & configuration.
@@ -92,6 +97,19 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (*backen
 	return b, nil
 }
 
+func newBackendWithOPPAccessControl(id string, callbackURLPath string, config map[string]string) (*backend, error) {
+	openshiftConnector, err := createOpenshiftConnectorForOPPAccessControl(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &backend{
+		id:                  id,
+		baseRedirectURLPath: callbackURLPath,
+		openshiftConnector:  openshiftConnector,
+	}, nil
+}
+
 func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 	settings, err := getOpenShiftSettings()
 	if err != nil {
@@ -103,6 +121,27 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 		ClientID:        settings.clientID,
 		ClientSecret:    settings.clientSecret,
 		TrustedCertPool: settings.trustedCertPool,
+	}
+
+	openshiftConnector, err := dexCfg.Open()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+	}
+
+	return openshiftConnector, nil
+}
+
+func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (callbackAndRefreshConnector, error) {
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
+	if err != nil {
+		return nil, err
+	}
+
+	dexCfg := dexconnector.Config{
+		Issuer:          openshiftAPIUrl,
+		ClientID:        config[ClientNameConfigKey],
+		ClientSecret:    config[ClientSecretConfigKey],
+		TrustedCertPool: certPool,
 	}
 
 	openshiftConnector, err := dexCfg.Open()
