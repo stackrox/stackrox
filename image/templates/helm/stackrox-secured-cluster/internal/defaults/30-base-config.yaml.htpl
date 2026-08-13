@@ -119,6 +119,10 @@ network:
 
 virtualMachines:
   enabled: false
+  scraper:
+    concurrency: 20
+    maxResponseSizeKB: 16384
+    pollInterval: "5m"
 
 enableOpenShiftMonitoring: false
 

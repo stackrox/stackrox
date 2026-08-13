@@ -77,7 +77,7 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
@@ -153,7 +153,7 @@ jobs:
       run: tests/e2e/run.sh /tmp/e2e-test-logs
 
     - name: Persist env vars for post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       run: |
         source tests/e2e/lib.sh
         wait_for_api
@@ -161,7 +161,7 @@ jobs:
         echo "ROX_ADMIN_PASSWORD=$(cat deploy/k8s/central-deploy/password)" >> "$GITHUB_ENV"
 
     - name: Run post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       shell: python
       env:
         ROX_USERNAME: admin

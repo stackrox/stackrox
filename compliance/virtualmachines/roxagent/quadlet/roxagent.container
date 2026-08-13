@@ -1,15 +1,12 @@
 [Unit]
 Description=StackRox VM Agent Container
-# Copy RPM database before starting (SQLite WAL requires writable access)
-Requires=roxagent-prep.service
-After=roxagent-prep.service
 
 [Container]
-# Replace with your StackRox main image tag
-Image=quay.io/stackrox-io/main:4.11.x-798-g8a5ad6ed58
+# TODO: Replace with your target StackRox main image tag before deploying.
+Image=quay.io/stackrox-io/main:latest
 # Pull when SHA is different (Default is "always")
 Pull=newer
-Exec=--host-path /host
+Exec=serve --host-path /host
 Network=host
 
 # Privileged for vsock access
@@ -18,8 +15,9 @@ Network=host
 SecurityLabelDisable=true
 PodmanArgs=--privileged --user root --entrypoint /stackrox/bin/roxagent --device /dev/vsock
 
-# Mount copied RPM database (writable for SQLite WAL) and host config files (read-only)
-Volume=/tmp/roxagent-rpm:/host/var/lib/rpm:rw
+# Live RPM DB (read-only): claircore spools to a temp file before opening SQLite,
+# so host WAL sidecars are never written. DNF history mounts stay read-only too.
+Volume=/var/lib/rpm:/host/var/lib/rpm:ro
 Volume=/etc/yum.repos.d:/host/etc/yum.repos.d:ro
 Volume=/etc/os-release:/host/etc/os-release:ro
 Volume=/etc/redhat-release:/host/etc/redhat-release:ro
@@ -30,13 +28,12 @@ Volume=/etc/distro.repos.d:/host/etc/distro.repos.d:ro
 # DNF cache and state for repo-to-package mapping
 Volume=/var/cache/dnf:/host/var/cache/dnf:ro
 Volume=/var/lib/dnf:/host/var/lib/dnf:ro
-# Single-instance lock shared between host and container roxagent runs
-Volume=/run/lock/roxagent:/run/lock/roxagent:rw
+# DNF 5 history (absent on DNF 4-only hosts; stripped by install.sh)
+Volume=/usr/lib/sysimage/libdnf5:/host/usr/lib/sysimage/libdnf5:ro
 
 [Service]
-Type=oneshot
-# First start can take longer on slow VMs
-TimeoutStartSec=600
+Restart=on-failure
+RestartSec=10s
 
 [Install]
-WantedBy=
+WantedBy=multi-user.target

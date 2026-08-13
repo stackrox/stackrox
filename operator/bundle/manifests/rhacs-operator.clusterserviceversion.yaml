@@ -1066,6 +1066,9 @@ spec:
             path: processIndicators
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:advanced
+          - description: Settings for virtual machine scanning (VSOCK RBAC and scraper).
+            displayName: Virtual Machines Settings
+            path: virtualMachines
           - description: |-
               Deprecated field. This field will be removed in a future release.
               Miscellaneous settings.
@@ -1604,6 +1607,35 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
+          - description: |-
+              Whether virtual machine scanning and VSOCK RBAC are enabled.
+              The default is: Disabled.
+            displayName: Mode
+            path: virtualMachines.mode
+            x-descriptors:
+              - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+              - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+          - description: Settings for the virtual machine scraper running in Sensor.
+            displayName: Scraper
+            path: virtualMachines.scraper
+          - description: |-
+              Maximum number of virtual machines scraped concurrently in each poll cycle.
+              The default is: 20.
+            displayName: Concurrency
+            path: virtualMachines.scraper.concurrency
+          - description: |-
+              Maximum response size in KB from a virtual machine agent.
+              Responses larger than this are rejected and that virtual machine is skipped until the next poll.
+              The default is: 16384.
+            displayName: Max Response Size KB
+            path: virtualMachines.scraper.maxResponseSizeKB
+          - description: |-
+              How often the scraper polls virtual machines for new reports.
+              Minimum interval is 1m; shorter values are rounded up.
+              Shorter intervals refresh scans more often but increase the load on kubevirt API server.
+              The default is: 5m.
+            displayName: Poll Interval
+            path: virtualMachines.scraper.pollInterval
         statusDescriptors:
           - description: The deployed version of the product.
             displayName: Product Version

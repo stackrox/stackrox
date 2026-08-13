@@ -63,7 +63,7 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
@@ -116,7 +116,7 @@ jobs:
         db_backup_and_restore_test /tmp/db-backup-restore-test
 
     - name: Run post-test
-      if: failure() || github.event_name == 'push'
+      if: always()
       shell: python
       run: |
         import sys
