@@ -320,6 +320,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
+		if cfg.workloadManager != nil {
+			cfg.workloadManager.SetFileActivityChannel(activityChan)
+		}
 	}
 
 	if vmService != nil {
