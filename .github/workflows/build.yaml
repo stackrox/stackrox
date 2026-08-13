@@ -498,7 +498,7 @@ jobs:
       - name: Build and push DB images in parallel with bake
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: docker/bake-action@5be5f02ff8819ecd3092ea6b2e6261c31774f2b4 # ratchet:docker/bake-action@v6
+        uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # ratchet:docker/bake-action@v7.3.0
         with:
           source: .
           files: .github/docker/images.hcl
