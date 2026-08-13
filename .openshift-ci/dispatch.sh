@@ -4,6 +4,13 @@
 # Imports secrets to env vars, gates the job based on context, changed files and PR labels and ultimately
 # hands off to the test/build script in *scripts/ci/jobs*.
 
+# BASH_ENV is set to /etc/initial-bash.env in the CI image for CircleCI
+# compatibility. In Prow the file doesn't exist and /etc may be read-only,
+# causing "Permission denied" on every bash invocation. Create it if missing.
+if [[ -n "${BASH_ENV:-}" && ! -f "${BASH_ENV}" ]]; then
+    touch "${BASH_ENV}" 2>/dev/null || { BASH_ENV="$(mktemp)"; export BASH_ENV; }
+fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 # shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
