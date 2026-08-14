@@ -218,6 +218,66 @@ func TestVMScraper_UrgentDuePileIsPacedByCatchUpBudget(t *testing.T) {
 	assert.Equal(t, int32(wantBudget), dialer.calls.Load(), "leftovers stay due for later ticks")
 }
 
+// TestVMScraper_StartBudgetUsesElapsedWhenTickOverruns covers a due pile
+// whose previous tick blocked longer than tickInterval: the next budget
+// must use that wall-clock gap, not the nominal 10s tick.
+func TestVMScraper_StartBudgetUsesElapsedWhenTickOverruns(t *testing.T) {
+	const numVMs = 100
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, clock := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	// Hour poll → catch-up 20m, so 10s vs 30s actually changes the integer budget.
+	s.interval = time.Hour
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			key := vm.Key()
+			s.vmState[key] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+				orderHash:     hashVMID(vm.ID, key),
+			}
+		}
+		s.lastReconcile = now
+	})
+	require.Len(t, s.dueKeys(), numVMs, "seed: every VM is never-scraped and already due")
+
+	catchUp := catchUpWindow(s.interval)
+	require.Equal(t, 20*time.Minute, catchUp)
+	first := startBudget(numVMs, s.tickInterval, catchUp)
+	require.Equal(t, 1, first, "ceil(100 × 10s / 20m) = 1 at the nominal tick")
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(first), dialer.calls.Load(), "first tick starts the nominal budget")
+	remaining := numVMs - first
+	assert.Len(t, s.dueKeys(), remaining,
+		"the started VM returns to cadence (interval+offset); leftovers stay due")
+
+	overrun := 3 * s.tickInterval
+	clock.Advance(overrun)
+	assert.Len(t, s.dueKeys(), remaining,
+		"30s is still inside the 1h cadence of the VM that already ran")
+
+	wantOverrun := startBudget(remaining, overrun, catchUp)
+	wantNominal := startBudget(remaining, s.tickInterval, catchUp)
+	require.Equal(t, 3, wantOverrun, "ceil(99 × 30s / 20m) = 3")
+	require.Equal(t, 1, wantNominal, "the same pile would stay at 1 if the budget ignored the gap")
+	require.Greater(t, wantOverrun, wantNominal)
+
+	dialer.calls.Store(0)
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(wantOverrun), dialer.calls.Load(),
+		"second tick must start 3, not 1, because the 30s Wait counts as the budget tick")
+	assert.Len(t, s.dueKeys(), remaining-wantOverrun, "the extra starts leave the due pile")
+}
+
 func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns", "old-a", 1),

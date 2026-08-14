@@ -80,6 +80,7 @@ type VMScraper struct {
 	// tickInterval is the scheduler step and the start-budget time base.
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
+	lastTickAt            time.Time
 	reconcileEvery        time.Duration
 	perVMTimeout          time.Duration
 	mandatoryRefreshAfter time.Duration
@@ -259,6 +260,12 @@ func (s *VMScraper) run() {
 // start a budgeted subset, and wait for those scrapes to finish.
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	tickStart := s.now()
+	var sinceLast time.Duration
+	if !s.lastTickAt.IsZero() {
+		sinceLast = tickStart.Sub(s.lastTickAt)
+	}
+	budgetTick := budgetTickDuration(s.tickInterval, sinceLast)
+	s.lastTickAt = tickStart
 	reconcile := forceReconcile
 	if !reconcile {
 		concurrency.WithLock(&s.mu, func() {
@@ -271,7 +278,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	metrics.PullDueVMs.Set(float64(len(due)))
-	toStart := s.selectStartsForTick(due)
+	toStart := s.selectStartsForTick(due, budgetTick)
 	metrics.PullStartsPerTick.Observe(float64(len(toStart)))
 	log.Debugf("VMScraper: tick: %d due, starting %d (concurrency=%d, reconcile=%v)",
 		len(due), len(toStart), s.concurrency, reconcile)
@@ -303,7 +310,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 // selectStartsForTick chooses which due VMs may start now so forwards do not
 // clump: never-scraped first, then at most the per-tick budget (concurrency
 // still caps overlap in the errgroup).
-func (s *VMScraper) selectStartsForTick(due []string) []string {
+func (s *VMScraper) selectStartsForTick(due []string, budgetTick time.Duration) []string {
 	if len(due) == 0 {
 		return nil
 	}
@@ -328,7 +335,7 @@ func (s *VMScraper) selectStartsForTick(due []string) []string {
 		}
 	})
 	budget := tickStartBudget(
-		nUrgent, len(cands), s.concurrency, s.tickInterval,
+		nUrgent, len(cands), s.concurrency, budgetTick,
 		catchUpWindow(s.interval), steadySpreadWidth(s.interval, s.spreadFraction),
 	)
 	return selectDueStarts(cands, budget)

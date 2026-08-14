@@ -42,6 +42,34 @@ func TestStartBudget(t *testing.T) {
 	}
 }
 
+func TestBudgetTickDuration(t *testing.T) {
+	t.Parallel()
+	tick := 10 * time.Second
+	cases := map[string]struct {
+		elapsed time.Duration
+		want    time.Duration
+	}{
+		"first tick (no elapsed) uses nominal": {
+			elapsed: 0, want: tick,
+		},
+		"on-time tick uses nominal": {
+			elapsed: tick, want: tick,
+		},
+		"early tick still uses nominal": {
+			elapsed: time.Second, want: tick,
+		},
+		"overrun uses elapsed": {
+			elapsed: 30 * time.Second, want: 30 * time.Second,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, budgetTickDuration(tick, tc.elapsed))
+		})
+	}
+}
+
 func TestTickStartBudget(t *testing.T) {
 	t.Parallel()
 

@@ -26,6 +26,13 @@ func tickStartBudget(nUrgent, nDue, concurrency int, tick, catchUpWindow, steady
 	return min(budget, concurrency)
 }
 
+// budgetTickDuration is the time base for this tick's start budget: the
+// nominal tick, or the wall-clock gap since the last tick if that was longer
+// (a scrape Wait that overran the ticker).
+func budgetTickDuration(nominal, elapsed time.Duration) time.Duration {
+	return max(nominal, elapsed)
+}
+
 // startBudget is how many of n already-due VMs may begin scraping this tick
 // when spreading them evenly across window at tick granularity:
 // max(1, ceil(n × tick / window)).
