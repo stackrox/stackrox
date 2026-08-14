@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"math/rand"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -117,11 +118,12 @@ type VMScraper struct {
 }
 
 type vmState struct {
-	lastToken       string
-	lastForwardedAt time.Time
-	nextAttemptAt   time.Time
-	backoff         time.Duration
-	vmID            virtualmachine.VMID
+	lastToken        string
+	lastForwardedAt  time.Time
+	nextAttemptAt    time.Time
+	backoff          time.Duration
+	vmID             virtualmachine.VMID
+	lastAgentVersion string
 }
 
 var _ common.SensorComponent = (*VMScraper)(nil)
@@ -503,7 +505,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	newToken := result.Meta.GetReportToken()
-	s.commitVMState(key, newToken)
+	s.commitVMState(key, newToken, result.Meta.GetAgentVersion())
 	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
@@ -706,7 +708,7 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 // then the NACK will overwrite lastToken / backoff / nextAttemptAt, and then this code
 // will set the token (and a later scheduleAfterAttempt(scrapeOK) will reset backoff schedule).
 // This race is accepted for v1.
-func (s *VMScraper) commitVMState(key string, newToken string) {
+func (s *VMScraper) commitVMState(key string, newToken string, agentVersion string) {
 	concurrency.WithLock(&s.mu, func() {
 		state, ok := s.vmState[key]
 		if !ok {
@@ -714,5 +716,85 @@ func (s *VMScraper) commitVMState(key string, newToken string) {
 		}
 		state.lastToken = newToken
 		state.lastForwardedAt = s.now()
+		state.lastAgentVersion = agentVersion
 	})
+}
+
+const maxVersionBuckets = 20
+
+// ScanDurationStats holds aggregate scan-duration statistics.
+type ScanDurationStats struct {
+	Count int
+	Avg   time.Duration
+	Min   time.Duration
+	Max   time.Duration
+}
+
+// Stats is a point-in-time snapshot of the scraper's fleet state.
+type Stats struct {
+	TrackedVMs    int
+	VMsScanned    int
+	VMsInBackoff  int
+	AvgBackoff    time.Duration
+	MaxBackoff    time.Duration
+	ScanDuration  ScanDurationStats
+	VersionCounts map[string]int
+}
+
+// Stats returns a point-in-time snapshot of fleet statistics.
+func (s *VMScraper) Stats() Stats {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	st := Stats{
+		TrackedVMs:    len(s.vmState),
+		VersionCounts: make(map[string]int, min(len(s.vmState), maxVersionBuckets+1)),
+	}
+
+	for _, vs := range s.vmState {
+		if !vs.lastForwardedAt.IsZero() {
+			st.VMsScanned++
+		}
+
+		ver := vs.lastAgentVersion
+		if ver == "" {
+			ver = "unknown"
+		}
+		st.VersionCounts[ver]++
+	}
+
+	capVersionCounts(st.VersionCounts)
+	return st
+}
+
+// capVersionCounts keeps only the top-N versions by count, folding the rest
+// into an "other" bucket so the map size is bounded regardless of fleet size.
+func capVersionCounts(counts map[string]int) {
+	if len(counts) <= maxVersionBuckets {
+		return
+	}
+
+	type entry struct {
+		ver   string
+		count int
+	}
+	entries := make([]entry, 0, len(counts))
+	for v, c := range counts {
+		entries = append(entries, entry{v, c})
+	}
+	slices.SortFunc(entries, func(a, b entry) int {
+		if a.count != b.count {
+			return b.count - a.count // descending by count
+		}
+		return strings.Compare(a.ver, b.ver) // stable tiebreak
+	})
+
+	otherTotal := 0
+	for _, e := range entries[maxVersionBuckets:] {
+		otherTotal += e.count
+		delete(counts, e.ver)
+	}
+	if otherTotal > 0 {
+		counts["other"] += otherTotal
+	}
 }
