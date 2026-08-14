@@ -232,12 +232,29 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	}
 
 	s, _ := newTestScraper(store, sender, dialer, client)
+	setTickToDrain(s)
 	discoveredBefore := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE"))
 	s.pollOnce(context.Background())
 
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+}
+
+func TestVMScraper_ProductionTickPacesTwoDueVMs(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+		makeVM("ns2", "vm-b", 200),
+	}}
+	sender := &mockSender{}
+	s, _ := newTestScraper(store, sender, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1), makeReport(1)},
+	})
+	require.Equal(t, defaultTickInterval, s.tickInterval)
+
+	s.pollOnce(context.Background())
+	assert.Len(t, sender.sent, 1, "production 10s tick over 100s catch-up should start 1 of 2 due VMs")
+	assert.Len(t, s.dueKeys(), 1, "the other VM should stay due for a later tick")
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
@@ -631,6 +648,7 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 				errQueue:    tc.errQueue,
 			}
 			s, _ := newTestScraper(&mockStore{vms: vms}, sender, tc.dialer, client)
+			setTickToDrain(s)
 			if tc.perVMTimeout > 0 {
 				s.perVMTimeout = tc.perVMTimeout
 			}
@@ -737,6 +755,7 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	}
 
 	s, clock := newTestScraper(store, sender, dialer, client)
+	setTickToDrain(s)
 	s.pollOnce(context.Background())
 	assert.Len(t, s.vmState, 2)
 	assert.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
@@ -782,9 +801,9 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		dialer:   dialer,
 		client:   client,
 		interval: interval,
-		// Match catch-up window so default urgent due sets drain in one tick
-		// under concurrency (production uses defaultTickInterval; pacing tests override).
-		tickInterval:          catchUpWindow(interval),
+		// Production scheduler step. Tests that must scrape every due VM in
+		// one pollOnce call setTickToDrain.
+		tickInterval:          defaultTickInterval,
 		initialBackoff:        initialBackoff,
 		reconcileEvery:        reconcilePeriod(interval),
 		perVMTimeout:          10 * time.Second,
@@ -805,6 +824,12 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 // pollOnce forces a reconcile and scrapes every due slot.
 func (s *VMScraper) pollOnce(ctx context.Context) {
 	s.tick(ctx, true)
+}
+
+// setTickToDrain sets tickInterval to the catch-up window so one tick can
+// start every never-scraped due VM under concurrency.
+func setTickToDrain(s *VMScraper) {
+	s.tickInterval = catchUpWindow(s.interval)
 }
 
 // --- Thread-safe mocks for concurrent tests ---

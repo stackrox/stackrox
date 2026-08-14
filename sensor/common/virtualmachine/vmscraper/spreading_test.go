@@ -72,8 +72,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
-	// Drain the urgent due pile in one tick; RNG is only used on cadence write.
-	s.tickInterval = catchUpWindow(s.interval)
+	setTickToDrain(s)
 	s.reconcileEvery = reconcilePeriod(s.interval)
 	s.randFloat64 = sequencedRand([]float64{0, 0.25, 0.5, 0.75, 1})
 
