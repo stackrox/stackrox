@@ -282,6 +282,7 @@ select_worker_node() {
 teardown_file() {
     local test_suite_end_timestamp=$(date +%s)
     _begin "teardown-file"
+    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     emit_timing_data "" "test-suite" "$test_suite_begin_timestamp" "$test_suite_end_timestamp"
     _end
 }
@@ -407,7 +408,10 @@ teardown() {
         echo "Test case passed, skipping log collection"
     fi
 
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    if (( BATS_TEST_NUMBER < ${#BATS_TEST_NAMES[@]} )); then
+        export SKIP_OPERATOR_TEARDOWN=true
+        run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    fi
     echo "Post-test teardown complete."
 
     _end
@@ -829,6 +833,12 @@ EOT
     _end
 }
 
+# --- Operator tests ---
+# The operator is deployed once by the [Operator] Upgrade test (first) and reused by subsequent operator tests.
+# To preserve this, operator tests must:
+#   1. Be grouped at the end of this file, with the [Operator] Upgrade test first.
+#   2. Not call deploy_stackrox_operator (except the [Operator] Upgrade test, which deploys via OLM directly).
+
 @test "[Operator] Upgrade multi-namespace installation" {
     init
 
@@ -926,6 +936,9 @@ EOT
     if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
+    if ! retrying_kubectl </dev/null get crd centrals.platform.stackrox.io >/dev/null 2>&1; then
+        skip "Operator not deployed (prerequisite [Operator] Upgrade test likely failed)"
+    fi
 
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
@@ -936,7 +949,6 @@ EOT
 
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
     _begin "verify"
@@ -963,6 +975,9 @@ EOT
     if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
         skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
+    if ! retrying_kubectl </dev/null get crd centrals.platform.stackrox.io >/dev/null 2>&1; then
+        skip "Operator not deployed (prerequisite [Operator] Upgrade test likely failed)"
+    fi
 
     # shellcheck disable=SC2030,SC2031
     export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
@@ -973,7 +988,6 @@ EOT
 
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _begin "verify"
