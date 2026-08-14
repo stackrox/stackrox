@@ -23,7 +23,6 @@ import {
     updateSearchFilter,
 } from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
@@ -86,7 +85,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const isSensorCompatibilityStatusEnabled = isFeatureFlagEnabled(
         'ROX_SENSOR_COMPATIBILITY_STATUS'
     );

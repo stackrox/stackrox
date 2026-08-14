@@ -34,7 +34,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.107.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.76.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.4
-	github.com/aws/smithy-go v1.27.6
+	github.com/aws/smithy-go v1.27.7
 	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -65,7 +65,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.23.0
 	github.com/gorilla/schema v1.4.1
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
-	github.com/grafana/pyroscope-go v1.4.1
+	github.com/grafana/pyroscope-go v1.4.2
 	github.com/graph-gophers/graphql-go v1.10.3-0.20260702060009-60399cce0c05
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
@@ -80,7 +80,7 @@ require (
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
-	github.com/klauspost/compress v1.19.1
+	github.com/klauspost/compress v1.19.2
 	github.com/lib/pq v1.12.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.2

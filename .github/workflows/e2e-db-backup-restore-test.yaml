@@ -63,7 +63,7 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
         source scripts/ci/gke.sh
