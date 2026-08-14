@@ -115,9 +115,9 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 // for the duration of the test, restoring the original data on cleanup.
 func OverrideBumpsForTesting(t interface {
 	Cleanup(func())
-}, data []byte) {
+}, data string) {
 	old := parsedBumps
-	parsedBumps = mustParseBumpsData(data)
+	parsedBumps = mustParseBumpsData([]byte(data))
 	t.Cleanup(func() { parsedBumps = old })
 }
 
@@ -166,11 +166,11 @@ func ParseXYFromVersionString(version string) (XYVersion, error) {
 func GetPreviousYStream(v XYVersion) (XYVersion, error) {
 	for _, b := range parsedBumps {
 		// Phantom version: snap back to the bump point (e.g. 4.14 → 4.11).
-		if b.From.X == v.X && v.Y > b.From.Y {
+		if v.X == b.From.X && v.Y > b.From.Y {
 			return b.From, nil
 		}
 		// Major boundary: cross back via bump history (e.g. 5.0 → 4.11).
-		if b.To.X == v.X && v.Y == 0 {
+		if v.X == b.To.X && v.Y == 0 {
 			return b.From, nil
 		}
 	}

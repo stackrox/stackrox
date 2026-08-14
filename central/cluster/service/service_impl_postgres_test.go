@@ -28,13 +28,20 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/version/testutils"
-	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 	"github.com/stretchr/testify/require"
 )
 
+func assertClustersAre(t *testing.T, clusters []*storage.Cluster, expectedNames ...string) {
+	t.Helper()
+	names := make([]string, len(clusters))
+	for i, c := range clusters {
+		names[i] = c.GetName()
+	}
+	require.ElementsMatch(t, expectedNames, names)
+}
+
 func TestGetClustersSkewFilteringPostgres(t *testing.T) {
-	testutils.SetMainVersion(t, "4.5.0")
-	versioncompatibility.OverrideForTesting(t)
+	testutils.SetMainVersion(t, "4.5.0-testing")
 
 	db := pgtest.ForT(t)
 	ds, err := datastore.GetTestPostgresDataStore(t, db)
@@ -48,25 +55,32 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 		labels        map[string]string
 	}
 	fixtures := []fixture{
-		{name: "a-matched", sensorVersion: "4.5.9", labels: map[string]string{"name": "a-matched", "major": "4"}},
-		{name: "b-matched", sensorVersion: "4.5.0", labels: map[string]string{"name": "b-matched", "major": "4"}},
-		{name: "c-behind", sensorVersion: "4.4.0", labels: map[string]string{"name": "c-behind", "major": "4"}},
-		{name: "d-ahead", sensorVersion: "4.6.0", labels: map[string]string{"name": "d-ahead", "major": "4"}},
-		{name: "e-incompatible-behind", sensorVersion: "1.0.0", labels: map[string]string{"name": "e-incompatible-behind", "major": "1"}},
-		{name: "f-incompatible-ahead", sensorVersion: "5.5.0", labels: map[string]string{"name": "f-incompatible-ahead", "major": "5"}},
+		{name: "a-matched", sensorVersion: "4.5.9", labels: map[string]string{"name": "a-matched", "env": "prod"}},
+		{name: "b-matched", sensorVersion: "4.5.0", labels: map[string]string{"name": "b-matched", "env": "staging"}},
+		{name: "c-behind", sensorVersion: "4.4.0", labels: map[string]string{"name": "c-behind", "env": "prod"}},
+		{name: "d-ahead", sensorVersion: "4.6.0", labels: map[string]string{"name": "d-ahead", "env": "prod"}},
+		{name: "e-incompatible-behind", sensorVersion: "1.0.0", labels: map[string]string{"name": "e-incompatible-behind", "env": "prod"}},
+		{name: "f-incompatible-ahead", sensorVersion: "5.5.0", labels: map[string]string{"name": "f-incompatible-ahead", "env": "prod"}},
+		{name: "g-unknown", sensorVersion: "", labels: map[string]string{"name": "g-unknown", "env": "prod"}},
 	}
 
 	for _, f := range fixtures {
-		id, err := ds.AddCluster(ctx, &storage.Cluster{
+		// MainImage uses a fixed tag because the sensor version is set
+		// separately via UpdateClusterStatus, which is what the datastore
+		// uses for compatibility classification.
+		cluster := &storage.Cluster{
 			Name:               f.name,
-			MainImage:          fmt.Sprintf("docker.io/stackrox/main:%s", f.sensorVersion),
+			MainImage:          "docker.io/stackrox/main:latest",
 			CentralApiEndpoint: "central.stackrox:443",
 			Labels:             f.labels,
-		})
+		}
+		id, err := ds.AddCluster(ctx, cluster)
 		require.NoError(t, err)
-		require.NoError(t, ds.UpdateClusterStatus(ctx, id, &storage.ClusterStatus{
-			SensorVersion: f.sensorVersion,
-		}))
+		if f.sensorVersion != "" {
+			require.NoError(t, ds.UpdateClusterStatus(ctx, id, &storage.ClusterStatus{
+				SensorVersion: f.sensorVersion,
+			}))
+		}
 	}
 
 	svc := New(ds, nil, nil, nil)
@@ -77,8 +91,16 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 1)
-		require.Equal(t, "c-behind", resp.GetClusters()[0].GetName())
+		assertClustersAre(t, resp.GetClusters(), "c-behind")
+	})
+
+	t.Run("filter by compatible ahead", func(t *testing.T) {
+		query := fmt.Sprintf("%s:%s", search.SensorVersionCompatibility,
+			storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD.String())
+
+		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
+		require.NoError(t, err)
+		assertClustersAre(t, resp.GetClusters(), "d-ahead")
 	})
 
 	t.Run("filter by matched returns multiple", func(t *testing.T) {
@@ -87,9 +109,7 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 2)
-		names := []string{resp.GetClusters()[0].GetName(), resp.GetClusters()[1].GetName()}
-		require.ElementsMatch(t, []string{"a-matched", "b-matched"}, names)
+		assertClustersAre(t, resp.GetClusters(), "a-matched", "b-matched")
 	})
 
 	t.Run("filter by incompatible behind", func(t *testing.T) {
@@ -98,8 +118,7 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 1)
-		require.Equal(t, "e-incompatible-behind", resp.GetClusters()[0].GetName())
+		assertClustersAre(t, resp.GetClusters(), "e-incompatible-behind")
 	})
 
 	t.Run("filter by incompatible ahead", func(t *testing.T) {
@@ -108,29 +127,26 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 1)
-		require.Equal(t, "f-incompatible-ahead", resp.GetClusters()[0].GetName())
+		assertClustersAre(t, resp.GetClusters(), "f-incompatible-ahead")
 	})
 
-	t.Run("filter returns empty results", func(t *testing.T) {
+	t.Run("filter by unknown", func(t *testing.T) {
 		query := fmt.Sprintf("%s:%s", search.SensorVersionCompatibility,
 			storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN.String())
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Empty(t, resp.GetClusters())
+		assertClustersAre(t, resp.GetClusters(), "g-unknown")
 	})
 
-	t.Run("db filter combined with skew filter", func(t *testing.T) {
+	t.Run("db filter narrows results before skew filter", func(t *testing.T) {
 		query := fmt.Sprintf("%s:%s+%s:%s", search.SensorVersionCompatibility,
 			storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED.String(),
-			search.ClusterLabel, "major=4")
+			search.ClusterLabel, "env=prod")
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 2)
-		names := []string{resp.GetClusters()[0].GetName(), resp.GetClusters()[1].GetName()}
-		require.ElementsMatch(t, []string{"a-matched", "b-matched"}, names)
+		assertClustersAre(t, resp.GetClusters(), "a-matched")
 	})
 
 	t.Run("no filter returns all clusters", func(t *testing.T) {
@@ -138,15 +154,14 @@ func TestGetClustersSkewFilteringPostgres(t *testing.T) {
 			Query: search.EmptyQuery().String(),
 		})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 6)
+		require.Len(t, resp.GetClusters(), 7)
 	})
 
 	t.Run("db filter only without skew filter", func(t *testing.T) {
-		query := fmt.Sprintf("%s:%s", search.ClusterLabel, "major=1")
+		query := fmt.Sprintf("%s:%s", search.ClusterLabel, "env=staging")
 
 		resp, err := svc.GetClusters(ctx, &v1.GetClustersRequest{Query: query})
 		require.NoError(t, err)
-		require.Len(t, resp.GetClusters(), 1)
-		require.Equal(t, "e-incompatible-behind", resp.GetClusters()[0].GetName())
+		assertClustersAre(t, resp.GetClusters(), "b-matched")
 	})
 }

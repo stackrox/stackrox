@@ -83,7 +83,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
-	versionTestutils.SetMainVersion(s.T(), "4.5.0")
+	versionTestutils.SetMainVersion(s.T(), "4.5.0-testing")
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	clusterDBStore := clusterPostgresStore.New(s.db)

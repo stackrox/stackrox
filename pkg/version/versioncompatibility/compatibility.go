@@ -2,9 +2,9 @@ package versioncompatibility
 
 import (
 	"slices"
+	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/productstreams"
@@ -28,54 +28,24 @@ const (
 	IncompatibleAhead                // Remote is too new.
 )
 
-func (c Compatibility) String() string {
-	switch c {
-	case Unknown:
-		return "UNKNOWN"
-	case Matched:
-		return "MATCHED"
-	case CompatibleBehind:
-		return "COMPATIBLE_BEHIND"
-	case CompatibleAhead:
-		return "COMPATIBLE_AHEAD"
-	case IncompatibleBehind:
-		return "INCOMPATIBLE_BEHIND"
-	case IncompatibleAhead:
-		return "INCOMPATIBLE_AHEAD"
-	default:
-		return "UNKNOWN"
-	}
-}
-
-var (
-	once            sync.Once
+type cachedRange struct {
+	mainVersion     string
 	mainXY          productstreams.XYVersion
 	compatibleRange []productstreams.XYVersion
 	initErr         error
-)
-
-func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
-	once.Do(func() {
-		mainXY, compatibleRange, initErr = computeCompatibleRange()
-		utils.Should(initErr)
-	})
-	return mainXY, compatibleRange, initErr
 }
 
-// OverrideForTesting recomputes the singleton using the current main version.
-// Call after testutils.SetMainVersion.
-func OverrideForTesting(t interface{ Cleanup(func()) }) {
-	old := struct {
-		mainXY          productstreams.XYVersion
-		compatibleRange []productstreams.XYVersion
-		initErr         error
-	}{mainXY, compatibleRange, initErr}
-	mainXY, compatibleRange, initErr = computeCompatibleRange()
-	t.Cleanup(func() {
-		mainXY = old.mainXY
-		compatibleRange = old.compatibleRange
-		initErr = old.initErr
-	})
+var cached atomic.Pointer[cachedRange]
+
+func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
+	current := version.GetMainVersion()
+	if c := cached.Load(); c != nil && c.mainVersion == current {
+		return c.mainXY, c.compatibleRange, c.initErr
+	}
+	xy, versions, err := computeCompatibleRange()
+	utils.Should(err)
+	cached.Store(&cachedRange{mainVersion: current, mainXY: xy, compatibleRange: versions, initErr: err})
+	return xy, versions, err
 }
 
 func computeCompatibleRange() (productstreams.XYVersion, []productstreams.XYVersion, error) {
@@ -106,9 +76,6 @@ func ClassifyVersion(remote productstreams.XYVersion) (Compatibility, error) {
 
 func classify(self productstreams.XYVersion, versions []productstreams.XYVersion, remote productstreams.XYVersion) Compatibility {
 	cmp := self.Compare(remote)
-	if cmp == 0 {
-		return Matched
-	}
 	// Remote is compatible if it falls within the bounds of the compatible
 	// range. This naturally handles phantom versions (e.g. 4.12 between
 	// 4.11 and 5.0) without explicit gap-checking.

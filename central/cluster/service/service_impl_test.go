@@ -316,6 +316,24 @@ func (suite *ClusterServiceTestSuite) TestGetClustersSkewFiltering() {
 	}
 }
 
+func (suite *ClusterServiceTestSuite) TestGetClustersInvalidSkewFilterValue() {
+	clusters := []*storage.Cluster{
+		{Id: "cluster-1"},
+	}
+
+	suite.dataStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(1).Return(clusters, nil)
+
+	clusterService := New(suite.dataStore, nil, nil, nil)
+
+	query := search.NewQueryBuilder().AddStrings(
+		search.SensorVersionCompatibility, "not-a-valid-compatibility",
+	).Query()
+
+	results, err := clusterService.GetClusters(context.Background(), &v1.GetClustersRequest{Query: query})
+	suite.NoError(err)
+	suite.Empty(results.GetClusters())
+}
+
 func (suite *ClusterServiceTestSuite) TestGetClustersNoSkewFilterReturnsAll() {
 	clusters := []*storage.Cluster{
 		{Id: "cluster-1"},

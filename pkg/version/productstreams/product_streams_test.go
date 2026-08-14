@@ -9,17 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testBumpsYAML = `bumps:
-  - from: "3.74"
-    to: "4.0"
-  - from: "4.11"
-    to: "5.0"
-`
-
-func overrideTestBumps(t *testing.T) {
-	OverrideBumpsForTesting(t, []byte(testBumpsYAML))
-}
-
 func TestMustParseBumpsDataPanicsOnInvalidInput(t *testing.T) {
 	assert.Panics(t, func() {
 		mustParseBumpsData([]byte(`[not valid yaml`))
@@ -152,14 +141,6 @@ bumps:
 			assert.Equal(t, tt.want, formatBumps(result))
 		})
 	}
-}
-
-func formatBumps(bumps []parsedBump) string {
-	parts := make([]string, 0, len(bumps))
-	for _, b := range bumps {
-		parts = append(parts, fmt.Sprintf("%s->%s", b.From, b.To))
-	}
-	return strings.Join(parts, ";")
 }
 
 func TestGetNextYStream(t *testing.T) {
@@ -325,4 +306,22 @@ func TestGetPreviousYStream(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func formatBumps(bumps []parsedBump) string {
+	parts := make([]string, 0, len(bumps))
+	for _, b := range bumps {
+		parts = append(parts, fmt.Sprintf("%s->%s", b.From, b.To))
+	}
+	return strings.Join(parts, ";")
+}
+
+func overrideTestBumps(t *testing.T) {
+	const testBumpsYAML = `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
+`
+	OverrideBumpsForTesting(t, testBumpsYAML)
 }

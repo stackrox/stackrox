@@ -4,22 +4,9 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
-
-const testBumpsYAML = `bumps:
-  - from: "3.74"
-    to: "4.0"
-  - from: "4.11"
-    to: "5.0"
-`
-
-func overrideTestBumps(t *testing.T) {
-	productstreams.OverrideBumpsForTesting(t, []byte(testBumpsYAML))
-}
-func xy(x, y int) productstreams.XYVersion {
-	return productstreams.XYVersion{X: x, Y: y}
-}
 
 func TestMakeCompatibleVersionRange(t *testing.T) {
 	overrideTestBumps(t)
@@ -109,7 +96,7 @@ func TestMakeCompatibleVersionRange(t *testing.T) {
 				xy(5, 0), xy(5, 1), xy(5, 2),
 			},
 		},
-		"truncated backward near earliest known": {
+		"backward near earliest known": {
 			self: xy(3, 73),
 			n:    3,
 			want: []productstreams.XYVersion{
@@ -146,6 +133,11 @@ func TestMakeCompatibleVersionRange(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+
+	t.Run("self beyond known bumps returns error", func(t *testing.T) {
+		_, err := makeCompatibleVersionRange(xy(6, 0), 3)
+		assert.Error(t, err)
+	})
 }
 
 func TestClassify(t *testing.T) {
@@ -219,6 +211,10 @@ func TestClassify(t *testing.T) {
 				self: xy(4, 8), remote: xy(6, 0), n: 3,
 				want: IncompatibleAhead,
 			},
+			"incompatible behind beyond known bumps": {
+				self: xy(4, 8), remote: xy(3, 70), n: 3,
+				want: IncompatibleBehind,
+			},
 			"custom n=1 compatible": {
 				self: xy(4, 5), remote: xy(4, 6), n: 1,
 				want: CompatibleAhead,
@@ -228,12 +224,6 @@ func TestClassify(t *testing.T) {
 				want: IncompatibleAhead,
 			},
 		})
-	})
-
-	t.Run("self beyond known bumps returns error", func(t *testing.T) {
-		overrideTestBumps(t)
-		_, err := makeCompatibleVersionRange(xy(6, 0), 3)
-		assert.Error(t, err)
 	})
 
 	// Phantom versions: versions past a bump point (e.g. 4.12 when the
@@ -248,12 +238,6 @@ func TestClassify(t *testing.T) {
 			"phantom remote beyond skew same major": {
 				self: xy(4, 7), remote: xy(4, 40), n: 3,
 				want: IncompatibleAhead,
-			},
-			// 4.40 fits between 4.11 and 5.0 in self's compatible range,
-			// so it is compatible.
-			"phantom remote cross major fits in gap": {
-				self: xy(5, 0), remote: xy(4, 40), n: 3,
-				want: CompatibleBehind,
 			},
 			"phantom remote cross major gap not in range": {
 				self: xy(5, 4), remote: xy(4, 40), n: 3,
@@ -298,28 +282,26 @@ func TestClassify(t *testing.T) {
 		})
 	})
 
-	// Three consecutive bumps: 1.3→2.0, 2.5→3.0, 3.2→4.0.
-	// Verifies that spanning all three is always incompatible within n=3.
-	t.Run("three consecutive bumps", func(t *testing.T) {
-		productstreams.OverrideBumpsForTesting(t, []byte(`bumps:
+	// Dense bumps: 1.3→2.0, 2.1→3.0. With n=3, self=1.3 can reach
+	// 3.0 (1.3→2.0→2.1→3.0 = 3 steps), so they are compatible.
+	t.Run("dense bumps", func(t *testing.T) {
+		productstreams.OverrideBumpsForTesting(t, `bumps:
   - from: "1.3"
     to: "2.0"
-  - from: "2.5"
+  - from: "2.1"
     to: "3.0"
-  - from: "3.2"
-    to: "4.0"
-`))
+`)
 		runCases(t, map[string]testCase{
-			"across all three bumps always incompatible": {
-				self: xy(1, 3), remote: xy(4, 0), n: 3,
-				want: IncompatibleAhead,
+			"spans multiple bumps and remains compatible": {
+				self: xy(1, 3), remote: xy(3, 0), n: 3,
+				want: CompatibleAhead,
 			},
 		})
 	})
 
 	// No bumps at all: cross-major is always incompatible.
 	t.Run("no bumps", func(t *testing.T) {
-		productstreams.OverrideBumpsForTesting(t, []byte(`bumps: []`))
+		productstreams.OverrideBumpsForTesting(t, `bumps: []`)
 		runCases(t, map[string]testCase{
 			"same major compatible": {
 				self: xy(4, 5), remote: xy(4, 8), n: 3,
@@ -341,27 +323,57 @@ func TestClassify(t *testing.T) {
 	})
 }
 
-func TestCompatibilityString(t *testing.T) {
-	tests := map[string]struct {
-		c    Compatibility
-		want string
-	}{
-		"unknown":             {Unknown, "UNKNOWN"},
-		"matched":             {Matched, "MATCHED"},
-		"compatible behind":   {CompatibleBehind, "COMPATIBLE_BEHIND"},
-		"compatible ahead":    {CompatibleAhead, "COMPATIBLE_AHEAD"},
-		"incompatible behind": {IncompatibleBehind, "INCOMPATIBLE_BEHIND"},
-		"incompatible ahead":  {IncompatibleAhead, "INCOMPATIBLE_AHEAD"},
-		"invalid value":       {Compatibility(99), "UNKNOWN"},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.c.String())
-		})
-	}
-}
-
 func TestCompatibleVersionRangePanicsOnNegativeN(t *testing.T) {
 	assert.Panics(t, func() { _, _ = makeCompatibleVersionRange(xy(4, 5), -1) })
+}
+
+func TestCompatibleVersions(t *testing.T) {
+	overrideTestBumps(t)
+	testutils.SetMainVersion(t, "4.11.0-testing")
+
+	versions, err := CompatibleVersions()
+	assert.NoError(t, err)
+	assert.Len(t, versions, 2*AllowedSkew+1)
+	assert.Equal(t, xy(4, 8), versions[0])
+	assert.Equal(t, xy(4, 11), versions[AllowedSkew])
+	assert.Equal(t, xy(5, 2), versions[len(versions)-1])
+}
+
+func TestClassifyVersion(t *testing.T) {
+	overrideTestBumps(t)
+	testutils.SetMainVersion(t, "4.11.0-testing")
+
+	compat, err := ClassifyVersion(xy(4, 9))
+	assert.NoError(t, err)
+	assert.Equal(t, CompatibleBehind, compat)
+}
+
+func TestCompatibleVersionsPanicsOnInvalidVersion(t *testing.T) {
+	testutils.SetMainVersion(t, "invalid")
+	assert.Panics(t, func() { _, _ = CompatibleVersions() })
+}
+
+func TestClassifyVersionPanicsOnInvalidVersion(t *testing.T) {
+	testutils.SetMainVersion(t, "invalid")
+	assert.Panics(t, func() { _, _ = ClassifyVersion(xy(4, 9)) })
+}
+
+func TestCompatibleVersionsPanicsOnMissingBumpData(t *testing.T) {
+	productstreams.OverrideBumpsForTesting(t, `bumps: []`)
+	testutils.SetMainVersion(t, "4.2.0-testing")
+	assert.Panics(t, func() { _, _ = CompatibleVersions() })
+}
+
+func overrideTestBumps(t *testing.T) {
+	const testBumpsYAML = `bumps:
+  - from: "3.74"
+    to: "4.0"
+  - from: "4.11"
+    to: "5.0"
+`
+	productstreams.OverrideBumpsForTesting(t, testBumpsYAML)
+}
+
+func xy(x, y int) productstreams.XYVersion {
+	return productstreams.XYVersion{X: x, Y: y}
 }

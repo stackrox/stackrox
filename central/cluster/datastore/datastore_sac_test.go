@@ -45,7 +45,7 @@ type clusterDatastoreSACSuite struct {
 }
 
 func (s *clusterDatastoreSACSuite) SetupSuite() {
-	versionTestutils.SetMainVersion(s.T(), "4.5.0")
+	versionTestutils.SetMainVersion(s.T(), "4.5.0-testing")
 	var err error
 	s.pgTestBase = pgtest.ForT(s.T())
 	s.NotNil(s.pgTestBase)
