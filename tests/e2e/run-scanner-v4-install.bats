@@ -307,10 +307,6 @@ setup() {
         # executing teardown to begin test execution in a well-defined state
         remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     fi
-    if [[ ${TEARDOWN_ONLY:-} == "true" ]]; then
-        echo "Only tearing down resources, exiting now..."
-        exit 0
-    fi
 
     test_case_no=$(( test_case_no + 1))
 
