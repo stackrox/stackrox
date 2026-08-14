@@ -201,3 +201,32 @@ func (s *ClusterMetricsTestSuite) TestVMStatsPopulated() {
 		"unknown": 2,
 	}, vmm.GetRoxagentVersionCounts())
 }
+
+func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
+	src := &fakeVMStatsSource{
+		stats: vmscraper.Stats{
+			TrackedVMs: 5,
+			VMsScanned: 3,
+			VersionCounts: map[string]int{
+				"v1.0.0":  3,
+				"unknown": 2,
+			},
+		},
+	}
+	cm := NewWithInterval(&fakeClusterIDPeeker{}, s.client, 10*time.Millisecond, src)
+	s.Require().NoError(cm.Start())
+	defer cm.Stop()
+	cm.Notify(common.SensorComponentEventCentralReachable)
+
+	select {
+	case msg := <-cm.ResponsesC():
+		vmm := msg.GetClusterMetrics().GetVirtualMachineMetrics()
+		s.Require().NotNil(vmm, "VirtualMachineMetrics must be present when vmStatsSource is non-nil")
+		s.Equal(int32(5), vmm.GetTrackedVms())
+		s.Equal(int32(3), vmm.GetVmsScanned())
+		s.Equal(int32(0), vmm.GetVmsInBackoff(), "Part 2 does not populate backoff fields")
+		s.Equal(map[string]int32{"v1.0.0": 3, "unknown": 2}, vmm.GetRoxagentVersionCounts())
+	case <-time.After(metricsTimeout):
+		s.Fail("timeout waiting for cluster metrics with VM data")
+	}
+}
