@@ -154,3 +154,19 @@ export type DeploymentWithRisk = {
     deployment: Deployment;
     risk?: Risk;
 };
+
+export type DeploymentRiskSummary = {
+    summary: string;
+};
+
+/**
+ * Fetches an AI-generated risk summary for a deployment by ID.
+ */
+export function fetchDeploymentRiskSummary(id: string): Promise<DeploymentRiskSummary> {
+    if (!id) {
+        throw new Error('Deployment ID must be specified');
+    }
+    return axios
+        .get<DeploymentRiskSummary>(`${deploymentWithRiskUrl}/${id}/ai-summary`)
+        .then((response) => response.data);
+}
