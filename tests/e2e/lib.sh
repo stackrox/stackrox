@@ -66,8 +66,6 @@ deploy_stackrox() {
 
     info "About to deploy StackRox (Central + Sensor)."
 
-    setup_podsecuritypolicies_config
-
     deploy_stackrox_operator
 
     deploy_central "${central_namespace}"
