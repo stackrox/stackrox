@@ -943,9 +943,6 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage.Cluster) {
 	for _, cluster := range clusters {
 		if cluster.GetStatus() == nil {
-			cluster.Status = &storage.ClusterStatus{
-				SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN,
-			}
 			continue
 		}
 		sensorXY, err := productstreams.ParseXYFromVersionString(cluster.GetStatus().GetSensorVersion())
