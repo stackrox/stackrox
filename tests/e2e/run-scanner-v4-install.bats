@@ -769,26 +769,19 @@ EOT
     _end
 }
 
-@test "[Operator] Fresh installation with Scanner V4 enabled" {
-    init
-
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
-        skip "This test is currently only supported on OpenShift"
-    fi
-    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
-        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
-    fi
-
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
-    # shellcheck disable=SC2030,SC2031
-    export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-
+@test "Fresh installation using roxctl with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="true"
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+      export ROX_OPENSHIFT_VERSION=4
+    fi
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_HELM_DEPLOY="false"
+
     _deploy_stackrox
 
     _begin "verify"
@@ -796,47 +789,42 @@ EOT
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
-
-    _begin "verify-cert-watchers"
-
-    verify_cert_watcher_running "stackrox" "central-db"
-    verify_cert_watcher_running "stackrox" "scanner-v4-db"
 
     _end
 }
 
-@test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
-    init
-
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
-        skip "This test is currently only supported on OpenShift"
-    fi
-    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
-        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
-    fi
-
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
-    # shellcheck disable=SC2030,SC2031
-    export DEPLOY_STACKROX_VIA_OPERATOR="true"
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_SCANNER_SUPPORT=true
-
+@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
     _begin "deploy-stackrox"
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
-    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    if [[ "$CI" = "true" ]]; then
+        setup_default_TLS_certs
+    fi
+
+    # Install using roxctl deployment bundles
+    # shellcheck disable=SC2030,SC2031
+    export OUTPUT_FORMAT=""
+    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
+    info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
+    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
     _begin "verify"
 
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    verify_scannerV2_deployed
+    verify_no_scannerV4_deployed
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+    _begin "upgrade-stackrox"
+
+    info "Upgrading StackRox using HEAD deployment bundles"
+    ROX_SCANNER_V4=true _deploy_stackrox
+
+    _begin "verify"
+
+    verify_scannerV2_deployed
+    verify_scannerV4_deployed
+    verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
 }
@@ -929,19 +917,26 @@ EOT
     _end
 }
 
-@test "Fresh installation using roxctl with Scanner V4 enabled" {
+@test "[Operator] Fresh installation with Scanner V4 enabled" {
+    init
+
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
+    fi
+
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
     _begin "deploy-stackrox"
 
-    # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    # shellcheck disable=SC2030,SC2031
-    export ROX_SCANNER_V4="true"
-    if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-      export ROX_OPENSHIFT_VERSION=4
-    fi
-    # shellcheck disable=SC2030,SC2031
-    export SENSOR_HELM_DEPLOY="false"
-
+    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
     _begin "verify"
@@ -949,42 +944,47 @@ EOT
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
+    verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+
+    _begin "verify-cert-watchers"
+
+    verify_cert_watcher_running "stackrox" "central-db"
+    verify_cert_watcher_running "stackrox" "scanner-v4-db"
 
     _end
 }
 
-@test "Upgrade from old version without Scanner V4 to HEAD with Scanner V4 enabled" {
-    _begin "deploy-stackrox"
+@test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
+    init
 
-    if [[ "$CI" = "true" ]]; then
-        setup_default_TLS_certs
+    if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
+        skip "This test is currently only supported on OpenShift"
+    fi
+    if [[ "${ENABLE_OPERATOR_TESTS:-}" != "true" ]]; then
+        skip "Operator tests disabled. Set ENABLE_OPERATOR_TESTS=true to enable them."
     fi
 
-    # Install using roxctl deployment bundles
     # shellcheck disable=SC2030,SC2031
-    export OUTPUT_FORMAT=""
-    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
-    info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
-    PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
+    # shellcheck disable=SC2030,SC2031
+    export DEPLOY_STACKROX_VIA_OPERATOR="true"
+    # shellcheck disable=SC2030,SC2031
+    export SENSOR_SCANNER_SUPPORT=true
+
+    _begin "deploy-stackrox"
+
+    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _begin "verify"
 
-    verify_scannerV2_deployed
-    verify_no_scannerV4_deployed
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
 
-    _begin "upgrade-stackrox"
-
-    info "Upgrading StackRox using HEAD deployment bundles"
-    ROX_SCANNER_V4=true _deploy_stackrox
-
-    _begin "verify"
-
-    verify_scannerV2_deployed
-    verify_scannerV4_deployed
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
+    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _end
 }
