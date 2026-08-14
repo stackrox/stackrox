@@ -211,10 +211,13 @@ func (s *serviceImpl) GetClusters(ctx context.Context, req *v1.GetClustersReques
 		}
 		var filtered []*storage.Cluster
 		for _, cluster := range clusters {
+			// TODO(ROX-36353): Try to move this to the db layer instead here
 			// Clusters where sensor has never connected have nil Status.
 			// Initialize it so the predicate can match UNKNOWN.
 			if cluster.GetStatus() == nil {
-				cluster.Status = &storage.ClusterStatus{}
+				cluster.Status = &storage.ClusterStatus{
+					SensorVersionCompatibility: storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN,
+				}
 			}
 			if pred.Matches(cluster) {
 				filtered = append(filtered, cluster)
