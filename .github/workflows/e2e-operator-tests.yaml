@@ -1,0 +1,276 @@
+name: e2e-operator-tests
+
+on:
+  workflow_call:
+    inputs:
+      should-run:
+        description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
+        required: true
+        type: boolean
+      tag:
+        description: "Image tag to test."
+        required: true
+        type: string
+      ci-job-name:
+        description: "Unique job name, e.g. e2e-operator-tests-<cluster flavor>. Used to configure the image prefetcher and name uploaded artifacts. Propagated to tests as CI_JOB_NAME for test dispatching."
+        required: true
+        type: string
+      cluster-name-prefix:
+        description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
+        required: true
+        type: string
+      cluster-provisioning-method:
+        description: "Selects cluster provisioning method to use (supported: direct-gke, infra)."
+        type: string
+        default: "direct-gke"
+      extra-env-vars:
+        description: "Environment variables for this flavor of Operator E2E tests, as multi-line KEY=VALUE pairs"
+        required: false
+        type: string
+      infra-flavor:
+        description: "Infra cluster flavor, e.g. gke-default, ocp-4."
+        type: string
+        default: "gke-default"
+      infra-args:
+        description: "Infra cluster args as multi-line KEY=VALUE pairs, one per line."
+        type: string
+        default: |
+          nodes=3
+          machine-type=e2-standard-8
+      infra-lifespan:
+        description: "Infra cluster lifespan (auto-deleted after expiry)."
+        type: string
+        default: "5h"
+      cluster-wait-timeout-minutes:
+        description: "Timeout for waiting on cluster provisioning (OCP needs longer)."
+        type: number
+        default: 25
+      job-timeout-minutes:
+        description: "Overall job timeout."
+        type: number
+        default: 361
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  e2e-operator-tests:
+    if: inputs.should-run
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      ARTIFACT_DIR: ./junit-reports/
+      PYTHONUNBUFFERED: "1"
+      CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
+      CLUSTER_NAME_PREFIX_MAX: "20"
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
+    steps:
+      - name: Validate workflow input
+        run: |
+          case "${{ inputs.cluster-provisioning-method }}" in
+            direct-gke|infra) ;;
+            *) echo "::error::Unknown cluster-provisioning-method: '${{ inputs.cluster-provisioning-method }}'. Supported: direct-gke, infra"; exit 1 ;;
+          esac
+
+          if [[ "${#CLUSTER_NAME_PREFIX}" -gt "$CLUSTER_NAME_PREFIX_MAX" ]]; then
+            echo "::error::Workflow input cluster-name-prefix must not be larger than $CLUSTER_NAME_PREFIX_MAX characters (is ${#CLUSTER_NAME_PREFIX} characters long)."
+            exit 1
+          fi
+
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Compute cluster name for infra-provisioned cluster
+        if: inputs.cluster-provisioning-method == 'infra'
+        # infractl enforces a 28-char limit for cluster names.
+        run: |
+          cluster_name_max=28
+
+          hash_length=$(( cluster_name_max - 1 - CLUSTER_NAME_PREFIX_MAX ))
+          hash_input="${{ github.run_id }}-${{ github.run_attempt }}"
+          hash="$(echo "$hash_input" | sha256sum)"
+          hash_truncated="${hash:0:$hash_length}"
+
+          cluster_name="${CLUSTER_NAME_PREFIX}-${hash_truncated}"
+          echo "CLUSTER_NAME=${cluster_name}" >> "$GITHUB_ENV"
+
+      - name: Prepare infra args
+        if: inputs.cluster-provisioning-method == 'infra'
+        id: prepare-infra-args
+        env:
+          INFRA_ARGS: ${{ inputs.infra-args }}
+        run: |
+          args=$(echo "$INFRA_ARGS" | grep -v '^$' | paste -sd ',' -)
+          echo "args=$args" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger cluster creation via infra
+        if: inputs.cluster-provisioning-method == 'infra'
+        uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: ${{ inputs.infra-flavor }}
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: ${{ inputs.infra-lifespan }}
+          args: ${{ steps.prepare-infra-args.outputs.args }}
+          wait: false
+
+      - name: Set up GCloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+        with:
+          install_components: "gke-gcloud-auth-plugin,beta"
+
+      # In the direct-gke provisioning case, this step also exports CLUSTER_NAME
+      # into the environments.
+      - name: Create cluster via direct-gke
+        if: inputs.cluster-provisioning-method == 'direct-gke'
+        timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
+        env:
+          MACHINE_TYPE: "e2-standard-4"
+          NUM_NODES: "4"
+          GKE_SPOT: "true"
+        run: |
+          scripts/ci/gke.sh provision_gke_cluster "$CLUSTER_NAME_PREFIX"
+          echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+
+      - name: Docker login to Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+
+      - name: Set flavor-specific env vars
+        env:
+          EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+        run: |
+          while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+              echo "$line" >> "$GITHUB_ENV"
+            fi
+          done <<< "$EXTRA_ENV_VARS"
+
+      - name: Install roxctl
+        uses: stackrox/roxctl-installer-action@47fb4f5b275066b8322369e6e33fa010915b0d13 # ratchet:stackrox/roxctl-installer-action@v1
+        with:
+          roxctl-release: latest
+
+      - name: Install oc
+        if: startsWith(inputs.infra-flavor, 'openshift')
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors https://mirror.openshift.com/pub/openshift-v5/clients/ocp/stable/openshift-client-linux.tar.gz \
+            | tar xz -C /usr/local/bin oc
+          oc version --client
+
+      - uses: stackrox/actions/infra/install-infractl@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/install-infractl@v1
+        if: inputs.cluster-provisioning-method == 'infra'
+
+      - name: Wait for infra cluster and get kubeconfig
+        if: inputs.cluster-provisioning-method == 'infra'
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
+        run: |
+          infractl wait "${CLUSTER_NAME}"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=${PWD}/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+      # gcloud container clusters create is synchronous, so the cluster is
+      # already RUNNING at this point. wait_for_cluster provides additional
+      # guarantees by polling until all kube-system pods are ready.
+      - name: Wait for cluster to stabilize
+        timeout-minutes: 5
+        env:
+          CLUSTER_PROVISIONING_METHOD: ${{ inputs.cluster-provisioning-method }}
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+          if [[ "$CLUSTER_PROVISIONING_METHOD" == "direct-gke" ]]; then
+            scripts/ci/gke.sh wait_for_cluster
+          fi
+
+      - name: Create artifact directory
+        run: mkdir -p "$ARTIFACT_DIR"
+
+      - name: Run Operator E2E tests
+        timeout-minutes: 120
+        run: |
+          case "$KUBERNETES_PROVIDER" in
+            gke) cluster_type=gke ;;
+            *)   echo "::error::Unknown KUBERNETES_PROVIDER: '$KUBERNETES_PROVIDER'"; exit 1 ;;
+          esac
+          operator/tests/run.sh "$cluster_type"
+
+      - name: Collect cluster artifacts
+        if: always() && env.KUBECONFIG != ''
+        shell: python
+        run: |
+          import os, sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          post = PostClusterTest(collect_central_artifacts=False)
+          post.run([os.environ['ARTIFACT_DIR']])
+
+      - name: Collect final artifacts
+        if: always()
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import FinalPost
+          FinalPost().run()
+
+      - name: Publish test summary
+        uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+        if: always()
+        with:
+          paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+          show: all
+
+      - name: Report junit failures in jira
+        if: (!cancelled())
+        id: junit2jira
+        uses: ./.github/actions/junit2jira
+        with:
+          create-jiras: ${{ github.event_name == 'push' }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          directory: ${{ env.ARTIFACT_DIR }}
+
+      # CLUSTER_NAME is set before cluster creation, so it may be non-empty
+      # even when creation ultimately failed. We intentionally attempt teardown
+      # here anyway, just in case a cluster has been provisioned even though
+      # a failure during cluster creation has been surfaced.
+      - name: Delete cluster via direct-gke
+        if: always() && inputs.cluster-provisioning-method == 'direct-gke'
+        continue-on-error: true
+        run: |
+          if [[ -z "${CLUSTER_NAME:-}" ]]; then
+            echo "No cluster to teardown"
+            exit 0
+          fi
+          if ! scripts/ci/gke.sh teardown_gke_cluster false; then
+            echo "::warning::WARNING: Could not delete the cluster ${CLUSTER_NAME}. See the step logs for details."
+            exit 6
+          fi
+
+      - name: Delete cluster via infra
+        if: always() && inputs.cluster-provisioning-method == 'infra'
+        continue-on-error: true
+        env:
+          INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+        run: |
+          infractl delete "${CLUSTER_NAME}"
