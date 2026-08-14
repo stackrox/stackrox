@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"slices"
 	"strconv"
 	"strings"
@@ -212,7 +213,12 @@ func getSchemaVarName(currentSchema *walker.Schema, targetSchema *walker.Schema)
 		return buildSchemaVarName(targetSchema)
 	}
 
-	return "schema"
+	if targetSchema.Parent == nil {
+		return "schema"
+	}
+	log.Fatalf("cannot resolve variable name for parent reference from table %q to table %q",
+		currentSchema.Table, targetSchema.Table)
+	return ""
 }
 
 func buildSchemaVarName(schema *walker.Schema) string {
