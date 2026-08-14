@@ -32,7 +32,7 @@ type cachedRange struct {
 	mainVersion     string
 	mainXY          productstreams.XYVersion
 	compatibleRange []productstreams.XYVersion
-	initErr         error
+	err             error
 }
 
 var cached atomic.Pointer[cachedRange]
@@ -40,11 +40,11 @@ var cached atomic.Pointer[cachedRange]
 func get() (productstreams.XYVersion, []productstreams.XYVersion, error) {
 	current := version.GetMainVersion()
 	if c := cached.Load(); c != nil && c.mainVersion == current {
-		return c.mainXY, c.compatibleRange, c.initErr
+		return c.mainXY, c.compatibleRange, c.err
 	}
 	xy, versions, err := computeCompatibleRange()
 	utils.Should(err)
-	cached.Store(&cachedRange{mainVersion: current, mainXY: xy, compatibleRange: versions, initErr: err})
+	cached.Store(&cachedRange{mainVersion: current, mainXY: xy, compatibleRange: versions, err: err})
 	return xy, versions, err
 }
 
