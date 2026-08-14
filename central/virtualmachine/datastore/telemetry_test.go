@@ -8,8 +8,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -283,11 +285,13 @@ func (m *mockVMV2DataStore) Walk(_ context.Context, fn func(vm *storage.VirtualM
 }
 
 type mockScanV2DataStore struct {
-	count int
-	err   error
+	count     int
+	err       error
+	lastQuery *v1.Query
 }
 
-func (m *mockScanV2DataStore) Count(_ context.Context, _ *v1.Query) (int, error) {
+func (m *mockScanV2DataStore) Count(_ context.Context, q *v1.Query) (int, error) {
+	m.lastQuery = q
 	return m.count, m.err
 }
 
@@ -362,6 +366,10 @@ func TestVirtualMachineTelemetryV2(t *testing.T) {
 		},
 	}
 
+	expectedScanQuery := search.NewQueryBuilder().
+		AddTimeRangeField(search.VirtualMachineScanTime, arbitraryNow.Add(-activeVMAgentMaxAgeLimitTelemetry), arbitraryNow).
+		ProtoQuery()
+
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			ctx := sac.WithAllAccess(context.Background())
@@ -377,6 +385,8 @@ func TestVirtualMachineTelemetryV2(t *testing.T) {
 			assert.Equal(t, tc.expectedClustersWithRunningVMs, props[metricClustersWithVMs])
 			assert.Equal(t, tc.expectedTotalVMs, props[metricTotalVMs])
 			assert.Equal(t, tc.expectedVMsWithActiveAgents, props[metricVMsWithActiveAgents])
+			require.NotNil(t, scanV2DS.lastQuery)
+			protoassert.Equal(t, expectedScanQuery, scanV2DS.lastQuery)
 		})
 	}
 }

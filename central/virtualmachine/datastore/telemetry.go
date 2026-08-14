@@ -153,9 +153,8 @@ func gatherV2WithTime(vmV2DS vmV2Walker, scanV2DS scanV2Counter, nowFunc func() 
 
 		now := nowFunc()
 		cutoff := now.Add(-activeVMAgentMaxAgeLimitTelemetry)
-		cutoffTS := protocompat.ConvertTimeToTimestampOrNil(&cutoff)
 		q := search.NewQueryBuilder().
-			AddStrings(search.VirtualMachineScanTime, ">"+protocompat.ConvertTimestampToString(cutoffTS, time.RFC3339Nano)).
+			AddTimeRangeField(search.VirtualMachineScanTime, cutoff, now).
 			ProtoQuery()
 
 		vmsWithActiveAgents, err := scanV2DS.Count(ctx, q)
