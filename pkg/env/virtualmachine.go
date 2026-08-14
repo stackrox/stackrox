@@ -84,7 +84,7 @@ var (
 	// VirtualMachinesScraperSteadySpreadFraction is the fraction of the poll interval used as the
 	// one-sided post-poll random band W for cadence reschedule (nextAttemptAt =
 	// now + pollInterval + U(0, W)). Default 2/3. Internal Sensor env only; not Operator/Helm-exposed.
-	// Valid range is (0, 1]; out-of-range values fall back to the default.
+	// Valid range is [0.01, 1] so W is not effectively zero; out-of-range values fall back to the default.
 	VirtualMachinesScraperSteadySpreadFraction = RegisterFloatSetting("ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION", 2.0/3).
 							WithMinimum(0.01).WithMaximum(1)
 )
