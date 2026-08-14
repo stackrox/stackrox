@@ -13,7 +13,6 @@ import (
 	configVersioned "github.com/openshift/client-go/config/clientset/versioned"
 	operatorVersioned "github.com/openshift/client-go/operator/clientset/versioned"
 	routeVersioned "github.com/openshift/client-go/route/clientset/versioned"
-	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
@@ -171,7 +170,7 @@ type WorkloadManager struct {
 	networkManager       manager.Manager
 	vmIndexReportHandler index.Handler
 	vmStore              *vmStore.VirtualMachineStore
-	fileActivityChan     chan *sensorInternal.FileActivity
+	pubSubDispatcher     common.PubSubDispatcher
 
 	// VM readiness coordinator
 	vmPrerequisitesReady *vmReadiness
@@ -349,11 +348,6 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
-// SetFileActivityChannel sets the channel for injecting file activity events into the pipeline
-func (w *WorkloadManager) SetFileActivityChannel(ch chan *sensorInternal.FileActivity) {
-	w.fileActivityChan = ch
-}
-
 // SetVMIndexReportHandler sets the handler that will accept VM index reports
 func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
 	w.vmIndexReportHandler = handler
@@ -366,6 +360,11 @@ func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
 	w.vmStore = store
 	w.vmPrerequisitesReady.signalStoreReady()
 	log.Debugf("SetVMStore completed (VMs will be populated by informer events)")
+}
+
+// SetPubSubDispatcher sets the pub/sub dispatcher for publishing synthetic file activities
+func (w *WorkloadManager) SetPubSubDispatcher(dispatcher common.PubSubDispatcher) {
+	w.pubSubDispatcher = dispatcher
 }
 
 // Notify implements common.Notifiable to receive Sensor component event notifications

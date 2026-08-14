@@ -291,6 +291,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
+		cfg.workloadManager.SetPubSubDispatcher(internalMessageDispatcher)
 		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
 			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
 			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
@@ -320,9 +321,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
-		if cfg.workloadManager != nil {
-			cfg.workloadManager.SetFileActivityChannel(activityChan)
-		}
 	}
 
 	if vmService != nil {

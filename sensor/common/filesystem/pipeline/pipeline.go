@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	"github.com/stackrox/rox/sensor/kubernetes/fake"
 )
 
 const (
@@ -85,6 +86,18 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 			log.Debug("File system pipeline using pub/sub mode for process enrichment")
 			p.wg.Add(1)
 			go p.cleanupExpiredBuffers()
+		}
+
+		// Register consumer for fake file activities from fake workloads
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.FakeFileActivityConsumer,
+			pubsub.FakeFileActivityTopic,
+			pubsub.FakeFileActivityLane,
+			p.handleFakeFileActivityEvent,
+		); err != nil {
+			log.Errorf("Failed to register consumer for fake file activities: %v", err)
+		} else {
+			log.Debug("File system pipeline registered consumer for fake file activities")
 		}
 	}
 
@@ -342,6 +355,33 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 	}
 
 	return nil
+}
+
+func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+
+	fakeEvent, ok := event.(*fake.FakeFileActivityEvent)
+	if !ok {
+		log.Errorf("File system pipeline received unexpected event type for fake file activity: %T", event)
+		return fmt.Errorf("unexpected event type: %T", event)
+	}
+
+	if fakeEvent.Activity == nil {
+		return nil
+	}
+
+	// Write the fake file activity to the activity channel
+	// The pipeline's run() goroutine will process it from there
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		return nil
+	case p.activityChan <- fakeEvent.Activity:
+		return nil
+	}
 }
 
 func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {

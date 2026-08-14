@@ -8,6 +8,7 @@ import (
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,7 +47,7 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			continue
 		}
 
-		if w.fileActivityChan == nil {
+		if w.pubSubDispatcher == nil {
 			continue
 		}
 
@@ -63,10 +64,19 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			if activity == nil {
 				continue
 			}
+
+			event := &FakeFileActivityEvent{
+				Activity: activity,
+			}
+
+			if err := w.pubSubDispatcher.Publish(event); err != nil {
+				log.Fatalf("Failed to publish fake file activity - scale test cannot function: %v", err)
+			}
+
 			select {
 			case <-ctx.Done():
 				return
-			case w.fileActivityChan <- activity:
+			default:
 			}
 		}
 	}
@@ -197,4 +207,19 @@ func generateFileActivityPaths(n int) []string {
 		paths = append(paths, fmt.Sprintf("%s/file-%s.conf", dir, uuid.NewV4().String()[:8]))
 	}
 	return paths
+}
+
+// FakeFileActivityEvent wraps a file activity message from fake workloads.
+// This allows fake workloads to publish file activities through the pubsub system rather
+// than writing directly to a shared channel.
+type FakeFileActivityEvent struct {
+	Activity *sensorAPI.FileActivity
+}
+
+func (e *FakeFileActivityEvent) Topic() pubsub.Topic {
+	return pubsub.FakeFileActivityTopic
+}
+
+func (e *FakeFileActivityEvent) Lane() pubsub.LaneID {
+	return pubsub.FakeFileActivityLane
 }
