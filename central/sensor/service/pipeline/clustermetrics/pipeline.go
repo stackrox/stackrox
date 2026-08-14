@@ -79,7 +79,7 @@ func (p *pipelineImpl) Run(
 	ctx context.Context,
 	clusterID string,
 	msg *central.MsgFromSensor,
-	_ common.MessageInjector,
+	injector common.MessageInjector,
 ) error {
 	clusterMetrics := msg.GetClusterMetrics()
 	p.metricsStore.Set(clusterID, clusterMetrics)
@@ -93,7 +93,8 @@ func (p *pipelineImpl) Run(
 		logging.GetRateLimitedLogger().Warn(
 			"Error while trying to update secured units usage: ", err.Error())
 	}
-	go clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics)
+	go clusterTelemetry.UpdateSecuredClusterIdentity(ctx, clusterID, clusterMetrics,
+		injector.HasCapability(centralsensor.VirtualMachineTelemetryCap))
 	return nil
 }
 
