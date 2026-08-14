@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -164,11 +165,11 @@ func TestAddValuesRoundTrip(t *testing.T) {
 			path: "test.severity",
 			descriptor: &descriptorpb.EnumDescriptorProto{
 				Value: []*descriptorpb.EnumValueDescriptorProto{
-					{Name: stringPtr("UNSET"), Number: int32Ptr(0)},
-					{Name: stringPtr("LOW"), Number: int32Ptr(1)},
-					{Name: stringPtr("MEDIUM"), Number: int32Ptr(2)},
-					{Name: stringPtr("HIGH"), Number: int32Ptr(3)},
-					{Name: stringPtr("CRITICAL"), Number: int32Ptr(4)},
+					{Name: proto.String("UNSET"), Number: proto.Int32(0)},
+					{Name: proto.String("LOW"), Number: proto.Int32(1)},
+					{Name: proto.String("MEDIUM"), Number: proto.Int32(2)},
+					{Name: proto.String("HIGH"), Number: proto.Int32(3)},
+					{Name: proto.String("CRITICAL"), Number: proto.Int32(4)},
 				},
 			},
 		},
@@ -237,12 +238,4 @@ func TestAddValuesRoundTrip(t *testing.T) {
 			}
 		})
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
-}
-
-func int32Ptr(i int32) *int32 {
-	return &i
 }
