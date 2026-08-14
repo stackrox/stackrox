@@ -27,6 +27,7 @@ import (
 	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
@@ -131,9 +132,7 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 	if err != nil {
 		return nil, err
 	}
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, id); err != nil {
-		log.Errorf("Failed to notify report config change: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id)
 
 	resp, err := s.convertProtoReportConfigurationToV2(createdReportConfig)
 	if err != nil {
@@ -182,9 +181,7 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 	if err != nil {
 		return nil, err
 	}
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId()); err != nil {
-		log.Errorf("Failed to notify report config change: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId())
 	return &apiV2.Empty{}, nil
 }
 
@@ -271,9 +268,7 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	}
 
 	s.scheduler.RemoveReportSchedule(id.GetId())
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId()); err != nil {
-		log.Errorf("Failed to notify report config deletion: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId())
 	return &apiV2.Empty{}, nil
 }
 
@@ -394,9 +389,7 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 	if err != nil {
 		return nil, err
 	}
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID); err != nil {
-		log.Errorf("Failed to notify report request submission: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID)
 
 	return &apiV2.RunReportResponse{
 		ReportConfigId: req.GetReportConfigId(),
@@ -426,9 +419,7 @@ func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID)
 		return nil, errors.Wrapf(errox.InvariantViolation, "Cannot cancel. Report job ID '%s' no longer queued."+
 			"It might already be preparing", req.GetId())
 	}
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestCancelled, req.GetId()); err != nil {
-		log.Errorf("Failed to notify report cancellation: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportRequestCancelled, req.GetId())
 
 	return &apiV2.Empty{}, nil
 }
@@ -507,9 +498,7 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	if err != nil {
 		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
 	}
-	if err := pgNotify.Notify(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID); err != nil {
-		log.Errorf("Failed to notify report request submission: %v", err)
-	}
+	notifyWithRetry(ctx, s.db, pgNotify.ReportRequestSubmitted, reportID)
 
 	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
 }
@@ -624,4 +613,15 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 		}
 	})
 	return err
+}
+
+func notifyWithRetry(ctx context.Context, db postgres.DB, channel, payload string) {
+	err := retry.WithRetry(func() error {
+		return pgNotify.Notify(ctx, db, channel, payload)
+	}, retry.Tries(3), retry.BetweenAttempts(func(previousAttempt int) {
+		log.Errorf("pg_notify %s failed (attempt %d), retrying", channel, previousAttempt+1)
+	}))
+	if err != nil {
+		log.Errorf("pg_notify %s failed after retries: %v", channel, err)
+	}
 }
