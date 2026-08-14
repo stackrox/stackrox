@@ -8,7 +8,9 @@ const (
 	initialBackoff = 10 * time.Second
 	maxBackoffCap  = 30 * time.Minute
 	maxReconcile   = 5 * time.Minute
-	// defaultTickInterval is the scraper scheduler step. Independent of retry-backoff.
+	// defaultTickInterval is the scraper scheduler step and the time base for
+	// the per-tick start budget. Independent of retry backoff so it can change
+	// without retuning NACK/failure delays.
 	defaultTickInterval = 10 * time.Second
 	// catchUpBound is the upper operand in catchUpWindow = min(bound, pollInterval/3).
 	catchUpBound = 20 * time.Minute

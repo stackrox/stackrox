@@ -783,7 +783,7 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		client:   client,
 		interval: interval,
 		// Match catch-up window so default urgent due sets drain in one tick
-		// under concurrency (production uses initialBackoff; pacing tests override).
+		// under concurrency (production uses defaultTickInterval; pacing tests override).
 		tickInterval:          catchUpWindow(interval),
 		initialBackoff:        initialBackoff,
 		reconcileEvery:        reconcilePeriod(interval),

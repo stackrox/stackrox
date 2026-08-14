@@ -72,11 +72,12 @@ type ProtocolClient interface {
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
-	store                 RunningVMStore
-	sender                IndexReportSender
-	dialer                VMDialer
-	client                ProtocolClient
-	interval              time.Duration
+	store    RunningVMStore
+	sender   IndexReportSender
+	dialer   VMDialer
+	client   ProtocolClient
+	interval time.Duration
+	// tickInterval is the scheduler step and the start-budget time base.
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
 	reconcileEvery        time.Duration

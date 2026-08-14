@@ -188,7 +188,7 @@ func TestVMScraper_UrgentDuePileIsPacedByCatchUpBudget(t *testing.T) {
 	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
 	s.concurrency = numVMs
 	s.interval = time.Hour
-	s.tickInterval = 10 * time.Second
+	s.tickInterval = defaultTickInterval
 	s.reconcileEvery = reconcilePeriod(s.interval)
 
 	now := s.now()
@@ -229,7 +229,7 @@ func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 	s, _ := newTestScraper(store, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
 	s.concurrency = 2
 	s.interval = time.Hour
-	s.tickInterval = 10 * time.Second
+	s.tickInterval = defaultTickInterval
 
 	now := s.now()
 	concurrency.WithLock(&s.mu, func() {
@@ -258,7 +258,7 @@ func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 		s.lastReconcile = now
 	})
 
-	// nUrgent=2, catchUp=20m, tick=10s → budget=1; never-scraped must win the slot.
+	// nUrgent=2, catchUp=20m, production tick → budget=1; never-scraped must win the slot.
 	s.tick(context.Background(), false)
 	require.Equal(t, int32(1), dialer.calls.Load())
 
@@ -284,7 +284,7 @@ func TestVMScraper_CadencedDuePileUsesSteadyBudget(t *testing.T) {
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
-	s.tickInterval = 10 * time.Second
+	s.tickInterval = defaultTickInterval
 
 	now := s.now()
 	concurrency.WithLock(&s.mu, func() {
