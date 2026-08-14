@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -183,29 +184,42 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 	}
 }
 
-func TestVirtualMachineTelemetryWithFeatureFlagDisabled(t *testing.T) {
-	// Disable the feature flag using t.Setenv for automatic cleanup
-	t.Setenv(features.VirtualMachines.EnvVar(), "false")
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	// Create a mock datastore with VMs (which should NOT be queried)
-	ds := &mockDataStore{
-		vms: []*storage.VirtualMachine{
-			{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-			{Id: "vm2", ClusterId: "cluster2", Name: "test-vm2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+func TestVirtualMachineTelemetrySkipGather(t *testing.T) {
+	tests := map[string]struct {
+		virtualMachinesEnabled bool
+		enhancedDataModel      bool
+	}{
+		"should return empty map when virtual machines flag is disabled": {
+			virtualMachinesEnabled: false,
+			enhancedDataModel:      false,
+		},
+		"should return empty map when enhanced data model is enabled": {
+			virtualMachinesEnabled: true,
+			enhancedDataModel:      true,
 		},
 	}
 
-	gatherer := gatherWithTime(ds, arbitraryNowFunc)
-	props, err := gatherer(ctx)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), strconv.FormatBool(tc.virtualMachinesEnabled))
+			t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), strconv.FormatBool(tc.enhancedDataModel))
 
-	require.NoError(t, err)
-	require.NotNil(t, props)
+			ctx := sac.WithAllAccess(context.Background())
+			ds := &mockDataStore{
+				vms: []*storage.VirtualMachine{
+					{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+				},
+			}
 
-	// When feature flag is disabled, should return empty map
-	// No database query should have been performed
-	assert.Empty(t, props, "Should return empty map when feature flag is disabled")
+			gatherer := gatherWithTime(ds, arbitraryNowFunc)
+			props, err := gatherer(ctx)
+
+			require.NoError(t, err)
+			require.NotNil(t, props)
+			assert.Empty(t, props)
+			assert.False(t, ds.walked)
+		})
+	}
 }
 
 // createScanWithAge creates a scan with a timestamp at the specified duration before arbitraryNow.
@@ -218,8 +232,9 @@ func createScanWithAge(age time.Duration) *storage.VirtualMachineScan {
 }
 
 type mockDataStore struct {
-	vms []*storage.VirtualMachine
-	err error
+	vms    []*storage.VirtualMachine
+	err    error
+	walked bool
 }
 
 func (m *mockDataStore) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
@@ -254,6 +269,7 @@ func (m *mockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.
 }
 
 func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	m.walked = true
 	if m.err != nil {
 		return m.err
 	}

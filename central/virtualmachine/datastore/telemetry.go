@@ -37,8 +37,8 @@ var (
 // 2. Total number of virtual machines
 // 3. Number of VMs with active agents (received IndexReport within last 24 hours)
 //
-// When the ROX_VIRTUAL_MACHINES feature flag is disabled, this function returns
-// an empty map without performing any database queries, ensuring no performance impact.
+// When ROX_VIRTUAL_MACHINES is off, or the enhanced data model is on (GatherV2
+// owns these metric names), Gather returns an empty map and does not query storage.
 func Gather(ds DataStore) phonehome.GatherFunc {
 	return gatherWithTime(ds, time.Now)
 }
@@ -46,8 +46,7 @@ func Gather(ds DataStore) phonehome.GatherFunc {
 // gatherWithTime allows injecting a time function for deterministic testing.
 func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc {
 	return func(ctx context.Context) (map[string]any, error) {
-		// Early return if virtual machines feature is disabled - zero performance impact
-		if !features.VirtualMachines.Enabled() {
+		if !features.VirtualMachines.Enabled() || features.VirtualMachinesEnhancedDataModel.Enabled() {
 			return map[string]any{}, nil
 		}
 
