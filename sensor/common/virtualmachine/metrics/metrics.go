@@ -270,7 +270,8 @@ var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
 			"gaps means many reports left this Sensor in a short wall-clock " +
 			"window (a spike of many reports in a short time). The " +
 			"first forward after Sensor start does not count to this metric.",
-		Buckets: prometheus.ExponentialBuckets(0.01, 2, 16), // 10ms to ~5.5min
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 18), // 10ms to ~22min; covers pollInterval+W (~8min default)
+
 	},
 )
 
