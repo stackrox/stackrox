@@ -259,7 +259,7 @@ webhooks:
         {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
       {{- else }}
       matchExpressions:
-      - key: namespace.metadata.stackrox.io/name
+      - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
           - {{ ._rox._namespace }}
