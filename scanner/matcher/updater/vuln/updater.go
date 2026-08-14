@@ -446,14 +446,24 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
 	// Process each vulnerability bundle in the .zip archive.
+	// Errors are collected so all bundles are attempted even when some fail.
+	var bundleErrs []error
+	succeeded := 0
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
+			continue
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
+		succeeded++
+	}
+
+	// Skip GC and distribution update when every bundle failed.
+	if succeeded == 0 && len(bundles) > 0 {
+		return false, errors.Join(bundleErrs...)
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
@@ -474,7 +484,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 
 	_ = u.Initialized(ctx)
 
-	return true, nil
+	return true, errors.Join(bundleErrs...)
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {
