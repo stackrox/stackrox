@@ -976,19 +976,6 @@ setup_generated_certs_for_test() {
     done
 }
 
-setup_podsecuritypolicies_config() {
-    info "Set POD_SECURITY_POLICIES variable based on kubernetes version"
-
-    SUPPORTS_PSP=$(retrying_kubectl </dev/null api-resources | grep "podsecuritypolicies" -c || true)
-    if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
-        ci_export "POD_SECURITY_POLICIES" "false"
-        info "POD_SECURITY_POLICIES set to false"
-    else
-        ci_export "POD_SECURITY_POLICIES" "true"
-        info "POD_SECURITY_POLICIES set to true"
-    fi
-}
-
 # wait_for_collectors_to_be_operational() ensures that collector pods are able
 # to load kernel objects and create network connections.
 # shellcheck disable=SC2120
