@@ -616,6 +616,9 @@ func verifyNoUserSearchLabels(q *v1.Query) error {
 }
 
 func notifyWithRetry(ctx context.Context, db postgres.DB, channel, payload string) {
+	if db == nil {
+		return
+	}
 	err := retry.WithRetry(func() error {
 		return pgNotify.Notify(ctx, db, channel, payload)
 	}, retry.Tries(3), retry.BetweenAttempts(func(previousAttempt int) {
