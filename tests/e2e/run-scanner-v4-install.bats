@@ -396,12 +396,16 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
-    # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
-    timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
-        echo "ERROR: Collecting analysis data during teardown did not finish in time."
-        echo "NOTE: This failure will be ignored to not cause a test failure."
-        true # Explicit.
-    }
+    if [[ "${BATS_TEST_COMPLETED:-}" != "1" ]]; then
+        # Execute this on a best-effort basis, as it sometimes encounters long delays for whatever reason.
+        timeout "$COLLECT_ANALYSIS_MAX_DURATION" bash -c "set -euo pipefail; collect_analysis_data '$central_namespace' '$sensor_namespace'" || {
+            echo "ERROR: Collecting analysis data during teardown did not finish in time."
+            echo "NOTE: This failure will be ignored to not cause a test failure."
+            true # Explicit.
+        }
+    else
+        echo "Test case passed, skipping log collection"
+    fi
 
     run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
     echo "Post-test teardown complete."
