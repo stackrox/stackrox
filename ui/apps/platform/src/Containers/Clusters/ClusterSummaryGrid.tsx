@@ -8,6 +8,7 @@ import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterHealthPanel from './Components/ClusterHealthPanel';
 import ClusterMetadata from './Components/ClusterMetadata';
 import CredentialExpiration from './Components/CredentialExpiration';
+import SensorCompatibilitySummary from './Components/SensorCompatibilitySummary';
 import SensorUpgradePanel from './Components/SensorUpgradePanel';
 import type { CertExpiryStatus } from './clusterTypes';
 
@@ -36,11 +37,21 @@ export function ClusterSummaryGrid({
             )}
             {clusterInfo.status && !isSensorCompatStatusEnabled && (
                 <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                    <SensorUpgradePanel
-                        centralVersion={centralVersion}
-                        sensorVersion={clusterInfo.status?.sensorVersion}
-                        upgradeStatus={clusterInfo.status?.upgradeStatus}
-                    />
+                    {isSensorCompatStatusEnabled ? (
+                        <ClusterHealthPanel header="Sensor version">
+                            <SensorCompatibilitySummary
+                                compatibility={clusterInfo.status.sensorVersionCompatibility}
+                                sensorVersion={clusterInfo.status.sensorVersion}
+                                centralVersion={centralVersion}
+                            />
+                        </ClusterHealthPanel>
+                    ) : (
+                        <SensorUpgradePanel
+                            centralVersion={centralVersion}
+                            sensorVersion={clusterInfo.status?.sensorVersion}
+                            upgradeStatus={clusterInfo.status?.upgradeStatus}
+                        />
+                    )}
                 </GridItem>
             )}
             {clusterInfo.status && (
