@@ -223,6 +223,75 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullDueVMs is how many VMs were ready to scrape at the start of the last
+// tick, before the scraper limited how many of them may actually start.
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help: "How many VMs were eligible to scrape at the beginning of the last " +
+			"scraper tick (their next attempt time had arrived and they were not " +
+			"already in flight). This is the size of the due pile before the " +
+			"per-tick start budget is applied, so it can be larger than the number " +
+			"of scrapes that tick actually starts. A persistently high value with " +
+			"low starts-per-tick usually means the budget is pacing a backlog " +
+			"(first-wave catch-up, aligned retries, or unlucky cadence clump).",
+	},
+)
+
+// PullStartsPerTick is how many VM scrapes each tick actually launches after
+// the start budget and never-scraped preference are applied.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick after " +
+			"applying the arrival-smoothing start budget (and preferring " +
+			"never-scraped VMs). Compare with vsock_pull_due_vms: when due is " +
+			"large but starts stay small, the Sensor is draining a backlog " +
+			"gradually instead of dumping every due VM into Central at once. " +
+			"Concurrency is a separate hard cap on overlapping scrapes.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central (not per-VM).
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central (for all VMs, Sensor-wide). Healthy " +
+			"arrival smoothing produces a spread of gaps; a burst of near-zero " +
+			"gaps means many reports left this Sensor in a short wall-clock " +
+			"window (a spike of many reports in a short time). The " +
+			"first forward after Sensor start does not count to this metric.",
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 16), // 10ms to ~5.5min
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to normal poll cadence after a successful or permanent non-retry outcome.
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a successful scrape or " +
+			"other return-to-cadence outcome. That offset is drawn uniformly in " +
+			"[0, W], where W is spreadFraction times the poll interval (default " +
+			"fraction 2/3), so next due times fan out across a wide post-poll " +
+			"band instead of lining up on the same wall-clock minute. Retry and " +
+			"NACK backoff paths do not use this offset.",
+		Buckets: prometheus.ExponentialBuckets(1, 2, 14), // 1s to ~4.5h
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
@@ -240,5 +309,9 @@ func init() {
 		PullRequestsTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullDueVMs,
+		PullStartsPerTick,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
 }
