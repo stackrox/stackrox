@@ -1,0 +1,170 @@
+name: e2e-operator-tests
+
+on:
+  workflow_call:
+    inputs:
+      should-run:
+        description: "true if should really run the job. false - otherwise, i.e. the job should be skipped."
+        required: true
+        type: boolean
+      tag:
+        description: "Image tag to test."
+        required: true
+        type: string
+      ci-job-name:
+        description: "Unique job name, e.g. e2e-operator-tests-<cluster flavor>. Used to configure the image prefetcher and name uploaded artifacts. Propagated to tests as CI_JOB_NAME for test dispatching."
+        required: true
+        type: string
+      cluster-name-prefix:
+        description: "Used as prefix in provisioned cluster names. Maximum 20 characters."
+        required: true
+        type: string
+      # Inputs below are passed through to e2e-test-begin. See
+      # .github/actions/e2e-test-begin/action.yaml for effective defaults.
+      cluster-provisioning-method:
+        description: "Passed to e2e-test-begin."
+        type: string
+      extra-env-vars:
+        description: "Passed to e2e-test-begin."
+        type: string
+      infra-flavor:
+        description: "Passed to e2e-test-begin."
+        type: string
+      infra-args:
+        description: "Passed to e2e-test-begin."
+        type: string
+      infra-lifespan:
+        description: "Passed to e2e-test-begin."
+        type: string
+      gke-machine-type:
+        description: "Passed to e2e-test-begin."
+        type: string
+      gke-num-nodes:
+        description: "Passed to e2e-test-begin."
+        type: string
+      gke-spot:
+        description: "Passed to e2e-test-begin."
+        type: string
+      cluster-wait-timeout-minutes:
+        description: "Passed to e2e-test-begin."
+        type: string
+      job-timeout-minutes:
+        description: "Overall job timeout."
+        type: number
+        default: 361
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  e2e-operator-tests:
+    if: inputs.should-run
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: ${{ inputs.ci-job-name }}
+      ARTIFACT_DIR: ./junit-reports/
+      PYTHONUNBUFFERED: "1"
+      CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
+    timeout-minutes: ${{ inputs.job-timeout-minutes }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Begin e2e test (provision cluster and prepare environment)
+        uses: ./.github/actions/e2e-test-begin
+        with:
+          cluster-provisioning-method: ${{ inputs.cluster-provisioning-method }}
+          cluster-name-prefix: ${{ inputs.cluster-name-prefix }}
+          infra-flavor: ${{ inputs.infra-flavor }}
+          infra-args: ${{ inputs.infra-args }}
+          infra-lifespan: ${{ inputs.infra-lifespan }}
+          cluster-wait-timeout-minutes: ${{ inputs.cluster-wait-timeout-minutes }}
+          gke-machine-type: ${{ inputs.gke-machine-type }}
+          gke-num-nodes: ${{ inputs.gke-num-nodes }}
+          gke-spot: ${{ inputs.gke-spot }}
+          extra-env-vars: ${{ inputs.extra-env-vars }}
+          artifact-dir: ${{ env.ARTIFACT_DIR }}
+          infra-token: ${{ secrets.INFRA_TOKEN }}
+          quay-rhacs-eng-ro-username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          quay-rhacs-eng-ro-password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          install-roxie: false # This test suite deliberately does not deploy ACS using roxie.
+
+      - name: Run pre-test
+        shell: python
+        env:
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from pre_tests import PreSystemTests
+          PreSystemTests().run()
+
+      - name: Prepare OLM
+        if: env.KUBERNETES_PROVIDER == 'ocp'
+        timeout-minutes: 2
+        run: |
+          echo "Removing unused catalog sources"
+          oc patch operatorhub.config.openshift.io cluster --type=json \
+            -p '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'
+          echo "Bouncing catalog operator pod to clear its cache"
+          oc delete pods \
+            --namespace=openshift-operator-lifecycle-manager \
+            --selector=app=catalog-operator --now=true
+
+      - name: Run Operator E2E tests
+        timeout-minutes: 120
+        run: |
+          case "$KUBERNETES_PROVIDER" in
+            gke) cluster_type=gke ;;
+            ocp) cluster_type=openshift4 ;;
+            *)   echo "::error::Unknown KUBERNETES_PROVIDER: '$KUBERNETES_PROVIDER'"; exit 1 ;;
+          esac
+          operator/tests/run.sh "$cluster_type"
+
+      - name: Collect cluster artifacts
+        if: always() && env.KUBECONFIG != ''
+        shell: python
+        run: |
+          import os, sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          post = PostClusterTest(collect_central_artifacts=False)
+          post.run([os.environ['ARTIFACT_DIR']])
+
+      - name: Collect final artifacts
+        if: always()
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import FinalPost
+          FinalPost().run()
+
+      - name: End e2e test (report results and tear down cluster)
+        if: always()
+        uses: ./.github/actions/e2e-test-end
+        with:
+          cluster-provisioning-method: ${{ inputs.cluster-provisioning-method }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          artifact-dir: ${{ env.ARTIFACT_DIR }}
+          jira-user: ${{ secrets.JIRA_USER }}
+          jira-token: ${{ secrets.JIRA_TOKEN }}
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+          infra-token: ${{ secrets.INFRA_TOKEN }}
