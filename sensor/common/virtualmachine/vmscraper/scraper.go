@@ -240,7 +240,8 @@ func (s *VMScraper) run() {
 	defer s.stopper.Flow().ReportStopped()
 	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
 
-	// Reconcile + scrape immediately so VMs don't wait a full tick on start.
+	// First tick forces reconcile so vmState is populated without waiting
+	// reconcileEvery; only VMs already due (catch-up offset 0) start now.
 	s.tick(ctx, true)
 
 	ticker := time.NewTicker(s.tickInterval)
