@@ -282,7 +282,7 @@ select_worker_node() {
 teardown_file() {
     local test_suite_end_timestamp=$(date +%s)
     _begin "teardown-file"
-    run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+    concurrently_remove_existing_stackrox_resources
     emit_timing_data "" "test-suite" "$test_suite_begin_timestamp" "$test_suite_end_timestamp"
     _end
 }
@@ -400,12 +400,22 @@ teardown() {
     fi
 
     if (( BATS_TEST_NUMBER < ${#BATS_TEST_NAMES[@]} )); then
-        export SKIP_OPERATOR_TEARDOWN=true
-        run remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
+        SKIP_OPERATOR_TEARDOWN=true concurrently_remove_existing_stackrox_resources
     fi
     echo "Post-test teardown complete."
 
     _end
+}
+
+concurrently_remove_existing_stackrox_resources() {
+    local central_cleanup_pid=""
+    SKIP_GLOBAL_RESOURCES=true \
+        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" & central_cleanup_pid=$!
+    local sensor_cleanup_pid=""
+    SKIP_GLOBAL_RESOURCES=true \
+        remove_existing_stackrox_resources "${CUSTOM_SENSOR_NAMESPACE}" & sensor_cleanup_pid=$!
+    wait "$central_cleanup_pid" "$sensor_cleanup_pid"
+    remove_existing_stackrox_resources "stackrox"
 }
 
 collect_analysis_data() {
