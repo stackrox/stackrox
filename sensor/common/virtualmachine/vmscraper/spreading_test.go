@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -318,9 +319,9 @@ func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 		s.lastReconcile = now
 	})
 
-	// nUrgent=2, catchUp=20m, production tick → budget=1; never-scraped must win the slot.
+	// nUrgent=2, nCadenced=2 → catch-up 1 + steady 1. Never-scraped take both slots.
 	s.tick(context.Background(), false)
-	require.Equal(t, int32(1), dialer.calls.Load())
+	require.Equal(t, int32(2), dialer.calls.Load())
 
 	dueOld := 0
 	concurrency.WithLock(&s.mu, func() {
@@ -330,7 +331,70 @@ func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 			}
 		}
 	})
-	assert.Equal(t, 2, dueOld, "cadenced VMs remain due when urgent fills the budget")
+	assert.Equal(t, 2, dueOld, "cadenced VMs remain due when never-scraped fill the combined budget")
+}
+
+// TestVMScraper_MixedDuePileStartsCadencedToo covers one never-scraped due VM
+// next to a cadenced clump: cadence must keep its steady-width starts, not
+// drop to zero because nUrgent > 0.
+func TestVMScraper_MixedDuePileStartsCadencedToo(t *testing.T) {
+	const (
+		nUrgent   = 1
+		nCadenced = 100
+	)
+	vms := []*virtualmachine.Info{makeVM("ns", "new", 1)}
+	for i := range nCadenced {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("old-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = nUrgent + nCadenced
+	s.tickInterval = defaultTickInterval
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		s.vmState["ns/new"] = &vmState{
+			vmID:          virtualmachine.VMID("ns/new"),
+			nextAttemptAt: now,
+			orderHash:     hashVMID(virtualmachine.VMID("ns/new"), "ns/new"),
+		}
+		for i := range nCadenced {
+			key := fmt.Sprintf("ns/old-%d", i)
+			id := virtualmachine.VMID(key)
+			s.vmState[key] = &vmState{
+				vmID:            id,
+				lastForwardedAt: now.Add(-time.Hour),
+				nextAttemptAt:   now,
+				orderHash:       hashVMID(id, key),
+			}
+		}
+		s.lastReconcile = now
+	})
+	require.Len(t, s.dueKeys(), nUrgent+nCadenced)
+
+	catchUp := catchUpWindow(s.interval)
+	steadyWidth := steadySpreadWidth(s.interval, s.spreadFraction)
+	wantUrgent := startBudget(nUrgent, s.tickInterval, catchUp)
+	wantCadenced := startBudget(nCadenced, s.tickInterval, steadyWidth)
+	wantTotal := wantUrgent + wantCadenced
+	require.Equal(t, 1, wantUrgent, "ceil(1 × 10s / 100s) = 1")
+	require.Equal(t, 5, wantCadenced, "ceil(100 × 10s / 200s) = 5")
+	require.Equal(t, 6, wantTotal)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(wantTotal), dialer.calls.Load(),
+		"cadenced steady-width starts must run alongside the one urgent slot")
+
+	due := s.dueKeys()
+	assert.False(t, slices.Contains(due, "ns/new"), "the never-scraped VM used the urgent slot")
+	nCadencedDue := 0
+	for i := range nCadenced {
+		if slices.Contains(due, fmt.Sprintf("ns/old-%d", i)) {
+			nCadencedDue++
+		}
+	}
+	assert.Equal(t, nCadenced-wantCadenced, nCadencedDue,
+		"five cadenced VMs should have left the due pile this tick")
 }
 
 func TestVMScraper_CadencedDuePileUsesSteadyBudget(t *testing.T) {

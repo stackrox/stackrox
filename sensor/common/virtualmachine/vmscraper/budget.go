@@ -9,19 +9,23 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 )
 
-// tickStartBudget is how many due scrapes may start this tick without dumping
-// the whole due pile at once. Never-scraped dues pace over the catch-up
-// window; cadenced-only dues pace over the steady width. concurrency is a
-// hard ceiling.
+// tickStartBudget is how many due scrapes may start this tick. Never-scraped
+// and cadenced piles each use their own window formula and the results sum,
+// capped by concurrency, so a mixed pile does not stall cadence.
 func tickStartBudget(nUrgent, nDue, concurrency int, tick, catchUpWindow, steadyWidth time.Duration) int {
 	if concurrency < 1 {
 		concurrency = 1
 	}
+	nCadenced := max(nDue-nUrgent, 0)
 	var budget int
 	if nUrgent > 0 {
-		budget = startBudget(nUrgent, tick, catchUpWindow)
-	} else {
-		budget = startBudget(nDue, tick, steadyWidth)
+		budget += startBudget(nUrgent, tick, catchUpWindow)
+	}
+	if nCadenced > 0 {
+		budget += startBudget(nCadenced, tick, steadyWidth)
+	}
+	if budget < 1 {
+		return 0
 	}
 	return min(budget, concurrency)
 }

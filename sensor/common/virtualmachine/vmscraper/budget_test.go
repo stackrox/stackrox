@@ -78,11 +78,15 @@ func TestTickStartBudget(t *testing.T) {
 	steadyWidth := 40 * time.Minute
 
 	assert.Equal(t, 1, tickStartBudget(100, 100, 20, tick, catchUp, steadyWidth),
-		"urgent uses catch-up budget, not full concurrency")
+		"100 urgent over 20m catch-up should yield 1 start, not concurrency 20")
 	assert.Equal(t, 1, tickStartBudget(0, 100, 20, tick, catchUp, steadyWidth),
-		"cadenced uses steady width budget capped by concurrency")
-	assert.Equal(t, 1, tickStartBudget(0, 100, 1, tick, catchUp, steadyWidth))
-	assert.Equal(t, 4, tickStartBudget(100, 100, 20, tick, 5*time.Minute, steadyWidth))
+		"100 cadenced over 40m steady width should yield 1 start")
+	assert.Equal(t, 1, tickStartBudget(0, 100, 1, tick, catchUp, steadyWidth),
+		"a cadenced pile with concurrency 1 should yield 1 start")
+	assert.Equal(t, 4, tickStartBudget(100, 100, 20, tick, 5*time.Minute, steadyWidth),
+		"100 urgent over a 5m catch-up window should yield 4 starts (ceil(100×10s/5m))")
+	assert.Equal(t, 2, tickStartBudget(1, 101, 20, tick, catchUp, steadyWidth),
+		"1 urgent + 100 cadenced should yield 2 starts (catch-up 1 plus steady 1)")
 }
 
 func TestSelectDueStarts(t *testing.T) {
