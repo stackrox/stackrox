@@ -303,11 +303,6 @@ setup() {
 
     _begin "pre-test-tear-down"
 
-    if [[ "${SKIP_INITIAL_TEARDOWN:-}" != "true" ]] && (( test_case_no == 0 )); then
-        # executing teardown to begin test execution in a well-defined state
-        remove_existing_stackrox_resources "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "stackrox"
-    fi
-
     test_case_no=$(( test_case_no + 1))
 
     export ROX_SCANNER_V4=true
