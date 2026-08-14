@@ -2007,7 +2007,7 @@ wait_for_object_to_appear() {
     local namespace="$1"
     local object="$2"
     local delay="${3:-300}"
-    local waitInterval=20
+    local waitInterval=5
     local tries=$(( delay / waitInterval ))
     local count=0
     until retrying_kubectl </dev/null -n "$namespace" get "$object" > /dev/null 2>&1; do
