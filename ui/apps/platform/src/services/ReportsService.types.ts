@@ -10,12 +10,17 @@ export type ReportConfigurationBase = {
     name: string;
     description: string;
     notifiers: NotifierConfiguration[];
-    schedule: Schedule | null;
+    schedule: ReportSchedule | null;
 };
 
-export type GenericVulnerabilityReportConfiguration = {
+export type NodeVulnerabilityReportFilters = {
+    allVuln: boolean;
+    query: string;
+};
+
+export type NodeReportConfiguration = {
     type: 'NODE_VULNERABILITY';
-    vulnReportFilters: GenericVulnerabilityReportFilters;
+    nodeVulnReportFilters: NodeVulnerabilityReportFilters;
     resourceScope: {
         entityScope: EntityScope;
     };
@@ -74,10 +79,6 @@ export type CvesSince =
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       };
 
-export type GenericVulnerabilityReportFilters = {
-    query: string;
-} & CvesSince;
-
 export type ViewBasedVulnerabilityReportFilters = {
     query: string;
 };
@@ -99,7 +100,7 @@ export type DaysOfMonth = {
 
 export type Interval = DaysOfWeek | DaysOfMonth;
 
-export type Schedule =
+export type ReportSchedule =
     | {
           intervalType: 'WEEKLY';
           hour: number;
@@ -111,6 +112,11 @@ export type Schedule =
           hour: number;
           minute: number;
           daysOfMonth: DaysOfMonth;
+      }
+    | {
+          intervalType: 'DAILY';
+          hour: number;
+          minute: number;
       };
 
 // Notification types
@@ -127,9 +133,13 @@ export type NotifierConfiguration = {
 
 // Resource scope types
 
-export type ResourceScope = {
-    collectionScope: CollectionScope;
-};
+export type ResourceScope =
+    | {
+          collectionScope: CollectionScope;
+      }
+    | {
+          entityScope: EntityScope;
+      };
 
 export type CollectionScope = {
     collectionId: string;
@@ -184,7 +194,7 @@ export type ViewBasedReportSnapshot = Snapshot & {
 
 // TODO temporary disjunction until snamshot has type property.
 type VulnerabilityReportFilters =
-    | GenericVulnerabilityReportFilters
+    | NodeVulnerabilityReportFilters
     | ImageVulnerabilityReportFiltersForCollection
     | ImageVulnerabilityReportFiltersForEntity;
 
@@ -193,7 +203,7 @@ export type ConfiguredReportSnapshot = Snapshot & {
     reportConfigId: string;
     vulnReportFilters: VulnerabilityReportFilters;
     collectionSnapshot: CollectionSnapshot;
-    schedule: Schedule | null;
+    schedule: ReportSchedule | null;
     notifiers: NotifierConfiguration[];
 };
 

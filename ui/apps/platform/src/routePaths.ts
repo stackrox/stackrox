@@ -104,6 +104,7 @@ export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/vi
 
 export const vulnerabilityNodeReportsPath = `${vulnerabilityReportsPath}/node`;
 export const vulnerabilityNodeConfigurationReportsPath = `${vulnerabilityNodeReportsPath}/configuration`;
+export const vulnerabilityNodeConfigurationReportDetailsPath = `${vulnerabilityNodeConfigurationReportsPath}/:reportId`;
 export const vulnerabilityNodeViewBasedReportsPath = `${vulnerabilityNodeReportsPath}/view-based`;
 
 // Vulnerability Management 1.0 path for links from Dashboard:
