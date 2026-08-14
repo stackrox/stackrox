@@ -8,8 +8,8 @@ import (
 )
 
 // maxLogOnceMemory sets the maximum number of unique entries to track.
-// When the code exceeds this amount, some previously logOnceSeen entries will be dropped from tracking and so subsequent
-// calls to LogOnce* will result in messages appearing in the log.
+// When the code exceeds this amount, some previously logOnceSeen entries will be randomly dropped from tracking and so
+// subsequent calls to LogOnce* will result in messages appearing in the log.
 const maxLogOnceMemory = 10_000
 
 var (
@@ -31,8 +31,8 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 		fullKey = key + "|" + template
 	}
 
-	_, seenBefore := logOnceSeen.LoadOrStore(fullKey, nil)
-	if !seenBefore {
+	_, seen := logOnceSeen.LoadOrStore(fullKey, nil)
+	if !seen {
 		logger.Logf(level, template, args...)
 
 		if logOnceMemoryUsed.Add(1) > maxLogOnceMemory {

@@ -17,11 +17,6 @@ func TestLogOnce(t *testing.T) {
 type logOnceTestSuite struct {
 	suite.Suite
 	mockLogger *logMocks.MockLogger
-	realLogger Logger
-}
-
-func (s *logOnceTestSuite) SetupSuite() {
-	s.realLogger = LoggerForModule()
 }
 
 func (s *logOnceTestSuite) SetupTest() {
@@ -66,7 +61,36 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	s.Equal(maxLogOnceMemory, inMap)
 }
 
-func (s *logOnceTestSuite) TestLogOncefReal() {
-	LogOncef(s.realLogger, zapcore.InfoLevel, "this message is only logged once")
-	LogOncef(s.realLogger, zapcore.InfoLevel, "this message is only logged once")
+func TestRealLogOncef(t *testing.T) {
+	logger := LoggerForModule()
+	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
+	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
+}
+
+func BenchmarkLogOncef(b *testing.B) {
+	logger := LoggerForModule()
+
+	b.Run("cold start", func(b *testing.B) {
+		for i := range b.N {
+			LogOncef(logger, zapcore.InfoLevel, "first benchmark message %d", i)
+		}
+	})
+
+	b.Run("warm start", func(b *testing.B) {
+		LogOncef(logger, zapcore.InfoLevel, "second benchmark message %d", 0)
+		b.ResetTimer()
+		for i := range b.N {
+			LogOncef(logger, zapcore.InfoLevel, "second benchmark message %d", i)
+		}
+	})
+
+	b.Run("warm start - parallel", func(b *testing.B) {
+		LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
+			}
+		})
+	})
 }
