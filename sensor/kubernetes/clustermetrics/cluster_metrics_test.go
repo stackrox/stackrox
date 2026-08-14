@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stretchr/testify/suite"
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -96,7 +97,7 @@ func (f *fakeClusterIDPeeker) GetNoWait() string {
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval)
+	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval, nil)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -150,4 +151,53 @@ func (s *ClusterMetricsTestSuite) addNode(name coreV1.ResourceName, cpu resource
 		},
 	}, metaV1.CreateOptions{})
 	s.Require().NoError(err)
+}
+
+type fakeVMStatsSource struct {
+	stats vmscraper.Stats
+}
+
+func (f *fakeVMStatsSource) Stats() vmscraper.Stats {
+	return f.stats
+}
+
+func (s *ClusterMetricsTestSuite) TestNilVMStatsSource() {
+	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, nil)
+	impl, ok := metrics.(*clusterMetricsImpl)
+	s.Require().True(ok)
+
+	cm, err := impl.collectMetrics()
+	s.Require().NoError(err)
+	s.Nil(cm.GetVirtualMachineMetrics(),
+		"nil vmStatsSource must produce nil virtual_machine_metrics, not a zero-valued one")
+}
+
+func (s *ClusterMetricsTestSuite) TestVMStatsPopulated() {
+	src := &fakeVMStatsSource{
+		stats: vmscraper.Stats{
+			TrackedVMs: 10,
+			VMsScanned: 7,
+			VersionCounts: map[string]int{
+				"v1.0.0":  5,
+				"v2.0.0":  3,
+				"unknown": 2,
+			},
+		},
+	}
+	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, src)
+	impl, ok := metrics.(*clusterMetricsImpl)
+	s.Require().True(ok)
+
+	cm, err := impl.collectMetrics()
+	s.Require().NoError(err)
+
+	vmm := cm.GetVirtualMachineMetrics()
+	s.Require().NotNil(vmm, "non-nil vmStatsSource must produce non-nil virtual_machine_metrics")
+	s.Equal(int32(10), vmm.GetTrackedVms())
+	s.Equal(int32(7), vmm.GetVmsScanned())
+	s.Equal(map[string]int32{
+		"v1.0.0":  5,
+		"v2.0.0":  3,
+		"unknown": 2,
+	}, vmm.GetRoxagentVersionCounts())
 }
