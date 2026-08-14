@@ -178,7 +178,9 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineScanV2DS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
+	virtualMachineV2DS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
@@ -716,6 +718,10 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(virtualMachineDS.GatherV2(
+		virtualMachineV2DS.Singleton(),
+		virtualMachineScanV2DS.Singleton(),
+	))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {

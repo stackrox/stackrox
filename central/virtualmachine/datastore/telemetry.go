@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -98,6 +100,75 @@ func gatherWithTime(ds DataStore, nowFunc func() time.Time) phonehome.GatherFunc
 			metricVMsWithActiveAgents: vmsWithActiveAgents,
 		}
 		log.Debugf("Virtual machines telemetry update: %v", props)
+		return props, nil
+	}
+}
+
+// vmV2Walker is the subset of the VM V2 datastore this gatherer needs.
+type vmV2Walker interface {
+	Walk(ctx context.Context, fn func(vm *storage.VirtualMachineV2) error) error
+}
+
+// scanV2Counter is the subset of the scan V2 datastore this gatherer needs.
+type scanV2Counter interface {
+	Count(ctx context.Context, q *v1.Query) (int, error)
+}
+
+// GatherV2 returns a gatherer that queries the V2 VM and scan datastores.
+func GatherV2(vmV2DS vmV2Walker, scanV2DS scanV2Counter) phonehome.GatherFunc {
+	return gatherV2WithTime(vmV2DS, scanV2DS, time.Now)
+}
+
+func gatherV2WithTime(vmV2DS vmV2Walker, scanV2DS scanV2Counter, nowFunc func() time.Time) phonehome.GatherFunc {
+	return func(ctx context.Context) (map[string]any, error) {
+		if !features.VirtualMachines.Enabled() || !features.VirtualMachinesEnhancedDataModel.Enabled() {
+			return map[string]any{}, nil
+		}
+
+		ctx = sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.VirtualMachine),
+			),
+		)
+
+		clusterIDsWithRunningVMs := set.NewStringSet()
+		totalVMs := 0
+
+		err := vmV2DS.Walk(ctx, func(vm *storage.VirtualMachineV2) error {
+			totalVMs++
+			if vm.GetState() == storage.VirtualMachineV2_RUNNING {
+				clusterID := vm.GetClusterId()
+				if clusterID == "" {
+					log.Debugf("Virtual machine V2 %s has empty cluster_id", vm.GetId())
+				} else {
+					clusterIDsWithRunningVMs.Add(clusterID)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		now := nowFunc()
+		cutoff := now.Add(-activeVMAgentMaxAgeLimitTelemetry)
+		cutoffTS := protocompat.ConvertTimeToTimestampOrNil(&cutoff)
+		q := search.NewQueryBuilder().
+			AddStrings(search.VirtualMachineScanTime, ">"+protocompat.ConvertTimestampToString(cutoffTS, time.RFC3339Nano)).
+			ProtoQuery()
+
+		vmsWithActiveAgents, err := scanV2DS.Count(ctx, q)
+		if err != nil {
+			return nil, err
+		}
+
+		props := map[string]any{
+			metricClustersWithVMs:     clusterIDsWithRunningVMs.Cardinality(),
+			metricTotalVMs:            totalVMs,
+			metricVMsWithActiveAgents: vmsWithActiveAgents,
+		}
+		log.Debugf("Virtual machines V2 telemetry update: %v", props)
 		return props, nil
 	}
 }

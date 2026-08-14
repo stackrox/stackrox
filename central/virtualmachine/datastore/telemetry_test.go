@@ -262,3 +262,121 @@ func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMac
 	}
 	return nil
 }
+
+// --- V2 mock types ---
+
+type mockVMV2DataStore struct {
+	vms []*storage.VirtualMachineV2
+	err error
+}
+
+func (m *mockVMV2DataStore) Walk(_ context.Context, fn func(vm *storage.VirtualMachineV2) error) error {
+	if m.err != nil {
+		return m.err
+	}
+	for _, vm := range m.vms {
+		if err := fn(vm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type mockScanV2DataStore struct {
+	count int
+	err   error
+}
+
+func (m *mockScanV2DataStore) Count(_ context.Context, _ *v1.Query) (int, error) {
+	return m.count, m.err
+}
+
+func TestVirtualMachineTelemetryV2(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+
+	tests := map[string]struct {
+		vms                            []*storage.VirtualMachineV2
+		scanCount                      int
+		expectedClustersWithRunningVMs int
+		expectedTotalVMs               int
+		expectedVMsWithActiveAgents    int
+	}{
+		"should return zero for all metrics when no V2 VMs exist": {
+			vms:                            nil,
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 0,
+			expectedTotalVMs:               0,
+			expectedVMsWithActiveAgents:    0,
+		},
+		"should count single cluster with one running V2 VM and one recent scan": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      1,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               1,
+			expectedVMsWithActiveAgents:    1,
+		},
+		"should count total V2 VMs including stopped ones": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachineV2_STOPPED},
+				{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachineV2_UNKNOWN},
+			},
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               3,
+			expectedVMsWithActiveAgents:    0,
+		},
+		"should count multiple distinct clusters with running V2 VMs": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      2,
+			expectedClustersWithRunningVMs: 3,
+			expectedTotalVMs:               3,
+			expectedVMsWithActiveAgents:    2,
+		},
+		"should exclude V2 VMs with empty cluster id from cluster count": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      1,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               2,
+			expectedVMsWithActiveAgents:    1,
+		},
+		"should handle V2 VM with no scan row yet (never scanned)": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               2,
+			expectedVMsWithActiveAgents:    0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := sac.WithAllAccess(context.Background())
+
+			vmV2DS := &mockVMV2DataStore{vms: tc.vms}
+			scanV2DS := &mockScanV2DataStore{count: tc.scanCount}
+
+			gatherer := gatherV2WithTime(vmV2DS, scanV2DS, arbitraryNowFunc)
+			props, err := gatherer(ctx)
+
+			require.NoError(t, err)
+			require.NotNil(t, props)
+			assert.Equal(t, tc.expectedClustersWithRunningVMs, props[metricClustersWithVMs])
+			assert.Equal(t, tc.expectedTotalVMs, props[metricTotalVMs])
+			assert.Equal(t, tc.expectedVMsWithActiveAgents, props[metricVMsWithActiveAgents])
+		})
+	}
+}
