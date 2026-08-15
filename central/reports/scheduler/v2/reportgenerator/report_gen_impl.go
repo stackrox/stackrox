@@ -70,16 +70,6 @@ var (
 	}
 )
 
-// imageCVESelectCursorFn is the function type for cursor-based CVE queries, extracted to allow
-// injection in unit tests without requiring a real database connection.
-type imageCVESelectCursorFn func(
-	ctx context.Context,
-	db postgres.DB,
-	schema *walker.Schema,
-	query *v1.Query,
-	fn func(*ImageCVEQueryResponse) error,
-) error
-
 type reportGeneratorImpl struct {
 	reportSnapshotStore     reportSnapshotDS.DataStore
 	deploymentDatastore     deploymentDS.DataStore
@@ -93,10 +83,6 @@ type reportGeneratorImpl struct {
 	db                      postgres.DB
 
 	Schema *graphql.Schema
-
-	// selectCursorFn allows tests to inject a fake cursor implementation;
-	// nil defaults to pgSearch.RunSelectCursorForSchemaFn.
-	selectCursorFn imageCVESelectCursorFn
 }
 
 type ImageCVEInterface interface {
@@ -468,11 +454,8 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 	rowCount *int,
 ) error {
 	var batch []*ImageCVEQueryResponse
-	batchNum := 0
 
 	flushBatch := func() error {
-		batchNum++
-		log.Infof("Processing batch %d (%d rows so far)", batchNum, *rowCount)
 		unseenIDs := set.NewStringSet()
 		for _, r := range batch {
 			id := r.GetCVEID()
@@ -503,11 +486,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 		return nil
 	}
 
-	cursorFn := rg.selectCursorFn
-	if cursorFn == nil {
-		cursorFn = pgSearch.RunSelectCursorForSchemaFn[ImageCVEQueryResponse]
-	}
-	err := cursorFn(
+	err := pgSearch.RunSelectCursorForSchemaFn[ImageCVEQueryResponse](
 		ctx, rg.db, schema, query,
 		func(r *ImageCVEQueryResponse) error {
 			batch = append(batch, r)

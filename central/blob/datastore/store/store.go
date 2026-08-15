@@ -130,9 +130,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Blob, reader io.Rea
 	if err := lo.Close(); err != nil {
 		return wrapRollback(ctx, tx, errors.Wrap(err, "closing large object for blob"))
 	}
-	if obj.GetLength() < 0 {
-		obj.Length = totalRead
-	} else if totalRead != obj.GetLength() {
+	if totalRead != obj.GetLength() {
 		return wrapRollback(ctx, tx, errors.Errorf("Blob metadata mismatch. Blob metadata shows %d in length, but data has length of %d", obj.GetLength(), totalRead))
 	}
 

@@ -185,76 +185,13 @@ func heapAllocBytes() uint64 {
 	return m.HeapAlloc
 }
 
-// BenchmarkMemory_InMemory measures peak heap allocation for the old in-memory path:
-// accumulate all rows, build CSV buffer, build ZIP buffer, then write to blob store.
-func BenchmarkMemory_InMemory(b *testing.B) {
-	if !features.FlattenImageData.Enabled() {
-		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
-	}
-	s := setupMemoryBench(b, 10, 50, 500)
-
-	b.Run("getReportData+GenerateCSV+saveReportData", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			// Fresh loaders context per iteration so loader-cached connections
-			// are not accumulated across iterations, which would exhaust the pool.
-			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-			forceGC()
-			before := heapAllocBytes()
-
-			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
-			require.NoError(b, err)
-			require.Equal(b, s.rowCount, len(reportData.CVEResponses))
-
-			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
-			require.NoError(b, err)
-			require.True(b, zippedCSV.Len() > 0)
-
-			// Measure after data + CSV + ZIP are all in memory.
-			after := heapAllocBytes()
-			b.ReportMetric(float64(after-before), "heap-delta-bytes")
-
-			// Save to blob store (same as production DOWNLOAD path).
-			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
-			require.NoError(b, err)
-		}
-	})
-}
-
-// BenchmarkMemory_Transaction measures peak heap allocation for the transactional streaming
-// path: cursor reads, CVE lookups, CSV/ZIP generation, and blob store writes all within a
-// single database transaction using constant memory.
-func BenchmarkMemory_Transaction(b *testing.B) {
-	if !features.FlattenImageData.Enabled() {
-		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
-	}
-	s := setupMemoryBench(b, 10, 50, 500)
-	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-
-	b.Run("generateReportTransaction", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-			forceGC()
-			before := heapAllocBytes()
-
-			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
-				ReportSnapshot: s.snap,
-				Collection:     s.collection,
-				DataStartTime:  time.Time{},
-			})
-			require.NoError(b, err)
-
-			after := heapAllocBytes()
-			b.ReportMetric(float64(after-before), "heap-delta-bytes")
-		}
-	})
-}
-
 // BenchmarkMemoryComparison runs InMemory and Transaction paths side-by-side for easy comparison.
 // Use: go test -tags sql_integration -bench BenchmarkMemoryComparison -benchtime 3x -v
 func BenchmarkMemoryComparison(b *testing.B) {
 	s := setupMemoryBench(b, 10, 50, 500)
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 
 	b.Run("InMemory", func(b *testing.B) {
 		b.ReportAllocs()
@@ -298,71 +235,6 @@ func BenchmarkMemoryComparison(b *testing.B) {
 	})
 }
 
-// BenchmarkMemoryPeakTracking provides finer-grained peak memory tracking by sampling
-// heap allocations using a finalizer-based approach.
-// This gives the most accurate picture since runtime.ReadMemStats is a stop-the-world snapshot.
-func BenchmarkMemoryPeakTracking(b *testing.B) {
-	if !features.FlattenImageData.Enabled() {
-		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
-	}
-	s := setupMemoryBench(b, 10, 50, 500)
-
-	b.Run("InMemory_Peak", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-			forceGC()
-			var peak uint64
-
-			sample := func() {
-				cur := heapAllocBytes()
-				if cur > peak {
-					peak = cur
-				}
-			}
-
-			baseline := heapAllocBytes()
-			reportData, err := s.rg.getReportDataSQF(iterCtx, s.snap, s.collection, time.Time{})
-			require.NoError(b, err)
-			sample()
-
-			zippedCSV, err := GenerateCSV(reportData.CVEResponses, s.snap.GetName())
-			require.NoError(b, err)
-			sample()
-
-			err = s.rg.saveReportData(iterCtx, s.snap.GetReportConfigurationId(), s.snap.GetReportId(), zippedCSV)
-			require.NoError(b, err)
-			sample()
-
-			b.ReportMetric(float64(peak-baseline), "peak-heap-delta-bytes")
-
-			// Prevent compiler from optimizing away the result.
-			_ = zippedCSV
-			_ = reportData
-		}
-	})
-
-	s.snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_DOWNLOAD
-	b.Run("Transaction_Peak", func(b *testing.B) {
-		b.ReportAllocs()
-		for i := 0; i < b.N; i++ {
-			iterCtx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-			forceGC()
-			baseline := heapAllocBytes()
-
-			err := s.rg.generateReportTransaction(iterCtx, &ReportRequest{
-				ReportSnapshot: s.snap,
-				Collection:     s.collection,
-				DataStartTime:  time.Time{},
-			})
-			require.NoError(b, err)
-
-			after := heapAllocBytes()
-			b.ReportMetric(float64(after-baseline), "peak-heap-delta-bytes")
-		}
-	})
-}
-
 // BenchmarkMemoryAtScale uses larger data volumes to amplify the difference.
 // 2 clusters * 20 namespaces * 100 deployments * 2 CVEs = 8000 deployed rows
 // + 1000 watched images * 2 CVEs = 2000 watched rows = 10000 total rows.
@@ -399,6 +271,9 @@ func BenchmarkMemoryAtScale(b *testing.B) {
 // Use: go test -tags sql_integration -bench BenchmarkReportDuration -benchtime 3x -v
 func BenchmarkReportDuration(b *testing.B) {
 	s := setupMemoryBench(b, 10, 50, 500)
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("benchmark requires FlattenImageData (image v2 model) to be enabled")
+	}
 
 	b.Run("InMemory", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
