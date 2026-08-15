@@ -1,9 +1,9 @@
 package logging
 
 import (
-	"sync"
 	"sync/atomic"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap/zapcore"
 )
 
