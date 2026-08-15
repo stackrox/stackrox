@@ -99,24 +99,18 @@ func (w *WorkloadManager) generateFileActivity(paths []string, hostname string) 
 	path := paths[rand.Intn(len(paths))]
 	now := timestamppb.Now()
 
-	var containerID string
+	var process *sensorAPI.ProcessSignal
 	if rand.Intn(100) >= w.workload.FileActivityWorkload.NodeEventPercent {
-		cid, ok := w.containerPool.randomElem()
+		// Container event - try to get from pool or generate with container ID
+		containerID, ok := w.containerPool.randomElem()
 		if ok {
-			containerID = cid
+			process = getRandomSensorProcess(containerID, w.processPool)
 		}
 	}
 
-	name := goodProcessNames[rand.Intn(len(goodProcessNames))]
-	process := &sensorAPI.ProcessSignal{
-		Id:           uuid.NewV4().String(),
-		ContainerId:  containerID,
-		Name:         name,
-		Args:         "abc def ghi jkl lmn op qrs tuv",
-		ExecFilePath: "/usr/bin/" + name,
-		Pid:          uint32(rand.Intn(65535) + 1),
-		Uid:          1000,
-		Gid:          1000,
+	if process == nil {
+		// Node event (or no container available) - generate process with empty container ID
+		process = getRandomNodeProcess()
 	}
 
 	base := &sensorAPI.FileActivityBase{
