@@ -250,7 +250,9 @@ func RunSelectCursorForSchemaFn[T any](ctx context.Context, db postgres.DB, sche
 	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
 	defer cancel()
 
-	cursor, err := getSelectCursorSession(ctx, db, builtQuery)
+	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
+		return getSelectCursorSession(ctx, db, builtQuery)
+	})
 	if err != nil {
 		return errors.Wrap(err, "prepare cursor")
 	}
