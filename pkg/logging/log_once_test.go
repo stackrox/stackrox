@@ -46,7 +46,7 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	testCount := maxLogOnceMemory * 2
 	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
 	for i := range testCount {
-		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(i))
+		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(i)) //nolint:govet
 	}
 
 	s.Equal(int64(maxLogOnceMemory), logOnceMemoryUsed.Load())
