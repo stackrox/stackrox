@@ -22,8 +22,7 @@ type logOnceTestSuite struct {
 func (s *logOnceTestSuite) SetupTest() {
 	mockController := gomock.NewController(s.T())
 	s.mockLogger = logMocks.NewMockLogger(mockController)
-	logOnceSeen.Clear()
-	logOnceMemoryUsed.Store(0)
+	clearMemory()
 }
 
 func (s *logOnceTestSuite) TestLogOncef() {
@@ -52,13 +51,18 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 
 	s.Equal(int64(maxLogOnceMemory), logOnceMemoryUsed.Load())
 
-	inMap := 0
+	countInMap := 0
 	logOnceSeen.Range(func(_ any, _ any) bool {
-		inMap++
+		countInMap++
 		return true
 	})
 
-	s.Equal(maxLogOnceMemory, inMap)
+	s.Equal(maxLogOnceMemory, countInMap)
+}
+
+func clearMemory() {
+	logOnceSeen.Clear()
+	logOnceMemoryUsed.Store(0)
 }
 
 func TestRealLogOncef(t *testing.T) {
@@ -67,16 +71,26 @@ func TestRealLogOncef(t *testing.T) {
 	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
 }
 
-func BenchmarkLogOncef(b *testing.B) {
+func TestRealLogOncePerKeyf(t *testing.T) {
+	logger := LoggerForModule()
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
+	LogOncePerKeyf("key2", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key2")
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
+}
+
+func BenchmarkLogOnce(b *testing.B) {
 	logger := LoggerForModule()
 
 	b.Run("cold start", func(b *testing.B) {
+		clearMemory()
+		b.ResetTimer()
 		for i := range b.N {
 			LogOncef(logger, zapcore.InfoLevel, "first benchmark message %d", i)
 		}
 	})
 
 	b.Run("warm start", func(b *testing.B) {
+		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "second benchmark message %d", 0)
 		b.ResetTimer()
 		for i := range b.N {
@@ -85,11 +99,23 @@ func BenchmarkLogOncef(b *testing.B) {
 	})
 
 	b.Run("warm start - parallel", func(b *testing.B) {
+		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
+			}
+		})
+	})
+
+	b.Run("with key", func(b *testing.B) {
+		clearMemory()
+		LogOncePerKeyf("mykey", logger, zapcore.InfoLevel, "fourth benchmark message %d", 0)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				LogOncePerKeyf("mykey", logger, zapcore.InfoLevel, "fourth benchmark message %d", 0)
 			}
 		})
 	})
