@@ -28,7 +28,7 @@ func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) 
 func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template string, args ...any) {
 	fullKey := template
 	if key != "" {
-		fullKey = key + "|" + template
+		fullKey = key + "\x00" + template
 	}
 
 	_, seen := logOnceSeen.LoadOrStore(fullKey, nil)
