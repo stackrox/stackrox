@@ -11,6 +11,7 @@ import CreateIntegrationPage from './CreateIntegrationPage';
 import EditIntegrationPage from './EditIntegrationPage';
 import IntegrationDetailsPage from './IntegrationDetailsPage';
 
+import AiIntegrationsTab from './IntegrationTiles/AiIntegrationsTab';
 import ApiClientIntegrationsTab from './IntegrationTiles/ApiClientIntegrationsTab';
 import AuthenticationIntegrationsTab from './IntegrationTiles/AuthenticationIntegrationsTab';
 import BackupIntegrationsTab from './IntegrationTiles/BackupIntegrationsTab';
@@ -31,6 +32,7 @@ const integrationsTabElementMap: Record<IntegrationSource, IntegrationsTabElemen
     notifiers: NotifierIntegrationsTab,
     backups: BackupIntegrationsTab,
     cloudSources: CloudSourceIntegrationsTab,
+    aiIntegrations: AiIntegrationsTab,
     authProviders: AuthenticationIntegrationsTab,
     apiClients: ApiClientIntegrationsTab,
 };
