@@ -96,7 +96,7 @@ type VirtualMachineMetrics struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	TrackedVms            int32                  `protobuf:"varint,1,opt,name=tracked_vms,json=trackedVms,proto3" json:"tracked_vms,omitempty"`                                                                                                              // VMs currently tracked for scraping.
 	VmsScanned            int32                  `protobuf:"varint,2,opt,name=vms_scanned,json=vmsScanned,proto3" json:"vms_scanned,omitempty"`                                                                                                              // Tracked VMs with at least one successful scrape ever.
-	RoxagentVersionCounts map[string]int32       `protobuf:"bytes,3,rep,name=roxagent_version_counts,json=roxagentVersionCounts,proto3" json:"roxagent_version_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Version (or "unknown"/"other") -> count of tracked VMs.
+	RoxagentVersionCounts map[string]int32       `protobuf:"bytes,3,rep,name=roxagent_version_counts,json=roxagentVersionCounts,proto3" json:"roxagent_version_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Version (or "unknown"/"other") -> count of scanned VMs. Unscanned VMs are omitted.
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }

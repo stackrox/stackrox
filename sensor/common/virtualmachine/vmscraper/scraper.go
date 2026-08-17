@@ -720,16 +720,21 @@ func (s *VMScraper) commitVMState(key string, newToken string, agentVersion stri
 	})
 }
 
-const maxVersionBuckets = 20
+const (
+	maxVersionBuckets   = 20
+	unknownAgentVersion = "unknown"
+	otherAgentVersion   = "other"
+)
 
 // Stats is a point-in-time snapshot of the scraper's fleet state.
 type Stats struct {
 	TrackedVMs    int
 	VMsScanned    int
-	VersionCounts map[string]int
+	VersionCounts map[string]int // scanned VMs only; empty AgentVersion is "unknown"
 }
 
 // Stats returns a point-in-time snapshot of fleet statistics.
+// VersionCounts omits never-scraped VMs: those have no agent version to report.
 func (s *VMScraper) Stats() Stats {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -740,13 +745,13 @@ func (s *VMScraper) Stats() Stats {
 	}
 
 	for _, vs := range s.vmState {
-		if !vs.lastForwardedAt.IsZero() {
-			st.VMsScanned++
+		if vs.lastForwardedAt.IsZero() {
+			continue
 		}
-
+		st.VMsScanned++
 		ver := vs.lastAgentVersion
 		if ver == "" {
-			ver = "unknown"
+			ver = unknownAgentVersion
 		}
 		st.VersionCounts[ver]++
 	}
@@ -783,6 +788,6 @@ func capVersionCounts(counts map[string]int) {
 		delete(counts, e.ver)
 	}
 	if otherTotal > 0 {
-		counts["other"] += otherTotal
+		counts[otherAgentVersion] += otherTotal
 	}
 }
