@@ -225,7 +225,7 @@ func (NotificationMethod) EnumDescriptor() ([]byte, []int) {
 type ReportConfiguration_ReportType int32
 
 const (
-	ReportConfiguration_VULNERABILITY      ReportConfiguration_ReportType = 0
+	ReportConfiguration_VULNERABILITY      ReportConfiguration_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
 	ReportConfiguration_NODE_VULNERABILITY ReportConfiguration_ReportType = 1
 )
 
@@ -574,7 +574,7 @@ func (ReportStatus_ReportMethod) EnumDescriptor() ([]byte, []int) {
 type ReportRequestViewBased_ReportType int32
 
 const (
-	ReportRequestViewBased_VULNERABILITY      ReportRequestViewBased_ReportType = 0
+	ReportRequestViewBased_VULNERABILITY      ReportRequestViewBased_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
 	ReportRequestViewBased_NODE_VULNERABILITY ReportRequestViewBased_ReportType = 1
 )
 

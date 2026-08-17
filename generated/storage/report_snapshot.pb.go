@@ -25,7 +25,7 @@ const (
 type ReportSnapshot_ReportType int32
 
 const (
-	ReportSnapshot_VULNERABILITY      ReportSnapshot_ReportType = 0
+	ReportSnapshot_VULNERABILITY      ReportSnapshot_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
 	ReportSnapshot_NODE_VULNERABILITY ReportSnapshot_ReportType = 1
 )
 

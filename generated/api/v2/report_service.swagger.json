@@ -1081,7 +1081,8 @@
         "VULNERABILITY",
         "NODE_VULNERABILITY"
       ],
-      "default": "VULNERABILITY"
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportHistoryResponse": {
       "type": "object",
@@ -1118,7 +1119,8 @@
         "VULNERABILITY",
         "NODE_VULNERABILITY"
       ],
-      "default": "VULNERABILITY"
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportSchedule": {
       "type": "object",

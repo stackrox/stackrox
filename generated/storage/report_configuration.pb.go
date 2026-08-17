@@ -132,7 +132,7 @@ func (EntityField) EnumDescriptor() ([]byte, []int) {
 type ReportConfiguration_ReportType int32
 
 const (
-	ReportConfiguration_VULNERABILITY      ReportConfiguration_ReportType = 0
+	ReportConfiguration_VULNERABILITY      ReportConfiguration_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
 	ReportConfiguration_NODE_VULNERABILITY ReportConfiguration_ReportType = 1
 )
 

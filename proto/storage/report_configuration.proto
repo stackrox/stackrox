@@ -15,7 +15,7 @@ option java_package = "io.stackrox.proto.storage";
 
 message ReportConfiguration {
   enum ReportType {
-    VULNERABILITY = 0;
+    VULNERABILITY = 0; // for historical reasons, this short form was used to mean "Image Vulnerability"
     NODE_VULNERABILITY = 1;
   }
 
