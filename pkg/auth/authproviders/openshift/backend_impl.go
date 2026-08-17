@@ -65,6 +65,8 @@ type backend struct {
 	baseRedirectURLPath     string
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
+
+	config   map[string]string
 }
 
 type openShiftSettings struct {

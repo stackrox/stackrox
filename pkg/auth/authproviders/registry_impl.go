@@ -389,6 +389,7 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 		if err != nil {
 			return nil, nil, err
 		}
+		log.Info("Rox ", token)
 
 		var refreshCookie *http.Cookie
 		if authResp.RefreshToken != "" {
@@ -465,6 +466,7 @@ func getRolesForOpenshiftResponse(
 	// InClusterConfig() sets BearerTokenFile to the service account token,
 	// which would override the user's OAuth token we just set.
 	cfg.BearerTokenFile = ""
+	log.Info(cfg.BearerToken)
 	acmClientObj, err := acmclient.NewACMClientForConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -473,6 +475,7 @@ func getRolesForOpenshiftResponse(
 	if err != nil {
 		return nil, err
 	}
+	log.Info(roles)
 	return roles, nil
 }
 
