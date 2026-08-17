@@ -256,16 +256,20 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	typ := parts[0]
+	log.Info("Getting auth provider factory for type ", typ)
 	factory := r.getFactory(typ)
 	if factory == nil {
 		log.Debugf("Factory with type %q not found", typ)
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
+	log.Info("Got auth provider factory for type ", typ)
 
+	log.Info("Provider HTTP Handler - passing request for factory for processing")
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
 	clientState, mode := idputil.ParseClientState(clientState)
 	testMode := mode == idputil.TestAuthMode
+	log.Info("Provider HTTP Handler - request processed by factory - state - ", clientState)
 
 	var provider Provider
 	if err == nil {

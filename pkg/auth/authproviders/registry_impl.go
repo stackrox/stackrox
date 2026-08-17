@@ -372,6 +372,7 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 	}
 	tokenOpts = append(tokenOpts, authResp.ExtraOpts...)
 	if features.ACMAccessControlDelegation.Enabled() {
+		log.Info("issue token for response - OPP Access control enabled")
 		roxClaims := tokens.RoxClaims{}
 		switch provider.Type() {
 		case OpenShiftTypeNameWithACMAccessControlDelegation:
