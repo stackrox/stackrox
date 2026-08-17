@@ -3,10 +3,10 @@ import queryString from 'qs';
 import type { SearchFilter, SearchQueryOptions } from 'types/search';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import axios from './instance';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
 import type { NodeVulnerabilityReportConfiguration } from './ReportsService.types';
+import axios from './instance';
 
 export function fetchNodeReportConfigurations({
     searchFilter,
