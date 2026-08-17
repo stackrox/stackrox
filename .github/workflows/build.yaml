@@ -1270,7 +1270,7 @@ jobs:
         paths: 'junit-reports/**/*.xml'
 
     - name: Report junit failures in jira
-      uses: ./.github/actions/junit2jira
+      uses: stackrox/actions/test/junit2jira@giles/junit2jira
       if: always()
       with:
         jira-user: ${{ secrets.JIRA_USER }}
