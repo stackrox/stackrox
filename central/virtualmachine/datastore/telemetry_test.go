@@ -2,17 +2,19 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -382,10 +384,6 @@ func TestVirtualMachineTelemetryV2(t *testing.T) {
 		},
 	}
 
-	expectedScanQuery := search.NewQueryBuilder().
-		AddTimeRangeField(search.VirtualMachineScanTime, arbitraryNow.Add(-activeVMAgentMaxAgeLimitTelemetry), arbitraryNow).
-		ProtoQuery()
-
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			ctx := sac.WithAllAccess(context.Background())
@@ -401,8 +399,73 @@ func TestVirtualMachineTelemetryV2(t *testing.T) {
 			assert.Equal(t, tc.expectedClustersWithRunningVMs, props[metricClustersWithVMs])
 			assert.Equal(t, tc.expectedTotalVMs, props[metricTotalVMs])
 			assert.Equal(t, tc.expectedVMsWithActiveAgents, props[metricVMsWithActiveAgents])
-			require.NotNil(t, scanV2DS.lastQuery)
-			protoassert.Equal(t, expectedScanQuery, scanV2DS.lastQuery)
+			assertActiveAgentScanQuery(t, scanV2DS.lastQuery)
 		})
 	}
+}
+
+func TestVirtualMachineTelemetryV2Errors(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+
+	walkErr := errors.New("walk failed")
+	countErr := errors.New("count failed")
+
+	tests := map[string]struct {
+		walkErr  error
+		countErr error
+		wantErr  error
+	}{
+		"should return Walk error and nil props": {
+			walkErr: walkErr,
+			wantErr: walkErr,
+		},
+		"should return Count error and nil props": {
+			countErr: countErr,
+			wantErr:  countErr,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := sac.WithAllAccess(context.Background())
+			vmV2DS := &mockVMV2DataStore{
+				vms: []*storage.VirtualMachineV2{
+					{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				},
+				err: tc.walkErr,
+			}
+			scanV2DS := &mockScanV2DataStore{count: 1, err: tc.countErr}
+
+			props, err := gatherV2WithTime(vmV2DS, scanV2DS, arbitraryNowFunc)(ctx)
+
+			require.ErrorIs(t, err, tc.wantErr)
+			assert.Nil(t, props)
+			if tc.walkErr != nil {
+				assert.Nil(t, scanV2DS.lastQuery)
+				return
+			}
+			assertActiveAgentScanQuery(t, scanV2DS.lastQuery)
+		})
+	}
+}
+
+func assertActiveAgentScanQuery(t *testing.T, q *v1.Query) {
+	t.Helper()
+	require.NotNil(t, q)
+	mfq := q.GetBaseQuery().GetMatchFieldQuery()
+	require.NotNil(t, mfq)
+	assert.Equal(t, search.VirtualMachineScanTime.String(), mfq.GetField())
+
+	value, ok := strings.CutPrefix(mfq.GetValue(), search.TimeRangePrefix)
+	require.True(t, ok)
+	fromStr, toStr, ok := strings.Cut(value, "-")
+	require.True(t, ok)
+	from, err := strconv.ParseInt(fromStr, 10, 64)
+	require.NoError(t, err)
+	to, err := strconv.ParseInt(toStr, 10, 64)
+	require.NoError(t, err)
+
+	assert.Equal(t, arbitraryNow.Add(-activeVMAgentMaxAgeLimitTelemetry).UnixMilli(), from)
+	assert.Equal(t, timestamp.InfiniteFuture.GoTime().UnixMilli(), to)
 }

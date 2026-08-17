@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 const (
@@ -153,7 +154,7 @@ func gatherV2WithTime(vmV2DS vmV2Walker, scanV2DS scanV2Counter, nowFunc func() 
 		now := nowFunc()
 		cutoff := now.Add(-activeVMAgentMaxAgeLimitTelemetry)
 		q := search.NewQueryBuilder().
-			AddTimeRangeField(search.VirtualMachineScanTime, cutoff, now).
+			AddTimeRangeField(search.VirtualMachineScanTime, cutoff, timestamp.InfiniteFuture.GoTime()).
 			ProtoQuery()
 
 		vmsWithActiveAgents, err := scanV2DS.Count(ctx, q)
