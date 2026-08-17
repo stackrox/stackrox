@@ -458,8 +458,9 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 		succeeded++
 	}
 
-	// Skip GC and distribution update when every bundle failed.
-	if succeeded == 0 && len(bundles) > 0 {
+	// Skip GC and distribution update only when every bundle that was
+	// attempted returned an error (i.e., no partial success to build on).
+	if len(bundleErrs) > 0 && succeeded == 0 {
 		return false, errors.Join(bundleErrs...)
 	}
 
