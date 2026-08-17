@@ -722,22 +722,10 @@ func (s *VMScraper) commitVMState(key string, newToken string, agentVersion stri
 
 const maxVersionBuckets = 20
 
-// ScanDurationStats holds aggregate scan-duration statistics.
-type ScanDurationStats struct {
-	Count int
-	Avg   time.Duration
-	Min   time.Duration
-	Max   time.Duration
-}
-
 // Stats is a point-in-time snapshot of the scraper's fleet state.
 type Stats struct {
 	TrackedVMs    int
 	VMsScanned    int
-	VMsInBackoff  int
-	AvgBackoff    time.Duration
-	MaxBackoff    time.Duration
-	ScanDuration  ScanDurationStats
 	VersionCounts map[string]int
 }
 

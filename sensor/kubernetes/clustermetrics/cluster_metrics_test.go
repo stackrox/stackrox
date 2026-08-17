@@ -224,7 +224,6 @@ func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 		s.Require().NotNil(vmm, "VirtualMachineMetrics must be present when vmStatsSource is non-nil")
 		s.Equal(int32(5), vmm.GetTrackedVms())
 		s.Equal(int32(3), vmm.GetVmsScanned())
-		s.Equal(int32(0), vmm.GetVmsInBackoff(), "Part 2 does not populate backoff fields")
 		s.Equal(map[string]int32{"v1.0.0": 3, "unknown": 2}, vmm.GetRoxagentVersionCounts())
 	case <-time.After(metricsTimeout):
 		s.Fail("timeout waiting for cluster metrics with VM data")

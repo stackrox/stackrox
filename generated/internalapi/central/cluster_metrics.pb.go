@@ -96,11 +96,7 @@ type VirtualMachineMetrics struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	TrackedVms            int32                  `protobuf:"varint,1,opt,name=tracked_vms,json=trackedVms,proto3" json:"tracked_vms,omitempty"`                                                                                                              // VMs currently tracked for scraping.
 	VmsScanned            int32                  `protobuf:"varint,2,opt,name=vms_scanned,json=vmsScanned,proto3" json:"vms_scanned,omitempty"`                                                                                                              // Tracked VMs with at least one successful scrape ever.
-	VmsInBackoff          int32                  `protobuf:"varint,3,opt,name=vms_in_backoff,json=vmsInBackoff,proto3" json:"vms_in_backoff,omitempty"`                                                                                                      // VMs with an outstanding, unresolved failure right now.
-	AvgBackoffSeconds     float64                `protobuf:"fixed64,4,opt,name=avg_backoff_seconds,json=avgBackoffSeconds,proto3" json:"avg_backoff_seconds,omitempty"`                                                                                      // Mean current backoff across vms_in_backoff entries; 0 if none.
-	MaxBackoffSeconds     float64                `protobuf:"fixed64,5,opt,name=max_backoff_seconds,json=maxBackoffSeconds,proto3" json:"max_backoff_seconds,omitempty"`                                                                                      // Worst current backoff across vms_in_backoff entries; 0 if none.
-	ScanDuration          *ScanDurationStats     `protobuf:"bytes,6,opt,name=scan_duration,json=scanDuration,proto3" json:"scan_duration,omitempty"`                                                                                                         // Successful scrape completions over the trailing ~24h.
-	RoxagentVersionCounts map[string]int32       `protobuf:"bytes,7,rep,name=roxagent_version_counts,json=roxagentVersionCounts,proto3" json:"roxagent_version_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Version (or "unknown"/"other") -> count of tracked VMs.
+	RoxagentVersionCounts map[string]int32       `protobuf:"bytes,3,rep,name=roxagent_version_counts,json=roxagentVersionCounts,proto3" json:"roxagent_version_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Version (or "unknown"/"other") -> count of tracked VMs.
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -149,107 +145,11 @@ func (x *VirtualMachineMetrics) GetVmsScanned() int32 {
 	return 0
 }
 
-func (x *VirtualMachineMetrics) GetVmsInBackoff() int32 {
-	if x != nil {
-		return x.VmsInBackoff
-	}
-	return 0
-}
-
-func (x *VirtualMachineMetrics) GetAvgBackoffSeconds() float64 {
-	if x != nil {
-		return x.AvgBackoffSeconds
-	}
-	return 0
-}
-
-func (x *VirtualMachineMetrics) GetMaxBackoffSeconds() float64 {
-	if x != nil {
-		return x.MaxBackoffSeconds
-	}
-	return 0
-}
-
-func (x *VirtualMachineMetrics) GetScanDuration() *ScanDurationStats {
-	if x != nil {
-		return x.ScanDuration
-	}
-	return nil
-}
-
 func (x *VirtualMachineMetrics) GetRoxagentVersionCounts() map[string]int32 {
 	if x != nil {
 		return x.RoxagentVersionCounts
 	}
 	return nil
-}
-
-type ScanDurationStats struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
-	AvgSeconds    float64                `protobuf:"fixed64,2,opt,name=avg_seconds,json=avgSeconds,proto3" json:"avg_seconds,omitempty"`
-	MinSeconds    float64                `protobuf:"fixed64,3,opt,name=min_seconds,json=minSeconds,proto3" json:"min_seconds,omitempty"`
-	MaxSeconds    float64                `protobuf:"fixed64,4,opt,name=max_seconds,json=maxSeconds,proto3" json:"max_seconds,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ScanDurationStats) Reset() {
-	*x = ScanDurationStats{}
-	mi := &file_internalapi_central_cluster_metrics_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ScanDurationStats) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ScanDurationStats) ProtoMessage() {}
-
-func (x *ScanDurationStats) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_cluster_metrics_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ScanDurationStats.ProtoReflect.Descriptor instead.
-func (*ScanDurationStats) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_cluster_metrics_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ScanDurationStats) GetCount() int32 {
-	if x != nil {
-		return x.Count
-	}
-	return 0
-}
-
-func (x *ScanDurationStats) GetAvgSeconds() float64 {
-	if x != nil {
-		return x.AvgSeconds
-	}
-	return 0
-}
-
-func (x *ScanDurationStats) GetMinSeconds() float64 {
-	if x != nil {
-		return x.MinSeconds
-	}
-	return 0
-}
-
-func (x *ScanDurationStats) GetMaxSeconds() float64 {
-	if x != nil {
-		return x.MaxSeconds
-	}
-	return 0
 }
 
 var File_internalapi_central_cluster_metrics_proto protoreflect.FileDescriptor
@@ -262,28 +162,16 @@ const file_internalapi_central_cluster_metrics_proto_rawDesc = "" +
 	"node_count\x18\x01 \x01(\x03R\tnodeCount\x12!\n" +
 	"\fcpu_capacity\x18\x02 \x01(\x03R\vcpuCapacity\x12>\n" +
 	"\x1bcompliance_operator_version\x18\x03 \x01(\tR\x19complianceOperatorVersion\x12V\n" +
-	"\x17virtual_machine_metrics\x18\x04 \x01(\v2\x1e.central.VirtualMachineMetricsR\x15virtualMachineMetrics\"\xdd\x03\n" +
+	"\x17virtual_machine_metrics\x18\x04 \x01(\v2\x1e.central.VirtualMachineMetricsR\x15virtualMachineMetrics\"\x96\x02\n" +
 	"\x15VirtualMachineMetrics\x12\x1f\n" +
 	"\vtracked_vms\x18\x01 \x01(\x05R\n" +
 	"trackedVms\x12\x1f\n" +
 	"\vvms_scanned\x18\x02 \x01(\x05R\n" +
-	"vmsScanned\x12$\n" +
-	"\x0evms_in_backoff\x18\x03 \x01(\x05R\fvmsInBackoff\x12.\n" +
-	"\x13avg_backoff_seconds\x18\x04 \x01(\x01R\x11avgBackoffSeconds\x12.\n" +
-	"\x13max_backoff_seconds\x18\x05 \x01(\x01R\x11maxBackoffSeconds\x12?\n" +
-	"\rscan_duration\x18\x06 \x01(\v2\x1a.central.ScanDurationStatsR\fscanDuration\x12q\n" +
-	"\x17roxagent_version_counts\x18\a \x03(\v29.central.VirtualMachineMetrics.RoxagentVersionCountsEntryR\x15roxagentVersionCounts\x1aH\n" +
+	"vmsScanned\x12q\n" +
+	"\x17roxagent_version_counts\x18\x03 \x03(\v29.central.VirtualMachineMetrics.RoxagentVersionCountsEntryR\x15roxagentVersionCounts\x1aH\n" +
 	"\x1aRoxagentVersionCountsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\x8c\x01\n" +
-	"\x11ScanDurationStats\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count\x12\x1f\n" +
-	"\vavg_seconds\x18\x02 \x01(\x01R\n" +
-	"avgSeconds\x12\x1f\n" +
-	"\vmin_seconds\x18\x03 \x01(\x01R\n" +
-	"minSeconds\x12\x1f\n" +
-	"\vmax_seconds\x18\x04 \x01(\x01R\n" +
-	"maxSecondsB\x1fZ\x1d./internalapi/central;centralb\x06proto3"
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
 	file_internalapi_central_cluster_metrics_proto_rawDescOnce sync.Once
@@ -297,22 +185,20 @@ func file_internalapi_central_cluster_metrics_proto_rawDescGZIP() []byte {
 	return file_internalapi_central_cluster_metrics_proto_rawDescData
 }
 
-var file_internalapi_central_cluster_metrics_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_internalapi_central_cluster_metrics_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_central_cluster_metrics_proto_goTypes = []any{
 	(*ClusterMetrics)(nil),        // 0: central.ClusterMetrics
 	(*VirtualMachineMetrics)(nil), // 1: central.VirtualMachineMetrics
-	(*ScanDurationStats)(nil),     // 2: central.ScanDurationStats
-	nil,                           // 3: central.VirtualMachineMetrics.RoxagentVersionCountsEntry
+	nil,                           // 2: central.VirtualMachineMetrics.RoxagentVersionCountsEntry
 }
 var file_internalapi_central_cluster_metrics_proto_depIdxs = []int32{
 	1, // 0: central.ClusterMetrics.virtual_machine_metrics:type_name -> central.VirtualMachineMetrics
-	2, // 1: central.VirtualMachineMetrics.scan_duration:type_name -> central.ScanDurationStats
-	3, // 2: central.VirtualMachineMetrics.roxagent_version_counts:type_name -> central.VirtualMachineMetrics.RoxagentVersionCountsEntry
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 1: central.VirtualMachineMetrics.roxagent_version_counts:type_name -> central.VirtualMachineMetrics.RoxagentVersionCountsEntry
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_central_cluster_metrics_proto_init() }
@@ -326,7 +212,7 @@ func file_internalapi_central_cluster_metrics_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_cluster_metrics_proto_rawDesc), len(file_internalapi_central_cluster_metrics_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
