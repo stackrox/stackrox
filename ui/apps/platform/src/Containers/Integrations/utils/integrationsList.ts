@@ -43,6 +43,7 @@ import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 import { integrationSources } from 'types/integration';
 import type {
+    AiIntegrationUiType,
     AuthProviderType,
     BackupIntegrationType,
     CloudSourceIntegrationType,
@@ -84,6 +85,10 @@ export type SignatureIntegrationDescriptor = {
 
 export type CloudSourceDescriptor = {
     type: CloudSourceIntegrationType;
+} & BaseIntegrationDescriptor;
+
+export type AiIntegrationDescriptor = {
+    type: AiIntegrationUiType;
 } & BaseIntegrationDescriptor;
 
 export type BaseIntegrationDescriptor = {
@@ -323,6 +328,17 @@ export const ocmDescriptor: CloudSourceDescriptor = {
 
 const cloudSourceDescriptors = [paladinCloudDescriptor, ocmDescriptor];
 
+export const aiIntegrationsSource = 'aiIntegrations';
+
+export const lightspeedDescriptor: AiIntegrationDescriptor = {
+    Logo: RedhatSvg,
+    label: 'OpenShift Lightspeed',
+    type: 'lightspeed',
+    featureFlagDependency: ['ROX_AI_INTEGRATIONS'],
+};
+
+const aiIntegrationsDescriptors = [lightspeedDescriptor];
+
 function getDescriptors(source: string): BaseIntegrationDescriptor[] {
     switch (source) {
         case 'imageIntegrations':
@@ -337,6 +353,8 @@ function getDescriptors(source: string): BaseIntegrationDescriptor[] {
             return authenticationTokensDescriptors;
         case 'cloudSources':
             return cloudSourceDescriptors;
+        case 'aiIntegrations':
+            return aiIntegrationsDescriptors;
         default:
             return [];
     }
@@ -360,6 +378,7 @@ const integrationSourceRequirementsMap: Record<IntegrationSource, IntegrationsRo
     notifiers: {},
     backups: { centralCapabilityRequirement: 'centralCanUseCloudBackupIntegrations' },
     cloudSources: {},
+    aiIntegrations: {},
     authProviders: {},
     apiClients: {},
 };
@@ -408,6 +427,7 @@ export const integrationSourceTitleMap: Record<IntegrationSource, string> = {
     notifiers: 'Notifier',
     backups: 'Backup',
     cloudSources: 'Cloud source',
+    aiIntegrations: 'AI',
     authProviders: 'Authentication',
     apiClients: 'API clients',
 };
