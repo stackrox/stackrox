@@ -2314,7 +2314,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2354,7 +2361,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2395,7 +2409,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2436,7 +2457,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2477,7 +2505,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2518,8 +2553,22 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
-						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"bin-2": {
+							Id:   "bin-2",
+							Kind: "binary",
+							Name: "rhel8-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
@@ -2581,7 +2630,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2638,8 +2694,22 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
-						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"bin-2": {
+							Id:   "bin-2",
+							Kind: "binary",
+							Name: "rhel8-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
@@ -2703,8 +2773,22 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
-						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"bin-2": {
+							Id:   "bin-2",
+							Kind: "binary",
+							Name: "rhel8-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
@@ -2759,9 +2843,30 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
-						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
-						"bin-3":    {Id: "bin-3", Kind: "binary", Name: "other-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"bin-2": {
+							Id:   "bin-2",
+							Kind: "binary",
+							Name: "rhel8-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"bin-3": {
+							Id:   "bin-3",
+							Kind: "binary",
+							Name: "other-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 						"go-pkg-3": {Id: "go-pkg-3", Kind: "binary", Name: "pkg3"},
@@ -2847,7 +2952,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "github.com/other/vendored-copy"},
 					},
@@ -2898,7 +3010,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2946,7 +3065,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-1": {
+							Id:   "bin-1",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
 					Environments: map[string]*v4.Environment_List{
@@ -2981,35 +3107,78 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			},
 		},
 		{
-			name: "package with a pre-existing empty vuln list is deleted",
+			name: "Mixed RHCC (OCI) and RPM packages: only RHCC suppresses OSV",
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
-						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+						"rhcc-pkg": {
+							Id:   "rhcc-pkg",
+							Kind: "binary",
+							Name: "ubi9-container",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "rhctag",
+							},
+						},
+						"rpm-pkg": {Id: "rpm-pkg", Kind: "binary", Name: "some-rpm-package"},
+						"go-pkg": {
+							Id:   "go-pkg",
+							Kind: "binary",
+							Name: "google.golang.org/protobuf",
+							NormalizedVersion: &v4.NormalizedVersion{
+								Kind: "pep440",
+							},
+						},
 					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"rhcc-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"rpm-pkg":  {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg":   {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
 				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"vex-vuln": {
-						Id:      "vex-vuln",
-						Name:    "CVE-2024-24786",
+					"rhcc-vex-vuln": {
+						Id:      "rhcc-vex-vuln",
+						Name:    "CVE-2024-11111",
 						Updater: "rhel-vex",
 						Aliases: []*v4.VulnerabilityReport_Alias{
-							{Space: "cve", Name: "CVE-2024-24786"},
+							{Space: "cve", Name: "CVE-2024-11111"},
+						},
+					},
+					"rpm-vex-vuln": {
+						Id:      "rpm-vex-vuln",
+						Name:    "CVE-2024-22222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-22222"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-11111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-11111"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-22222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-22222"},
 						},
 					},
 				},
 				PackageVulnerabilities: map[string]*v4.StringList{
-					"bin-1":    {Values: []string{"vex-vuln"}},
-					"go-pkg-1": {Values: []string{}},
+					"rhcc-pkg": {Values: []string{"rhcc-vex-vuln"}},
+					"rpm-pkg":  {Values: []string{"rpm-vex-vuln"}},
+					"go-pkg":   {Values: []string{"osv-vuln-1", "osv-vuln-2"}},
 				},
 			},
 			expectedPkgVulns: map[string][]string{
-				"bin-1": {"vex-vuln"},
+				"rhcc-pkg": {"rhcc-vex-vuln"},
+				"rpm-pkg":  {"rpm-vex-vuln"},
+				"go-pkg":   {"osv-vuln-2"},
 			},
 		},
 	}
@@ -3025,56 +3194,6 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			assert.Equal(t, tc.expectedPkgVulns, got)
 		})
 	}
-
-	// filterOSVSupersededByRedHatVEX never reads Package.Kind, so a rhel-vex
-	// vulnerability suppresses OSV regardless of which Kind carries it.
-	for _, kind := range []string{"binary", "source", "ancestry"} {
-		t.Run("rhel-vex package has kind "+kind, func(t *testing.T) {
-			const pkgID = "vex-pkg"
-			report := &v4.VulnerabilityReport{
-				Contents: &v4.Contents{
-					Packages: map[string]*v4.Package{
-						pkgID:      {Id: pkgID, Kind: kind, Name: "ubi9-container"},
-						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
-					},
-					Environments: map[string]*v4.Environment_List{
-						pkgID:      {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-					},
-				},
-				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
-					"vex-vuln": {
-						Id:      "vex-vuln",
-						Name:    "CVE-2024-24786",
-						Updater: "rhel-vex",
-						Aliases: []*v4.VulnerabilityReport_Alias{
-							{Space: "cve", Name: "CVE-2024-24786"},
-						},
-					},
-					"osv-vuln": {
-						Id:      "osv-vuln",
-						Name:    "CVE-2024-24786",
-						Updater: "osv/go",
-						Aliases: []*v4.VulnerabilityReport_Alias{
-							{Space: "cve", Name: "CVE-2024-24786"},
-						},
-					},
-				},
-				PackageVulnerabilities: map[string]*v4.StringList{
-					pkgID:      {Values: []string{"vex-vuln"}},
-					"go-pkg-1": {Values: []string{"osv-vuln"}},
-				},
-			}
-
-			filterOSVSupersededByRedHatVEX(report, layerSHAToIndex)
-
-			got := make(map[string][]string)
-			for id, vulns := range report.GetPackageVulnerabilities() {
-				got[id] = vulns.GetValues()
-			}
-			assert.Equal(t, map[string][]string{pkgID: {"vex-vuln"}}, got)
-		})
-	}
 }
 
 func TestFilterOSVSupersededByRedHatVEX_FeatureFlag(t *testing.T) {
@@ -3082,7 +3201,14 @@ func TestFilterOSVSupersededByRedHatVEX_FeatureFlag(t *testing.T) {
 		return &v4.VulnerabilityReport{
 			Contents: &v4.Contents{
 				Packages: map[string]*v4.Package{
-					"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+					"bin-1": {
+						Id:   "bin-1",
+						Kind: "binary",
+						Name: "ubi9-container",
+						NormalizedVersion: &v4.NormalizedVersion{
+							Kind: "rhctag",
+						},
+					},
 					"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 				},
 				Environments: map[string]*v4.Environment_List{

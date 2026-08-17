@@ -658,6 +658,12 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 	// too, so only the highest is kept.
 	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		// Only consider OCI (RHCC) packages.
+		pkg := report.GetContents().GetPackages()[pkgID]
+		if pkg == nil || pkg.GetNormalizedVersion().GetKind() != "rhctag" {
+			continue
+		}
+
 		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
