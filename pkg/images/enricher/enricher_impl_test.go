@@ -79,6 +79,7 @@ func TestEnricherFlow(t *testing.T) {
 		result                 EnrichmentResult
 		errorExpected          bool
 		expectedBaseImageCalls int
+		expectScanCall         *bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -157,6 +158,36 @@ func TestEnricherFlow(t *testing.T) {
 				ScanResult:   ScanSucceeded,
 			},
 			expectedBaseImageCalls: 1,
+		},
+		{
+			name: "data in both caches but force refetch metadata only",
+			ctx: EnrichmentContext{
+				FetchOpt: ForceRefetchMetadataOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+			},
+			imageGetter: imageGetterFromImage(&storage.Image{
+				Id:    "id",
+				Name:  &storage.ImageName{Registry: "reg"},
+				Names: []*storage.ImageName{{Registry: "reg"}},
+				Scan:  &storage.ImageScan{}}),
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     false,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 1,
+			expectScanCall:         new(bool),
 		},
 		{
 			name: " data in both caches but force refetch use names",
@@ -411,6 +442,9 @@ func TestEnricherFlow(t *testing.T) {
 
 			assert.Equal(t, c.result, result)
 			assert.Equal(t, c.expectedBaseImageCalls, mockBaseGetter.callCount, "Mismatch in: %s", c.name)
+			if c.expectScanCall != nil {
+				assert.Equal(t, *c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
+			}
 		})
 	}
 }
@@ -1312,6 +1346,13 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 			},
 			opt: ForceRefetchCachedValuesOnly,
 		},
+		"ForceRefetchMetadataOnly should retain image names": {
+			expectedImageNames: []*storage.ImageName{
+				testImageName,
+				existingTestImageName,
+			},
+			opt: ForceRefetchMetadataOnly,
+		},
 		"UseImageNamesRefetchCachedValues should retain image names": {
 			expectedImageNames: []*storage.ImageName{
 				testImageName,
@@ -1762,4 +1803,15 @@ func TestHasScanData(t *testing.T) {
 			assert.Equal(t, tc.expected, tc.result.HasScanData())
 		})
 	}
+}
+
+func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
+	ctx := EnrichmentContext{FetchOpt: ForceRefetchMetadataOnly}
+
+	assert.False(t, ctx.FetchOnlyIfMetadataEmpty(),
+		"ForceRefetchMetadataOnly must force metadata refetch (same as ForceRefetch)")
+	assert.True(t, ctx.FetchOnlyIfScanEmpty(),
+		"ForceRefetchMetadataOnly must allow scan reuse from DB")
+	assert.False(t, ctx.FetchOpt.forceRefetchCachedValues(),
+		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
 }
