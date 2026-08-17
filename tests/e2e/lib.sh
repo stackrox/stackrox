@@ -356,8 +356,7 @@ export_test_environment() {
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
-    # OCP IPv6-primary clusters need route (AWS CLBs don't support IPv6).
-    # EKS doesn't have Routes, so keep lb there (tests use port-forward).
+    # OCP IPv6-primary clusters use route (AWS CLBs don't support IPv6)
     if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
         _lb_default="route"
     elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
@@ -1628,6 +1627,12 @@ wait_for_api() {
     info "Waiting for Central API endpoint"
 
     LOAD_BALANCER="${LOAD_BALANCER:-}"
+    # EKS IPv6: switch CLB to NLB (CLBs don't support IPv6 targets)
+    if [[ "${LOAD_BALANCER}" == "lb" && "${NETWORK_STACK:-}" =~ ipv6 ]] && ! kubectl get network.config.openshift.io cluster 2>/dev/null; then
+        info "Annotating central-loadbalancer for NLB (IPv6 support)"
+        retrying_kubectl </dev/null -n "${central_namespace}" annotate svc/central-loadbalancer \
+            service.beta.kubernetes.io/aws-load-balancer-type=nlb --overwrite || true
+    fi
     case "${LOAD_BALANCER}" in
         lb)
             get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
