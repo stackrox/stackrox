@@ -18,16 +18,5 @@ message ClusterMetrics {
 message VirtualMachineMetrics {
   int32 tracked_vms = 1;             // VMs currently tracked for scraping.
   int32 vms_scanned = 2;             // Tracked VMs with at least one successful scrape ever.
-  int32 vms_in_backoff = 3;          // VMs with an outstanding, unresolved failure right now.
-  double avg_backoff_seconds = 4;    // Mean current backoff across vms_in_backoff entries; 0 if none.
-  double max_backoff_seconds = 5;    // Worst current backoff across vms_in_backoff entries; 0 if none.
-  ScanDurationStats scan_duration = 6; // Successful scrape completions over the trailing ~24h.
-  map<string, int32> roxagent_version_counts = 7; // Version (or "unknown"/"other") -> count of tracked VMs.
-}
-
-message ScanDurationStats {
-  int32 count = 1;
-  double avg_seconds = 2;
-  double min_seconds = 3;
-  double max_seconds = 4;
+  map<string, int32> roxagent_version_counts = 3; // Version (or "unknown"/"other") -> count of tracked VMs.
 }
