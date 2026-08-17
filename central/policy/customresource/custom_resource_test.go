@@ -74,8 +74,13 @@ func getTestPolicy() *storage.Policy {
 			},
 		},
 	}
+	p.Scope = append(p.Scope, &storage.Scope{
+		ClusterLabel:   &storage.Scope_Label{Key: "env", Value: "prod"},
+		NamespaceLabel: &storage.Scope_Label{Key: "team", Value: "platform"},
+	})
 	return p
 }
+
 
 func TestToDNSSubdomainName(t *testing.T) {
 	tests := []struct {
