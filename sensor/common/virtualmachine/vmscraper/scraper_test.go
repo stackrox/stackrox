@@ -1001,11 +1001,11 @@ func TestVMScraper_Stats(t *testing.T) {
 			wantTracked: 3,
 			wantScanned: 2,
 			wantVersions: map[string]int{
-				"v1.0.0": 2,
+				"v1.0.0": 1,
 				"v2.0.0": 1,
 			},
 		},
-		"should bucket empty agent version as unknown": {
+		"should omit unscanned VMs from the version histogram": {
 			setup: func(s *VMScraper) {
 				s.vmState["ns1/vm-a"] = &vmState{}
 				s.vmState["ns1/vm-b"] = &vmState{
@@ -1016,8 +1016,24 @@ func TestVMScraper_Stats(t *testing.T) {
 			wantTracked: 2,
 			wantScanned: 1,
 			wantVersions: map[string]int{
-				"unknown": 1,
-				"v1.0.0":  1,
+				"v1.0.0": 1,
+			},
+		},
+		"should bucket empty agent version of a scanned VM as unknown": {
+			setup: func(s *VMScraper) {
+				s.vmState["ns1/vm-a"] = &vmState{
+					lastForwardedAt: s.now(),
+				}
+				s.vmState["ns1/vm-b"] = &vmState{
+					lastAgentVersion: "v1.0.0",
+					lastForwardedAt:  s.now(),
+				}
+			},
+			wantTracked: 2,
+			wantScanned: 2,
+			wantVersions: map[string]int{
+				unknownAgentVersion: 1,
+				"v1.0.0":            1,
 			},
 		},
 		"should cap version map to top N and fold remainder into other": {
@@ -1065,8 +1081,8 @@ func TestVMScraper_Stats(t *testing.T) {
 				for _, c := range stats.VersionCounts {
 					total += c
 				}
-				assert.Equal(t, tc.wantTracked, total,
-					"sum of version counts should equal tracked VMs")
+				assert.Equal(t, tc.wantScanned, total,
+					"sum of version counts should equal scanned VMs")
 			}
 		})
 	}

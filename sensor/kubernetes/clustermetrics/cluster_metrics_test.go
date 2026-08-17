@@ -178,9 +178,9 @@ func (s *ClusterMetricsTestSuite) TestVMStatsPopulated() {
 			TrackedVMs: 10,
 			VMsScanned: 7,
 			VersionCounts: map[string]int{
-				"v1.0.0":  5,
-				"v2.0.0":  3,
-				"unknown": 2,
+				"v1.0.0":  4,
+				"v2.0.0":  2,
+				"unknown": 1,
 			},
 		},
 	}
@@ -196,9 +196,9 @@ func (s *ClusterMetricsTestSuite) TestVMStatsPopulated() {
 	s.Equal(int32(10), vmm.GetTrackedVms())
 	s.Equal(int32(7), vmm.GetVmsScanned())
 	s.Equal(map[string]int32{
-		"v1.0.0":  5,
-		"v2.0.0":  3,
-		"unknown": 2,
+		"v1.0.0":  4,
+		"v2.0.0":  2,
+		"unknown": 1,
 	}, vmm.GetRoxagentVersionCounts())
 }
 
@@ -208,8 +208,8 @@ func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 			TrackedVMs: 5,
 			VMsScanned: 3,
 			VersionCounts: map[string]int{
-				"v1.0.0":  3,
-				"unknown": 2,
+				"v1.0.0":  2,
+				"unknown": 1,
 			},
 		},
 	}
@@ -224,7 +224,7 @@ func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 		s.Require().NotNil(vmm, "VirtualMachineMetrics must be present when vmStatsSource is non-nil")
 		s.Equal(int32(5), vmm.GetTrackedVms())
 		s.Equal(int32(3), vmm.GetVmsScanned())
-		s.Equal(map[string]int32{"v1.0.0": 3, "unknown": 2}, vmm.GetRoxagentVersionCounts())
+		s.Equal(map[string]int32{"v1.0.0": 2, "unknown": 1}, vmm.GetRoxagentVersionCounts())
 	case <-time.After(metricsTimeout):
 		s.Fail("timeout waiting for cluster metrics with VM data")
 	}
