@@ -331,8 +331,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
             exit 1
         fi
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE}"
+        local sensor_image_flavor
+        sensor_image_flavor="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "${TEST_ROOT}" image-flavor)}"
+        roxctl helm output secured-cluster-services --image-defaults="${sensor_image_flavor}" --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
+        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE} (image-defaults=${sensor_image_flavor})"
     else
         echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
