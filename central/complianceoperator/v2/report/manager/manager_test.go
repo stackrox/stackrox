@@ -721,7 +721,20 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
+	// Once the last outstanding scan result arrives, scansToWait becomes empty and
+	// checkCompletion() re-queries the DB once to make sure no new scans were created
+	// in the meantime (see scanconfigwatcher.go). Returning the full, already-tracked
+	// set of scans here makes GetScansFromScanConfiguration report zero new scans, so
+	// the scan config is immediately marked ready.
+	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
 		// GetClusterData
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
@@ -745,7 +758,20 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
+	// Once the last outstanding scan result arrives, scansToWait becomes empty and
+	// checkCompletion() re-queries the DB once to make sure no new scans were created
+	// in the meantime (see scanconfigwatcher.go). Returning the full, already-tracked
+	// set of scans here makes GetScansFromScanConfiguration report zero new scans, so
+	// the scan config is immediately marked ready.
+	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
 		// Validate Results
 		m.complianceIntegrationDataStore.EXPECT().
 			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
@@ -827,6 +853,14 @@ func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Ti
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
 		ScanConfigName:  scanConfigName,
+		// ScanName must be distinct per profile on a given cluster: scanConfigWatcher's
+		// removeStaleResult (see scanconfigwatcher.go) treats two results from the same
+		// cluster with the same ScanName as the same (recycled) scan and evicts the
+		// older one. Since "scan" here is the profile name, using it as the ScanName
+		// mirrors the real Compliance Operator behavior of distinct scan names per
+		// profile, and avoids the different profiles of the same cluster in this test
+		// being mistaken for the same recycled scan.
+		ScanName: scan,
 	}
 	if done {
 		ret.Annotations = map[string]string{
