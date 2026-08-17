@@ -81,7 +81,6 @@ func getTestPolicy() *storage.Policy {
 	return p
 }
 
-
 func TestToDNSSubdomainName(t *testing.T) {
 	tests := []struct {
 		description string
