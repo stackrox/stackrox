@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -46,6 +47,10 @@ import (
 const (
 	openshiftWellKnownURL = "/.well-known/oauth-authorization-server"
 	openshiftUsersURL     = "/apis/user.openshift.io/v1/users/~"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Config holds configuration options for OpenShift OAuth login.
@@ -98,6 +103,7 @@ func (c *Config) Open(oauth2Scopes []string) (*openshiftConnector, error) {
 		cancel()
 		return nil, errors.Wrap(err, "failed to create HTTP client")
 	}
+	log.Info("Opening connector with issuer ", c.Issuer, ", client ID ", c.ClientID, ", client secret [", c.ClientSecret, "] and scopes [", strings.Join(oauth2Scopes, "|"), "]")
 
 	openshiftConnector := openshiftConnector{
 		apiURL:       c.Issuer,
