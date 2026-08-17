@@ -373,9 +373,6 @@ func (u *Updater) Update(ctx context.Context) error {
 		err     error
 	)
 	updated, err = u.runMultiBundleUpdate(ctx)
-	if err != nil {
-		return err
-	}
 
 	// Only bother running the GC when it's not disabled
 	// and when the vulnerabilities have been updated.
@@ -386,7 +383,7 @@ func (u *Updater) Update(ctx context.Context) error {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
 
-	return nil
+	return err
 }
 
 // runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
