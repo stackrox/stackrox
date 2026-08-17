@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/logging"
 	clusterviewv1alpha1 "github.com/stolostron/cluster-lifecycle-api/clusterview/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -13,6 +14,10 @@ type ACMClient interface {
 	ListUserPermissions(ctx context.Context, opts metav1.ListOptions) (*clusterviewv1alpha1.UserPermissionList, error)
 	GetUserPermission(ctx context.Context, name string, opts metav1.GetOptions) (*clusterviewv1alpha1.UserPermission, error)
 }
+
+var (
+	log = logging.LoggerForModule()
+)
 
 // GetResolvedRolesFromACM retrieves UserPermissions from ACM, filters them for supported Kubernetes resources,
 // and converts each to a permissions.ResolvedRole.
@@ -35,9 +40,11 @@ func GetResolvedRolesFromACM(
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list user permissions")
 	}
+	log.Info(len(userPermissionList.Items), " - ", userPermissionList)
 
 	// Filter to only permissions managing supported Kubernetes resources
 	filteredPermissions := FilterUserPermissionsForSupportedK8sResources(userPermissionList.Items)
+	log.Info("filtered - ", len(filteredPermissions), " - ", filteredPermissions)
 
 	// Convert each filtered UserPermission to a ResolvedRole
 	resolvedRoles := make([]*tokens.InternalRole, 0, len(filteredPermissions))
