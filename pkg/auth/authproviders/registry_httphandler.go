@@ -267,9 +267,10 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 
 	log.Info("Provider HTTP Handler - passing request for factory for processing")
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
+	log.Info("Provider HTTP Handler - request processed by factory - pre-parse state - ", clientState)
 	clientState, mode := idputil.ParseClientState(clientState)
 	testMode := mode == idputil.TestAuthMode
-	log.Info("Provider HTTP Handler - request processed by factory - state - ", clientState)
+	log.Info("Provider HTTP Handler - request processed by factory - parsed state - ", clientState)
 
 	var provider Provider
 	if err == nil {

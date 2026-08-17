@@ -239,6 +239,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	// Attempt to merge configs.
 	log.Info(request.GetConfig())
 	request.Config = provider.MergeConfigInto(request.GetConfig())
+	log.Info("Merged config: ", request.GetConfig())
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
