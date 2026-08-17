@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -18,6 +19,10 @@ import (
 
 var (
 	accessSAC = sac.ForResource(resources.Access)
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -82,6 +87,7 @@ func (b *datastoreImpl) AddAuthProvider(ctx context.Context, authProvider *stora
 	if err := verifyAuthProviderOrigin(ctx, authProvider); err != nil {
 		return pkgErrors.Wrap(err, "origin didn't match for new auth provider")
 	}
+	log.Info("Add auth provider with config ", authProvider.GetConfig())
 	if err := validateAuthProvider(authProvider); err != nil {
 		return err
 	}
@@ -105,6 +111,7 @@ func (b *datastoreImpl) UpdateAuthProvider(ctx context.Context, authProvider *st
 	if err := validateAuthProvider(authProvider); err != nil {
 		return err
 	}
+	log.Info("Upsert AuthProvider with config ", authProvider.GetConfig())
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
