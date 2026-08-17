@@ -3,9 +3,9 @@ import queryString from 'qs';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import axios from './instance';
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
+import axios from './instance';
 import type { NodeReportConfiguration } from './ReportsService.types';
 
 export function fetchNodeReportConfigurations({
