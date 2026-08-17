@@ -275,10 +275,18 @@ func (m *NodeVulnerabilityReportFilters) CloneVT() *NodeVulnerabilityReportFilte
 		return (*NodeVulnerabilityReportFilters)(nil)
 	}
 	r := new(NodeVulnerabilityReportFilters)
+	r.Query = m.Query
 	if m.CvesSince != nil {
 		r.CvesSince = m.CvesSince.(interface {
 			CloneVT() isNodeVulnerabilityReportFilters_CvesSince
 		}).CloneVT()
+	}
+	if rhs := m.AccessScopeRules; rhs != nil {
+		tmpContainer := make([]*SimpleAccessScope_Rules, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.AccessScopeRules = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -813,6 +821,26 @@ func (this *NodeVulnerabilityReportFilters) EqualVT(that *NodeVulnerabilityRepor
 		}).EqualVT(that.CvesSince) {
 			return false
 		}
+	}
+	if len(this.AccessScopeRules) != len(that.AccessScopeRules) {
+		return false
+	}
+	for i, vx := range this.AccessScopeRules {
+		vy := that.AccessScopeRules[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &SimpleAccessScope_Rules{}
+			}
+			if q == nil {
+				q = &SimpleAccessScope_Rules{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
+	}
+	if this.Query != that.Query {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1575,6 +1603,25 @@ func (m *NodeVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (in
 		}
 		i -= size
 	}
+	if len(m.Query) > 0 {
+		i -= len(m.Query)
+		copy(dAtA[i:], m.Query)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.AccessScopeRules) > 0 {
+		for iNdEx := len(m.AccessScopeRules) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.AccessScopeRules[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
 	return len(dAtA) - i, nil
 }
 
@@ -1941,6 +1988,16 @@ func (m *NodeVulnerabilityReportFilters) SizeVT() (n int) {
 	_ = l
 	if vtmsg, ok := m.CvesSince.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
+	}
+	if len(m.AccessScopeRules) > 0 {
+		for _, e := range m.AccessScopeRules {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3486,6 +3543,72 @@ func (m *NodeVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Query = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -5164,6 +5287,76 @@ func (m *NodeVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Query = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

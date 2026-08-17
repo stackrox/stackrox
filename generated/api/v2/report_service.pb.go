@@ -926,6 +926,7 @@ type NodeVulnerabilityReportFilters struct {
 	//
 	//	*NodeVulnerabilityReportFilters_AllVuln
 	CvesSince     isNodeVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	Query         string                                     `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -974,6 +975,13 @@ func (x *NodeVulnerabilityReportFilters) GetAllVuln() bool {
 		}
 	}
 	return false
+}
+
+func (x *NodeVulnerabilityReportFilters) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type isNodeVulnerabilityReportFilters_CvesSince interface {
@@ -2605,9 +2613,10 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +
 	"\aWATCHED\x10\x01B\f\n" +
 	"\n" +
-	"cves_since\"K\n" +
+	"cves_since\"a\n" +
 	"\x1eNodeVulnerabilityReportFilters\x12\x1b\n" +
-	"\ball_vuln\x18\x01 \x01(\bH\x00R\aallVulnB\f\n" +
+	"\ball_vuln\x18\x01 \x01(\bH\x00R\aallVuln\x12\x14\n" +
+	"\x05query\x18\x02 \x01(\tR\x05queryB\f\n" +
 	"\n" +
 	"cves_since\";\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +

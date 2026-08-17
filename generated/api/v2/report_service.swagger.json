@@ -978,6 +978,9 @@
       "properties": {
         "allVuln": {
           "type": "boolean"
+        },
+        "query": {
+          "type": "string"
         }
       }
     },

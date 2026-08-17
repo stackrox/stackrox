@@ -975,9 +975,11 @@ type NodeVulnerabilityReportFilters struct {
 	// Types that are valid to be assigned to CvesSince:
 	//
 	//	*NodeVulnerabilityReportFilters_AllVuln
-	CvesSince     isNodeVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CvesSince        isNodeVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	AccessScopeRules []*SimpleAccessScope_Rules                 `protobuf:"bytes,2,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
+	Query            string                                     `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *NodeVulnerabilityReportFilters) Reset() {
@@ -1024,6 +1026,20 @@ func (x *NodeVulnerabilityReportFilters) GetAllVuln() bool {
 		}
 	}
 	return false
+}
+
+func (x *NodeVulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_Rules {
+	if x != nil {
+		return x.AccessScopeRules
+	}
+	return nil
+}
+
+func (x *NodeVulnerabilityReportFilters) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
 }
 
 type isNodeVulnerabilityReportFilters_CvesSince interface {
@@ -1162,9 +1178,11 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\x0fEntityScopeRule\x12+\n" +
 	"\x06entity\x18\x01 \x01(\x0e2\x13.storage.EntityTypeR\x06entity\x12*\n" +
 	"\x05field\x18\x02 \x01(\x0e2\x14.storage.EntityFieldR\x05field\x12*\n" +
-	"\x06values\x18\x03 \x03(\v2\x12.storage.RuleValueR\x06values\"K\n" +
+	"\x06values\x18\x03 \x03(\v2\x12.storage.RuleValueR\x06values\"\xb1\x01\n" +
 	"\x1eNodeVulnerabilityReportFilters\x12\x1b\n" +
-	"\ball_vuln\x18\x01 \x01(\bH\x00R\aallVulnB\f\n" +
+	"\ball_vuln\x18\x01 \x01(\bH\x00R\aallVuln\x12N\n" +
+	"\x12access_scope_rules\x18\x02 \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\x12\x14\n" +
+	"\x05query\x18\x03 \x01(\tR\x05queryB\f\n" +
 	"\n" +
 	"cves_since\"\x8b\x01\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +
@@ -1246,12 +1264,13 @@ var file_storage_report_configuration_proto_depIdxs = []int32{
 	0,  // 19: storage.EntityScopeRule.entity:type_name -> storage.EntityType
 	1,  // 20: storage.EntityScopeRule.field:type_name -> storage.EntityField
 	21, // 21: storage.EntityScopeRule.values:type_name -> storage.RuleValue
-	20, // 22: storage.ViewBasedVulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	20, // 22: storage.NodeVulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
+	20, // 23: storage.ViewBasedVulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_storage_report_configuration_proto_init() }

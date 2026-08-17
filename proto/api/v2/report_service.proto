@@ -71,6 +71,7 @@ message NodeVulnerabilityReportFilters {
   oneof cves_since {
     bool all_vuln = 1;
   }
+  string query = 2;
 }
 
 //filter for ondemand view based reports

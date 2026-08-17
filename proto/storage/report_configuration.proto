@@ -122,6 +122,8 @@ message NodeVulnerabilityReportFilters {
   oneof cves_since {
     bool all_vuln = 1;
   }
+  repeated SimpleAccessScope.Rules access_scope_rules = 2;
+  string query = 3;
 }
 
 // filter for view based reports

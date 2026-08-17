@@ -142,6 +142,7 @@ func (m *NodeVulnerabilityReportFilters) CloneVT() *NodeVulnerabilityReportFilte
 		return (*NodeVulnerabilityReportFilters)(nil)
 	}
 	r := new(NodeVulnerabilityReportFilters)
+	r.Query = m.Query
 	if m.CvesSince != nil {
 		r.CvesSince = m.CvesSince.(interface {
 			CloneVT() isNodeVulnerabilityReportFilters_CvesSince
@@ -1028,6 +1029,9 @@ func (this *NodeVulnerabilityReportFilters) EqualVT(that *NodeVulnerabilityRepor
 		}).EqualVT(that.CvesSince) {
 			return false
 		}
+	}
+	if this.Query != that.Query {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2383,6 +2387,13 @@ func (m *NodeVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (in
 			return 0, err
 		}
 		i -= size
+	}
+	if len(m.Query) > 0 {
+		i -= len(m.Query)
+		copy(dAtA[i:], m.Query)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Query)))
+		i--
+		dAtA[i] = 0x12
 	}
 	return len(dAtA) - i, nil
 }
@@ -4097,6 +4108,10 @@ func (m *NodeVulnerabilityReportFilters) SizeVT() (n int) {
 	if vtmsg, ok := m.CvesSince.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
+	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5523,6 +5538,38 @@ func (m *NodeVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Query = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9727,6 +9774,42 @@ func (m *NodeVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			b := bool(v != 0)
 			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Query", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Query = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
