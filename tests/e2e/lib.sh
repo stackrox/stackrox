@@ -356,14 +356,10 @@ export_test_environment() {
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
-    # IPv6: OCP uses route, EKS uses port-forward (AWS CLBs don't support IPv6)
-    if [[ "${NETWORK_STACK:-}" =~ ipv6 ]]; then
-        if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]] || kubectl get network.config.openshift.io cluster 2>/dev/null; then
-            _lb_default="route"
-        else
-            _lb_default="pf"
-        fi
-    elif kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+    # OCP IPv6-primary: use route. Non-OCP IPv6: keep lb (NLB via AWS LB Controller)
+    if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
+        _lb_default="route"
+    elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
         _lb_default="route"
     fi
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
@@ -1631,6 +1627,16 @@ wait_for_api() {
     info "Waiting for Central API endpoint"
 
     LOAD_BALANCER="${LOAD_BALANCER:-}"
+    # EKS IPv6: patch LB service for NLB with dualstack before waiting for ingress
+    if [[ "${LOAD_BALANCER}" == "lb" && "${NETWORK_STACK:-}" =~ ipv6 ]] && ! kubectl get network.config.openshift.io cluster 2>/dev/null; then
+        info "Patching central-loadbalancer for NLB with dualstack IPv6 support"
+        retrying_kubectl </dev/null -n "${central_namespace}" annotate svc/central-loadbalancer \
+            service.beta.kubernetes.io/aws-load-balancer-type=external \
+            service.beta.kubernetes.io/aws-load-balancer-nlb-target-type=ip \
+            service.beta.kubernetes.io/aws-load-balancer-scheme=internet-facing \
+            service.beta.kubernetes.io/aws-load-balancer-ip-address-type=dualstack \
+            --overwrite || true
+    fi
     case "${LOAD_BALANCER}" in
         lb)
             get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
@@ -1643,10 +1649,6 @@ wait_for_api() {
             API_PORT=443
             ;;
         *)
-            # EKS IPv6 and local dev: use port-forward since CLBs don't support IPv6
-            info "Starting port-forward to Central (no LB/route available)"
-            retrying_kubectl </dev/null -n "${central_namespace}" port-forward svc/central 8000:443 &
-            sleep 5
             API_HOSTNAME=localhost
             API_PORT=8000
             ;;
