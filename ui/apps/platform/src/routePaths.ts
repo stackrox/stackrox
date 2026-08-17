@@ -379,7 +379,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Node', 'WorkflowAdministration']),
     },
     'vulnerabilities/reports': {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/user-workloads': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
