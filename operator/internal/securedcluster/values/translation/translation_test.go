@@ -1145,9 +1145,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		// Unreachable in production: static.go's defaulting flow always fills in
-		// Mode: Disabled before translate() runs. Kept to pin translate()'s own
-		// nil-handling in isolation.
+		// Production path when spec.virtualMachines.mode is unset: Helm
+		// virtualMachines.enabled follows ROX_VIRTUAL_MACHINES. Kept to pin
+		// translate()'s own nil-handling in isolation.
 		"virtual machines unset": {
 			args: args{
 				client: newDefaultFakeClient(t),

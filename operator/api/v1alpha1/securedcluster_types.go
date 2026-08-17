@@ -548,7 +548,6 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 // VirtualMachinesSpec configures VM scanning and VSOCK RBAC.
 type VirtualMachinesSpec struct {
 	// Whether virtual machine scanning and VSOCK RBAC are enabled.
-	// The default is: Disabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled","urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
 	Mode *VirtualMachinesMode `json:"mode,omitempty"`
 
@@ -589,7 +588,7 @@ type VirtualMachinesScraperSpec struct {
 	// How often the scraper polls virtual machines for new reports.
 	// Minimum interval is 1m; shorter values are rounded up.
 	// Shorter intervals refresh scans more often but increase the load on kubevirt API server.
-	// The default is: 5m.
+	// The default is: 4h.
 	//+kubebuilder:validation:Pattern=`^[0-9]+(m|h)$`
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	PollInterval *string `json:"pollInterval,omitempty"`

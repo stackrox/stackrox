@@ -623,6 +623,7 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 		return nil
 	}
 	cv := translation.NewValuesBuilder()
+	// Unset Mode leaves Helm virtualMachines.enabled to follow ROX_VIRTUAL_MACHINES.
 	if vm.Mode != nil {
 		switch *vm.Mode {
 		case platform.VirtualMachinesModeEnabled:

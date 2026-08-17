@@ -896,11 +896,12 @@ function launch_sensor {
       fi
 
       if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        # Enables Sensor VSOCK RBAC and ROX_VIRTUAL_MACHINES on Sensor.
         extra_helm_config+=(--set "virtualMachines.enabled=true")
-        # Shorten pull-mode scraper cadence for VM e2e (production default is 5m).
+        # Shorten pull-mode scraper cadence for VM e2e (production default is 4h).
         # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
         extra_helm_config+=(--set "customize.envVars.ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}")
+      elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
+        extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then

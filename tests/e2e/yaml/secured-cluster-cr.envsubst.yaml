@@ -9,7 +9,7 @@ spec:
     fileActivityMonitoring:
       mode: $fam_mode_setting
   virtualMachines:
-    mode: $vm_mode_setting
+    $vm_mode_line
     scraper:
       pollInterval: $vm_scraper_poll_interval
   processIndicators:

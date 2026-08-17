@@ -670,8 +670,8 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
-    local vm_mode_setting="Disabled"
-    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    local vm_mode_line=""
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 4h.
     local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
@@ -705,7 +705,9 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        vm_mode_setting="Enabled"
+        vm_mode_line="mode: Enabled"
+    elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
+        vm_mode_line="mode: Disabled"
     fi
 
     customize_envVars=""
@@ -733,7 +735,7 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
-      vm_mode_setting="$vm_mode_setting" \
+      vm_mode_line="$vm_mode_line" \
       vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
