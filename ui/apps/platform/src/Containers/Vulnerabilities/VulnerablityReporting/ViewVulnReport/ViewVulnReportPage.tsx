@@ -28,6 +28,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
+import { deleteReportConfiguration } from 'services/ReportsService';
 import type { ReportConfiguration } from 'services/ReportsService.types';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -79,6 +80,7 @@ function ViewVulnReportPage() {
         onDelete,
         deleteResults,
     } = useDeleteModal({
+        deleteFn: deleteReportConfiguration,
         onCompleted: () => {
             navigate(vulnerabilityConfigurationReportsPath);
         },
@@ -226,7 +228,7 @@ function ViewVulnReportPage() {
                                 <Divider component="li" key="execution-danger-separator" />
                                 <DropdownItem
                                     key="Delete report"
-                                    className="pf-v6-u-text-color-status-danger"
+                                    isDanger
                                     onClick={() => {
                                         openDeleteModal([reportConfiguration.id]);
                                     }}

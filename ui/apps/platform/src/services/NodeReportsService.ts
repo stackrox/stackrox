@@ -7,6 +7,7 @@ import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
 import type { NodeReportConfiguration } from './ReportsService.types';
+import type { Empty } from './types';
 
 export function fetchNodeReportConfigurations({
     searchFilter,
@@ -43,4 +44,10 @@ export function fetchNodeReportConfigurationsCount(
                 return response.data;
             })
     );
+}
+
+export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> {
+    return axios
+        .delete<Empty>(`/v2/reports/node/configurations/${reportId}`)
+        .then((response) => response.data);
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import useModal from 'hooks/useModal';
-import { deleteReportConfiguration } from 'services/ReportsService';
 import type { Empty } from 'services/types';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -17,9 +16,10 @@ type ErrorDeleteResult = {
     error: string;
 };
 
-type DeleteResult = SuccessDeleteResult | ErrorDeleteResult;
+export type DeleteResult = SuccessDeleteResult | ErrorDeleteResult;
 
 export type UseDeleteModalProps = {
+    deleteFn: (id: string) => Promise<Empty>;
     onCompleted: () => void;
 };
 
@@ -43,7 +43,7 @@ export function isErrorDeleteResult(deleteResult: DeleteResult): deleteResult is
     return deleteResult.success === false;
 }
 
-function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalResult {
+function useDeleteModal({ deleteFn, onCompleted }: UseDeleteModalProps): UseDeleteModalResult {
     const { isModalOpen: isDeleteModalOpen, openModal, closeModal } = useModal();
     const [reportIdsToDelete, setReportIdsToDelete] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -66,7 +66,7 @@ function useDeleteModal({ onCompleted }: UseDeleteModalProps): UseDeleteModalRes
     // potential errors.
     async function onSafeDelete(id: string): Promise<DeleteResult> {
         try {
-            const result = await deleteReportConfiguration(id);
+            const result = await deleteFn(id);
             return { success: true, id, result };
         } catch (error) {
             return {
