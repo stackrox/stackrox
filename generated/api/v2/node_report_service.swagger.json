@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v2/report_service.proto",
+    "title": "api/v2/node_report_service.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "ReportService"
+      "name": "NodeReportService"
     }
   ],
   "consumes": [
@@ -16,10 +16,9 @@
     "application/json"
   ],
   "paths": {
-    "/v2/reports/configuration-count": {
+    "/v2/reports/node/configuration-count": {
       "get": {
-        "summary": "CountReportConfigurations returns the number of report configurations.",
-        "operationId": "ReportService_CountReportConfigurations",
+        "operationId": "NodeReportService_CountNodeReportConfigurations",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -88,14 +87,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/configurations": {
+    "/v2/reports/node/configurations": {
       "get": {
-        "summary": "ListReportConfigurations returns report configurations matching given query",
-        "operationId": "ReportService_ListReportConfigurations",
+        "operationId": "NodeReportService_ListNodeReportConfigurations",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -164,12 +162,11 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       },
       "post": {
-        "summary": "PostReportConfiguration creates a report configuration",
-        "operationId": "ReportService_PostReportConfiguration",
+        "operationId": "NodeReportService_PostNodeReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -195,14 +192,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/configurations/{id}": {
+    "/v2/reports/node/configurations/{id}": {
       "get": {
-        "summary": "GetReportConfiguration returns the report configuration with given ID",
-        "operationId": "ReportService_GetReportConfiguration",
+        "operationId": "NodeReportService_GetNodeReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -226,12 +222,11 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       },
       "delete": {
-        "summary": "DeleteReportConfiguration removes the report configuration with given ID",
-        "operationId": "ReportService_DeleteReportConfiguration",
+        "operationId": "NodeReportService_DeleteNodeReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -255,12 +250,11 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       },
       "put": {
-        "summary": "UpdateReportConfiguration updates a report configuration",
-        "operationId": "ReportService_UpdateReportConfiguration",
+        "operationId": "NodeReportService_UpdateNodeReportConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -287,19 +281,18 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/ReportServiceUpdateReportConfigurationBody"
+              "$ref": "#/definitions/NodeReportServiceUpdateNodeReportConfigurationBody"
             }
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/configurations/{id}/history": {
+    "/v2/reports/node/configurations/{id}/history": {
       "get": {
-        "summary": "GetReportHistory returns the full report job history for a report configuration with the specified ID.",
-        "operationId": "ReportService_GetReportHistory",
+        "operationId": "NodeReportService_GetNodeReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -374,14 +367,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/configurations/{id}/my-history": {
+    "/v2/reports/node/configurations/{id}/my-history": {
       "get": {
-        "summary": "GetMyReportHistory returns the requester's report job history for a report configuration with the specified ID.",
-        "operationId": "ReportService_GetMyReportHistory",
+        "operationId": "NodeReportService_GetMyNodeReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -456,14 +448,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/jobs/{id}/cancel": {
+    "/v2/reports/node/jobs/{id}/cancel": {
       "delete": {
-        "summary": "Cancels a queued report job for the given report id. If the job is not active, it is a noop.\nIf a report is already being prepared, it won't be cancelled.",
-        "operationId": "ReportService_CancelReport",
+        "operationId": "NodeReportService_CancelNodeReport",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -487,14 +478,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/jobs/{id}/delete": {
+    "/v2/reports/node/jobs/{id}/delete": {
       "delete": {
-        "summary": "Deletes a generated report for the given report id",
-        "operationId": "ReportService_DeleteReport",
+        "operationId": "NodeReportService_DeleteNodeReport",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -518,14 +508,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/jobs/{id}/status": {
+    "/v2/reports/node/jobs/{id}/status": {
       "get": {
-        "summary": "GetReportStatus returns report status for the given report id",
-        "operationId": "ReportService_GetReportStatus",
+        "operationId": "NodeReportService_GetNodeReportStatus",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -549,14 +538,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/run": {
+    "/v2/reports/node/run": {
       "post": {
-        "summary": "Submits a new report generation request if the user requesting this report does not have another waiting or preparing\nreport for the same report configuration.",
-        "operationId": "ReportService_RunReport",
+        "operationId": "NodeReportService_RunNodeReport",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -582,13 +570,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/view-based/history": {
+    "/v2/reports/node/view-based/history": {
       "get": {
-        "operationId": "ReportService_GetViewBasedReportHistory",
+        "operationId": "NodeReportService_GetViewBasedNodeReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -657,13 +645,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/view-based/my-history": {
+    "/v2/reports/node/view-based/my-history": {
       "get": {
-        "operationId": "ReportService_GetViewBasedMyReportHistory",
+        "operationId": "NodeReportService_GetViewBasedMyNodeReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -732,13 +720,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     },
-    "/v2/reports/view-based/run": {
+    "/v2/reports/node/view-based/run": {
       "post": {
-        "operationId": "ReportService_PostViewBasedReport",
+        "operationId": "NodeReportService_PostViewBasedNodeReport",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -764,13 +752,13 @@
           }
         ],
         "tags": [
-          "ReportService"
+          "NodeReportService"
         ]
       }
     }
   },
   "definitions": {
-    "ReportServiceUpdateReportConfigurationBody": {
+    "NodeReportServiceUpdateNodeReportConfigurationBody": {
       "type": "object",
       "properties": {
         "name": {

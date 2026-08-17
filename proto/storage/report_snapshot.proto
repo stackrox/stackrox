@@ -16,6 +16,7 @@ option java_package = "io.stackrox.proto.storage";
 message ReportSnapshot {
   enum ReportType {
     VULNERABILITY = 0;
+    NODE_VULNERABILITY = 1;
   }
 
   string report_id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -26,6 +27,7 @@ message ReportSnapshot {
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 6;
     ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
+    NodeVulnerabilityReportFilters node_vuln_report_filters = 15;
   }
   CollectionSnapshot collection = 7;
   storage.Schedule schedule = 8;

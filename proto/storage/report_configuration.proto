@@ -16,6 +16,7 @@ option java_package = "io.stackrox.proto.storage";
 message ReportConfiguration {
   enum ReportType {
     VULNERABILITY = 0;
+    NODE_VULNERABILITY = 1;
   }
 
   string id = 1; // @gotags: sql:"pk"
@@ -24,6 +25,7 @@ message ReportConfiguration {
   ReportType type = 4; // @gotags: search:"Report Type"
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
+    NodeVulnerabilityReportFilters node_vuln_report_filters = 15;
   }
   // Deprecated: V1 field. Use resource_scope instead.
   string scope_id = 6 [deprecated = true]; // @gotags: search:"Embedded Collection ID"
@@ -114,6 +116,12 @@ enum EntityField {
   FIELD_NAME = 2;
   FIELD_LABEL = 3;
   FIELD_ANNOTATION = 4;
+}
+
+message NodeVulnerabilityReportFilters {
+  oneof cves_since {
+    bool all_vuln = 1;
+  }
 }
 
 // filter for view based reports

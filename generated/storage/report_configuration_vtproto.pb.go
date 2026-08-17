@@ -75,6 +75,15 @@ func (m *ReportConfiguration_VulnReportFilters) CloneVT() isReportConfiguration_
 	return r
 }
 
+func (m *ReportConfiguration_NodeVulnReportFilters) CloneVT() isReportConfiguration_Filter {
+	if m == nil {
+		return (*ReportConfiguration_NodeVulnReportFilters)(nil)
+	}
+	r := new(ReportConfiguration_NodeVulnReportFilters)
+	r.NodeVulnReportFilters = m.NodeVulnReportFilters.CloneVT()
+	return r
+}
+
 func (m *ReportConfiguration_EmailConfig) CloneVT() isReportConfiguration_NotifierConfig {
 	if m == nil {
 		return (*ReportConfiguration_EmailConfig)(nil)
@@ -261,6 +270,36 @@ func (m *EntityScopeRule) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
+func (m *NodeVulnerabilityReportFilters) CloneVT() *NodeVulnerabilityReportFilters {
+	if m == nil {
+		return (*NodeVulnerabilityReportFilters)(nil)
+	}
+	r := new(NodeVulnerabilityReportFilters)
+	if m.CvesSince != nil {
+		r.CvesSince = m.CvesSince.(interface {
+			CloneVT() isNodeVulnerabilityReportFilters_CvesSince
+		}).CloneVT()
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *NodeVulnerabilityReportFilters) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *NodeVulnerabilityReportFilters_AllVuln) CloneVT() isNodeVulnerabilityReportFilters_CvesSince {
+	if m == nil {
+		return (*NodeVulnerabilityReportFilters_AllVuln)(nil)
+	}
+	r := new(NodeVulnerabilityReportFilters_AllVuln)
+	r.AllVuln = m.AllVuln
+	return r
+}
+
 func (m *ViewBasedVulnerabilityReportFilters) CloneVT() *ViewBasedVulnerabilityReportFilters {
 	if m == nil {
 		return (*ViewBasedVulnerabilityReportFilters)(nil)
@@ -417,6 +456,31 @@ func (this *ReportConfiguration_EmailConfig) EqualVT(thatIface isReportConfigura
 		}
 		if q == nil {
 			q = &EmailNotifierConfiguration{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *ReportConfiguration_NodeVulnReportFilters) EqualVT(thatIface isReportConfiguration_Filter) bool {
+	that, ok := thatIface.(*ReportConfiguration_NodeVulnReportFilters)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.NodeVulnReportFilters, that.NodeVulnReportFilters; p != q {
+		if p == nil {
+			p = &NodeVulnerabilityReportFilters{}
+		}
+		if q == nil {
+			q = &NodeVulnerabilityReportFilters{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -732,6 +796,51 @@ func (this *EntityScopeRule) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
+func (this *NodeVulnerabilityReportFilters) EqualVT(that *NodeVulnerabilityReportFilters) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.CvesSince == nil && that.CvesSince != nil {
+		return false
+	} else if this.CvesSince != nil {
+		if that.CvesSince == nil {
+			return false
+		}
+		if !this.CvesSince.(interface {
+			EqualVT(isNodeVulnerabilityReportFilters_CvesSince) bool
+		}).EqualVT(that.CvesSince) {
+			return false
+		}
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *NodeVulnerabilityReportFilters) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*NodeVulnerabilityReportFilters)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *NodeVulnerabilityReportFilters_AllVuln) EqualVT(thatIface isNodeVulnerabilityReportFilters_CvesSince) bool {
+	that, ok := thatIface.(*NodeVulnerabilityReportFilters_AllVuln)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.AllVuln != that.AllVuln {
+		return false
+	}
+	return true
+}
+
 func (this *ViewBasedVulnerabilityReportFilters) EqualVT(that *ViewBasedVulnerabilityReportFilters) bool {
 	if this == that {
 		return true
@@ -798,7 +907,7 @@ func (m *ReportConfiguration) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if vtmsg, ok := m.NotifierConfig.(interface {
+	if vtmsg, ok := m.Filter.(interface {
 		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
 		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -807,7 +916,7 @@ func (m *ReportConfiguration) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	if vtmsg, ok := m.Filter.(interface {
+	if vtmsg, ok := m.NotifierConfig.(interface {
 		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
 		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -962,6 +1071,29 @@ func (m *ReportConfiguration_EmailConfig) MarshalToSizedBufferVT(dAtA []byte) (i
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
 		dAtA[i] = 0x3a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *ReportConfiguration_NodeVulnReportFilters) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ReportConfiguration_NodeVulnReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.NodeVulnReportFilters != nil {
+		size, err := m.NodeVulnReportFilters.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x7a
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x7a
 	}
 	return len(dAtA) - i, nil
 }
@@ -1404,6 +1536,65 @@ func (m *EntityScopeRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *NodeVulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *NodeVulnerabilityReportFilters) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *NodeVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if vtmsg, ok := m.CvesSince.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *NodeVulnerabilityReportFilters_AllVuln) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *NodeVulnerabilityReportFilters_AllVuln) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i--
+	if m.AllVuln {
+		dAtA[i] = 1
+	} else {
+		dAtA[i] = 0
+	}
+	i--
+	dAtA[i] = 0x8
+	return len(dAtA) - i, nil
+}
 func (m *ViewBasedVulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1542,6 +1733,20 @@ func (m *ReportConfiguration_EmailConfig) SizeVT() (n int) {
 	_ = l
 	if m.EmailConfig != nil {
 		l = m.EmailConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *ReportConfiguration_NodeVulnReportFilters) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NodeVulnReportFilters != nil {
+		l = m.NodeVulnReportFilters.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -1728,6 +1933,28 @@ func (m *EntityScopeRule) SizeVT() (n int) {
 	return n
 }
 
+func (m *NodeVulnerabilityReportFilters) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if vtmsg, ok := m.CvesSince.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *NodeVulnerabilityReportFilters_AllVuln) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	n += 2
+	return n
+}
 func (m *ViewBasedVulnerabilityReportFilters) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2239,6 +2466,47 @@ func (m *ReportConfiguration) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportConfiguration_NodeVulnReportFilters); ok {
+				if err := oneof.NodeVulnReportFilters.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &NodeVulnerabilityReportFilters{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportConfiguration_NodeVulnReportFilters{NodeVulnReportFilters: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3168,6 +3436,78 @@ func (m *EntityScopeRule) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *NodeVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeVulnerabilityReportFilters: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllVuln", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3792,6 +4132,47 @@ func (m *ReportConfiguration) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 15:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportConfiguration_NodeVulnReportFilters); ok {
+				if err := oneof.NodeVulnReportFilters.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &NodeVulnerabilityReportFilters{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportConfiguration_NodeVulnReportFilters{NodeVulnReportFilters: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4711,6 +5092,78 @@ func (m *EntityScopeRule) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *NodeVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: NodeVulnerabilityReportFilters: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: NodeVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AllVuln", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			b := bool(v != 0)
+			m.CvesSince = &NodeVulnerabilityReportFilters_AllVuln{AllVuln: b}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
