@@ -245,6 +245,7 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
+	log.Info("Config after provider validation: ", request.GetConfig())
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it.
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), false, false); err != nil {
 		return nil, err
