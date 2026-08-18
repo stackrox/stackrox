@@ -20,7 +20,7 @@ Run roxagent on RHEL VMs with Podman Quadlet: a systemd-managed container that s
 * RHEL 8, 9, or 10 VM running on KubeVirt with VSOCK enabled
 * Podman installed (`dnf install -y podman`)
 * StackRox deployed with VM scanning enabled (`ROX_VIRTUAL_MACHINES=true`)
-* Network access to pull the StackRox main image
+* Network access to pull the StackRox main image. For a private registry, see [Private Registries](#private-registries).
 
 ## Installation
 
@@ -115,6 +115,30 @@ Exec=serve --host-path /host --port 2048
 
 The port must match the StackRox Sensor configuration.
 
+### Private Registries
+
+Quadlet pulls the image as a systemd service. That pull does not use `/etc/containers/auth.json` unless you pass the path into Podman.
+
+RHEL 8 Quadlet (Podman 4.9) rejects `AuthFile=` in the `[Container]` section (`unsupported key 'AuthFile'`), so set a systemd environment variable instead.
+
+If the StackRox main image is in a private registry:
+
+1. Put registry credentials in `/etc/containers/auth.json`. Create that file with `sudo podman login` or by copying a Docker config JSON. Each registry entry needs an `auth` field (`base64(username:password)`); RHEL 8 Podman ignores username/password-only files.
+2. Add this line to the `[Service]` section of `roxagent.container`:
+
+```ini
+Environment=REGISTRY_AUTH_FILE=/etc/containers/auth.json
+```
+
+On Podman 5 and later you can set `AuthFile=/etc/containers/auth.json` in `[Container]` instead.
+
+3. Reload systemd and restart the unit:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart roxagent.service
+```
+
 ## Troubleshooting
 
 ### No Packages Found
@@ -141,6 +165,10 @@ Verify VSOCK is enabled in the VM:
 ls -la /dev/vsock
 lsmod | grep vsock
 ```
+
+### Image Pull Unauthorized
+
+If `journalctl -u roxagent.service` reports `unauthorized` while pulling the main image, Quadlet is not using your registry credentials. Set `REGISTRY_AUTH_FILE` as described in [Private Registries](#private-registries). If `quadlet --dryrun` reports `unsupported key 'AuthFile'`, use the `[Service]` `Environment=` form, not `AuthFile=`.
 
 ### Container Fails to Start
 

@@ -90,6 +90,8 @@ type VMHandle struct {
 	ID string
 	// NodeName is the Kubernetes node hosting the VirtualMachineInstance (populated after VMI is Running).
 	NodeName string
+	// SkipReason, when set, skips this VM's subtests so other VMs still run.
+	SkipReason string
 }
 
 // VMScanningSuite exercises OpenShift VM scanning end-to-end (KubeVirt guests, roxagent, Central).
@@ -592,7 +594,7 @@ func (s *VMScanningSuite) prepareGuests() {
 func (s *VMScanningSuite) prepareGuestWithRecovery(vm *VMHandle) error {
 	const maxRecoveries = 2
 	for recoveryAttempt := 0; recoveryAttempt <= maxRecoveries; recoveryAttempt++ {
-		err := s.prepareGuest(*vm)
+		err := s.prepareGuest(vm)
 		if err == nil {
 			return nil
 		}
@@ -773,8 +775,8 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	return defaultVMDeleteTimeout
 }
 
-func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
-	virt := s.virtctlForVM(vm)
+func (s *VMScanningSuite) prepareGuest(vm *VMHandle) error {
+	virt := s.virtctlForVM(*vm)
 	stepNum := 0
 	runStep := func(stepName, errContext string, timeout time.Duration, fn func(stepCtx context.Context) error) error {
 		stepNum++
@@ -807,8 +809,14 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 		return err
 	}
 	if err := runStep("Install roxagent Quadlet", "InstallRoxagentQuadlet", max(stepTimeout, 15*time.Minute), func(stepCtx context.Context) error {
-		return vmhelpers.InstallRoxagentQuadlet(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentImage, s.cfg.Repo2CPEURL, s.cfg.ImagePullSecretPath)
+		return vmhelpers.InstallRoxagentQuadlet(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentImage, s.cfg.Repo2CPEURL, s.cfg.PodmanAuthFilePath)
 	}); err != nil {
+		if errors.Is(err, vmhelpers.ErrPodmanNotFound) {
+			vm.SkipReason = err.Error()
+			s.logf("[guest prep] Quadlet install skipped on %s/%s; VM subtest will be skipped: %v",
+				vm.Namespace, vm.Name, err)
+			return nil
+		}
 		return err
 	}
 	s.logf("[guest prep] COMPLETED for %s/%s in %d step(s)", vm.Namespace, vm.Name, stepNum)

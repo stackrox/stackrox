@@ -23,6 +23,10 @@ const (
 	guestPodmanAuthStagingPath = "/tmp/roxagent-podman-auth.json"
 )
 
+// ErrPodmanNotFound means the guest has no podman binary. SetupSuite records
+// SkipReason and continues; TestScanPipeline skips that VM's subtests.
+var ErrPodmanNotFound = errors.New("podman not found on guest")
+
 // ErrTerminalVSOCKUnavailable is returned when vsock is permanently unavailable on the guest (no retry).
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 

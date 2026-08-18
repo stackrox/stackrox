@@ -18,15 +18,15 @@ const (
 // InstallRoxagentQuadlet copies the customer installer plus a staged
 // roxagent.container to the guest and runs install.sh --stage-dir so systemd
 // ends up with roxagent.service.
-func InstallRoxagentQuadlet(ctx context.Context, virt Virtctl, namespace, vm, image, repo2cpeURL, pullSecretPath string) error {
+func InstallRoxagentQuadlet(ctx context.Context, virt Virtctl, namespace, vm, image, repo2cpeURL, podmanAuthPath string) error {
 	if err := requireGuestPodman(ctx, virt, namespace, vm); err != nil {
 		return err
 	}
-	if err := installGuestPodmanAuth(ctx, virt, namespace, vm, pullSecretPath); err != nil {
+	if err := installGuestPodmanAuth(ctx, virt, namespace, vm, podmanAuthPath); err != nil {
 		return err
 	}
 
-	hostStage, err := stageQuadletInstall(image, repo2cpeURL)
+	hostStage, err := stageQuadletInstall(image, repo2cpeURL, podmanAuthPath)
 	if err != nil {
 		return err
 	}
@@ -93,22 +93,22 @@ func requireGuestPodman(ctx context.Context, virt Virtctl, namespace, vm string)
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
 		}, "podman", "--version")
 		if err != nil {
-			return fmt.Errorf("podman not found on guest %s/%s (VM image must ship it; unactivated guests cannot dnf install): %w: %s",
-				namespace, vm, err, strings.TrimSpace(stderr))
+			return fmt.Errorf("%w on guest %s/%s (VM image must ship it; unactivated guests cannot dnf install): %v: %s",
+				ErrPodmanNotFound, namespace, vm, err, strings.TrimSpace(stderr))
 		}
 		return nil
 	})
 }
 
-func installGuestPodmanAuth(ctx context.Context, virt Virtctl, namespace, vm, pullSecretPath string) error {
-	if strings.TrimSpace(pullSecretPath) == "" {
+func installGuestPodmanAuth(ctx context.Context, virt Virtctl, namespace, vm, podmanAuthPath string) error {
+	if strings.TrimSpace(podmanAuthPath) == "" {
 		return nil
 	}
-	if _, err := os.Stat(pullSecretPath); err != nil {
-		return fmt.Errorf("podman pull secret %q: %w", pullSecretPath, err)
+	if _, err := os.Stat(podmanAuthPath); err != nil {
+		return fmt.Errorf("podman auth file %q: %w", podmanAuthPath, err)
 	}
 	return retryOnSSHTransport(ctx, virt.Logf, "install guest podman auth", func(ctx context.Context) error {
-		if err := scpToGuest(ctx, virt, namespace, vm, pullSecretPath, guestPodmanAuthStagingPath); err != nil {
+		if err := scpToGuest(ctx, virt, namespace, vm, podmanAuthPath, guestPodmanAuthStagingPath); err != nil {
 			return err
 		}
 		defer func() {
@@ -136,13 +136,17 @@ func scpToGuest(ctx context.Context, virt Virtctl, namespace, vm, src, dst strin
 	return nil
 }
 
-func stageQuadletInstall(image, repo2cpeURL string) (string, error) {
+func stageQuadletInstall(image, repo2cpeURL, podmanAuthPath string) (string, error) {
 	srcDir := filepath.Join(repoRoot(), "compliance", "virtualmachines", "roxagent", "quadlet")
 	srcContainer, err := os.ReadFile(filepath.Join(srcDir, quadletContainerFileName))
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", quadletContainerFileName, err)
 	}
-	overlayed, err := overlayQuadletContainer(srcContainer, image, repo2cpeURL)
+	authFile := ""
+	if strings.TrimSpace(podmanAuthPath) != "" {
+		authFile = guestPodmanAuthPath
+	}
+	overlayed, err := overlayQuadletContainer(srcContainer, image, repo2cpeURL, authFile)
 	if err != nil {
 		return "", err
 	}
@@ -166,9 +170,10 @@ func stageQuadletInstall(image, repo2cpeURL string) (string, error) {
 	return dir, nil
 }
 
-// overlayQuadletContainer rewrites Image= and Exec= so e2e uses the cluster
-// image and a 5m rescan without changing the shipped unit file.
-func overlayQuadletContainer(src []byte, image, repo2cpeURL string) ([]byte, error) {
+// overlayQuadletContainer rewrites Image= and Exec= for the cluster image and
+// a 5m rescan. A non-empty authFile sets REGISTRY_AUTH_FILE on [Service]:
+// RHEL 8 Quadlet rejects AuthFile= as an unsupported [Container] key.
+func overlayQuadletContainer(src []byte, image, repo2cpeURL, authFile string) ([]byte, error) {
 	if strings.TrimSpace(image) == "" {
 		return nil, errors.New("overlayQuadletContainer: image is empty")
 	}
@@ -176,28 +181,27 @@ func overlayQuadletContainer(src []byte, image, repo2cpeURL string) ([]byte, err
 		return nil, errors.New("overlayQuadletContainer: repo2cpeURL is empty")
 	}
 
-	var b strings.Builder
-	b.Grow(len(src) + len(image) + len(repo2cpeURL))
 	sawImage, sawExec := false, false
-	first := true
-	for line := range strings.SplitSeq(string(src), "\n") {
-		if !first {
-			b.WriteByte('\n')
-		}
-		first = false
+	srcLines := strings.Split(string(src), "\n")
+	out := make([]string, 0, len(srcLines)+1)
+	for _, line := range srcLines {
 		switch {
 		case strings.HasPrefix(line, "Image="):
-			b.WriteString("Image=")
-			b.WriteString(image)
+			out = append(out, "Image="+image)
 			sawImage = true
+		case strings.HasPrefix(line, "AuthFile="):
+			continue
+		case line == "[Service]":
+			out = append(out, "[Service]")
+			if authFile != "" {
+				out = append(out, "Environment=REGISTRY_AUTH_FILE="+authFile)
+			}
 		case strings.HasPrefix(line, "Exec="):
-			b.WriteString("Exec=serve --host-path /host --rescan-interval ")
-			b.WriteString(E2ERescanInterval.String())
-			b.WriteString(" --repo-cpe-url ")
-			b.WriteString(repo2cpeURL)
+			out = append(out, "Exec=serve --host-path /host --rescan-interval "+
+				E2ERescanInterval.String()+" --repo-cpe-url "+repo2cpeURL)
 			sawExec = true
 		default:
-			b.WriteString(line)
+			out = append(out, line)
 		}
 	}
 	if !sawImage {
@@ -206,5 +210,5 @@ func overlayQuadletContainer(src []byte, image, repo2cpeURL string) ([]byte, err
 	if !sawExec {
 		return nil, errors.New("overlayQuadletContainer: no Exec= line")
 	}
-	return []byte(b.String()), nil
+	return []byte(strings.Join(out, "\n")), nil
 }

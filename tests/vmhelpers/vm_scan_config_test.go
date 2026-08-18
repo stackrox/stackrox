@@ -51,6 +51,18 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	require.Equal(t, "vm-1", specs[1].Name)
 }
 
+func TestLoadVMScanConfig_AuthPaths(t *testing.T) {
+	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
+	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("MAIN_IMAGE", "quay.io/example/main:test")
+	t.Setenv("VM_IMAGE_PULL_SECRET_PATH", "/tmp/k8s-pull-secret.json")
+	t.Setenv("VM_PODMAN_AUTH_FILE", "/tmp/podman-auth.json")
+	cfg, err := LoadVMScanConfig()
+	require.NoError(t, err)
+	require.Equal(t, "/tmp/k8s-pull-secret.json", cfg.ImagePullSecretPath)
+	require.Equal(t, "/tmp/podman-auth.json", cfg.PodmanAuthFilePath)
+}
+
 func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VM_IMAGES", "img-a,img-b,img-c")
 	t.Setenv("VM_USERS", "alice")

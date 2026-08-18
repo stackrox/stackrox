@@ -5,6 +5,7 @@ package vmhelpers
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -21,14 +22,32 @@ func TestOverlayQuadletContainer(t *testing.T) {
 		url   = "https://example.test/repository-to-cpe.json"
 	)
 
-	got, err := overlayQuadletContainer(src, image, url)
+	got, err := overlayQuadletContainer(src, image, url, "")
 	require.NoError(t, err)
 	out := string(got)
 	require.Contains(t, out, "Image="+image)
 	require.NotContains(t, out, "Image=quay.io/stackrox-io/main:latest")
+	require.NotContains(t, out, "AuthFile=")
+	require.NotContains(t, out, "REGISTRY_AUTH_FILE")
 	require.Contains(t, out, "Exec=serve --host-path /host --rescan-interval "+E2ERescanInterval.String()+" --repo-cpe-url "+url)
 	require.Contains(t, out, "Notify=true")
 	require.Contains(t, out, "TimeoutStartSec=600")
+}
+
+func TestOverlayQuadletContainer_RegistryAuthFile(t *testing.T) {
+	t.Parallel()
+
+	src, err := os.ReadFile(filepath.Join(repoRoot(), "compliance", "virtualmachines", "roxagent", "quadlet", "roxagent.container"))
+	require.NoError(t, err)
+
+	got, err := overlayQuadletContainer(src, "quay.io/rhacs-eng/main:e2e-test", "https://example.test/repository-to-cpe.json", guestPodmanAuthPath)
+	require.NoError(t, err)
+	out := string(got)
+	require.NotContains(t, out, "AuthFile=")
+	container, rest, found := strings.Cut(out, "[Service]")
+	require.True(t, found)
+	require.NotContains(t, container, "REGISTRY_AUTH_FILE")
+	require.Contains(t, rest, "Environment=REGISTRY_AUTH_FILE="+guestPodmanAuthPath)
 }
 
 func TestOverlayQuadletContainer_Errors(t *testing.T) {
@@ -67,7 +86,7 @@ func TestOverlayQuadletContainer_Errors(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, err := overlayQuadletContainer(tc.src, tc.image, tc.repo2cpeURL)
+			_, err := overlayQuadletContainer(tc.src, tc.image, tc.repo2cpeURL, "")
 			require.ErrorContains(t, err, tc.errSubstring)
 		})
 	}

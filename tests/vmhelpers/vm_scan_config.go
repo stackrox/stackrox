@@ -60,7 +60,8 @@ type VMScanConfig struct {
 	ScanPollInterval    time.Duration
 	DeleteTimeout       time.Duration
 	SkipCleanup         bool
-	ImagePullSecretPath string // Path to docker config JSON for private registries
+	ImagePullSecretPath string // Path to docker config JSON for the namespace imagePullSecret
+	PodmanAuthFilePath  string // Path to containers-auth JSON for guest Quadlet pulls
 }
 
 // LoadVMScanConfig reads the VM scanning configuration from the environment.
@@ -123,6 +124,7 @@ func LoadVMScanConfig() (*VMScanConfig, error) {
 	cfg.DeleteTimeout = defaultDeleteTimeout
 	cfg.SkipCleanup = vmScanSkipCleanup.BooleanSetting()
 	cfg.ImagePullSecretPath = strings.TrimSpace(os.Getenv("VM_IMAGE_PULL_SECRET_PATH"))
+	cfg.PodmanAuthFilePath = strings.TrimSpace(os.Getenv("VM_PODMAN_AUTH_FILE"))
 
 	return cfg, nil
 }

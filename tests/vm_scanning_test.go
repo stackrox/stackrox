@@ -14,6 +14,12 @@ import (
 func (s *VMScanningSuite) TestScanPipeline() {
 	for i := range s.vms {
 		vm := &s.vms[i]
+		if vm.SkipReason != "" {
+			s.T().Run(vm.Name, func(t *testing.T) {
+				t.Skip(vm.SkipReason)
+			})
+			continue
+		}
 		virt := s.virtctlForVM(*vm)
 
 		if err := vmhelpers.EnsureVsockReady(s.ctx, virt, vm.Namespace, vm.Name, "scan pipeline"); err != nil {
