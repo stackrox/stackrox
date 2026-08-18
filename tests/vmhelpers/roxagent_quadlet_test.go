@@ -103,6 +103,10 @@ func TestIsVsockUnavailableOutput(t *testing.T) {
 			output: "dial vsock host(2):818: connection refused",
 			want:   false,
 		},
+		"unrelated enoent in journal dump": {
+			output: "listening on VSOCK port 818\nopen /etc/foo: no such file or directory",
+			want:   false,
+		},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {

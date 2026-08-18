@@ -32,6 +32,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
+	t.Setenv("ROXAGENT_IMAGE", "")
 	t.Setenv("MAIN_IMAGE", "quay.io/example/main:test")
 	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := LoadVMScanConfig()

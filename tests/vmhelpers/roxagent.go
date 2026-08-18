@@ -27,15 +27,20 @@ const (
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 
 // isVsockUnavailableOutput detects terminal vsock device errors in roxagent or
-// Podman combined output (bare binary listen failures and Quadlet --device /dev/vsock).
+// Podman combined output. Both the vsock token and an unavailable-device marker
+// must appear on the same line so an unrelated ENOENT in a journal dump is ignored.
 func isVsockUnavailableOutput(output string) bool {
-	lower := strings.ToLower(strings.TrimSpace(output))
-	if !strings.Contains(lower, "vsock") {
-		return false
+	for line := range strings.SplitSeq(strings.ToLower(output), "\n") {
+		if !strings.Contains(line, "vsock") {
+			continue
+		}
+		if strings.Contains(line, "no such device") ||
+			strings.Contains(line, "no such file or directory") ||
+			(strings.Contains(line, "/dev/vsock") && strings.Contains(line, "not found")) {
+			return true
+		}
 	}
-	return strings.Contains(lower, "no such device") ||
-		strings.Contains(lower, "no such file or directory") ||
-		(strings.Contains(lower, "/dev/vsock") && strings.Contains(lower, "not found"))
+	return false
 }
 
 // EnsureRoxagentServing starts Quadlet `roxagent.service` if it is not already
@@ -95,10 +100,10 @@ func waitRoxagentActive(ctx context.Context, virt Virtctl, namespace, vm string)
 		default:
 			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
 			if isVsockUnavailableOutput(logs) {
-				return fmt.Errorf("%w: roxagent serve unit %q (journal: %s)",
-					ErrTerminalVSOCKUnavailable, state, logs)
+				return fmt.Errorf("%w: %s ActiveState=%q (journal: %s)",
+					ErrTerminalVSOCKUnavailable, roxagentUnit, state, logs)
 			}
-			return fmt.Errorf("roxagent serve unit %q (journal: %s)", state, logs)
+			return fmt.Errorf("%s ActiveState=%q (journal: %s)", roxagentUnit, state, logs)
 		}
 
 		timer := time.NewTimer(roxagentListenPollInterval)

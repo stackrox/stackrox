@@ -111,6 +111,12 @@ func installGuestPodmanAuth(ctx context.Context, virt Virtctl, namespace, vm, pu
 		if err := scpToGuest(ctx, virt, namespace, vm, pullSecretPath, guestPodmanAuthStagingPath); err != nil {
 			return err
 		}
+		defer func() {
+			_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+				description:            "remove staged podman auth file",
+				transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+			}, "rm", "-f", guestPodmanAuthStagingPath)
+		}()
 		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
 			description:            "install /etc/containers/auth.json",
 			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
@@ -118,10 +124,6 @@ func installGuestPodmanAuth(ctx context.Context, virt Virtctl, namespace, vm, pu
 		if err != nil {
 			return fmt.Errorf("install %s: %w: %s", guestPodmanAuthPath, err, strings.TrimSpace(stderr))
 		}
-		_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "remove staged podman auth",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "rm", "-f", guestPodmanAuthStagingPath)
 		return nil
 	})
 }
