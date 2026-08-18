@@ -584,8 +584,8 @@ func startGRPCServer() {
 		}
 	}
 
-	if features.OPPAccessControl.Enabled() {
-		authProviderBackendFactories[oidc.TypeNameWithOPPAccessControl] = openshift.NewFactory
+	if features.ACMAccessControlDelegation.Enabled() {
+		authProviderBackendFactories[oidc.TypeNameWithACMAccessControlDelegation] = openshift.NewFactory
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {

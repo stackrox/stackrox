@@ -20,9 +20,9 @@ const (
 	// TypeName is the standard type name for OIDC auth providers.
 	TypeName = "oidc"
 
-	// TypeNameWithOPPAccessControl is the type name for OpenShift auth providers
+	// TypeNameWithACMAccessControlDelegation is the type name for OpenShift auth providers
 	// with role resolution from ACM.
-	TypeNameWithOPPAccessControl = authproviders.OIDCTypeNameWithACMRoles
+	TypeNameWithACMAccessControlDelegation = authproviders.OIDCTypeNameWithACMRoles
 
 	callbackRelativePath = "callback"
 
