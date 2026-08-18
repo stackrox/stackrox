@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	OpenShiftTypeNameWithOPPAccessControl = "openshiftWithOPPRBAC"
+	OpenShiftTypeNameWithACMAccessControlDelegation = "openshift-with-acm-roles"
 )
 
 var (
@@ -372,10 +372,10 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 		tokenOpts = append(tokenOpts, tokens.WithExpiry(authResp.Expiration))
 	}
 	tokenOpts = append(tokenOpts, authResp.ExtraOpts...)
-	if features.OPPAccessControl.Enabled() {
+	if features.ACMAccessControlDelegation.Enabled() {
 		roxClaims := tokens.RoxClaims{}
 		switch provider.Type() {
-		case OpenShiftTypeNameWithOPPAccessControl:
+		case OpenShiftTypeNameWithACMAccessControlDelegation:
 			roles, err := getRolesForOpenshiftResponse(ctx, authResp, r.clusterResolver)
 			if err != nil {
 				return nil, nil, err
@@ -477,7 +477,7 @@ func getRolesForOpenshiftResponse(
 
 func isACMRoleDelegationProvider(provider Provider) bool {
 	switch provider.Type() {
-	case OpenShiftTypeNameWithOPPAccessControl:
+	case OpenShiftTypeNameWithACMAccessControlDelegation:
 		return true
 	}
 	return false
