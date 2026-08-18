@@ -207,7 +207,12 @@ function launch_central {
         add_args "--output-format=${OUTPUT_FORMAT}"
     fi
 
-    add_args "--lb-type=$LOAD_BALANCER"
+    # roxctl has no "nlb" lb-type. EKS IPv6 exposes Central via a dedicated
+    # dualstack NLB created after deploy (see wait_for_api in tests/e2e/lib.sh),
+    # so generate the bundle with no built-in exposure.
+    lb_type_arg="$LOAD_BALANCER"
+    [[ "$lb_type_arg" == "nlb" ]] && lb_type_arg="none"
+    add_args "--lb-type=$lb_type_arg"
 
     add_args "--offline=$OFFLINE_MODE"
 
