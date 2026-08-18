@@ -185,7 +185,7 @@ func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (call
 		TrustedCertPool: certPool,
 	}
 
-	openshiftConnector, err := dexCfg.Open()
+	openshiftConnector, err := dexCfg.Open([]string{"user:info", "user:full"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
