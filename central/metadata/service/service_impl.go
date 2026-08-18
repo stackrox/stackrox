@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/certwatch"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/versioncompatibility"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 )
 
@@ -207,10 +209,13 @@ func (s *serviceImpl) GetMetadata(ctx context.Context, _ *v1.Empty) (*v1.Metadat
 	// Only return version information to logged-in users, not anonymous users.
 	if authn.IdentityFromContextOrNil(ctx) != nil {
 		metadata.Version = version.GetMainVersion()
-		if versions, err := versioncompatibility.CompatibleVersions(); err == nil {
+		versions, err := versioncompatibility.CompatibleVersions()
+		if err == nil {
 			for _, xy := range versions {
 				metadata.CompatibleSensorVersions = append(metadata.CompatibleSensorVersions, xy.String())
 			}
+		} else {
+			logging.LogOncef(log, zapcore.WarnLevel, "Failed to determine compatible Sensor versions: %v", err)
 		}
 	}
 	return metadata, nil
