@@ -97,7 +97,7 @@ wait_for_background_migrations() {
             continue
         fi
         local response
-        if response=$(kubectl -n stackrox exec "$central_pod" -- curl -s localhost:9090/metrics 2>&1); then
+        if response=$(kubectl -n stackrox exec "$central_pod" -- curl -s --connect-timeout 5 --max-time 10 localhost:9090/metrics 2>&1); then
             local val
             val=$(echo "$response" | grep '^rox_central_background_migration_complete ' | awk '{print $2}' || true)
             if [[ "$val" == "1" ]]; then
@@ -108,7 +108,9 @@ wait_for_background_migrations() {
         else
             info "Metrics request failed (attempt $((i+1))/$retries), retrying..."
         fi
-        sleep "$interval"
+        if (( i < retries - 1 )); then
+            sleep "$interval"
+        fi
     done
     die "Background migrations did not complete within $((retries * interval)) seconds"
 }
