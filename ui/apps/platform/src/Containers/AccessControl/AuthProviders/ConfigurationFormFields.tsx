@@ -738,6 +738,55 @@ function ConfigurationFormFields({
                     </FormGroup>
                 </GridItem>
             )}
+            {type === 'openshift-with-acm-roles' && (
+                <>
+                    <GridItem span={12} lg={6}>
+                        <FormGroup label="Client Name" fieldId="config.client_name" isRequired>
+                            <TextInput
+                                type="text"
+                                id="config.client_name"
+                                value={(config.client_name as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                            />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        <span className="pf-v6-u-font-size-sm">
+                                            The name of the client registered in ACM for role resolution
+                                        </span>
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
+                        </FormGroup>
+                    </GridItem>
+                    <GridItem span={12} lg={6}>
+                        <FormGroup label="Client Secret" fieldId="config.client_secret" isRequired>
+                            <TextInput
+                                type="password"
+                                id="config.client_secret"
+                                value={(config.client_secret as string) || ''}
+                                onChange={onChange}
+                                isDisabled={isViewing || isActiveModificationsDisabled}
+                                isRequired
+                                onBlur={onBlur}
+                                placeholder={isViewing ? '*****' : ''}
+                            />
+                            <FormHelperText>
+                                <HelperText>
+                                    <HelperTextItem>
+                                        <span className="pf-v6-u-font-size-sm">
+                                            The client secret for authenticating with ACM
+                                        </span>
+                                    </HelperTextItem>
+                                </HelperText>
+                            </FormHelperText>
+                        </FormGroup>
+                    </GridItem>
+                </>
+            )}
         </>
     );
 }
