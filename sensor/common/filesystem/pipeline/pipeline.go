@@ -374,14 +374,11 @@ func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
 		return nil
 	}
 
-	// Write the fake file activity to the activity channel
-	// The pipeline's run() goroutine will process it from there
-	select {
-	case <-p.stopper.Flow().StopRequested():
-		return nil
-	case p.activityChan <- fakeEvent.Activity:
-		return nil
-	}
+	// Process fake file activity directly instead of writing to activityChan.
+	// This avoids potential panic on shutdown when the channel is closed by filesystemService.
+	// The activityChan is owned by the gRPC service, which is its only writer.
+	p.processFileActivity(fakeEvent.Activity)
+	return nil
 }
 
 func (p *Pipeline) processFileActivity(fs *sensorAPI.FileActivity) {
