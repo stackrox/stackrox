@@ -515,7 +515,7 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 		return fmt.Errorf("importing vulnerabilities: %w", err)
 	}
 
-	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipTime)
+	err = u.metadataStore.SetLastVulnerabilityUpdate(lCtx, zipF.Name, zipF.Modified)
 	if err != nil {
 		return fmt.Errorf("updating timestamp (import was successful): %w", err)
 	}

@@ -224,6 +224,86 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
+	const bundleName = "alpine.json.zst"
+
+	// Older than the archive zipTime
+	entryModified, err := http.ParseTime(time.Now().Add(-2 * time.Hour).UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		w, err := zw.CreateHeader(&zip.FileHeader{
+			Name:     bundleName,
+			Method:   zip.Deflate,
+			Modified: entryModified,
+		})
+		require.NoError(t, err)
+		_, err = w.Write([]byte("fake-compressed-content"))
+		require.NoError(t, err)
+		require.NoError(t, zw.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+	require.True(t, entryModified.Before(now), "test setup: entry timestamp must be older than the archive zipTime")
+
+	ctrl := gomock.NewController(t)
+	store := mocks.NewMockMatcherStore(ctrl)
+	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+	prevTime := now.Add(-time.Hour)
+
+	u := &Updater{
+		locker:        &testLocker{locker: updates.NewLocalLockSource()},
+		store:         store,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		skipGC:        true,
+		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
+		retryDelay:    1 * time.Second,
+		retryMax:      1,
+		distManager:   newDistManager(store),
+	}
+
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(prevTime, nil)
+
+	// Pre-registration phase.
+	preReg := metadataStore.EXPECT().
+		GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleName, prevTime).
+		Return(prevTime, nil)
+
+	// Processing phase: lastTime (prevTime) is before zipTime (now), so it runs.
+	metadataStore.EXPECT().
+		GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleName, prevTime).
+		Return(prevTime, nil).
+		After(preReg)
+
+	// Saved timestamp is the entry's Modified time, not zipTime.
+	metadataStore.EXPECT().
+		SetLastVulnerabilityUpdate(gomock.Any(), bundleName, gomock.Cond(func(got time.Time) bool {
+			return got.Equal(entryModified)
+		})).
+		Return(nil)
+
+	// GC and Initialized at end of runMultiBundleUpdate.
+	metadataStore.EXPECT().
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(nil, nil)
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+
+	err = u.Update(test.Logging(t))
+	assert.NoError(t, err)
+}
+
 func TestFetch(t *testing.T) {
 	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
 		return strings.NewReader("test")
