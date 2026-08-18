@@ -444,6 +444,10 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 
 	// Process each vulnerability bundle in the .zip archive.
 	// Errors are collected so all bundles are attempted even when some fail.
+	//
+	// TODO(ROX-36437): succeeded counts lock-skipped and already-current
+	// bundles as successes; distinguish genuinely imported bundles from
+	// skipped ones.
 	var bundleErrs []error
 	succeeded := 0
 	for _, bundleF := range bundles {
