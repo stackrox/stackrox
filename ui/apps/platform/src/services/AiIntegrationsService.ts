@@ -63,3 +63,7 @@ export function testAiIntegration(data: AiIntegration): Promise<Empty> {
         .post<Empty>(`${aiIntegrationsUrl}/test`, request)
         .then((response) => response.data);
 }
+
+export function deleteAiIntegrations(ids: string[]): Promise<Empty[]> {
+    return Promise.all(ids.map(deleteAiIntegration));
+}
