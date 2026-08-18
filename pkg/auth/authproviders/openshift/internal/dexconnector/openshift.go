@@ -90,7 +90,7 @@ func (e *oauth2Error) Error() string {
 
 // Open returns a openshiftConnector which can be used to login users through an
 // upstream OpenShift OAuth2 server.
-func (c *Config) Open() (*openshiftConnector, error) {
+func (c *Config) Open(oauth2Scopes []string) (*openshiftConnector, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	httpClient, err := newHTTPClient(c.TrustedCertPool)
@@ -135,7 +135,7 @@ func (c *Config) Open() (*openshiftConnector, error) {
 	openshiftConnector.oauth2Config = &oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
-		Scopes:       []string{"user:info"},
+		Scopes:       oauth2Scopes,
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  metadata.Auth,
 			TokenURL: metadata.Token,
