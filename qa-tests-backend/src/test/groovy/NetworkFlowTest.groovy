@@ -90,8 +90,12 @@ class NetworkFlowTest extends BaseSpecification {
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP-LISTEN:80,fork STDOUT & " +
-                                      "socat "+SOCAT_DEBUG+" TCP-LISTEN:8080,fork STDOUT)" as String,]),
+                    // TCP6-LISTEN with ipv6-v6only=0 binds :: dual-stack (accepts IPv6 and
+                    // IPv4-mapped), so this works on both IPv4 and IPv6-only clusters. Plain
+                    // TCP-LISTEN is a TCP4 alias (binds 0.0.0.0) and is unreachable on an
+                    // IPv6-only pod, so the connection never establishes and no edge appears.
+                    .setArgs(["(socat "+SOCAT_DEBUG+" TCP6-LISTEN:80,fork,ipv6-v6only=0 STDOUT & " +
+                                      "socat "+SOCAT_DEBUG+" TCP6-LISTEN:8080,fork,ipv6-v6only=0 STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
                     .setImagePrefetcherAffinity()
