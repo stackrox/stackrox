@@ -11,10 +11,6 @@ var (
 	// PostgresDefaultCursorTimeout sets the default timeout for Postgres cursor statements
 	PostgresDefaultCursorTimeout = registerDurationSetting("ROX_POSTGRES_DEFAULT_CURSOR_TIMEOUT", 10*time.Minute)
 
-	// PostgresDefaultCursorBatchSize sets the number of rows fetched per FETCH in server-side
-	// cursor queries. Lower values reduce memory usage; higher values reduce round-trips.
-	PostgresDefaultCursorBatchSize = RegisterIntegerSetting("ROX_POSTGRES_CURSOR_BATCH_SIZE", 1000)
-
 	// PostgresDefaultMigrationStatementTimeout sets the default timeout for Postgres statements during migration
 	PostgresDefaultMigrationStatementTimeout = registerDurationSetting("ROX_POSTGRES_MIGRATION_STATEMENT_TIMEOUT", 2*time.Hour)
 
