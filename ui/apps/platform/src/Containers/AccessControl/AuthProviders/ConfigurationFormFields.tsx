@@ -176,7 +176,7 @@ function ConfigurationFormFields({
                     </GridItem>
                 </>
             )}
-            {type === 'oidc' && (
+            {(type === 'oidc' || type === 'oidc-with-acm-roles') && (
                 <>
                     <GridItem span={12} lg={6}>
                         <FormGroup label="Callback mode" fieldId="config.mode" isRequired>
