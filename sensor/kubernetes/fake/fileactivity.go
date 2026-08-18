@@ -70,11 +70,11 @@ func (w *WorkloadManager) manageFileActivity(ctx context.Context) {
 			}
 
 			if err := w.pubSubDispatcher.Publish(event); err != nil {
-                if ctx.Err() != nil {
-                   return
-                }
-                log.Fatalf("Failed to publish fake file activity: %v", err)
-            }
+				if ctx.Err() != nil {
+					return
+				}
+				log.Fatalf("Failed to publish fake file activity: %v", err)
+			}
 
 			select {
 			case <-ctx.Done():
