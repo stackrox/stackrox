@@ -46,13 +46,13 @@ func (s *logOnceTestSuite) TestLogOncef() {
 }
 
 func (s *logOnceTestSuite) TestLogOncePerKeyf() {
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unealthy %d seconds", "sensor 1", 4).MinTimes(1).MaxTimes(1)
-	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unealthy %d seconds", "sensor 2", 1).MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4).MinTimes(1).MaxTimes(1)
+	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1).MinTimes(1).MaxTimes(1)
 
-	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unealthy %d seconds", "sensor 1", 4)
-	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unealthy %d seconds", "sensor 1", 34)
+	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 4)
+	LogOncePerKeyf("sensor 1", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 1", 34)
 
-	LogOncePerKeyf("sensor 2", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unealthy %d seconds", "sensor 2", 1)
+	LogOncePerKeyf("sensor 2", s.mockLogger, zapcore.InfoLevel, "This sensor %s is unhealthy %d seconds", "sensor 2", 1)
 }
 
 func (s *logOnceTestSuite) TestLogOncefSizeLimit() {

@@ -30,9 +30,8 @@ var (
 // It is important that repeated messages are prevented for the same template string which is used before formatting
 // args into it. This is intentional compromise: LogOncef and LogOncePerKeyf are more performant than RateLimitedLogger
 // because they don't rely on heavy synchronization with Mutex and use relatively small memory of seen messages
-// (capped by maxLogOnceMemory in a somewhat relaxed manner). If you want to prevent repeated varied messages
-// considering args, LogOncef and LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent
-// something else.
+// (capped by maxLogOnceMemory). If you want to prevent repeated varied messages considering args, LogOncef and
+// LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent something else.
 // Note that level also does not participate in de-duplication (similar to args).
 func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) {
 	LogOncePerKeyf("", logger, level, template, args...)
@@ -54,18 +53,21 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 		logger.Logf(level, template, args...)
 
 		if logOnceMemoryUsed.Add(1) > maxLogOnceMemory {
-			if logOnceLimitNotified.Swap(true) == false {
+			if !logOnceLimitNotified.Swap(true) {
 				logger.Warnf("maxLogOnceMemory=%d limit reached", maxLogOnceMemory)
 			}
-			// This is a best-effort deletion. It's possible that multiple threads try to delete the same item but only
-			// one succeeds, thought both decrement the counter. Trying to do this consistently would require more
-			// heavy-weight synchronization or data structures which defeats the idea of this log-once functionality
-			// being computationally cheap. We should try to avoid filling up all memory to the limit anyway.
 			logOnceSeen.Range(func(randomKey, _ any) bool {
-				logOnceSeen.Delete(randomKey)
-				return false
+				if randomKey == fullKey {
+					// Don't forget what we just added.
+					return true
+				}
+				if _, deleted := logOnceSeen.LoadAndDelete(randomKey); deleted {
+					logOnceMemoryUsed.Add(-1)
+					return false
+				}
+				// Some other thread deleted the same randomKey, keep iterating to try another one.
+				return true
 			})
-			logOnceMemoryUsed.Add(-1)
 		}
 	}
 }
