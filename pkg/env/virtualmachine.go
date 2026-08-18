@@ -60,6 +60,16 @@ var (
 	// polls VMs for new reports.
 	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 5*time.Minute)
 
+	// VirtualMachinesScraperTickInterval is how often VMScraper considers due VMs.
+	// Independent of retry backoff so operators can slow the ticker without
+	// retuning NACK and failure delays.
+	VirtualMachinesScraperTickInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL", 10*time.Second)
+
+	// VirtualMachinesScraperInitialBackoff is the first retry delay after a
+	// retryable scrape failure or Central NACK. Later retries double, capped at
+	// min(poll interval, 30m).
+	VirtualMachinesScraperInitialBackoff = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF", 10*time.Second)
+
 	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
 	// and pulling a report in a single scrape cycle.
 	VirtualMachinesScraperPerVMTimeout = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_PER_VM_TIMEOUT", 30*time.Second)
