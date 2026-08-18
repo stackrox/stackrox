@@ -90,8 +90,8 @@ This document covers TLS certificate management in StackRox, primarily the inter
 
 ## TLS challenge endpoint (/v1/tls-challenge)
 
-- Unauthenticated endpoint. Sensor sends challenge token, Central returns signed TrustInfo.
-- Original purpose: allows Sensor to discover Central's internal CA cert when Central presents a custom default cert instead of its internal one on the TLS connection. The LB must be passthrough — Central requires Sensor's client cert for mTLS authorization.
+- Unauthenticated endpoint, called by Sensor before establishing its main mTLS connection to Central, to bootstrap TLS trust. Sensor sends challenge token, Central returns signed TrustInfo.
+- Original purpose: allows Sensor to discover Central's internal CA cert when Sensor cannot validate the certificate that Central presents, e.g when Central uses a custom default certificate. (This endpoint does not help when Central cannot receive Sensor's client certificate.)
 - Extended in 4.9 for CA rotation: response includes both primary and secondary cert chains. This is how Sensor (on a different cluster) discovers the new CA — it verifies the response using the CA it already trusts, then adds the other CA to its trust pool.
 - Response includes: primary cert chain, secondary cert chain (if present), additional CAs, default TLS leaf cert.
 - Signed with both primary and secondary leaf certs. Sensor verifies one signature and trusts all certs in the response (trust delegation).
