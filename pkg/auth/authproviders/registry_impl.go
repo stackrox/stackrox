@@ -376,7 +376,7 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 		roxClaims := tokens.RoxClaims{}
 		switch provider.Type() {
 		case OpenShiftTypeNameWithOPPAccessControl:
-			roles, err := getRolesForOpenshiftResponse(ctx, authResp)
+			roles, err := getRolesForOpenshiftResponse(ctx, authResp, r.clusterResolver)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -439,7 +439,11 @@ func (r *registryImpl) issueTokenForResponse(ctx context.Context, provider Provi
 	return token, refreshCookie, nil
 }
 
-func getRolesForOpenshiftResponse(ctx context.Context, authResp *AuthResponse) ([]*tokens.InternalRole, error) {
+func getRolesForOpenshiftResponse(
+	ctx context.Context,
+	authResp *AuthResponse,
+	clusterIDResolver tokens.ClusterResolver,
+) ([]*tokens.InternalRole, error) {
 	if authResp == nil {
 		return nil, errox.InvalidArgs.CausedBy("auth response should not be nil")
 	}
@@ -456,13 +460,25 @@ func getRolesForOpenshiftResponse(ctx context.Context, authResp *AuthResponse) (
 	}
 	// Enrich the config with the OpenShift Auth Token
 	cfg.BearerToken = tokenData.AccessToken
+	// Clear BearerTokenFile so that BearerToken takes precedence.
+	// InClusterConfig() sets BearerTokenFile to the service account token,
+	// which would override the user's OAuth token we just set.
+	cfg.BearerTokenFile = ""
 	acmClientObj, err := acmclient.NewACMClientForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, nil)
+	roles, err := externalrolebroker.GetResolvedRolesFromACM(ctx, acmClientObj, clusterIDResolver)
 	if err != nil {
 		return nil, err
 	}
 	return roles, nil
+}
+
+func isACMRoleDelegationProvider(provider Provider) bool {
+	switch provider.Type() {
+	case OpenShiftTypeNameWithOPPAccessControl:
+		return true
+	}
+	return false
 }

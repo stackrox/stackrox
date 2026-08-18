@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions/utils"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/auth/user"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -43,6 +44,20 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	resolvedRoles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, err
+	}
+	if features.OPPAccessControl.Enabled() && isACMRoleDelegationProvider(provider) {
+		// At the point of writing, the only use for the resolved roles
+		// is to filter away users with no roles.
+		// The generated user identity is used to log successful login attempts.
+		// TODO: Find a cleaner way to bypass the "no user role check",
+		// and provide a loggable user identity.
+		fakeRole := &tokens.InternalRole{
+			RoleName: "dummy role with no access",
+			Permissions: map[storage.Access][]string{
+				storage.Access_NO_ACCESS: {"dummy-resource"},
+			},
+		}
+		resolvedRoles = append(resolvedRoles, fakeRole)
 	}
 	return &v1.AuthStatus{
 		Id: &v1.AuthStatus_UserId{
