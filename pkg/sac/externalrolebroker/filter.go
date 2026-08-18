@@ -41,6 +41,9 @@ func ruleHasSupportedK8sResource(rule rbacv1.PolicyRule) bool {
 	if len(rule.APIGroups) == 0 {
 		return false
 	}
+	if len(rules.ResourceNames) > 0 {
+		return false
+	}
 	for _, resource := range rule.Resources {
 		baseResource := getBaseResourceFromResource(resource)
 		for _, apiGroup := range rule.APIGroups {
