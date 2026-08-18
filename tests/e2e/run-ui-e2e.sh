@@ -80,9 +80,9 @@ test_ui_e2e() {
 run_ui_e2e_tests() {
     info "Running UI e2e tests"
 
-    # nlb (EKS IPv6 dualstack NLB) uses the same central-lb hostalias path as lb:
+    # EKS IPv6 (CENTRAL_NLB) uses the same central-lb hostalias path as lb:
     # API_HOSTNAME is the NLB hostname, aliased to central-lb to match the TLS SAN.
-    if [[ "${LOAD_BALANCER}" == "lb" || "${LOAD_BALANCER}" == "nlb" ]]; then
+    if [[ "${LOAD_BALANCER}" == "lb" || "${CENTRAL_NLB:-}" == "true" ]]; then
         local hostname
         if [[ "${API_HOSTNAME}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             info "Getting hostname from IP: ${API_HOSTNAME}"
