@@ -28,6 +28,7 @@ import { deleteIntegrations, isServiceIntegrationSource } from 'services/Integra
 import { revokeAPITokens } from 'services/APITokensService';
 import { deleteMachineAccessConfigs } from 'services/MachineAccessService';
 import { deleteCloudSources } from 'services/CloudSourceService';
+import { deleteAiIntegrations } from 'services/AiIntegrationsService';
 import { triggerBackup } from 'services/BackupIntegrationsService';
 
 import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
@@ -35,6 +36,7 @@ import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
+    getIsAiIntegration,
     getIsCloudSource,
     getIsGCR,
     getIsMachineAccessConfig,
@@ -75,6 +77,7 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
     const isScannerV4 = getIsScannerV4(source, type);
     const isGCR = getIsGCR(source, type);
     const isCloudSource = getIsCloudSource(source);
+    const isAiIntegration = getIsAiIntegration(source);
     const isS3 = getIsS3(source, type);
     const isS3Compatible = getIsS3Compatible(source, type);
 
@@ -91,6 +94,9 @@ function IntegrationsListPage({ source, type }: IntegrationsListPageProps): Reac
             }
             if (isCloudSource) {
                 return deleteCloudSources(ids);
+            }
+            if (isAiIntegration) {
+                return deleteAiIntegrations(ids).then(() => undefined);
             }
             if (isServiceIntegrationSource(source)) {
                 return deleteIntegrations(source, ids).then(() => undefined);

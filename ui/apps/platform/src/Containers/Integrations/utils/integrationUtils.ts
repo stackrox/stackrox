@@ -52,6 +52,10 @@ export function getIsCloudSource(source: IntegrationSource): boolean {
     return source === 'cloudSources';
 }
 
+export function getIsAiIntegration(source: IntegrationSource): boolean {
+    return source === 'aiIntegrations';
+}
+
 export function getGoogleCredentialsPlaceholder(
     useWorkloadId: boolean,
     updatePassword: boolean

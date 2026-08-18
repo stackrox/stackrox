@@ -17,7 +17,13 @@ import { getAxiosErrorMessage, isTimeoutError } from 'utils/responseErrorUtils';
 
 import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { createMachineAccessConfig } from 'services/MachineAccessService';
+import {
+    createAiIntegration,
+    testAiIntegration,
+    updateAiIntegration,
+} from 'services/AiIntegrationsService';
 
+import { getIsAiIntegration } from '../utils/integrationUtils';
 import type { IntegrationSource, IntegrationType } from '../utils/integrationUtils';
 import usePageState from './usePageState';
 
@@ -47,17 +53,25 @@ function useIntegrationActions(): UseIntegrationActionsResult {
     async function onSave(data, { updatePassword }: IntegrationOptions = {}) {
         try {
             let responseData;
+            const isAiIntegration = getIsAiIntegration(source);
 
             if (isEditing) {
-                responseData =
-                    typeof updatePassword === 'boolean'
-                        ? await saveIntegration(crudSource, data, { updatePassword })
-                        : await saveIntegrationV2(crudSource, data);
+                if (isAiIntegration) {
+                    responseData = await updateAiIntegration(data.integration);
+                } else {
+                    responseData =
+                        typeof updatePassword === 'boolean'
+                            ? await saveIntegration(crudSource, data, { updatePassword })
+                            : await saveIntegrationV2(crudSource, data);
+                }
                 navigate(integrationsListPath);
             } else if (type === 'apitoken') {
                 responseData = await generateAPIToken(data);
             } else if (type === 'machineAccess') {
                 responseData = await createMachineAccessConfig(data);
+                navigate(-1);
+            } else if (isAiIntegration) {
+                responseData = await createAiIntegration(data.integration);
                 navigate(-1);
             } else {
                 responseData = await createIntegration(crudSource, data);
@@ -73,7 +87,11 @@ function useIntegrationActions(): UseIntegrationActionsResult {
 
     async function onTest(data, { updatePassword }: IntegrationOptions = {}) {
         try {
-            if (typeof updatePassword === 'boolean') {
+            const isAiIntegration = getIsAiIntegration(source);
+
+            if (isAiIntegration) {
+                await testAiIntegration(data.integration);
+            } else if (typeof updatePassword === 'boolean') {
                 await testIntegration(crudSource, data, { updatePassword });
             } else {
                 await testIntegrationV2(crudSource, data);

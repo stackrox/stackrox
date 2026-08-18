@@ -46,7 +46,10 @@ export function viteProxy() {
 
     const proxy = proxyWithTarget(process.env.UI_START_TARGET || 'https://localhost:8000');
 
+    // Custom proxies come first so that more specific paths (e.g.
+    // `/v2/ai-integrations`) match before the generic `/v2` fallthrough.
     return {
+        ...customProxies,
         '/v1': proxy,
         '/v2': proxy,
         '/api': proxy,
