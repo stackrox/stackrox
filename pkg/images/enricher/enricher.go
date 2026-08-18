@@ -38,10 +38,10 @@ const (
 	UseImageNamesRefetchCachedValues
 	// ForceRefetchMetadataOnly forces a registry metadata refresh (bypassing the
 	// in-memory metadata cache) but allows reusing an existing scan from the
-	// database if the resolved digest already has one. This is the hybrid
+	// database if the resolved image ID already has one. This is the hybrid
 	// option used by admission-controller tag-only requests: always confirm the
 	// current tag→digest mapping via registry, yet skip Scanner when Central
-	// already holds scan data for that digest.
+	// already holds scan data for that image ID.
 	ForceRefetchMetadataOnly
 )
 

@@ -1804,14 +1804,3 @@ func TestHasScanData(t *testing.T) {
 		})
 	}
 }
-
-func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
-	ctx := EnrichmentContext{FetchOpt: ForceRefetchMetadataOnly}
-
-	assert.False(t, ctx.FetchOnlyIfMetadataEmpty(),
-		"ForceRefetchMetadataOnly must force metadata refetch (same as ForceRefetch)")
-	assert.True(t, ctx.FetchOnlyIfScanEmpty(),
-		"ForceRefetchMetadataOnly must allow scan reuse from DB")
-	assert.False(t, ctx.FetchOpt.forceRefetchCachedValues(),
-		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
-}

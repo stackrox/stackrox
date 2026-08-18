@@ -1450,6 +1450,17 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	assert.Equal(t, expectedDigest, img.GetBaseImageInfo()[0].GetBaseImageDigest())
 }
 
+func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
+	ctx := EnrichmentContext{FetchOpt: ForceRefetchMetadataOnly}
+
+	assert.False(t, ctx.FetchOnlyIfMetadataEmpty(),
+		"ForceRefetchMetadataOnly must force metadata refetch (same as ForceRefetch)")
+	assert.True(t, ctx.FetchOnlyIfScanEmpty(),
+		"ForceRefetchMetadataOnly must allow scan reuse from DB")
+	assert.False(t, ctx.FetchOpt.forceRefetchCachedValues(),
+		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
+}
+
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, nil, set, pkgMetrics.CentralSubsystem,
 		newCache(),
