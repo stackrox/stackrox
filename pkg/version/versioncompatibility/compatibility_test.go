@@ -349,7 +349,7 @@ func TestClassifyVersion(t *testing.T) {
 	assert.Equal(t, CompatibleBehind, compat)
 }
 
-func TestCompatibleVersionsOnInvalidVersion(t *testing.T) {
+func TestCompatibleVersionsWhenInvalidVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "invalid")
 
 	if buildinfo.ReleaseBuild {
@@ -361,7 +361,7 @@ func TestCompatibleVersionsOnInvalidVersion(t *testing.T) {
 	}
 }
 
-func TestClassifyVersionOnInvalidVersion(t *testing.T) {
+func TestClassifyVersionWhenInvalidVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "invalid")
 
 	if buildinfo.ReleaseBuild {
@@ -373,7 +373,7 @@ func TestClassifyVersionOnInvalidVersion(t *testing.T) {
 	}
 }
 
-func TestCompatibleVersionsOnMissingBumpData(t *testing.T) {
+func TestCompatibleVersionsWhenMissingBumpData(t *testing.T) {
 	productstreams.OverrideBumpsForTesting(t, `bumps: []`)
 	testutils.SetMainVersion(t, "4.2.0-testing")
 
