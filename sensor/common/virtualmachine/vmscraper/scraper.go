@@ -77,6 +77,7 @@ type VMScraper struct {
 	client                ProtocolClient
 	interval              time.Duration
 	tickInterval          time.Duration
+	initialBackoff        time.Duration
 	reconcileEvery        time.Duration
 	perVMTimeout          time.Duration
 	mandatoryRefreshAfter time.Duration
@@ -112,7 +113,8 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		dialer:                dialer,
 		client:                client,
 		interval:              interval,
-		tickInterval:          initialBackoff,
+		tickInterval:          env.VirtualMachinesScraperTickInterval.DurationSetting(),
+		initialBackoff:        env.VirtualMachinesScraperInitialBackoff.DurationSetting(),
 		reconcileEvery:        reconcilePeriod(interval),
 		perVMTimeout:          env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
 		mandatoryRefreshAfter: env.VirtualMachinesScraperMandatoryRefreshInterval.DurationSetting(),
@@ -192,7 +194,7 @@ func (s *VMScraper) handleNACK(resourceID string) {
 			return false
 		}
 		state.lastGeneration = 0
-		state.backoff = nextBackoff(state.backoff, s.interval)
+		state.backoff = nextBackoff(state.backoff, s.interval, s.initialBackoff)
 		state.nextAttemptAt = s.now().Add(state.backoff)
 		backoff = state.backoff
 		return true
@@ -229,7 +231,7 @@ func (s *VMScraper) run() {
 	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
 
 	// Reconcile + scrape immediately so VMs don't wait a full tick on start.
-	s.pollOnce(ctx)
+	s.tick(ctx, true)
 
 	ticker := time.NewTicker(s.tickInterval)
 	defer ticker.Stop()
@@ -242,12 +244,6 @@ func (s *VMScraper) run() {
 			s.tick(ctx, false)
 		}
 	}
-}
-
-// pollOnce forces a reconcile and scrapes every due slot. Tests call this
-// directly; production uses tick() on the short ticker.
-func (s *VMScraper) pollOnce(ctx context.Context) {
-	s.tick(ctx, true)
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
@@ -361,8 +357,11 @@ func (s *VMScraper) scrapeKey(ctx context.Context, key string) bool {
 func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool {
 	key := vm.Key()
 	snap := s.snapshotVMState(key)
-	reason, backoff := s.scrapeScheduleHint(key)
-	log.Infof("VMScraper: scraping %q (reason=%s backoff=%s)", key, reason, backoff)
+	reason := "poll"
+	if snap.backoff > 0 {
+		reason = "retry"
+	}
+	log.Infof("VMScraper: scraping %q (reason=%s backoff=%s)", key, reason, snap.backoff)
 
 	vmCtx, cancel := context.WithTimeout(ctx, s.perVMTimeout)
 	defer cancel()
@@ -439,19 +438,6 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	return true
 }
 
-// scrapeScheduleHint reports whether this scrape is a normal poll or a backoff
-// retry, based on the current per-VM backoff (NACK and retryable failures share
-// that field).
-func (s *VMScraper) scrapeScheduleHint(key string) (string, time.Duration) {
-	return concurrency.WithLock2(&s.mu, func() (string, time.Duration) {
-		st, ok := s.vmState[key]
-		if !ok || st.backoff <= 0 {
-			return "poll", 0
-		}
-		return "retry", st.backoff
-	})
-}
-
 type scrapeOutcome int
 
 const (
@@ -471,7 +457,7 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 		now := s.now()
 		switch outcome {
 		case scrapeRetryable:
-			st.backoff = nextBackoff(st.backoff, s.interval)
+			st.backoff = nextBackoff(st.backoff, s.interval, s.initialBackoff)
 			st.nextAttemptAt = now.Add(st.backoff)
 			return st.backoff
 		case scrapeOK, scrapeNonRetryable:
@@ -562,6 +548,7 @@ type vmStateSnapshot struct {
 	lastGeneration  uint32
 	lastEpoch       uint32
 	lastForwardedAt time.Time
+	backoff         time.Duration
 }
 
 func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
@@ -577,6 +564,7 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 			lastGeneration:  st.lastGeneration,
 			lastEpoch:       st.lastEpoch,
 			lastForwardedAt: st.lastForwardedAt,
+			backoff:         st.backoff,
 		}
 	})
 }

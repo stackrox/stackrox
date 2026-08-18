@@ -756,7 +756,8 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		dialer:                dialer,
 		client:                client,
 		interval:              interval,
-		tickInterval:          initialBackoff,
+		tickInterval:          defaultTickInterval,
+		initialBackoff:        initialBackoff,
 		reconcileEvery:        reconcilePeriod(interval),
 		perVMTimeout:          10 * time.Second,
 		mandatoryRefreshAfter: 4 * time.Hour,
@@ -768,6 +769,11 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		inFlight:     set.NewStringSet(),
 		now:          clock.Now,
 	}, clock
+}
+
+// pollOnce forces a reconcile and scrapes every due slot.
+func (s *VMScraper) pollOnce(ctx context.Context) {
+	s.tick(ctx, true)
 }
 
 // --- Thread-safe mocks for concurrent tests ---
@@ -907,6 +913,30 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 		"send failure should retry using backoff": {
 			client:      &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport(1)}},
 			sender:      &mockSender{err: errors.New("central unavailable")},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"ErrInternal should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrInternal}},
+			sender:      &mockSender{},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"io.EOF should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{io.EOF}},
+			sender:      &mockSender{},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"io.ErrUnexpectedEOF should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{io.ErrUnexpectedEOF}},
+			sender:      &mockSender{},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
+		"unhandled protocol error should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{errors.New("bogus frame")}},
+			sender:      &mockSender{},
 			wantBackoff: initialBackoff,
 			wantGap:     initialBackoff,
 		},
