@@ -290,8 +290,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if cfg.workloadManager != nil {
-		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 		cfg.workloadManager.SetPubSubDispatcher(internalMessageDispatcher)
+		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
 		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
 			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
 			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
