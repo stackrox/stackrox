@@ -80,7 +80,12 @@ func (s *RedHatSigningKeySuite) SetupSuite() {
 	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
 	defer cancel()
 	s.logf("Ensuring %s=%s on central", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	currentVal, _ := s.getDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv)
+	if currentVal == shortWatchInterval {
+		s.logf("%s already set to %s, skipping patch", watchIntervalEnv, shortWatchInterval)
+	} else {
+		s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	}
 
 	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
 	s.waitForCentralReady(ctx)
