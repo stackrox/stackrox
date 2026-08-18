@@ -149,18 +149,20 @@ func envOS(env *v4.Environment, report *v4.VulnerabilityReport) string {
 	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
-func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+// environmentList returns the *v4.Environment_List associated with the given
+// package ID, falling back to the deprecated environments map if the
+// current one is unset.
+func environmentList(report *v4.VulnerabilityReport, id string) *v4.Environment_List {
 	environments := report.GetContents().GetEnvironments()
 	if environments == nil {
 		// Fallback to deprecated environments.
 		environments = report.GetContents().GetEnvironmentsDEPRECATED()
 	}
-	envList, ok := environments[id]
-	if !ok {
-		return nil
-	}
+	return environments[id]
+}
 
-	envs := envList.GetEnvironments()
+func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+	envs := environmentList(report, id).GetEnvironments()
 	if len(envs) > 0 {
 		// Just use the first environment.
 		// It is possible there are multiple environments associated with this package;
@@ -171,6 +173,20 @@ func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
 	}
 
 	return nil
+}
+
+// packageHasRepositoryKey reports whether pkgID is associated, via any of
+// its Environment entries, with a Repository whose Key matches key.
+func packageHasRepositoryKey(report *v4.VulnerabilityReport, pkgID, key string) bool {
+	repos := report.GetContents().GetRepositories()
+	for _, env := range environmentList(report, pkgID).GetEnvironments() {
+		for _, repoID := range env.GetRepositoryIds() {
+			if repos[repoID].GetKey() == key {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ParsePackageDB parses the given packageDB into its source type + filepath.
@@ -647,6 +663,10 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 	const (
 		osvUpdaterPrefix     = "osv/"
 		redHatVEXUpdaterName = "rhel-vex"
+		// redHatContainerRepositoryKey matches
+		// github.com/quay/claircore/rhel/rhcc.RepositoryKey: it is set on
+		// every Repository indexed by claircore's RHCC (container) ecosystem.
+		redHatContainerRepositoryKey = "rhcc-container-repository"
 	)
 
 	if len(report.GetPackageVulnerabilities()) == 0 {
@@ -659,8 +679,7 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
 		// Only consider OCI (RHCC) packages.
-		pkg := report.GetContents().GetPackages()[pkgID]
-		if pkg == nil || pkg.GetNormalizedVersion().GetKind() != "rhctag" {
+		if !packageHasRepositoryKey(report, pkgID, redHatContainerRepositoryKey) {
 			continue
 		}
 

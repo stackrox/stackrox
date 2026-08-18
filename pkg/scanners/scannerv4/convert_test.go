@@ -2314,18 +2314,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -2361,18 +2357,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer2"}}},
 					},
 				},
@@ -2409,18 +2401,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -2457,18 +2445,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -2505,18 +2489,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -2553,28 +2533,17 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"bin-2": {
-							Id:   "bin-2",
-							Kind: "binary",
-							Name: "rhel8-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
 					},
@@ -2630,18 +2599,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -2694,28 +2659,17 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"bin-2": {
-							Id:   "bin-2",
-							Kind: "binary",
-							Name: "rhel8-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"bin-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						// go-pkg-1 intentionally has no Environments entry.
 						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:unknown-layer"}}},
 					},
@@ -2773,28 +2727,17 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"bin-2": {
-							Id:   "bin-2",
-							Kind: "binary",
-							Name: "rhel8-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
@@ -2843,38 +2786,20 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"bin-2": {
-							Id:   "bin-2",
-							Kind: "binary",
-							Name: "rhel8-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"bin-3": {
-							Id:   "bin-3",
-							Kind: "binary",
-							Name: "other-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"bin-3":    {Id: "bin-3", Kind: "binary", Name: "other-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
 						"go-pkg-3": {Id: "go-pkg-3", Kind: "binary", Name: "pkg3"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
 						// bin-1 intentionally has no Environments entry.
-						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:unknown-layer"}}},
-						"bin-3":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:unknown-layer", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-3":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 						"go-pkg-3": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
@@ -2952,19 +2877,15 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "github.com/other/vendored-copy"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
@@ -3010,18 +2931,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -3065,18 +2982,14 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"bin-1": {
-							Id:   "bin-1",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
 					Environments: map[string]*v4.Environment_List{
-						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -3111,27 +3024,17 @@ func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
 			report: &v4.VulnerabilityReport{
 				Contents: &v4.Contents{
 					Packages: map[string]*v4.Package{
-						"rhcc-pkg": {
-							Id:   "rhcc-pkg",
-							Kind: "binary",
-							Name: "ubi9-container",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "rhctag",
-							},
-						},
-						"rpm-pkg": {Id: "rpm-pkg", Kind: "binary", Name: "some-rpm-package"},
-						"go-pkg": {
-							Id:   "go-pkg",
-							Kind: "binary",
-							Name: "google.golang.org/protobuf",
-							NormalizedVersion: &v4.NormalizedVersion{
-								Kind: "pep440",
-							},
-						},
+						"rhcc-pkg": {Id: "rhcc-pkg", Kind: "binary", Name: "ubi9-container"},
+						"rpm-pkg":  {Id: "rpm-pkg", Kind: "binary", Name: "some-rpm-package"},
+						"go-pkg":   {Id: "go-pkg", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+						"rhel-repo": {Id: "rhel-repo", Key: "rhel-cpe-repository"},
 					},
 					Environments: map[string]*v4.Environment_List{
-						"rhcc-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
-						"rpm-pkg":  {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"rhcc-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"rpm-pkg":  {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhel-repo"}}}},
 						"go-pkg":   {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 					},
 				},
@@ -3201,18 +3104,14 @@ func TestFilterOSVSupersededByRedHatVEX_FeatureFlag(t *testing.T) {
 		return &v4.VulnerabilityReport{
 			Contents: &v4.Contents{
 				Packages: map[string]*v4.Package{
-					"bin-1": {
-						Id:   "bin-1",
-						Kind: "binary",
-						Name: "ubi9-container",
-						NormalizedVersion: &v4.NormalizedVersion{
-							Kind: "rhctag",
-						},
-					},
+					"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
 					"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
 				},
+				Repositories: map[string]*v4.Repository{
+					"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+				},
 				Environments: map[string]*v4.Environment_List{
-					"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
 					"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
 				},
 			},
