@@ -95,6 +95,7 @@ func (f *factory) MergeConfig(newConfig, oldConfig map[string]string) map[string
 		if newConfig[ClientSecretConfigKey] != "" {
 			mergedCfg[ClientSecretConfigKey] = newConfig[ClientSecretConfigKey]
 		}
+		return mergedCfg
 	}
 	return newConfig
 }

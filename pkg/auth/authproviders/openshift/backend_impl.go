@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/dexconnector"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -60,6 +61,7 @@ type callbackAndRefreshConnector interface {
 
 type backend struct {
 	id                      string
+	config                  map[string]string
 	baseRedirectURLPath     string
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
@@ -105,6 +107,7 @@ func newBackendWithOPPAccessControl(id string, callbackURLPath string, config ma
 
 	return &backend{
 		id:                  id,
+		config:              config,
 		baseRedirectURLPath: callbackURLPath,
 		openshiftConnector:  openshiftConnector,
 	}, nil
@@ -123,7 +126,7 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 		TrustedCertPool: settings.trustedCertPool,
 	}
 
-	openshiftConnector, err := dexCfg.Open()
+	openshiftConnector, err := dexCfg.Open([]string{"user:info"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
@@ -144,7 +147,7 @@ func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (call
 		TrustedCertPool: certPool,
 	}
 
-	openshiftConnector, err := dexCfg.Open()
+	openshiftConnector, err := dexCfg.Open([]string{"user:info", "user:full"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
@@ -154,6 +157,9 @@ func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (call
 
 // There is no config but static settings instead.
 func (b *backend) Config() map[string]string {
+	if features.OPPAccessControl.Enabled() {
+		return b.config
+	}
 	return nil
 }
 
