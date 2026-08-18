@@ -8,13 +8,17 @@ import (
 )
 
 // maxLogOnceMemory sets the maximum number of unique entries to track.
-// When the code exceeds this amount, some previously logOnceSeen entries will be randomly dropped from tracking and so
-// subsequent calls to LogOnce* will result in messages appearing in the log.
+// When the use exceeds this amount, some previously logOnceSeen entries will be randomly dropped and so subsequent
+// calls to LogOnce* will result in previously seen messages again appearing in the log.
+// If we see a warning in the logs (ref logOnceLimitNotified) that we reached this limit, we should check our use of
+// LogOncef / LogOncePerKeyf and remove any cases when the same line sends varying templates, or bump the limit if
+// there are no such cases.
 const maxLogOnceMemory = 10_000
 
 var (
-	logOnceSeen       sync.Map
-	logOnceMemoryUsed atomic.Int64
+	logOnceSeen          sync.Map
+	logOnceMemoryUsed    atomic.Int64
+	logOnceLimitNotified atomic.Bool
 )
 
 // LogOncef logs a message only once per template string (before formatting message).
@@ -29,6 +33,7 @@ var (
 // (capped by maxLogOnceMemory in a somewhat relaxed manner). If you want to prevent repeated varied messages
 // considering args, LogOncef and LogOncePerKeyf are not for you, and you should look at RateLimitedLogger or invent
 // something else.
+// Note that level also does not participate in de-duplication (similar to args).
 func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) {
 	LogOncePerKeyf("", logger, level, template, args...)
 }
@@ -49,6 +54,9 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 		logger.Logf(level, template, args...)
 
 		if logOnceMemoryUsed.Add(1) > maxLogOnceMemory {
+			if logOnceLimitNotified.Swap(true) == false {
+				logger.Warnf("maxLogOnceMemory=%d limit reached", maxLogOnceMemory)
+			}
 			// This is a best-effort deletion. It's possible that multiple threads try to delete the same item but only
 			// one succeeds, thought both decrement the counter. Trying to do this consistently would require more
 			// heavy-weight synchronization or data structures which defeats the idea of this log-once functionality

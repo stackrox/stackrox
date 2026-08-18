@@ -58,6 +58,7 @@ func (s *logOnceTestSuite) TestLogOncePerKeyf() {
 func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 	testCount := maxLogOnceMemory * 2
 	s.mockLogger.EXPECT().Logf(gomock.Any(), gomock.Any()).AnyTimes()
+	s.mockLogger.EXPECT().Warnf("maxLogOnceMemory=%d limit reached", maxLogOnceMemory).MinTimes(1).MaxTimes(1)
 	for i := range testCount {
 		LogOncef(s.mockLogger, zapcore.WarnLevel, "test message "+strconv.Itoa(i)) //nolint:govet
 	}
@@ -76,6 +77,7 @@ func (s *logOnceTestSuite) TestLogOncefSizeLimit() {
 func clearMemory() {
 	logOnceSeen.Clear()
 	logOnceMemoryUsed.Store(0)
+	logOnceLimitNotified.Store(false)
 }
 
 func BenchmarkLogOnce(b *testing.B) {
