@@ -549,7 +549,7 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 type VirtualMachinesSpec struct {
 	// Whether virtual machine scanning and VSOCK RBAC are enabled.
 	// When omitted, virtual machine scanning is enabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled","urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Mode *VirtualMachinesMode `json:"mode,omitempty"`
 
 	// Settings for the virtual machine scraper running in Sensor.

@@ -1613,8 +1613,7 @@ spec:
             displayName: Mode
             path: virtualMachines.mode
             x-descriptors:
-              - urn:alm:descriptor:com.tectonic.ui:select:Enabled
-              - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+              - urn:alm:descriptor:com.tectonic.ui:hidden
           - description: Settings for the virtual machine scraper running in Sensor.
             displayName: Scraper
             path: virtualMachines.scraper

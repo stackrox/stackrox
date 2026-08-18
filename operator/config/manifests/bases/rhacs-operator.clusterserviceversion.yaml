@@ -1142,8 +1142,7 @@ spec:
         displayName: Mode
         path: virtualMachines.mode
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
-        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: |-
           Maximum number of virtual machines scraped concurrently in each poll cycle.
           The default is: 20.
