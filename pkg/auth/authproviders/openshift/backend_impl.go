@@ -99,8 +99,8 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (*backen
 	return b, nil
 }
 
-func newBackendWithOPPAccessControl(id string, callbackURLPath string, config map[string]string) (*backend, error) {
-	openshiftConnector, err := createOpenshiftConnectorForOPPAccessControl(config)
+func newBackendWithACMAccessControlDelegation(id string, callbackURLPath string, config map[string]string) (*backend, error) {
+	openshiftConnector, err := createOpenshiftConnectorForACMAccessControlDelegation(config)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 	return openshiftConnector, nil
 }
 
-func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (callbackAndRefreshConnector, error) {
+func createOpenshiftConnectorForACMAccessControlDelegation(config map[string]string) (callbackAndRefreshConnector, error) {
 	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func createOpenshiftConnectorForOPPAccessControl(config map[string]string) (call
 
 // There is no config but static settings instead.
 func (b *backend) Config() map[string]string {
-	if features.OPPAccessControl.Enabled() {
+	if features.ACMAccessControlDelegation.Enabled() {
 		return b.config
 	}
 	return nil

@@ -16,9 +16,9 @@ const (
 	// TypeName is the standard type name for OpenShift auth providers.
 	TypeName = "openshift"
 
-	// TypeNameWithOPPAccessControl is the type name for OpenShift auth providers
+	// TypeNameWithACMAccessControlDelegation is the type name for OpenShift auth providers
 	// with role resolution from ACM.
-	TypeNameWithOPPAccessControl = "openshiftWithOPPRBAC"
+	TypeNameWithACMAccessControlDelegation = "openshift-with-acm-roles"
 
 	callbackRelativePath = "callback"
 )
@@ -41,12 +41,12 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-// NewFactoryWithOPPAccessControl creates a new factory for OpenShift oauth authprovider backends.
-func NewFactoryWithOPPAccessControl(urlPathPrefix string) authproviders.BackendFactory {
+// NewFactoryWithACMAccessControlDelegation creates a new factory for OpenShift oauth authprovider backends.
+func NewFactoryWithACMAccessControlDelegation(urlPathPrefix string) authproviders.BackendFactory {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	return &factory{
 		callbackURLPath: urlPathPrefix + callbackRelativePath,
-		newBackend:      newBackendWithOPPAccessControl,
+		newBackend:      newBackendWithACMAccessControlDelegation,
 	}
 }
 
@@ -77,7 +77,7 @@ func (f *factory) ResolveProviderAndClientState(state string) (string, string, e
 }
 
 func (f *factory) RedactConfig(config map[string]string) map[string]string {
-	if features.OPPAccessControl.Enabled() {
+	if features.ACMAccessControlDelegation.Enabled() {
 		if config[ClientSecretConfigKey] != "" {
 			config = maputil.ShallowClone(config)
 			config[ClientSecretConfigKey] = "*****"
@@ -87,7 +87,7 @@ func (f *factory) RedactConfig(config map[string]string) map[string]string {
 }
 
 func (f *factory) MergeConfig(newConfig, oldConfig map[string]string) map[string]string {
-	if features.OPPAccessControl.Enabled() {
+	if features.ACMAccessControlDelegation.Enabled() {
 		mergedCfg := maputil.ShallowClone(oldConfig)
 		if newConfig[ClientNameConfigKey] != "" {
 			mergedCfg[ClientNameConfigKey] = newConfig[ClientNameConfigKey]
