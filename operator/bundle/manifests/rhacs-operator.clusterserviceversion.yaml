@@ -1607,7 +1607,9 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
-          - description: Whether virtual machine scanning and VSOCK RBAC are enabled.
+          - description: |-
+              Whether virtual machine scanning and VSOCK RBAC are enabled.
+              When omitted, virtual machine scanning is enabled.
             displayName: Mode
             path: virtualMachines.mode
             x-descriptors:

@@ -704,10 +704,18 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        vm_mode_line="mode: Enabled"
-    elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
-        vm_mode_line="mode: Disabled"
+    if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
+        case "${ROX_VIRTUAL_MACHINES}" in
+        true)
+            vm_mode_line="mode: Enabled"
+            ;;
+        false)
+            vm_mode_line="mode: Disabled"
+            ;;
+        *)
+            die "Unsupported value for ROX_VIRTUAL_MACHINES: ${ROX_VIRTUAL_MACHINES}"
+            ;;
+        esac
     fi
 
     customize_envVars=""

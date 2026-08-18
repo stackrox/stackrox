@@ -1145,10 +1145,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
-		// Production path when spec.virtualMachines.mode is unset: Helm
-		// virtualMachines.enabled follows ROX_VIRTUAL_MACHINES. Kept to pin
-		// translate()'s own nil-handling in isolation.
-		"virtual machines unset": {
+		// getVirtualMachinesValues(nil) omits the virtualMachines helm key.
+		"virtual machines spec nil": {
 			args: args{
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
@@ -1173,6 +1171,50 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"monitoring": map[string]interface{}{
 					"openshift": map[string]interface{}{
 						"enabled": true,
+					},
+				},
+			},
+		},
+		// Mode omitted: Helm virtualMachines.enabled follows ROX_VIRTUAL_MACHINES.
+		"virtual machines mode unset": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Scraper: &platform.VirtualMachinesScraperSpec{
+								Concurrency:       new(int32(20)),
+								MaxResponseSizeKB: new(int32(16384)),
+								PollInterval:      new("4h"),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"scraper": map[string]interface{}{
+						"concurrency":       int32(20),
+						"maxResponseSizeKB": int32(16384),
+						"pollInterval":      "4h",
 					},
 				},
 			},

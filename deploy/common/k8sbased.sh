@@ -1048,6 +1048,10 @@ function launch_sensor {
         sensor_env+=("ROX_NETFLOW_CACHE_LIMITING=${ROX_NETFLOW_CACHE_LIMITING}")
       fi
 
+      if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
+        sensor_env+=("ROX_VIRTUAL_MACHINES=${ROX_VIRTUAL_MACHINES}")
+      fi
+
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then
         kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
       fi
