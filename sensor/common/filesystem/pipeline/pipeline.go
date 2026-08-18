@@ -16,10 +16,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
-	"github.com/stackrox/rox/sensor/kubernetes/fake"
 )
 
 const (
@@ -364,7 +364,7 @@ func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
 	default:
 	}
 
-	fakeEvent, ok := event.(*fake.FakeFileActivityEvent)
+	fakeEvent, ok := event.(*events.FakeFileActivityEvent)
 	if !ok {
 		log.Errorf("File system pipeline received unexpected event type for fake file activity: %T", event)
 		return fmt.Errorf("unexpected event type: %T", event)
