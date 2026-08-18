@@ -165,8 +165,8 @@ func DiscoverVirtctlPath() (string, error) {
 }
 
 // discoverRoxagentImage returns ROXAGENT_IMAGE, else MAIN_IMAGE, else
-// MAIN_IMAGE_REPO:MAIN_IMAGE_TAG. Local `make vm-scanning-tests` often has the
-// repo/tag pair from a prior deploy without MAIN_IMAGE itself.
+// <repo>:MAIN_IMAGE_TAG. Repo is MAIN_IMAGE_REPO, else DEFAULT_IMAGE_REGISTRY/main,
+// else the branding default, so CI can pass only MAIN_IMAGE_TAG.
 func discoverRoxagentImage() (string, error) {
 	if v := strings.TrimSpace(os.Getenv("ROXAGENT_IMAGE")); v != "" {
 		return v, nil
@@ -174,12 +174,26 @@ func discoverRoxagentImage() (string, error) {
 	if v := strings.TrimSpace(os.Getenv("MAIN_IMAGE")); v != "" {
 		return v, nil
 	}
-	repo := strings.TrimSpace(os.Getenv("MAIN_IMAGE_REPO"))
 	tag := strings.TrimSpace(os.Getenv("MAIN_IMAGE_TAG"))
-	if repo != "" && tag != "" {
-		return repo + ":" + tag, nil
+	if tag == "" {
+		return "", errors.New("ROXAGENT_IMAGE or MAIN_IMAGE is required (or MAIN_IMAGE_TAG)")
 	}
-	return "", errors.New("ROXAGENT_IMAGE or MAIN_IMAGE is required (or MAIN_IMAGE_REPO and MAIN_IMAGE_TAG)")
+	return defaultMainImageRepo() + ":" + tag, nil
+}
+
+// defaultMainImageRepo matches make/env.mk: RHACS_BRANDING uses quay.io/rhacs-eng,
+// otherwise quay.io/stackrox-io.
+func defaultMainImageRepo() string {
+	if v := strings.TrimSpace(os.Getenv("MAIN_IMAGE_REPO")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(os.Getenv("DEFAULT_IMAGE_REGISTRY")); v != "" {
+		return v + "/main"
+	}
+	if os.Getenv("ROX_PRODUCT_BRANDING") == "RHACS_BRANDING" {
+		return "quay.io/rhacs-eng/main"
+	}
+	return "quay.io/stackrox-io/main"
 }
 
 // repoRoot returns the repository root by walking up from this source file.

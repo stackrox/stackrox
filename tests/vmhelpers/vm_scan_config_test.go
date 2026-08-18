@@ -124,6 +124,8 @@ func TestDiscoverRoxagentImage(t *testing.T) {
 		mainImage     string
 		repo          string
 		tag           string
+		branding      string
+		registry      string
 		want          string
 		errSubstring  string
 	}{
@@ -141,6 +143,21 @@ func TestDiscoverRoxagentImage(t *testing.T) {
 			tag:  "4.12.x-123",
 			want: "quay.io/rhacs-eng/main:4.12.x-123",
 		},
+		"should default rhacs repo from MAIN_IMAGE_TAG": {
+			tag:      "4.12.x-784-g58e138e64c",
+			branding: "RHACS_BRANDING",
+			want:     "quay.io/rhacs-eng/main:4.12.x-784-g58e138e64c",
+		},
+		"should default opensource repo from MAIN_IMAGE_TAG": {
+			tag:  "4.12.x-1",
+			want: "quay.io/stackrox-io/main:4.12.x-1",
+		},
+		"should prefer DEFAULT_IMAGE_REGISTRY over branding": {
+			tag:      "4.12.x-1",
+			branding: "RHACS_BRANDING",
+			registry: "quay.io/example",
+			want:     "quay.io/example/main:4.12.x-1",
+		},
 		"should reject missing image configuration": {
 			errSubstring: "ROXAGENT_IMAGE or MAIN_IMAGE",
 		},
@@ -151,6 +168,8 @@ func TestDiscoverRoxagentImage(t *testing.T) {
 			t.Setenv("MAIN_IMAGE", tc.mainImage)
 			t.Setenv("MAIN_IMAGE_REPO", tc.repo)
 			t.Setenv("MAIN_IMAGE_TAG", tc.tag)
+			t.Setenv("ROX_PRODUCT_BRANDING", tc.branding)
+			t.Setenv("DEFAULT_IMAGE_REGISTRY", tc.registry)
 			got, err := discoverRoxagentImage()
 			if tc.errSubstring != "" {
 				require.ErrorContains(t, err, tc.errSubstring)

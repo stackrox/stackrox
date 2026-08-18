@@ -13,6 +13,21 @@ ensure_vm_scanning_cluster_prereqs() {
     require_environment "KUBECONFIG"
     require_environment "VM_IMAGES"
 
+    # Quadlet pulls the cluster main image. Construct MAIN_IMAGE the same way
+    # deploy.sh does when the caller only exported MAIN_IMAGE_TAG.
+    if [[ -z "${ROXAGENT_IMAGE:-}" && -z "${MAIN_IMAGE:-}" ]]; then
+        if [[ -z "${MAIN_IMAGE_TAG:-}" ]]; then
+            MAIN_IMAGE_TAG="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" tag)"
+            export MAIN_IMAGE_TAG
+        fi
+        if [[ -z "${MAIN_IMAGE_REPO:-}" ]]; then
+            MAIN_IMAGE_REPO="$(make --quiet --no-print-directory -C "$_VM_SCANNING_LIB_ROOT" default-image-registry)/main"
+            export MAIN_IMAGE_REPO
+        fi
+        export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
+        info "MAIN_IMAGE set to ${MAIN_IMAGE} for Quadlet roxagent"
+    fi
+
     # Build a docker config JSON for pulling private container-disk images
     # (e.g. quay.io/rhacs-eng/vm-images/*) inside the VM test namespace.
     if [[ -n "${QUAY_RHACS_ENG_RO_USERNAME:-}" && -n "${QUAY_RHACS_ENG_RO_PASSWORD:-}" ]]; then
