@@ -45,7 +45,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	if err != nil {
 		return nil, err
 	}
-	if features.OPPAccessControl.Enabled() && isACMRoleDelegationProvider(provider) {
+	if features.ACMAccessControlDelegation.Enabled() && isACMRoleDelegationProvider(provider) {
 		// At the point of writing, the only use for the resolved roles
 		// is to filter away users with no roles.
 		// The generated user identity is used to log successful login attempts.
