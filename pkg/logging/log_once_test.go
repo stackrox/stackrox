@@ -10,6 +10,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+func TestLogOncefReal(t *testing.T) {
+	logger := LoggerForModule()
+	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
+	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
+}
+
+func TestLogOncePerKeyfReal(t *testing.T) {
+	logger := LoggerForModule()
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
+	LogOncePerKeyf("key2", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key2")
+	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
+}
+
 func TestLogOnce(t *testing.T) {
 	suite.Run(t, new(logOnceTestSuite))
 }
@@ -65,23 +78,10 @@ func clearMemory() {
 	logOnceMemoryUsed.Store(0)
 }
 
-func TestRealLogOncef(t *testing.T) {
-	logger := LoggerForModule()
-	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
-	LogOncef(logger, zapcore.InfoLevel, "this message is only %s", "logged once")
-}
-
-func TestRealLogOncePerKeyf(t *testing.T) {
-	logger := LoggerForModule()
-	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
-	LogOncePerKeyf("key2", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key2")
-	LogOncePerKeyf("key1", logger, zapcore.InfoLevel, "this message is only logged once per %s", "key1")
-}
-
 func BenchmarkLogOnce(b *testing.B) {
 	logger := LoggerForModule()
 
-	b.Run("cold start", func(b *testing.B) {
+	b.Run("including cold start", func(b *testing.B) {
 		clearMemory()
 		b.ResetTimer()
 		for i := range b.N {
@@ -89,7 +89,7 @@ func BenchmarkLogOnce(b *testing.B) {
 		}
 	})
 
-	b.Run("warm start", func(b *testing.B) {
+	b.Run("when suppressed", func(b *testing.B) {
 		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "second benchmark message %d", 0)
 		b.ResetTimer()
@@ -98,7 +98,7 @@ func BenchmarkLogOnce(b *testing.B) {
 		}
 	})
 
-	b.Run("warm start - parallel", func(b *testing.B) {
+	b.Run("when suppressed - parallel", func(b *testing.B) {
 		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
 		b.ResetTimer()
