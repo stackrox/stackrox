@@ -106,7 +106,7 @@ wait_for_background_migrations() {
             fi
             info "Background migrations not yet complete (value: ${val:-not found}), attempt $((i+1))/$retries"
         else
-            info "Metrics request failed (attempt $((i+1))/$retries), retrying..."
+            info "Metrics request failed (attempt $((i+1))/$retries): $response"
         fi
         if (( i < retries - 1 )); then
             sleep "$interval"
