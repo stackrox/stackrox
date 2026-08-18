@@ -3,6 +3,7 @@ package versioncompatibility
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/version/productstreams"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -348,20 +349,41 @@ func TestClassifyVersion(t *testing.T) {
 	assert.Equal(t, CompatibleBehind, compat)
 }
 
-func TestCompatibleVersionsPanicsOnInvalidVersion(t *testing.T) {
+func TestCompatibleVersionsOnInvalidVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "invalid")
-	assert.Panics(t, func() { _, _ = CompatibleVersions() })
+
+	if buildinfo.ReleaseBuild {
+		v, err := CompatibleVersions()
+		assert.Empty(t, v)
+		assert.Error(t, err)
+	} else {
+		assert.Panics(t, func() { _, _ = CompatibleVersions() })
+	}
 }
 
-func TestClassifyVersionPanicsOnInvalidVersion(t *testing.T) {
+func TestClassifyVersionOnInvalidVersion(t *testing.T) {
 	testutils.SetMainVersion(t, "invalid")
-	assert.Panics(t, func() { _, _ = ClassifyVersion(xy(4, 9)) })
+
+	if buildinfo.ReleaseBuild {
+		c, err := ClassifyVersion(xy(4, 9))
+		assert.Equal(t, Unknown, c)
+		assert.Error(t, err)
+	} else {
+		assert.Panics(t, func() { _, _ = ClassifyVersion(xy(4, 9)) })
+	}
 }
 
-func TestCompatibleVersionsPanicsOnMissingBumpData(t *testing.T) {
+func TestCompatibleVersionsOnMissingBumpData(t *testing.T) {
 	productstreams.OverrideBumpsForTesting(t, `bumps: []`)
 	testutils.SetMainVersion(t, "4.2.0-testing")
-	assert.Panics(t, func() { _, _ = CompatibleVersions() })
+
+	if buildinfo.ReleaseBuild {
+		v, err := CompatibleVersions()
+		assert.Empty(t, v)
+		assert.Error(t, err)
+	} else {
+		assert.Panics(t, func() { _, _ = CompatibleVersions() })
+	}
 }
 
 func overrideTestBumps(t *testing.T) {
