@@ -65,53 +65,6 @@ func TestACMClient_GetUserPermission(t *testing.T) {
 	t.Skip("Requires a running cluster with ACM installed")
 }
 
-// Example usage:
-func ExampleACMClient_ListUserPermissions() {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err)
-	}
-	client, err := NewACMClientForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	// List all user permissions
-	list, err := client.ListUserPermissions(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, permission := range list.Items {
-		_ = permission // Process each permission
-	}
-}
-
-// Example usage with filtering:
-func ExampleACMClient_GetUserPermission() {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		panic(err)
-	}
-	client, err := NewACMClientForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-
-	// Get a specific user permission by name
-	permission, err := client.GetUserPermission(context.Background(), "managedcluster:admin", metav1.GetOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	// Access the bindings
-	for _, binding := range permission.Status.Bindings {
-		_ = binding.Cluster    // The cluster name
-		_ = binding.Scope      // "cluster" or "namespace"
-		_ = binding.Namespaces // List of namespaces
-	}
-}
-
 func TestACMClient_WithFakeServer(t *testing.T) {
 	// Create test data
 	testPermissions := &clusterviewv1alpha1.UserPermissionList{
