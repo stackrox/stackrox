@@ -237,6 +237,14 @@ function AuthProviderForm({
                     configSchema.shape({
                         audience: yup.string().required('An audience is required.'),
                     }),
+            })
+            .when('type', {
+                is: 'openshift-with-acm-roles',
+                then: (configSchema) =>
+                    configSchema.shape({
+                        client_name: yup.string().required('A client name is required.'),
+                        client_secret: yup.string().required('A client secret is required.'),
+                    }),
             }),
     });
 

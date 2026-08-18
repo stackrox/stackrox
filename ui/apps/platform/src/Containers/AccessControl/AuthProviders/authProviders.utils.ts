@@ -45,6 +45,18 @@ export function transformInitialValues(
             config: alteredConfig,
         };
     }
+    if (initialValues.type === 'openshift-with-acm-roles') {
+        const alteredConfig = { ...initialValues.config };
+
+        // backend doesn't return the exact value for the client secret for security reasons
+        // clean-up obfuscated value if any as we don't need to show it
+        alteredConfig.client_secret = '';
+
+        return {
+            ...initialValues,
+            config: alteredConfig,
+        };
+    }
     if (initialValues.type === 'saml') {
         const alteredConfig = { ...initialValues.config };
         // unless static config values are present, assume dynamic configuration is selected
