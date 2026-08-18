@@ -74,19 +74,53 @@ func TestTickStartBudget(t *testing.T) {
 	t.Parallel()
 
 	tick := 10 * time.Second
-	catchUp := 20 * time.Minute
-	steadyWidth := 40 * time.Minute
+	catchUp20m := 20 * time.Minute
+	steady40m := 40 * time.Minute
+	catchUp100s := 100 * time.Second
+	steady200s := 200 * time.Second
 
-	assert.Equal(t, 1, tickStartBudget(100, 100, 20, tick, catchUp, steadyWidth),
-		"100 urgent over 20m catch-up should yield 1 start, not concurrency 20")
-	assert.Equal(t, 1, tickStartBudget(0, 100, 20, tick, catchUp, steadyWidth),
-		"100 cadenced over 40m steady width should yield 1 start")
-	assert.Equal(t, 1, tickStartBudget(0, 100, 1, tick, catchUp, steadyWidth),
-		"a cadenced pile with concurrency 1 should yield 1 start")
-	assert.Equal(t, 4, tickStartBudget(100, 100, 20, tick, 5*time.Minute, steadyWidth),
-		"100 urgent over a 5m catch-up window should yield 4 starts (ceil(100×10s/5m))")
-	assert.Equal(t, 2, tickStartBudget(1, 101, 20, tick, catchUp, steadyWidth),
-		"1 urgent + 100 cadenced should yield 2 starts (catch-up 1 plus steady 1)")
+	cases := map[string]struct {
+		nTracked, nUrgentDue, concurrency int
+		catchUp, steady                   time.Duration
+		want                              int
+	}{
+		"100 tracked all urgent over 20m catch-up should yield 1 start": {
+			nTracked: 100, nUrgentDue: 100, concurrency: 20,
+			catchUp: catchUp20m, steady: steady40m, want: 1,
+		},
+		"100 tracked cadenced-only over 40m steady should yield 1 start": {
+			nTracked: 100, nUrgentDue: 0, concurrency: 20,
+			catchUp: catchUp20m, steady: steady40m, want: 1,
+		},
+		"cadenced pile with concurrency 1 should yield 1 start": {
+			nTracked: 100, nUrgentDue: 0, concurrency: 1,
+			catchUp: catchUp20m, steady: steady40m, want: 1,
+		},
+		"100 tracked urgent over a 5m catch-up window should yield 4 starts": {
+			nTracked: 100, nUrgentDue: 100, concurrency: 20,
+			catchUp: 5 * time.Minute, steady: steady40m, want: 4,
+		},
+		"one urgent due should use the fleet catch-up rate, not 1": {
+			nTracked: 101, nUrgentDue: 1, concurrency: 20,
+			catchUp: catchUp100s, steady: steady200s, want: 11,
+		},
+		"leftover due must not shrink a 100-VM catch-up rate": {
+			nTracked: 100, nUrgentDue: 55, concurrency: 20,
+			catchUp: catchUp100s, steady: steady200s, want: 10,
+		},
+		"zero tracked should yield no starts": {
+			nTracked: 0, nUrgentDue: 0, concurrency: 20,
+			catchUp: catchUp100s, steady: steady200s, want: 0,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, tickStartBudget(
+				tc.nTracked, tc.nUrgentDue, tc.concurrency, tick, tc.catchUp, tc.steady,
+			))
+		})
+	}
 }
 
 func TestSelectDueStarts(t *testing.T) {

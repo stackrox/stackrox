@@ -9,21 +9,21 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 )
 
-// tickStartBudget is how many due scrapes may start this tick. Never-scraped
-// and cadenced piles each use their own window formula and the results sum,
-// capped by concurrency, so a mixed pile does not stall cadence.
-func tickStartBudget(nUrgent, nDue, concurrency int, tick, catchUpWindow, steadyWidth time.Duration) int {
+// tickStartBudget is the per-tick start cap from tracked fleet size, not the
+// current due pile: leftovers must not shrink the rate. Catch-up if any
+// never-forwarded VM is due, else the steady width; concurrency is a hard cap.
+func tickStartBudget(nTracked, nUrgentDue, concurrency int, tick, catchUpWindow, steadyWidth time.Duration) int {
 	if concurrency < 1 {
 		concurrency = 1
 	}
-	nCadenced := max(nDue-nUrgent, 0)
-	var budget int
-	if nUrgent > 0 {
-		budget += startBudget(nUrgent, tick, catchUpWindow)
+	if nTracked < 1 {
+		return 0
 	}
-	if nCadenced > 0 {
-		budget += startBudget(nCadenced, tick, steadyWidth)
+	window := steadyWidth
+	if nUrgentDue > 0 {
+		window = catchUpWindow
 	}
+	budget := startBudget(nTracked, tick, window)
 	if budget < 1 {
 		return 0
 	}
@@ -37,9 +37,8 @@ func budgetTickDuration(nominal, elapsed time.Duration) time.Duration {
 	return max(nominal, elapsed)
 }
 
-// startBudget is how many of n already-due VMs may begin scraping this tick
-// when spreading them evenly across window at tick granularity:
-// max(1, ceil(n × tick / window)).
+// startBudget is max(1, ceil(n × tick / window)). n is tracked fleet size so
+// leftover due VMs do not reset the window each tick.
 func startBudget(n int, tick, window time.Duration) int {
 	if n <= 0 || tick <= 0 || window <= 0 {
 		return 1

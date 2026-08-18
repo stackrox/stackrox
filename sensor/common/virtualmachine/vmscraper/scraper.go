@@ -316,8 +316,9 @@ func (s *VMScraper) selectStartsForTick(due []string, budgetTick time.Duration) 
 		return nil
 	}
 	var cands []dueCandidate
-	var nUrgent int
+	var nUrgent, nTracked int
 	concurrency.WithLock(&s.mu, func() {
+		nTracked = len(s.vmState)
 		cands = make([]dueCandidate, 0, len(due))
 		for _, key := range due {
 			st, ok := s.vmState[key]
@@ -336,7 +337,7 @@ func (s *VMScraper) selectStartsForTick(due []string, budgetTick time.Duration) 
 		}
 	})
 	budget := tickStartBudget(
-		nUrgent, len(cands), s.concurrency, budgetTick,
+		nTracked, nUrgent, s.concurrency, budgetTick,
 		catchUpWindow(s.interval), steadySpreadWidth(s.interval, s.spreadFraction),
 	)
 	return selectDueStarts(cands, budget)
