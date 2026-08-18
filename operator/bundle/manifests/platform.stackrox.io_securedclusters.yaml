@@ -1888,8 +1888,8 @@ spec:
                   scraper).
                 properties:
                   mode:
-                    description: |-
-                      Whether virtual machine scanning and VSOCK RBAC are enabled.
+                    description: Whether virtual machine scanning and VSOCK RBAC are
+                      enabled.
                     enum:
                     - Enabled
                     - Disabled

@@ -1136,8 +1136,7 @@ spec:
           * for new installations starting with ACS 4.8, the default is: AutoSense.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
-      - description: |-
-          Whether virtual machine scanning and VSOCK RBAC are enabled.
+      - description: Whether virtual machine scanning and VSOCK RBAC are enabled.
         displayName: Mode
         path: virtualMachines.mode
         x-descriptors:
