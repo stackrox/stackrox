@@ -52,6 +52,8 @@ func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	}
 }
 
+// TestPoliciesCategoryAutocompleteFieldPath verifies that the POLICIES multimap resolves "Category"
+// to the PolicyCategoryName field path so autocomplete works via the policy_categories join.
 func TestPoliciesCategoryAutocompleteFieldPath(t *testing.T) {
 	policiesMultimap := categoryToOptionsMultimap[v1.SearchCategory_POLICIES]
 	fields := policiesMultimap.GetAll(search.Category.String())

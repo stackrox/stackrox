@@ -9,6 +9,7 @@ import (
 // CategorySearchOptions maps the "Category" label to PolicyCategoryName for POLICIES autocomplete,
 var CategorySearchOptions search.OptionsMap
 
+// init populates CategorySearchOptions from the PolicyCategoriesSchema at startup.
 func init() {
 	CategorySearchOptions = search.NewOptionsMap(v1.SearchCategory_POLICIES).
 		Add(search.Category, schema.PolicyCategoriesSchema.OptionsMap.MustGet(search.PolicyCategoryName.String()))
