@@ -41,26 +41,6 @@ func ruleHasSupportedK8sResource(rule rbacv1.PolicyRule) bool {
 	if len(rule.APIGroups) == 0 {
 		return false
 	}
-	hasNamespaceResource := false
-	hasBaseK8sAPIGroup := false
-	for _, resource := range rule.Resources {
-		if resource == "*" || resource == "namespaces" {
-			hasNamespaceResource = true
-			break
-		}
-	}
-	for _, apiGroup := range rule.APIGroups {
-		if apiGroup == "*" || apiGroup == "" {
-			hasBaseK8sAPIGroup = true
-			break
-		}
-	}
-	if len(rule.ResourceNames) > 0 && !hasBaseK8sAPIGroup && !hasNamespaceResource {
-		// ACS does not have granularity to apply ResourceName restriction on object access.
-		// One exception to this are namespaces, for which UserPermission objects can be considered.
-		// Otherwise, the UserPermission object is ignored by ACS.
-		return false
-	}
 	for _, resource := range rule.Resources {
 		baseResource := getBaseResourceFromResource(resource)
 		for _, apiGroup := range rule.APIGroups {
