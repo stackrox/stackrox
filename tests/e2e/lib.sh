@@ -359,6 +359,7 @@ export_test_environment() {
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
     local _central_nlb="false"
+    local _lb_svc_annotations=""
     # IPv6: OCP-primary uses route. EKS (non-OCP) IPv6-only uses a dedicated
     # dualstack NLB created via the AWS Load Balancer Controller. We cannot get
     # a dualstack NLB by patching the built-in central-loadbalancer: on an
@@ -376,10 +377,16 @@ export_test_environment() {
         else
             _lb_default="none"
             _central_nlb="true"
+            # Also make qa-test LoadBalancer Services (NetworkFlowTest etc.)
+            # provision as dualstack NLBs; a plain LoadBalancer never gets an
+            # address on IPv6-only EKS. See loadBalancerServiceAnnotations() in
+            # the Groovy harness.
+            _lb_svc_annotations="service.beta.kubernetes.io/aws-load-balancer-type=external,service.beta.kubernetes.io/aws-load-balancer-nlb-target-type=ip,service.beta.kubernetes.io/aws-load-balancer-scheme=internet-facing,service.beta.kubernetes.io/aws-load-balancer-ip-address-type=dualstack"
         fi
     fi
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
     ci_export CENTRAL_NLB "${CENTRAL_NLB:-${_central_nlb}}"
+    ci_export LOAD_BALANCER_SERVICE_ANNOTATIONS "${LOAD_BALANCER_SERVICE_ANNOTATIONS:-${_lb_svc_annotations}}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
