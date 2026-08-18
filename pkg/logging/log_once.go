@@ -42,6 +42,9 @@ func LogOncef(logger Logger, level zapcore.Level, template string, args ...any) 
 // The combination of the key and the template string would be the thing which prevents logging the same message
 // multiple times. Use this function when you want to log once for a certain object that can be identified by the key.
 // Make sure you understand when to use and not to use this function - read doc/comment for LogOncef.
+// It's important to make sure the number of keys is bounded. For example, the use of cluster IDs is ok there as we
+// know that the number of clusters is limited, but the use of container IDs is not because many new containers are
+// likely to appear during the run time of the process.
 func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template string, args ...any) {
 	fullKey := template
 	if key != "" {
@@ -58,12 +61,12 @@ func LogOncePerKeyf(key string, logger Logger, level zapcore.Level, template str
 			}
 			logOnceSeen.Range(func(randomKey, _ any) bool {
 				if randomKey == fullKey {
-					// Don't forget what we just added.
+					// Don't forget what we just added, iterate to try another randomKey.
 					return true
 				}
 				if _, deleted := logOnceSeen.LoadAndDelete(randomKey); deleted {
 					logOnceMemoryUsed.Add(-1)
-					return false
+					return false // Stop iterating.
 				}
 				// Some other thread deleted the same randomKey, keep iterating to try another one.
 				return true

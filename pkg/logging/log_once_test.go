@@ -91,7 +91,7 @@ func BenchmarkLogOnce(b *testing.B) {
 		}
 	})
 
-	b.Run("when suppressed", func(b *testing.B) {
+	b.Run("when already seen", func(b *testing.B) {
 		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "second benchmark message %d", 0)
 		b.ResetTimer()
@@ -100,7 +100,7 @@ func BenchmarkLogOnce(b *testing.B) {
 		}
 	})
 
-	b.Run("when suppressed - parallel", func(b *testing.B) {
+	b.Run("when already seen - parallel", func(b *testing.B) {
 		clearMemory()
 		LogOncef(logger, zapcore.InfoLevel, "third benchmark message %d", 0)
 		b.ResetTimer()
