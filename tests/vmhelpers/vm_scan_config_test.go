@@ -32,7 +32,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest,registry.example.com/rhel10:latest")
 	t.Setenv("VM_USERS", "")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
-	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
+	t.Setenv("MAIN_IMAGE", "quay.io/example/main:test")
 	t.Setenv("VM_SCAN_NAMESPACE_PREFIX", "")
 	cfg, err := LoadVMScanConfig()
 	require.NoError(t, err)
@@ -42,6 +42,7 @@ func TestLoadVMScanConfig_Defaults(t *testing.T) {
 	require.Equal(t, 20*time.Minute, cfg.ScanTimeout)
 	require.Equal(t, 10*time.Second, cfg.ScanPollInterval)
 	require.Equal(t, 5*time.Minute, cfg.DeleteTimeout)
+	require.Equal(t, "quay.io/example/main:test", cfg.RoxagentImage)
 
 	specs := cfg.VMSpecs()
 	require.Len(t, specs, 2)
@@ -53,7 +54,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 	t.Setenv("VM_IMAGES", "img-a,img-b,img-c")
 	t.Setenv("VM_USERS", "alice")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
-	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
+	t.Setenv("MAIN_IMAGE", "quay.io/example/main:test")
 	cfg, err := LoadVMScanConfig()
 	require.NoError(t, err)
 	require.Equal(t, []string{"alice"}, cfg.GuestUsers, "only explicit users; VMSpecs() pads with default")
@@ -62,7 +63,7 @@ func TestLoadVMScanConfig_PartialUsers(t *testing.T) {
 func TestLoadVMScanConfig_InvalidSSHKeyContent(t *testing.T) {
 	t.Setenv("VM_IMAGES", "registry.example.com/rhel9:latest")
 	t.Setenv("VIRTCTL_PATH", mustFindExecutable(t, "true"))
-	t.Setenv("ROXAGENT_BINARY_PATH", "/bin/true")
+	t.Setenv("MAIN_IMAGE", "quay.io/example/main:test")
 
 	tests := map[string]string{
 		"should reject a file path":         "/home/user/.ssh/id_ed25519",
@@ -114,6 +115,51 @@ func TestGenerateEphemeralSSHKeypair(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, priv, "-----BEGIN OPENSSH PRIVATE KEY-----") // notsecret
 	require.Contains(t, pub, "ssh-ed25519 ")                         // notsecret
+}
+
+func TestDiscoverRoxagentImage(t *testing.T) {
+	tests := map[string]struct {
+		roxagentImage string
+		mainImage     string
+		repo          string
+		tag           string
+		want          string
+		errSubstring  string
+	}{
+		"should prefer ROXAGENT_IMAGE over MAIN_IMAGE": {
+			roxagentImage: "quay.io/custom/main:dev",
+			mainImage:     "quay.io/example/main:ignored",
+			want:          "quay.io/custom/main:dev",
+		},
+		"should use MAIN_IMAGE": {
+			mainImage: "quay.io/example/main:test",
+			want:      "quay.io/example/main:test",
+		},
+		"should synthesize MAIN_IMAGE_REPO and MAIN_IMAGE_TAG": {
+			repo: "quay.io/rhacs-eng/main",
+			tag:  "4.12.x-123",
+			want: "quay.io/rhacs-eng/main:4.12.x-123",
+		},
+		"should reject missing image configuration": {
+			errSubstring: "ROXAGENT_IMAGE or MAIN_IMAGE",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv("ROXAGENT_IMAGE", tc.roxagentImage)
+			t.Setenv("MAIN_IMAGE", tc.mainImage)
+			t.Setenv("MAIN_IMAGE_REPO", tc.repo)
+			t.Setenv("MAIN_IMAGE_TAG", tc.tag)
+			got, err := discoverRoxagentImage()
+			if tc.errSubstring != "" {
+				require.ErrorContains(t, err, tc.errSubstring)
+				require.Empty(t, got)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tc.want, got)
+		})
+	}
 }
 
 func TestRepoRootFrom_VMHelpersFile(t *testing.T) {

@@ -711,8 +711,8 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureRoxagentServing starts pull-mode `roxagent serve` on the guest (if needed)
-// and waits until its VSOCK listener is ready. Sensor scrapes the report afterward.
+// ensureRoxagentServing starts Quadlet roxagent.service on the guest if needed
+// and waits until it is active (VSOCK listener ready). Sensor scrapes afterward.
 func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
 		return errors.New("ensureRoxagentServing: nil VM handle")
@@ -722,7 +722,7 @@ func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandl
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name)
 }
 
 // waitForScan polls Central in order until scan data is visible.
@@ -806,14 +806,8 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}); err != nil {
 		return err
 	}
-	if err := runStep("Copy roxagent binary", "CopyRoxagentBinary", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.CopyRoxagentBinary(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentBinaryPath)
-	}); err != nil {
-		return err
-	}
-	// Runs `roxagent --help` to confirm the binary is present, executable, and in $PATH.
-	if err := runStep("Verify roxagent installed", "VerifyRoxagentInstalled", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentInstalled(stepCtx, virt, vm.Namespace, vm.Name)
+	if err := runStep("Install roxagent Quadlet", "InstallRoxagentQuadlet", max(stepTimeout, 15*time.Minute), func(stepCtx context.Context) error {
+		return vmhelpers.InstallRoxagentQuadlet(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentImage, s.cfg.Repo2CPEURL, s.cfg.ImagePullSecretPath)
 	}); err != nil {
 		return err
 	}

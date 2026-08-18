@@ -36,6 +36,8 @@ Volume=/usr/lib/sysimage/libdnf5:/host/usr/lib/sysimage/libdnf5:ro
 [Service]
 Restart=on-failure
 RestartSec=10s
+# First pull of the main image can take minutes; systemd's 90s default would kill Type=notify start.
+TimeoutStartSec=600
 
 [Install]
 WantedBy=multi-user.target

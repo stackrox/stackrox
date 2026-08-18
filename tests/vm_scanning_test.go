@@ -26,8 +26,8 @@ func (s *VMScanningSuite) TestScanPipeline() {
 			roxagentOK := false
 
 			t.Run("EnsureRoxagentServing", func(t *testing.T) {
-				t.Logf("ensuring pull-mode agent: sudo %s serve --port 818 --host-path / --rescan-interval 5m --repo-cpe-url %s",
-					vmhelpers.DefaultRoxagentInstallPath, s.cfg.Repo2CPEURL)
+				t.Logf("ensuring Quadlet roxagent.service is active (image=%s rescan=%s repo-cpe-url=%s)",
+					s.cfg.RoxagentImage, vmhelpers.E2ERescanInterval, s.cfg.Repo2CPEURL)
 				err := s.ensureRoxagentServing(s.ctx, vm)
 				require.NoError(t, err)
 				roxagentOK = true

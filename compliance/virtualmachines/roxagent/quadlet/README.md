@@ -6,7 +6,7 @@ Run roxagent on RHEL VMs with Podman Quadlet: a systemd-managed container that s
 
 [Podman Quadlet](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html) turns `roxagent.container` into a systemd unit that runs `roxagent serve`. The agent scans installed packages, caches the report, and listens on a VSOCK port. Sensor dials in when it needs a report. The agent rescans on its own schedule (default: every 4 hours).
 
-`Notify=true` makes Podman pass systemd's notify socket into the container, so `systemctl status roxagent` becomes `active` only after the agent has bound the VSOCK listener (not merely when the container process starts).
+`Notify=true` makes Podman pass systemd's notify socket into the container, so `systemctl status roxagent` becomes `active` only after the agent has bound the VSOCK listener (not merely when the container process starts). `TimeoutStartSec=600` covers a cold pull of the main image, which can exceed systemd's 90s default.
 
 ### Components
 

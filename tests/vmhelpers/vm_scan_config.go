@@ -51,7 +51,7 @@ type VMScanConfig struct {
 	Images              []string // container-disk images (from VM_IMAGES, comma-separated)
 	GuestUsers          []string // per-image SSH users (from VM_USERS, comma-separated; shorter lists are padded with defaultGuestUser)
 	VirtctlPath         string
-	RoxagentBinaryPath  string
+	RoxagentImage       string
 	Repo2CPEURL         string
 	SSHPrivateKey       string // PEM-encoded private key content (not a file path)
 	SSHPublicKey        string // OpenSSH authorized_keys line (not a file path)
@@ -91,7 +91,7 @@ func LoadVMScanConfig() (*VMScanConfig, error) {
 	if cfg.VirtctlPath, err = DiscoverVirtctlPath(); err != nil {
 		return nil, err
 	}
-	if cfg.RoxagentBinaryPath, err = discoverRoxagentBinaryPath(); err != nil {
+	if cfg.RoxagentImage, err = discoverRoxagentImage(); err != nil {
 		return nil, err
 	}
 
@@ -164,18 +164,22 @@ func DiscoverVirtctlPath() (string, error) {
 	return p, nil
 }
 
-// discoverRoxagentBinaryPath returns the ROXAGENT_BINARY_PATH env var if set,
-// otherwise probes the standard build output path relative to the repository root.
-func discoverRoxagentBinaryPath() (string, error) {
-	if v := strings.TrimSpace(os.Getenv("ROXAGENT_BINARY_PATH")); v != "" {
+// discoverRoxagentImage returns ROXAGENT_IMAGE, else MAIN_IMAGE, else
+// MAIN_IMAGE_REPO:MAIN_IMAGE_TAG. Local `make vm-scanning-tests` often has the
+// repo/tag pair from a prior deploy without MAIN_IMAGE itself.
+func discoverRoxagentImage() (string, error) {
+	if v := strings.TrimSpace(os.Getenv("ROXAGENT_IMAGE")); v != "" {
 		return v, nil
 	}
-	root := repoRoot()
-	candidate := filepath.Join(root, "bin", "linux_amd64", "roxagent")
-	if _, err := os.Stat(candidate); err == nil {
-		return candidate, nil
+	if v := strings.TrimSpace(os.Getenv("MAIN_IMAGE")); v != "" {
+		return v, nil
 	}
-	return "", fmt.Errorf("ROXAGENT_BINARY_PATH not set and %s does not exist; run 'make roxagent_linux-amd64'", candidate)
+	repo := strings.TrimSpace(os.Getenv("MAIN_IMAGE_REPO"))
+	tag := strings.TrimSpace(os.Getenv("MAIN_IMAGE_TAG"))
+	if repo != "" && tag != "" {
+		return repo + ":" + tag, nil
+	}
+	return "", errors.New("ROXAGENT_IMAGE or MAIN_IMAGE is required (or MAIN_IMAGE_REPO and MAIN_IMAGE_TAG)")
 }
 
 // repoRoot returns the repository root by walking up from this source file.
