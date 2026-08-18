@@ -358,11 +358,22 @@ export_test_environment() {
     ci_export DEPLOY_STACKROX_VIA_OPERATOR "${DEPLOY_STACKROX_VIA_OPERATOR:-false}"
     ci_export INSTALL_COMPLIANCE_OPERATOR "${INSTALL_COMPLIANCE_OPERATOR:-false}"
     local _lb_default="lb"
-    # OCP IPv6-primary: use route. Non-OCP IPv6: keep lb (NLB via AWS LB Controller)
+    # IPv6: OCP-primary uses route. EKS (non-OCP) IPv6-only uses a dedicated
+    # dualstack NLB created via the AWS Load Balancer Controller. We cannot get
+    # a dualstack NLB by patching the built-in central-loadbalancer: on an
+    # IPv6-only cluster that Service is SingleStack-IPv6, and the controller
+    # rejects converting it ("unsupported IPv6 configuration, lb not
+    # dual-stack"). Instead we skip the built-in exposure and create a fresh
+    # external NLB service with the annotations at creation (see wait_for_api),
+    # matching the validated manual setup.
     if kubectl get network.config.openshift.io cluster -o jsonpath='{.spec.serviceNetwork[0]}' 2>/dev/null | grep -q ':'; then
         _lb_default="route"
-    elif [[ "${NETWORK_STACK:-}" =~ ipv6 && "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-        _lb_default="route"
+    elif [[ "${NETWORK_STACK:-}" =~ ipv6 ]]; then
+        if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
+            _lb_default="route"
+        else
+            _lb_default="nlb"
+        fi
     fi
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
     ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
@@ -1055,7 +1066,10 @@ patch_resources_for_test() {
     require_environment "TEST_ROOT"
     require_environment "API_HOSTNAME"
 
-    retrying_kubectl </dev/null -n "${central_namespace}" patch svc central-loadbalancer --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
+    # EKS IPv6 uses a dedicated central-nlb service instead of central-loadbalancer.
+    local lb_svc="central-loadbalancer"
+    [[ "${LOAD_BALANCER:-}" == "nlb" ]] && lb_svc="central-nlb"
+    retrying_kubectl </dev/null -n "${central_namespace}" patch svc "${lb_svc}" --patch "$(cat "$TEST_ROOT"/tests/e2e/yaml/endpoints-test-lb-patch.yaml)"
     retrying_kubectl </dev/null -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
 
     info "Checking port availability..."
@@ -1629,19 +1643,48 @@ wait_for_api() {
     info "Waiting for Central API endpoint"
 
     LOAD_BALANCER="${LOAD_BALANCER:-}"
-    # EKS IPv6: patch LB service for NLB with dualstack before waiting for ingress
-    if [[ "${LOAD_BALANCER}" == "lb" && "${NETWORK_STACK:-}" =~ ipv6 ]] && ! kubectl get network.config.openshift.io cluster 2>/dev/null; then
-        info "Patching central-loadbalancer for NLB with dualstack IPv6 support"
-        retrying_kubectl </dev/null -n "${central_namespace}" annotate svc/central-loadbalancer \
-            service.beta.kubernetes.io/aws-load-balancer-type=external \
-            service.beta.kubernetes.io/aws-load-balancer-nlb-target-type=ip \
-            service.beta.kubernetes.io/aws-load-balancer-scheme=internet-facing \
-            service.beta.kubernetes.io/aws-load-balancer-ip-address-type=dualstack \
-            --overwrite || true
+    # EKS IPv6: create a dedicated external NLB service with dualstack
+    # annotations at creation time. Patching the built-in central-loadbalancer
+    # does not work — on an IPv6-only cluster it is SingleStack-IPv6 and the
+    # AWS Load Balancer Controller rejects converting it to a dualstack NLB
+    # ("unsupported IPv6 configuration, lb not dual-stack"). A fresh service
+    # created with the annotations is owned by the controller from the start and
+    # provisions a dualstack NLB (IPv4 front door for the test runner, IPv6 pod
+    # targets). This mirrors the validated manual setup.
+    if [[ "${LOAD_BALANCER}" == "nlb" ]]; then
+        info "Creating dedicated dualstack NLB service central-nlb for IPv6 EKS"
+        local nlb_manifest; nlb_manifest="$(mktemp)"
+        cat > "${nlb_manifest}" <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: central-nlb
+  namespace: ${central_namespace}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: external
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    service.beta.kubernetes.io/aws-load-balancer-ip-address-type: dualstack
+spec:
+  type: LoadBalancer
+  selector:
+    app: central
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8443
+EOF
+        retrying_kubectl </dev/null -n "${central_namespace}" apply -f "${nlb_manifest}"
+        rm -f "${nlb_manifest}"
     fi
     case "${LOAD_BALANCER}" in
         lb)
             get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
+            API_HOSTNAME="${ingress_endpoint}"
+            API_PORT=443
+            ;;
+        nlb)
+            get_ingress_endpoint "${central_namespace}" svc/central-nlb '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
