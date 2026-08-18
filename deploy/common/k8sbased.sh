@@ -512,6 +512,8 @@ function launch_central {
         ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
           ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
         mv "${central_deployment}.tmp" "${central_deployment}"
+      else
+        echo >&2 "WARNING: ${central_deployment} not found; Central will deploy with the default signing key watch interval and rely on the test's set env fallback."
       fi
 
       launch_service "${unzip_dir}" central
