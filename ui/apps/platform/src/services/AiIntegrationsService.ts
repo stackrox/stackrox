@@ -12,26 +12,45 @@ export type AiIntegration = {
     serviceUrl: string;
 };
 
-type AiIntegrationsResponse = {
+// The v2 AI integrations API wraps the resource in request/response messages,
+// consistent with the cloud sources service (ListCloudSourcesResponse,
+// GetCloudSourceResponse, CreateCloudSourceRequest, ...).
+type ListAiIntegrationsResponse = {
     integrations: AiIntegration[];
+};
+
+type AiIntegrationResponse = {
+    integration: AiIntegration;
+};
+
+type AiIntegrationRequest = {
+    integration: AiIntegration;
 };
 
 export function fetchAiIntegrations(): Promise<AiIntegration[]> {
     return axios
-        .get<AiIntegrationsResponse>(aiIntegrationsUrl)
+        .get<ListAiIntegrationsResponse>(aiIntegrationsUrl)
         .then((response) => response.data.integrations);
 }
 
 export function fetchAiIntegration(id: string): Promise<AiIntegration> {
-    return axios.get<AiIntegration>(`${aiIntegrationsUrl}/${id}`).then((response) => response.data);
+    return axios
+        .get<AiIntegrationResponse>(`${aiIntegrationsUrl}/${id}`)
+        .then((response) => response.data.integration);
 }
 
 export function createAiIntegration(data: AiIntegration): Promise<AiIntegration> {
-    return axios.post<AiIntegration>(aiIntegrationsUrl, data).then((response) => response.data);
+    const request: AiIntegrationRequest = { integration: data };
+    return axios
+        .post<AiIntegrationResponse>(aiIntegrationsUrl, request)
+        .then((response) => response.data.integration);
 }
 
-export function updateAiIntegration(data: AiIntegration): Promise<AiIntegration> {
-    return axios.put<AiIntegration>(aiIntegrationsUrl, data).then((response) => response.data);
+export function updateAiIntegration(data: AiIntegration): Promise<Empty> {
+    const request: AiIntegrationRequest = { integration: data };
+    return axios
+        .put<Empty>(`${aiIntegrationsUrl}/${data.id}`, request)
+        .then((response) => response.data);
 }
 
 export function deleteAiIntegration(id: string): Promise<Empty> {
@@ -39,5 +58,8 @@ export function deleteAiIntegration(id: string): Promise<Empty> {
 }
 
 export function testAiIntegration(data: AiIntegration): Promise<Empty> {
-    return axios.post<Empty>(`${aiIntegrationsUrl}/test`, data).then((response) => response.data);
+    const request: AiIntegrationRequest = { integration: data };
+    return axios
+        .post<Empty>(`${aiIntegrationsUrl}/test`, request)
+        .then((response) => response.data);
 }
