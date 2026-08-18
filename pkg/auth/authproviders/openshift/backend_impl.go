@@ -66,7 +66,7 @@ type backend struct {
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
 
-	config   map[string]string
+	config map[string]string
 }
 
 type openShiftSettings struct {
