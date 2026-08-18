@@ -52,6 +52,13 @@ func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	}
 }
 
+func TestPoliciesCategoryAutocompleteFieldPath(t *testing.T) {
+	policiesMultimap := categoryToOptionsMultimap[v1.SearchCategory_POLICIES]
+	fields := policiesMultimap.GetAll(search.Category.String())
+	assert.Len(t, fields, 1, `POLICIES multimap must have exactly one field for the "Category" key`)
+	assert.Equal(t, "policycategory.name", fields[0].GetFieldPath())
+}
+
 func TestGetSearchFuncs_FlattenImageDataRoutesImageSearch(t *testing.T) {
 	ctx := context.Background()
 	q := &v1.Query{}

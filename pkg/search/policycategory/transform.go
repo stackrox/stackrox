@@ -2,8 +2,17 @@ package policycategory
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 )
+
+// CategorySearchOptions maps the "Category" label to PolicyCategoryName for POLICIES autocomplete,
+var CategorySearchOptions search.OptionsMap
+
+func init() {
+	CategorySearchOptions = search.NewOptionsMap(v1.SearchCategory_POLICIES).
+		Add(search.Category, schema.PolicyCategoriesSchema.OptionsMap.MustGet(search.PolicyCategoryName.String()))
+}
 
 // TransformCategoryNameFieldsQuery transforms category name fields for the new data layout for categories in postgres.
 func TransformCategoryNameFieldsQuery(q *v1.Query) *v1.Query {
