@@ -152,13 +152,15 @@ var PullTotalDurationSeconds = prometheus.NewHistogram(
 	},
 )
 
-// PullCycleDurationSeconds measures the full poll cycle across all VMs.
-var PullCycleDurationSeconds = prometheus.NewHistogram(
+// PullTickDurationSeconds measures how long each scraper tick spends
+// scraping the VMs that were due, not a poll of the whole VM set: VMs are
+// scraped on independent per-VM schedules, not in lockstep.
+var PullTickDurationSeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycle_duration_seconds",
-		Help:      "Duration of a full poll cycle across all VMs",
+		Name:      "vsock_pull_tick_duration_seconds",
+		Help:      "Duration of a scraper tick spent scraping the VMs due at that tick",
 		Buckets:   prometheus.ExponentialBuckets(1, 2, 10), // 1s to ~512s
 	},
 )
@@ -200,23 +202,24 @@ var PullRequestsTotal = prometheus.NewCounterVec(
 	[]string{"status"},
 )
 
-// PullCyclesTotal counts poll cycles executed.
-var PullCyclesTotal = prometheus.NewCounter(
+// PullTicksTotal counts scraper ticks executed.
+var PullTicksTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycles_total",
-		Help:      "Total number of pull poll cycles executed",
+		Name:      "vsock_pull_ticks_total",
+		Help:      "Total number of scraper ticks executed",
 	},
 )
 
-// PullVMsInCycle tracks the number of running VMs in the last poll set.
-var PullVMsInCycle = prometheus.NewGauge(
+// PullTrackedVMs tracks the number of VMs currently tracked for pull-mode
+// scraping, regardless of how many were due at the last tick.
+var PullTrackedVMs = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_vms_in_cycle",
-		Help:      "Number of running VMs in the last poll set",
+		Name:      "vsock_pull_tracked_vms",
+		Help:      "Number of VMs currently tracked for pull-mode scraping",
 	},
 )
 
@@ -231,11 +234,11 @@ func init() {
 		PullDialDurationSeconds,
 		PullReadDurationSeconds,
 		PullTotalDurationSeconds,
-		PullCycleDurationSeconds,
+		PullTickDurationSeconds,
 		PullReportBytes,
 		PullReportPackages,
 		PullRequestsTotal,
-		PullCyclesTotal,
-		PullVMsInCycle,
+		PullTicksTotal,
+		PullTrackedVMs,
 	)
 }

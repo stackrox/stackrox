@@ -2,7 +2,9 @@
 
 VM index reports flow directly from Sensor to Central; Compliance is not involved (see `compliance/ACK_MODEL.md` for the separate node-scanning ACK model, which does go through Compliance).
 
-`VMScraper` polls each VM's roxagent directly over VSOCK on a fixed interval (`ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL`) and forwards successful reports to Central through `vmIndex.Handler`, the same handler used by every other producer of `v1.IndexReport`s.
+`VMScraper` pulls reports from each running VM's roxagent over VSOCK and forwards successful reports to Central through `vmIndex.Handler`, the same handler used by every other producer of `v1.IndexReport`s.
+
+A short tick (`ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL`, default 10s) walks the per-VM schedule. Each VM is due at its own `nextAttemptAt`. Success and permanent failures reschedule at `ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL`. Retryable pull failures and NACKs share one exponential backoff (`ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF`, default 10s, doubled each time, capped at `min(poll interval, 30m)`).
 
 Central's `SensorACK` is delivered to Sensor components whose `Accepts()` matches. Only `VMScraper` accepts `SensorACK_VM_INDEX_REPORT`; `Handler` does not.
 
@@ -13,19 +15,19 @@ sequenceDiagram
     participant H as Sensor Handler
     participant X as Central VM pipeline
 
-    Sc->>A: GetReport (VSOCK, polled on interval)
+    Sc->>A: GetReport (VSOCK, when the VM is due)
     A-->>Sc: index report
     Sc->>H: Send(report)
     H->>X: SensorEvent(vmID, index report)
     X-->>Sc: SensorACK(vmID:vsockCID, ACK|NACK, reason)
 
     alt NACK
-        Sc->>Sc: clear cached generation for this VM
-        Note over Sc,A: next poll cycle requests a full report
+        Sc->>Sc: clear cached generation; apply retry backoff
+        Note over Sc,A: next due attempt requests a full report
     end
 ```
 
-`VMScraper` records ACK/NACK volume (`IndexReportAcksReceived`) and, on NACK, resets its cached `report_generation` so the next poll re-sends a full report instead of an "unchanged" delta. There is no separate retry/backoff loop and no payload cache: Sensor re-polls every VM on a fixed interval regardless of ACK outcome.
+`VMScraper` records ACK/NACK volume (`IndexReportAcksReceived`) and, on NACK, resets its cached `report_generation` so the next due attempt re-sends a full report instead of an "unchanged" delta. There is no payload cache.
 
 ## Why the resource ID is `vmID:vsockCID`
 
