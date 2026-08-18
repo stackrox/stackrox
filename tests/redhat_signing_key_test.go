@@ -81,9 +81,9 @@ func (s *RedHatSigningKeySuite) SetupSuite() {
 	defer cancel()
 	s.logf("Ensuring %s=%s on central", watchIntervalEnv, shortWatchInterval)
 	s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
 
 	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
+	s.waitForCentralReady(ctx)
 }
 
 func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient {

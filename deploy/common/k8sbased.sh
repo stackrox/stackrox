@@ -503,6 +503,17 @@ function launch_central {
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
+
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      # Bake it into the manifest so Central starts with fast polling instead of
+      # requiring a second rollout via a post-launch `set env`.
+      central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
+      if [[ -f "${central_deployment}" ]]; then
+        ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
+          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
+        mv "${central_deployment}.tmp" "${central_deployment}"
+      fi
+
       launch_service "${unzip_dir}" central
       echo
 
@@ -525,9 +536,6 @@ function launch_central {
       if [[ -n $MODULE_LOGLEVELS ]]; then
         ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
       fi
-
-      # Shorten signing key watcher poll for e2e tests (production default is 4h).
-      ${ORCH_CMD} -n stackrox set env deploy/central ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s
 
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         echo >&2 "ROX_MANAGED_CENTRAL=true is only supported in conjunction with OUTPUT_FORMAT=helm"
