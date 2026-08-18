@@ -201,6 +201,11 @@ message CollectionSnapshot {
 }
 
 message ReportSnapshot {
+  enum ReportType {
+    VULNERABILITY = 0; // for historical reasons, this short form was used to mean "Image Vulnerability"
+    NODE_VULNERABILITY = 1;
+  }
+  ReportType type = 16;
   string report_config_id = 1;
   string report_job_id = 2;
   string name = 3;

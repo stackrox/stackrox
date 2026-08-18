@@ -585,6 +585,7 @@ func (m *ReportSnapshot) CloneVT() *ReportSnapshot {
 		return (*ReportSnapshot)(nil)
 	}
 	r := new(ReportSnapshot)
+	r.Type = m.Type
 	r.ReportConfigId = m.ReportConfigId
 	r.ReportJobId = m.ReportJobId
 	r.Name = m.Name
@@ -1733,6 +1734,9 @@ func (this *ReportSnapshot) EqualVT(that *ReportSnapshot) bool {
 		return false
 	}
 	if !this.ResourceScope.EqualVT(that.ResourceScope) {
+		return false
+	}
+	if this.Type != that.Type {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3431,6 +3435,13 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.Type != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Type))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x80
+	}
 	if m.ResourceScope != nil {
 		size, err := m.ResourceScope.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -4562,6 +4573,9 @@ func (m *ReportSnapshot) SizeVT() (n int) {
 	if m.ResourceScope != nil {
 		l = m.ResourceScope.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Type != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.Type))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8174,6 +8188,25 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				m.Filter = &ReportSnapshot_NodeVulnReportFilters{NodeVulnReportFilters: v}
 			}
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ReportSnapshot_ReportType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12482,6 +12515,25 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Filter = &ReportSnapshot_NodeVulnReportFilters{NodeVulnReportFilters: v}
 			}
 			iNdEx = postIndex
+		case 16:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			m.Type = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Type |= ReportSnapshot_ReportType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

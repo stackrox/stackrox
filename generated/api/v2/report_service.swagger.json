@@ -1183,6 +1183,9 @@
     "v2ReportSnapshot": {
       "type": "object",
       "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportSnapshotReportType"
+        },
         "reportConfigId": {
           "type": "string"
         },
@@ -1233,6 +1236,15 @@
           "$ref": "#/definitions/v2ResourceScope"
         }
       }
+    },
+    "v2ReportSnapshotReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
+      ],
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
     },
     "v2ReportStatus": {
       "type": "object",
