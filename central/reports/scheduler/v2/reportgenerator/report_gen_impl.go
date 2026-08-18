@@ -68,6 +68,7 @@ var (
 			Offset(int32(0)).
 			AddSortOption(search.NewSortOption(search.ImageName)).Proto(),
 	}
+	cursorBatchSize = env.PostgresDefaultCursorBatchSize.IntegerSetting()
 )
 
 type reportGeneratorImpl struct {
@@ -372,7 +373,9 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		Length:       -1,
 	}
 
-	refLinksCache := make(map[string]string)
+	//  cveRefLinksCache is a map[string]string that maps CVE ID -> reference URL.
+	//  It caches the "Reference" link for each CVE (the external URL pointing to the CVE advisory, e.g., on NVD).
+	cveRefLinksCache := make(map[string]string)
 	rowCount := 0
 
 	err = rg.blobStore.UpsertWithWriter(txCtx, tx, blob, func(w io.Writer) error {
@@ -388,7 +391,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		}
 
 		for _, qs := range queries {
-			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, refLinksCache, &rowCount); err != nil {
+			if err := rg.streamQueryToCSV(txCtx, qs.schema, qs.query, csvW, cveRefLinksCache, &rowCount); err != nil {
 				return err
 			}
 		}
@@ -415,8 +418,6 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 	return nil
 }
 
-var refLinkBatchSize = env.PostgresDefaultCursorBatchSize.IntegerSetting()
-
 // streamQueryToCSV runs a cursor-based query and streams each row directly through CSV formatting
 // to the provided csv.Writer. CVE reference links are resolved incrementally in batches and cached.
 func (rg *reportGeneratorImpl) streamQueryToCSV(
@@ -424,7 +425,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 	schema *walker.Schema,
 	query *v1.Query,
 	csvW *csv.Writer,
-	refLinksCache map[string]string,
+	cveRefLinksCache map[string]string,
 	rowCount *int,
 ) error {
 	var batch []*ImageCVEQueryResponse
@@ -434,7 +435,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 		for _, r := range batch {
 			id := r.GetCVEID()
 			if id != "" {
-				if _, cached := refLinksCache[id]; !cached {
+				if _, cached := cveRefLinksCache[id]; !cached {
 					unseenIDs.Add(id)
 				}
 			}
@@ -445,11 +446,11 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 				return errors.Wrap(err, "fetching CVE reference links")
 			}
 			for _, cve := range cves {
-				refLinksCache[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
+				cveRefLinksCache[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
 			}
 		}
 		for _, r := range batch {
-			if link, ok := refLinksCache[r.GetCVEID()]; ok {
+			if link, ok := cveRefLinksCache[r.GetCVEID()]; ok {
 				r.Link = link
 			}
 			if err := csvW.Write(formatCSVRow(r)); err != nil {
@@ -465,7 +466,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 		func(r *ImageCVEQueryResponse) error {
 			batch = append(batch, r)
 			*rowCount++
-			if len(batch) >= refLinkBatchSize {
+			if len(batch) >= cursorBatchSize {
 				return flushBatch()
 			}
 			return nil
@@ -739,6 +740,7 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(ctx context.Context, imageC
 		cves = append(cves, v2)
 	}
 
+	// cveRefLinks is a map[string]string that maps CVE ID -> reference URL
 	cveRefLinks := make(map[string]string)
 	for _, cve := range cves {
 		cveRefLinks[cve.GetId()] = cve.GetCveBaseInfo().GetLink()
