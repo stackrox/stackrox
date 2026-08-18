@@ -71,6 +71,8 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             return '/v1/signatureintegrations'; // lowercase in endpoint address
         case 'cloudSources':
             return '/v1/cloud-sources';
+        case 'aiIntegrations':
+            return '/v2/ai-integrations';
         default:
             return '';
     }
@@ -97,6 +99,8 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             return 'signatureintegrations'; // lowercase in endpoint alias
         case 'cloudSources':
             return '/v1/cloud-sources';
+        case 'aiIntegrations':
+            return '/v2/ai-integrations';
         default:
             return '';
     }
@@ -155,6 +159,12 @@ const routeMatcherMapForIntegrationsTab = {
             url: getIntegrationsEndpointAddressForGET('cloudSources'),
         },
     },
+    aiIntegrations: {
+        [getIntegrationsEndpointAlias('aiIntegrations')]: {
+            method: 'GET',
+            url: getIntegrationsEndpointAddressForGET('aiIntegrations'),
+        },
+    },
     authProviders: {
         [getIntegrationsEndpointAlias('authProviders', 'apitoken')]: {
             method: 'GET',
@@ -172,6 +182,7 @@ const routeMatcherMapForIntegrationsTab = {
 const integrationsTitle = 'Integrations';
 
 const integrationSourceTitleMap = {
+    aiIntegrations: 'AI',
     authProviders: 'Authentication',
     backups: 'Backup',
     cloudSources: 'Cloud source',
@@ -224,6 +235,9 @@ const integrationTitleMap = {
     cloudSources: {
         paladinCloud: 'Paladin Cloud',
         ocm: 'OpenShift Cluster Manager',
+    },
+    aiIntegrations: {
+        lightspeed: 'OpenShift Lightspeed',
     },
 };
 
