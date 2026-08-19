@@ -1,0 +1,43 @@
+name: e2e-operator-tests-ocp-4-22
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+
+jobs:
+  run:
+    uses: ./.github/workflows/e2e-operator-tests.yaml
+    with:
+      should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
+      tag: ${{ inputs.tag }}
+      ci-job-name: ocp-4-22-operator-e2e-tests
+      cluster-name-prefix: e2e-oper-tests-ocp422
+      cluster-provisioning-method: infra
+      cluster-wait-timeout-minutes: 50
+      infra-flavor: openshift-4
+      infra-args: |
+        openshift-version=ocp/stable-4.22
+        master-node-type=e2-standard-4
+        master-node-count=3
+        worker-node-type=e2-standard-8
+        worker-node-count=3
+        ssd-storage-class=true
+      infra-lifespan: 5h
+      extra-env-vars: |
+        ORCHESTRATOR_FLAVOR=openshift
+        KUBERNETES_PROVIDER=ocp
+    secrets: inherit
