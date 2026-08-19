@@ -2,7 +2,7 @@ package filter
 
 import (
 	"fmt"
-	"runtime"
+	"math"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -137,8 +137,64 @@ func BenchmarkBuildIndicatorFilterMemory(b *testing.B) {
 				}
 			}
 		}
+	}
+}
 
-		// Force GC to measure actual memory retained
-		runtime.GC()
+// BenchmarkHighCardinalityProcesses measures a single container accumulating many
+// distinct executable paths. Sensor runs with an unbounded maxUniqueProcesses, so
+// the process level must stay near O(1) per insert rather than degrading to O(n^2).
+// The "maxed" case additionally pushes the configurable parameters to their limits
+// (fanOut 255 across 10 levels, maxExact 1000) with several argument variations per
+// process to also stress the argument-level tree.
+func BenchmarkHighCardinalityProcesses(b *testing.B) {
+	cases := []struct {
+		name         string
+		numProcesses int
+		argsPerProc  int
+		fanOut       []int
+		maxExact     int
+	}{
+		{
+			name:         "10k_processes_default_fanout",
+			numProcesses: 10000,
+			argsPerProc:  1,
+			fanOut:       []int{8, 6, 4, 2},
+			maxExact:     5,
+		},
+		{
+			name:         "10k_processes_maxed_params",
+			numProcesses: 10000,
+			argsPerProc:  20,
+			fanOut:       []int{255, 255, 255, 255, 255, 255, 255, 255, 255, 255},
+			maxExact:     1000,
+		},
+	}
+
+	for _, tc := range cases {
+		b.Run(tc.name, func(b *testing.B) {
+			indicators := make([]*storage.ProcessIndicator, 0, tc.numProcesses*tc.argsPerProc)
+			for p := range tc.numProcesses {
+				for a := range tc.argsPerProc {
+					indicators = append(indicators, &storage.ProcessIndicator{
+						DeploymentId:  "dep",
+						ContainerName: "container",
+						Signal: &storage.ProcessSignal{
+							ContainerId:  "id",
+							ExecFilePath: fmt.Sprintf("/usr/bin/process%d", p),
+							Args:         fmt.Sprintf("--flag%d value subcommand run", a),
+						},
+					})
+				}
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for b.Loop() {
+				filter := NewFilter(tc.maxExact, math.MaxInt, tc.fanOut)
+				for _, pi := range indicators {
+					filter.Add(pi)
+				}
+			}
+		})
 	}
 }
