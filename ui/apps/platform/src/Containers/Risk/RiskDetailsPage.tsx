@@ -12,6 +12,7 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
+import { MagicIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -25,10 +26,13 @@ import {
     riskPlatformViewPath,
     riskUserWorkloadsViewPath,
 } from 'routePaths';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 
 import RiskDetailTabs from './RiskDetailTabs';
 import useDeploymentWithRisk from './useDeploymentWithRisk';
+import AiRiskSummaryCard from './AiRiskSummary/AiRiskSummaryCard';
+import useAiRiskSummary from './AiRiskSummary/useAiRiskSummary';
 
 function getRiskBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
     // Note: We cannot exhaustively check for all possible values of filteredWorkflowView because
@@ -51,6 +55,10 @@ function RiskDetailsPage(): ReactElement {
     const deploymentName = data?.deployment.name;
 
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isRiskSummaryEnabled = isFeatureFlagEnabled('ROX_LIGHTSPEED_RISK_SUMMARY');
+    const aiRiskSummary = useAiRiskSummary(deploymentId);
 
     const isRouteEnabled = useIsRouteEnabled();
     const isRouteEnabledForNetworkGraph = isRouteEnabled('network-graph');
@@ -76,22 +84,52 @@ function RiskDetailsPage(): ReactElement {
                         <Skeleton width="25%" screenreaderText="Loading deployment information" />
                     )}
                     <FlexItem>
-                        {isRouteEnabledForNetworkGraph && data && (
-                            <Button
-                                variant="link"
-                                href={getLinkToDeploymentInNetworkGraph({
-                                    cluster: data.deployment.clusterName,
-                                    namespace: data.deployment.namespace,
-                                    deploymentId: data.deployment.id,
-                                })}
-                                component={LinkShim}
-                            >
-                                View Deployment in Network Graph
-                            </Button>
-                        )}
+                        <Flex
+                            alignItems={{ default: 'alignItemsCenter' }}
+                            spaceItems={{ default: 'spaceItemsMd' }}
+                        >
+                            {isRouteEnabledForNetworkGraph && data && (
+                                <FlexItem>
+                                    <Button
+                                        variant="link"
+                                        href={getLinkToDeploymentInNetworkGraph({
+                                            cluster: data.deployment.clusterName,
+                                            namespace: data.deployment.namespace,
+                                            deploymentId: data.deployment.id,
+                                        })}
+                                        component={LinkShim}
+                                    >
+                                        View Deployment in Network Graph
+                                    </Button>
+                                </FlexItem>
+                            )}
+                            {isRiskSummaryEnabled && data && (
+                                <FlexItem>
+                                    <Button
+                                        variant="primary"
+                                        icon={<MagicIcon />}
+                                        onClick={aiRiskSummary.investigate}
+                                        isDisabled={aiRiskSummary.isOpen || aiRiskSummary.isLoading}
+                                        isLoading={aiRiskSummary.isLoading}
+                                    >
+                                        Investigate with Lightspeed
+                                    </Button>
+                                </FlexItem>
+                            )}
+                        </Flex>
                     </FlexItem>
                 </Flex>
             </PageSection>
+            {isRiskSummaryEnabled && aiRiskSummary.isOpen && data && (
+                <PageSection>
+                    <AiRiskSummaryCard
+                        summary={aiRiskSummary.summary?.summary}
+                        isLoading={aiRiskSummary.isLoading}
+                        error={aiRiskSummary.error}
+                        onClose={aiRiskSummary.close}
+                    />
+                </PageSection>
+            )}
             {error && (
                 <TableErrorComponent
                     error={error}
