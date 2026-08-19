@@ -36,6 +36,7 @@ ci_export() {
         if [[ "$env_value" == *$'\n'* ]]; then
             # GHA also supports multi-line values, which need to be added to $GITHUB_ENV with a
             # special syntax.
+            # See https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
             local delimiter="EOF_${env_name}_$$"
             printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
         else
