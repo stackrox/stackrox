@@ -389,10 +389,9 @@ EOF
 
     rm -f "$config_file" "$roxie_envrc"
 
-    # Wait for _collector_ pods. (The function does more than sensor wait).
     # TODO(https://github.com/stackrox/roxie/issues/269): replace with --early-readiness=false roxie flag,
     # once we no longer need to deploy 4.9
-    sensor_wait stackrox
+    wait_for_collectors_to_be_operational stackrox
 
     info "Stackrox deployed with Central version: ${central_version}, Sensor version: ${sensor_version}"
 }
