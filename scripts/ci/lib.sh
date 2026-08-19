@@ -659,7 +659,7 @@ _image_prefetcher_prebuilt_start() {
         image_prefetcher_start_set compatibility
         _set_quay_pull_policy
         ;;
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|e2e-operator-tests*)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
         ;;
@@ -694,7 +694,7 @@ _image_prefetcher_system_start() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
+    *-operator-e2e-tests|e2e-operator-tests*|*ocp*qa-e2e-tests*)
         image_prefetcher_start_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -821,7 +821,7 @@ _image_prefetcher_prebuilt_await() {
     *compatibility-tests)
         image_prefetcher_await_set compatibility
         ;;
-    *-operator-e2e-tests)
+    *-operator-e2e-tests|e2e-operator-tests*)
         image_prefetcher_await_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
         ;;
@@ -835,7 +835,7 @@ _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
+    *-operator-e2e-tests|e2e-operator-tests*|*ocp*qa-e2e-tests*)
         image_prefetcher_await_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -1001,7 +1001,7 @@ populate_stackrox_image_list() {
 
     # Require images based on the job
     case "$CI_JOB_NAME" in
-        *-operator-e2e-tests)
+        *-operator-e2e-tests|e2e-operator-tests*)
             cat >> "${image_list}" << END
 stackrox-operator ${operator_controller_tag}
 stackrox-operator-bundle ${operator_metadata_tag}
