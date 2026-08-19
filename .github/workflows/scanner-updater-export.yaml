@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       object:
-        description: "Full GCS object path (gs://bucket/prefix/stream/sources/updater/data.json.zst)"
+        description: "Full GCS object path (gs://bucket/prefix/stream/sources/updater.json.zst)"
         required: true
         type: string
       manual_url:

@@ -58,6 +58,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 )
 
 const (
@@ -316,6 +318,7 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	}
 
 	ds.populateHealthInfos(ctx, clusters...)
+	ds.populateSensorVersionCompatibility(clusters...)
 	ds.updateClusterPriority(clusters...)
 	return clusters, nil
 }
@@ -330,6 +333,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	}
 
 	ds.populateHealthInfos(ctx, cluster)
+	ds.populateSensorVersionCompatibility(cluster)
 	ds.updateClusterPriority(cluster)
 	return cluster, true, nil
 }
@@ -345,6 +349,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		}
 
 		ds.populateHealthInfos(ctx, clusters...)
+		ds.populateSensorVersionCompatibility(clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
@@ -400,6 +405,7 @@ func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clonedCluster := cluster.CloneVT()
 			ds.populateHealthInfos(ctx, clonedCluster)
+			ds.populateSensorVersionCompatibility(clonedCluster)
 			ds.updateClusterPriority(clonedCluster)
 			return fn(clonedCluster)
 		})
@@ -931,6 +937,42 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 		}
 		cluster.HealthStatus = infos[healthIdx]
 		healthIdx++
+	}
+}
+
+func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage.Cluster) {
+	for _, cluster := range clusters {
+		if cluster.GetStatus() == nil {
+			continue
+		}
+		sensorXY, err := productstreams.ParseXYFromVersionString(cluster.GetStatus().GetSensorVersion())
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		compat, err := versioncompatibility.ClassifyVersion(sensorXY)
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		cluster.Status.SensorVersionCompatibility = compatibilityToProto(compat)
+	}
+}
+
+func compatibilityToProto(c versioncompatibility.Compatibility) storage.SensorVersionCompatibility {
+	switch c {
+	case versioncompatibility.Matched:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED
+	case versioncompatibility.CompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND
+	case versioncompatibility.CompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD
+	case versioncompatibility.IncompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND
+	case versioncompatibility.IncompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD
+	default:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 	}
 }
 

@@ -991,6 +991,15 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		Compression:   true,
 	})
 
+	if features.NodeVulnerabilityReports.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/node/jobs/download",
+			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
+
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/v2/compliance/scan/configurations/reports/download",

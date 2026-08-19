@@ -30,6 +30,9 @@ var (
 	ClusterPlatformType      = newFieldLabel("Cluster Platform Type")
 	ClusterKubernetesVersion = newFieldLabel("Cluster Kubernetes Version")
 
+	// SensorVersionCompatibility is computed at runtime in the cluster datastore and is not persisted.
+	SensorVersionCompatibility = newFieldLabel("Sensor Version Compatibility")
+
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
 	SensorStatus           = newFieldLabel("Sensor Status")
