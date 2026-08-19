@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
@@ -137,9 +136,11 @@ func main() {
 		Use: "generate store implementations",
 	}
 
+	var generateRegistryFiles bool
+	c.Flags().BoolVar(&generateRegistryFiles, "generate-registry-files", false, "generate enum_registry_list.go and *_search.go files")
+
 	var props properties
 	c.Flags().StringVar(&props.Type, "type", "", "the (Go) name of the object")
-	utils.Must(c.MarkFlagRequired("type"))
 
 	c.Flags().StringVar(&props.FeatureFlag, "feature-flag", "", "the feature flag that registers the schema")
 	c.Flags().StringVar(&props.RegisteredType, "registered-type", "", "the type this is registered in proto as storage.X")
@@ -160,7 +161,6 @@ func main() {
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
-	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
@@ -168,6 +168,18 @@ func main() {
 	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
 	c.Flags().BoolVar(&props.NoSerialized, "no-serialized", false, "if true, all proto fields become individual DB columns with no serialized bytea blob")
 	c.RunE = func(*cobra.Command, []string) error {
+		// Handle --generate-registry-files mode
+		if generateRegistryFiles {
+			return batchGenerateRegistryFiles()
+		}
+
+		// Normal per-schema generation mode requires --type and --schema-directory flags
+		if props.Type == "" {
+			return fmt.Errorf("--type flag is required when not using --generate-registry-files")
+		}
+		if props.SchemaDirectory == "" {
+			return fmt.Errorf("--schema-directory flag is required when not using --generate-registry-files")
+		}
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
 		mt := protoutils.MessageType(typ)
