@@ -216,6 +216,18 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
+      - name: Prepare OLM
+        if: env.KUBERNETES_PROVIDER == 'ocp'
+        timeout-minutes: 2
+        run: |
+          echo "Removing unused catalog sources"
+          oc patch operatorhub.config.openshift.io cluster --type=json \
+            -p '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'
+          echo "Bouncing catalog operator pod to clear its cache"
+          oc delete pods \
+            --namespace=openshift-operator-lifecycle-manager \
+            --selector=app=catalog-operator --now=true
+
       - name: Run Operator E2E tests
         timeout-minutes: 120
         run: |
