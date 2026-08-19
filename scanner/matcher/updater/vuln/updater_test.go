@@ -125,9 +125,6 @@ func TestMultiBundleUpdate(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
-		Return(nil)
-	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 	store.EXPECT().
@@ -147,6 +144,73 @@ func TestMultiBundleUpdate(t *testing.T) {
 	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
 	assert.Equal(t, dists, u.KnownDistributions())
+}
+
+func TestMultiBundleUpdate_SkipsCleanupWhenNoBundleProcessed(t *testing.T) {
+	tests := map[string]struct {
+		bundleNames []string
+		allowlist   []string
+	}{
+		"empty archive": {
+			bundleNames: nil,
+		},
+		"every entry filtered out by allowlist": {
+			bundleNames: []string{"alpine.json.zst"},
+			allowlist:   []string{"not-in-the-archive"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+				var buf bytes.Buffer
+				zw := zip.NewWriter(&buf)
+				for _, n := range tc.bundleNames {
+					_, err := zw.Create(n)
+					require.NoError(t, err)
+				}
+				require.NoError(t, zw.Close())
+				return bytes.NewReader(buf.Bytes())
+			})
+
+			ctrl := gomock.NewController(t)
+			store := mocks.NewMockMatcherStore(ctrl)
+			metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+			u := &Updater{
+				locker:              &testLocker{locker: updates.NewLocalLockSource()},
+				store:               store,
+				metadataStore:       metadataStore,
+				client:              srv.Client(),
+				urls:                []string{srv.URL},
+				root:                t.TempDir(),
+				skipGC:              true,
+				importFunc:          func(_ context.Context, _ io.Reader) error { return nil },
+				retryDelay:          1 * time.Second,
+				retryMax:            1,
+				distManager:         newDistManager(store),
+				vulnBundleAllowlist: set.NewFrozenSet(tc.allowlist...),
+			}
+
+			prevTime := now.Add(-time.Hour)
+
+			// No GetOrSetLastVulnerabilityUpdate (pre-registration/processing), and
+			// critically no GCVulnerabilityUpdates call: with zero allowed bundles,
+			// nothing should be pre-registered, processed, or cleaned up.
+			metadataStore.EXPECT().
+				GetLastVulnerabilityUpdate(gomock.Any()).
+				Return(prevTime, nil)
+			store.EXPECT().
+				Distributions(gomock.Any()).
+				Return(nil, nil)
+			metadataStore.EXPECT().
+				GetLastVulnerabilityUpdate(gomock.Any()).
+				Return(now, nil)
+
+			err := u.Update(test.Logging(t))
+			assert.NoError(t, err)
+		})
+	}
 }
 
 func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
@@ -302,6 +366,116 @@ func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
 
 	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
+}
+
+func TestMultiBundleUpdate_UnchangedBundleNotReimported(t *testing.T) {
+	const bundleA = "alpine.json.zst"
+	const bundleB = "nvd.json.zst"
+
+	buildZip := func(t *testing.T, modA, modB time.Time) []byte {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, e := range []struct {
+			name string
+			mod  time.Time
+		}{{bundleA, modA}, {bundleB, modB}} {
+			w, err := zw.CreateHeader(&zip.FileHeader{
+				Name:     e.name,
+				Method:   zip.Deflate,
+				Modified: e.mod,
+			})
+			require.NoError(t, err)
+			_, err = w.Write([]byte("fake-compressed-content"))
+			require.NoError(t, err)
+		}
+		require.NoError(t, zw.Close())
+		return buf.Bytes()
+	}
+
+	var requestCount int
+	var zip1, zip2 []byte
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		requestCount++
+		if requestCount == 1 {
+			return bytes.NewReader(zip1)
+		}
+		return bytes.NewReader(zip2)
+	})
+
+	modA, err := http.ParseTime(now.Add(-3 * time.Hour).Format(http.TimeFormat))
+	require.NoError(t, err)
+	modB1, err := http.ParseTime(now.Add(-3 * time.Hour).Format(http.TimeFormat))
+	require.NoError(t, err)
+	modB2, err := http.ParseTime(now.Add(-1 * time.Hour).Format(http.TimeFormat))
+	require.NoError(t, err)
+
+	// Cycle 1: both bundles are new. Cycle 2: bundleA's entry is unchanged
+	// (still modA), bundleB's entry changed (modB2 > modB1).
+	zip1 = buildZip(t, modA, modB1)
+	zip2 = buildZip(t, modA, modB2)
+
+	ctrl := gomock.NewController(t)
+	store := mocks.NewMockMatcherStore(ctrl)
+	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+	var importCount int
+	u := &Updater{
+		locker:        &testLocker{locker: updates.NewLocalLockSource()},
+		store:         store,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		skipGC:        true,
+		importFunc: func(_ context.Context, _ io.Reader) error {
+			importCount++
+			return nil
+		},
+		retryDelay:  1 * time.Second,
+		retryMax:    1,
+		distManager: newDistManager(store),
+	}
+
+	prevTime1 := now.Add(-4 * time.Hour)
+	prevTime2 := modA // aggregate MIN after cycle 1, since both bundles landed on modA==modB1.
+
+	gomock.InOrder(
+		// Cycle 1: both bundles are new, both import.
+		metadataStore.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(prevTime1, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleA, prevTime1).Return(prevTime1, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleB, prevTime1).Return(prevTime1, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleA, prevTime1).Return(prevTime1, nil),
+		metadataStore.EXPECT().SetLastVulnerabilityUpdate(gomock.Any(), bundleA, gomock.Cond(func(got time.Time) bool {
+			return got.Equal(modA)
+		})).Return(nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleB, prevTime1).Return(prevTime1, nil),
+		metadataStore.EXPECT().SetLastVulnerabilityUpdate(gomock.Any(), bundleB, gomock.Cond(func(got time.Time) bool {
+			return got.Equal(modB1)
+		})).Return(nil),
+		metadataStore.EXPECT().GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).Return(nil),
+		store.EXPECT().Distributions(gomock.Any()).Return(nil, nil),
+		metadataStore.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(modA, nil), // Initialized() caches true from here on.
+
+		// Cycle 2: bundleA unchanged (must NOT reimport), bundleB changed (must reimport).
+		metadataStore.EXPECT().GetLastVulnerabilityUpdate(gomock.Any()).Return(prevTime2, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleA, prevTime2).Return(modA, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleB, prevTime2).Return(modB1, nil),
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleA, prevTime2).Return(modA, nil),
+		// No SetLastVulnerabilityUpdate for bundleA: it must be skipped, not reimported.
+		metadataStore.EXPECT().GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleB, prevTime2).Return(modB1, nil),
+		metadataStore.EXPECT().SetLastVulnerabilityUpdate(gomock.Any(), bundleB, gomock.Cond(func(got time.Time) bool {
+			return got.Equal(modB2)
+		})).Return(nil),
+		metadataStore.EXPECT().GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).Return(nil),
+		store.EXPECT().Distributions(gomock.Any()).Return(nil, nil),
+		// Initialized() short-circuits on the cached value: no further GetLastVulnerabilityUpdate call.
+	)
+
+	require.NoError(t, u.Update(test.Logging(t)))
+	assert.Equal(t, 2, importCount, "cycle 1 should import both bundles")
+
+	require.NoError(t, u.Update(test.Logging(t)))
+	assert.Equal(t, 3, importCount, "cycle 2 should only reimport the changed bundle (bundleB), not the unchanged bundleA")
 }
 
 func TestFetch(t *testing.T) {

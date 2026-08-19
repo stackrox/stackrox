@@ -458,12 +458,16 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
 	// Safe to be run concurrently.
-	names := make([]string, 0, len(bundles))
-	for _, f := range bundles {
-		names = append(names, f.Name)
-	}
-	if err := u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime); err != nil {
-		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+	if len(bundles) > 0 {
+		names := make([]string, 0, len(bundles))
+		for _, f := range bundles {
+			names = append(names, f.Name)
+		}
+		if err := u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime); err != nil {
+			return false, fmt.Errorf("cleaning vuln updates: %w", err)
+		}
+	} else {
+		slog.WarnContext(ctx, "skipping vuln update cleanup: no bundle was processed")
 	}
 
 	err = u.distManager.update(ctx)
