@@ -24,8 +24,8 @@ type MatcherMetadataStore interface {
 	// GetOrSetLastVulnerabilityUpdate get the last update timestamp of one vulnerability bundle,
 	// or set it to the specified value if it does not exist.
 	GetOrSetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) (time.Time, error)
-	// GCVulnerabilityUpdate cleanup unknown and obsolete update timestamps of `updater`.
-	GCVulnerabilityUpdate(ctx context.Context, updater string, lastUpdate time.Time) error
+	// GCVulnerabilityUpdates clean-up unknown and obsolete update timestamps.
+	GCVulnerabilityUpdates(ctx context.Context, activeUpdaters []string, lastUpdate time.Time) error
 }
 
 type matcherMetadataStore struct {

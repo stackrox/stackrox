@@ -80,16 +80,16 @@ func (m *matcherMetadataStore) GetOrSetLastVulnerabilityUpdate(ctx context.Conte
 	return t.UTC(), nil
 }
 
-// GCVulnerabilityUpdate implements MatcherMetadataStore.GCVulnerabilityUpdate
+// GCVulnerabilityUpdates implements MatcherMetadataStore.GCVulnerabilityUpdates
 //
-// Removes all entries for inactive vulnerability bundles that are older than
-// the given bundle's update time.
-func (m *matcherMetadataStore) GCVulnerabilityUpdate(ctx context.Context, updater string, lastUpdate time.Time) error {
+// Removes all entries for inactive vulnerability bundles that are older than the
+// last know update.
+func (m *matcherMetadataStore) GCVulnerabilityUpdates(ctx context.Context, activeUpdaters []string, lastUpdate time.Time) error {
 	const deleteUnknownAndInactive = `
 		DELETE FROM last_vuln_update
-		WHERE NOT key = $1 AND update_timestamp < $2
+		WHERE NOT key = ANY($1) AND update_timestamp < $2
 		RETURNING key`
-	rows, err := m.pool.Query(ctx, deleteUnknownAndInactive, updater, sanitizeTimestamp(lastUpdate))
+	rows, err := m.pool.Query(ctx, deleteUnknownAndInactive, activeUpdaters, sanitizeTimestamp(lastUpdate))
 	if err != nil {
 		return err
 	}

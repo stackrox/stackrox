@@ -125,6 +125,9 @@ func TestMultiBundleUpdate(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
+	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 	store.EXPECT().
@@ -208,9 +211,8 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 
 	// GC and Initialized at end of runMultiBundleUpdate.
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdate(gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).
-		Times(len(bundleNames))
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
 	store.EXPECT().
 		Distributions(gomock.Any()).
 		Return(nil, nil)
@@ -289,9 +291,7 @@ func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
 
 	// GC and Initialized at end of runMultiBundleUpdate.
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdate(gomock.Any(), bundleName, gomock.Cond(func(got time.Time) bool {
-			return got.Equal(entryModified)
-		})).
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
 		Return(nil)
 	store.EXPECT().
 		Distributions(gomock.Any()).
