@@ -152,7 +152,12 @@ jobs:
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
 
+    # GKE pre-test: gather cluster debug, start the multi-node image prefetcher,
+    # and poll quay.io/rhacs-eng until the product images are published. This is
+    # GKE-specific machinery — the prefetcher spreads images across the node pool
+    # and the poll targets the rhacs-eng registry used by master/release builds.
     - name: Run pre-test
+      if: matrix.cluster == 'gke'
       shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -161,6 +166,16 @@ jobs:
         sys.path.append('.openshift-ci')
         from pre_tests import PreSystemTests
         PreSystemTests().run()
+
+    # KinD pre-test: the prefetcher/poll above do not apply — images are pre-pulled
+    # into the node's containerd by create-kind-cluster (from quay.io/stackrox-io,
+    # where PR builds publish) and kubelet pulls any remainder on demand during
+    # deploy. Mark images available so downstream junit reporting is accurate.
+    - name: Mark images available (KinD)
+      if: matrix.cluster == 'kind'
+      run: |
+        source scripts/ci/test_state.sh
+        touch "${STATE_IMAGES_AVAILABLE}"
 
     - name: Deploy StackRox and run DB backup/restore test
       env:
