@@ -56,13 +56,15 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: "false"
       PYTHONUNBUFFERED: "1"
-      # Cluster-specific settings.
-      # GKE: cloud LoadBalancer exposure + pd-ssd "faster" storage class + scanner v2.
-      # KinD: no cloud LB (deploy falls back to port-forward on localhost:8000),
-      #       default local-path storage class, scanner disabled to fit the runner.
-      LOAD_BALANCER: ${{ matrix.cluster == 'gke' && 'lb' || 'none' }}
+      # Both cluster types expose Central via a LoadBalancer service. On KinD,
+      # cloud-provider-kind (started by create-kind-cluster) assigns the service
+      # a real, host-reachable IP, so the deploy + wait_for_api path is identical
+      # to GKE with no port-forward.
+      LOAD_BALANCER: lb
       STORAGE: pvc
+      # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
+      # Scanner v2 on GKE; disabled on KinD to fit a standard runner.
       SCANNER_SUPPORT: ${{ matrix.cluster == 'gke' && 'true' || 'false' }}
     timeout-minutes: 60
     steps:
@@ -105,8 +107,11 @@ jobs:
       with:
         cluster-name: dbbr
         tag: ${{ inputs.tag }}
-        registry: quay.io/stackrox-io
+        # Match the deploy's image registry (RHACS_BRANDING -> rhacs-eng) so the
+        # pre-pulled image refs are the ones kubelet looks up.
+        registry: quay.io/rhacs-eng
         memory-limit: 12g
+        enable-loadbalancer: "true"
         pull-scanner: "false"
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
