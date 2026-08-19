@@ -94,9 +94,8 @@ wait_for_background_migrations() {
     info "Target background migration seqnum: $target_seqnum"
     for ((i=0; i<retries; i++)); do
         local db_seqnum
-        if db_seqnum=$(kubectl -n stackrox exec -it deploy/central-db -- \
-            psql -U postgres -d central_active -tAc \
-            "SELECT seqnum FROM background_migration_versions LIMIT 1" 2>&1); then
+        if db_seqnum=$(kubectl -n stackrox exec deploy/central-db -c central-db -- \
+            bash -c 'PGPASSWORD=$(cat /run/secrets/stackrox.io/secrets/password) psql -U postgres -d central_active -tAc "SELECT seqnum FROM background_migration_versions LIMIT 1"' 2>&1); then
             db_seqnum=$(echo "$db_seqnum" | tr -d '[:space:]')
             if [[ "$db_seqnum" -ge "$target_seqnum" ]] 2>/dev/null; then
                 info "Background migrations complete (seqnum: $db_seqnum)"
