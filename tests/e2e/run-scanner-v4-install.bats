@@ -315,13 +315,12 @@ setup() {
     _end
 }
 
-# CRD needs to be owned by Helm if upgrading to 4.8+ from 4.7.x via Helm
-apply_crd_ownership_for_upgrade() {
+fix_up_crd_ownership() {
     local namespace=$1
     echo "Making sure that SecurityPolicies CRD has the correct metadata..."
-    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
-    "${ORCH_CMD}" </dev/null annotate crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
-    "${ORCH_CMD}" </dev/null label crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
+    "${ORCH_CMD}" </dev/null annotate --overwrite crd/securitypolicies.config.stackrox.io meta.helm.sh/release-name=stackrox-central-services || true
+    "${ORCH_CMD}" </dev/null annotate --overwrite crd/securitypolicies.config.stackrox.io meta.helm.sh/release-namespace="$namespace" || true
+    "${ORCH_CMD}" </dev/null label --overwrite crd/securitypolicies.config.stackrox.io app.kubernetes.io/managed-by=Helm || true
 }
 
 describe_pods_in_namespace() {
@@ -1186,6 +1185,7 @@ _deploy_stackrox() {
     local sensor_namespace=${3:-stackrox}
     local validate=${4:-true}
 
+    fix_up_crd_ownership "${central_namespace}"
     _deploy_central "${central_namespace}"
     # shellcheck disable=SC2031
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" != "true" && "${HELM_REUSE_VALUES:-}" != "true" ]]; then
@@ -1253,6 +1253,11 @@ EOT
         )
     fi
 
+    # The SecurityPolicies CRD is cluster-scoped and may survive teardown between tests.
+    # Patch its Helm ownership annotations to match the target namespace so that both
+    # fresh installs and upgrades can adopt it.
+    fix_up_crd_ownership "$central_namespace"
+
     command=("install" "--create-namespace")
     if helm list -n "$central_namespace" -o json | jq -e '.[] | select(.name == "stackrox-central-services")' > /dev/null 2>&1; then
         helm_generated_values_file=$(mktemp)
@@ -1262,7 +1267,6 @@ EOT
             > "$helm_generated_values_file"
         command=("upgrade" "--install" "--reuse-values" "-f" "$helm_generated_values_file")
         upgrade="true"
-        apply_crd_ownership_for_upgrade "$central_namespace"
     else
         create_central_pull_secrets "$central_namespace"
 
