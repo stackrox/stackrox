@@ -37,7 +37,7 @@ for i in $(seq 0 $((key_count - 1))); do
     name=$(jq -r ".keys[$i].name // empty" "$bundle")
     pem_data=$(jq -r ".keys[$i].pem // empty" "$bundle")
 
-    if [[ -z "$name" ]]; then
+    if [[ -z "${name//[[:space:]]/}" ]]; then
         echo "ERROR: key at index $i has empty name" >&2
         exit 1
     fi
