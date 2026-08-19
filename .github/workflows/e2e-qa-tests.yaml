@@ -236,10 +236,6 @@ jobs:
         # don't have the cache pre-populated.
         run: go mod download github.com/stackrox/scanner
 
-      - name: Install check-workflow-run
-        # For CI lib to be able to tell what's with GHA builds when images are missing.
-        run: cd tools/check-workflow-run && go install .
-
       - name: Run pre-test
         shell: python
         env:
