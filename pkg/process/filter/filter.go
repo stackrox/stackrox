@@ -120,12 +120,18 @@ func (l *level) findChild(h BinaryHash) *level {
 	return nil
 }
 
+// containerNode is the per-container root of the filter tree, keyed by process
+// executable path. The process layer is unbounded (Sensor sets maxUniqueProcesses
+// to math.MaxInt), so a map keeps lookup and insertion O(1); argument levels below
+// each process are bounded by fanOut and use slices (see level).
+type containerNode = map[BinaryHash]*level
+
 type filterImpl struct {
 	maxExactPathMatches int     // maximum number of exact path (same pod + container and same process and args) matches to tolerate
 	maxUniqueProcesses  int     // maximum number of unique process exec file paths
 	maxFanOut           []uint8 // maximum fan out starting at the process level
 
-	containersInDeployment map[string]map[string]*level
+	containersInDeployment map[string]map[string]containerNode
 	rootLock               sync.Mutex
 
 	// Hash instance for computing BinaryHash keys
@@ -180,21 +186,21 @@ func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter
 		maxUniqueProcesses:  maxUniqueProcesses,
 		maxFanOut:           maxFanOut,
 
-		containersInDeployment: make(map[string]map[string]*level),
+		containersInDeployment: make(map[string]map[string]containerNode),
 		h:                      xxhash.New(),
 	}
 }
 
-func (f *filterImpl) getOrAddRootLevelNoLock(indicator *storage.ProcessIndicator) *level {
+func (f *filterImpl) getOrAddRootLevelNoLock(indicator *storage.ProcessIndicator) containerNode {
 	containerMap := f.containersInDeployment[indicator.GetDeploymentId()]
 	if containerMap == nil {
-		containerMap = make(map[string]*level)
+		containerMap = make(map[string]containerNode)
 		f.containersInDeployment[indicator.GetDeploymentId()] = containerMap
 	}
 
 	rootLevel := containerMap[indicator.GetSignal().GetContainerId()]
 	if rootLevel == nil {
-		rootLevel = newLevel()
+		rootLevel = make(containerNode)
 		containerMap[indicator.GetSignal().GetContainerId()] = rootLevel
 	}
 
@@ -214,13 +220,13 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	execFilePathHash := hashString(f.h, execFilePath)
 
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.findChild(execFilePathHash)
+	processLevel := rootLevel[execFilePathHash]
 	if processLevel == nil {
-		if len(rootLevel.children) >= f.maxUniqueProcesses {
+		if len(rootLevel) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		rootLevel.children = append(rootLevel.children, child{hash: execFilePathHash, node: processLevel})
+		rootLevel[execFilePathHash] = processLevel
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
