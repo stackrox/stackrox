@@ -623,17 +623,6 @@ func getVirtualMachinesValues(vm *platform.VirtualMachinesSpec) *translation.Val
 		return nil
 	}
 	cv := translation.NewValuesBuilder()
-	// Unset Mode leaves Helm virtualMachines.enabled to follow ROX_VIRTUAL_MACHINES.
-	if vm.Mode != nil {
-		switch *vm.Mode {
-		case platform.VirtualMachinesModeEnabled:
-			cv.SetBoolValue("enabled", true)
-		case platform.VirtualMachinesModeDisabled:
-			cv.SetBoolValue("enabled", false)
-		default:
-			return cv.SetError(fmt.Errorf("invalid virtual machines mode %q", *vm.Mode))
-		}
-	}
 	// Scraper is always set by static defaulting; omit helm values when unset.
 	if vm.Scraper != nil {
 		sv := translation.NewValuesBuilder()

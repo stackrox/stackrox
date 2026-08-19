@@ -1884,17 +1884,8 @@ spec:
                     type: array
                 type: object
               virtualMachines:
-                description: Settings for virtual machine scanning (VSOCK RBAC and
-                  scraper).
+                description: Settings for the virtual machine scraper.
                 properties:
-                  mode:
-                    description: |-
-                      Whether virtual machine scanning and VSOCK RBAC are enabled.
-                      When omitted, virtual machine scanning is enabled.
-                    enum:
-                    - Enabled
-                    - Disabled
-                    type: string
                   scraper:
                     description: Settings for the virtual machine scraper running
                       in Sensor.

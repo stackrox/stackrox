@@ -34,7 +34,6 @@ spec:
           memory: "100Mi"
           cpu: "100m"
   virtualMachines:
-    $vm_mode_line
     scraper:
       pollInterval: $vm_scraper_poll_interval
   processIndicators:

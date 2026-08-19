@@ -344,27 +344,12 @@ handle_file_activity_monitoring() {
 handle_virtual_machines_configuration() {
     local config_file="$1"
     local poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
-    local mode_yaml=""
-
-    if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
-        case "${ROX_VIRTUAL_MACHINES}" in
-        true)
-            mode_yaml=$'      mode: "Enabled"\n'
-            ;;
-        false)
-            mode_yaml=$'      mode: "Disabled"\n'
-            ;;
-        *)
-            die "Unsupported value for ROX_VIRTUAL_MACHINES: ${ROX_VIRTUAL_MACHINES}"
-            ;;
-        esac
-    fi
 
     merge_yaml "$config_file" <<EOF
 securedCluster:
   spec:
     virtualMachines:
-${mode_yaml}      scraper:
+      scraper:
         pollInterval: "${poll_interval}"
 EOF
 }

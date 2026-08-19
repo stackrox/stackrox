@@ -670,7 +670,6 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
-    local vm_mode_line=""
     # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 4h.
     local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
@@ -704,20 +703,6 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
-        case "${ROX_VIRTUAL_MACHINES}" in
-        true)
-            vm_mode_line="mode: Enabled"
-            ;;
-        false)
-            vm_mode_line="mode: Disabled"
-            ;;
-        *)
-            die "Unsupported value for ROX_VIRTUAL_MACHINES: ${ROX_VIRTUAL_MACHINES}"
-            ;;
-        esac
-    fi
-
     customize_envVars=""
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
@@ -743,7 +728,6 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
-      vm_mode_line="$vm_mode_line" \
       vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \

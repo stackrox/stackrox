@@ -116,7 +116,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=ProcessIndicators,order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ProcessIndicators *ProcessIndicatorsSpec `json:"processIndicators,omitempty"`
 
-	// Settings for virtual machine scanning (VSOCK RBAC and scraper).
+	// Settings for the virtual machine scraper.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=18,displayName="Virtual Machines Settings"
 	VirtualMachines *VirtualMachinesSpec `json:"virtualMachines,omitempty"`
 }
@@ -545,30 +545,11 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 	return &v
 }
 
-// VirtualMachinesSpec configures VM scanning and VSOCK RBAC.
+// VirtualMachinesSpec configures the virtual machine scraper.
 type VirtualMachinesSpec struct {
-	// Whether virtual machine scanning and VSOCK RBAC are enabled.
-	// When omitted, virtual machine scanning is enabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Mode *VirtualMachinesMode `json:"mode,omitempty"`
-
 	// Settings for the virtual machine scraper running in Sensor.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Scraper *VirtualMachinesScraperSpec `json:"scraper,omitempty"`
-}
-
-// VirtualMachinesMode is the type for spec.virtualMachines.mode.
-// +kubebuilder:validation:Enum=Enabled;Disabled
-type VirtualMachinesMode string
-
-const (
-	VirtualMachinesModeEnabled  VirtualMachinesMode = "Enabled"
-	VirtualMachinesModeDisabled VirtualMachinesMode = "Disabled"
-)
-
-// Pointer returns the given mode value as a pointer, needed in k8s resource structs.
-func (v VirtualMachinesMode) Pointer() *VirtualMachinesMode {
-	return &v
 }
 
 // VirtualMachinesScraperSpec tunes the virtual machine scraper.

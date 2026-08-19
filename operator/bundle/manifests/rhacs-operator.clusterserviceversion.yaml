@@ -1066,7 +1066,7 @@ spec:
             path: processIndicators
             x-descriptors:
               - urn:alm:descriptor:com.tectonic.ui:advanced
-          - description: Settings for virtual machine scanning (VSOCK RBAC and scraper).
+          - description: Settings for the virtual machine scraper.
             displayName: Virtual Machines Settings
             path: virtualMachines
           - description: |-
@@ -1607,13 +1607,6 @@ spec:
           - description: Allows you to specify additional trusted Root CAs.
             displayName: Additional CAs
             path: tls.additionalCAs
-          - description: |-
-              Whether virtual machine scanning and VSOCK RBAC are enabled.
-              When omitted, virtual machine scanning is enabled.
-            displayName: Mode
-            path: virtualMachines.mode
-            x-descriptors:
-              - urn:alm:descriptor:com.tectonic.ui:hidden
           - description: Settings for the virtual machine scraper running in Sensor.
             displayName: Scraper
             path: virtualMachines.scraper
