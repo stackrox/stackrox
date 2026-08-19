@@ -266,26 +266,26 @@ func TestGenerateFileActivity(t *testing.T) {
 			hostname := "test-node"
 
 			// Generate multiple activities to test randomness
-			for i := 0; i < 50; i++ {
+			for range 50 {
 				activity := wm.generateFileActivity(paths, hostname)
 
 				assert.NotNil(t, activity, "Activity should not be nil")
-				assert.NotNil(t, activity.Process, "Process should not be nil")
-				assert.Equal(t, hostname, activity.Hostname, "Hostname should match")
-				assert.NotNil(t, activity.Timestamp, "Timestamp should not be nil")
-				assert.NotNil(t, activity.File, "File activity type should be set")
+				assert.NotNil(t, activity.GetProcess(), "Process should not be nil")
+				assert.Equal(t, hostname, activity.GetHostname(), "Hostname should match")
+				assert.NotNil(t, activity.GetTimestamp(), "Timestamp should not be nil")
+				assert.NotNil(t, activity.GetFile(), "File activity type should be set")
 
 				// Verify process signal
-				process := activity.Process
-				assert.NotEmpty(t, process.Id, "Process ID should not be empty")
-				assert.NotEmpty(t, process.Name, "Process name should not be empty")
-				assert.NotEmpty(t, process.ExecFilePath, "Exec file path should not be empty")
+				process := activity.GetProcess()
+				assert.NotEmpty(t, process.GetId(), "Process ID should not be empty")
+				assert.NotEmpty(t, process.GetName(), "Process name should not be empty")
+				assert.NotEmpty(t, process.GetExecFilePath(), "Exec file path should not be empty")
 
 				if tc.expectNodeEvent {
-					assert.Empty(t, process.ContainerId, "Container ID should be empty for node events")
+					assert.Empty(t, process.GetContainerId(), "Container ID should be empty for node events")
 				}
 				if tc.expectContainerEvent {
-					assert.NotEmpty(t, process.ContainerId, "Container ID should not be empty for container events")
+					assert.NotEmpty(t, process.GetContainerId(), "Container ID should not be empty for container events")
 				}
 			}
 		})
