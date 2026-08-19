@@ -22,19 +22,17 @@ import (
 var (
 	testEnv *envtest.Environment
 	cfg     *rest.Config
-	testT   *testing.T
 	gvk     = schema.GroupVersionKind{Group: "example.com", Version: "v1", Kind: "TestApp"}
 )
 
 func TestReconcileExtensions(t *testing.T) {
-	testT = t
+	versionTestutils.SetExampleVersion(t)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Reconcile Extensions Suite")
 }
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true), zap.Level(zapcore.InfoLevel)))
-	versionTestutils.SetExampleVersion(testT)
 	testEnv = &envtest.Environment{
 		AttachControlPlaneOutput: false, // set to true to see kube-apiserver and etcd logs
 		CRDDirectoryPaths:        []string{"../../config/crd/bases"},
