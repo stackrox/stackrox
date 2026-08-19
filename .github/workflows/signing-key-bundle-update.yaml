@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   validate-and-upload:
     if: ${{ github.repository_owner == 'stackrox' }}
