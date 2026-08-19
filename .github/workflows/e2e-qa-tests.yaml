@@ -288,7 +288,6 @@ jobs:
 
       - name: Run Part 1 post-test
         if: always() && env.KUBECONFIG != ''
-        env: *test_env
         shell: python
         run: |
           import os, sys
