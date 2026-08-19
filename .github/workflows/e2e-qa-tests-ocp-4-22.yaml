@@ -37,7 +37,7 @@ jobs:
         worker-node-count=3
         ssd-storage-class=true
       infra-lifespan: 5h
-      # To address later:
+      # TODO(ROX-36332): setup workload identities
       #   SETUP_WORKLOAD_IDENTITIES=true
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=openshift
