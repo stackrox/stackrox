@@ -36,11 +36,12 @@ class AutocompleteTest extends BaseSpecification {
         "Data inputs are: "
         query                 | category                   | contains
 
-        "Subject:system:auth" | []                         | "system:authenticated"
+        "Subject:system:auth" | []                          | "system:authenticated"
         "Subject:system:auth" | [SearchCategory.SUBJECTS]  | "system:authenticated"
-        "Subject Kind:GROUP"  | []                         | GROUP_AUTOCOMPLETE
-        "Subject Kind:group"  | []                         | GROUP_AUTOCOMPLETE
-        "Subject Kind:gr"     | []                         | GROUP_AUTOCOMPLETE
+        "Subject Kind:GROUP"  | []                          | GROUP_AUTOCOMPLETE
+        "Subject Kind:group"  | []                          | GROUP_AUTOCOMPLETE
+        "Subject Kind:gr"     | []                          | GROUP_AUTOCOMPLETE
+        "Category:"           | [SearchCategory.POLICIES]  | "Anomalous Activity"
     }
 
     @Unroll
