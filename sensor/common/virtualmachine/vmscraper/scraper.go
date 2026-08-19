@@ -243,6 +243,9 @@ func (s *VMScraper) run() {
 	// First tick forces reconcile so vmState is populated without waiting
 	// reconcileEvery; only VMs already due (catch-up offset 0) start now.
 	s.tick(ctx, true)
+	// lastTickAt is the start of that tick; reset so the first ticker fire
+	// does not count pre-ticker scrape time as an overrun.
+	s.lastTickAt = s.now()
 
 	ticker := time.NewTicker(s.tickInterval)
 	defer ticker.Stop()
@@ -280,7 +283,9 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	due := s.dueKeys()
 	metrics.PullDueVMs.Set(float64(len(due)))
 	toStart := s.selectStartsForTick(due, budgetTick)
-	metrics.PullStartsPerTick.Observe(float64(len(toStart)))
+	if len(due) > 0 {
+		metrics.PullStartsPerTick.Observe(float64(len(toStart)))
+	}
 	log.Debugf("VMScraper: tick: %d due, starting %d (concurrency=%d, reconcile=%v)",
 		len(due), len(toStart), s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()

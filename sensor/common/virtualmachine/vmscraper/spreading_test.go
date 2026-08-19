@@ -278,6 +278,52 @@ func TestVMScraper_StartBudgetUsesElapsedWhenTickOverruns(t *testing.T) {
 	assert.Len(t, s.dueKeys(), remaining-wantOverrun, "the extra starts leave the due pile")
 }
 
+// TestVMScraper_FirstTickDurationDoesNotInflateNextBudget covers run()'s
+// post-first-tick lastTickAt reset: scrape time before the ticker exists
+// must not count as an overrun on the first ticker fire.
+func TestVMScraper_FirstTickDurationDoesNotInflateNextBudget(t *testing.T) {
+	const numVMs = 100
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, clock := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.interval = time.Hour
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			key := vm.Key()
+			s.vmState[key] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+				orderHash:     hashVMID(vm.ID, key),
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	catchUp := catchUpWindow(s.interval)
+	nominal := startBudget(numVMs, s.tickInterval, catchUp)
+	require.Equal(t, 1, nominal)
+
+	s.tick(t.Context(), false)
+	assert.Equal(t, int32(nominal), dialer.calls.Load())
+
+	clock.Advance(3 * s.tickInterval)
+	s.lastTickAt = s.now()
+	clock.Advance(s.tickInterval)
+
+	dialer.calls.Store(0)
+	s.tick(t.Context(), false)
+	assert.Equal(t, int32(nominal), dialer.calls.Load(),
+		"first-tick scrape time before the ticker starts must not inflate the next budget")
+}
+
 func TestVMScraper_UrgentPreferredOverCadenced(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns", "old-a", 1),

@@ -821,7 +821,7 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 	}, clock
 }
 
-// pollOnce forces a reconcile and scrapes every due slot.
+// pollOnce forces a reconcile and starts a budgeted subset of due VMs.
 func (s *VMScraper) pollOnce(ctx context.Context) {
 	s.tick(ctx, true)
 }

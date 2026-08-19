@@ -37,11 +37,11 @@ func budgetTickDuration(nominal, elapsed time.Duration) time.Duration {
 	return max(nominal, elapsed)
 }
 
-// startBudget is max(1, ceil(n × tick / window)). n is tracked fleet size so
-// leftover due VMs do not reset the window each tick.
+// startBudget is max(1, ceil(n × tick / window)) for positive n, tick, and
+// window. Zero otherwise so a missing window does not start a scrape.
 func startBudget(n int, tick, window time.Duration) int {
 	if n <= 0 || tick <= 0 || window <= 0 {
-		return 1
+		return 0
 	}
 	num := int64(n) * int64(tick)
 	den := int64(window)

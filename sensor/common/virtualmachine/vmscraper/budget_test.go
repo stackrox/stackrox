@@ -27,11 +27,14 @@ func TestStartBudget(t *testing.T) {
 		"n=100 window=5m -> ceil(100*10/300)=4": {
 			n: 100, tick: tick, window: 5 * time.Minute, want: 4,
 		},
-		"n=0 -> 1": {
-			n: 0, tick: tick, window: 20 * time.Minute, want: 1,
+		"n=0 -> 0": {
+			n: 0, tick: tick, window: 20 * time.Minute, want: 0,
 		},
-		"zero window -> 1": {
-			n: 10, tick: tick, window: 0, want: 1,
+		"zero window -> 0": {
+			n: 10, tick: tick, window: 0, want: 0,
+		},
+		"zero tick -> 0": {
+			n: 10, tick: 0, window: 20 * time.Minute, want: 0,
 		},
 	}
 	for name, tc := range cases {
