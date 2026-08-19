@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"slices"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	olsClient "github.com/stackrox/rox/central/lightspeed/client"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -21,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
@@ -29,17 +32,22 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
 	maxDeploymentsReturned = 1000
 )
 
+var log = logging.LoggerForModule()
+
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Deployment)): {
 			v1.DeploymentService_GetDeployment_FullMethodName,
 			v1.DeploymentService_GetDeploymentWithRisk_FullMethodName,
+			v1.DeploymentService_GetDeploymentRiskAISummary_FullMethodName,
 			v1.DeploymentService_CountDeployments_FullMethodName,
 			v1.DeploymentService_ListDeployments_FullMethodName,
 			v1.DeploymentService_GetLabels_FullMethodName,
@@ -60,6 +68,7 @@ type serviceImpl struct {
 	processBaselineResults processBaselineResultsStore.DataStore
 	risks                  riskDataStore.DataStore
 	manager                manager.Manager
+	lightspeedClient       olsClient.Client
 }
 
 func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
@@ -278,4 +287,167 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	slices.Sort(values)
 
 	return keyValuesMap, values
+}
+
+// GetDeploymentRiskAISummary returns an AI-generated risk summary for a deployment.
+func (s *serviceImpl) GetDeploymentRiskAISummary(ctx context.Context, request *v1.ResourceByID) (*v1.DeploymentRiskAISummaryResponse, error) {
+	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errors.Wrapf(errox.NotFound, "deployment with id '%s' does not exist", request.GetId())
+	}
+
+	risk, _, err := s.risks.GetRiskForDeployment(ctx, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	contextJSON, err := buildSanitizedRiskContext(deployment, risk)
+	if err != nil {
+		return nil, errors.Wrap(err, "building risk context for AI summary")
+	}
+
+	olsResp, err := s.lightspeedClient.Query(ctx, &olsClient.QueryRequest{
+		Query:   aiSummaryPrompt,
+		Context: contextJSON,
+	})
+	if err != nil {
+		log.Errorf("Lightspeed query failed for deployment %s: %v", request.GetId(), err)
+		return nil, status.Error(codes.Unavailable, "AI service unavailable")
+	}
+
+	return &v1.DeploymentRiskAISummaryResponse{
+		Summary: olsResp.Response,
+	}, nil
+}
+
+// buildSanitizedRiskContext produces a minimal JSON representation of the
+// deployment and risk data suitable for sending to an external LLM. It keeps
+// only fields relevant to risk analysis and strips sensitive data (env vars,
+// secret paths) and wasteful metadata (IDs, hashes, empty fields).
+func buildSanitizedRiskContext(deployment *storage.Deployment, risk *storage.Risk) (string, error) {
+	ctx := sanitizedContext{
+		Deployment: sanitizeDeployment(deployment),
+		Risk:       sanitizeRisk(risk),
+	}
+	data, err := json.Marshal(ctx)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+type sanitizedContext struct {
+	Deployment sanitizedDeployment `json:"deployment"`
+	Risk       sanitizedRisk       `json:"risk"`
+}
+
+type sanitizedDeployment struct {
+	Name                          string               `json:"name"`
+	Namespace                     string               `json:"namespace"`
+	ClusterName                   string               `json:"clusterName"`
+	Type                          string               `json:"type"`
+	Created                       string               `json:"created,omitempty"`
+	ServiceAccount                string               `json:"serviceAccount,omitempty"`
+	ServiceAccountPermissionLevel string               `json:"serviceAccountPermissionLevel,omitempty"`
+	AutomountServiceAccountToken  bool                 `json:"automountServiceAccountToken"`
+	HostNetwork                   bool                 `json:"hostNetwork"`
+	HostPid                       bool                 `json:"hostPid"`
+	HostIpc                       bool                 `json:"hostIpc"`
+	Containers                    []sanitizedContainer `json:"containers"`
+}
+
+type sanitizedContainer struct {
+	Name            string                   `json:"name"`
+	ImageFullName   string                   `json:"imageFullName,omitempty"`
+	SecurityContext *storage.SecurityContext `json:"securityContext,omitempty"`
+	Resources       *storage.Resources       `json:"resources,omitempty"`
+	UID             int64                    `json:"uid,omitempty"`
+	LivenessProbe   *storage.LivenessProbe   `json:"livenessProbe,omitempty"`
+	ReadinessProbe  *storage.ReadinessProbe  `json:"readinessProbe,omitempty"`
+}
+
+type sanitizedRisk struct {
+	Score   float32               `json:"score"`
+	Results []sanitizedRiskResult `json:"results,omitempty"`
+}
+
+type sanitizedRiskResult struct {
+	Name    string                `json:"name"`
+	Score   float32               `json:"score"`
+	Factors []sanitizedRiskFactor `json:"factors,omitempty"`
+}
+
+type sanitizedRiskFactor struct {
+	Message string `json:"message"`
+}
+
+func sanitizeDeployment(d *storage.Deployment) sanitizedDeployment {
+	sd := sanitizedDeployment{
+		Name:                         d.GetName(),
+		Namespace:                    d.GetNamespace(),
+		ClusterName:                  d.GetClusterName(),
+		Type:                         d.GetType(),
+		ServiceAccount:               d.GetServiceAccount(),
+		AutomountServiceAccountToken: d.GetAutomountServiceAccountToken(),
+		HostNetwork:                  d.GetHostNetwork(),
+		HostPid:                      d.GetHostPid(),
+		HostIpc:                      d.GetHostIpc(),
+	}
+
+	if d.GetServiceAccountPermissionLevel() != storage.PermissionLevel_UNSET {
+		sd.ServiceAccountPermissionLevel = d.GetServiceAccountPermissionLevel().String()
+	}
+
+	if d.GetCreated() != nil {
+		sd.Created = d.GetCreated().AsTime().Format("2006-01-02T15:04:05Z")
+	}
+
+	for _, c := range d.GetContainers() {
+		sc := sanitizedContainer{
+			Name:            c.GetName(),
+			SecurityContext: c.GetSecurityContext(),
+			UID:             c.GetConfig().GetUid(),
+		}
+
+		if img := c.GetImage(); img != nil && img.GetName() != nil {
+			sc.ImageFullName = img.GetName().GetFullName()
+		}
+
+		if res := c.GetResources(); res != nil {
+			sc.Resources = res
+		}
+
+		sc.LivenessProbe = c.GetLivenessProbe()
+		sc.ReadinessProbe = c.GetReadinessProbe()
+
+		sd.Containers = append(sd.Containers, sc)
+	}
+	return sd
+}
+
+func sanitizeRisk(r *storage.Risk) sanitizedRisk {
+	if r == nil {
+		return sanitizedRisk{}
+	}
+	sr := sanitizedRisk{
+		Score: r.GetScore(),
+	}
+	for _, result := range r.GetResults() {
+		srr := sanitizedRiskResult{
+			Name:  result.GetName(),
+			Score: result.GetScore(),
+		}
+		for _, factor := range result.GetFactors() {
+			if factor.GetMessage() != "" {
+				srr.Factors = append(srr.Factors, sanitizedRiskFactor{
+					Message: factor.GetMessage(),
+				})
+			}
+		}
+		sr.Results = append(sr.Results, srr)
+	}
+	return sr
 }
