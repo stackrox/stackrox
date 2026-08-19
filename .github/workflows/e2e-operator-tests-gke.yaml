@@ -24,7 +24,7 @@ jobs:
     with:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
-      ci-job-name: gke-operator-e2e-tests
+      ci-job-name: e2e-operator-tests-gke
       cluster-name-prefix: e2e-oper-tests-gke
       cluster-provisioning-method: direct-gke
       extra-env-vars: |
