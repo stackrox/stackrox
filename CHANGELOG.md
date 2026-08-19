@@ -12,6 +12,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ## [4.11.6]
 
+### Added Features
+
+- ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
+
 ### Technical Changes
 
 - ROX-37315: Image exclusions no longer turn off deploy-time checks. Previously, an image exclusion on a policy with Build and Deploy stages stopped that policy from raising deploy-time violations or blocking any deployment. Image exclusions now apply only at Build, so after upgrading, affected policies raise deploy-time violations again and block deployments if enforcement is on. To skip apps at deploy time, use deployment exclusions.
