@@ -483,7 +483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Wall-clock picture of scrapes: rate(rox_sensor_vsock_pull_requests_total{status=\"success\"}). Healthy: low, fairly flat (paced). Clump: a spike (many reports in a short window). There is no scrape-timestamp metric; this rate is that picture. Scale depends on pollInterval and fleet size, not a fixed 5m cadence.",
+      "description": "How many successful forwards landed in each graph step: increase(rox_sensor_vsock_pull_requests_total{status=\"success\"}[$__interval]). Y is a count, not a per-second rate, so a dump is a tall bar (near fleet size) and pacing is short bars spread across the poll window. There is no scrape-timestamp metric; this is that picture. Zoom in to shrink the step. Bucket width follows the graph interval, not a fixed 5m cadence.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -493,20 +493,20 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "forwards/s",
+            "axisLabel": "forwards",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "opacity",
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -531,7 +531,7 @@
               }
             ]
           },
-          "unit": "ops"
+          "unit": "short"
         },
         "overrides": [
           {
@@ -581,13 +581,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "rate(rox_sensor_vsock_pull_requests_total{status=\"success\"}[$__rate_interval])",
+          "expr": "increase(rox_sensor_vsock_pull_requests_total{status=\"success\"}[$__interval])",
           "legendFormat": "success",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Successful forward rate",
+      "title": "Successful forwards",
       "type": "timeseries"
     },
     {
