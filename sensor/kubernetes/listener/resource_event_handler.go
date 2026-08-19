@@ -10,6 +10,7 @@ import (
 	osRouteExtVersions "github.com/openshift/client-go/route/informers/externalversions"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/aiworkload"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	listenerUtils "github.com/stackrox/rox/sensor/kubernetes/listener/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
+	aiworkloadAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/aiworkload"
 	complianceOperatorAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
 	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
@@ -400,6 +402,46 @@ func (k *listenerImpl) handleAllEvents() {
 			return
 		}
 		log.Info("Successfully synced virtual machines")
+	}
+
+	// AI Workload Watcher and Informers
+	if features.AIWorkloads.Enabled() {
+		aiWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+		aiAvailabilityChecker := aiworkloadAvailabilityChecker.NewAvailabilityChecker()
+		if err := aiAvailabilityChecker.AppendToCRDWatcher(aiWatcher); err != nil {
+			log.Errorf("Unable to add resources to the AI Workload CRD Watcher: %v", err)
+		}
+
+		aiCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
+			allResourcesAvailable(),
+			k.pubSub,
+			"AI Workload resources have been updated. Connection will restart to force reconciliation with Central")
+
+		shouldTrackAIWorkloads, err := aiAvailabilityChecker.Available(k.client)
+		if err != nil {
+			log.Errorf("Failed to check the availability of AI Workload resources: %v", err)
+		}
+
+		if shouldTrackAIWorkloads {
+			log.Info("Initializing AI workload informers")
+			inferenceServiceInformer := crdSharedInformerFactory.ForResource(aiworkload.InferenceService.GroupVersionResource()).Informer()
+
+			aiWaitGroup := &concurrency.WaitGroup{}
+			handle(k.context, informerInferenceServices, inferenceServiceInformer, dispatchers.ForInferenceServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, aiWaitGroup, stopSignal, &eventLock, informerTracker)
+
+			aiCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
+				resourcesUnavailable(),
+				k.pubSub,
+				"AI Workload resources have been removed. Connection will restart to force reconciliation with Central")
+
+			if !startAndWait(stopSignal, aiWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+				return
+			}
+			log.Info("Successfully synced AI workload resources")
+		}
+		if err := aiWatcher.Watch(aiCrdHandlerFn); err != nil {
+			log.Errorf("Failed to start watching the AI Workload CRDs: %v", err)
+		}
 	}
 
 	// prePodWaitGroup
