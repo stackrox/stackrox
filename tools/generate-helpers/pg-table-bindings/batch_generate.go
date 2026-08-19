@@ -18,6 +18,7 @@ type schemaConfig struct {
 	Table          string
 	TypeName       string
 	SearchCategory string
+	SourceDir      string // Directory where the schema file is located
 }
 
 // batchGenerateRegistryFiles generates enum_registry_list.go and *_search.go files.
@@ -32,7 +33,7 @@ func batchGenerateRegistryFiles() error {
 
 	// Aggregate enum and search field data
 	allEnums := make(map[string]map[string]int32)
-	searchFieldsBySchema := make(map[string]string) // schema table -> search fields source code
+	searchFieldsBySchema := make(map[string]schemaSearchInfo) // schema table -> search info
 
 	for _, cfg := range schemas {
 		fmt.Printf("Processing %s...\n", cfg.Table)
@@ -72,7 +73,10 @@ func batchGenerateRegistryFiles() error {
 		originalFields := optionsMap.Original()
 		if len(originalFields) > 0 {
 			searchFieldsSource := SerializeSearchFieldsFile(cfg.Table, cfg.SearchCategory, originalFields)
-			searchFieldsBySchema[cfg.Table] = searchFieldsSource
+			searchFieldsBySchema[cfg.Table] = schemaSearchInfo{
+				Source:    searchFieldsSource,
+				SourceDir: cfg.SourceDir,
+			}
 		}
 	}
 
@@ -88,9 +92,9 @@ func batchGenerateRegistryFiles() error {
 	fmt.Printf("Generated %s\n", enumRegistryPath)
 
 	// Generate *_search.go files
-	for table, source := range searchFieldsBySchema {
-		searchFilePath := filepath.Join("pkg/postgres/schema", table+"_search.go")
-		if err := os.WriteFile(searchFilePath, []byte(source), 0644); err != nil {
+	for table, info := range searchFieldsBySchema {
+		searchFilePath := filepath.Join(info.SourceDir, table+"_search.go")
+		if err := os.WriteFile(searchFilePath, []byte(info.Source), 0644); err != nil {
 			return fmt.Errorf("failed to write %s: %w", searchFilePath, err)
 		}
 		fmt.Printf("Generated %s\n", searchFilePath)
@@ -99,14 +103,40 @@ func batchGenerateRegistryFiles() error {
 	return nil
 }
 
+// schemaSearchInfo holds search file information including the source directory
+type schemaSearchInfo struct {
+	Source    string
+	SourceDir string
+}
+
 // discoverSchemas parses existing schema files to find schemas with search categories.
 func discoverSchemas() ([]schemaConfig, error) {
-	schemaDir := "pkg/postgres/schema"
-	files, err := filepath.Glob(filepath.Join(schemaDir, "*.go"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to list schema files: %w", err)
+	// Search in both main schema directory and migrator test schemas
+	schemaDirs := []string{
+		"pkg/postgres/schema",
+		"migrator/migrations/postgreshelper/schema",
 	}
 
+	var schemas []schemaConfig
+
+	for _, schemaDir := range schemaDirs {
+		files, err := filepath.Glob(filepath.Join(schemaDir, "*.go"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to list schema files in %s: %w", schemaDir, err)
+		}
+
+		dirSchemas, err := discoverSchemasInFiles(files)
+		if err != nil {
+			return nil, err
+		}
+		schemas = append(schemas, dirSchemas...)
+	}
+
+	return schemas, nil
+}
+
+// discoverSchemasInFiles extracts schema metadata from a list of Go files.
+func discoverSchemasInFiles(files []string) ([]schemaConfig, error) {
 	var schemas []schemaConfig
 	for _, file := range files {
 		// Skip generated test files, search files, and special files
@@ -164,10 +194,14 @@ func discoverSchemas() ([]schemaConfig, error) {
 		}
 		typeName := strings.TrimPrefix(storageMatches[1], "*")
 
+		// Extract source directory from file path
+		sourceDir := filepath.Dir(file)
+
 		schemas = append(schemas, schemaConfig{
 			Table:          tableName,
 			TypeName:       typeName,
 			SearchCategory: searchCategory,
+			SourceDir:      sourceDir,
 		})
 	}
 
