@@ -25,16 +25,19 @@ const (
 type ReportSnapshot_ReportType int32
 
 const (
-	ReportSnapshot_VULNERABILITY ReportSnapshot_ReportType = 0
+	ReportSnapshot_VULNERABILITY      ReportSnapshot_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
+	ReportSnapshot_NODE_VULNERABILITY ReportSnapshot_ReportType = 1
 )
 
 // Enum value maps for ReportSnapshot_ReportType.
 var (
 	ReportSnapshot_ReportType_name = map[int32]string{
 		0: "VULNERABILITY",
+		1: "NODE_VULNERABILITY",
 	}
 	ReportSnapshot_ReportType_value = map[string]int32{
-		"VULNERABILITY": 0,
+		"VULNERABILITY":      0,
+		"NODE_VULNERABILITY": 1,
 	}
 )
 
@@ -228,6 +231,7 @@ type ReportSnapshot struct {
 	//
 	//	*ReportSnapshot_VulnReportFilters
 	//	*ReportSnapshot_ViewBasedVulnReportFilters
+	//	*ReportSnapshot_NodeVulnReportFilters
 	Filter       isReportSnapshot_Filter `protobuf_oneof:"filter"`
 	Collection   *CollectionSnapshot     `protobuf:"bytes,7,opt,name=collection,proto3" json:"collection,omitempty"`
 	Schedule     *Schedule               `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
@@ -333,6 +337,15 @@ func (x *ReportSnapshot) GetViewBasedVulnReportFilters() *ViewBasedVulnerability
 	return nil
 }
 
+func (x *ReportSnapshot) GetNodeVulnReportFilters() *NodeVulnerabilityReportFilters {
+	if x != nil {
+		if x, ok := x.Filter.(*ReportSnapshot_NodeVulnReportFilters); ok {
+			return x.NodeVulnReportFilters
+		}
+	}
+	return nil
+}
+
 func (x *ReportSnapshot) GetCollection() *CollectionSnapshot {
 	if x != nil {
 		return x.Collection
@@ -394,9 +407,15 @@ type ReportSnapshot_ViewBasedVulnReportFilters struct {
 	ViewBasedVulnReportFilters *ViewBasedVulnerabilityReportFilters `protobuf:"bytes,12,opt,name=view_based_vuln_report_filters,json=viewBasedVulnReportFilters,proto3,oneof"`
 }
 
+type ReportSnapshot_NodeVulnReportFilters struct {
+	NodeVulnReportFilters *NodeVulnerabilityReportFilters `protobuf:"bytes,15,opt,name=node_vuln_report_filters,json=nodeVulnReportFilters,proto3,oneof"`
+}
+
 func (*ReportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
 
 func (*ReportSnapshot_ViewBasedVulnReportFilters) isReportSnapshot_Filter() {}
+
+func (*ReportSnapshot_NodeVulnReportFilters) isReportSnapshot_Filter() {}
 
 type CollectionSnapshot struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -612,7 +631,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xc2\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xbe\a\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -620,7 +639,8 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x126\n" +
 	"\x04type\x18\x05 \x01(\x0e2\".storage.ReportSnapshot.ReportTypeR\x04type\x12U\n" +
 	"\x13vuln_report_filters\x18\x06 \x01(\v2#.storage.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12r\n" +
-	"\x1eview_based_vuln_report_filters\x18\f \x01(\v2,.storage.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12;\n" +
+	"\x1eview_based_vuln_report_filters\x18\f \x01(\v2,.storage.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12b\n" +
+	"\x18node_vuln_report_filters\x18\x0f \x01(\v2'.storage.NodeVulnerabilityReportFiltersH\x00R\x15nodeVulnReportFilters\x12;\n" +
 	"\n" +
 	"collection\x18\a \x01(\v2\x1b.storage.CollectionSnapshotR\n" +
 	"collection\x12-\n" +
@@ -630,10 +650,11 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
 	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12&\n" +
 	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\x12=\n" +
-	"\x0eresource_scope\x18\x0e \x01(\v2\x16.storage.ResourceScopeR\rresourceScope\"\x1f\n" +
+	"\x0eresource_scope\x18\x0e \x01(\v2\x16.storage.ResourceScopeR\rresourceScope\"7\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
-	"\rVULNERABILITY\x10\x00B\b\n" +
+	"\rVULNERABILITY\x10\x00\x12\x16\n" +
+	"\x12NODE_VULNERABILITY\x10\x01B\b\n" +
 	"\x06filter\"8\n" +
 	"\x12CollectionSnapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -690,33 +711,35 @@ var file_storage_report_snapshot_proto_goTypes = []any{
 	(*ReportStatus)(nil),                        // 7: storage.ReportStatus
 	(*VulnerabilityReportFilters)(nil),          // 8: storage.VulnerabilityReportFilters
 	(*ViewBasedVulnerabilityReportFilters)(nil), // 9: storage.ViewBasedVulnerabilityReportFilters
-	(*Schedule)(nil),                            // 10: storage.Schedule
-	(*SlimUser)(nil),                            // 11: storage.SlimUser
-	(*ResourceScope)(nil),                       // 12: storage.ResourceScope
-	(*EmailNotifierConfiguration)(nil),          // 13: storage.EmailNotifierConfiguration
-	(*timestamppb.Timestamp)(nil),               // 14: google.protobuf.Timestamp
+	(*NodeVulnerabilityReportFilters)(nil),      // 10: storage.NodeVulnerabilityReportFilters
+	(*Schedule)(nil),                            // 11: storage.Schedule
+	(*SlimUser)(nil),                            // 12: storage.SlimUser
+	(*ResourceScope)(nil),                       // 13: storage.ResourceScope
+	(*EmailNotifierConfiguration)(nil),          // 14: storage.EmailNotifierConfiguration
+	(*timestamppb.Timestamp)(nil),               // 15: google.protobuf.Timestamp
 }
 var file_storage_report_snapshot_proto_depIdxs = []int32{
 	0,  // 0: storage.ReportSnapshot.type:type_name -> storage.ReportSnapshot.ReportType
 	8,  // 1: storage.ReportSnapshot.vuln_report_filters:type_name -> storage.VulnerabilityReportFilters
 	9,  // 2: storage.ReportSnapshot.view_based_vuln_report_filters:type_name -> storage.ViewBasedVulnerabilityReportFilters
-	5,  // 3: storage.ReportSnapshot.collection:type_name -> storage.CollectionSnapshot
-	10, // 4: storage.ReportSnapshot.schedule:type_name -> storage.Schedule
-	7,  // 5: storage.ReportSnapshot.report_status:type_name -> storage.ReportStatus
-	6,  // 6: storage.ReportSnapshot.notifiers:type_name -> storage.NotifierSnapshot
-	11, // 7: storage.ReportSnapshot.requester:type_name -> storage.SlimUser
-	12, // 8: storage.ReportSnapshot.resource_scope:type_name -> storage.ResourceScope
-	13, // 9: storage.NotifierSnapshot.email_config:type_name -> storage.EmailNotifierConfiguration
-	1,  // 10: storage.ReportStatus.run_state:type_name -> storage.ReportStatus.RunState
-	14, // 11: storage.ReportStatus.queued_at:type_name -> google.protobuf.Timestamp
-	14, // 12: storage.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	3,  // 13: storage.ReportStatus.report_request_type:type_name -> storage.ReportStatus.RunMethod
-	2,  // 14: storage.ReportStatus.report_notification_method:type_name -> storage.ReportStatus.NotificationMethod
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	10, // 3: storage.ReportSnapshot.node_vuln_report_filters:type_name -> storage.NodeVulnerabilityReportFilters
+	5,  // 4: storage.ReportSnapshot.collection:type_name -> storage.CollectionSnapshot
+	11, // 5: storage.ReportSnapshot.schedule:type_name -> storage.Schedule
+	7,  // 6: storage.ReportSnapshot.report_status:type_name -> storage.ReportStatus
+	6,  // 7: storage.ReportSnapshot.notifiers:type_name -> storage.NotifierSnapshot
+	12, // 8: storage.ReportSnapshot.requester:type_name -> storage.SlimUser
+	13, // 9: storage.ReportSnapshot.resource_scope:type_name -> storage.ResourceScope
+	14, // 10: storage.NotifierSnapshot.email_config:type_name -> storage.EmailNotifierConfiguration
+	1,  // 11: storage.ReportStatus.run_state:type_name -> storage.ReportStatus.RunState
+	15, // 12: storage.ReportStatus.queued_at:type_name -> google.protobuf.Timestamp
+	15, // 13: storage.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	3,  // 14: storage.ReportStatus.report_request_type:type_name -> storage.ReportStatus.RunMethod
+	2,  // 15: storage.ReportStatus.report_notification_method:type_name -> storage.ReportStatus.NotificationMethod
+	16, // [16:16] is the sub-list for method output_type
+	16, // [16:16] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_storage_report_snapshot_proto_init() }
@@ -731,6 +754,7 @@ func file_storage_report_snapshot_proto_init() {
 	file_storage_report_snapshot_proto_msgTypes[0].OneofWrappers = []any{
 		(*ReportSnapshot_VulnReportFilters)(nil),
 		(*ReportSnapshot_ViewBasedVulnReportFilters)(nil),
+		(*ReportSnapshot_NodeVulnReportFilters)(nil),
 	}
 	file_storage_report_snapshot_proto_msgTypes[2].OneofWrappers = []any{
 		(*NotifierSnapshot_EmailConfig)(nil),

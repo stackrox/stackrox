@@ -14,9 +14,8 @@ import (
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
-	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
 	virtualmachine "github.com/stackrox/rox/sensor/common/virtualmachine"
@@ -75,20 +74,6 @@ func (mr *MockHandlerMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockHandler)(nil).Capabilities))
 }
 
-// ComplianceC mocks base method.
-func (m *MockHandler) ComplianceC() <-chan common.MessageToComplianceWithAddress {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ComplianceC")
-	ret0, _ := ret[0].(<-chan common.MessageToComplianceWithAddress)
-	return ret0
-}
-
-// ComplianceC indicates an expected call of ComplianceC.
-func (mr *MockHandlerMockRecorder) ComplianceC() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComplianceC", reflect.TypeOf((*MockHandler)(nil).ComplianceC))
-}
-
 // Name mocks base method.
 func (m *MockHandler) Name() string {
 	m.ctrl.T.Helper()
@@ -144,17 +129,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, vm, report)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, vm, report any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm, report)
 }
 
 // Start mocks base method.
@@ -181,20 +166,6 @@ func (m *MockHandler) Stop() {
 func (mr *MockHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop))
-}
-
-// Stopped mocks base method.
-func (m *MockHandler) Stopped() concurrency.ReadOnlyErrorSignal {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stopped")
-	ret0, _ := ret[0].(concurrency.ReadOnlyErrorSignal)
-	return ret0
-}
-
-// Stopped indicates an expected call of Stopped.
-func (mr *MockHandlerMockRecorder) Stopped() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stopped", reflect.TypeOf((*MockHandler)(nil).Stopped))
 }
 
 // MockVirtualMachineStore is a mock of VirtualMachineStore interface.

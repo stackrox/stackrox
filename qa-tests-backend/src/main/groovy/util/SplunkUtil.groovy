@@ -202,6 +202,9 @@ class SplunkUtil {
                             .addPort(514)
                             .setEnv(ENV_VARIABLES)
                             .addLabel("app", deploymentName)
+                            .addRequest("cpu", "500m")
+                            .addLimits("memory", "3Gi")
+                            .setReadinessProbeTcpPort(8089)
             orchestrator.createDeployment(deployment)
 
             collectorSvc = new Service("splunk-collector-" + uid, namespace)

@@ -19,27 +19,6 @@ var (
 	StatusTimeoutLabels         = prometheus.Labels{"status": "timeout"}
 )
 
-// IndexReportsReceived is a counter for the number of virtual machine index reports received.
-var IndexReportsReceived = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_reports_received_total",
-		Help:      "Total number of virtual machine index reports received by this Sensor",
-	},
-)
-
-// IndexReportsSuppressed counts push-mode index reports dropped because the
-// VM is actively scraped via pull mode.
-var IndexReportsSuppressed = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_reports_suppressed_total",
-		Help:      "Total number of push-mode virtual machine index reports suppressed because the VM is actively scraped via pull mode",
-	},
-)
-
 // IndexReportsSent is a counter for the number of virtual machine index reports sent.
 var IndexReportsSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -49,17 +28,6 @@ var IndexReportsSent = prometheus.NewCounterVec(
 		Help:      "Total number of virtual machine index reports sent by this Sensor",
 	},
 	[]string{"status"},
-)
-
-// VirtualMachineIndexReportHandlingDurationMilliseconds captures how long it takes to handle a virtual machine index report.
-var VirtualMachineIndexReportHandlingDurationMilliseconds = prometheus.NewHistogram(
-	prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_handling_duration_milliseconds",
-		Help:      "Distribution of time spent (in ms) handling virtual machine index reports in Sensor, including the enqueue step",
-		Buckets:   prometheus.ExponentialBuckets(10, 2, 12), // 10ms to ~40s
-	},
 )
 
 // IndexReportProcessingDuration label values.
@@ -115,7 +83,7 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
-// VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
+// VMDiscoveredData counts VM discovered-data observations grouped by detected OS and status values.
 var VMDiscoveredData = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -184,13 +152,15 @@ var PullTotalDurationSeconds = prometheus.NewHistogram(
 	},
 )
 
-// PullCycleDurationSeconds measures the full poll cycle across all VMs.
-var PullCycleDurationSeconds = prometheus.NewHistogram(
+// PullTickDurationSeconds measures how long each scraper tick spends
+// scraping the VMs that were due, not a poll of the whole VM set: VMs are
+// scraped on independent per-VM schedules, not in lockstep.
+var PullTickDurationSeconds = prometheus.NewHistogram(
 	prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycle_duration_seconds",
-		Help:      "Duration of a full poll cycle across all VMs",
+		Name:      "vsock_pull_tick_duration_seconds",
+		Help:      "Duration of a scraper tick spent scraping the VMs due at that tick",
 		Buckets:   prometheus.ExponentialBuckets(1, 2, 10), // 1s to ~512s
 	},
 )
@@ -232,47 +202,43 @@ var PullRequestsTotal = prometheus.NewCounterVec(
 	[]string{"status"},
 )
 
-// PullCyclesTotal counts poll cycles executed.
-var PullCyclesTotal = prometheus.NewCounter(
+// PullTicksTotal counts scraper ticks executed.
+var PullTicksTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_cycles_total",
-		Help:      "Total number of pull poll cycles executed",
+		Name:      "vsock_pull_ticks_total",
+		Help:      "Total number of scraper ticks executed",
 	},
 )
 
-// PullVMsInCycle tracks the number of running VMs in the last poll set.
-var PullVMsInCycle = prometheus.NewGauge(
+// PullTrackedVMs tracks the number of VMs currently tracked for pull-mode
+// scraping, regardless of how many were due at the last tick.
+var PullTrackedVMs = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "vsock_pull_vms_in_cycle",
-		Help:      "Number of running VMs in the last poll set",
+		Name:      "vsock_pull_tracked_vms",
+		Help:      "Number of VMs currently tracked for pull-mode scraping",
 	},
 )
 
 func init() {
 	prometheus.MustRegister(
-		// Push-mode metrics.
-		IndexReportsReceived,
-		IndexReportsSuppressed,
 		IndexReportsSent,
-		VirtualMachineIndexReportHandlingDurationMilliseconds,
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
 		IndexReportAcksReceived,
-		// Pull-mode metrics.
 		PullDialDurationSeconds,
 		PullReadDurationSeconds,
 		PullTotalDurationSeconds,
-		PullCycleDurationSeconds,
+		PullTickDurationSeconds,
 		PullReportBytes,
 		PullReportPackages,
 		PullRequestsTotal,
-		PullCyclesTotal,
-		PullVMsInCycle,
+		PullTicksTotal,
+		PullTrackedVMs,
 	)
 }

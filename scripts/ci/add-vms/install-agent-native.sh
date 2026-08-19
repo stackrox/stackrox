@@ -28,6 +28,8 @@ NATIVE_MOUNT_CANDIDATES=(
     /etc/distro.repos.d
     /var/cache/dnf
     /var/lib/dnf
+    /var/lib/rpm
+    /usr/lib/sysimage/libdnf5
 )
 
 die() { echo "ERROR: $*" >&2; exit 1; }
@@ -77,7 +79,6 @@ Type=simple
 User=root
 Restart=on-failure
 RestartSec=5s
-BindPaths=/tmp/roxagent-rpm:/tmp/roxroot/var/lib/rpm
 EOF
 
     for mount_path in "${NATIVE_MOUNT_CANDIDATES[@]}"; do

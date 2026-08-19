@@ -66,7 +66,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:aed48c45219de72549bada3f6340ceb6f5193c4d10e380973f537c0294675493
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:2d425bf6d8d292d31e641fa71a23a866d329f4339ba57bf84dd55dc55c4b1b67
         - name: kind
           value: task
         resolver: bundles
@@ -117,7 +117,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.5@sha256:799e6093832d194293168240a6e2209479cfaad33de51d57bfcbcfead97ed038
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.2.6@sha256:5e56115ccb92a1ac49432eef7255929839d02dd43f0e2d6f9557b561e7251a25
         - name: kind
           value: task
         resolver: bundles
@@ -146,7 +146,7 @@ spec:
         - name: name
           value: buildah-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.11.0@sha256:4bcb4f671e105ccd86c007501676bac8691018916b5476b3b4c4a8c389b23dda
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.12.0@sha256:de5580c99ca52588f9b8cec452023bc7e3de470a594c99243320752d250bb2a2
         - name: kind
           value: task
         resolver: bundles

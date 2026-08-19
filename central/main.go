@@ -380,7 +380,11 @@ func startServices() {
 
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
-	pruning.Singleton().Start()
+	if !env.CentralWorkerEnabled.BooleanSetting() {
+		pruning.Singleton().Start()
+	} else {
+		log.Info("Pruning is managed by central-worker, skipping start in Central")
+	}
 	if baseImageWatcher.Enabled() {
 		baseImageWatcher.Singleton().Start()
 	}
@@ -982,10 +986,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	// Append report custom routes
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
-		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)),
+		Authorizer:    user.With(permissions.View(resources.Image)),
 		ServerHandler: v2Service.NewDownloadHandler(),
 		Compression:   true,
 	})
+
+	if features.NodeVulnerabilityReports.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/node/jobs/download",
+			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
 
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -1037,7 +1050,11 @@ func waitForTerminationSignal() {
 	stoppables := []stoppableWithName{
 		{reprocessor.Singleton(), "reprocessor loop"},
 		{suppress.Singleton(), "cve unsuppress loop"},
-		{pruning.Singleton(), "garbage collector"},
+	}
+	if !env.CentralWorkerEnabled.BooleanSetting() {
+		stoppables = append(stoppables, stoppableWithName{pruning.Singleton(), "garbage collector"})
+	}
+	stoppables = append(stoppables, []stoppableWithName{
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
 		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
@@ -1047,14 +1064,16 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
-	}
+	}...)
 
 	if baseImageWatcher.Enabled() {
 		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
-	stoppables = append(stoppables,
-		stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	if !env.CentralWorkerEnabled.BooleanSetting() {
+		stoppables = append(stoppables,
+			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
+	}
 
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,

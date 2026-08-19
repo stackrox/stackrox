@@ -11,6 +11,7 @@ import type {
     CompoundSearchFilterEntity,
     SelectSearchFilterOptions,
 } from 'Components/CompoundSearchFilter/types';
+import type { SensorVersionCompatibility } from 'types/cluster.proto';
 
 export const statusSelectOptions: SelectSearchFilterOptions['options'] = [
     { label: 'Healthy', value: 'HEALTHY' },
@@ -57,6 +58,28 @@ const sensorStatusAttribute: CompoundSearchFilterAttribute = {
     searchTerm: 'Sensor Status',
     inputType: 'select',
     inputProps: { options: statusSelectOptions },
+};
+
+const sensorCompatibilityStatusOptions: SelectSearchFilterOptions<SensorVersionCompatibility>['options'] =
+    [
+        {
+            label: 'Incompatible (Behind)',
+            value: 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND',
+        },
+        { label: 'Compatible (Behind)', value: 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND' },
+        { label: 'Matched', value: 'SENSOR_VERSION_COMPATIBILITY_MATCHED' },
+        { label: 'Compatible (Ahead)', value: 'SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD' },
+        { label: 'Incompatible (Ahead)', value: 'SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD' },
+        { label: 'Unknown', value: 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' },
+    ];
+
+const sensorCompatibilityStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Compatibility status',
+    filterChipLabel: 'Sensor compatibility status',
+    searchTerm: 'Sensor Version Compatibility',
+    inputType: 'select',
+    inputProps: { options: sensorCompatibilityStatusOptions },
+    featureFlagDependency: ['ROX_SENSOR_COMPATIBILITY_STATUS'],
 };
 
 const lastContactAttributes: CompoundSearchFilterAttribute = {
@@ -107,7 +130,7 @@ const scannerSearchFilterConfig: CompoundSearchFilterEntity = {
 const sensorSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Sensor',
     searchCategory: 'CLUSTERS',
-    attributes: [sensorStatusAttribute],
+    attributes: [sensorStatusAttribute, sensorCompatibilityStatusAttribute],
 };
 
 export const searchFilterConfig = [
