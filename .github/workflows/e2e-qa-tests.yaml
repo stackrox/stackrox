@@ -307,7 +307,6 @@ jobs:
 
       - name: Run Part 2 post-test
         if: always() && steps.run-part-2.outcome != 'skipped' && env.KUBECONFIG != ''
-        env: *test_env
         shell: python
         run: |
           import os, sys
