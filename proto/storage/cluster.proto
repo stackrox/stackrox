@@ -250,7 +250,7 @@ message ClusterStatus {
   ClusterUpgradeStatus upgrade_status = 5;
   ClusterCertExpiryStatus cert_expiry_status = 6;
   // Computed at runtime, not persisted.
-  SensorVersionCompatibility sensor_version_compatibility = 7;
+  SensorVersionCompatibility sensor_version_compatibility = 7; // @gotags: search:"Sensor Version Compatibility" sql:"-"
 }
 
 message ClusterUpgradeStatus {

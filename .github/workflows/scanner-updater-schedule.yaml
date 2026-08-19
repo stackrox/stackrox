@@ -83,7 +83,7 @@ jobs:
         set -euo pipefail
         bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
         prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
-        matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual/data.json.zst\"}]}"
+        matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual.json.zst\"}]}"
         printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
 
     - name: Validate matrix builder (PR)
