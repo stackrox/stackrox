@@ -26,8 +26,8 @@ type Scope struct {
 	Cluster        string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty" crYaml:",omitempty"`                                     // @gotags: crYaml:",omitempty"`
 	Namespace      string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" crYaml:",omitempty"`                                 // @gotags: crYaml:",omitempty"`
 	Label          *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"`                                         // Deployment label. @gotags: crYaml:",omitempty"`
-	ClusterLabel   *Scope_Label           `protobuf:"bytes,4,opt,name=cluster_label,json=clusterLabel,proto3" json:"cluster_label,omitempty" crYaml:",omitempty"`       // @gotags: crYaml:",omitempty"`
-	NamespaceLabel *Scope_Label           `protobuf:"bytes,5,opt,name=namespace_label,json=namespaceLabel,proto3" json:"namespace_label,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+	ClusterLabel   *Scope_Label           `protobuf:"bytes,4,opt,name=cluster_label,json=clusterLabel,proto3" json:"cluster_label,omitempty" crYaml:"clusterLabel,omitempty"`       // @gotags: crYaml:"clusterLabel,omitempty"`
+	NamespaceLabel *Scope_Label           `protobuf:"bytes,5,opt,name=namespace_label,json=namespaceLabel,proto3" json:"namespace_label,omitempty" crYaml:"namespaceLabel,omitempty"` // @gotags: crYaml:"namespaceLabel,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
