@@ -136,12 +136,16 @@ jobs:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
     runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG_DIR: "."
+      IMAGE_PREFIX: ""
+      OPERATOR_IMAGE_PREFIX: "stackrox-"
+      DEV_TAG_SUFFIX: ""
+      # MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
+      # MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     outputs:
       tag: ${{ steps.image-references.outputs.tag }}
       tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
-      ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
-      # env:
-      #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     concurrency:
       group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
@@ -155,23 +159,26 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Determine image references
       id: image-references
-      run: |
-        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+      run: &image-references |
+        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
         echo "IMAGE_TAG=$IMAGE_TAG" | tee -a "$GITHUB_ENV"
         echo "tag=$IMAGE_TAG" | tee -a "$GITHUB_OUTPUT"
 
         OPERATOR_IMAGE_TAG="$(BUILD_TAG="${IMAGE_TAG}" make -C operator --quiet --no-print-directory tag)"
         echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
-        IMAGE_PREFIX=""
-        echo "IMAGE_PREFIX=${IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-
-        OPERATOR_IMAGE_PREFIX="stackrox-"
-        echo "OPERATOR_IMAGE_PREFIX=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-
+        # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
+        source_branch="${GITHUB_HEAD_REF:-}"
+        target_branch="${GITHUB_BASE_REF:-${GITHUB_REF}}"
         TAG_SUFFIX=""
+        if [[ "${source_branch}" == *konflux-release-like* ]]; then
+          echo "Source branch contains 'konflux-release-like', suppressing suffix."
+        elif ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${target_branch}"; then
+          TAG_SUFFIX="${DEV_TAG_SUFFIX}"
+        fi
         echo "TAG_SUFFIX=${TAG_SUFFIX}" | tee -a "$GITHUB_ENV"
         echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
+
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
@@ -196,13 +203,14 @@ jobs:
     needs: [ should-dispatch ]
     if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
     runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG_DIR: "operator"
+      IMAGE_PREFIX: "release-"
+      OPERATOR_IMAGE_PREFIX: "release-"
+      DEV_TAG_SUFFIX: "-fast"
     outputs:
       tag: ${{ steps.image-references.outputs.tag }}
       tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
-
-      ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
-      # env:
-      #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     concurrency:
       group: wait-for-konflux-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
@@ -216,33 +224,7 @@ jobs:
     - uses: ./.github/actions/handle-tagged-build
     - name: Determine image references
       id: image-references
-      run: |
-        # Critical difference to upstream images:
-        # For Konflux-built images we need to use the semver-compatible "operator tag" for all images.
-        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C operator --quiet --no-print-directory tag)"}"
-        echo "IMAGE_TAG=${IMAGE_TAG}" | tee -a "$GITHUB_ENV"
-        echo "tag=${IMAGE_TAG}" | tee -a "$GITHUB_OUTPUT"
-
-        OPERATOR_IMAGE_TAG="${IMAGE_TAG}"
-        echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
-
-        IMAGE_PREFIX="release-"
-        echo "IMAGE_PREFIX=${IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-
-        OPERATOR_IMAGE_PREFIX="release-"
-        echo "OPERATOR_IMAGE_PREFIX=${OPERATOR_IMAGE_PREFIX}" | tee -a "$GITHUB_ENV"
-
-        # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
-        source_branch="${GITHUB_HEAD_REF:-}"
-        target_branch="${GITHUB_BASE_REF:-${GITHUB_REF}}"
-        TAG_SUFFIX=""
-        if [[ "${source_branch}" == *konflux-release-like* ]]; then
-          echo "Source branch contains 'konflux-release-like', suppressing suffix."
-        elif ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${target_branch}"; then
-          TAG_SUFFIX="-fast"
-        fi
-        echo "TAG_SUFFIX=${TAG_SUFFIX}" | tee -a "$GITHUB_ENV"
-        echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
+      run: *image-references
 
     - name: Wait for Konflux images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
