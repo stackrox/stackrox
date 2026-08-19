@@ -128,6 +128,7 @@ func (r *reportListener) periodicResync(ctx context.Context) {
 			return
 		case <-ticker.C:
 			r.resyncConfigs()
+			r.resyncPendingRequests()
 		}
 	}
 }
@@ -148,4 +149,37 @@ func (r *reportListener) resyncConfigs() {
 			}
 		}
 	}
+}
+
+func (r *reportListener) resyncPendingRequests() {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String()).
+		WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ReportQueuedTime))).
+		ProtoQuery()
+	snapshots, err := r.snapshotStore.SearchReportSnapshots(listenerCtx, query)
+	if err != nil {
+		log.Errorf("Error resyncing pending report requests: %v", err)
+		return
+	}
+
+	for _, snap := range snapshots {
+		var collection *storage.ResourceCollection
+		if collID := snap.GetCollection().GetId(); collID != "" {
+			var exists bool
+			collection, exists, err = r.collectionDatastore.Get(listenerCtx, collID)
+			if err != nil || !exists {
+				log.Errorf("Error loading collection for pending snapshot %s: %v", snap.GetReportId(), err)
+				continue
+			}
+		}
+
+		req := &reportGen.ReportRequest{
+			ReportSnapshot: snap,
+			Collection:     collection,
+		}
+		if _, err := r.scheduler.SubmitReportRequest(listenerCtx, req, true); err != nil {
+			log.Errorf("Error resyncing pending report %s: %v", snap.GetReportId(), err)
+		}
+	}
+
 }
