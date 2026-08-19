@@ -1894,7 +1894,7 @@ _EO_DETAILS_
     *gke-upgrade-tests)
         record_upgrade_test_progess
         ;;
-    *operator-e2e-tests)
+    *operator-e2e-tests|*-version-compatibility-tests|*-nongroovy-compatibility-tests)
         check_deployment=false
         ;;
     *)
