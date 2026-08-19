@@ -389,6 +389,9 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
+							SigningKeyBundle: &platform.SigningKeyBundleSpec{
+								ConfigMapName: "redhat-signing-key-bundle",
+							},
 							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 								Enabled: pointer.Bool(true),
 							},
@@ -651,6 +654,9 @@ func TestTranslate(t *testing.T) {
 								"secret-2",
 							},
 						},
+					},
+					"signingKeyBundle": map[string]interface{}{
+						"configMapName": "redhat-signing-key-bundle",
 					},
 					"notifierSecretsEncryption": map[string]interface{}{
 						"enabled": true,
