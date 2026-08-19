@@ -175,6 +175,12 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
 	maxFanOut := make([]uint8, len(fanOut))
 	for i, v := range fanOut {
+		if v < 1 {
+			// Guard the boundary: uint8(negative) wraps to a large value (e.g. -1 -> 255).
+			// Mirror the env layer's MinimumElementValue(1) so invalid values cannot become max fan out.
+			utils.Should(fmt.Errorf("fanOut[%d]=%d is below minimum, clamping to 1", i, v))
+			v = 1
+		}
 		if v > 255 {
 			utils.Should(fmt.Errorf("fanOut[%d]=%d exceeds uint8 max, clamping to 255", i, v))
 			v = 255

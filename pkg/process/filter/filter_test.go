@@ -21,6 +21,14 @@ func TestBasicFilterFunctions(t *testing.T) {
 	assert.True(t, filter.Add(pi))
 }
 
+func TestNewFilterNegativeFanOut(t *testing.T) {
+	// A negative fanOut must be caught at the NewFilter boundary rather than
+	// silently wrapping through uint8 to 255. utils.Should panics on non-release builds.
+	assert.Panics(t, func() {
+		NewFilter(2, 5, []int{-1})
+	})
+}
+
 func TestBasicFilter(t *testing.T) {
 	cases := []struct {
 		name     string
