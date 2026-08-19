@@ -233,6 +233,7 @@ jobs:
         run: |
           case "$KUBERNETES_PROVIDER" in
             gke) cluster_type=gke ;;
+            ocp) cluster_type=openshift4 ;;
             *)   echo "::error::Unknown KUBERNETES_PROVIDER: '$KUBERNETES_PROVIDER'"; exit 1 ;;
           esac
           operator/tests/run.sh "$cluster_type"
