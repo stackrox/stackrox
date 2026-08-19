@@ -14,30 +14,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
 
     - name: Validate key bundle
       run: .github/workflows/scripts/validate-signing-key-bundle.sh pkg/signatures/bundle.json
 
-    # TODO(ROX-35312): Enable upload once the workflow is validated end-to-end.
-    # - name: Authenticate with Google Cloud
-    #   uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
-    #   with:
-    #     credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
-    #
-    # - name: Set up Cloud SDK
-    #   uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-    #
-    # - name: Upload key bundle to GCS
-    #   run: |
-    #     gsutil -h "Content-Type: application/json" \
-    #       cp pkg/signatures/bundle.json \
-    #       gs://definitions.stackrox.io/signing-keys/bundle.json
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
-    - name: Upload skipped (dry run)
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Upload key bundle to GCS
       run: |
-        echo "Dry run — upload is disabled."
-        echo "Would upload pkg/signatures/bundle.json to gs://definitions.stackrox.io/signing-keys/bundle.json"
+        gsutil -h "Content-Type: application/json" \
+          cp pkg/signatures/bundle.json \
+          gs://definitions.stackrox.io/signing-keys/bundle.json
 
   send-notification:
     needs:
@@ -45,11 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     if: failure()
     steps:
-    # TODO(ROX-35312): Switch to a dedicated sensor-ecosystem webhook and
-    # mention <!subteam^SENSOR_ECOSYSTEM_GROUP_ID|acs-sensor-ecosystem-primary>
-    # once the Slack webhook secret is set up.
     - name: Send Slack notification on failure
       run: |
         curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"<${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed: Red Hat signing key bundle update\"}" \
-          ${{ secrets.SLACK_CI_INTEGRATION_TESTING_WEBHOOK }}
+          --data "{\"text\":\"<!subteam^S04S96AAVND|acs-scanner-primary> <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed: Red Hat signing key bundle update\"}" \
+          ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}
