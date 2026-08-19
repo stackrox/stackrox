@@ -370,13 +370,13 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/node-cves': {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
+    'vulnerabilities/node-reports': {
+        featureFlagRequirements: allEnabled(['ROX_NODE_VULNERABILITY_REPORTS']),
+        resourceAccessRequirements: everyResource(['Node']),
+    },
     'vulnerabilities/platform-cves': {
         featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
         resourceAccessRequirements: everyResource(['Cluster']),
-    },
-    'vulnerabilities/node-reports': {
-        featureFlagRequirements: allEnabled(['ROX_NODE_VULNERABILITY_REPORTS']),
-        resourceAccessRequirements: everyResource(['Node', 'WorkflowAdministration']),
     },
     'vulnerabilities/reports': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
