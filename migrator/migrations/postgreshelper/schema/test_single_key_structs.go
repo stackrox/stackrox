@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,7 +27,10 @@ var (
 
 	// TestSingleKeyStructsSchema is the go schema for table `test_single_key_structs`.
 	TestSingleKeyStructsSchema = func() *walker.Schema {
-		var schema *walker.Schema
+		schema := GetSchemaForTable("test_single_key_structs")
+		if schema != nil {
+			return schema
+		}
 		schema = &walker.Schema{
 			Table:    "test_single_key_structs",
 			Type:     "*storage.TestSingleKeyStruct",
@@ -43,30 +46,16 @@ var (
 			{Schema: schema, Name: "Float", ProtoBufName: "float", ColumnName: "Float", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetFloat()", false), Search: walker.SearchField{FieldName: "Test Float", Enabled: true}},
 			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Test Labels", Enabled: true}},
 			{Schema: schema, Name: "Timestamp", ProtoBufName: "timestamp", ColumnName: "Timestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamp()", false), Search: walker.SearchField{FieldName: "Test Timestamp", Enabled: true}},
-			{Schema: schema, Name: "Enum", ProtoBufName: "enum", ColumnName: "Enum", Type: "storage.TestSingleKeyStruct_Enum", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TestSingleKeyStruct_Enum", ObjectGetter: walker.MakeObjectGetter("GetEnum()", false), Search: walker.SearchField{FieldName: "Test Enum", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test string affected by enum2", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "invalid test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "Enum", ProtoBufName: "enum", ColumnName: "Enum", Type: "storage.TestSingleKeyStruct_Enum", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TestSingleKeyStruct_Enum", ObjectGetter: walker.MakeObjectGetter("GetEnum()", false), Search: walker.SearchField{FieldName: "Test Enum", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "invalid test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "test string affected by enum2", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
 			{Schema: schema, Name: "Enums", ProtoBufName: "enums", ColumnName: "Enums", Type: "[]storage.TestSingleKeyStruct_Enum", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetEnums()", false), Search: walker.SearchField{FieldName: "Test Enum Slice", Enabled: true}},
 			{Schema: schema, Name: "Timestamptz", ProtoBufName: "timestamptz", ColumnName: "Timestamptz", Type: "*timestamppb.Timestamp", DataType: postgres.DateTimeTZ, SQLType: "timestamptz", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamptz()", false), Options: walker.PostgresOptions{ColumnType: "timestamptz"}, Search: walker.SearchField{FieldName: "Test TimestampTZ", Enabled: true}},
 			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
 		}
 
-		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, map[search.FieldLabel]*search.Field{
-			"Test Bool":         {FieldPath: "testsinglekeystruct.bool", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Enum":         {FieldPath: "testsinglekeystruct.enum", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Enum Slice":   {FieldPath: "testsinglekeystruct.enums", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Float":        {FieldPath: "testsinglekeystruct.float", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Int64":        {FieldPath: "testsinglekeystruct.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Key":          {FieldPath: "testsinglekeystruct.key", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Labels":       {FieldPath: "testsinglekeystruct.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Name":         {FieldPath: "testsinglekeystruct.name", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test String Slice": {FieldPath: "testsinglekeystruct.string_slice", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Timestamp":    {FieldPath: "testsinglekeystruct.timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test TimestampTZ":  {FieldPath: "testsinglekeystruct.timestamptz.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Uint64":       {FieldPath: "testsinglekeystruct.uint64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-		}))
-		enumregistry.AddValues("testsinglekeystruct.enum", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
-		enumregistry.AddValues("testsinglekeystruct.enums", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
-
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, testsinglekeystructsSearchFields))
 		schema.ScopingResource = resources.Namespace
+		RegisterTable(schema, CreateTableTestSingleKeyStructsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
 		return schema
 	}()
 )

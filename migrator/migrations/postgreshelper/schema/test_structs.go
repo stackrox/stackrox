@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -29,7 +29,10 @@ var (
 
 	// TestStructsSchema is the go schema for table `test_structs`.
 	TestStructsSchema = func() *walker.Schema {
-		var schema *walker.Schema
+		schema := GetSchemaForTable("test_structs")
+		if schema != nil {
+			return schema
+		}
 		schema = &walker.Schema{
 			Table:    "test_structs",
 			Type:     "*storage.TestStruct",
@@ -73,33 +76,10 @@ var (
 			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
 		}
 
-		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, map[search.FieldLabel]*search.Field{
-			"Test Bool":                {FieldPath: "teststruct.bool", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Enum":                {FieldPath: "teststruct.enum", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Enum Slice":          {FieldPath: "teststruct.enums", Type: v1.SearchDataType_SEARCH_ENUM, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Float":               {FieldPath: "teststruct.float", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Int32 Slice":         {FieldPath: "teststruct.int32_slice", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Int64":               {FieldPath: "teststruct.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Key":                 {FieldPath: "teststruct.key1", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Key 2":               {FieldPath: "teststruct.key2", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Labels":              {FieldPath: "teststruct.labels", Type: v1.SearchDataType_SEARCH_MAP, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested Bool":         {FieldPath: "teststruct.nested.is_nested", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested Bool 2":       {FieldPath: "teststruct.nested.nested2.is_nested", Type: v1.SearchDataType_SEARCH_BOOL, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested Int64":        {FieldPath: "teststruct.nested.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested Int64 2":      {FieldPath: "teststruct.nested.nested2.int64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested String":       {FieldPath: "teststruct.nested.nested", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Nested String 2":     {FieldPath: "teststruct.nested.nested2.nested2", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Oneof Nested String": {FieldPath: "teststruct.Oneof.Oneofnested.nested", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test String":              {FieldPath: "teststruct.string", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test String Slice":        {FieldPath: "teststruct.string_slice", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Timestamp":           {FieldPath: "teststruct.timestamp.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test TimestampTZ":         {FieldPath: "teststruct.timestamptz.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Category: v1.SearchCategory_SEARCH_UNSET},
-			"Test Uint64":              {FieldPath: "teststruct.uint64", Type: v1.SearchDataType_SEARCH_NUMERIC, Category: v1.SearchCategory_SEARCH_UNSET},
-		}))
-		enumregistry.AddValues("teststruct.enum", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
-		enumregistry.AddValues("teststruct.enums", map[string]int32{"ENUM0": 0, "ENUM1": 1, "ENUM2": 2})
-
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, teststructsSearchFields))
 		schema.ScopingResource = resources.Namespace
+		RegisterTable(schema, CreateTableTestStructsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
 		return schema
 	}()
 )
