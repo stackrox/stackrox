@@ -70,7 +70,7 @@ message ComplianceOperatorProfileV2 {
   OperatorKind operator_kind = 16; // @gotags: search:"Compliance Profile Operator Kind,hidden"
 }
 
-// Next tag: 19
+// Next tag: 24
 message ComplianceOperatorRuleV2 {
   string id = 1; // @gotags: sql:"pk"
   string rule_id = 2;
@@ -100,6 +100,31 @@ message ComplianceOperatorRuleV2 {
     CUSTOM_RULE = 2;
   }
   OperatorKind operator_kind = 18;
+
+  // CEL rule fields. Populated for rules with scanner_type "CEL".
+  string scanner_type = 19;
+  string expression = 20;
+  repeated ComplianceOperatorCelInput inputs = 21;
+  string failure_reason = 22;
+
+  // CustomRuleDetails contains validation lifecycle fields specific to
+  // Compliance Operator CustomRule resources. Only set when operator_kind
+  // is CUSTOM_RULE.
+  message CustomRuleDetails {
+    string phase = 1;
+    string error_message = 2;
+  }
+  CustomRuleDetails custom_rule_details = 23;
+}
+
+// ComplianceOperatorCelInput represents a Kubernetes resource input for a CEL rule expression.
+message ComplianceOperatorCelInput {
+  string name = 1;
+  string api_group = 2;
+  string api_version = 3;
+  string resource = 4;
+  string resource_namespace = 5;
+  string resource_name = 6;
 }
 
 // Next Tag: 4
