@@ -57,5 +57,3 @@ class PreSystemTests:
             check=True,
             timeout=self.START_PREFETCH_TIMEOUT,
         )
-
-
