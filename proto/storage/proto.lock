@@ -15605,6 +15605,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -15721,6 +15725,12 @@
                 "id": 5,
                 "name": "vuln_report_filters",
                 "type": "VulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
@@ -15961,6 +15971,28 @@
             ]
           },
           {
+            "name": "NodeVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 1,
+                "name": "all_vuln",
+                "type": "bool",
+                "oneof_parent": "cves_since"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "query",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "ViewBasedVulnerabilityReportFilters",
             "fields": [
               {
@@ -16087,6 +16119,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -16182,6 +16218,12 @@
                 "id": 12,
                 "name": "view_based_vuln_report_filters",
                 "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {

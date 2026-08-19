@@ -225,16 +225,19 @@ func (NotificationMethod) EnumDescriptor() ([]byte, []int) {
 type ReportConfiguration_ReportType int32
 
 const (
-	ReportConfiguration_VULNERABILITY ReportConfiguration_ReportType = 0
+	ReportConfiguration_VULNERABILITY      ReportConfiguration_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
+	ReportConfiguration_NODE_VULNERABILITY ReportConfiguration_ReportType = 1
 )
 
 // Enum value maps for ReportConfiguration_ReportType.
 var (
 	ReportConfiguration_ReportType_name = map[int32]string{
 		0: "VULNERABILITY",
+		1: "NODE_VULNERABILITY",
 	}
 	ReportConfiguration_ReportType_value = map[string]int32{
-		"VULNERABILITY": 0,
+		"VULNERABILITY":      0,
+		"NODE_VULNERABILITY": 1,
 	}
 )
 
@@ -464,7 +467,53 @@ func (x ReportSchedule_IntervalType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ReportSchedule_IntervalType.Descriptor instead.
 func (ReportSchedule_IntervalType) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{3, 0}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{4, 0}
+}
+
+type ReportSnapshot_ReportType int32
+
+const (
+	ReportSnapshot_VULNERABILITY      ReportSnapshot_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
+	ReportSnapshot_NODE_VULNERABILITY ReportSnapshot_ReportType = 1
+)
+
+// Enum value maps for ReportSnapshot_ReportType.
+var (
+	ReportSnapshot_ReportType_name = map[int32]string{
+		0: "VULNERABILITY",
+		1: "NODE_VULNERABILITY",
+	}
+	ReportSnapshot_ReportType_value = map[string]int32{
+		"VULNERABILITY":      0,
+		"NODE_VULNERABILITY": 1,
+	}
+)
+
+func (x ReportSnapshot_ReportType) Enum() *ReportSnapshot_ReportType {
+	p := new(ReportSnapshot_ReportType)
+	*p = x
+	return p
+}
+
+func (x ReportSnapshot_ReportType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ReportSnapshot_ReportType) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_report_service_proto_enumTypes[9].Descriptor()
+}
+
+func (ReportSnapshot_ReportType) Type() protoreflect.EnumType {
+	return &file_api_v2_report_service_proto_enumTypes[9]
+}
+
+func (x ReportSnapshot_ReportType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ReportSnapshot_ReportType.Descriptor instead.
+func (ReportSnapshot_ReportType) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{19, 0}
 }
 
 type ReportStatus_RunState int32
@@ -506,11 +555,11 @@ func (x ReportStatus_RunState) String() string {
 }
 
 func (ReportStatus_RunState) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_report_service_proto_enumTypes[9].Descriptor()
+	return file_api_v2_report_service_proto_enumTypes[10].Descriptor()
 }
 
 func (ReportStatus_RunState) Type() protoreflect.EnumType {
-	return &file_api_v2_report_service_proto_enumTypes[9]
+	return &file_api_v2_report_service_proto_enumTypes[10]
 }
 
 func (x ReportStatus_RunState) Number() protoreflect.EnumNumber {
@@ -519,7 +568,7 @@ func (x ReportStatus_RunState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ReportStatus_RunState.Descriptor instead.
 func (ReportStatus_RunState) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{19, 0}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20, 0}
 }
 
 type ReportStatus_ReportMethod int32
@@ -552,11 +601,11 @@ func (x ReportStatus_ReportMethod) String() string {
 }
 
 func (ReportStatus_ReportMethod) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_report_service_proto_enumTypes[10].Descriptor()
+	return file_api_v2_report_service_proto_enumTypes[11].Descriptor()
 }
 
 func (ReportStatus_ReportMethod) Type() protoreflect.EnumType {
-	return &file_api_v2_report_service_proto_enumTypes[10]
+	return &file_api_v2_report_service_proto_enumTypes[11]
 }
 
 func (x ReportStatus_ReportMethod) Number() protoreflect.EnumNumber {
@@ -565,22 +614,25 @@ func (x ReportStatus_ReportMethod) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ReportStatus_ReportMethod.Descriptor instead.
 func (ReportStatus_ReportMethod) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{19, 1}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20, 1}
 }
 
 type ReportRequestViewBased_ReportType int32
 
 const (
-	ReportRequestViewBased_VULNERABILITY ReportRequestViewBased_ReportType = 0
+	ReportRequestViewBased_VULNERABILITY      ReportRequestViewBased_ReportType = 0 // for historical reasons, this short form was used to mean "Image Vulnerability"
+	ReportRequestViewBased_NODE_VULNERABILITY ReportRequestViewBased_ReportType = 1
 )
 
 // Enum value maps for ReportRequestViewBased_ReportType.
 var (
 	ReportRequestViewBased_ReportType_name = map[int32]string{
 		0: "VULNERABILITY",
+		1: "NODE_VULNERABILITY",
 	}
 	ReportRequestViewBased_ReportType_value = map[string]int32{
-		"VULNERABILITY": 0,
+		"VULNERABILITY":      0,
+		"NODE_VULNERABILITY": 1,
 	}
 )
 
@@ -595,11 +647,11 @@ func (x ReportRequestViewBased_ReportType) String() string {
 }
 
 func (ReportRequestViewBased_ReportType) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_report_service_proto_enumTypes[11].Descriptor()
+	return file_api_v2_report_service_proto_enumTypes[12].Descriptor()
 }
 
 func (ReportRequestViewBased_ReportType) Type() protoreflect.EnumType {
-	return &file_api_v2_report_service_proto_enumTypes[11]
+	return &file_api_v2_report_service_proto_enumTypes[12]
 }
 
 func (x ReportRequestViewBased_ReportType) Number() protoreflect.EnumNumber {
@@ -608,7 +660,7 @@ func (x ReportRequestViewBased_ReportType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ReportRequestViewBased_ReportType.Descriptor instead.
 func (ReportRequestViewBased_ReportType) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{23, 0}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{24, 0}
 }
 
 type ReportConfiguration struct {
@@ -620,6 +672,7 @@ type ReportConfiguration struct {
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportConfiguration_VulnReportFilters
+	//	*ReportConfiguration_NodeVulnReportFilters
 	Filter        isReportConfiguration_Filter `protobuf_oneof:"filter"`
 	Schedule      *ReportSchedule              `protobuf:"bytes,6,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	ResourceScope *ResourceScope               `protobuf:"bytes,7,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
@@ -702,6 +755,15 @@ func (x *ReportConfiguration) GetVulnReportFilters() *VulnerabilityReportFilters
 	return nil
 }
 
+func (x *ReportConfiguration) GetNodeVulnReportFilters() *NodeVulnerabilityReportFilters {
+	if x != nil {
+		if x, ok := x.Filter.(*ReportConfiguration_NodeVulnReportFilters); ok {
+			return x.NodeVulnReportFilters
+		}
+	}
+	return nil
+}
+
 func (x *ReportConfiguration) GetSchedule() *ReportSchedule {
 	if x != nil {
 		return x.Schedule
@@ -731,7 +793,13 @@ type ReportConfiguration_VulnReportFilters struct {
 	VulnReportFilters *VulnerabilityReportFilters `protobuf:"bytes,5,opt,name=vuln_report_filters,json=vulnReportFilters,proto3,oneof"`
 }
 
+type ReportConfiguration_NodeVulnReportFilters struct {
+	NodeVulnReportFilters *NodeVulnerabilityReportFilters `protobuf:"bytes,9,opt,name=node_vuln_report_filters,json=nodeVulnReportFilters,proto3,oneof"`
+}
+
 func (*ReportConfiguration_VulnReportFilters) isReportConfiguration_Filter() {}
+
+func (*ReportConfiguration_NodeVulnReportFilters) isReportConfiguration_Filter() {}
 
 type VulnerabilityReportFilters struct {
 	state      protoimpl.MessageState                             `protogen:"open.v1"`
@@ -898,6 +966,80 @@ func (*VulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityR
 
 func (*VulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
 
+type NodeVulnerabilityReportFilters struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to CvesSince:
+	//
+	//	*NodeVulnerabilityReportFilters_AllVuln
+	CvesSince     isNodeVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	Query         string                                     `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NodeVulnerabilityReportFilters) Reset() {
+	*x = NodeVulnerabilityReportFilters{}
+	mi := &file_api_v2_report_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeVulnerabilityReportFilters) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeVulnerabilityReportFilters) ProtoMessage() {}
+
+func (x *NodeVulnerabilityReportFilters) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_report_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeVulnerabilityReportFilters.ProtoReflect.Descriptor instead.
+func (*NodeVulnerabilityReportFilters) Descriptor() ([]byte, []int) {
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *NodeVulnerabilityReportFilters) GetCvesSince() isNodeVulnerabilityReportFilters_CvesSince {
+	if x != nil {
+		return x.CvesSince
+	}
+	return nil
+}
+
+func (x *NodeVulnerabilityReportFilters) GetAllVuln() bool {
+	if x != nil {
+		if x, ok := x.CvesSince.(*NodeVulnerabilityReportFilters_AllVuln); ok {
+			return x.AllVuln
+		}
+	}
+	return false
+}
+
+func (x *NodeVulnerabilityReportFilters) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+type isNodeVulnerabilityReportFilters_CvesSince interface {
+	isNodeVulnerabilityReportFilters_CvesSince()
+}
+
+type NodeVulnerabilityReportFilters_AllVuln struct {
+	AllVuln bool `protobuf:"varint,1,opt,name=all_vuln,json=allVuln,proto3,oneof"`
+}
+
+func (*NodeVulnerabilityReportFilters_AllVuln) isNodeVulnerabilityReportFilters_CvesSince() {}
+
 // filter for ondemand view based reports
 type ViewBasedVulnerabilityReportFilters struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -908,7 +1050,7 @@ type ViewBasedVulnerabilityReportFilters struct {
 
 func (x *ViewBasedVulnerabilityReportFilters) Reset() {
 	*x = ViewBasedVulnerabilityReportFilters{}
-	mi := &file_api_v2_report_service_proto_msgTypes[2]
+	mi := &file_api_v2_report_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -920,7 +1062,7 @@ func (x *ViewBasedVulnerabilityReportFilters) String() string {
 func (*ViewBasedVulnerabilityReportFilters) ProtoMessage() {}
 
 func (x *ViewBasedVulnerabilityReportFilters) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[2]
+	mi := &file_api_v2_report_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -933,7 +1075,7 @@ func (x *ViewBasedVulnerabilityReportFilters) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ViewBasedVulnerabilityReportFilters.ProtoReflect.Descriptor instead.
 func (*ViewBasedVulnerabilityReportFilters) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{2}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ViewBasedVulnerabilityReportFilters) GetQuery() string {
@@ -959,7 +1101,7 @@ type ReportSchedule struct {
 
 func (x *ReportSchedule) Reset() {
 	*x = ReportSchedule{}
-	mi := &file_api_v2_report_service_proto_msgTypes[3]
+	mi := &file_api_v2_report_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -971,7 +1113,7 @@ func (x *ReportSchedule) String() string {
 func (*ReportSchedule) ProtoMessage() {}
 
 func (x *ReportSchedule) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[3]
+	mi := &file_api_v2_report_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -984,7 +1126,7 @@ func (x *ReportSchedule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportSchedule.ProtoReflect.Descriptor instead.
 func (*ReportSchedule) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{3}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReportSchedule) GetIntervalType() ReportSchedule_IntervalType {
@@ -1065,7 +1207,7 @@ type ResourceScope struct {
 
 func (x *ResourceScope) Reset() {
 	*x = ResourceScope{}
-	mi := &file_api_v2_report_service_proto_msgTypes[4]
+	mi := &file_api_v2_report_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1077,7 +1219,7 @@ func (x *ResourceScope) String() string {
 func (*ResourceScope) ProtoMessage() {}
 
 func (x *ResourceScope) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[4]
+	mi := &file_api_v2_report_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1090,7 +1232,7 @@ func (x *ResourceScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceScope.ProtoReflect.Descriptor instead.
 func (*ResourceScope) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{4}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ResourceScope) GetScopeReference() isResourceScope_ScopeReference {
@@ -1144,7 +1286,7 @@ type CollectionReference struct {
 
 func (x *CollectionReference) Reset() {
 	*x = CollectionReference{}
-	mi := &file_api_v2_report_service_proto_msgTypes[5]
+	mi := &file_api_v2_report_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1156,7 +1298,7 @@ func (x *CollectionReference) String() string {
 func (*CollectionReference) ProtoMessage() {}
 
 func (x *CollectionReference) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[5]
+	mi := &file_api_v2_report_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1169,7 +1311,7 @@ func (x *CollectionReference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionReference.ProtoReflect.Descriptor instead.
 func (*CollectionReference) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{5}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CollectionReference) GetCollectionId() string {
@@ -1195,7 +1337,7 @@ type EntityScope struct {
 
 func (x *EntityScope) Reset() {
 	*x = EntityScope{}
-	mi := &file_api_v2_report_service_proto_msgTypes[6]
+	mi := &file_api_v2_report_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1349,7 @@ func (x *EntityScope) String() string {
 func (*EntityScope) ProtoMessage() {}
 
 func (x *EntityScope) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[6]
+	mi := &file_api_v2_report_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1220,7 +1362,7 @@ func (x *EntityScope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EntityScope.ProtoReflect.Descriptor instead.
 func (*EntityScope) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{6}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EntityScope) GetRules() []*EntityScopeRule {
@@ -1240,7 +1382,7 @@ type RuleValue struct {
 
 func (x *RuleValue) Reset() {
 	*x = RuleValue{}
-	mi := &file_api_v2_report_service_proto_msgTypes[7]
+	mi := &file_api_v2_report_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1252,7 +1394,7 @@ func (x *RuleValue) String() string {
 func (*RuleValue) ProtoMessage() {}
 
 func (x *RuleValue) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[7]
+	mi := &file_api_v2_report_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1265,7 +1407,7 @@ func (x *RuleValue) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuleValue.ProtoReflect.Descriptor instead.
 func (*RuleValue) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{7}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RuleValue) GetValue() string {
@@ -1293,7 +1435,7 @@ type EntityScopeRule struct {
 
 func (x *EntityScopeRule) Reset() {
 	*x = EntityScopeRule{}
-	mi := &file_api_v2_report_service_proto_msgTypes[8]
+	mi := &file_api_v2_report_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1305,7 +1447,7 @@ func (x *EntityScopeRule) String() string {
 func (*EntityScopeRule) ProtoMessage() {}
 
 func (x *EntityScopeRule) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[8]
+	mi := &file_api_v2_report_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1318,7 +1460,7 @@ func (x *EntityScopeRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EntityScopeRule.ProtoReflect.Descriptor instead.
 func (*EntityScopeRule) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{8}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EntityScopeRule) GetEntity() ScopeEntity {
@@ -1355,7 +1497,7 @@ type NotifierConfiguration struct {
 
 func (x *NotifierConfiguration) Reset() {
 	*x = NotifierConfiguration{}
-	mi := &file_api_v2_report_service_proto_msgTypes[9]
+	mi := &file_api_v2_report_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1367,7 +1509,7 @@ func (x *NotifierConfiguration) String() string {
 func (*NotifierConfiguration) ProtoMessage() {}
 
 func (x *NotifierConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[9]
+	mi := &file_api_v2_report_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1380,7 +1522,7 @@ func (x *NotifierConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotifierConfiguration.ProtoReflect.Descriptor instead.
 func (*NotifierConfiguration) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{9}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NotifierConfiguration) GetNotifierConfig() isNotifierConfiguration_NotifierConfig {
@@ -1428,7 +1570,7 @@ type EmailNotifierConfiguration struct {
 
 func (x *EmailNotifierConfiguration) Reset() {
 	*x = EmailNotifierConfiguration{}
-	mi := &file_api_v2_report_service_proto_msgTypes[10]
+	mi := &file_api_v2_report_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1440,7 +1582,7 @@ func (x *EmailNotifierConfiguration) String() string {
 func (*EmailNotifierConfiguration) ProtoMessage() {}
 
 func (x *EmailNotifierConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[10]
+	mi := &file_api_v2_report_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1453,7 +1595,7 @@ func (x *EmailNotifierConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmailNotifierConfiguration.ProtoReflect.Descriptor instead.
 func (*EmailNotifierConfiguration) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{10}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EmailNotifierConfiguration) GetNotifierId() string {
@@ -1493,7 +1635,7 @@ type ListReportConfigurationsResponse struct {
 
 func (x *ListReportConfigurationsResponse) Reset() {
 	*x = ListReportConfigurationsResponse{}
-	mi := &file_api_v2_report_service_proto_msgTypes[11]
+	mi := &file_api_v2_report_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1505,7 +1647,7 @@ func (x *ListReportConfigurationsResponse) String() string {
 func (*ListReportConfigurationsResponse) ProtoMessage() {}
 
 func (x *ListReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[11]
+	mi := &file_api_v2_report_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1660,7 @@ func (x *ListReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReportConfigurationsResponse.ProtoReflect.Descriptor instead.
 func (*ListReportConfigurationsResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{11}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListReportConfigurationsResponse) GetReportConfigs() []*ReportConfiguration {
@@ -1537,7 +1679,7 @@ type CountReportConfigurationsResponse struct {
 
 func (x *CountReportConfigurationsResponse) Reset() {
 	*x = CountReportConfigurationsResponse{}
-	mi := &file_api_v2_report_service_proto_msgTypes[12]
+	mi := &file_api_v2_report_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1549,7 +1691,7 @@ func (x *CountReportConfigurationsResponse) String() string {
 func (*CountReportConfigurationsResponse) ProtoMessage() {}
 
 func (x *CountReportConfigurationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[12]
+	mi := &file_api_v2_report_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1562,7 +1704,7 @@ func (x *CountReportConfigurationsResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CountReportConfigurationsResponse.ProtoReflect.Descriptor instead.
 func (*CountReportConfigurationsResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{12}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CountReportConfigurationsResponse) GetCount() int32 {
@@ -1582,7 +1724,7 @@ type GetReportHistoryRequest struct {
 
 func (x *GetReportHistoryRequest) Reset() {
 	*x = GetReportHistoryRequest{}
-	mi := &file_api_v2_report_service_proto_msgTypes[13]
+	mi := &file_api_v2_report_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1594,7 +1736,7 @@ func (x *GetReportHistoryRequest) String() string {
 func (*GetReportHistoryRequest) ProtoMessage() {}
 
 func (x *GetReportHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[13]
+	mi := &file_api_v2_report_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1607,7 +1749,7 @@ func (x *GetReportHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReportHistoryRequest.ProtoReflect.Descriptor instead.
 func (*GetReportHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{13}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetReportHistoryRequest) GetId() string {
@@ -1633,7 +1775,7 @@ type GetViewBasedReportHistoryRequest struct {
 
 func (x *GetViewBasedReportHistoryRequest) Reset() {
 	*x = GetViewBasedReportHistoryRequest{}
-	mi := &file_api_v2_report_service_proto_msgTypes[14]
+	mi := &file_api_v2_report_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1645,7 +1787,7 @@ func (x *GetViewBasedReportHistoryRequest) String() string {
 func (*GetViewBasedReportHistoryRequest) ProtoMessage() {}
 
 func (x *GetViewBasedReportHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[14]
+	mi := &file_api_v2_report_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1658,7 +1800,7 @@ func (x *GetViewBasedReportHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetViewBasedReportHistoryRequest.ProtoReflect.Descriptor instead.
 func (*GetViewBasedReportHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{14}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetViewBasedReportHistoryRequest) GetReportParamQuery() *RawQuery {
@@ -1677,7 +1819,7 @@ type ReportHistoryResponse struct {
 
 func (x *ReportHistoryResponse) Reset() {
 	*x = ReportHistoryResponse{}
-	mi := &file_api_v2_report_service_proto_msgTypes[15]
+	mi := &file_api_v2_report_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1689,7 +1831,7 @@ func (x *ReportHistoryResponse) String() string {
 func (*ReportHistoryResponse) ProtoMessage() {}
 
 func (x *ReportHistoryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[15]
+	mi := &file_api_v2_report_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1702,7 +1844,7 @@ func (x *ReportHistoryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportHistoryResponse.ProtoReflect.Descriptor instead.
 func (*ReportHistoryResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{15}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ReportHistoryResponse) GetReportSnapshots() []*ReportSnapshot {
@@ -1721,7 +1863,7 @@ type ReportStatusResponse struct {
 
 func (x *ReportStatusResponse) Reset() {
 	*x = ReportStatusResponse{}
-	mi := &file_api_v2_report_service_proto_msgTypes[16]
+	mi := &file_api_v2_report_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1733,7 +1875,7 @@ func (x *ReportStatusResponse) String() string {
 func (*ReportStatusResponse) ProtoMessage() {}
 
 func (x *ReportStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[16]
+	mi := &file_api_v2_report_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1746,7 +1888,7 @@ func (x *ReportStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportStatusResponse.ProtoReflect.Descriptor instead.
 func (*ReportStatusResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{16}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ReportStatusResponse) GetStatus() *ReportStatus {
@@ -1766,7 +1908,7 @@ type CollectionSnapshot struct {
 
 func (x *CollectionSnapshot) Reset() {
 	*x = CollectionSnapshot{}
-	mi := &file_api_v2_report_service_proto_msgTypes[17]
+	mi := &file_api_v2_report_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1778,7 +1920,7 @@ func (x *CollectionSnapshot) String() string {
 func (*CollectionSnapshot) ProtoMessage() {}
 
 func (x *CollectionSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[17]
+	mi := &file_api_v2_report_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1791,7 +1933,7 @@ func (x *CollectionSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectionSnapshot.ProtoReflect.Descriptor instead.
 func (*CollectionSnapshot) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{17}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CollectionSnapshot) GetId() string {
@@ -1809,15 +1951,17 @@ func (x *CollectionSnapshot) GetName() string {
 }
 
 type ReportSnapshot struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ReportConfigId string                 `protobuf:"bytes,1,opt,name=report_config_id,json=reportConfigId,proto3" json:"report_config_id,omitempty"`
-	ReportJobId    string                 `protobuf:"bytes,2,opt,name=report_job_id,json=reportJobId,proto3" json:"report_job_id,omitempty"`
-	Name           string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	state          protoimpl.MessageState    `protogen:"open.v1"`
+	Type           ReportSnapshot_ReportType `protobuf:"varint,16,opt,name=type,proto3,enum=v2.ReportSnapshot_ReportType" json:"type,omitempty"`
+	ReportConfigId string                    `protobuf:"bytes,1,opt,name=report_config_id,json=reportConfigId,proto3" json:"report_config_id,omitempty"`
+	ReportJobId    string                    `protobuf:"bytes,2,opt,name=report_job_id,json=reportJobId,proto3" json:"report_job_id,omitempty"`
+	Name           string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Description    string                    `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportSnapshot_VulnReportFilters
 	//	*ReportSnapshot_ViewBasedVulnReportFilters
+	//	*ReportSnapshot_NodeVulnReportFilters
 	Filter              isReportSnapshot_Filter  `protobuf_oneof:"filter"`
 	CollectionSnapshot  *CollectionSnapshot      `protobuf:"bytes,6,opt,name=collection_snapshot,json=collectionSnapshot,proto3" json:"collection_snapshot,omitempty"`
 	Schedule            *ReportSchedule          `protobuf:"bytes,7,opt,name=schedule,proto3" json:"schedule,omitempty"`
@@ -1833,7 +1977,7 @@ type ReportSnapshot struct {
 
 func (x *ReportSnapshot) Reset() {
 	*x = ReportSnapshot{}
-	mi := &file_api_v2_report_service_proto_msgTypes[18]
+	mi := &file_api_v2_report_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1845,7 +1989,7 @@ func (x *ReportSnapshot) String() string {
 func (*ReportSnapshot) ProtoMessage() {}
 
 func (x *ReportSnapshot) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[18]
+	mi := &file_api_v2_report_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1858,7 +2002,14 @@ func (x *ReportSnapshot) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportSnapshot.ProtoReflect.Descriptor instead.
 func (*ReportSnapshot) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{18}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ReportSnapshot) GetType() ReportSnapshot_ReportType {
+	if x != nil {
+		return x.Type
+	}
+	return ReportSnapshot_VULNERABILITY
 }
 
 func (x *ReportSnapshot) GetReportConfigId() string {
@@ -1909,6 +2060,15 @@ func (x *ReportSnapshot) GetViewBasedVulnReportFilters() *ViewBasedVulnerability
 	if x != nil {
 		if x, ok := x.Filter.(*ReportSnapshot_ViewBasedVulnReportFilters); ok {
 			return x.ViewBasedVulnReportFilters
+		}
+	}
+	return nil
+}
+
+func (x *ReportSnapshot) GetNodeVulnReportFilters() *NodeVulnerabilityReportFilters {
+	if x != nil {
+		if x, ok := x.Filter.(*ReportSnapshot_NodeVulnReportFilters); ok {
+			return x.NodeVulnReportFilters
 		}
 	}
 	return nil
@@ -1982,9 +2142,15 @@ type ReportSnapshot_ViewBasedVulnReportFilters struct {
 	ViewBasedVulnReportFilters *ViewBasedVulnerabilityReportFilters `protobuf:"bytes,12,opt,name=view_based_vuln_report_filters,json=viewBasedVulnReportFilters,proto3,oneof"`
 }
 
+type ReportSnapshot_NodeVulnReportFilters struct {
+	NodeVulnReportFilters *NodeVulnerabilityReportFilters `protobuf:"bytes,15,opt,name=node_vuln_report_filters,json=nodeVulnReportFilters,proto3,oneof"`
+}
+
 func (*ReportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
 
 func (*ReportSnapshot_ViewBasedVulnReportFilters) isReportSnapshot_Filter() {}
+
+func (*ReportSnapshot_NodeVulnReportFilters) isReportSnapshot_Filter() {}
 
 type ReportStatus struct {
 	state                    protoimpl.MessageState    `protogen:"open.v1"`
@@ -1999,7 +2165,7 @@ type ReportStatus struct {
 
 func (x *ReportStatus) Reset() {
 	*x = ReportStatus{}
-	mi := &file_api_v2_report_service_proto_msgTypes[19]
+	mi := &file_api_v2_report_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2011,7 +2177,7 @@ func (x *ReportStatus) String() string {
 func (*ReportStatus) ProtoMessage() {}
 
 func (x *ReportStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[19]
+	mi := &file_api_v2_report_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2024,7 +2190,7 @@ func (x *ReportStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportStatus.ProtoReflect.Descriptor instead.
 func (*ReportStatus) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{19}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ReportStatus) GetRunState() ReportStatus_RunState {
@@ -2072,7 +2238,7 @@ type RunReportRequest struct {
 
 func (x *RunReportRequest) Reset() {
 	*x = RunReportRequest{}
-	mi := &file_api_v2_report_service_proto_msgTypes[20]
+	mi := &file_api_v2_report_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2084,7 +2250,7 @@ func (x *RunReportRequest) String() string {
 func (*RunReportRequest) ProtoMessage() {}
 
 func (x *RunReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[20]
+	mi := &file_api_v2_report_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2097,7 +2263,7 @@ func (x *RunReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunReportRequest.ProtoReflect.Descriptor instead.
 func (*RunReportRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RunReportRequest) GetReportConfigId() string {
@@ -2124,7 +2290,7 @@ type RunReportResponse struct {
 
 func (x *RunReportResponse) Reset() {
 	*x = RunReportResponse{}
-	mi := &file_api_v2_report_service_proto_msgTypes[21]
+	mi := &file_api_v2_report_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2136,7 +2302,7 @@ func (x *RunReportResponse) String() string {
 func (*RunReportResponse) ProtoMessage() {}
 
 func (x *RunReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[21]
+	mi := &file_api_v2_report_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2149,7 +2315,7 @@ func (x *RunReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunReportResponse.ProtoReflect.Descriptor instead.
 func (*RunReportResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{21}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *RunReportResponse) GetReportConfigId() string {
@@ -2175,7 +2341,7 @@ type DeleteReportRequest struct {
 
 func (x *DeleteReportRequest) Reset() {
 	*x = DeleteReportRequest{}
-	mi := &file_api_v2_report_service_proto_msgTypes[22]
+	mi := &file_api_v2_report_service_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2187,7 +2353,7 @@ func (x *DeleteReportRequest) String() string {
 func (*DeleteReportRequest) ProtoMessage() {}
 
 func (x *DeleteReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[22]
+	mi := &file_api_v2_report_service_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2200,7 +2366,7 @@ func (x *DeleteReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteReportRequest.ProtoReflect.Descriptor instead.
 func (*DeleteReportRequest) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{22}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *DeleteReportRequest) GetId() string {
@@ -2216,6 +2382,7 @@ type ReportRequestViewBased struct {
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportRequestViewBased_ViewBasedVulnReportFilters
+	//	*ReportRequestViewBased_NodeVulnReportFilters
 	Filter        isReportRequestViewBased_Filter `protobuf_oneof:"filter"`
 	AreaOfConcern string                          `protobuf:"bytes,3,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -2224,7 +2391,7 @@ type ReportRequestViewBased struct {
 
 func (x *ReportRequestViewBased) Reset() {
 	*x = ReportRequestViewBased{}
-	mi := &file_api_v2_report_service_proto_msgTypes[23]
+	mi := &file_api_v2_report_service_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2236,7 +2403,7 @@ func (x *ReportRequestViewBased) String() string {
 func (*ReportRequestViewBased) ProtoMessage() {}
 
 func (x *ReportRequestViewBased) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[23]
+	mi := &file_api_v2_report_service_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2249,7 +2416,7 @@ func (x *ReportRequestViewBased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportRequestViewBased.ProtoReflect.Descriptor instead.
 func (*ReportRequestViewBased) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{23}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ReportRequestViewBased) GetType() ReportRequestViewBased_ReportType {
@@ -2275,6 +2442,15 @@ func (x *ReportRequestViewBased) GetViewBasedVulnReportFilters() *ViewBasedVulne
 	return nil
 }
 
+func (x *ReportRequestViewBased) GetNodeVulnReportFilters() *NodeVulnerabilityReportFilters {
+	if x != nil {
+		if x, ok := x.Filter.(*ReportRequestViewBased_NodeVulnReportFilters); ok {
+			return x.NodeVulnReportFilters
+		}
+	}
+	return nil
+}
+
 func (x *ReportRequestViewBased) GetAreaOfConcern() string {
 	if x != nil {
 		return x.AreaOfConcern
@@ -2290,7 +2466,13 @@ type ReportRequestViewBased_ViewBasedVulnReportFilters struct {
 	ViewBasedVulnReportFilters *ViewBasedVulnerabilityReportFilters `protobuf:"bytes,2,opt,name=view_based_vuln_report_filters,json=viewBasedVulnReportFilters,proto3,oneof"`
 }
 
+type ReportRequestViewBased_NodeVulnReportFilters struct {
+	NodeVulnReportFilters *NodeVulnerabilityReportFilters `protobuf:"bytes,4,opt,name=node_vuln_report_filters,json=nodeVulnReportFilters,proto3,oneof"`
+}
+
 func (*ReportRequestViewBased_ViewBasedVulnReportFilters) isReportRequestViewBased_Filter() {}
+
+func (*ReportRequestViewBased_NodeVulnReportFilters) isReportRequestViewBased_Filter() {}
 
 type RunReportResponseViewBased struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2302,7 +2484,7 @@ type RunReportResponseViewBased struct {
 
 func (x *RunReportResponseViewBased) Reset() {
 	*x = RunReportResponseViewBased{}
-	mi := &file_api_v2_report_service_proto_msgTypes[24]
+	mi := &file_api_v2_report_service_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2314,7 +2496,7 @@ func (x *RunReportResponseViewBased) String() string {
 func (*RunReportResponseViewBased) ProtoMessage() {}
 
 func (x *RunReportResponseViewBased) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[24]
+	mi := &file_api_v2_report_service_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2327,7 +2509,7 @@ func (x *RunReportResponseViewBased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunReportResponseViewBased.ProtoReflect.Descriptor instead.
 func (*RunReportResponseViewBased) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{24}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *RunReportResponseViewBased) GetReportID() string {
@@ -2354,7 +2536,7 @@ type ReportSchedule_DaysOfWeek struct {
 
 func (x *ReportSchedule_DaysOfWeek) Reset() {
 	*x = ReportSchedule_DaysOfWeek{}
-	mi := &file_api_v2_report_service_proto_msgTypes[25]
+	mi := &file_api_v2_report_service_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2366,7 +2548,7 @@ func (x *ReportSchedule_DaysOfWeek) String() string {
 func (*ReportSchedule_DaysOfWeek) ProtoMessage() {}
 
 func (x *ReportSchedule_DaysOfWeek) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[25]
+	mi := &file_api_v2_report_service_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2379,7 +2561,7 @@ func (x *ReportSchedule_DaysOfWeek) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportSchedule_DaysOfWeek.ProtoReflect.Descriptor instead.
 func (*ReportSchedule_DaysOfWeek) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{3, 0}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *ReportSchedule_DaysOfWeek) GetDays() []int32 {
@@ -2399,7 +2581,7 @@ type ReportSchedule_DaysOfMonth struct {
 
 func (x *ReportSchedule_DaysOfMonth) Reset() {
 	*x = ReportSchedule_DaysOfMonth{}
-	mi := &file_api_v2_report_service_proto_msgTypes[26]
+	mi := &file_api_v2_report_service_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2411,7 +2593,7 @@ func (x *ReportSchedule_DaysOfMonth) String() string {
 func (*ReportSchedule_DaysOfMonth) ProtoMessage() {}
 
 func (x *ReportSchedule_DaysOfMonth) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[26]
+	mi := &file_api_v2_report_service_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2424,7 +2606,7 @@ func (x *ReportSchedule_DaysOfMonth) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportSchedule_DaysOfMonth.ProtoReflect.Descriptor instead.
 func (*ReportSchedule_DaysOfMonth) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{3, 1}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{4, 1}
 }
 
 func (x *ReportSchedule_DaysOfMonth) GetDays() []int32 {
@@ -2438,19 +2620,21 @@ var File_api_v2_report_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1bapi/v2/report_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x19api/v2/search_query.proto\x1a\x11api/v2/user.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb3\x03\n" +
+	"\x1bapi/v2/report_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x19api/v2/search_query.proto\x1a\x11api/v2/user.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xaa\x04\n" +
 	"\x13ReportConfiguration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x126\n" +
 	"\x04type\x18\x04 \x01(\x0e2\".v2.ReportConfiguration.ReportTypeR\x04type\x12P\n" +
-	"\x13vuln_report_filters\x18\x05 \x01(\v2\x1e.v2.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12.\n" +
+	"\x13vuln_report_filters\x18\x05 \x01(\v2\x1e.v2.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12]\n" +
+	"\x18node_vuln_report_filters\x18\t \x01(\v2\".v2.NodeVulnerabilityReportFiltersH\x00R\x15nodeVulnReportFilters\x12.\n" +
 	"\bschedule\x18\x06 \x01(\v2\x12.v2.ReportScheduleR\bschedule\x128\n" +
 	"\x0eresource_scope\x18\a \x01(\v2\x11.v2.ResourceScopeR\rresourceScope\x127\n" +
-	"\tnotifiers\x18\b \x03(\v2\x19.v2.NotifierConfigurationR\tnotifiers\"\x1f\n" +
+	"\tnotifiers\x18\b \x03(\v2\x19.v2.NotifierConfigurationR\tnotifiers\"7\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
-	"\rVULNERABILITY\x10\x00B\b\n" +
+	"\rVULNERABILITY\x10\x00\x12\x16\n" +
+	"\x12NODE_VULNERABILITY\x10\x01B\b\n" +
 	"\x06filter\"\xa2\a\n" +
 	"\x1aVulnerabilityReportFilters\x12I\n" +
 	"\n" +
@@ -2482,6 +2666,11 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\tImageType\x12\f\n" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +
 	"\aWATCHED\x10\x01B\f\n" +
+	"\n" +
+	"cves_since\"a\n" +
+	"\x1eNodeVulnerabilityReportFilters\x12\x1b\n" +
+	"\ball_vuln\x18\x01 \x01(\bH\x00R\aallVuln\x12\x14\n" +
+	"\x05query\x18\x02 \x01(\tR\x05queryB\f\n" +
 	"\n" +
 	"cves_since\";\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +
@@ -2549,14 +2738,16 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\v2\x10.v2.ReportStatusR\x06status\"8\n" +
 	"\x12CollectionSnapshot\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\x80\x06\n" +
-	"\x0eReportSnapshot\x12(\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xcb\a\n" +
+	"\x0eReportSnapshot\x121\n" +
+	"\x04type\x18\x10 \x01(\x0e2\x1d.v2.ReportSnapshot.ReportTypeR\x04type\x12(\n" +
 	"\x10report_config_id\x18\x01 \x01(\tR\x0ereportConfigId\x12\"\n" +
 	"\rreport_job_id\x18\x02 \x01(\tR\vreportJobId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12P\n" +
 	"\x13vuln_report_filters\x18\x05 \x01(\v2\x1e.v2.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12m\n" +
-	"\x1eview_based_vuln_report_filters\x18\f \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12G\n" +
+	"\x1eview_based_vuln_report_filters\x18\f \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12]\n" +
+	"\x18node_vuln_report_filters\x18\x0f \x01(\v2\".v2.NodeVulnerabilityReportFiltersH\x00R\x15nodeVulnReportFilters\x12G\n" +
 	"\x13collection_snapshot\x18\x06 \x01(\v2\x16.v2.CollectionSnapshotR\x12collectionSnapshot\x12.\n" +
 	"\bschedule\x18\a \x01(\v2\x12.v2.ReportScheduleR\bschedule\x125\n" +
 	"\rreport_status\x18\b \x01(\v2\x10.v2.ReportStatusR\freportStatus\x127\n" +
@@ -2565,7 +2756,11 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	" \x01(\v2\f.v2.SlimUserR\x04user\x122\n" +
 	"\x15is_download_available\x18\v \x01(\bR\x13isDownloadAvailable\x12&\n" +
 	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\x128\n" +
-	"\x0eresource_scope\x18\x0e \x01(\v2\x11.v2.ResourceScopeR\rresourceScopeB\b\n" +
+	"\x0eresource_scope\x18\x0e \x01(\v2\x11.v2.ResourceScopeR\rresourceScope\"7\n" +
+	"\n" +
+	"ReportType\x12\x11\n" +
+	"\rVULNERABILITY\x10\x00\x12\x16\n" +
+	"\x12NODE_VULNERABILITY\x10\x01B\b\n" +
 	"\x06filter\"\xc8\x03\n" +
 	"\fReportStatus\x126\n" +
 	"\trun_state\x18\x01 \x01(\x0e2\x19.v2.ReportStatus.RunStateR\brunState\x12=\n" +
@@ -2589,14 +2784,16 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\x10report_config_id\x18\x01 \x01(\tR\x0ereportConfigId\x12\x1b\n" +
 	"\treport_id\x18\x02 \x01(\tR\breportId\"%\n" +
 	"\x13DeleteReportRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x95\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x8c\x03\n" +
 	"\x16ReportRequestViewBased\x129\n" +
 	"\x04type\x18\x01 \x01(\x0e2%.v2.ReportRequestViewBased.ReportTypeR\x04type\x12m\n" +
-	"\x1eview_based_vuln_report_filters\x18\x02 \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12&\n" +
-	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\"\x1f\n" +
+	"\x1eview_based_vuln_report_filters\x18\x02 \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12]\n" +
+	"\x18node_vuln_report_filters\x18\x04 \x01(\v2\".v2.NodeVulnerabilityReportFiltersH\x00R\x15nodeVulnReportFilters\x12&\n" +
+	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\"7\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
-	"\rVULNERABILITY\x10\x00B\b\n" +
+	"\rVULNERABILITY\x10\x00\x12\x16\n" +
+	"\x12NODE_VULNERABILITY\x10\x01B\b\n" +
 	"\x06filter\"Z\n" +
 	"\x1aRunReportResponseViewBased\x12\x1a\n" +
 	"\breportID\x18\x01 \x01(\tR\breportID\x12 \n" +
@@ -2650,8 +2847,8 @@ func file_api_v2_report_service_proto_rawDescGZIP() []byte {
 	return file_api_v2_report_service_proto_rawDescData
 }
 
-var file_api_v2_report_service_proto_enumTypes = make([]protoimpl.EnumInfo, 12)
-var file_api_v2_report_service_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_api_v2_report_service_proto_enumTypes = make([]protoimpl.EnumInfo, 13)
+var file_api_v2_report_service_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_api_v2_report_service_proto_goTypes = []any{
 	(MatchType)(0),                                        // 0: v2.MatchType
 	(ScopeEntity)(0),                                      // 1: v2.ScopeEntity
@@ -2662,118 +2859,124 @@ var file_api_v2_report_service_proto_goTypes = []any{
 	(VulnerabilityReportFilters_VulnerabilitySeverity)(0), // 6: v2.VulnerabilityReportFilters.VulnerabilitySeverity
 	(VulnerabilityReportFilters_ImageType)(0),             // 7: v2.VulnerabilityReportFilters.ImageType
 	(ReportSchedule_IntervalType)(0),                      // 8: v2.ReportSchedule.IntervalType
-	(ReportStatus_RunState)(0),                            // 9: v2.ReportStatus.RunState
-	(ReportStatus_ReportMethod)(0),                        // 10: v2.ReportStatus.ReportMethod
-	(ReportRequestViewBased_ReportType)(0),                // 11: v2.ReportRequestViewBased.ReportType
-	(*ReportConfiguration)(nil),                           // 12: v2.ReportConfiguration
-	(*VulnerabilityReportFilters)(nil),                    // 13: v2.VulnerabilityReportFilters
-	(*ViewBasedVulnerabilityReportFilters)(nil),           // 14: v2.ViewBasedVulnerabilityReportFilters
-	(*ReportSchedule)(nil),                                // 15: v2.ReportSchedule
-	(*ResourceScope)(nil),                                 // 16: v2.ResourceScope
-	(*CollectionReference)(nil),                           // 17: v2.CollectionReference
-	(*EntityScope)(nil),                                   // 18: v2.EntityScope
-	(*RuleValue)(nil),                                     // 19: v2.RuleValue
-	(*EntityScopeRule)(nil),                               // 20: v2.EntityScopeRule
-	(*NotifierConfiguration)(nil),                         // 21: v2.NotifierConfiguration
-	(*EmailNotifierConfiguration)(nil),                    // 22: v2.EmailNotifierConfiguration
-	(*ListReportConfigurationsResponse)(nil),              // 23: v2.ListReportConfigurationsResponse
-	(*CountReportConfigurationsResponse)(nil),             // 24: v2.CountReportConfigurationsResponse
-	(*GetReportHistoryRequest)(nil),                       // 25: v2.GetReportHistoryRequest
-	(*GetViewBasedReportHistoryRequest)(nil),              // 26: v2.GetViewBasedReportHistoryRequest
-	(*ReportHistoryResponse)(nil),                         // 27: v2.ReportHistoryResponse
-	(*ReportStatusResponse)(nil),                          // 28: v2.ReportStatusResponse
-	(*CollectionSnapshot)(nil),                            // 29: v2.CollectionSnapshot
-	(*ReportSnapshot)(nil),                                // 30: v2.ReportSnapshot
-	(*ReportStatus)(nil),                                  // 31: v2.ReportStatus
-	(*RunReportRequest)(nil),                              // 32: v2.RunReportRequest
-	(*RunReportResponse)(nil),                             // 33: v2.RunReportResponse
-	(*DeleteReportRequest)(nil),                           // 34: v2.DeleteReportRequest
-	(*ReportRequestViewBased)(nil),                        // 35: v2.ReportRequestViewBased
-	(*RunReportResponseViewBased)(nil),                    // 36: v2.RunReportResponseViewBased
-	(*ReportSchedule_DaysOfWeek)(nil),                     // 37: v2.ReportSchedule.DaysOfWeek
-	(*ReportSchedule_DaysOfMonth)(nil),                    // 38: v2.ReportSchedule.DaysOfMonth
-	(*timestamppb.Timestamp)(nil),                         // 39: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                      // 40: v2.RawQuery
-	(*SlimUser)(nil),                                      // 41: v2.SlimUser
-	(*ResourceByID)(nil),                                  // 42: v2.ResourceByID
-	(*Empty)(nil),                                         // 43: v2.Empty
+	(ReportSnapshot_ReportType)(0),                        // 9: v2.ReportSnapshot.ReportType
+	(ReportStatus_RunState)(0),                            // 10: v2.ReportStatus.RunState
+	(ReportStatus_ReportMethod)(0),                        // 11: v2.ReportStatus.ReportMethod
+	(ReportRequestViewBased_ReportType)(0),                // 12: v2.ReportRequestViewBased.ReportType
+	(*ReportConfiguration)(nil),                           // 13: v2.ReportConfiguration
+	(*VulnerabilityReportFilters)(nil),                    // 14: v2.VulnerabilityReportFilters
+	(*NodeVulnerabilityReportFilters)(nil),                // 15: v2.NodeVulnerabilityReportFilters
+	(*ViewBasedVulnerabilityReportFilters)(nil),           // 16: v2.ViewBasedVulnerabilityReportFilters
+	(*ReportSchedule)(nil),                                // 17: v2.ReportSchedule
+	(*ResourceScope)(nil),                                 // 18: v2.ResourceScope
+	(*CollectionReference)(nil),                           // 19: v2.CollectionReference
+	(*EntityScope)(nil),                                   // 20: v2.EntityScope
+	(*RuleValue)(nil),                                     // 21: v2.RuleValue
+	(*EntityScopeRule)(nil),                               // 22: v2.EntityScopeRule
+	(*NotifierConfiguration)(nil),                         // 23: v2.NotifierConfiguration
+	(*EmailNotifierConfiguration)(nil),                    // 24: v2.EmailNotifierConfiguration
+	(*ListReportConfigurationsResponse)(nil),              // 25: v2.ListReportConfigurationsResponse
+	(*CountReportConfigurationsResponse)(nil),             // 26: v2.CountReportConfigurationsResponse
+	(*GetReportHistoryRequest)(nil),                       // 27: v2.GetReportHistoryRequest
+	(*GetViewBasedReportHistoryRequest)(nil),              // 28: v2.GetViewBasedReportHistoryRequest
+	(*ReportHistoryResponse)(nil),                         // 29: v2.ReportHistoryResponse
+	(*ReportStatusResponse)(nil),                          // 30: v2.ReportStatusResponse
+	(*CollectionSnapshot)(nil),                            // 31: v2.CollectionSnapshot
+	(*ReportSnapshot)(nil),                                // 32: v2.ReportSnapshot
+	(*ReportStatus)(nil),                                  // 33: v2.ReportStatus
+	(*RunReportRequest)(nil),                              // 34: v2.RunReportRequest
+	(*RunReportResponse)(nil),                             // 35: v2.RunReportResponse
+	(*DeleteReportRequest)(nil),                           // 36: v2.DeleteReportRequest
+	(*ReportRequestViewBased)(nil),                        // 37: v2.ReportRequestViewBased
+	(*RunReportResponseViewBased)(nil),                    // 38: v2.RunReportResponseViewBased
+	(*ReportSchedule_DaysOfWeek)(nil),                     // 39: v2.ReportSchedule.DaysOfWeek
+	(*ReportSchedule_DaysOfMonth)(nil),                    // 40: v2.ReportSchedule.DaysOfMonth
+	(*timestamppb.Timestamp)(nil),                         // 41: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                      // 42: v2.RawQuery
+	(*SlimUser)(nil),                                      // 43: v2.SlimUser
+	(*ResourceByID)(nil),                                  // 44: v2.ResourceByID
+	(*Empty)(nil),                                         // 45: v2.Empty
 }
 var file_api_v2_report_service_proto_depIdxs = []int32{
 	4,  // 0: v2.ReportConfiguration.type:type_name -> v2.ReportConfiguration.ReportType
-	13, // 1: v2.ReportConfiguration.vuln_report_filters:type_name -> v2.VulnerabilityReportFilters
-	15, // 2: v2.ReportConfiguration.schedule:type_name -> v2.ReportSchedule
-	16, // 3: v2.ReportConfiguration.resource_scope:type_name -> v2.ResourceScope
-	21, // 4: v2.ReportConfiguration.notifiers:type_name -> v2.NotifierConfiguration
-	5,  // 5: v2.VulnerabilityReportFilters.fixability:type_name -> v2.VulnerabilityReportFilters.Fixability
-	6,  // 6: v2.VulnerabilityReportFilters.severities:type_name -> v2.VulnerabilityReportFilters.VulnerabilitySeverity
-	7,  // 7: v2.VulnerabilityReportFilters.image_types:type_name -> v2.VulnerabilityReportFilters.ImageType
-	39, // 8: v2.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
-	8,  // 9: v2.ReportSchedule.interval_type:type_name -> v2.ReportSchedule.IntervalType
-	37, // 10: v2.ReportSchedule.days_of_week:type_name -> v2.ReportSchedule.DaysOfWeek
-	38, // 11: v2.ReportSchedule.days_of_month:type_name -> v2.ReportSchedule.DaysOfMonth
-	17, // 12: v2.ResourceScope.collection_scope:type_name -> v2.CollectionReference
-	18, // 13: v2.ResourceScope.entity_scope:type_name -> v2.EntityScope
-	20, // 14: v2.EntityScope.rules:type_name -> v2.EntityScopeRule
-	0,  // 15: v2.RuleValue.match_type:type_name -> v2.MatchType
-	1,  // 16: v2.EntityScopeRule.entity:type_name -> v2.ScopeEntity
-	2,  // 17: v2.EntityScopeRule.field:type_name -> v2.ScopeField
-	19, // 18: v2.EntityScopeRule.values:type_name -> v2.RuleValue
-	22, // 19: v2.NotifierConfiguration.email_config:type_name -> v2.EmailNotifierConfiguration
-	12, // 20: v2.ListReportConfigurationsResponse.report_configs:type_name -> v2.ReportConfiguration
-	40, // 21: v2.GetReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
-	40, // 22: v2.GetViewBasedReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
-	30, // 23: v2.ReportHistoryResponse.report_snapshots:type_name -> v2.ReportSnapshot
-	31, // 24: v2.ReportStatusResponse.status:type_name -> v2.ReportStatus
-	13, // 25: v2.ReportSnapshot.vuln_report_filters:type_name -> v2.VulnerabilityReportFilters
-	14, // 26: v2.ReportSnapshot.view_based_vuln_report_filters:type_name -> v2.ViewBasedVulnerabilityReportFilters
-	29, // 27: v2.ReportSnapshot.collection_snapshot:type_name -> v2.CollectionSnapshot
-	15, // 28: v2.ReportSnapshot.schedule:type_name -> v2.ReportSchedule
-	31, // 29: v2.ReportSnapshot.report_status:type_name -> v2.ReportStatus
-	21, // 30: v2.ReportSnapshot.notifiers:type_name -> v2.NotifierConfiguration
-	41, // 31: v2.ReportSnapshot.user:type_name -> v2.SlimUser
-	16, // 32: v2.ReportSnapshot.resource_scope:type_name -> v2.ResourceScope
-	9,  // 33: v2.ReportStatus.run_state:type_name -> v2.ReportStatus.RunState
-	39, // 34: v2.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	10, // 35: v2.ReportStatus.report_request_type:type_name -> v2.ReportStatus.ReportMethod
-	3,  // 36: v2.ReportStatus.report_notification_method:type_name -> v2.NotificationMethod
-	3,  // 37: v2.RunReportRequest.report_notification_method:type_name -> v2.NotificationMethod
-	11, // 38: v2.ReportRequestViewBased.type:type_name -> v2.ReportRequestViewBased.ReportType
-	14, // 39: v2.ReportRequestViewBased.view_based_vuln_report_filters:type_name -> v2.ViewBasedVulnerabilityReportFilters
-	12, // 40: v2.ReportService.PostReportConfiguration:input_type -> v2.ReportConfiguration
-	12, // 41: v2.ReportService.UpdateReportConfiguration:input_type -> v2.ReportConfiguration
-	40, // 42: v2.ReportService.ListReportConfigurations:input_type -> v2.RawQuery
-	40, // 43: v2.ReportService.CountReportConfigurations:input_type -> v2.RawQuery
-	42, // 44: v2.ReportService.GetReportConfiguration:input_type -> v2.ResourceByID
-	42, // 45: v2.ReportService.DeleteReportConfiguration:input_type -> v2.ResourceByID
-	42, // 46: v2.ReportService.GetReportStatus:input_type -> v2.ResourceByID
-	25, // 47: v2.ReportService.GetReportHistory:input_type -> v2.GetReportHistoryRequest
-	25, // 48: v2.ReportService.GetMyReportHistory:input_type -> v2.GetReportHistoryRequest
-	32, // 49: v2.ReportService.RunReport:input_type -> v2.RunReportRequest
-	42, // 50: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
-	34, // 51: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
-	35, // 52: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
-	26, // 53: v2.ReportService.GetViewBasedMyReportHistory:input_type -> v2.GetViewBasedReportHistoryRequest
-	26, // 54: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.GetViewBasedReportHistoryRequest
-	12, // 55: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
-	43, // 56: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
-	23, // 57: v2.ReportService.ListReportConfigurations:output_type -> v2.ListReportConfigurationsResponse
-	24, // 58: v2.ReportService.CountReportConfigurations:output_type -> v2.CountReportConfigurationsResponse
-	12, // 59: v2.ReportService.GetReportConfiguration:output_type -> v2.ReportConfiguration
-	43, // 60: v2.ReportService.DeleteReportConfiguration:output_type -> v2.Empty
-	28, // 61: v2.ReportService.GetReportStatus:output_type -> v2.ReportStatusResponse
-	27, // 62: v2.ReportService.GetReportHistory:output_type -> v2.ReportHistoryResponse
-	27, // 63: v2.ReportService.GetMyReportHistory:output_type -> v2.ReportHistoryResponse
-	33, // 64: v2.ReportService.RunReport:output_type -> v2.RunReportResponse
-	43, // 65: v2.ReportService.CancelReport:output_type -> v2.Empty
-	43, // 66: v2.ReportService.DeleteReport:output_type -> v2.Empty
-	36, // 67: v2.ReportService.PostViewBasedReport:output_type -> v2.RunReportResponseViewBased
-	27, // 68: v2.ReportService.GetViewBasedMyReportHistory:output_type -> v2.ReportHistoryResponse
-	27, // 69: v2.ReportService.GetViewBasedReportHistory:output_type -> v2.ReportHistoryResponse
-	55, // [55:70] is the sub-list for method output_type
-	40, // [40:55] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	14, // 1: v2.ReportConfiguration.vuln_report_filters:type_name -> v2.VulnerabilityReportFilters
+	15, // 2: v2.ReportConfiguration.node_vuln_report_filters:type_name -> v2.NodeVulnerabilityReportFilters
+	17, // 3: v2.ReportConfiguration.schedule:type_name -> v2.ReportSchedule
+	18, // 4: v2.ReportConfiguration.resource_scope:type_name -> v2.ResourceScope
+	23, // 5: v2.ReportConfiguration.notifiers:type_name -> v2.NotifierConfiguration
+	5,  // 6: v2.VulnerabilityReportFilters.fixability:type_name -> v2.VulnerabilityReportFilters.Fixability
+	6,  // 7: v2.VulnerabilityReportFilters.severities:type_name -> v2.VulnerabilityReportFilters.VulnerabilitySeverity
+	7,  // 8: v2.VulnerabilityReportFilters.image_types:type_name -> v2.VulnerabilityReportFilters.ImageType
+	41, // 9: v2.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
+	8,  // 10: v2.ReportSchedule.interval_type:type_name -> v2.ReportSchedule.IntervalType
+	39, // 11: v2.ReportSchedule.days_of_week:type_name -> v2.ReportSchedule.DaysOfWeek
+	40, // 12: v2.ReportSchedule.days_of_month:type_name -> v2.ReportSchedule.DaysOfMonth
+	19, // 13: v2.ResourceScope.collection_scope:type_name -> v2.CollectionReference
+	20, // 14: v2.ResourceScope.entity_scope:type_name -> v2.EntityScope
+	22, // 15: v2.EntityScope.rules:type_name -> v2.EntityScopeRule
+	0,  // 16: v2.RuleValue.match_type:type_name -> v2.MatchType
+	1,  // 17: v2.EntityScopeRule.entity:type_name -> v2.ScopeEntity
+	2,  // 18: v2.EntityScopeRule.field:type_name -> v2.ScopeField
+	21, // 19: v2.EntityScopeRule.values:type_name -> v2.RuleValue
+	24, // 20: v2.NotifierConfiguration.email_config:type_name -> v2.EmailNotifierConfiguration
+	13, // 21: v2.ListReportConfigurationsResponse.report_configs:type_name -> v2.ReportConfiguration
+	42, // 22: v2.GetReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
+	42, // 23: v2.GetViewBasedReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
+	32, // 24: v2.ReportHistoryResponse.report_snapshots:type_name -> v2.ReportSnapshot
+	33, // 25: v2.ReportStatusResponse.status:type_name -> v2.ReportStatus
+	9,  // 26: v2.ReportSnapshot.type:type_name -> v2.ReportSnapshot.ReportType
+	14, // 27: v2.ReportSnapshot.vuln_report_filters:type_name -> v2.VulnerabilityReportFilters
+	16, // 28: v2.ReportSnapshot.view_based_vuln_report_filters:type_name -> v2.ViewBasedVulnerabilityReportFilters
+	15, // 29: v2.ReportSnapshot.node_vuln_report_filters:type_name -> v2.NodeVulnerabilityReportFilters
+	31, // 30: v2.ReportSnapshot.collection_snapshot:type_name -> v2.CollectionSnapshot
+	17, // 31: v2.ReportSnapshot.schedule:type_name -> v2.ReportSchedule
+	33, // 32: v2.ReportSnapshot.report_status:type_name -> v2.ReportStatus
+	23, // 33: v2.ReportSnapshot.notifiers:type_name -> v2.NotifierConfiguration
+	43, // 34: v2.ReportSnapshot.user:type_name -> v2.SlimUser
+	18, // 35: v2.ReportSnapshot.resource_scope:type_name -> v2.ResourceScope
+	10, // 36: v2.ReportStatus.run_state:type_name -> v2.ReportStatus.RunState
+	41, // 37: v2.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	11, // 38: v2.ReportStatus.report_request_type:type_name -> v2.ReportStatus.ReportMethod
+	3,  // 39: v2.ReportStatus.report_notification_method:type_name -> v2.NotificationMethod
+	3,  // 40: v2.RunReportRequest.report_notification_method:type_name -> v2.NotificationMethod
+	12, // 41: v2.ReportRequestViewBased.type:type_name -> v2.ReportRequestViewBased.ReportType
+	16, // 42: v2.ReportRequestViewBased.view_based_vuln_report_filters:type_name -> v2.ViewBasedVulnerabilityReportFilters
+	15, // 43: v2.ReportRequestViewBased.node_vuln_report_filters:type_name -> v2.NodeVulnerabilityReportFilters
+	13, // 44: v2.ReportService.PostReportConfiguration:input_type -> v2.ReportConfiguration
+	13, // 45: v2.ReportService.UpdateReportConfiguration:input_type -> v2.ReportConfiguration
+	42, // 46: v2.ReportService.ListReportConfigurations:input_type -> v2.RawQuery
+	42, // 47: v2.ReportService.CountReportConfigurations:input_type -> v2.RawQuery
+	44, // 48: v2.ReportService.GetReportConfiguration:input_type -> v2.ResourceByID
+	44, // 49: v2.ReportService.DeleteReportConfiguration:input_type -> v2.ResourceByID
+	44, // 50: v2.ReportService.GetReportStatus:input_type -> v2.ResourceByID
+	27, // 51: v2.ReportService.GetReportHistory:input_type -> v2.GetReportHistoryRequest
+	27, // 52: v2.ReportService.GetMyReportHistory:input_type -> v2.GetReportHistoryRequest
+	34, // 53: v2.ReportService.RunReport:input_type -> v2.RunReportRequest
+	44, // 54: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
+	36, // 55: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
+	37, // 56: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
+	28, // 57: v2.ReportService.GetViewBasedMyReportHistory:input_type -> v2.GetViewBasedReportHistoryRequest
+	28, // 58: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.GetViewBasedReportHistoryRequest
+	13, // 59: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
+	45, // 60: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
+	25, // 61: v2.ReportService.ListReportConfigurations:output_type -> v2.ListReportConfigurationsResponse
+	26, // 62: v2.ReportService.CountReportConfigurations:output_type -> v2.CountReportConfigurationsResponse
+	13, // 63: v2.ReportService.GetReportConfiguration:output_type -> v2.ReportConfiguration
+	45, // 64: v2.ReportService.DeleteReportConfiguration:output_type -> v2.Empty
+	30, // 65: v2.ReportService.GetReportStatus:output_type -> v2.ReportStatusResponse
+	29, // 66: v2.ReportService.GetReportHistory:output_type -> v2.ReportHistoryResponse
+	29, // 67: v2.ReportService.GetMyReportHistory:output_type -> v2.ReportHistoryResponse
+	35, // 68: v2.ReportService.RunReport:output_type -> v2.RunReportResponse
+	45, // 69: v2.ReportService.CancelReport:output_type -> v2.Empty
+	45, // 70: v2.ReportService.DeleteReport:output_type -> v2.Empty
+	38, // 71: v2.ReportService.PostViewBasedReport:output_type -> v2.RunReportResponseViewBased
+	29, // 72: v2.ReportService.GetViewBasedMyReportHistory:output_type -> v2.ReportHistoryResponse
+	29, // 73: v2.ReportService.GetViewBasedReportHistory:output_type -> v2.ReportHistoryResponse
+	59, // [59:74] is the sub-list for method output_type
+	44, // [44:59] is the sub-list for method input_type
+	44, // [44:44] is the sub-list for extension type_name
+	44, // [44:44] is the sub-list for extension extendee
+	0,  // [0:44] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_report_service_proto_init() }
@@ -2786,37 +2989,43 @@ func file_api_v2_report_service_proto_init() {
 	file_api_v2_user_proto_init()
 	file_api_v2_report_service_proto_msgTypes[0].OneofWrappers = []any{
 		(*ReportConfiguration_VulnReportFilters)(nil),
+		(*ReportConfiguration_NodeVulnReportFilters)(nil),
 	}
 	file_api_v2_report_service_proto_msgTypes[1].OneofWrappers = []any{
 		(*VulnerabilityReportFilters_AllVuln)(nil),
 		(*VulnerabilityReportFilters_SinceLastSentScheduledReport)(nil),
 		(*VulnerabilityReportFilters_SinceStartDate)(nil),
 	}
-	file_api_v2_report_service_proto_msgTypes[3].OneofWrappers = []any{
+	file_api_v2_report_service_proto_msgTypes[2].OneofWrappers = []any{
+		(*NodeVulnerabilityReportFilters_AllVuln)(nil),
+	}
+	file_api_v2_report_service_proto_msgTypes[4].OneofWrappers = []any{
 		(*ReportSchedule_DaysOfWeek_)(nil),
 		(*ReportSchedule_DaysOfMonth_)(nil),
 	}
-	file_api_v2_report_service_proto_msgTypes[4].OneofWrappers = []any{
+	file_api_v2_report_service_proto_msgTypes[5].OneofWrappers = []any{
 		(*ResourceScope_CollectionScope)(nil),
 		(*ResourceScope_EntityScope)(nil),
 	}
-	file_api_v2_report_service_proto_msgTypes[9].OneofWrappers = []any{
+	file_api_v2_report_service_proto_msgTypes[10].OneofWrappers = []any{
 		(*NotifierConfiguration_EmailConfig)(nil),
 	}
-	file_api_v2_report_service_proto_msgTypes[18].OneofWrappers = []any{
+	file_api_v2_report_service_proto_msgTypes[19].OneofWrappers = []any{
 		(*ReportSnapshot_VulnReportFilters)(nil),
 		(*ReportSnapshot_ViewBasedVulnReportFilters)(nil),
+		(*ReportSnapshot_NodeVulnReportFilters)(nil),
 	}
-	file_api_v2_report_service_proto_msgTypes[23].OneofWrappers = []any{
+	file_api_v2_report_service_proto_msgTypes[24].OneofWrappers = []any{
 		(*ReportRequestViewBased_ViewBasedVulnReportFilters)(nil),
+		(*ReportRequestViewBased_NodeVulnReportFilters)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_report_service_proto_rawDesc), len(file_api_v2_report_service_proto_rawDesc)),
-			NumEnums:      12,
-			NumMessages:   27,
+			NumEnums:      13,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

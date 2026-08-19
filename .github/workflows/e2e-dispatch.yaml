@@ -106,7 +106,7 @@ jobs:
 
         jobs_registry = [
             Job(name='e2e-byodb-tests'),
-            Job(name='e2e-db-backup-restore-test'),
+            Job(name='e2e-db-backup-restore-tests'),
             Job(name='e2e-gke-upgrade-tests'),
             Job(name='e2e-nongroovy-tests'),
             Job(name='e2e-qa-tests-gke', require_pr_label=True),
@@ -244,15 +244,15 @@ jobs:
       group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-db-backup-restore-test:
+  e2e-db-backup-restore-tests:
     needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
+    uses: ./.github/workflows/e2e-db-backup-restore-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-test }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-tests }}
     secrets: inherit
     concurrency:
-      group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-db-backup-restore-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-gke-upgrade-tests:

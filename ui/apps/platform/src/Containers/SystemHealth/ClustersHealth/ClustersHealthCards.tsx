@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { GridItem } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { fetchClusters } from 'services/ClustersService';
 import type { Cluster } from 'types/cluster.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ClusterStatusCard from './ClusterStatusCard';
 import CredentialExpirationCard from './CredentialExpirationCard';
+import SensorCompatibilityCard from './SensorCompatibilityCard';
 import SensorUpgradeCard from './SensorUpgradeCard';
 
 type ClustersHealthCardsProps = {
@@ -20,6 +22,9 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
     const [clusters, setClusters] = useState<Cluster[]>([]);
 
     const [currentDatetime, setCurrentDatetime] = useState<Date | null>(null);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const showCompatibilityStatus = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
 
     useEffect(() => {
         setIsFetching(true);
@@ -54,11 +59,19 @@ const ClustersHealthCards = ({ pollingCount }: ClustersHealthCardsProps): ReactE
                 />
             </GridItem>
             <GridItem span={12}>
-                <SensorUpgradeCard
-                    clusters={clusters}
-                    isFetchingInitialRequest={isFetchingInitialRequest}
-                    errorMessageFetching={errorMessageFetching}
-                />
+                {showCompatibilityStatus ? (
+                    <SensorCompatibilityCard
+                        clusters={clusters}
+                        isFetchingInitialRequest={isFetchingInitialRequest}
+                        errorMessageFetching={errorMessageFetching}
+                    />
+                ) : (
+                    <SensorUpgradeCard
+                        clusters={clusters}
+                        isFetchingInitialRequest={isFetchingInitialRequest}
+                        errorMessageFetching={errorMessageFetching}
+                    />
+                )}
             </GridItem>
             <GridItem span={12}>
                 <CredentialExpirationCard

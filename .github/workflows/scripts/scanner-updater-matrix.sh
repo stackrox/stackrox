@@ -43,7 +43,7 @@ prefix=$(yq '.storage.prefix' "$config")
                 done
       done \
     | while read -r stream ref updater; do
-          object="gs://${bucket}/${prefix}/${stream}/sources/${updater}/data.json.zst"
+          object="gs://${bucket}/${prefix}/${stream}/sources/${updater}.json.zst"
 
           # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
           if GCS_OBJECT="$object" \

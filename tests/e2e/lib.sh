@@ -332,8 +332,10 @@ deploy_stackrox_with_custom_central_and_sensor_versions() {
             exit 1
         fi
         ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE}"
+        local sensor_image_flavor
+        sensor_image_flavor="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "${TEST_ROOT}" image-flavor)}"
+        roxctl helm output secured-cluster-services --image-defaults="${sensor_image_flavor}" --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
+        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE} (image-defaults=${sensor_image_flavor})"
     else
         echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
         exit 1
@@ -669,6 +671,9 @@ deploy_sensor_via_operator() {
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
     local fam_mode_setting="Disabled"
+    local vm_mode_setting="Disabled"
+    # Test-only setting: VM scraper poll interval to 1m (floor is 1m) to shorten e2e test runtime. Production default is 5m.
+    local vm_scraper_poll_interval="${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -700,21 +705,11 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
-    customize_envVars=""
     if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES'
-        customize_envVars+=$'\n      value: "true"'
-        # Shorten pull-mode scraper cadence so VM e2e does not wait on the
-        # production default (5m) between Sensor polls of guest agents.
-        # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
-        customize_envVars+=$'\n    - name: ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL'
-        customize_envVars+=$'\n      value: "'"${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}"'"'
+        vm_mode_setting="Enabled"
     fi
-    # For VM e2e tests that may send multiple index reports per minute.
-    if [[ -n "${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE:-}" ]]; then
-        customize_envVars+=$'\n    - name: ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE'
-        customize_envVars+=$'\n      value: "'"${ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE}"'"'
-    fi
+
+    customize_envVars=""
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
@@ -739,6 +734,8 @@ deploy_sensor_via_operator() {
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
+      vm_mode_setting="$vm_mode_setting" \
+      vm_scraper_poll_interval="$vm_scraper_poll_interval" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
       scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
@@ -747,18 +744,6 @@ deploy_sensor_via_operator() {
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
-
-    # Operator cannot set Helm virtualMachines.enabled yet; without that value
-    # the chart skips VSOCK RBAC. Pull-mode scraping needs get on
-    # virtualmachineinstances/vsock, so apply the equivalent roles here.
-    if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        info "Applying Sensor VSOCK RBAC for virtual machine pull-mode scraping"
-        if [[ "${sensor_namespace}" != "stackrox" ]]; then
-            # Manifest hard-codes the sensor SA namespace as stackrox.
-            die "ROX_VIRTUAL_MACHINES VSOCK RBAC currently requires sensor_namespace=stackrox (got ${sensor_namespace})"
-        fi
-        retrying_kubectl </dev/null apply -f "${ROOT}/tests/e2e/yaml/sensor-vsock-rbac.yaml"
-    fi
 
     collector_envs=()
 
