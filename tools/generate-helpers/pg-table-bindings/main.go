@@ -291,9 +291,10 @@ func main() {
 			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
 			"NoSerialized":             props.NoSerialized,
 
-			"SchemaBuilder":       schemaBuilder,
-			"SearchFieldsLiteral": searchFieldsLiteral,
-			"EnumRegistration":    enumRegistration,
+			"SchemaBuilder":        schemaBuilder,
+			"SearchFieldsLiteral":  searchFieldsLiteral,
+			"SearchFieldsVariable": strings.ReplaceAll(schema.Table, "_", "") + "SearchFields",
+			"EnumRegistration":     enumRegistration,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

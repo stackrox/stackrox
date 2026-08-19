@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
@@ -45,18 +44,7 @@ var (
 			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
 		}
 
-		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_EVENTS, map[search.FieldLabel]*search.Field{
-			"Created Time":     {FieldPath: "administrationevent.created_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Event Domain":     {FieldPath: "administrationevent.domain", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Event Level":      {FieldPath: "administrationevent.level", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Event Occurrence": {FieldPath: "administrationevent.num_occurrences", Type: v1.SearchDataType_SEARCH_NUMERIC, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Event Type":       {FieldPath: "administrationevent.type", Type: v1.SearchDataType_SEARCH_ENUM, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Last Updated":     {FieldPath: "administrationevent.last_occurred_at.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-			"Resource Type":    {FieldPath: "administrationevent.resource.type", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_ADMINISTRATION_EVENTS},
-		}))
-		enumregistry.AddValues("administrationevent.level", map[string]int32{"ADMINISTRATION_EVENT_LEVEL_ERROR": 4, "ADMINISTRATION_EVENT_LEVEL_INFO": 1, "ADMINISTRATION_EVENT_LEVEL_SUCCESS": 2, "ADMINISTRATION_EVENT_LEVEL_UNKNOWN": 0, "ADMINISTRATION_EVENT_LEVEL_WARNING": 3})
-		enumregistry.AddValues("administrationevent.type", map[string]int32{"ADMINISTRATION_EVENT_TYPE_GENERIC": 1, "ADMINISTRATION_EVENT_TYPE_LOG_MESSAGE": 2, "ADMINISTRATION_EVENT_TYPE_UNKNOWN": 0})
-
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_ADMINISTRATION_EVENTS, administrationeventsSearchFields))
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableAdministrationEventsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ADMINISTRATION_EVENTS, schema)

@@ -80,10 +80,7 @@ var (
          {{- end }}
 
         {{- if .SearchCategory }}
-            schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, {{.SearchFieldsLiteral}}))
-            {{- if .EnumRegistration }}
-            {{.EnumRegistration}}
-            {{- end }}
+            schema.SetOptionsMap(search.OptionsMapFromMap(v1.{{.SearchCategory}}, {{.SearchFieldsVariable}}))
             {{- if .SearchScope }}
             schema.SetSearchScope([]v1.SearchCategory{
             {{- range $category := .SearchScope }}
