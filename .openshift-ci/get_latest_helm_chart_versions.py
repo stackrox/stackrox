@@ -49,7 +49,7 @@ NUM_RELEASES_DEFAULT = 3
 # From this release onward the stackrox-operator chart is used instead of the
 # per-component legacy charts (stackrox-central-services,
 # stackrox-secured-cluster-services), which are not published for new releases.
-# TODO: Drop legacy chart inspection once 4.10 goes EOL.
+# Drop legacy chart inspection can be dropped, once 4.10 goes EOL.
 OPERATOR_CHART_FIRST_RELEASE = Release(major=4, minor=11)
 
 OPERATOR_CHART_NAME = "stackrox-operator"
