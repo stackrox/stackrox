@@ -89,30 +89,33 @@ wait_for_background_migrations() {
     local retries=10
     local interval=30
     local i
+    local target_seqnum
+    target_seqnum=$(get_target_bg_migration_seqnum)
+    info "Target background migration seqnum: $target_seqnum"
     for ((i=0; i<retries; i++)); do
-        local central_pod
-        if ! central_pod=$(kubectl -n stackrox get pod -l app=central -o jsonpath='{.items[0].metadata.name}' 2>&1) || [[ -z "$central_pod" ]]; then
-            info "Could not find central pod (attempt $((i+1))/$retries), retrying..."
-            sleep "$interval"
-            continue
-        fi
-        local response
-        if response=$(kubectl -n stackrox exec "$central_pod" -- curl -s --connect-timeout 5 --max-time 10 localhost:9090/metrics 2>&1); then
-            local val
-            val=$(echo "$response" | grep '^rox_central_background_migration_complete ' | awk '{print $2}' || true)
-            if [[ "$val" == "1" ]]; then
-                info "Background migrations complete"
+        local db_seqnum
+        if db_seqnum=$(kubectl -n stackrox exec -it deploy/central-db -- \
+            psql -U postgres -d central_active -tAc \
+            "SELECT seqnum FROM background_migration_versions LIMIT 1" 2>&1); then
+            db_seqnum=$(echo "$db_seqnum" | tr -d '[:space:]')
+            if [[ "$db_seqnum" -ge "$target_seqnum" ]] 2>/dev/null; then
+                info "Background migrations complete (seqnum: $db_seqnum)"
                 return 0
             fi
-            info "Background migrations not yet complete (value: ${val:-not found}), attempt $((i+1))/$retries"
+            info "Background migrations not yet complete (seqnum: ${db_seqnum:-null}, target: $target_seqnum), attempt $((i+1))/$retries"
         else
-            info "Metrics request failed (attempt $((i+1))/$retries): $response"
+            info "DB query failed (attempt $((i+1))/$retries): $db_seqnum"
         fi
         if (( i < retries - 1 )); then
             sleep "$interval"
         fi
     done
     die "Background migrations did not complete within $((retries * interval)) seconds"
+}
+
+get_target_bg_migration_seqnum() {
+    grep -oP 'CurrentBgMigrationSeqNum\s*=\s*\K[0-9]+' \
+        "$TEST_ROOT/central/backgroundmigrations/seq_num.go"
 }
 
 deploy_earlier_postgres_central() {
