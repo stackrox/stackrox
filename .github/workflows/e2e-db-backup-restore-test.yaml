@@ -11,12 +11,25 @@ on:
         description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
         type: boolean
         required: true
+      cluster:
+        description: Which cluster type(s) to run on — gke, kind, or both.
+        type: string
+        required: false
+        default: gke
   workflow_dispatch:
     inputs:
       tag:
         description: Image tag to test.
         type: string
         required: true
+      cluster:
+        description: Which cluster type(s) to run on.
+        type: choice
+        options:
+          - kind
+          - gke
+          - both
+        default: kind
 
 permissions:
   contents: read
@@ -27,19 +40,30 @@ defaults:
     shell: bash
 
 jobs:
-  gke-db-backup-restore-test:
+  db-backup-restore-test:
     if: github.event_name == 'workflow_dispatch' || inputs.should-run
+    strategy:
+      fail-fast: false
+      matrix:
+        # Derive the cluster list from the `cluster` input:
+        #   both -> [gke, kind]   kind -> [kind]   (default) -> [gke]
+        cluster: ${{ fromJSON(inputs.cluster == 'both' && '["gke","kind"]' || (inputs.cluster == 'kind' && '["kind"]' || '["gke"]')) }}
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: gke-db-backup-restore-test
+      CI_JOB_NAME: ${{ matrix.cluster }}-db-backup-restore-test
       ARTIFACT_DIR: ./junit-reports
-      LOAD_BALANCER: lb
       ROX_SCANNER_V4: "false"
-      STORAGE: pvc
-      STORAGE_CLASS: faster
       PYTHONUNBUFFERED: "1"
+      # Cluster-specific settings.
+      # GKE: cloud LoadBalancer exposure + pd-ssd "faster" storage class + scanner v2.
+      # KinD: no cloud LB (deploy falls back to port-forward on localhost:8000),
+      #       default local-path storage class, scanner disabled to fit the runner.
+      LOAD_BALANCER: ${{ matrix.cluster == 'gke' && 'lb' || 'none' }}
+      STORAGE: pvc
+      STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
+      SCANNER_SUPPORT: ${{ matrix.cluster == 'gke' && 'true' || 'false' }}
     timeout-minutes: 60
     steps:
 
@@ -54,12 +78,16 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    # --- GKE provisioning (matrix.cluster == 'gke') ---
+
     - name: Set up Cloud SDK
+      if: matrix.cluster == 'gke'
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       with:
         install_components: "gke-gcloud-auth-plugin,beta"
 
     - name: Create GKE cluster
+      if: matrix.cluster == 'gke'
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
@@ -74,18 +102,57 @@ jobs:
           echo "KUBECONFIG=${HOME}/.kube/config"
         } >> "$GITHUB_ENV"
 
+    # --- KinD provisioning (matrix.cluster == 'kind') ---
+
+    - name: Create KinD cluster
+      if: matrix.cluster == 'kind'
+      uses: ./.github/actions/create-kind-cluster
+      with:
+        cluster-name: dbbr
+        tag: ${{ inputs.tag }}
+        registry: quay.io/rhacs-eng
+        memory-limit: 12g
+        pull-scanner: "false"
+        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+    # --- Shared: build roxctl (used for central backup/restore) ---
+
     - name: Build roxctl
-      # The test uses roxctl for central backup/restore operations
       run: |
         make roxctl_linux-amd64
         echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
 
-    - name: Verify kubectl access and wait for cluster to stabilize
+    # --- Cluster readiness ---
+
+    - name: Verify kubectl access and wait for GKE cluster to stabilize
+      if: matrix.cluster == 'gke'
       timeout-minutes: 5
       run: |
         kubectl cluster-info
         kubectl get nodes
         scripts/ci/gke.sh wait_for_cluster
+
+    - name: Wait for KinD cluster to be ready
+      if: matrix.cluster == 'kind'
+      timeout-minutes: 10
+      run: |
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
+        export KUBECONFIG="${HOME}/.kube/config"
+        # create-kind-cluster runs in the background; wait for its readiness file.
+        for _ in $(seq 1 120); do
+          [[ -f /tmp/kind-ready ]] && break
+          sleep 5
+        done
+        echo "=== KinD creation log ==="
+        cat /tmp/kind-create.log 2>/dev/null || true
+        if [[ ! -f /tmp/kind-ready ]]; then
+          echo "::error::KinD cluster did not become ready in time"
+          exit 1
+        fi
+        kubectl cluster-info
+        kubectl wait --for=condition=Ready nodes --all --timeout=180s
+        kubectl get nodes
 
     - name: Run pre-test
       shell: python
@@ -137,7 +204,7 @@ jobs:
         FinalPost(store_qa_tests_data=False).run()
 
     - name: Teardown GKE cluster
-      if: always()
+      if: always() && matrix.cluster == 'gke'
       continue-on-error: true
       run: |
         if [[ -z "${CLUSTER_NAME:-}" ]]; then
@@ -148,6 +215,12 @@ jobs:
           echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
           exit 6
         fi
+
+    - name: Teardown KinD cluster
+      if: always() && matrix.cluster == 'kind'
+      continue-on-error: true
+      run: |
+        kind delete cluster --name dbbr || true
 
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
