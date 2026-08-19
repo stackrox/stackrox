@@ -399,7 +399,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	slog.InfoContext(ctx, "previous vuln update", "timestamp", prevTime)
 
-	zipFile, zipTime, err := u.fetch(ctx, prevTime)
+	zipFile, _, err := u.fetch(ctx, prevTime)
 	if err != nil {
 		return false, err
 	}
@@ -449,7 +449,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
-		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
+		if err := u.updateBundle(bundleCtx, bundleF, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
 			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
 		}
@@ -458,13 +458,10 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
 	// Safe to be run concurrently.
-	names := make([]string, 0, len(bundles))
 	for _, f := range bundles {
-		names = append(names, f.Name)
-	}
-	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
-	if err != nil {
-		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+		if err := u.metadataStore.GCVulnerabilityUpdate(ctx, f.Name, f.Modified); err != nil {
+			return false, fmt.Errorf("cleaning vuln updates: %w", err)
+		}
 	}
 
 	err = u.distManager.update(ctx)
@@ -477,7 +474,7 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {
+func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, prevTime time.Time) error {
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
@@ -492,8 +489,8 @@ func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time
 	if err != nil {
 		return fmt.Errorf("querying last update: %w", err)
 	}
-	if !lastTime.Before(zipTime) {
-		slog.InfoContext(ctx, "skipping: last update time is greater or equal to the zip archive time", "last_update_time", lastTime, "update_time", zipTime)
+	if !lastTime.Before(zipF.Modified) {
+		slog.InfoContext(ctx, "skipping: last update time is greater or equal to the zip archive time", "last_update_time", lastTime, "update_time", zipF.Modified)
 		return nil
 	}
 

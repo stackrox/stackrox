@@ -67,7 +67,7 @@ func Test_CleanVulnerabilityUpdates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, now.Add(-2*time.Hour).UTC().Truncate(time.Second), timestamp)
 
-	err = store.GCVulnerabilityUpdates(ctx, []string{"valid"}, now)
+	err = store.GCVulnerabilityUpdate(ctx, "valid", now)
 	require.NoError(t, err)
 
 	// Expect valid timestamp after cleaned.

@@ -125,9 +125,6 @@ func TestMultiBundleUpdate(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
-		Return(nil)
-	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 	store.EXPECT().
@@ -211,8 +208,9 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 
 	// GC and Initialized at end of runMultiBundleUpdate.
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
-		Return(nil)
+		GCVulnerabilityUpdate(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		Times(len(bundleNames))
 	store.EXPECT().
 		Distributions(gomock.Any()).
 		Return(nil, nil)
@@ -251,7 +249,7 @@ func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
 	store := mocks.NewMockMatcherStore(ctrl)
 	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
 
-	prevTime := now.Add(-time.Hour)
+	prevTime := entryModified.Add(-time.Hour)
 
 	u := &Updater{
 		locker:        &testLocker{locker: updates.NewLocalLockSource()},
@@ -276,7 +274,7 @@ func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
 		GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleName, prevTime).
 		Return(prevTime, nil)
 
-	// Processing phase: lastTime (prevTime) is before zipTime (now), so it runs.
+	// Processing phase: lastTime (prevTime) is before the entry's Modified time, so it runs.
 	metadataStore.EXPECT().
 		GetOrSetLastVulnerabilityUpdate(gomock.Any(), bundleName, prevTime).
 		Return(prevTime, nil).
@@ -291,7 +289,9 @@ func TestUpdateBundle_UsesPerEntryZipModifiedTimestamp(t *testing.T) {
 
 	// GC and Initialized at end of runMultiBundleUpdate.
 	metadataStore.EXPECT().
-		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		GCVulnerabilityUpdate(gomock.Any(), bundleName, gomock.Cond(func(got time.Time) bool {
+			return got.Equal(entryModified)
+		})).
 		Return(nil)
 	store.EXPECT().
 		Distributions(gomock.Any()).
