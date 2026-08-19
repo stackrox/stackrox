@@ -167,6 +167,26 @@ func (mr *MockcentralClientMockRecorder) ScanImageInternal(arg0, arg1 any, arg2 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanImageInternal", reflect.TypeOf((*MockcentralClient)(nil).ScanImageInternal), varargs...)
 }
 
+// ScanImageInternalForAdmission mocks base method.
+func (m *MockcentralClient) ScanImageInternalForAdmission(arg0 context.Context, arg1 *v1.ScanImageInternalRequest, arg2 ...grpc.CallOption) (*v1.ScanImageInternalResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ScanImageInternalForAdmission", varargs...)
+	ret0, _ := ret[0].(*v1.ScanImageInternalResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScanImageInternalForAdmission indicates an expected call of ScanImageInternalForAdmission.
+func (mr *MockcentralClientMockRecorder) ScanImageInternalForAdmission(arg0, arg1 any, arg2 ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanImageInternalForAdmission", reflect.TypeOf((*MockcentralClient)(nil).ScanImageInternalForAdmission), varargs...)
+}
+
 // MocklocalScan is a mock of localScan interface.
 type MocklocalScan struct {
 	ctrl     *gomock.Controller
