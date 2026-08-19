@@ -2,10 +2,10 @@
 # Validates a Red Hat signing key bundle JSON file.
 #
 # Checks mirror the Go ParseKeyBundle logic in pkg/signatures/key_bundle.go:
-#   - valid JSON with non-empty "keys" array
-#   - each key has a non-empty "name" without path separators
+#   - valid JSON with non-empty "cosignKeys" array
+#   - each key has a non-empty "name" (after trimming) without path separators
 #   - no duplicate key names
-#   - each "pem" value is a valid PEM-encoded public key
+#   - each "publicKey" value is a valid PEM-encoded public key
 #
 # USAGE: validate-signing-key-bundle.sh <bundle.json>
 
@@ -18,9 +18,9 @@ if [[ ! -f "$bundle" ]]; then
     exit 1
 fi
 
-# 1. Valid JSON structure with non-empty keys array.
-key_count=$(jq -e '.keys | length' "$bundle") || {
-    echo "ERROR: invalid JSON or missing 'keys' array" >&2
+# 1. Valid JSON structure with non-empty cosignKeys array.
+key_count=$(jq -e '.cosignKeys | length' "$bundle") || {
+    echo "ERROR: invalid JSON or missing 'cosignKeys' array" >&2
     exit 1
 }
 
@@ -34,10 +34,14 @@ echo "Found $key_count key(s), validating..."
 # 2-4. Validate each key entry.
 seen_names=()
 for i in $(seq 0 $((key_count - 1))); do
-    name=$(jq -r ".keys[$i].name // empty" "$bundle")
-    pem_data=$(jq -r ".keys[$i].pem // empty" "$bundle")
+    raw_name=$(jq -r ".cosignKeys[$i].name // empty" "$bundle")
+    pem_data=$(jq -r ".cosignKeys[$i].publicKey // empty" "$bundle")
 
-    if [[ -z "${name//[[:space:]]/}" ]]; then
+    # Trim whitespace to match Go's strings.TrimSpace before all checks.
+    name="${raw_name#"${raw_name%%[![:space:]]*}"}"
+    name="${name%"${name##*[![:space:]]}"}"
+
+    if [[ -z "$name" ]]; then
         echo "ERROR: key at index $i has empty name" >&2
         exit 1
     fi
@@ -56,7 +60,7 @@ for i in $(seq 0 $((key_count - 1))); do
     seen_names+=("$name")
 
     if [[ -z "$pem_data" ]]; then
-        echo "ERROR: key '$name' has empty PEM data" >&2
+        echo "ERROR: key '$name' has empty publicKey" >&2
         exit 1
     fi
 
