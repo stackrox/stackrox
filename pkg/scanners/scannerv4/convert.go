@@ -585,8 +585,8 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 		return
 	}
 
-	// Find AncestryPackage entries. A package at or below that layer is
-	// covered by any lower layer index too, so only the highest is kept.
+	// Find AncestryPackage entries. A package introduced at or before that
+	// layer is also not affected, so keep the highest layer index per alias.
 	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageNotVulnerable() {
 		pkg := report.GetContents().GetPackages()[pkgID]
@@ -673,9 +673,8 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 		return
 	}
 
-	// Find packages with an affirmative rhel-vex vulnerability. An OSV
-	// package at or below that layer is covered by any lower layer index
-	// too, so only the highest is kept.
+	// Find packages with a rhel-vex vulnerability. An OSV package introduced
+	// at or before that layer is superseded too, so keep the highest layer per alias.
 	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
 		// Only consider OCI (RHCC) packages.
@@ -690,7 +689,7 @@ func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIn
 
 		for _, vulnID := range vulnIDs.GetValues() {
 			vuln := report.GetVulnerabilities()[vulnID]
-			if vuln.GetUpdater() != redHatVEXUpdaterName {
+			if vuln == nil || vuln.GetUpdater() != redHatVEXUpdaterName {
 				continue
 			}
 			for _, alias := range vuln.GetAliases() {
