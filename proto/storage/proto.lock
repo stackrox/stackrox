@@ -195,6 +195,119 @@
       }
     },
     {
+      "protopath": "ai_workload.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "AIWorkload.WorkloadType",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "INFERENCE",
+                "integer": 1
+              },
+              {
+                "name": "TRAINING",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "AIWorkload",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "workload_type",
+                "type": "WorkloadType"
+              },
+              {
+                "id": 7,
+                "name": "model_format",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "storage_uri",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "runtime",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "gpu_requests",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "cpu_requests",
+                "type": "string"
+              },
+              {
+                "id": 12,
+                "name": "memory_requests",
+                "type": "string"
+              },
+              {
+                "id": 13,
+                "name": "deployment_mode",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "auth_enabled",
+                "type": "bool"
+              },
+              {
+                "id": 15,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
       "protopath": "alert.proto",
       "def": {
         "enums": [
