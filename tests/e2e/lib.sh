@@ -360,6 +360,7 @@ export_test_environment() {
     local _lb_default="lb"
     local _central_nlb="false"
     local _lb_svc_annotations=""
+    local _local_port="443"
     # IPv6: OCP-primary uses route. EKS (non-OCP) IPv6-only uses a dedicated
     # dualstack NLB created via the AWS Load Balancer Controller. We cannot get
     # a dualstack NLB by patching the built-in central-loadbalancer: on an
@@ -377,6 +378,14 @@ export_test_environment() {
         else
             _lb_default="none"
             _central_nlb="true"
+            # With LOAD_BALANCER=none the deploy reaches Central via a
+            # port-forward on localhost:LOCAL_PORT (deploy/common/k8sbased.sh),
+            # while wait_for_central and get_cluster_zip curl API_ENDPOINT, which
+            # defaults to localhost:8000 (deploy/common/env.sh). LOCAL_PORT must
+            # therefore be 8000, not the 443 default used for direct-LB access —
+            # otherwise the port-forward serves :443 while the deploy curls :8000
+            # and times out ("Connection refused") before aborting Central.
+            _local_port="8000"
             # Also make qa-test LoadBalancer Services (NetworkFlowTest etc.)
             # provision as dualstack NLBs; a plain LoadBalancer never gets an
             # address on IPv6-only EKS. See loadBalancerServiceAnnotations() in
@@ -387,7 +396,7 @@ export_test_environment() {
     ci_export LOAD_BALANCER "${LOAD_BALANCER:-${_lb_default}}"
     ci_export CENTRAL_NLB "${CENTRAL_NLB:-${_central_nlb}}"
     ci_export LOAD_BALANCER_SERVICE_ANNOTATIONS "${LOAD_BALANCER_SERVICE_ANNOTATIONS:-${_lb_svc_annotations}}"
-    ci_export LOCAL_PORT "${LOCAL_PORT:-443}"
+    ci_export LOCAL_PORT "${LOCAL_PORT:-${_local_port}}"
     ci_export MONITORING_SUPPORT "${MONITORING_SUPPORT:-false}"
     ci_export SCANNER_SUPPORT "${SCANNER_SUPPORT:-true}"
     ci_export USE_MIDSTREAM_IMAGES "${USE_MIDSTREAM_IMAGES:-false}"
