@@ -18,8 +18,8 @@ inputs:
     description: Image tag for central-db and main
     required: true
   registry:
-    description: Image registry
-    default: quay.io/rhacs-eng
+    description: Image registry to pre-pull from (main + central-db both live at quay.io/stackrox-io)
+    default: quay.io/stackrox-io
   memory-limit:
     description: Docker container memory cap for the KinD node
     default: 12g
@@ -58,29 +58,30 @@ runs:
           docker update --memory "${{ inputs.memory-limit }}" \
             --memory-swap "${{ inputs.memory-limit }}" "$NODE"
 
-          # Pull central-db first (foreground wait) — it is the slowest kubelet
-          # backoff failure mode. Everything else pulls in the background.
+          # The cluster is usable now — signal readiness immediately. Image
+          # pre-pull below is a best-effort optimization to avoid kubelet
+          # image-pull backoff; if it fails, kubelet still pulls on demand
+          # during deploy using the pull secret. A pull failure must never
+          # block the job.
+          touch /tmp/kind-ready
+
           # set +x around ctr pull to keep --user credentials out of the trace.
           set +x
           docker exec "$NODE" ctr -n k8s.io images pull \
             --user "$CTR_AUTH" --platform linux/amd64 \
-            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" &
-          PID_CDB=$!
+            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" || true
           docker exec "$NODE" ctr -n k8s.io images pull \
             --user "$CTR_AUTH" --platform linux/amd64 \
-            "${{ inputs.registry }}/main:${{ inputs.tag }}" &
+            "${{ inputs.registry }}/main:${{ inputs.tag }}" || true
           if [[ -n "$SCANNER_TAG" ]]; then
             docker exec "$NODE" ctr -n k8s.io images pull \
               --user "$CTR_AUTH" --platform linux/amd64 \
-              "${{ inputs.registry }}/scanner:${SCANNER_TAG}" &
+              "${{ inputs.registry }}/scanner:${SCANNER_TAG}" || true
             docker exec "$NODE" ctr -n k8s.io images pull \
               --user "$CTR_AUTH" --platform linux/amd64 \
-              "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" &
+              "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" || true
           fi
           set -x
-
-          wait $PID_CDB
-          touch /tmp/kind-ready
         ) > /tmp/kind-create.log 2>&1 &
 
         echo "KinD cluster creation started in background"

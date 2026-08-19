@@ -105,7 +105,7 @@ jobs:
       with:
         cluster-name: dbbr
         tag: ${{ inputs.tag }}
-        registry: quay.io/rhacs-eng
+        registry: quay.io/stackrox-io
         memory-limit: 12g
         pull-scanner: "false"
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
