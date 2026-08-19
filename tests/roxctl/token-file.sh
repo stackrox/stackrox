@@ -30,11 +30,12 @@ token_file_has_token() {
 }
 
 request_api_token() {
+  # wait_for_api_token owns retries; curl --retry would multiply generate POSTs.
   curl -k -f \
     --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") \
     -d '{"name": "test", "role": "Admin"}' \
-    --retry 5 \
-    --retry-connrefused \
+    --connect-timeout 10 \
+    --max-time 30 \
     "https://$API_ENDPOINT/v1/apitokens/generate"
 }
 
