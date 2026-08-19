@@ -7,6 +7,7 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	v11 "github.com/stackrox/rox/generated/internalapi/aiworkload/v1"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -523,6 +524,21 @@ func (m *SensorEvent_VirtualMachine) CloneVT() isSensorEvent_Resource {
 			r.VirtualMachine = vtpb.CloneVT()
 		} else {
 			r.VirtualMachine = proto.Clone(rhs).(*v1.VirtualMachine)
+		}
+	}
+	return r
+}
+
+func (m *SensorEvent_AiWorkload) CloneVT() isSensorEvent_Resource {
+	if m == nil {
+		return (*SensorEvent_AiWorkload)(nil)
+	}
+	r := new(SensorEvent_AiWorkload)
+	if rhs := m.AiWorkload; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v11.AIWorkload }); ok {
+			r.AiWorkload = vtpb.CloneVT()
+		} else {
+			r.AiWorkload = proto.Clone(rhs).(*v11.AIWorkload)
 		}
 	}
 	return r
@@ -2107,6 +2123,35 @@ func (this *SensorEvent_VirtualMachine) EqualVT(thatIface isSensorEvent_Resource
 			q = &v1.VirtualMachine{}
 		}
 		if equal, ok := interface{}(p).(interface{ EqualVT(*v1.VirtualMachine) bool }); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *SensorEvent_AiWorkload) EqualVT(thatIface isSensorEvent_Resource) bool {
+	that, ok := thatIface.(*SensorEvent_AiWorkload)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.AiWorkload, that.AiWorkload; p != q {
+		if p == nil {
+			p = &v11.AIWorkload{}
+		}
+		if q == nil {
+			q = &v11.AIWorkload{}
+		}
+		if equal, ok := interface{}(p).(interface{ EqualVT(*v11.AIWorkload) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -4160,6 +4205,45 @@ func (m *SensorEvent_VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	return len(dAtA) - i, nil
 }
+func (m *SensorEvent_AiWorkload) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *SensorEvent_AiWorkload) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.AiWorkload != nil {
+		if vtmsg, ok := interface{}(m.AiWorkload).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.AiWorkload)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xaa
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xaa
+	}
+	return len(dAtA) - i, nil
+}
 func (m *SensorEnforcement) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -5872,6 +5956,26 @@ func (m *SensorEvent_VirtualMachine) SizeVT() (n int) {
 			l = size.SizeVT()
 		} else {
 			l = proto.Size(m.VirtualMachine)
+		}
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 3
+	}
+	return n
+}
+func (m *SensorEvent_AiWorkload) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.AiWorkload != nil {
+		if size, ok := interface{}(m.AiWorkload).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.AiWorkload)
 		}
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
@@ -8570,6 +8674,63 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Resource = &SensorEvent_VirtualMachine{VirtualMachine: v}
+			}
+			iNdEx = postIndex
+		case 37:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AiWorkload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_AiWorkload); ok {
+				if unmarshal, ok := interface{}(oneof.AiWorkload).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.AiWorkload); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &v11.AIWorkload{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_AiWorkload{AiWorkload: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -12886,6 +13047,63 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 				}
 				m.Resource = &SensorEvent_VirtualMachine{VirtualMachine: v}
+			}
+			iNdEx = postIndex
+		case 37:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AiWorkload", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*SensorEvent_AiWorkload); ok {
+				if unmarshal, ok := interface{}(oneof.AiWorkload).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.AiWorkload); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &v11.AIWorkload{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVTUnsafe([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Resource = &SensorEvent_AiWorkload{AiWorkload: v}
 			}
 			iNdEx = postIndex
 		default:
