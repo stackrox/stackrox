@@ -1,6 +1,10 @@
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import { addCheckboxSelectFilter, selectAttribute, selectEntity } from '../../helpers/compoundFilters';
+import {
+    addCheckboxSelectFilter,
+    selectAttribute,
+    selectEntity,
+} from '../../helpers/compoundFilters';
 import { generateNameWithDate } from '../../helpers/formHelpers';
 import {
     changePolicyStatusInTable,
@@ -182,7 +186,10 @@ describe('Policies table', () => {
         cy.get('button[aria-label="Menu toggle"]').click();
 
         // the dropdown must not be empty — this was fixed by ROX-36393
-        cy.get('ul[aria-label="Filter results select menu"] li').should('have.length.greaterThan', 0);
+        cy.get('ul[aria-label="Filter results select menu"] li').should(
+            'have.length.greaterThan',
+            0
+        );
     });
 
     it('should have expected lifecycle values', () => {
