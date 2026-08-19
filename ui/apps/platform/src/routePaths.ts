@@ -91,6 +91,7 @@ export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user
 export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
 export const vulnerabilitiesVirtualMachineCvesPath = `${vulnerabilitiesBasePath}/virtual-machine-cves`;
+export const vulnerabilitiesAIWorkloadsPath = `${vulnerabilitiesBasePath}/ai-workloads`;
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
@@ -201,6 +202,7 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
+    | 'vulnerabilities/ai-workloads'
     | 'base-images'
     | 'vulnerability-management'
     ;
@@ -390,6 +392,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/virtual-machine-cves': {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
+    },
+    'vulnerabilities/ai-workloads': {
+        featureFlagRequirements: allEnabled(['ROX_AI_WORKLOADS']),
+        resourceAccessRequirements: everyResource(['AIWorkload']),
     },
     'base-images': {
         featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
