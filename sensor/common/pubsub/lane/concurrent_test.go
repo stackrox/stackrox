@@ -316,6 +316,20 @@ func TestErrorHandling(t *testing.T) {
 	})
 }
 
+func TestHandleEvent_StalledConsumerDoesNotLeakGoroutines(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+	lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(newStalledConsumer)).NewLane()
+	assert.NotNil(t, lane)
+	for range 50 {
+		require.NoError(t, lane.Publish(&concurrentTestEvent{}))
+	}
+	// Give handleEvent a chance to run for every published event before stopping.
+	// If it spawned a goroutine per event to watch stalledConsumer's never-resolving
+	// errC, goleak would catch the leak below regardless of this sleep's length.
+	time.Sleep(50 * time.Millisecond)
+	lane.Stop()
+}
+
 func TestStop(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 	t.Run("stop should clean up resources", func(t *testing.T) {
@@ -382,3 +396,18 @@ func (m *mockConsumer) Stop() {
 		m.stopFn()
 	}
 }
+
+// newStalledConsumer builds a consumer whose Consume() returns a channel that is
+// never written to and never closed, simulating a consumer whose processing never
+// resolves.
+func newStalledConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
+	return &stalledConsumer{}, nil
+}
+
+type stalledConsumer struct{}
+
+func (c *stalledConsumer) Consume(_ concurrency.Waitable, _ pubsub.Event) <-chan error {
+	return make(chan error)
+}
+
+func (c *stalledConsumer) Stop() {}
