@@ -77,14 +77,18 @@ jobs:
       STORAGE: pvc
       # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2: 'default' means per-cluster — on for GKE, off for KinD.
-      # (Scanner adds no coverage to this test and overcommits a single KinD node:
-      # it runs, but pushes sensor to Pending. Use scanner=on to force it anyway.)
+      # Scanner v2: 'default' means per-cluster — on for GKE, off for KinD. Scanner
+      # adds no coverage to this test (config round-trip), so KinD leaves it off by
+      # default to keep the gate fast; use scanner=on to run the full stack.
       SCANNER_SUPPORT: ${{ (inputs.scanner == 'on' && 'true') || (inputs.scanner == 'off' && 'false') || (matrix.cluster == 'gke' && 'true' || 'false') }}
-      # When scanner is forced on for KinD, apply minimal-footprint resource
-      # overrides (small requests to schedule; modest limits so ROX_MEMLIMIT ->
-      # GOMEMLIMIT keeps pods under the limit instead of OOMing). Empty otherwise.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      # On KinD, always apply minimal-footprint resource overrides to both the
+      # central-services and secured-cluster-services charts. Small *requests* let
+      # everything (Central, DB, Sensor, Collector, Admission, and Scanner when on)
+      # schedule on one runner node; modest *limits* drive ROX_MEMLIMIT -> Go soft
+      # GC (95% of limits.memory) so pods back off instead of OOMing. The default
+      # sensor requests alone are cpu:2/mem:4Gi, which otherwise starve the node.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
     timeout-minutes: 60
     steps:
 

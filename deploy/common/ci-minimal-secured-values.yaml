@@ -1,0 +1,47 @@
+# Minimal-footprint resource overrides for stackrox-secured-cluster-services, the
+# companion to ci-minimal-values.yaml, for running the secured-cluster components
+# alongside Central (and optionally Scanner) on a single-node runner-hosted KinD.
+#
+# The default sensor requests (cpu: 2, memory: 4Gi — see the secured-cluster chart
+# defaults/40-resources.yaml) are sized for production and dwarf actual usage in a
+# tiny cluster. On a 4-CPU runner node they consume half the CPU budget by
+# themselves, which starves Scanner and leaves sensor Pending. Shrink the
+# *requests* so everything schedules; keep modest *limits* so ROX_MEMLIMIT (wired
+# from limits.memory via the downward API) drives Go's soft GC limit and pods back
+# off instead of OOMing.
+#
+# Applied via ROX_SENSOR_EXTRA_HELM_VALUES_FILE.
+
+sensor:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 500Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
+
+admissionControl:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 500m
+      memory: 500Mi
+
+collector:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 200Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  complianceResources:
+    requests:
+      cpu: 10m
+      memory: 10Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
