@@ -31,6 +31,7 @@ func Test_config_HashUserAuthID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	id := mocks.NewMockIdentity(ctrl)
 	provider, _ := authproviders.NewProvider(
+		t.Context(),
 		authproviders.WithID("test-provider"),
 		authproviders.WithName("test-provider-name"),
 	)

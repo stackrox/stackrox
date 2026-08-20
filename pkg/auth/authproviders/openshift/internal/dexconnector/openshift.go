@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -47,6 +48,8 @@ const (
 	openshiftWellKnownURL = "/.well-known/oauth-authorization-server"
 	openshiftUsersURL     = "/apis/user.openshift.io/v1/users/~"
 )
+
+var log = logging.LoggerForModule()
 
 // Config holds configuration options for OpenShift OAuth login.
 type Config struct {
@@ -135,7 +138,7 @@ func (c *Config) Open() (*openshiftConnector, error) {
 	openshiftConnector.oauth2Config = &oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
-		Scopes:       []string{"user:info"},
+		Scopes:       []string{"user:info"/* , "user:full"*/},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  metadata.Auth,
 			TokenURL: metadata.Token,
@@ -292,6 +295,7 @@ func (c *openshiftConnector) identity(ctx context.Context, s Scopes, token *oaut
 			return identity, errors.Wrap(err, "failed to marshal openshift's oauth2 token")
 		}
 		identity.ConnectorData = connData
+		log.Info(string(connData))
 	}
 
 	return identity, nil

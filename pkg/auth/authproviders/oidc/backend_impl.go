@@ -234,6 +234,7 @@ func (p *backendImpl) claimsFromIDToken(ctx context.Context, idToken oidcIDToken
 // iff the ID token claims do not contain groups.
 func (p *backendImpl) authFromIDToken(ctx context.Context, rawIDToken string, rawAccessToken string,
 	nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
+	log.Info("OIDC implicit flow - access token : ", rawAccessToken)
 	idToken, err := p.verifyIDToken(ctx, rawIDToken, nonceVerification)
 	if err != nil {
 		return nil, errors.Wrap(err, "verifying ID token")
@@ -475,6 +476,8 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithIDToken(ctx context.C
 		return nil, errors.New("no id_token field found in response")
 	}
 
+	log.Info("OIDC implicit flow - ID token : ", rawIDToken)
+
 	// For the implicit flow, according to the spec an access token _should_ be sent which should be valid for
 	// calling the userinfo endpoint. If no access token is given, the auth response will not contain the enriched
 	// groups claim from the userinfo endpoint (in case the ID token does not have groups present).
@@ -491,6 +494,8 @@ func (p *backendImpl) processIDPResponseForImplicitFlowWithAccessToken(ctx conte
 	if rawToken == "" {
 		return nil, errors.New("no access_token field found in response")
 	}
+
+	log.Info("OIDC implicit flow - access token : ", rawToken)
 
 	authResp, err := p.authFromUserInfo(ctx, rawToken)
 	if err != nil {
@@ -524,6 +529,9 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 	if rawIDToken == "" {
 		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
+	log.Info("OIDC code flow - access token : ", token.GetAccessToken())
+	log.Info("OIDC code flow - raw ID token : ", rawIDToken)
+	log.Info("OIDC code flow - refresh token : ", token.GetRefreshToken())
 
 	authResp, err := p.authFromIDToken(ctx, rawIDToken, token.GetAccessToken(), verifyNonce)
 	if err != nil {
