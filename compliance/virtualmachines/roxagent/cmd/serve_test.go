@@ -15,13 +15,13 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// validMappingJSON is the minimal content repositorytocpe.ValidateMapping accepts.
+// validMappingJSON is the minimal content cpemapping.ValidateMapping accepts.
 // otherValidMappingJSON is a distinct valid payload for tests that need two
 // different hashes (e.g. deferred-apply across a simulated scan).
 const (
@@ -257,7 +257,7 @@ func TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies(t *testin
 
 	_, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
 	require.True(t, provider.Ready(), "a pre-seeded Sensor cache must bootstrap the provider Ready")
-	require.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), provider.Hash())
+	require.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), provider.Hash())
 
 	gate, ok := updater.(vsockserver.ScanBusyGate)
 	require.True(t, ok, "the Sensor updater must implement ScanBusyGate")
@@ -267,12 +267,12 @@ func TestNewRescannerAndProvider_SensorSync_DefersUnderScanThenApplies(t *testin
 	require.NoError(t, err)
 	require.True(t, updated)
 
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), provider.Hash(),
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), provider.Hash(),
 		"the active mapping must stay the bootstrapped content while a scan is in flight")
 
 	gate.MarkScanIdleAndApplyPending()
 
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(otherValidMappingJSON)), provider.Hash(),
+	assert.Equal(t, cpemapping.HashMapping([]byte(otherValidMappingJSON)), provider.Hash(),
 		"the pending mapping should apply once the scan is marked idle")
 
 	// MarkScanIdleAndApplyPending's persist is also fire-and-forget; wait

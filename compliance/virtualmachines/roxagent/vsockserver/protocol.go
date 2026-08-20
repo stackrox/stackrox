@@ -11,14 +11,14 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // maxRequestSize must fit a synced repo-to-CPE mapping (up to MaxMappingBytes) plus envelope headroom, not just a GetReport request.
-const maxRequestSize = repositorytocpe.MaxMappingBytes + 1<<20
+const maxRequestSize = cpemapping.MaxMappingBytes + 1<<20
 
 // reportSnapshot is an immutable point-in-time view of the cached report state.
 type reportSnapshot struct {

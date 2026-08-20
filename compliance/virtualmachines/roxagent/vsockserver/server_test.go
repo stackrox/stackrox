@@ -77,7 +77,7 @@ func TestRejectConn(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				handler := NewHandler(&ReportCache{}, "test")
+				handler := NewHandler(&ReportCache{}, "test", readyProvider(), nil)
 				srv := NewServer(handler, nil)
 
 				serverConn, clientConn := net.Pipe()
