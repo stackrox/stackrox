@@ -324,10 +324,11 @@ jobs:
       cancel-in-progress: true
 
   e2e-operator-tests-ocp-4-22:
-    needs: [ wait-for-images, should-dispatch ]
+    # TEMPORARY: skip wait-for-images, hardcode tag for faster iteration
+    needs: [ should-dispatch ]
     uses: ./.github/workflows/e2e-operator-tests-ocp-4-22.yaml
     with:
-      tag: ${{ needs.wait-for-images.outputs.tag }}
+      tag: "5.0.x-195-g8c92f96a2b"
       should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-operator-tests-ocp-4-22 }}
     secrets: inherit
     concurrency:
