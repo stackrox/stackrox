@@ -215,6 +215,8 @@ jobs:
         run: mkdir -p "$ARTIFACT_DIR"
 
       - name: Run pre-test
+        # TEMPORARY: skip pre-test when reusing cluster (image prefetcher has a preexisting issue)
+        if: inputs.reuse-infra-cluster == ''
         shell: python
         env:
           QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
