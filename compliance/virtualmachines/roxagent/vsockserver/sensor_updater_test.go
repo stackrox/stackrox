@@ -149,6 +149,23 @@ func TestSensorUpdater_Update_OwnsContent(t *testing.T) {
 	waitForCacheContent(t, cachePath, validMappingJSON)
 }
 
+func TestSensorUpdater_Path_WritesCurrentActive(t *testing.T) {
+	cachePath := filepath.Join(t.TempDir(), "cache.json")
+	u := NewSensorUpdater(cachePath, "", func() {})
+	_, err := u.Update([]byte(validMappingJSON))
+	require.NoError(t, err)
+	_, err = u.Update([]byte(otherValidMappingJSON))
+	require.NoError(t, err)
+
+	path, err := u.Path()
+	require.NoError(t, err)
+	onDisk, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, otherValidMappingJSON, string(onDisk),
+		"Path must persist the current active mapping, not an in-flight older write")
+	waitForCacheContent(t, cachePath, otherValidMappingJSON)
+}
+
 func TestSensorUpdater_Update_AppliesWhenIdle(t *testing.T) {
 	dir := t.TempDir()
 	cachePath := filepath.Join(dir, "cache.json")

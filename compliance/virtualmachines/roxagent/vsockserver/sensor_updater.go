@@ -31,6 +31,9 @@ type SensorUpdater struct {
 	busy       bool
 	onChange   func()
 	mu         sync.Mutex
+	// persistMu serializes cachePath writes. persistActive is the only
+	// acquirer; it takes persistMu, then mu, never the reverse.
+	persistMu sync.Mutex
 }
 
 // NewSensorUpdater seeds active from cachePath, else bundledPath, else
@@ -101,16 +104,7 @@ func (u *SensorUpdater) Bytes() ([]byte, error) {
 // callers always get a file whose content matches Bytes() even if the
 // fire-and-forget persistence from the last apply has not landed yet.
 func (u *SensorUpdater) Path() (string, error) {
-	active, cachePath := concurrency.WithLock2(&u.mu, func() ([]byte, string) {
-		return u.active, u.cachePath
-	})
-	if len(active) == 0 {
-		return "", errSensorMappingNotReady
-	}
-	if err := filedownloader.AtomicWriteFile(cachePath, active); err != nil {
-		return "", err
-	}
-	return cachePath, nil
+	return u.persistActive()
 }
 
 // Update applies content to active immediately, or stages it as pending
@@ -150,7 +144,7 @@ func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 		log.Infof("SyncRepoCPEMapping: deferring apply of mapping (hash=%s) until the in-flight scan finishes", hash)
 		return true, nil
 	}
-	u.persistAndNotify(content)
+	u.persistAndNotify()
 	return true, nil
 }
 
@@ -177,7 +171,7 @@ func (u *SensorUpdater) MarkScanIdleAndApplyPending() {
 		return pending
 	})
 	if pending != nil {
-		u.persistAndNotify(pending)
+		u.persistAndNotify()
 	}
 }
 
@@ -187,17 +181,36 @@ func (u *SensorUpdater) applyLocked(content []byte, hash string) {
 	u.activeHash = hash
 }
 
-// persistAndNotify writes content to cachePath in the background, then
-// synchronously fires onChange so the caller's later reads already see
-// the new active mapping.
-func (u *SensorUpdater) persistAndNotify(content []byte) {
-	cachePath := u.cachePath
+// persistAndNotify persists the active mapping in the background, then
+// fires onChange so later reads already see it.
+func (u *SensorUpdater) persistAndNotify() {
 	go func() {
-		if err := filedownloader.AtomicWriteFile(cachePath, content); err != nil {
-			log.Warnf("Persisting repo-to-CPE mapping cache to %q: %v", cachePath, err)
+		if _, err := u.persistActive(); err != nil {
+			log.Warnf("Persisting repo-to-CPE mapping cache to %q: %v", u.cachePath, err)
 		}
 	}()
 	if u.onChange != nil {
 		u.onChange()
 	}
+}
+
+// persistActive writes a copy of the current active mapping to cachePath.
+// It takes persistMu, then mu, so a late persist cannot overwrite the
+// file with a superseded mapping.
+func (u *SensorUpdater) persistActive() (string, error) {
+	return concurrency.WithLock2(&u.persistMu, func() (string, error) {
+		active, cachePath := concurrency.WithLock2(&u.mu, func() ([]byte, string) {
+			if len(u.active) == 0 {
+				return nil, u.cachePath
+			}
+			return bytes.Clone(u.active), u.cachePath
+		})
+		if len(active) == 0 {
+			return "", errSensorMappingNotReady
+		}
+		if err := filedownloader.AtomicWriteFile(cachePath, active); err != nil {
+			return "", err
+		}
+		return cachePath, nil
+	})
 }
