@@ -25,7 +25,7 @@ jobs:
       should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
       tag: ${{ inputs.tag }}
       ci-job-name: ocp-4-22-operator-e2e-tests
-      cluster-name-prefix: e2e-oper-tests-ocp422
+      cluster-name-prefix: e2e-op-tests-ocp422
       cluster-provisioning-method: infra
       cluster-wait-timeout-minutes: 50
       infra-flavor: openshift-4
