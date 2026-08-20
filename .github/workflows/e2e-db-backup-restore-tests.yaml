@@ -70,6 +70,11 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       # Scanner v4 (indexer+matcher+db) — customer default. On when scanner=v4.
       ROX_SCANNER_V4: ${{ inputs.scanner == 'v4' && 'true' || 'false' }}
+      # Scanner v4's matcher gates readiness on the vuln bundle load. The default
+      # allowlist (9 sources) takes ~30 min on KinD's capped CPU and stalls the
+      # deploy. Restrict KinD to alpine only (<1 min) so v4 comes up fast; GKE
+      # keeps the fuller default set. (Empty -> tests/e2e/lib.sh default.)
+      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'v4') && 'alpine' || '' }}
       PYTHONUNBUFFERED: "1"
       # Both cluster types expose Central via a LoadBalancer service. On KinD,
       # cloud-provider-kind (started by create-kind-cluster) assigns the service
