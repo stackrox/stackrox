@@ -275,77 +275,125 @@ gen_admin_password() {
     head -c 20 </dev/urandom | base64
 }
 
-# shellcheck disable=SC2120
+# Deploy StackRox for compatibility testing using roxie.
+# Deploys central at central_version and secured cluster at sensor_version.
 deploy_stackrox_with_custom_central_and_sensor_versions() {
     if [[ "$#" -ne 2 ]]; then
-        die "expected central chart version and sensor chart version as parameters in \
-          deploy_stackrox_with_custom_central_and_sensor_versions: \
-          deploy_stackrox_with_custom_central_and_sensor_versions <central chart version> <sensor chart version>"
+        die "usage: deploy_stackrox_with_custom_central_and_sensor_versions <central_version> <sensor_version>"
     fi
     local central_version="$1"
     local sensor_version="$2"
 
-    ci_export DEPLOY_STACKROX_VIA_OPERATOR "false"
-    ci_export OUTPUT_FORMAT "helm"
+    local roxie="${TEST_ROOT}/scripts/roxie.sh"
 
-    # Repo name can't be too long or `helm search repo [REPO_NAME] -l` cuts off part of the name and the regex below fails.
-    local helm_repo_name="tmp-srox-compat"
-    local helm_chart_url="https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource"
-    if ! helm repo list -o json | jq -e --arg name "$helm_repo_name" --arg url "$helm_chart_url" \
-        'any(.[]; .name == $name and .url == $url)'; then
-        helm repo add --force-update "${helm_repo_name}" "${helm_chart_url}"
+    info "Deploying for compatibility test: Central ${central_version}, Sensor ${sensor_version}"
+
+    local namespace="stackrox"
+    local config_file; config_file="$(mktemp)"
+    local roxie_envrc; roxie_envrc="$(mktemp)"
+
+    # Fix the cluster name so setup_generated_certs_for_test can look it up by name.
+    merge_yaml "$config_file" <<EOF
+securedCluster:
+  spec:
+    clusterName: remote
+EOF
+
+    # Expose plaintext endpoints required by endpoints_test.go.
+    set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
+
+    # Speed up baseline generation so TestPod can observe process events within the test window.
+    # The default is 1h; tests time out long before baselines would be generated.
+    set_custom_env "$config_file" "central" "ROX_BASELINE_GENERATION_DURATION" "1m"
+    set_custom_env "$config_file" "central" "ROX_NETWORK_BASELINE_OBSERVATION_PERIOD" "2m"
+
+    # Inject the full endpoint config into the central-endpoints ConfigMap so that
+    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+        local overlay_tmp; overlay_tmp="$(mktemp)"
+        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
+        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
+        cat > "$overlay_tmp" <<'OVERLAY'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: central-endpoints
+      patches:
+      - path: data.endpoints\.yaml
+        verbatim: |
+OVERLAY
+        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        merge_yaml "$config_file" < "$overlay_tmp"
+        rm -f "$overlay_tmp"
     fi
 
-    current_tag="$(make tag --quiet --no-print-directory)"
-
-    helm_charts="$(helm search repo "${helm_repo_name}" -l)"
-    central_regex="${helm_repo_name}/stackrox-central-services[ \t]*.${central_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-    sensor_regex="${helm_repo_name}/stackrox-secured-cluster-services[ \t]*.${sensor_version}[ \t]*.([0-9]+\.[0-9]+\.[0-9]+)"
-
-    charts_dir="$(mktemp -d ./charts-dir.XXXXXX)"
-
-    # If the central version is the same as the current_tag, the default behavior of deploy_central() is correct for compatibility tests
-    chart_name="stackrox-central-services"
-    if  [[ $helm_charts =~ $central_regex ]]; then
-        central_chart="${helm_repo_name}/${chart_name}"
-        ci_export CENTRAL_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${central_chart}" --version "${central_version}" --untar --untardir "${charts_dir}"
-        echo "Pulled helm chart for ${chart_name} to ${CENTRAL_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" != "${central_version}" ]]; then
-        echo >&2 "${chart_name} helm chart for version ${central_version} not found in ${helm_repo_name} repo nor is it the current tag."
-        exit 1
+    # Add the test CA so Central accepts client-cert auth during endpoints_test.go.
+    if [[ -n "${TRUSTED_CA_FILE:-}" && -f "${TRUSTED_CA_FILE}" ]]; then
+        local trusted_ca_content
+        trusted_ca_content="$(jq -Rs . < "${TRUSTED_CA_FILE}")"
+        merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    tls:
+      additionalCAs:
+      - name: additional-ca
+        content: ${trusted_ca_content}
+EOF
     fi
 
-    # If the sensor version is the same as the current_tag the default behavior of deploy_sensor() is incorrect, because it will deploy
-    # a sensor version to match the central version. In our tests we want to test current sensor vs older central too,
-    # and since current sensor is not available in the repo either the chart is created here in the elif case.
-    chart_name="stackrox-secured-cluster-services"
-    if [[ $helm_charts =~ $sensor_regex ]]; then
-        sensor_chart="${helm_repo_name}/${chart_name}"
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        helm pull "${sensor_chart}" --version "${sensor_version}" --untar --untardir "${charts_dir}"
-        echo "Pulled helm chart for ${chart_name} to ${SENSOR_CHART_DIR_OVERRIDE}"
-    elif [[ "$current_tag" == "${sensor_version}" ]]; then
-        if [[ $(roxctl version) != "$current_tag" ]]; then
-            echo >&2 "Reported roxctl version $(roxctl version) is different from requested tag ${current_tag}. It won't be possible to get helm charts for ${current_tag}. Please check test setup."
-            exit 1
-        fi
-        ci_export SENSOR_CHART_DIR_OVERRIDE "${charts_dir}/${chart_name}"
-        local sensor_image_flavor
-        sensor_image_flavor="${ROXCTL_ROX_IMAGE_FLAVOR:-$(make --quiet --no-print-directory -C "${TEST_ROOT}" image-flavor)}"
-        roxctl helm output secured-cluster-services --image-defaults="${sensor_image_flavor}" --output-dir "${SENSOR_CHART_DIR_OVERRIDE}" --remove
-        echo "Downloaded ${chart_name} helm chart for version ${sensor_version} to ${SENSOR_CHART_DIR_OVERRIDE} (image-defaults=${sensor_image_flavor})"
-    else
-        echo >&2 "${chart_name} helm chart for version ${sensor_version} not found in ${helm_repo_name} repo nor is it the latest tag."
-        exit 1
+    # Create a TLS secret and reference it in the Central CR (for TLS cert tests).
+    if [[ -n "${ROX_DEFAULT_TLS_KEY_FILE:-}" && -n "${ROX_DEFAULT_TLS_CERT_FILE:-}" ]]; then
+        local tls_secret_name="central-default-tls-secret"
+
+        # Ensure the namespace exists.
+        retrying_kubectl create ns "$namespace" --dry-run=client -o yaml </dev/null \
+            | retrying_kubectl apply -f -
+
+        retrying_kubectl -n "$namespace" create secret tls "$tls_secret_name" \
+            --cert="$ROX_DEFAULT_TLS_CERT_FILE" \
+            --key="$ROX_DEFAULT_TLS_KEY_FILE" \
+            --dry-run=client -o yaml </dev/null \
+            | retrying_kubectl -n "$namespace" apply -f -
+        merge_yaml "$config_file" <<EOF
+central:
+  spec:
+    central:
+      defaultTLSSecret:
+        name: "${tls_secret_name}"
+EOF
     fi
 
-    deploy_stackrox
+    ROX_ADMIN_PASSWORD="$(gen_admin_password)"
+    export ROX_ADMIN_PASSWORD
 
-    rm -rf "$charts_dir"
+    "$roxie" --verbose deploy \
+        --single-namespace \
+        --tag "${central_version}" \
+        --secured-cluster-tag "${sensor_version}" \
+        --resources ci \
+        --pause-reconciliation \
+        --config "$config_file" \
+        --envrc "$roxie_envrc"
 
-    ci_export CENTRAL_CHART_DIR_OVERRIDE ""
-    ci_export SENSOR_CHART_DIR_OVERRIDE ""
+
+    extend_roxie_envrc "$roxie_envrc"
+    if [[ -n "${BASH_ENV:-}" ]]; then
+        cat "$roxie_envrc" >> "$BASH_ENV"
+    fi
+    # shellcheck source=/dev/null
+    source "$roxie_envrc"
+    ci_export API_ENDPOINT "$API_ENDPOINT"
+    ci_export ROX_ADMIN_PASSWORD "$ROX_ADMIN_PASSWORD"
+
+    rm -f "$config_file" "$roxie_envrc"
+
+    # TODO(https://github.com/stackrox/roxie/issues/269): replace with --early-readiness=false roxie flag,
+    # once we no longer need to deploy 4.9
+    wait_for_collectors_to_be_operational stackrox
+
+    info "Stackrox deployed with Central version: ${central_version}, Sensor version: ${sensor_version}"
 }
 
 # export_test_environment() - Persist environment variables for the remainder of
@@ -1846,7 +1894,7 @@ _EO_DETAILS_
     *gke-upgrade-tests)
         record_upgrade_test_progess
         ;;
-    *operator-e2e-tests)
+    *operator-e2e-tests|*-version-compatibility-tests|*-nongroovy-compatibility-tests)
         check_deployment=false
         ;;
     *)
