@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -25,8 +24,6 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	// LightspeedEndpoint is the URL of the OpenShift Lightspeed API.
 	LightspeedEndpoint = env.RegisterSetting("ROX_LIGHTSPEED_ENDPOINT",
 		env.WithDefault("https://lightspeed-app-server.openshift-lightspeed.svc:8443"))
