@@ -37,6 +37,8 @@ jobs:
         worker-node-count=3
         ssd-storage-class=true
       infra-lifespan: 5h
+      # TEMPORARY: reuse existing cluster for faster iteration
+      reuse-infra-cluster: mc-08-20-scale-nearby-usuall
       extra-env-vars: |
         ORCHESTRATOR_FLAVOR=openshift
         KUBERNETES_PROVIDER=ocp
