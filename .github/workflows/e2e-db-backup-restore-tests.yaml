@@ -16,6 +16,11 @@ on:
         type: string
         required: false
         default: gke
+      scanner:
+        description: Scanner v2 support — 'on' or 'off'.
+        type: string
+        required: false
+        default: "on"
   workflow_dispatch:
     inputs:
       tag:
@@ -30,6 +35,13 @@ on:
           - gke
           - both
         default: kind
+      scanner:
+        description: Scanner v2 support.
+        type: choice
+        options:
+          - "on"
+          - "off"
+        default: "on"
 
 permissions:
   contents: read
@@ -64,8 +76,13 @@ jobs:
       STORAGE: pvc
       # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2 on GKE; disabled on KinD to fit a standard runner.
-      SCANNER_SUPPORT: ${{ matrix.cluster == 'gke' && 'true' || 'false' }}
+      # Scanner v2 on by default for both clusters (off only when explicitly requested).
+      SCANNER_SUPPORT: ${{ inputs.scanner == 'off' && 'false' || 'true' }}
+      # On KinD, apply minimal-footprint resource overrides so the full stack
+      # (incl. Scanner v2) fits on one runner-hosted node without OOM. GOMEMLIMIT
+      # is auto-derived from limits.memory (see ci-minimal-values.yaml). Empty on
+      # GKE, which uses ci-values.yaml sizing.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
     timeout-minutes: 60
     steps:
 
@@ -112,7 +129,7 @@ jobs:
         registry: quay.io/rhacs-eng
         memory-limit: 12g
         enable-loadbalancer: "true"
-        pull-scanner: "false"
+        pull-scanner: "true"
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 

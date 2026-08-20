@@ -1,0 +1,81 @@
+# Minimal-footprint resource overrides for stackrox-central-services, for running
+# the full stack (incl. Scanner v2) on a single-node runner-hosted KinD cluster.
+#
+# Strategy (validated in PR #21334 for local KinD dev):
+#   - Small memory/CPU *requests* so every pod schedules on one small node.
+#   - Modest memory *limits* — the chart wires ROX_MEMLIMIT from limits.memory via
+#     the downward API (resourceFieldRef: limits.memory), and pkg/memlimit sets the
+#     Go soft memory limit to 95% of it. So GC gets aggressive before the limit and
+#     the process backs off instead of OOMing. Keeping a limit is what enables this;
+#     removing it would drop the GOMEMLIMIT signal.
+#
+# Applied via ROX_CENTRAL_EXTRA_HELM_VALUES_FILE, i.e. after ci-values.yaml, so
+# these win. Keep in sync with deploy/common/local-dev-values.yaml.
+
+central:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 200Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
+
+  db:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 200Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    # Postgres tuned for a ~2Gi limit so it does not assume a large machine.
+    postgresConfig: |
+      hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+      listen_addresses = '*'
+      max_connections = 100
+      password_encryption = scram-sha-256
+      ssl = on
+      ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+      ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+      ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+      shared_buffers = 256MB
+      work_mem = 10MB
+      maintenance_work_mem = 64MB
+      effective_cache_size = 512MB
+      hash_mem_multiplier = 2.0
+      dynamic_shared_memory_type = posix
+      max_wal_size = 1GB
+      min_wal_size = 80MB
+      log_timezone = 'Etc/UTC'
+      datestyle = 'iso, mdy'
+      timezone = 'Etc/UTC'
+      lc_messages = 'en_US.utf8'
+      lc_monetary = 'en_US.utf8'
+      lc_numeric = 'en_US.utf8'
+      lc_time = 'en_US.utf8'
+      default_text_search_config = 'pg_catalog.english'
+      shared_preload_libraries = 'pg_stat_statements'
+      log_min_duration_statement = 500
+
+  telemetry:
+    enabled: false
+
+scanner:
+  replicas: 1
+  autoscaling:
+    disable: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  dbResources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
