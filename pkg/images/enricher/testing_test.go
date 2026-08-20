@@ -30,7 +30,10 @@ func emptySignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureInt
 }
 
 func defaultRedHatSignatureIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
-	return []*storage.SignatureIntegration{signatures.DefaultRedHatSignatureIntegration}, nil
+	return []*storage.SignatureIntegration{{
+		Id:   signatures.DefaultRedHatIntegrationID,
+		Name: signatures.DefaultRedHatIntegrationName,
+	}}, nil
 }
 
 func twoSignaturesIntegrationGetter(_ context.Context) ([]*storage.SignatureIntegration, error) {
@@ -53,7 +56,7 @@ type fakeSigFetcher struct {
 }
 
 func (f *fakeSigFetcher) FetchSignatures(_ context.Context, _ *storage.Image, _ string,
-	_ types.Registry) ([]*storage.Signature, error) {
+	_ types.Registry, _ ...retry.OptionsModifier) ([]*storage.Signature, error) {
 	if f.fail {
 		err := errors.New("some error")
 		if f.retryable {

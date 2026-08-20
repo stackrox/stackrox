@@ -1,4 +1,5 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.TestListener
 import java.time.Duration
 
 plugins {
@@ -120,12 +121,20 @@ tasks.withType<Test>().configureEach {
     val testSourceSet = project.sourceSets["test"]
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath
-}
 
-tasks.register<Test>("testBegin") {
-    useJUnitPlatform {
-        includeTags("Begin")
-    }
+    // Catches the case when tag filters match nothing: the task runs but
+    // zero tests execute. This is different case than NO-SOURCE handled below with afterTask hook.
+    addTestListener(object : TestListener {
+        override fun afterSuite(suite: TestDescriptor, result: TestResult) {
+            if (suite.parent == null && result.testCount == 0L) {
+                throw GradleException(
+                    "No tests were executed in task '${name}'. " +
+                    "This likely means no tests matched the configured filters. " +
+                    "Check your tests selection (e.g. includeTags/excludeTags)."
+                )
+            }
+        }
+    })
 }
 
 tasks.register<Test>("testParallel") {
@@ -137,7 +146,7 @@ tasks.register<Test>("testParallel") {
 
 tasks.register<Test>("testRest") {
     useJUnitPlatform {
-        excludeTags("Begin", "Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
+        excludeTags("Parallel", "Upgrade", "SensorBounce", "SensorBounceNext")
     }
 }
 
@@ -245,6 +254,26 @@ tasks.register<Test>("testPZDebug") {
 tasks.register<Test>("testDeploymentCheck") {
     useJUnitPlatform {
         includeTags("DeploymentCheck")
+    }
+}
+
+// Fail the build if any Test task is skipped with NO-SOURCE. Gradle exits 0
+// in this case, silently producing no test results. afterSuite/doFirst/doLast
+// callbacks don't fire for NO-SOURCE tasks, so this project-level hook is
+// the only reliable way to detect it.
+// https://discuss.gradle.org/t/copy-task-how-to-fail-on-no-source/25581
+// https://github.com/gradle/gradle/issues/36700
+//
+// afterTask is deprecated since Gradle 8.3 and incompatible with configuration
+// cache (explicitly disabled in gradle.properties). No replacement exists for
+// detecting NO-SOURCE skips — tracked in gradle/gradle#36700.
+@Suppress("DEPRECATION")
+gradle.taskGraph.afterTask {
+    if (this is Test && this.state.noSource) {
+        throw GradleException(
+            "Test task '${this.path}' was skipped with NO-SOURCE. " +
+            "Check that testClassesDirs and classpath are wired correctly."
+        )
     }
 }
 

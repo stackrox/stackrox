@@ -30,7 +30,7 @@ export function visitFromLeftNavExpandable(
     expandableTitle: string,
     itemText: string,
     routeMatcherMap: Record<string, { method: string; url: string }>,
-    staticResponseMap: Record<string, { body: unknown } | { fixture: string }>
+    staticResponseMap?: Record<string, { body: unknown } | { fixture: string }>
 ) {
     visitMainDashboard();
 

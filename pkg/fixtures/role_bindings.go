@@ -31,7 +31,7 @@ func GetK8sRoleBindingWithSubjects(id, name, clusterID, clusterName, namespace s
 	subjectKinds := []storage.SubjectKind{storage.SubjectKind_SERVICE_ACCOUNT, storage.SubjectKind_USER, storage.SubjectKind_GROUP}
 	currKind := 0
 	binding.Subjects = make([]*storage.Subject, 0, numSubjects)
-	for i := 0; i < numSubjects; i++ {
+	for i := range numSubjects {
 		subjectName := fmt.Sprintf("%s_subject%d", name, i)
 		subject := &storage.Subject{
 			Id:          k8srbac.CreateSubjectID(clusterID, subjectName),
@@ -66,7 +66,7 @@ func GetMultipleK8sRoleBindingsWithRole(numBindings, numSubjectsPerBinding int,
 	bindings := make([]*storage.K8SRoleBinding, 0, numBindings)
 	var roleIndex int
 	var roleID string
-	for i := 0; i < numBindings; i++ {
+	for i := range numBindings {
 		name := fmt.Sprintf("k8sRoleBinding%d", i)
 		clusterName := fmt.Sprintf("cluster%d", i)
 		namespace := fmt.Sprintf("namespace%d", i)

@@ -1,5 +1,6 @@
 import static util.Helpers.withRetry
 
+import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -10,7 +11,6 @@ import services.ImageService
 import services.PolicyService
 import util.Timer
 
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -64,6 +64,8 @@ class AdmissionControllerTest extends BaseSpecification {
             .addAnnotation("admission.stackrox.io/break-glass", "yay")
 
     def setupSpec() {
+        ImageService.waitForScannerIntegration()
+
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
@@ -89,6 +91,20 @@ class AdmissionControllerTest extends BaseSpecification {
         ImageOuterClass.Image image = ImageService.getImage(imageId, false)
         assert image
         assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_METADATA)
+        assert !image.getNotesList().contains(ImageOuterClass.Image.Note.MISSING_SCAN_DATA)
+        assert image.getScan() != null : "Image scan data is null after scanning"
+        assert image.getScan().getComponentsList().size() > 0 : "Image has no scan components"
+
+        def hasFixableImportantVuln = image.getScan().getComponentsList().any { component ->
+            component.getVulnsList().any { vuln ->
+                vuln.getSeverity().getNumber() >=
+                    VulnerabilitySeverity.IMPORTANT_VULNERABILITY_SEVERITY.getNumber() &&
+                vuln.getFixedBy() != ""
+            }
+        }
+        assert hasFixableImportantVuln :
+            "Image ${SCAN_INLINE_IMAGE_NAME_WITH_SHA} has no fixable vulnerabilities with severity >= Important. " +
+            "The severity policy test will fail without matching vulnerabilities."
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
 
@@ -127,7 +143,21 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify admission controller enforcement on create: #desc"() {
         when:
         "Create a deployment that violates an enforced policy"
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        // Retry to allow time for the admission controller to fetch scan data from
+        // Central. Policies that require image enrichment (e.g. severity) may not
+        // evaluate on the first attempt if the AC pod handling this request hasn't
+        // cached the scan results yet. The retry is harmless for fast-path policies
+        // (latest tag, bypass) since they pass on the first attempt.
+        def created
+        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
+            created = orchestrator.createDeploymentNoWait(deployment)
+            if (created != launched) {
+                if (created) {
+                    deleteDeploymentWithCaution(deployment)
+                }
+                assert created == launched
+            }
+        }
 
         then:
         "Verify the admission controller allows or blocks based on policy and bypass annotation"
@@ -392,7 +422,6 @@ class AdmissionControllerTest extends BaseSpecification {
 
     @Unroll
     @Tag("BAT")
-    @IgnoreIf({ System.getenv("ROX_INIT_CONTAINER_SUPPORT") != "true" })
     def "Verify AC enforcement on init containers: #desc"() {
         when:
         "Create a deployment with init containers"

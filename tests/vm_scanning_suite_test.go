@@ -22,7 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	coreV1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,6 +29,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -100,7 +100,7 @@ type VMScanningSuite struct {
 	cleanupCtx context.Context
 	cancel     func()
 
-	cfg           *vmScanConfig
+	cfg           *vmhelpers.VMScanConfig
 	restCfg       *rest.Config
 	k8sClient     kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -112,7 +112,7 @@ type VMScanningSuite struct {
 	virtctl vmhelpers.Virtctl
 
 	// vmSpecs is the provisioning blueprint for each VM.
-	vmSpecs []vmSpec
+	vmSpecs []vmhelpers.VMSpec
 	// vms tracks every VM provisioned by the suite; TearDownSuite deletes each.
 	vms []VMHandle
 	// scannerV4Checked is set after the one-time Scanner V4 matcher initialization check.
@@ -179,7 +179,7 @@ func (s *VMScanningSuite) SetupSuite() {
 		HeartbeatInterval: defaultVirtctlHeartbeatInterval,
 	}
 
-	s.vmSpecs = s.cfg.vmSpecs()
+	s.vmSpecs = s.cfg.VMSpecs()
 	s.logf("VM scanning setup: provision VMs (%d specs)", len(s.vmSpecs))
 	s.provisionVMs(s.vmSpecs)
 	s.logf("VM scanning setup: prepare guests (ssh/cloud-init/sudo readiness)")
@@ -321,13 +321,37 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 	// Verify the feature flag env var is set on all components that need it.
 	s.mustVerifyContainerEnvVar(ctx, "deployment", "central", "central", ns, wantEnv)
 	s.mustVerifyContainerEnvVar(ctx, "deployment", sensorDeployment, sensorContainer, ns, wantEnv)
-	s.mustVerifyContainerEnvVar(ctx, "daemonset", "collector", "compliance", ns, wantEnv)
+	s.mustVerifySensorVSOCKRBAC(ctx)
+}
+
+// mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
+// Pull-mode scraping fails without this; the Helm chart creates the binding when
+// spec.virtualMachines.mode is Enabled on the SecuredCluster CR.
+func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
+	t := s.T()
+	t.Helper()
+
+	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
+	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
+		"Sensor cannot scrape guest agents over vsock without this RBAC "+
+		"(check that spec.virtualMachines.mode is Enabled on the SecuredCluster CR)")
+	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
+	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
+
+	foundSensorSA := false
+	for _, sub := range binding.Subjects {
+		if sub.Kind == "ServiceAccount" && sub.Name == "sensor" && sub.Namespace == namespaces.StackRox {
+			foundSensorSA = true
+			break
+		}
+	}
+	require.True(t, foundSensorSA, "ClusterRoleBinding stackrox:vsock-access-binding must bind stackrox/sensor")
 }
 
 // mustVerifyContainerEnvVar asserts that the named container within a Deployment or DaemonSet
 // has the given environment variable set to a truthy value ("true", "1", etc.).
-// This catches deployment misconfigurations where a feature flag reaches Central but not
-// the workload containers that also need it.
+// This catches deployment misconfigurations where a feature flag reaches one component
+// but not another that also needs it.
 func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, name, containerName, ns, envName string) {
 	t := s.T()
 	t.Helper()
@@ -354,14 +378,13 @@ func (s *VMScanningSuite) mustVerifyContainerEnvVar(ctx context.Context, kind, n
 			if e.Name == envName {
 				val := strings.ToLower(strings.TrimSpace(e.Value))
 				require.Truef(t, val == "true" || val == "1",
-					"%s %s/%s container %q has %s=%q which is not truthy; "+
-						"the VSOCK relay will not start without this flag",
+					"%s %s/%s container %q has %s=%q which is not truthy",
 					kind, ns, name, containerName, envName, e.Value)
 				return
 			}
 		}
 		require.Failf(t, fmt.Sprintf("%s %s/%s container %q is missing env var %s", kind, ns, name, containerName, envName),
-			"the feature flag must be set on all components that need it (Central, Sensor, compliance); "+
+			"the feature flag must be set on Central and Sensor for pull-mode VM scanning; "+
 				"present env vars: %s", formatContainerEnvNames(c.Env))
 	}
 	require.Failf(t, fmt.Sprintf("container %q not found in %s %s/%s", containerName, kind, ns, name),
@@ -384,7 +407,7 @@ func formatContainerNames(containers []coreV1.Container) string {
 	return strings.Join(names, ", ")
 }
 
-func (s *VMScanningSuite) provisionVMs(specs []vmSpec) {
+func (s *VMScanningSuite) provisionVMs(specs []vmhelpers.VMSpec) {
 	ctx := s.ctx
 
 	s.logf("provision VMs: creating namespace %q", s.namespace)
@@ -478,20 +501,29 @@ func (s *VMScanningSuite) ensureImagePullSecret(ctx context.Context) {
 	}
 	require.NoError(s.T(), err, "ensure image pull secret %q in namespace %q", vmImagePullSecretName, s.namespace)
 
-	sa, err := s.waitForDefaultServiceAccount(ctx)
-	require.NoError(s.T(), err, "get default service account in namespace %q", s.namespace)
-	hasRef := false
-	for _, ref := range sa.ImagePullSecrets {
-		if ref.Name == vmImagePullSecretName {
-			hasRef = true
-			break
+	// Wait for the default SA to exist before attempting the update.
+	_, err = s.waitForDefaultServiceAccount(ctx)
+	require.NoError(s.T(), err, "wait for default service account in namespace %q", s.namespace)
+
+	// The SA controller may still be mutating the freshly-created default SA
+	// (e.g. patching token secrets), so a single Get+Update can hit an
+	// optimistic concurrency conflict. Retry exactly like the DaemonSet
+	// update in ensureComplianceMetricsEnv.
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		sa, getErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Get(ctx, "default", metaV1.GetOptions{})
+		if getErr != nil {
+			return getErr
 		}
-	}
-	if !hasRef {
+		for _, ref := range sa.ImagePullSecrets {
+			if ref.Name == vmImagePullSecretName {
+				return nil
+			}
+		}
 		sa.ImagePullSecrets = append(sa.ImagePullSecrets, coreV1.LocalObjectReference{Name: vmImagePullSecretName})
-		_, err = s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
-		require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
-	}
+		_, updateErr := s.k8sClient.CoreV1().ServiceAccounts(s.namespace).Update(ctx, sa, metaV1.UpdateOptions{})
+		return updateErr
+	})
+	require.NoError(s.T(), err, "link image pull secret to default service account in namespace %q", s.namespace)
 	s.logf("provision VMs: image pull secret %q ready in namespace %q", vmImagePullSecretName, s.namespace)
 }
 
@@ -633,8 +665,8 @@ func (s *VMScanningSuite) vmRequestForVM(vm VMHandle) (vmhelpers.VMRequest, erro
 	return vmhelpers.VMRequest{}, fmt.Errorf("no spec found for VM %s/%s", vm.Namespace, vm.Name)
 }
 
-// vmSpecToRequest converts a vmSpec into a VMRequest using suite-level defaults.
-func (s *VMScanningSuite) vmSpecToRequest(sp vmSpec) vmhelpers.VMRequest {
+// vmSpecToRequest converts a VMSpec into a VMRequest using suite-level defaults.
+func (s *VMScanningSuite) vmSpecToRequest(sp vmhelpers.VMSpec) vmhelpers.VMRequest {
 	return vmhelpers.VMRequest{
 		Name:         sp.Name,
 		Namespace:    s.namespace,
@@ -679,18 +711,18 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureCanonicalScan runs a single guest-side roxagent invocation.
-// It verifies the ROX_VIRTUAL_MACHINES feature flag is enabled before triggering the scan.
-func (s *VMScanningSuite) ensureCanonicalScan(ctx context.Context, vm *VMHandle) error {
+// ensureRoxagentServing starts pull-mode `roxagent serve` on the guest (if needed)
+// and waits until its VSOCK listener is ready. Sensor scrapes the report afterward.
+func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
-		return errors.New("ensureCanonicalScan: nil VM handle")
+		return errors.New("ensureRoxagentServing: nil VM handle")
 	}
 	s.mustVerifyVirtualMachinesFeatureEnabled()
 	if err := s.waitForScannerV4Initialized(); err != nil {
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.RunRoxagentOnce(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
 }
 
 // waitForScan polls Central in order until scan data is visible.
@@ -739,16 +771,6 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 		return s.cfg.DeleteTimeout
 	}
 	return defaultVMDeleteTimeout
-}
-
-func (s *VMScanningSuite) mustGetScanTimestamp(id string) *timestamppb.Timestamp {
-	t := s.T()
-	t.Helper()
-	vm := s.mustGetVM(id)
-	require.NotNil(t, vm.GetScan(), "mustGetScanTimestamp: GetVirtualMachine id=%q returned nil scan", id)
-	ts := vm.GetScan().GetScanTime()
-	require.NotNil(t, ts, "mustGetScanTimestamp: GetVirtualMachine id=%q scan_time is nil", id)
-	return ts
 }
 
 func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {

@@ -359,20 +359,23 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
-deps: $(shell find $(BASE_DIR) -name "go.sum")
-	@echo "+ $@"
-	$(SILENT)touch deps
-
-%/go.sum: %/go.mod
-	$(SILENT)cd $*
-	@echo "+ $@"
-	$(SILENT)$(eval GOMOCK_REFLECT_DIRS=`find . -type d -name 'gomock_reflect_*'`)
-	$(SILENT)test -z $(GOMOCK_REFLECT_DIRS) || { echo "Found leftover gomock directories. Please remove them and rerun make deps!"; echo $(GOMOCK_REFLECT_DIRS); exit 1; }
-	$(SILENT)go mod tidy
 ifdef CI
-	$(SILENT)git diff --exit-code -- go.mod go.sum || { echo "go.mod/go.sum files were updated after running 'go mod tidy', run this command on your local machine and commit the results." ; exit 1 ; }
-endif
+# In CI, go.mod/go.sum must be committed — not auto-updated.
+# go mod tidy is validated by check-generated-files (scripts/ci/jobs/check-generated.sh).
+deps:
+	@echo "deps: CI is set — skipping go mod tidy (validated by check-generated-files)" >&2
+else
+deps: go.mod
+	@echo "+ $@"
+	$(SILENT)GOMOCK_REFLECT_DIRS=$$(find . -type d -name 'gomock_reflect_*'); \
+	if [ -n "$$GOMOCK_REFLECT_DIRS" ]; then \
+		echo "Found leftover gomock directories. Please remove them and rerun make deps!"; \
+		echo "$$GOMOCK_REFLECT_DIRS"; \
+		exit 1; \
+	fi
+	$(SILENT)go mod tidy
 	$(SILENT)touch $@
+endif
 
 .PHONY: clean-deps
 clean-deps:
@@ -501,17 +504,20 @@ main-build-dockerized: build-volumes
 main-build-nodeps:
 	$(GOBUILD) \
 		central \
+		central/worker \
 		compliance/cmd/compliance \
 		config-controller \
 		migrator \
 		operator/cmd \
-		roxctl \
 		scanner/cmd/scanner \
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent
 	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
+ifndef CI
+	CGO_ENABLED=0 $(GOBUILD) roxctl
+endif
 
 .PHONY: scale-build
 scale-build: build-prep
@@ -679,6 +685,7 @@ docker-build-roxctl-image:
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
 	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
+	cp bin/linux_$(GOARCH)/worker image/rhel/bin/central-worker
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
@@ -867,6 +874,10 @@ mitre:
 .PHONY: bootstrap_migration
 bootstrap_migration:
 	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-migration/main.go --root . --description "${DESCRIPTION}" ;fi
+
+.PHONY: bootstrap_background_migration
+bootstrap_background_migration:
+	$(SILENT)if [[ "x${DESCRIPTION}" == "x" ]]; then echo "Please set a description for your migration in the DESCRIPTION environment variable"; else go run tools/generate-helpers/bootstrap-background-migration/main.go --root . --description "${DESCRIPTION}" ;fi
 
 .PHONY: image-prefetcher-deploy-bin
 image-prefetcher-deploy-bin: $(IMAGE_PREFETCHER_DEPLOY_BIN) ## download and install

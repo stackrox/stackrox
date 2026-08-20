@@ -35,6 +35,8 @@ import {
     policiesBasePath,
     policyManagementBasePath,
     riskBasePath,
+    riskSecretsBasePath,
+    riskWorkloadsBasePath,
     searchPath,
     systemConfigPath,
     systemHealthPath,
@@ -54,6 +56,7 @@ import {
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
 
+import FeatureDisabledMessage from 'Components/FeatureDisabledMessage';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
@@ -208,8 +211,16 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         component: asyncComponent(() => import('Containers/PolicyManagement/PolicyManagementPage')),
         path: policyManagementBasePath,
     },
-    risk: {
+    'risk/secrets': {
+        component: asyncComponent(() => import('Containers/Risk/Secrets/SecretsPage')),
+        path: riskSecretsBasePath,
+    },
+    'risk/workloads': {
         component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        path: riskWorkloadsBasePath,
+    },
+    risk: {
+        component: RiskRedirect,
         path: riskBasePath,
     },
     search: {
@@ -308,6 +319,12 @@ function WorkloadCvesRedirect() {
     return <Navigate to={`${newPath}${location.search}`} replace />;
 }
 
+function RiskRedirect() {
+    const location = useLocation();
+    const newPath = location.pathname.replace(riskBasePath, riskWorkloadsBasePath);
+    return <Navigate to={`${newPath}${location.search}`} replace />;
+}
+
 function DeprecatedPoliciesRedirect() {
     const { policyId, command } = useParams();
 
@@ -351,6 +368,22 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         const { component: Component, path } = routeComponentMap[routeKey];
                         return <Route key={routeKey} path={`${path}/*`} element={<Component />} />;
                     })}
+                {!isFeatureFlagEnabled('ROX_LEGACY_SCANNER') && (
+                    <Route
+                        path={`${vulnerabilitiesPlatformCvesPath}/*`}
+                        element={
+                            <PageSection>
+                                <PageTitle title="Kubernetes components - Disabled" />
+                                <FeatureDisabledMessage
+                                    title="Kubernetes components"
+                                    message="The Legacy Scanner [deprecated] has been disabled by your administrator."
+                                    actionText="Go to Vulnerability Management"
+                                    url={vulnerabilitiesUserWorkloadsPath}
+                                />
+                            </PageSection>
+                        }
+                    />
+                )}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
             {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}

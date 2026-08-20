@@ -23,9 +23,11 @@ os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 os.environ["INSTALL_CNV_OPERATOR"] = "true"
 os.environ["ROX_VIRTUAL_MACHINES"] = "true"
-os.environ["ROX_SCANNER_V4"] = "true"
-# Avoid default rate limiting of VM index reports set to 1 report per minute per VM.
-os.environ["ROX_VM_RELAY_MAX_REPORTS_PER_MINUTE"] = "10"
+# Selectively enable vulnerability bundles to prevent timeouts of matcher not being ready in 40 minutes.
+# The rhel-vex bundle alone has ~3M records and can take >30 min to import.
+# Drops alpine, aws, debian, oracle, osv, photon, suse, ubuntu (unused for RHEL guests).
+os.environ["SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"] = "rhel-vex,stackrox-rhel-csaf,manual,epss,nvd"
+os.environ["SCANNER_V4_VULN_READINESS_TIMEOUT"] = "7200"
 os.environ["VM_IMAGES"] = ",".join([
     "quay.io/rhacs-eng/vm-images:rhel8-dnf-primed-latest",
     "quay.io/rhacs-eng/vm-images:rhel9-dnf-primed-latest",

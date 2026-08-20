@@ -1949,6 +1949,34 @@
             ]
           },
           {
+            "name": "SensorVersionCompatibility",
+            "enum_fields": [
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_UNKNOWN"
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_MATCHED",
+                "integer": 1
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND",
+                "integer": 2
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD",
+                "integer": 3
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND",
+                "integer": 4
+              },
+              {
+                "name": "SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD",
+                "integer": 5
+              }
+            ]
+          },
+          {
             "name": "ClusterUpgradeStatus.Upgradability",
             "enum_fields": [
               {
@@ -2625,6 +2653,11 @@
                 "id": 6,
                 "name": "cert_expiry_status",
                 "type": "ClusterCertExpiryStatus"
+              },
+              {
+                "id": 7,
+                "name": "sensor_version_compatibility",
+                "type": "SensorVersionCompatibility"
               }
             ]
           },
@@ -5640,6 +5673,11 @@
                 "id": 3,
                 "name": "node_vulnerabilities",
                 "type": "Group"
+              },
+              {
+                "id": 4,
+                "name": "administrative_events",
+                "type": "Group"
               }
             ],
             "messages": [
@@ -6326,6 +6364,36 @@
             ]
           },
           {
+            "name": "Exploit",
+            "fields": [
+              {
+                "id": 1,
+                "name": "date_added",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "short_description",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "required_action",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "due_date",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "known_ransomware_campaign_use",
+                "type": "string"
+              }
+            ]
+          },
+          {
             "name": "CVE",
             "fields": [
               {
@@ -6548,6 +6616,16 @@
                 "id": 12,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 13,
+                "name": "exploit",
+                "type": "Exploit"
+              },
+              {
+                "id": 14,
+                "name": "cisa_kev",
+                "type": "bool"
               }
             ],
             "messages": [
@@ -8574,6 +8652,54 @@
       "def": {
         "enums": [
           {
+            "name": "AclEntry.AclTag",
+            "enum_fields": [
+              {
+                "name": "ACL_TAG_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TAG_USER_OBJ",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TAG_USER",
+                "integer": 2
+              },
+              {
+                "name": "ACL_TAG_GROUP_OBJ",
+                "integer": 3
+              },
+              {
+                "name": "ACL_TAG_GROUP",
+                "integer": 4
+              },
+              {
+                "name": "ACL_TAG_MASK",
+                "integer": 5
+              },
+              {
+                "name": "ACL_TAG_OTHER",
+                "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "AclType",
+            "enum_fields": [
+              {
+                "name": "ACL_TYPE_UNSPECIFIED"
+              },
+              {
+                "name": "ACL_TYPE_ACCESS",
+                "integer": 1
+              },
+              {
+                "name": "ACL_TYPE_DEFAULT",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "FileAccess.Operation",
             "enum_fields": [
               {
@@ -8598,11 +8724,43 @@
               {
                 "name": "OPEN",
                 "integer": 5
+              },
+              {
+                "name": "ACL_CHANGE",
+                "integer": 6
+              },
+              {
+                "name": "XATTR_SET",
+                "integer": 7
+              },
+              {
+                "name": "XATTR_REMOVE",
+                "integer": 8
               }
             ]
           }
         ],
         "messages": [
+          {
+            "name": "AclEntry",
+            "fields": [
+              {
+                "id": 1,
+                "name": "tag",
+                "type": "AclTag"
+              },
+              {
+                "id": 2,
+                "name": "perm",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "id",
+                "type": "uint32"
+              }
+            ]
+          },
           {
             "name": "FileAccess",
             "fields": [
@@ -8664,6 +8822,22 @@
                   {
                     "id": 5,
                     "name": "group",
+                    "type": "string"
+                  },
+                  {
+                    "id": 6,
+                    "name": "acl_type",
+                    "type": "AclType"
+                  },
+                  {
+                    "id": 7,
+                    "name": "acl_entries",
+                    "type": "AclEntry",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 8,
+                    "name": "xattr_name",
                     "type": "string"
                   }
                 ]
@@ -9047,6 +9221,22 @@
               {
                 "name": "INFRASTRUCTURE",
                 "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "CosignSignature.SignatureFormat",
+            "enum_fields": [
+              {
+                "name": "SIGNATURE_FORMAT_UNSPECIFIED"
+              },
+              {
+                "name": "SIMPLE_SIGNING",
+                "integer": 1
+              },
+              {
+                "name": "DEAD_SIMPLE_SIGNING_ENVELOPE",
+                "integer": 2
               }
             ]
           }
@@ -9469,6 +9659,16 @@
               {
                 "id": 5,
                 "name": "rekor_bundle",
+                "type": "bytes"
+              },
+              {
+                "id": 6,
+                "name": "signature_format",
+                "type": "SignatureFormat"
+              },
+              {
+                "id": 7,
+                "name": "sigstore_bundle",
                 "type": "bytes"
               }
             ]
@@ -15405,6 +15605,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -15524,14 +15728,32 @@
                 "oneof_parent": "filter"
               },
               {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
                 "id": 6,
                 "name": "scope_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 7,
                 "name": "email_config",
                 "type": "EmailNotifierConfiguration",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ],
                 "oneof_parent": "notifier_config"
               },
               {
@@ -15542,12 +15764,24 @@
               {
                 "id": 9,
                 "name": "last_run_status",
-                "type": "ReportLastRunStatus"
+                "type": "ReportLastRunStatus",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 10,
                 "name": "last_successful_run_time",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 11,
@@ -15603,7 +15837,13 @@
               {
                 "id": 2,
                 "name": "since_last_report",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -15727,6 +15967,28 @@
                 "name": "values",
                 "type": "RuleValue",
                 "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "NodeVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 1,
+                "name": "all_vuln",
+                "type": "bool",
+                "oneof_parent": "cves_since"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "query",
+                "type": "string"
               }
             ]
           },
@@ -15857,6 +16119,10 @@
             "enum_fields": [
               {
                 "name": "VULNERABILITY"
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 1
               }
             ]
           },
@@ -15952,6 +16218,12 @@
                 "id": 12,
                 "name": "view_based_vuln_report_filters",
                 "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 15,
+                "name": "node_vuln_report_filters",
+                "type": "NodeVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
@@ -17075,6 +17347,11 @@
                 "id": 6,
                 "name": "created_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "relationship",
+                "type": "SecretRelationship"
               }
             ]
           },
@@ -20761,6 +21038,16 @@
                 "id": 26,
                 "name": "datasource",
                 "type": "string"
+              },
+              {
+                "id": 27,
+                "name": "exploit",
+                "type": "Exploit"
+              },
+              {
+                "id": 28,
+                "name": "cisa_kev",
+                "type": "bool"
               }
             ],
             "reserved_ids": [

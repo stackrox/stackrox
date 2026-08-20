@@ -472,6 +472,26 @@ func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.Secu
 	return policyId
 }
 
+func (pc *PolicyAsCodeSuite) TestCRWithEvaluationFilter() {
+	k8sPolicy := createBasePolicyStruct("test-eval-filter-cr")
+	k8sPolicy.Spec.EvaluationFilter = &v1alpha1.EvaluationFilter{
+		SkipContainerTypes: []v1alpha1.ContainerType{"INIT"},
+	}
+
+	id := pc.createCRAndObserveInCentral(k8sPolicy)
+	pc.Require().NotEmpty(id)
+
+	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{Id: id})
+	pc.Require().NoError(err)
+	pc.policies = append(pc.policies, policy)
+
+	pc.Require().NotNil(policy.GetEvaluationFilter())
+	pc.Require().Equal(
+		[]storage.ContainerType{storage.ContainerType_INIT},
+		policy.GetEvaluationFilter().GetSkipContainerTypes(),
+	)
+}
+
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
 	for _, policy := range pc.policies {
 		pc.T().Logf("Deleting policy with name \"%s\"", policy.GetName())

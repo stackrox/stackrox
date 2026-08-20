@@ -46,6 +46,7 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/uuid"
+	versionTestutils "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -82,7 +83,7 @@ type ClusterPostgresDataStoreTestSuite struct {
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
-
+	versionTestutils.SetMainVersion(s.T(), "4.5.0-testing")
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	clusterDBStore := clusterPostgresStore.New(s.db)
@@ -1034,7 +1035,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 	const numIterations = 10
 	var firstResults []*storage.Cluster
 
-	for i := 0; i < numIterations; i++ {
+	for i := range numIterations {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
 		s.Require().NoError(err)
 		s.Require().NotEmpty(results)
@@ -1058,7 +1059,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 	query := pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "test", "ordering").ProtoQuery()
 	var firstFilteredResults []*storage.Cluster
 
-	for i := 0; i < numIterations; i++ {
+	for i := range numIterations {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, query)
 		s.Require().NoError(err)
 		s.Require().Len(results, len(clusterNames), "Should return all test clusters")

@@ -62,10 +62,12 @@ export const policyCategoriesPath = `${policyManagementBasePath}/policy-categori
 export const deprecatedPoliciesBasePath = `${mainPath}/policies`;
 export const deprecatedPoliciesPath = `${deprecatedPoliciesBasePath}/:policyId?/:command?`;
 export const riskBasePath = `${mainPath}/risk`;
-export const riskPath = `${riskBasePath}/:deploymentId?`;
-export const riskUserWorkloadsViewPath = `${riskBasePath}?filteredWorkflowView=Applications view`;
-export const riskPlatformViewPath = `${riskBasePath}?filteredWorkflowView=Platform view`;
-export const riskFullViewPath = `${riskBasePath}?filteredWorkflowView=Full view`;
+export const riskWorkloadsBasePath = `${riskBasePath}/workloads`;
+export const riskWorkloadPath = `${riskWorkloadsBasePath}/:deploymentId?`;
+export const riskUserWorkloadsViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Applications view`;
+export const riskPlatformViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Platform view`;
+export const riskFullViewPath = `${riskWorkloadsBasePath}?filteredWorkflowView=Full view`;
+export const riskSecretsBasePath = `${riskBasePath}/secrets`;
 export const searchPath = `${mainPath}/search`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
@@ -179,6 +181,10 @@ export type RouteKey =
     | 'listening-endpoints'
     | 'network-graph'
     | 'policy-management'
+    // Risk secrets must precede generic risk in Body for route specificity.
+    | 'risk/secrets'
+    // Risk workloads must precede generic risk in Body for route specificity.
+    | 'risk/workloads'
     | 'risk'
     | 'search'
     | 'system-health'
@@ -310,6 +316,14 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
             'WorkflowAdministration',
         ]),
     },
+    'risk/secrets': {
+        featureFlagRequirements: allEnabled(['ROX_UI_SECRETS_PAGE_MIGRATION']),
+        resourceAccessRequirements: everyResource(['Secret']),
+    },
+    'risk/workloads': {
+        resourceAccessRequirements: everyResource(['Deployment']),
+    },
+    // Retained for backward compatibility, will redirect to risk/workloads
     risk: {
         resourceAccessRequirements: everyResource(['Deployment']),
     },
@@ -352,10 +366,11 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
     },
     'vulnerabilities/platform-cves': {
+        featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerabilities/reports': {
-        resourceAccessRequirements: everyResource(['WorkflowAdministration']),
+        resourceAccessRequirements: everyResource(['Deployment', 'Image']),
     },
     'vulnerabilities/user-workloads': {
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),

@@ -69,8 +69,15 @@ class Env {
     }
 
     private loadEnvVarsFromPropsFile() {
+        def file = new File(PROPERTIES_FILE)
+        if (!file.exists()) {
+            LOG.info("Optional properties file '${PROPERTIES_FILE}' not found. " +
+                "You can create it to set env vars locally (e.g. integration credentials). " +
+                "See qa-tests-backend/README.md for details.")
+            return
+        }
         try {
-            envVars.load(new FileInputStream(PROPERTIES_FILE))
+            envVars.load(new FileInputStream(file))
         } catch (Exception ex) {
             LOG.error( "Failed to load extra properties file", ex)
         }
@@ -82,7 +89,7 @@ class Env {
 
     protected String mustGetInternal(String key) {
         def value = envVars.get(key)
-        if (value == null) {
+        if (!value) {
             throw new RuntimeException("No value assigned for required key ${key}")
         }
         return value
@@ -90,7 +97,7 @@ class Env {
 
     protected String mustGetInCIInternal(String key, String defVal) {
         def value = envVars.get(key)
-        if (value == null) {
+        if (!value) {
             if (IN_CI) {
                 throw new RuntimeException("No value assigned for required key ${key}")
             }
@@ -240,14 +247,6 @@ class Env {
         return mustGet("AWS_ASSUME_ROLE_TEST_CONDITION_ID")
     }
 
-    static String mustGetAWSS3BucketName() {
-        return mustGet("AWS_S3_BACKUP_TEST_BUCKET_NAME") // stackrox-qa-backup-test
-    }
-
-    static String mustGetAWSS3BucketRegion() {
-        return mustGet("AWS_S3_BACKUP_TEST_BUCKET_REGION") // us-east-2
-    }
-
     static String mustGetAWSECRRegistryID() {
         return mustGet("AWS_ECR_REGISTRY_NAME") // 051999192406
     }
@@ -258,34 +257,6 @@ class Env {
 
     static String mustGetAWSECRDockerPullPassword() {
         return mustGet("AWS_ECR_DOCKER_PULL_PASSWORD") // aws ecr get-login-password
-    }
-
-    static String mustGetCloudflareR2BucketName() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_BUCKET_NAME") // stackrox-ci-qa-backup-test
-    }
-
-    static String mustGetCloudflareR2BucketRegion() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_REGION") // ENAM
-    }
-
-    static String mustGetCloudflareR2Endpoint() {
-        return "${mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCOUNT_ID")}.r2.cloudflarestorage.com"
-    }
-
-    static String mustGetCloudflareR2AccessKeyID() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_ACCESS_KEY_ID")
-    }
-
-    static String mustGetCloudflareR2SecretAccessKey() {
-        return mustGet("CLOUDFLARE_R2_BACKUP_TEST_SECRET_ACCESS_KEY")
-    }
-
-    static String mustGetGCSBucketName() {
-        return mustGet("GCP_GCS_BACKUP_TEST_BUCKET_NAME_V2")
-    }
-
-    static String mustGetGCSServiceAccount() {
-        return mustGet("GOOGLE_GCS_BACKUP_SERVICE_ACCOUNT_V2")
     }
 
     static String mustGetGCRServiceAccount() {

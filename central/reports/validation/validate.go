@@ -302,9 +302,6 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report configuration id not found %s", configID)
 	}
-	if !common.IsV2ReportConfig(config) {
-		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
-	}
 	// Verify ResourceScope is non-nil
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,
@@ -359,12 +356,11 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 	}
 
 	switch snapshot.GetReportStatus().GetRunState() {
-	case storage.ReportStatus_DELIVERED, storage.ReportStatus_GENERATED, storage.ReportStatus_FAILURE:
+	case storage.ReportStatus_WAITING, storage.ReportStatus_PREPARING:
+		// valid states for cancellation — fall through
+	default:
 		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' has already completed execution.", reportID)
-	case storage.ReportStatus_PREPARING:
-		return errors.Wrapf(errox.InvalidArgs, "Cannot cancel. Report job ID '%s' is currently being prepared.", reportID)
 	}
-
 	if requester.GetId() != snapshot.GetRequester().GetId() {
 		return errors.Wrap(errox.NotAuthorized, "Report job cannot be cancelled by a user who did not request the report.")
 	}
@@ -448,7 +444,7 @@ func generateViewBasedRequestName(user *storage.SlimUser) string {
 	now := time.Now()
 	date := now.Format("Jan02")
 	year := now.Format("2006")
-	shortUUID := strings.Split(uuid.NewV4().String(), "-")[0]
+	shortUUID, _, _ := strings.Cut(uuid.NewV4().String(), "-")
 	return fmt.Sprintf("%s-%s-%s-%s", shortName, strings.ToLower(date), year, shortUUID)
 }
 
@@ -459,7 +455,7 @@ func getShortName(user *storage.SlimUser) string {
 
 	name := strings.ToUpper(user.GetName())
 	parts := strings.Split(name, " ")
-	for i := 0; i < len(parts); i++ {
+	for i := range parts {
 		parts[i] = strings.TrimSpace(parts[i])
 	}
 

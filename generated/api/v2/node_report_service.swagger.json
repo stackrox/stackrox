@@ -1,0 +1,1454 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/node_report_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "NodeReportService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/reports/node/configuration-count": {
+      "get": {
+        "operationId": "NodeReportService_CountNodeReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2CountReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/configurations": {
+      "get": {
+        "operationId": "NodeReportService_ListNodeReportConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListReportConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      },
+      "post": {
+        "operationId": "NodeReportService_PostNodeReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/configurations/{id}": {
+      "get": {
+        "operationId": "NodeReportService_GetNodeReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      },
+      "delete": {
+        "operationId": "NodeReportService_DeleteNodeReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      },
+      "put": {
+        "operationId": "NodeReportService_UpdateNodeReportConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/NodeReportServiceUpdateNodeReportConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/configurations/{id}/history": {
+      "get": {
+        "operationId": "NodeReportService_GetNodeReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/configurations/{id}/my-history": {
+      "get": {
+        "operationId": "NodeReportService_GetMyNodeReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/jobs/{id}/cancel": {
+      "delete": {
+        "operationId": "NodeReportService_CancelNodeReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/jobs/{id}/delete": {
+      "delete": {
+        "operationId": "NodeReportService_DeleteNodeReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/jobs/{id}/status": {
+      "get": {
+        "operationId": "NodeReportService_GetNodeReportStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/run": {
+      "post": {
+        "operationId": "NodeReportService_RunNodeReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2RunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/view-based/history": {
+      "get": {
+        "operationId": "NodeReportService_GetViewBasedNodeReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/view-based/my-history": {
+      "get": {
+        "operationId": "NodeReportService_GetViewBasedMyNodeReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    },
+    "/v2/reports/node/view-based/run": {
+      "post": {
+        "operationId": "NodeReportService_PostViewBasedNodeReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportRequestViewBased"
+            }
+          }
+        ],
+        "tags": [
+          "NodeReportService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "NodeReportServiceUpdateNodeReportConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "VulnerabilityReportFiltersFixability": {
+      "type": "string",
+      "enum": [
+        "BOTH",
+        "FIXABLE",
+        "NOT_FIXABLE"
+      ],
+      "default": "BOTH"
+    },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2CollectionReference": {
+      "type": "object",
+      "properties": {
+        "collectionId": {
+          "type": "string"
+        },
+        "collectionName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CollectionSnapshot": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2CountReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2EmailNotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "notifierId": {
+          "type": "string"
+        },
+        "mailingLists": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customSubject": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Empty": {
+      "type": "object"
+    },
+    "v2EntityScope": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2EntityScopeRule"
+          }
+        }
+      }
+    },
+    "v2EntityScopeRule": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/v2ScopeEntity"
+        },
+        "field": {
+          "$ref": "#/definitions/v2ScopeField"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2RuleValue"
+          }
+        }
+      }
+    },
+    "v2ListReportConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ReportConfiguration"
+          }
+        }
+      }
+    },
+    "v2MatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
+    },
+    "v2NodeVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "allVuln": {
+          "type": "boolean"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "v2NotificationMethod": {
+      "type": "string",
+      "enum": [
+        "EMAIL",
+        "DOWNLOAD"
+      ],
+      "default": "EMAIL"
+    },
+    "v2NotifierConfiguration": {
+      "type": "object",
+      "properties": {
+        "emailConfig": {
+          "$ref": "#/definitions/v2EmailNotifierConfiguration"
+        },
+        "notifierName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2ReportConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        }
+      }
+    },
+    "v2ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
+      ],
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
+    },
+    "v2ReportHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "reportSnapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ReportRequestViewBased": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportRequestViewBasedReportType"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ReportRequestViewBasedReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
+      ],
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
+    },
+    "v2ReportSchedule": {
+      "type": "object",
+      "properties": {
+        "intervalType": {
+          "$ref": "#/definitions/v2ReportScheduleIntervalType"
+        },
+        "hour": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minute": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "daysOfWeek": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfWeek"
+        },
+        "daysOfMonth": {
+          "$ref": "#/definitions/v2ReportScheduleDaysOfMonth"
+        }
+      }
+    },
+    "v2ReportScheduleDaysOfMonth": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "1 for 1st, 2 for 2nd .... 31 for 31st"
+    },
+    "v2ReportScheduleDaysOfWeek": {
+      "type": "object",
+      "properties": {
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "title": "Sunday = 0, Monday = 1, .... Saturday =  6"
+    },
+    "v2ReportScheduleIntervalType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "WEEKLY",
+        "MONTHLY",
+        "DAILY"
+      ],
+      "default": "UNSET"
+    },
+    "v2ReportSnapshot": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportSnapshotReportType"
+        },
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportJobId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "vulnReportFilters": {
+          "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "nodeVulnReportFilters": {
+          "$ref": "#/definitions/v2NodeVulnerabilityReportFilters"
+        },
+        "collectionSnapshot": {
+          "$ref": "#/definitions/v2CollectionSnapshot"
+        },
+        "schedule": {
+          "$ref": "#/definitions/v2ReportSchedule"
+        },
+        "reportStatus": {
+          "$ref": "#/definitions/v2ReportStatus"
+        },
+        "notifiers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2NotifierConfiguration"
+          }
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "isDownloadAvailable": {
+          "type": "boolean"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        },
+        "resourceScope": {
+          "$ref": "#/definitions/v2ResourceScope"
+        }
+      }
+    },
+    "v2ReportSnapshotReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY",
+        "NODE_VULNERABILITY"
+      ],
+      "default": "VULNERABILITY",
+      "title": "- VULNERABILITY: for historical reasons, this short form was used to mean \"Image Vulnerability\""
+    },
+    "v2ReportStatus": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ReportStatusRunState"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        },
+        "reportRequestType": {
+          "$ref": "#/definitions/v2ReportStatusReportMethod"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2ReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
+    },
+    "v2ReportStatusResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/v2ReportStatus"
+        }
+      }
+    },
+    "v2ReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE"
+      ],
+      "default": "WAITING"
+    },
+    "v2ResourceScope": {
+      "type": "object",
+      "properties": {
+        "collectionScope": {
+          "$ref": "#/definitions/v2CollectionReference"
+        },
+        "entityScope": {
+          "$ref": "#/definitions/v2EntityScope",
+          "title": "scope for deployment, namespace, cluster"
+        }
+      },
+      "description": "Reports are transitioning to a modernized architecture in a future release.\nTo prepare for future updates, we recommend transitioning your collections-based reports to the “Entity Scope” method.\nWhen the “Collection scope” option is removed in a future release, existing reports will not automatically convert to the “Entity scope” method."
+    },
+    "v2RuleValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/v2MatchType"
+        }
+      }
+    },
+    "v2RunReportRequest": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        }
+      }
+    },
+    "v2RunReportResponse": {
+      "type": "object",
+      "properties": {
+        "reportConfigId": {
+          "type": "string"
+        },
+        "reportId": {
+          "type": "string"
+        }
+      }
+    },
+    "v2RunReportResponseViewBased": {
+      "type": "object",
+      "properties": {
+        "reportID": {
+          "type": "string"
+        },
+        "requestName": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ScopeEntity": {
+      "type": "string",
+      "enum": [
+        "SCOPE_ENTITY_UNSET",
+        "SCOPE_ENTITY_DEPLOYMENT",
+        "SCOPE_ENTITY_NAMESPACE",
+        "SCOPE_ENTITY_CLUSTER"
+      ],
+      "default": "SCOPE_ENTITY_UNSET"
+    },
+    "v2ScopeField": {
+      "type": "string",
+      "enum": [
+        "FIELD_UNSET",
+        "FIELD_ID",
+        "FIELD_NAME",
+        "FIELD_LABEL",
+        "FIELD_ANNOTATION"
+      ],
+      "default": "FIELD_UNSET"
+    },
+    "v2SlimUser": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2ViewBasedVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "title": "filter for ondemand view based reports"
+    },
+    "v2VulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "fixability": {
+          "$ref": "#/definitions/VulnerabilityReportFiltersFixability"
+        },
+        "severities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2VulnerabilityReportFiltersVulnerabilitySeverity"
+          }
+        },
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+          }
+        },
+        "allVuln": {
+          "type": "boolean"
+        },
+        "sinceLastSentScheduledReport": {
+          "type": "boolean"
+        },
+        "sinceStartDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "includeNvdCvss": {
+          "type": "boolean",
+          "description": "Deprecated: These fields are no longer used.\nNVD CVSS, EPSS Probability and Advisory columns are always included in reports."
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "includeAdvisory": {
+          "type": "boolean"
+        },
+        "query": {
+          "type": "string",
+          "title": "Filters related to image, cve etc for non-collection-based scopes"
+        }
+      }
+    },
+    "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    }
+  }
+}

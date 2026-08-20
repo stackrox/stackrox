@@ -12,6 +12,12 @@ set -euo pipefail
 
 info "Start of CI handling"
 
+# Skip expensive setup for non-UI jobs when the PR only touches ui/ files.
+if [[ "${JOB_NAME:-}" =~ nongroovy|upgrade ]] && changes_limited_to "ui/"; then
+    info "Skipping begin: UI-only PR, non-UI job ${JOB_NAME}"
+    exit 0
+fi
+
 openshift_ci_mods
 openshift_ci_import_creds
 

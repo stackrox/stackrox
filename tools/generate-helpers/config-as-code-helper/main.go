@@ -48,7 +48,7 @@ type Field struct {
 var customResourceTemplate = newTemplate(templateFile)
 
 func main() {
-	typ := reflect.TypeOf(storage.Policy{})
+	typ := reflect.TypeFor[storage.Policy]()
 	renderData := RenderRequestData{
 		TypeName:       "Policy",
 		TypesToConvert: generateTemplateData(typ, set.NewStringSet()),

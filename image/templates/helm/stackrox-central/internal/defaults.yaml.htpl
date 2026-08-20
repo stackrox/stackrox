@@ -17,6 +17,7 @@ defaults:
     endpointsConfig: "@config/central/endpoints.yaml|config/central/endpoints.yaml.default"
     endpoint: "central.{{ required "unknown namespace" .Release.Namespace }}.svc:443"
 
+    rolloutStrategy: Recreate
     exposeMonitoring: false
 
     affinity:
@@ -90,6 +91,39 @@ defaults:
         limits:
           memory: "16Gi"
           cpu: "8"
+  centralWorker:
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: cloud.google.com/gke-preemptible
+              operator: NotIn
+              values:
+                - "true"
+        - weight: 50
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/infra
+              operator: Exists
+        - weight: 25
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/compute
+              operator: Exists
+        - weight: 100
+          preference:
+            matchExpressions:
+            - key: node-role.kubernetes.io/control-plane
+              operator: DoesNotExist
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
   configController:
     affinity:
       nodeAffinity:

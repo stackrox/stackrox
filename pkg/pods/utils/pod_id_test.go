@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -31,48 +32,135 @@ func TestPodIDWithPeriodToString(t *testing.T) {
 	assert.Equal(t, expected, p.String())
 }
 
-func TestParsePodIDSuccess(t *testing.T) {
-	str := "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
-
-	expected := PodID{
-		Name:      "mypod",
-		Namespace: "myns",
-		UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
+func TestParsePodID(t *testing.T) {
+	validCases := map[string]struct {
+		input    string
+		wantName string
+		wantNS   string
+		wantUID  string
+	}{
+		"simple": {
+			input:    "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+			wantName: "mypod", wantNS: "myns", wantUID: "ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		},
+		"dot in name": {
+			input:    "my-po.d.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+			wantName: "my-po.d", wantNS: "myns", wantUID: "ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		},
+		"minimal": {
+			input: "a.b@c", wantName: "a", wantNS: "b", wantUID: "c",
+		},
+		"uppercase hex in uid": {
+			input: "a.b@ABCDEF", wantName: "a", wantNS: "b", wantUID: "ABCDEF",
+		},
+		"hyphens everywhere": {
+			input: "pod-name.ns-name@abc-def", wantName: "pod-name", wantNS: "ns-name", wantUID: "abc-def",
+		},
+		"multiple dots in name": {
+			input: "a.b.c.d.ns@abc", wantName: "a.b.c.d", wantNS: "ns", wantUID: "abc",
+		},
+		"numeric parts": {
+			input: "1.2@a", wantName: "1", wantNS: "2", wantUID: "a",
+		},
+		"consecutive hyphens in name": {
+			input: "po--d.ns@abc", wantName: "po--d", wantNS: "ns", wantUID: "abc",
+		},
+		"consecutive hyphens in namespace": {
+			input: "pod.n--s@abc", wantName: "pod", wantNS: "n--s", wantUID: "abc",
+		},
+		"double dot in name": {
+			input: "a..b.ns@abc", wantName: "a..b", wantNS: "ns", wantUID: "abc",
+		},
+		"hyphen-dot in name": {
+			input: "po-.d.ns@abc", wantName: "po-.d", wantNS: "ns", wantUID: "abc",
+		},
+		"dot-hyphen in name": {
+			input: "po.-d.ns@abc", wantName: "po.-d", wantNS: "ns", wantUID: "abc",
+		},
+		"uid all hyphens": {
+			input: "pod.ns@---", wantName: "pod", wantNS: "ns", wantUID: "---",
+		},
+		"uid single char": {
+			input: "pod.ns@a", wantName: "pod", wantNS: "ns", wantUID: "a",
+		},
+		"uid single hyphen": {
+			input: "a.b@-", wantName: "a", wantNS: "b", wantUID: "-",
+		},
+		"mixed case uid": {
+			input: "a.b@aAbBcC", wantName: "a", wantNS: "b", wantUID: "aAbBcC",
+		},
 	}
 
-	parsed, err := ParsePodID(str)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, parsed)
-}
-
-func TestParsePodIDWithPeriodSuccess(t *testing.T) {
-	str := "my-po.d.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
-
-	expected := PodID{
-		Name:      "my-po.d",
-		Namespace: "myns",
-		UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
+	for name, tc := range validCases {
+		t.Run(name, func(t *testing.T) {
+			got, err := ParsePodID(tc.input)
+			require.NoError(t, err)
+			assert.Equal(t, tc.wantName, got.Name)
+			assert.Equal(t, tc.wantNS, got.Namespace)
+			assert.Equal(t, tc.wantUID, string(got.UID))
+		})
 	}
 
-	parsed, err := ParsePodID(str)
+	invalidCases := map[string]string{
+		"no dot":                     "mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		"leading dot":                ".mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		"name ends with hyphen":      "pod-.ns@abc",
+		"ns starts with hyphen":      "pod.-ns@abc",
+		"ns ends with hyphen":        "pod.ns-@abc",
+		"name starts with hyphen":    "-pod.ns@abc",
+		"empty uid":                  "pod.ns@",
+		"empty namespace":            "pod.@abc",
+		"dot-at only":                ".@abc",
+		"no name or namespace":       "@abc",
+		"empty string":               "",
+		"no at-sign":                 "pod.ns",
+		"uppercase in name":          "Pod.ns@abc",
+		"uppercase in namespace":     "pod.NS@abc",
+		"extra at-sign":              "pod.ns@abc@extra",
+		"non-hex in uid g":           "pod.ns@g",
+		"non-hex in uid xyz":         "pod.ns@xyz",
+		"non-hex in uid GGG":         "pod.ns@GGG",
+		"double dot before ns":       "pod..ns@abc",
+		"trailing dot in name":       "pod.name..ns@abc",
+		"space in name":              "pod .ns@abc",
+		"space in uid":               "pod.ns@ab c",
+		"invalid char mid-name":      "po_d.ns@abc",
+		"invalid char mid-namespace": "pod.n_s@abc",
+		"uppercase char mid-name":    "poXd.ns@abc",
+		"space mid-namespace":        "pod.n s@abc",
+		"multi-byte unicode in name": "café.ns@abc",
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expected, parsed)
+	for name, input := range invalidCases {
+		t.Run(name, func(t *testing.T) {
+			_, err := ParsePodID(input)
+			assert.Errorf(t, err, "input: %q", input)
+		})
+	}
 }
 
-func TestParsePodIDError(t *testing.T) {
-	str := "mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
-
-	_, err := ParsePodID(str)
-
-	assert.Error(t, err)
+func TestParsePodIDRoundTrip(t *testing.T) {
+	original := PodID{
+		Name:      "my-pod.name",
+		Namespace: "my-ns",
+		UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
+	}
+	parsed, err := ParsePodID(original.String())
+	require.NoError(t, err)
+	assert.Equal(t, original, parsed)
 }
 
-func TestParsePodIDWithPeriodError(t *testing.T) {
-	str := ".mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066"
-
-	_, err := ParsePodID(str)
-
-	assert.Error(t, err)
+func BenchmarkParsePodID(b *testing.B) {
+	cases := map[string]string{
+		"simple":       "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		"dots in name": "my-po.d.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+		"invalid":      "mypodwithoutns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+	}
+	for name, input := range cases {
+		b.Run(name, func(b *testing.B) {
+			for range b.N {
+				_, _ = ParsePodID(input)
+			}
+		})
+	}
 }

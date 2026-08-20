@@ -333,7 +333,7 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 	// ensure the Track catches the group properties. We do it several
 	// times to raise the chances for the potential events from other
 	// clients coming in between to capture the group properties.
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if i != 0 {
 			<-ti.C
 		}

@@ -29,6 +29,11 @@ ci_export() {
     local env_value="$2"
 
     if command -v cci-export >/dev/null; then
+        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
+        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
+            BASH_ENV=$(mktemp)
+            export BASH_ENV
+        fi
         cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
@@ -87,6 +92,17 @@ handle_dangling_processes() {
     info "Process state at exit:"
     ps -e -O ppid
 
+    # Build the set of ancestor PIDs (parent, grandparent, ... up to init).
+    # Killing an ancestor terminates us and the step script above us, causing
+    # the Prow entrypoint to report "signal: terminated" / exit 255.
+    local ancestor_list=" $$ "
+    local cur_pid
+    cur_pid=$(ps -o ppid= -p "$$" 2>/dev/null | tr -d ' ') || true
+    while [[ -n "${cur_pid:-}" && "$cur_pid" -gt 1 ]] 2>/dev/null; do
+        ancestor_list+="$cur_pid "
+        cur_pid=$(ps -o ppid= -p "$cur_pid" 2>/dev/null | tr -d ' ') || break
+    done
+
     local psline pid ppid
     ps -e -O ppid | while read -r pid ppid psline; do
         # Example output:
@@ -101,8 +117,8 @@ handle_dangling_processes() {
             # Ignoring header
             continue
         fi
-        if [[ "$pid" == "$$" ]]; then
-            echo "Ignoring self: $psline"
+        if [[ "$ancestor_list" == *" $pid "* ]]; then
+            echo "Ignoring self/ancestor: $psline"
             continue
         fi
         if [[ "$ppid" == "$$" ]]; then
@@ -1186,6 +1202,35 @@ is_in_PR_context() {
     return 1
 }
 
+# Returns 0 when the current PR only changes files under the given path prefix.
+# Returns 1 for non-PR contexts (postsubmit, periodic) so callers always run.
+changes_limited_to() {
+    local prefix="${1:?usage: changes_limited_to <path-prefix>}"
+
+    is_in_PR_context || return 1
+
+    local base_ref
+    if is_OPENSHIFT_CI; then
+        base_ref="${PULL_BASE_SHA:-}"
+    elif is_GITHUB_ACTIONS; then
+        if [[ -n "${GITHUB_BASE_REF:-}" ]]; then
+            git fetch --depth=1 origin "${GITHUB_BASE_REF}" 2>/dev/null || return 1
+            base_ref="origin/${GITHUB_BASE_REF}"
+        fi
+    fi
+    if [[ -z "${base_ref:-}" ]]; then
+        return 1
+    fi
+
+    local changed
+    changed="$(git diff --name-only "${base_ref}...HEAD" 2>/dev/null)" || return 1
+    if [[ -z "$changed" ]]; then
+        return 1
+    fi
+
+    ! grep -qv "^${prefix}" <<< "$changed"
+}
+
 get_PR_number() {
     if is_OPENSHIFT_CI && [[ -n "${PULL_NUMBER:-}" ]]; then
         echo "${PULL_NUMBER}"
@@ -1443,10 +1488,6 @@ openshift_ci_mods() {
 
     info "Current Status:"
     "$ROOT/status.sh" || true
-
-    # For ci_export(), override BASH_ENV from stackrox-test with something that is writable.
-    BASH_ENV=$(mktemp)
-    export BASH_ENV
 
     # These are not set in the binary_build_commands or image build envs.
     export CI=true

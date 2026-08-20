@@ -4,19 +4,16 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/tests/vmhelpers"
 	"github.com/stretchr/testify/require"
-	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/util/retry"
 )
 
 // ensureComplianceMetricsExposed patches the collector DaemonSet so the
@@ -54,51 +51,8 @@ func (s *VMScanningSuite) ensureComplianceMetricsExposed() {
 // ensureComplianceMetricsEnv patches the collector DaemonSet to set the
 // metrics port env var and waits for the rollout to complete.
 func (s *VMScanningSuite) ensureComplianceMetricsEnv(ctx context.Context, ns, dsName, containerName, envName, envValue string) {
-	t := s.T()
-
-	ds, err := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, dsName, metaV1.GetOptions{})
-	require.NoError(t, err, "getting DaemonSet %s/%s", ns, dsName)
-
-	changed, err := setContainerEnv(ds, containerName, envName, envValue)
-	require.NoError(t, err)
-	if !changed {
-		s.logf("VM scanning setup: %s/%s container %q already has %s=%s", ns, dsName, containerName, envName, envValue)
-		return
-	}
-
-	s.logf("VM scanning setup: patching %s/%s container %q: %s=%s", ns, dsName, containerName, envName, envValue)
-	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		current, getErr := s.k8sClient.AppsV1().DaemonSets(ns).Get(ctx, dsName, metaV1.GetOptions{})
-		if getErr != nil {
-			return getErr
-		}
-		needsUpdate, setErr := setContainerEnv(current, containerName, envName, envValue)
-		if setErr != nil || !needsUpdate {
-			return setErr
-		}
-		_, updateErr := s.k8sClient.AppsV1().DaemonSets(ns).Update(ctx, current, metaV1.UpdateOptions{})
-		return updateErr
-	})
-	require.NoError(t, err, "updating DaemonSet %s/%s", ns, dsName)
-
-	s.logf("VM scanning setup: waiting for %s/%s rollout", ns, dsName)
-	err = wait.PollUntilContextCancel(ctx, 10*time.Second, false, func(pollCtx context.Context) (bool, error) {
-		current, getErr := s.k8sClient.AppsV1().DaemonSets(ns).Get(pollCtx, dsName, metaV1.GetOptions{})
-		if getErr != nil {
-			return false, getErr
-		}
-		ready := current.Status.DesiredNumberScheduled > 0 &&
-			current.Status.UpdatedNumberScheduled == current.Status.DesiredNumberScheduled &&
-			current.Status.NumberReady == current.Status.DesiredNumberScheduled &&
-			current.Status.ObservedGeneration >= current.Generation
-		if !ready {
-			s.logf("VM scanning setup: %s/%s rollout in progress (desired=%d updated=%d ready=%d)",
-				ns, dsName, current.Status.DesiredNumberScheduled, current.Status.UpdatedNumberScheduled, current.Status.NumberReady)
-		}
-		return ready, nil
-	})
-	require.NoError(t, err, "waiting for %s/%s rollout", ns, dsName)
-	s.logf("VM scanning setup: %s/%s rollout complete", ns, dsName)
+	err := vmhelpers.EnsureComplianceMetricsEnv(ctx, s.k8sClient, s.logf, ns, dsName, containerName, envName, envValue)
+	require.NoError(s.T(), err)
 }
 
 // ensureMonitoringNetworkPolicy creates or updates a dedicated test-owned
@@ -147,29 +101,4 @@ func (s *VMScanningSuite) ensureMonitoringNetworkPolicy(ctx context.Context, ns,
 	default:
 		require.NoError(t, err, "getting NetworkPolicy %s/%s", ns, name)
 	}
-}
-
-// setContainerEnv ensures ds has envName=envValue on the named container.
-// Returns (true, nil) if the DaemonSet was modified.
-func setContainerEnv(ds *appsV1.DaemonSet, containerName, envName, envValue string) (bool, error) {
-	for i := range ds.Spec.Template.Spec.Containers {
-		c := &ds.Spec.Template.Spec.Containers[i]
-		if c.Name != containerName {
-			continue
-		}
-		for j := range c.Env {
-			if c.Env[j].Name != envName {
-				continue
-			}
-			if c.Env[j].Value == envValue && c.Env[j].ValueFrom == nil {
-				return false, nil
-			}
-			c.Env[j].Value = envValue
-			c.Env[j].ValueFrom = nil
-			return true, nil
-		}
-		c.Env = append(c.Env, coreV1.EnvVar{Name: envName, Value: envValue})
-		return true, nil
-	}
-	return false, fmt.Errorf("container %q not found in DaemonSet %s/%s", containerName, ds.Namespace, ds.Name)
 }

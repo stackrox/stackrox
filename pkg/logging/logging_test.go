@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,7 +76,7 @@ func Test_withRotatingCore(t *testing.T) {
 	logger, err := cfg.Build(zap.WrapCore(core))
 	require.NoError(t, err)
 	logger.Info("begin")
-	for i := 0; i < 10000; i++ {
+	for range 10000 {
 		logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 	}
 
@@ -134,7 +136,7 @@ func Test_withRotatingCore(t *testing.T) {
 	})
 	t.Run("ensure the oldest rotation is deleted", func(t *testing.T) {
 		// Write more to trigger a rotation.
-		for i := 0; i < 4000; i++ {
+		for range 4000 {
 			logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
 		}
 		assert.NoError(t, logger.Sync())
@@ -156,6 +158,51 @@ func Test_withRotatingCore(t *testing.T) {
 		})
 	})
 
+}
+
+// Test_withRotatingCore_sharedPath verifies that multiple loggers writing to
+// the same file path do not lose lines. Without a shared writer, each logger
+// creates an independent lumberjack.Logger with its own file descriptor and
+// size counter. Concurrent writes through separate descriptors cause lines to
+// be silently dropped (~15% loss observed with 10 writers).
+func Test_withRotatingCore_sharedPath(t *testing.T) {
+	t.Setenv(env.LoggingMaxRotationFiles.EnvVar(), "1")
+	t.Setenv(env.LoggingMaxSizeMB.EnvVar(), "10")
+	logpath := filepath.Join(t.TempDir(), "shared.log")
+
+	cfg := config
+	cfg.OutputPaths = []string{}
+
+	const numLoggers = 10
+	const linesPerLogger = 1000
+
+	loggers := make([]*zap.Logger, numLoggers)
+	for i := range numLoggers {
+		core := withRotatingCores(&cfg, []string{logpath})
+		l, err := cfg.Build(zap.WrapCore(core))
+		require.NoError(t, err)
+		loggers[i] = l
+	}
+
+	var wg sync.WaitGroup
+	for id, l := range loggers {
+		wg.Go(func() {
+			marker := fmt.Sprintf("LOGGER-%02d", id)
+			for range linesPerLogger {
+				l.Info(marker)
+			}
+		})
+	}
+	wg.Wait()
+	for _, l := range loggers {
+		require.NoError(t, l.Sync())
+	}
+
+	data, err := os.ReadFile(logpath)
+	require.NoError(t, err)
+	lineCount := len(strings.Split(strings.TrimSpace(string(data)), "\n"))
+	assert.Equalf(t, numLoggers*linesPerLogger, lineCount,
+		"expected %d lines but got %d", numLoggers*linesPerLogger, lineCount)
 }
 
 func TestForEachRotation(t *testing.T) {

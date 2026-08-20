@@ -17,6 +17,7 @@ import type {
     Cluster,
     ClusterHealthStatusLabel,
     ClusterProviderMetadata,
+    SensorVersionCompatibility,
 } from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
@@ -200,6 +201,48 @@ export const sensorUpgradeStyles = {
     failure: styleUnhealthy,
 };
 
+export const sensorCompatibilityMap = {
+    SENSOR_VERSION_COMPATIBILITY_MATCHED: {
+        displayValue: 'Matched',
+        zoneLabel: 'Matched',
+        Icon: CheckCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-success',
+    },
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND: {
+        displayValue: 'Compatible (Behind)',
+        zoneLabel: 'Behind',
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
+    },
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD: {
+        displayValue: 'Compatible (Ahead)',
+        zoneLabel: 'Ahead',
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
+    },
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND: {
+        displayValue: 'Incompatible (Behind)',
+        zoneLabel: 'Incompatible',
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD: {
+        displayValue: 'Incompatible (Ahead)',
+        zoneLabel: 'Incompatible',
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    SENSOR_VERSION_COMPATIBILITY_UNKNOWN: {
+        displayValue: 'Unknown',
+        zoneLabel: '',
+        Icon: UnknownIcon,
+        fgColor: 'pf-v6-u-icon-color-subtle',
+    },
+} as const;
+
+export type SensorCompatibilityInfo =
+    (typeof sensorCompatibilityMap)[keyof typeof sensorCompatibilityMap];
+
 type UpgradeState = {
     displayValue: string;
     type: string;
@@ -301,7 +344,7 @@ export function formatBuildDate(orchestratorMetadata) {
         : 'Not available';
 }
 
-export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
+export function formatCloudProvider(providerMetadata: ClusterProviderMetadata | undefined) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
@@ -556,6 +599,27 @@ export function buildStatusMessage(
         message += ` ${formatDelayedText(distance)}`;
     }
     return message;
+}
+
+const defaultSensorCompatibility = sensorCompatibilityMap.SENSOR_VERSION_COMPATIBILITY_UNKNOWN;
+
+export function getSensorCompatibilityInfo(compatibility: SensorVersionCompatibility | undefined) {
+    return compatibility
+        ? (sensorCompatibilityMap[compatibility] ?? defaultSensorCompatibility)
+        : defaultSensorCompatibility;
+}
+
+// The version range chart can only be rendered when the compatibility state is
+// known and Central has advertised a compatible sensor version range.
+export function shouldShowSensorVersionRangeChart(
+    compatibility: SensorVersionCompatibility | undefined,
+    compatibleVersions: string[]
+): boolean {
+    return (
+        compatibility !== undefined &&
+        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' &&
+        compatibleVersions.length > 0
+    );
 }
 
 export default {

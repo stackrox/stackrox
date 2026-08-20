@@ -1,13 +1,13 @@
 import * as api from '../../constants/apiEndpoints';
-import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
+import pf6 from '../../selectors/pf6';
 import {
     doPolicyPageAction,
     doPolicyRowAction,
     visitPolicies,
     visitPolicy,
-} from '../../helpers/policies';
-import pf6 from '../../selectors/pf6';
+} from './Policies.helpers';
+import { selectors } from './Policies.selectors';
 
 describe('Export policy', () => {
     withAuth();
@@ -87,7 +87,7 @@ describe('Export policy', () => {
             cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
 
             cy.get(`thead ${selectors.table.selectCheckbox}`).should('not.be.checked').click();
-            cy.get(selectors.table.bulkActionsDropdownButton).click();
+            cy.get(selectors.table.bulkActionsDropdownButton).should('not.be.disabled').click();
             cy.get(`${pf6.dropdownItem}:contains("Export policies")`).click();
 
             cy.wait('@exportPolicy').then(({ request, response }) => {

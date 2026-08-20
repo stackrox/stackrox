@@ -215,8 +215,8 @@ func (m *managerImpl) Stop() {
 }
 
 func (m *managerImpl) generateReportNoLock(req *reportRequest) {
-	clusterIds := []string{}
-	profiles := []string{}
+	clusterIds := make([]string, 0, len(req.scanConfig.GetClusters()))
+	profiles := make([]string, 0, len(req.scanConfig.GetProfiles()))
 	for _, cluster := range req.scanConfig.GetClusters() {
 		clusterIds = append(clusterIds, cluster.GetClusterId())
 	}
@@ -364,11 +364,15 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 			log.Debug("The scan is missing the LastStartedTime field")
 			return nil
 		}
-		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) && !watcher.IsScanNotApplicable(scan) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
 			return nil
 		}
-		return err
+		if !errors.Is(err, watcher.ErrScanAlreadyHandled) {
+			return err
+		}
+		log.Debugf("Scan %s was already handled but is NOT-APPLICABLE, allowing through", scan.GetScanName())
+		id = fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId())
 	}
 	numChecks, err := watcher.GetExpectedNumChecks(scan)
 	if err != nil {
@@ -546,7 +550,7 @@ func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results 
 		if err != nil {
 			return nil, nil, false, errors.Wrap(err, "unable to retrieve snapshots from the store")
 		}
-		if len(snapshot) > 0 {
+		if len(snapshot) > 0 && !watcher.IsScanNotApplicable(results.Scan) {
 			// We already handled a scan newer than this one, we ignore this scanResults
 			return nil, nil, false, watcher.ErrScanAlreadyHandled
 		}
@@ -608,9 +612,6 @@ func (m *managerImpl) handleReadyScanConfig() {
 		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 		})
-		if err := watcher.DeleteOldResultsFromMissingScans(m.automaticReportingCtx, scanConfigWatcherResult, m.profileDataStore, m.scanDataStore, m.checkResultDataStore); err != nil {
-			log.Errorf("unable to delete old CheckResults: %v", err)
-		}
 		m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 	}
 }

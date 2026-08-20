@@ -229,14 +229,17 @@ func (x *Secret) GetRelationship() *SecretRelationship {
 }
 
 type ListSecret struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId     string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName   string                 `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace     string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Types         []SecretType           `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId   string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName string                 `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Namespace   string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Types       []SecretType           `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// `relationship` is only retrieved in very specific circumstances and has to be explicitly requested by the caller.
+	// As such the N+1 query pattern to populate it is an acceptable pattern.  By default relationship will be nil.
+	Relationship  *SecretRelationship `protobuf:"bytes,8,opt,name=relationship,proto3" json:"relationship,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -316,6 +319,13 @@ func (x *ListSecret) GetTypes() []SecretType {
 func (x *ListSecret) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *ListSecret) GetRelationship() *SecretRelationship {
+	if x != nil {
+		return x.Relationship
 	}
 	return nil
 }
@@ -910,7 +920,7 @@ const file_storage_secret_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
 	"\x10AnnotationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb7\x02\n" +
 	"\n" +
 	"ListSecret\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -921,7 +931,8 @@ const file_storage_secret_proto_rawDesc = "" +
 	"\tnamespace\x18\x04 \x01(\tR\tnamespace\x12)\n" +
 	"\x05types\x18\x05 \x03(\x0e2\x13.storage.SecretTypeR\x05types\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe5\x01\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12?\n" +
+	"\frelationship\x18\b \x01(\v2\x1b.storage.SecretRelationshipR\frelationship\"\xe5\x01\n" +
 	"\x12SecretRelationship\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12]\n" +
 	"\x17container_relationships\x18\x04 \x03(\v2$.storage.SecretContainerRelationshipR\x16containerRelationships\x12`\n" +
@@ -1021,21 +1032,22 @@ var file_storage_secret_proto_depIdxs = []int32{
 	3,  // 4: storage.Secret.relationship:type_name -> storage.SecretRelationship
 	0,  // 5: storage.ListSecret.types:type_name -> storage.SecretType
 	13, // 6: storage.ListSecret.created_at:type_name -> google.protobuf.Timestamp
-	5,  // 7: storage.SecretRelationship.container_relationships:type_name -> storage.SecretContainerRelationship
-	4,  // 8: storage.SecretRelationship.deployment_relationships:type_name -> storage.SecretDeploymentRelationship
-	12, // 9: storage.ImagePullSecret.registries:type_name -> storage.ImagePullSecret.Registry
-	0,  // 10: storage.SecretDataFile.type:type_name -> storage.SecretType
-	8,  // 11: storage.SecretDataFile.cert:type_name -> storage.Cert
-	6,  // 12: storage.SecretDataFile.image_pull_secret:type_name -> storage.ImagePullSecret
-	9,  // 13: storage.Cert.subject:type_name -> storage.CertName
-	9,  // 14: storage.Cert.issuer:type_name -> storage.CertName
-	13, // 15: storage.Cert.start_date:type_name -> google.protobuf.Timestamp
-	13, // 16: storage.Cert.end_date:type_name -> google.protobuf.Timestamp
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	3,  // 7: storage.ListSecret.relationship:type_name -> storage.SecretRelationship
+	5,  // 8: storage.SecretRelationship.container_relationships:type_name -> storage.SecretContainerRelationship
+	4,  // 9: storage.SecretRelationship.deployment_relationships:type_name -> storage.SecretDeploymentRelationship
+	12, // 10: storage.ImagePullSecret.registries:type_name -> storage.ImagePullSecret.Registry
+	0,  // 11: storage.SecretDataFile.type:type_name -> storage.SecretType
+	8,  // 12: storage.SecretDataFile.cert:type_name -> storage.Cert
+	6,  // 13: storage.SecretDataFile.image_pull_secret:type_name -> storage.ImagePullSecret
+	9,  // 14: storage.Cert.subject:type_name -> storage.CertName
+	9,  // 15: storage.Cert.issuer:type_name -> storage.CertName
+	13, // 16: storage.Cert.start_date:type_name -> google.protobuf.Timestamp
+	13, // 17: storage.Cert.end_date:type_name -> google.protobuf.Timestamp
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_storage_secret_proto_init() }

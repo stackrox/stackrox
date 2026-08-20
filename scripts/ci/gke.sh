@@ -326,6 +326,8 @@ teardown_gke_cluster() {
 
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
+    setup_gcp
+
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 

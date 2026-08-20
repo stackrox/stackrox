@@ -19,8 +19,6 @@
 //
 // 3. MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
 //
-// 4. MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
-//
 // LOGLEVEL semantics follow common conventions, i.e., any log message with a level less than the
 // currently set log level will be discarded.
 package logging
@@ -28,18 +26,17 @@ package logging
 import (
 	"fmt"
 	"io/fs"
-	"math"
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/sync"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -145,9 +142,7 @@ var (
 		for severity := range validLevels {
 			severities = append(severities, severity)
 		}
-		sort.Slice(severities, func(i, j int) bool {
-			return severities[i] < severities[j]
-		})
+		slices.Sort(severities)
 		return severities
 	}()
 
@@ -186,11 +181,6 @@ func init() {
 
 	if buildinfo.ReleaseBuild {
 		config.DisableStacktrace = true
-		// Sampling is applied via a shared sampler core (see sharedSampler below)
-		// in CreateLogger, NOT via per-logger config.Sampling. Each config.Sampling
-		// allocates a [7][4096]counter array (~450 KB). With 100+ loggers this
-		// totaled ~46 MB. A single shared sampler reduces this to ~450 KB total
-		// while preserving the same log-flood protection.
 	} else {
 		// Configures logging at the DPanic log-level to panic.
 		config.Development = true
@@ -227,10 +217,8 @@ func init() {
 }
 
 func addOutput(config *zap.Config, path string) {
-	for _, p := range config.OutputPaths {
-		if p == path {
-			return
-		}
+	if slices.Contains(config.OutputPaths, path) {
+		return
 	}
 	if logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666); err == nil {
 		defer func() {
@@ -350,14 +338,10 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	}
 	// Make zap build a logger with only the standard streams:
 	lc.OutputPaths = stdPaths
-	// Append rotating files as a Tee core, and wrap with the shared sampler
-	// for log-flood protection in release builds:
+	// Append rotating files as a Tee core:
 	wrapOpts := []zap.Option{
 		zap.AddCallerSkip(skip),
 		zap.WrapCore(withRotatingCores(&lc, rotatingPaths)),
-	}
-	if buildinfo.ReleaseBuild {
-		wrapOpts = append(wrapOpts, zap.WrapCore(withSharedSampler))
 	}
 	logger, err := lc.Build(wrapOpts...)
 	if err != nil {
@@ -380,33 +364,35 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	return result
 }
 
+var (
+	fileWritersMu     sync.Mutex
+	sharedFileWriters = make(map[string]zapcore.WriteSyncer)
+)
+
+func getOrCreateFileWriter(path string) zapcore.WriteSyncer {
+	fileWritersMu.Lock()
+	defer fileWritersMu.Unlock()
+	if w, ok := sharedFileWriters[path]; ok {
+		return w
+	}
+	w := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   path,
+		MaxSize:    env.LoggingMaxSizeMB.IntegerSetting(),
+		MaxBackups: env.LoggingMaxRotationFiles.IntegerSetting(),
+	})
+	sharedFileWriters[path] = w
+	return w
+}
+
 func withRotatingCores(lc *zap.Config, rotatingPaths []string) func(c zapcore.Core) zapcore.Core {
 	var cores = make([]zapcore.Core, 0, len(rotatingPaths))
 	for _, path := range rotatingPaths {
-		writer := zapcore.AddSync(&lumberjack.Logger{
-			Filename:   path,
-			MaxSize:    env.LoggingMaxSizeMB.IntegerSetting(),
-			MaxBackups: env.LoggingMaxRotationFiles.IntegerSetting(),
-		})
+		writer := getOrCreateFileWriter(path)
 		cores = append(cores, zapcore.NewCore(getEncoderForConfig(lc), writer, lc.Level))
 	}
 	return func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(append(cores, c)...)
 	}
-}
-
-// withSharedSampler wraps a core with a single shared sampler for log-flood
-// protection. All loggers share this one sampler instead of each getting their
-// own via config.Sampling. This reduces memory from ~46 MB (100+ loggers ×
-// 450 KB counter array each) to ~450 KB total.
-//
-// The sampling parameters match the original per-logger config:
-//   - tick: 1 second sampling window
-//   - first: allow the first N messages per key per tick (from MAX_LOG_LINE_QUOTA)
-//   - thereafter: log every 1st message after the initial burst
-func withSharedSampler(c zapcore.Core) zapcore.Core {
-	first := int(math.Max(1, float64(maxLogLineQuotaPerInterval/logLineQuotaIntervalSecs)))
-	return zapcore.NewSamplerWithOptions(c, time.Second, first, 1)
 }
 
 func getEncoderForConfig(lc *zap.Config) zapcore.Encoder {

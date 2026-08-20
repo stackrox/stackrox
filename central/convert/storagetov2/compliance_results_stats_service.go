@@ -10,7 +10,7 @@ import (
 
 // ComplianceV2ClusterStats converts the counts to the v2 stats
 func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClusterScan, scanToScanID map[string]string) []*v2.ComplianceClusterScanStats {
-	var convertedResults []*v2.ComplianceClusterScanStats
+	convertedResults := make([]*v2.ComplianceClusterScanStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceClusterScanStats{
@@ -59,7 +59,7 @@ func ComplianceV2ClusterStats(resultCounts []*datastore.ResourceResultCountByClu
 
 // ComplianceV2ClusterOverallStats converts the counts to the v2 stats
 func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCountByCluster, clusterErrors map[string][]string) []*v2.ComplianceClusterOverallStats {
-	var convertedResults []*v2.ComplianceClusterOverallStats
+	convertedResults := make([]*v2.ComplianceClusterOverallStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
 		var lastScanTime *types.Timestamp
@@ -110,7 +110,7 @@ func ComplianceV2ClusterOverallStats(resultCounts []*datastore.ResultStatusCount
 
 // ComplianceV2ProfileStats converts the counts to the v2 stats
 func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByProfile, profileMap map[string]*storage.ComplianceOperatorProfileV2, profileBenchmarkMap map[string][]*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceProfileScanStats {
-	var convertedResults []*v2.ComplianceProfileScanStats
+	convertedResults := make([]*v2.ComplianceProfileScanStats, 0, len(resultCounts))
 
 	for _, resultCount := range resultCounts {
 		convertedResults = append(convertedResults, &v2.ComplianceProfileScanStats{
@@ -154,7 +154,7 @@ func ComplianceV2ProfileStats(resultCounts []*datastore.ResourceResultCountByPro
 }
 
 func convertBenchmarks(incoming []*storage.ComplianceOperatorBenchmarkV2) []*v2.ComplianceBenchmark {
-	var convertedBenchmarks []*v2.ComplianceBenchmark
+	convertedBenchmarks := make([]*v2.ComplianceBenchmark, 0, len(incoming))
 	for _, benchmark := range incoming {
 		convertedBenchmarks = append(convertedBenchmarks, &v2.ComplianceBenchmark{
 			Name:        benchmark.GetName(),

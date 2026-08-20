@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"strings"
@@ -18,6 +19,8 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/refresh"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
 	netEntityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
@@ -55,6 +58,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version/productstreams"
+	"github.com/stackrox/rox/pkg/version/versioncompatibility"
 )
 
 const (
@@ -120,7 +125,12 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	}
 
 	cluster.Status.UpgradeStatus = upgradeStatus
-	return ds.clusterStorage.Upsert(ctx, cluster)
+
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
@@ -141,7 +151,11 @@ func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id s
 	}
 
 	cluster.Status.CertExpiryStatus = clusterCertExpiryStatus
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Expiry)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
@@ -158,7 +172,11 @@ func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, sta
 	status.CertExpiryStatus = cluster.GetStatus().GetCertExpiryStatus()
 	cluster.Status = status
 
-	return ds.clusterStorage.Upsert(ctx, cluster)
+	err = ds.clusterStorage.Upsert(ctx, cluster)
+	if err == nil {
+		refresh.RefreshTracker(metrics.Health)
+	}
+	return err
 }
 
 func (ds *datastoreImpl) buildCache(ctx context.Context) error {
@@ -300,6 +318,7 @@ func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]
 	}
 
 	ds.populateHealthInfos(ctx, clusters...)
+	ds.populateSensorVersionCompatibility(clusters...)
 	ds.updateClusterPriority(clusters...)
 	return clusters, nil
 }
@@ -314,6 +333,7 @@ func (ds *datastoreImpl) GetCluster(ctx context.Context, id string) (*storage.Cl
 	}
 
 	ds.populateHealthInfos(ctx, cluster)
+	ds.populateSensorVersionCompatibility(cluster)
 	ds.updateClusterPriority(cluster)
 	return cluster, true, nil
 }
@@ -329,6 +349,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		}
 
 		ds.populateHealthInfos(ctx, clusters...)
+		ds.populateSensorVersionCompatibility(clusters...)
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}
@@ -384,6 +405,7 @@ func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
 			clonedCluster := cluster.CloneVT()
 			ds.populateHealthInfos(ctx, clonedCluster)
+			ds.populateSensorVersionCompatibility(clonedCluster)
 			ds.updateClusterPriority(clonedCluster)
 			return fn(clonedCluster)
 		})
@@ -535,6 +557,7 @@ func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clu
 	if clusterHealthStatus.GetSensorHealthStatus() == oldHealth.GetSensorHealthStatus() && clusterHealthStatus.GetCollectorHealthStatus() == oldHealth.GetCollectorHealthStatus() {
 		return nil
 	}
+	defer refresh.RefreshTracker(metrics.Health)
 
 	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if err != nil {
@@ -595,9 +618,7 @@ func (ds *datastoreImpl) UpdateAuditLogFileStates(ctx context.Context, id string
 	if cluster.GetAuditLogState() == nil {
 		cluster.AuditLogState = make(map[string]*storage.AuditLogFileState)
 	}
-	for node, state := range states {
-		cluster.AuditLogState[node] = state
-	}
+	maps.Copy(cluster.GetAuditLogState(), states)
 
 	return ds.clusterStorage.Upsert(ctx, cluster)
 }
@@ -916,6 +937,42 @@ func (ds *datastoreImpl) populateHealthInfos(ctx context.Context, clusters ...*s
 		}
 		cluster.HealthStatus = infos[healthIdx]
 		healthIdx++
+	}
+}
+
+func (ds *datastoreImpl) populateSensorVersionCompatibility(clusters ...*storage.Cluster) {
+	for _, cluster := range clusters {
+		if cluster.GetStatus() == nil {
+			continue
+		}
+		sensorXY, err := productstreams.ParseXYFromVersionString(cluster.GetStatus().GetSensorVersion())
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		compat, err := versioncompatibility.ClassifyVersion(sensorXY)
+		if err != nil {
+			cluster.Status.SensorVersionCompatibility = storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
+			continue
+		}
+		cluster.Status.SensorVersionCompatibility = compatibilityToProto(compat)
+	}
+}
+
+func compatibilityToProto(c versioncompatibility.Compatibility) storage.SensorVersionCompatibility {
+	switch c {
+	case versioncompatibility.Matched:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_MATCHED
+	case versioncompatibility.CompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND
+	case versioncompatibility.CompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD
+	case versioncompatibility.IncompatibleBehind:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND
+	case versioncompatibility.IncompatibleAhead:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD
+	default:
+		return storage.SensorVersionCompatibility_SENSOR_VERSION_COMPATIBILITY_UNKNOWN
 	}
 }
 

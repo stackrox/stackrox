@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
@@ -14,7 +13,6 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
@@ -32,8 +30,6 @@ var (
 )
 
 type datastoreImpl struct {
-	keyedMutex *concurrency.KeyedMutex
-
 	storage store.Store
 
 	risks riskDS.DataStore
@@ -51,8 +47,6 @@ func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
 
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
-
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	return ds
 }
@@ -261,9 +255,6 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
-
-	ds.keyedMutex.Lock(image.GetId())
-	defer ds.keyedMutex.Unlock(image.GetId())
 
 	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)

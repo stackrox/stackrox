@@ -27,7 +27,10 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import type { ConfiguredReportSnapshot } from 'services/ReportsService.types';
+import type {
+    ConfiguredReportSnapshot,
+    ImageVulnerabilityReportConfiguration,
+} from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -45,7 +48,6 @@ import type { RunState } from 'types/reportJob';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 
 import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
-import type { ImageVulnerabilityReportConfiguration } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
     searchFilterConfigForImageVulnerabilityReport,

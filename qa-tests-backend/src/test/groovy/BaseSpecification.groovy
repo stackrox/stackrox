@@ -43,6 +43,11 @@ import spock.lang.Specification
 @OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
+    static final Javers JAVERS = JaversBuilder.javers()
+            .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
+            .withPrintProBanner(false)
+            .build()
+
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
     static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3@$TEST_IMAGE_SHA"
@@ -339,12 +344,8 @@ class BaseSpecification extends Specification {
     }
 
     private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
-        Javers javers = JaversBuilder.javers()
-                .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                .build()
-
         List<String> namespaces = orchestrator.getNamespaces()
-        Diff diff = javers.compare(resourceRecord["namespaces"], namespaces)
+        Diff diff = JAVERS.compare(resourceRecord["namespaces"], namespaces)
         if (diff.hasChanges()) {
             LOG.info "There is a difference in namespaces between the start and end of this test run:"
             LOG.info diff.prettyPrint()
@@ -354,7 +355,7 @@ class BaseSpecification extends Specification {
 
         List<String> deployments = orchestrator.getDeployments("default") +
                 orchestrator.getDeployments(Constants.ORCHESTRATOR_NAMESPACE)
-        diff = javers.compare(resourceRecord["deployments"], deployments)
+        diff = JAVERS.compare(resourceRecord["deployments"], deployments)
         if (diff.hasChanges()) {
             LOG.info "There is a difference in deployments between the start and end of this test run"
             LOG.info diff.prettyPrint()
@@ -371,8 +372,7 @@ class BaseSpecification extends Specification {
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
 
-        if (!Env.IN_CI && (Env.get("REGISTRY_USERNAME", null) == null ||
-                           Env.get("REGISTRY_PASSWORD", null) == null)) {
+        if (!Env.get("REGISTRY_USERNAME", null) || !Env.get("REGISTRY_PASSWORD", null)) {
             // Arguably this should be fatal but for tests that don't pull from docker.io/stackrox it is not strictly
             // necessary.
             LOG.warn "The REGISTRY_USERNAME and/or REGISTRY_PASSWORD env var is missing. " +
@@ -403,7 +403,7 @@ class BaseSpecification extends Specification {
     }
 
     static addGCRImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null) == null) {
+        if (!Env.get("GOOGLE_CREDENTIALS_GCR_SCANNER_V2", null)) {
             // Arguably this should be fatal but for tests that don't pull from us.gcr.io it is not strictly necessary
             LOG.warn "The GOOGLE_CREDENTIALS_GCR_SCANNER_V2 env var is missing. "+
                     "(this is ok if your test does not use images on us.gcr.io)"
@@ -434,9 +434,8 @@ class BaseSpecification extends Specification {
     }
 
     static addRedHatImagePullSecret(Kubernetes orchestrator, String ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
-                           Env.get("REDHAT_PASSWORD") == null)) {
-            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+        if (!Env.get("REDHAT_USERNAME") || !Env.get("REDHAT_PASSWORD")) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing or empty. " +
                     "(this is ok if your test does not use images from registry.redhat.io)"
             return
         }

@@ -85,20 +85,20 @@ COPY --link THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 COPY --link ui /ui
 
-COPY --link bin/central            /stackrox/central
-COPY --link bin/migrator           /stackrox/bin/migrator
-COPY --link bin/compliance         /stackrox/bin/compliance
-COPY --link bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
-COPY --link bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
-COPY --link bin/admission-control  /stackrox/bin/admission-control
-COPY --link bin/config-controller  /stackrox/bin/config-controller
-COPY --link bin/roxagent           /stackrox/bin/roxagent
-COPY --link bin/roxctl*            /assets/downloads/cli/
+COPY bin/central            /stackrox/central
+COPY bin/migrator           /stackrox/bin/migrator
+COPY bin/compliance         /stackrox/bin/compliance
+COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
+COPY bin/admission-control  /stackrox/bin/admission-control
+COPY bin/config-controller  /stackrox/bin/config-controller
+COPY bin/central-worker     /stackrox/bin/central-worker
+COPY bin/roxagent           /stackrox/bin/roxagent
+COPY bin/roxctl*            /assets/downloads/cli/
 # dlv (Delve debugger) — present only in DEBUG_BUILD=yes images
-COPY --link bin/dlv-placeholder bin/dlv* /stackrox/bin/
+COPY bin/dlv-placeholder bin/dlv* /stackrox/bin/
 
-RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
-    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
 

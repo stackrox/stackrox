@@ -447,7 +447,8 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 	}
 
 	if !enrichmentContext.FetchOpt.forceRefetchCachedValues() &&
-		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues {
+		enrichmentContext.FetchOpt != UseImageNamesRefetchCachedValues &&
+		enrichmentContext.FetchOpt != ForceRefetchMetadataOnly {
 		// The metadata in the cache is always up-to-date with respect to the current metadataVersion
 		if metadataValue, ok := e.metadataCache.Get(getRef(image)); ok {
 			e.metrics.IncrementMetadataCacheHit()
@@ -855,7 +856,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 	}
 
 	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
-		sigIntegrations[0].GetId() == signatures.DefaultRedHatSignatureIntegration.GetId()
+		sigIntegrations[0].GetId() == signatures.DefaultRedHatIntegrationID
 
 	// Short-circuit if
 	//	- no integrations are available, or

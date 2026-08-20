@@ -34,10 +34,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var (
-	withoutV1ConfigsQuery = search.NewQueryBuilder().AddExactMatches(search.EmbeddedCollectionID, "").ProtoQuery()
-)
-
 type upsertTestCase struct {
 	desc                       string
 	setMocksAndGenReportConfig func() *apiV2.ReportConfiguration
@@ -243,9 +239,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Empty query",
 			query: &apiV2.RawQuery{Query: ""},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+				query := search.EmptyQuery()
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -254,9 +248,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 			desc:  "Query with search field",
 			query: &apiV2.RawQuery{Query: "Report Name:name"},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-					withoutV1ConfigsQuery)
+				query := search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery()
 				query.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 				return query
 			}(),
@@ -268,9 +260,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 				Pagination: &apiV2.Pagination{Limit: 25},
 			},
 			expectedQ: func() *v1.Query {
-				query := search.ConjunctionQuery(
-					search.EmptyQuery(),
-					withoutV1ConfigsQuery)
+				query := search.EmptyQuery()
 				query.Pagination = &v1.QueryPagination{Limit: 25}
 				return query
 			}(),
@@ -362,18 +352,14 @@ func (s *ReportServiceTestSuite) TestCountReportConfigurations() {
 		expectedQ *v1.Query
 	}{
 		{
-			desc:  "Empty query",
-			query: &apiV2.RawQuery{Query: ""},
-			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().ProtoQuery(),
-				withoutV1ConfigsQuery),
+			desc:      "Empty query",
+			query:     &apiV2.RawQuery{Query: ""},
+			expectedQ: search.NewQueryBuilder().ProtoQuery(),
 		},
 		{
-			desc:  "Query with search field",
-			query: &apiV2.RawQuery{Query: "Report Name:name"},
-			expectedQ: search.ConjunctionQuery(
-				search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
-				withoutV1ConfigsQuery),
+			desc:      "Query with search field",
+			query:     &apiV2.RawQuery{Query: "Report Name:name"},
+			expectedQ: search.NewQueryBuilder().AddStrings(search.ReportName, "name").ProtoQuery(),
 		},
 	}
 
@@ -859,6 +845,111 @@ func (s *ReportServiceTestSuite) TestAuthz() {
 	testutils.AssertAuthzWorks(s.T(), &svc)
 }
 
+// TestAuthzPermissions verifies that each reporting API method enforces the correct permissions.
+// View-based report methods require only View Image + View Deployment (matching the CVE Results
+// page) while collection-based report management requires WorkflowAdministration.
+func (s *ReportServiceTestSuite) TestAuthzPermissions() {
+	svc := &serviceImpl{}
+
+	ctxWithPerms := func(perms map[string]storage.Access) context.Context {
+		mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
+		mockID.EXPECT().Permissions().Return(perms).AnyTimes()
+		return authn.ContextWithIdentity(context.Background(), mockID, s.T())
+	}
+
+	// viewImageDeployment is the minimum permission set for view-based report APIs —
+	// the same permissions required to view CVE results in the UI.
+	viewImageDeployment := map[string]storage.Access{
+		"Image":      storage.Access_READ_ACCESS,
+		"Deployment": storage.Access_READ_ACCESS,
+	}
+	// modifyWorkflow is required for collection-based report lifecycle operations.
+	modifyWorkflow := map[string]storage.Access{
+		"WorkflowAdministration": storage.Access_READ_WRITE_ACCESS,
+		"Image":                  storage.Access_READ_ACCESS,
+		"Deployment":             storage.Access_READ_ACCESS,
+	}
+	// viewWorkflow is required for read-only collection-based report APIs.
+	viewWorkflow := map[string]storage.Access{
+		"WorkflowAdministration": storage.Access_READ_ACCESS,
+		"Image":                  storage.Access_READ_ACCESS,
+		"Deployment":             storage.Access_READ_ACCESS,
+	}
+	// viewImageOnly is insufficient for view-based report APIs since Deployment access is missing.
+	viewImageOnly := map[string]storage.Access{
+		"Image": storage.Access_READ_ACCESS,
+	}
+	// deploymentOnly has no Image access, so it is denied by any report API that requires View Image.
+	deploymentOnly := map[string]storage.Access{
+		"Deployment": storage.Access_READ_ACCESS,
+	}
+
+	testCases := map[string]struct {
+		method       string
+		allowedPerms map[string]storage.Access
+		deniedPerms  map[string]storage.Access
+	}{
+		// View-based report APIs require View Image + View Deployment; no WorkflowAdministration needed.
+		"PostViewBasedReport allowed with View Image+Deployment, denied without Deployment": {
+			method:       apiV2.ReportService_PostViewBasedReport_FullMethodName,
+			allowedPerms: viewImageDeployment,
+			deniedPerms:  viewImageOnly,
+		},
+		"GetViewBasedReportHistory allowed with View Image+Deployment, denied without Deployment": {
+			method:       apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
+			allowedPerms: viewImageDeployment,
+			deniedPerms:  viewImageOnly,
+		},
+		"GetViewBasedMyReportHistory allowed with View Image+Deployment, denied without Deployment": {
+			method:       apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
+			allowedPerms: viewImageDeployment,
+			deniedPerms:  viewImageOnly,
+		},
+		// CancelReport and DeleteReport only require View Image (per-user job operations).
+		"CancelReport allowed with View Image, denied without Image": {
+			method:       apiV2.ReportService_CancelReport_FullMethodName,
+			allowedPerms: viewImageOnly,
+			deniedPerms:  deploymentOnly,
+		},
+		// Collection-based report APIs require WorkflowAdministration; View Image+Deployment alone is insufficient.
+		"RunReport requires Modify WorkflowAdministration, denied with View Image+Deployment only": {
+			method:       apiV2.ReportService_RunReport_FullMethodName,
+			allowedPerms: modifyWorkflow,
+			deniedPerms:  viewImageDeployment,
+		},
+		"DeleteReport allowed with View Image, denied without Image": {
+			method:       apiV2.ReportService_DeleteReport_FullMethodName,
+			allowedPerms: viewImageOnly,
+			deniedPerms:  deploymentOnly,
+		},
+		"ListReportConfigurations requires View WorkflowAdministration, denied without it": {
+			method:       apiV2.ReportService_ListReportConfigurations_FullMethodName,
+			allowedPerms: viewWorkflow,
+			deniedPerms:  viewImageOnly,
+		},
+		"GetReportStatus requires View WorkflowAdministration, denied without it": {
+			method:       apiV2.ReportService_GetReportStatus_FullMethodName,
+			allowedPerms: viewWorkflow,
+			deniedPerms:  viewImageDeployment,
+		},
+		"GetReportHistory requires View WorkflowAdministration, denied without it": {
+			method:       apiV2.ReportService_GetReportHistory_FullMethodName,
+			allowedPerms: viewWorkflow,
+			deniedPerms:  viewImageDeployment,
+		},
+	}
+
+	for name, tc := range testCases {
+		s.T().Run(name, func(t *testing.T) {
+			_, err := svc.AuthFuncOverride(ctxWithPerms(tc.allowedPerms), tc.method)
+			assert.NoError(t, err, "should be allowed with sufficient permissions")
+
+			_, err = svc.AuthFuncOverride(ctxWithPerms(tc.deniedPerms), tc.method)
+			assert.Error(t, err, "should be denied with insufficient permissions")
+		})
+	}
+}
+
 func (s *ReportServiceTestSuite) TestRunReport() {
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
 	notifierIDs := make([]string, 0, len(reportConfig.GetNotifiers()))
@@ -1132,6 +1223,24 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(true, nil).Times(1)
+			},
+			isError: false,
+		},
+		{
+			desc: "Report in PREPARING state but no longer in running map",
+			req: &apiV2.ResourceByID{
+				Id: reportSnapshot.GetReportId(),
+			},
+			ctx: userContext,
+			mockGen: func() {
+				snap := reportSnapshot.CloneVT()
+				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
+				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(snap, true, nil).Times(1)
+				s.scheduler.EXPECT().CancelReportRequest(gomock.Any(), reportSnapshot.GetReportId()).
+					Return(false, nil).Times(1)
 			},
 			isError: true,
 		},

@@ -1,0 +1,6 @@
+central:
+  pauseReconciliation: true
+  namespace: stackrox
+securedCluster:
+  pauseReconciliation: true
+  namespace: stackrox

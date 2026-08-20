@@ -1,9 +1,5 @@
 import static util.Helpers.withRetry
 
-import org.javers.core.Javers
-import org.javers.core.JaversBuilder
-import org.javers.core.diff.ListCompareAlgorithm
-
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 
 import services.ClusterService
@@ -39,10 +35,7 @@ class NamespaceTest extends BaseSpecification {
                         "the orchestrator has ${orchestratorNamespaces.size()}"
                 log.info "In this diff, 'removed' means 'missing in orchestrator but given in ACS', " +
                         "whereas 'added' - the other way round"
-                Javers javers = JaversBuilder.javers()
-                        .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                        .build()
-                log.info javers.compare(stackroxNamespaces.keySet().sort(), orchestratorNamespaces.sort())
+                log.info JAVERS.compare(stackroxNamespaces.keySet().sort(), orchestratorNamespaces.sort())
                         .prettyPrint()
             }
             assert stackroxNamespaces.keySet().sort() == orchestratorNamespaces.sort()
@@ -68,10 +61,7 @@ class NamespaceTest extends BaseSpecification {
                             SearchServiceOuterClass.RawQuery.newBuilder().setQuery(
                                     "Namespace:${ stackroxNamespaceDetails.metadata.name }").build()
                     )*.name
-                    Javers javers = JaversBuilder.javers()
-                            .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                            .build()
-                    log.info javers.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deployments)
+                    log.info JAVERS.compare(stackroxDeploymentNames, orchestratorNamespaceDetails.deployments)
                             .prettyPrint()
                 }
                 verifyAll(stackroxNamespaceDetails) {

@@ -41,6 +41,7 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		// V2 API authorization
+		// TO DO ROX-35954: add view deployment permission to report config APIs
 		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_ListReportConfigurations_FullMethodName,
 			apiV2.ReportService_GetReportConfiguration_FullMethodName,
@@ -52,19 +53,23 @@ var (
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_DeleteReportConfiguration_FullMethodName,
+			apiV2.ReportService_RunReport_FullMethodName,
 		},
 		user.With(permissions.View(resources.WorkflowAdministration), permissions.View(resources.Image)): {
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+		},
+		user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)): {
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
-		},
-		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)): {
-			apiV2.ReportService_RunReport_FullMethodName,
-			apiV2.ReportService_CancelReport_FullMethodName,
-			apiV2.ReportService_DeleteReport_FullMethodName,
 			apiV2.ReportService_PostViewBasedReport_FullMethodName,
+		},
+		// view permissions are enough if user is deleting a job created by the user
+		// TO DO ROX-35954: add view deployment permission
+		user.With(permissions.View(resources.Image)): {
+			apiV2.ReportService_DeleteReport_FullMethodName,
+			apiV2.ReportService_CancelReport_FullMethodName,
 		},
 	})
 )
@@ -180,12 +185,10 @@ func (s *serviceImpl) ListReportConfigurations(ctx context.Context, query *apiV2
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
-
 	// Fill in pagination.
-	paginated.FillPaginationV2(filteredQ, query.GetPagination(), maxPaginationLimit)
+	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
-	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, filteredQ)
+	reportConfigs, err := s.reportConfigStore.GetReportConfigurations(ctx, parsedQuery)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve report configurations")
 	}
@@ -212,9 +215,6 @@ func (s *serviceImpl) GetReportConfiguration(ctx context.Context, req *apiV2.Res
 	if !exists {
 		return nil, errors.Wrapf(errox.NotFound, "report configuration with id '%s' does not exist", req.GetId())
 	}
-	if !common.IsV2ReportConfig(config) {
-		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
-	}
 	// Remove report configs with empty scope. This can happen after downgrade to a version that has less scoping methods and doesn't support the new scoping method.
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
 		return nil, errors.Wrapf(errox.InvalidArgs,
@@ -233,9 +233,7 @@ func (s *serviceImpl) CountReportConfigurations(ctx context.Context, request *ap
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
-	filteredQ := common.WithoutV1ReportConfigs(parsedQuery)
-
-	numReportConfigs, err := s.reportConfigStore.Count(ctx, filteredQ)
+	numReportConfigs, err := s.reportConfigStore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -246,15 +244,12 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 	if id.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report configuration id is required for deletion")
 	}
-	config, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
+	_, found, err := s.reportConfigStore.GetReportConfiguration(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrap(err, "Error finding report config")
 	}
 	if !found {
 		return nil, errors.Wrapf(errox.NotFound, "Report config ID '%s' not found", id.GetId())
-	}
-	if !common.IsV2ReportConfig(config) {
-		return nil, errors.Wrap(errox.InvalidArgs, "report configuration does not belong to reporting version 2.0")
 	}
 	query := search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, id.GetId()).AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).ProtoQuery()
 	reportSnapshots, _ := s.snapshotDatastore.SearchReportSnapshots(ctx, query)
@@ -395,9 +390,6 @@ func (s *serviceImpl) RunReport(ctx context.Context, req *apiV2.RunReportRequest
 }
 
 func (s *serviceImpl) CancelReport(ctx context.Context, req *apiV2.ResourceByID) (*apiV2.Empty, error) {
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report job ID is empty")
 	}
@@ -477,11 +469,6 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 		return nil, errors.Wrap(errox.NotImplemented, "View-based vulnerability reports are not enabled. Please enable the ROX_VULNERABILITY_VIEW_BASED_REPORTS feature flag.")
 	}
 
-	// Authorisation: must have write access on workflow administration.
-	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
-		return nil, err
-	}
-
 	if req == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
 	}
@@ -526,7 +513,16 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate the
+	// context to that single read scope instead of granting unrestricted access.
+	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -572,7 +568,17 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
 
-	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	// View-based history endpoints are authorized with only Image+Deployment view.
+	// The snapshot datastore requires WorkflowAdministration read, so elevate the
+	// context to that single read scope. Results are already scoped to the requesting
+	// user via the UserID query filter above.
+	snapshotReadCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.WorkflowAdministration),
+		),
+	)
+	results, err := s.snapshotDatastore.SearchReportSnapshots(snapshotReadCtx, conjunctionQuery)
 	if err != nil {
 		return nil, err
 	}

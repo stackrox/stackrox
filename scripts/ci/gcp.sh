@@ -10,6 +10,8 @@ setup_gcp() {
     require_executable "gcloud"
     local gcp_credentials_file="/tmp/gcp.json"
 
+    gcloud config set core/disable_prompts True
+
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
         echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
 
@@ -32,13 +34,15 @@ setup_gcp() {
         die "Support is missing for this environment"
     fi
 
-    retry 7 true gcloud auth activate-service-account --key-file <(echo "$service_account")
+    _gcloud_auth() {
+        gcloud auth activate-service-account --key-file <(echo "$service_account")
+    }
+    retry 7 true _gcloud_auth
 
     gcloud auth list
     gcloud config set project acs-san-stackroxci
     gcloud config set compute/region us-central1
     gcloud config unset compute/zone
-    gcloud config set core/disable_prompts True
 
     # Some tools require a credential file for API calls e.g. prometheus-metric-parser
     touch "$gcp_credentials_file"

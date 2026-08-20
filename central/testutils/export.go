@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math/rand"
 	"os"
 	"slices"
@@ -163,7 +164,7 @@ func (h *ExportServicePostgresTestHelper) InjectImages(
 	copies := count / len(baseImages)
 	extras := count % len(baseImages)
 	upsertCtx := sac.WithAllAccess(context.Background())
-	for i := 0; i < len(baseImages); i++ {
+	for i := range baseImages {
 		copyCount := copies
 		if i < extras {
 			copyCount++
@@ -195,7 +196,7 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 ) ([]*storage.Deployment, error) {
 	upsertCtx := sac.WithAllAccess(context.Background())
 	deployments := make([]*storage.Deployment, 0, count)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		deployment := &storage.Deployment{}
 		err := testutils.FullInit(deployment, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
 		if err != nil {
@@ -203,7 +204,7 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 		}
 		nbContainers := (i % 3) + 1
 		containers := make([]*storage.Container, 0, nbContainers)
-		for j := 0; j < nbContainers; j++ {
+		for range nbContainers {
 			container := &storage.Container{}
 			err := testutils.FullInit(container, testutils.UniqueInitializer(), testutils.JSONFieldsFilter)
 			if err != nil {
@@ -348,9 +349,7 @@ func (h *ExportServicePostgresTestHelper) InjectDataAndRunBenchmark(
 				b.Error(err)
 			}
 			imageIDs = append(imageIDs, addedImageIDs...)
-			for imageID, imageName := range addedImageNamesByID {
-				imageNamesByIDs[imageID] = imageName
-			}
+			maps.Copy(imageNamesByIDs, addedImageNamesByID)
 		}
 		log.Info("Injecting ", delta, " deployments")
 		deployments, err := h.InjectDeployments(b, delta, imageIDs, imageNamesByIDs)

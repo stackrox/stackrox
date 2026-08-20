@@ -3,6 +3,7 @@ package mitre
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -157,7 +158,7 @@ func buildVectors(
 	techniques map[string]*storage.MitreTechnique,
 	tacticTechniquesMap map[string]map[string]struct{},
 ) []*storage.MitreAttackVector {
-	var vectors []*storage.MitreAttackVector
+	vectors := make([]*storage.MitreAttackVector, 0, len(tacticTechniquesMap))
 	for tacticID, techniquesMap := range tacticTechniquesMap {
 		vector := &storage.MitreAttackVector{
 			Tactic: tactics[tacticID],
@@ -229,12 +230,7 @@ func generateBundle(
 }
 
 func appliesToDomain(mitreObj mitreObject, domain Domain) bool {
-	for _, d := range mitreObj.XMitreDomains {
-		if d == domain {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(mitreObj.XMitreDomains, domain)
 }
 
 func appliesToAnyPlatform(mitreObj mitreObject, platforms map[Platform]struct{}) ([]Platform, bool) {

@@ -20,6 +20,9 @@ var (
 	CreateTableClusterCvesStmt = &postgres.CreateStmts{
 		GormModel: (*ClusterCves)(nil),
 		Children:  []*postgres.CreateStmts{},
+		Indexes: []*postgres.IndexDefinition{
+			{Name: "clustercves_cvebaseinfo_cve", CreateSQL: "CREATE INDEX CONCURRENTLY IF NOT EXISTS clustercves_cvebaseinfo_cve ON cluster_cves USING btree (cvebaseinfo_cve)"},
+		},
 	}
 
 	// ClusterCvesSchema is the go schema for table `cluster_cves`.
@@ -50,10 +53,11 @@ const (
 // ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {
 	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:clustercves_cvebaseinfo_cve,type:btree"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoCisaKev             bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
 	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
