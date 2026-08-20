@@ -721,11 +721,6 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	// checkCompletion() re-queries the scan configuration's scans exactly once, when the
-	// last outstanding scan result arrives and scansToWait empties out. Returning the full,
-	// already-tracked set of scans for the scan config means GetScansFromScanConfiguration's
-	// result set is empty once already-received results are subtracted, so the watcher
-	// converges immediately instead of waiting for scans that will never arrive.
 	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
 		m.profileDataStore.EXPECT().
@@ -758,12 +753,6 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	// checkCompletion() re-queries the scan configuration's scans exactly once, when the
-	// last outstanding scan result (even a timed-out one, which is still pushed to the
-	// ScanConfigWatcher) arrives and scansToWait empties out. Returning the full,
-	// already-tracked set of scans for the scan config means GetScansFromScanConfiguration's
-	// result set is empty once already-received results are subtracted, so the watcher
-	// converges immediately instead of waiting for scans that will never arrive.
 	allScans := getTestScansFromScanConfig(sc, timestamp)
 	calls := []any{
 		m.profileDataStore.EXPECT().
@@ -850,12 +839,7 @@ func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfig
 
 func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
 	ret := &storage.ComplianceOperatorScanV2{
-		Id: scan,
-		// ScanName must be unique per (cluster, profile), matching the "scan" identifier used
-		// for Id above. scanConfigWatcher.removeStaleResult() uses (ClusterId, ScanName) to
-		// detect the Compliance Operator recycling a scan resource with a new ID; leaving
-		// ScanName empty would make every scan on the same cluster look like "the same scan",
-		// causing sibling profiles' results to be incorrectly evicted as stale.
+		Id:              scan,
 		ScanName:        scan,
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
