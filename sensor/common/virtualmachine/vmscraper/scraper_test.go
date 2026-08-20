@@ -266,11 +266,12 @@ func unchangedResultWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
 	}
 }
 
-func strPtr(s string) *string { return &s }
+//go:fix inline
+func strPtr(s string) *string { return new(s) }
 
 func metaWithMapping(hash string, path pb.RepoCPEMappingUpdatePath) *pb.ResponseMeta {
 	return &pb.ResponseMeta{
-		RepoCpeMappingHash:       strPtr(hash),
+		RepoCpeMappingHash:       new(hash),
 		RepoCpeMappingUpdatePath: path.Enum(),
 	}
 }
@@ -1233,7 +1234,7 @@ func TestVMScraper_DialAndGetReport_SyncTriggering(t *testing.T) {
 func TestVMScraper_SyncRepoCPEMapping_ExpiredContext_ClassifiedAsTimeout(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	dialer := &mockDialer{err: errors.New("dial must not be attempted")}
-	s := newTestScraper(&mockStore{}, &mockSender{}, dialer, &mockProtocolClient{})
+	s, _ := newTestScraper(&mockStore{}, &mockSender{}, dialer, &mockProtocolClient{})
 
 	timeoutBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout))
 	syncErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSyncError))
@@ -1259,12 +1260,12 @@ func TestVMScraper_DialAndGetReport_ClosesConnectionBeforeSync(t *testing.T) {
 		IndexReport: &v4.IndexReport{State: "IndexFinished"},
 		Meta:        metaWithMapping("old-hash", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR),
 	}}}
-	s := newTestScraper(&mockStore{}, &mockSender{}, dialer, client)
+	s, _ := newTestScraper(&mockStore{}, &mockSender{}, dialer, client)
 	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
 
-	_, ok := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
+	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
 
-	require.True(t, ok)
+	require.Equal(t, scrapeOK, outcome)
 	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
 }
 
@@ -1278,12 +1279,12 @@ func TestVMScraper_DialAndGetReport_MappingRequired_ClosesConnectionBeforeSync(t
 		resultQueue: []*vsockclient.GetReportResult{{Meta: metaWithMapping("", pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR)}},
 		errQueue:    []error{vsockclient.ErrMappingRequired},
 	}
-	s := newTestScraper(&mockStore{}, &mockSender{}, dialer, client)
+	s, _ := newTestScraper(&mockStore{}, &mockSender{}, dialer, client)
 	s.SetRepo2CPEFetcher(&fakeFetcher{ok: true, hash: "new-hash", mapping: []byte("payload")})
 
-	_, ok := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
+	_, outcome := s.dialAndGetReport(context.Background(), vm, "ns1/vm-a", 1, 0, 0)
 
-	require.False(t, ok)
+	require.Equal(t, scrapeRetryable, outcome)
 	require.Len(t, client.syncCalls, 1, "maybeSync's dial must succeed, not be rejected as busy by a still-open first connection")
 }
 
