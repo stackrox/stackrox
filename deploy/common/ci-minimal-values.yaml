@@ -82,8 +82,10 @@ scanner:
       memory: 1Gi
 
 # Scanner v4 (indexer + matcher + db) — used when ROX_SCANNER_V4=true. Single
-# replica, no autoscaling, small requests; matcher gets a slightly larger memory
-# limit because it loads the vulnerability match data.
+# replica, no autoscaling. Requests stay tiny so everything still schedules on one
+# node; memory *limits* are generous so the matcher can burst through its startup
+# vulnerability load (which is large and slow — ~30 min for the full set) without
+# OOM-looping. GOMEMLIMIT (95% of limits.memory) still keeps each pod bounded.
 scannerV4:
   indexer:
     scaling:
@@ -95,8 +97,8 @@ scannerV4:
         cpu: 100m
         memory: 200Mi
       limits:
-        cpu: 1
-        memory: 1Gi
+        cpu: 2
+        memory: 2Gi
   matcher:
     scaling:
       autoScaling: Disabled
@@ -107,13 +109,13 @@ scannerV4:
         cpu: 100m
         memory: 200Mi
       limits:
-        cpu: 1
-        memory: 1500Mi
+        cpu: 2
+        memory: 4Gi
   db:
     resources:
       requests:
         cpu: 100m
         memory: 200Mi
       limits:
-        cpu: 1
-        memory: 1Gi
+        cpu: 2
+        memory: 2Gi

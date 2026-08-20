@@ -137,7 +137,9 @@ jobs:
         # Match the deploy's image registry (RHACS_BRANDING -> rhacs-eng) so the
         # pre-pulled image refs are the ones kubelet looks up.
         registry: quay.io/rhacs-eng
-        memory-limit: 12g
+        # 14g of the runner's 16g — leaves headroom for the runner agent while
+        # giving the full stack (incl. Scanner v4's memory-hungry startup) room.
+        memory-limit: 14g
         enable-loadbalancer: "true"
         pull-scanner: ${{ inputs.scanner == 'v2' && 'true' || 'false' }}
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
