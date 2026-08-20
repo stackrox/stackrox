@@ -227,7 +227,7 @@ func (h *Handler) newResponseFromSnap(snap *reportSnapshot) *pb.VMServiceRespons
 		SupportedMethods:         []string{"get_report", "sync_repo_cpe_mapping"},
 		Facts:                    facts,
 		Epoch:                    h.epoch,
-		RepoCpeMappingHash:       proto.String(h.provider.Hash()),
+		RepoCpeMappingHash:       new(h.provider.Hash()),
 		RepoCpeMappingUpdatePath: updatePath.Enum(),
 	}
 	if snap != nil && !snap.generatedAt.IsZero() {
