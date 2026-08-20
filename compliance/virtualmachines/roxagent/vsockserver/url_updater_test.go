@@ -121,6 +121,71 @@ func TestURLUpdater_SuccessfulDownload_AppliesNewContent(t *testing.T) {
 	assert.Equal(t, validMappingJSON, string(onDisk), "a validated download must be promoted to cachePath")
 }
 
+// TestURLUpdater_PersistFailure_DoesNotActivate covers a validated
+// download whose cache promotion fails: active stays unchanged so Path()
+// still matches Bytes(), and a later identical fetch retries the persist.
+func TestURLUpdater_PersistFailure_DoesNotActivate(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	require.NoError(t, os.Mkdir(cacheDir, 0700))
+	cachePath := filepath.Join(cacheDir, "cache.json")
+	counter := &onChangeCounter{}
+	u := NewURLUpdater(dummyMappingURL, cachePath, counter.fn)
+	writeFile(t, u.stagingPath, validMappingJSON)
+
+	require.NoError(t, os.Chmod(cacheDir, 0500))
+	t.Cleanup(func() { _ = os.Chmod(cacheDir, 0700) })
+
+	u.onDownloadComplete(nil, 0)
+
+	assert.False(t, u.Ready(), "a failed persist must not expose the new mapping as active")
+	assert.Equal(t, 0, counter.count)
+	_, err := os.Stat(cachePath)
+	assert.Error(t, err, "cachePath must not exist after a failed persist")
+
+	require.NoError(t, os.Chmod(cacheDir, 0700))
+	u.onDownloadComplete(nil, 0)
+
+	require.True(t, u.Ready(), "the next identical fetch must retry persist and then activate")
+	assert.Equal(t, 1, counter.count)
+	onDisk, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, validMappingJSON, string(onDisk))
+}
+
+func TestURLUpdater_PersistFailure_KeepsLastGoodThenRetries(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	require.NoError(t, os.Mkdir(cacheDir, 0700))
+	cachePath := filepath.Join(cacheDir, "cache.json")
+	writeFile(t, cachePath, validMappingJSON)
+	counter := &onChangeCounter{}
+	u := NewURLUpdater(dummyMappingURL, cachePath, counter.fn)
+	require.Equal(t, 1, counter.count)
+	writeFile(t, u.stagingPath, otherValidMappingJSON)
+
+	require.NoError(t, os.Chmod(cacheDir, 0500))
+	t.Cleanup(func() { _ = os.Chmod(cacheDir, 0700) })
+
+	u.onDownloadComplete(nil, 0)
+
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash(),
+		"a failed persist must keep serving the last-good mapping")
+	assert.Equal(t, 1, counter.count)
+	onDisk, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, validMappingJSON, string(onDisk))
+
+	require.NoError(t, os.Chmod(cacheDir, 0700))
+	u.onDownloadComplete(nil, 0)
+
+	assert.Equal(t, cpemapping.HashMapping([]byte(otherValidMappingJSON)), u.Hash())
+	assert.Equal(t, 2, counter.count)
+	onDisk, err = os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, otherValidMappingJSON, string(onDisk))
+}
+
 func TestURLUpdater_SuccessfulDownload_InvalidContentKeepsLastGood(t *testing.T) {
 	dir := t.TempDir()
 	cachePath := filepath.Join(dir, "cache.json")

@@ -120,6 +120,10 @@ func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
 	if err := cpemapping.ValidateMapping(content); err != nil {
 		return false, err
 	}
+	// MappingUpdater retains content in active/pending and in the async
+	// cache write; clone so a caller reusing the buffer cannot desync
+	// those from activeHash.
+	content = bytes.Clone(content)
 	hash := cpemapping.HashMapping(content)
 
 	updated, deferred := concurrency.WithLock2(&u.mu, func() (bool, bool) {

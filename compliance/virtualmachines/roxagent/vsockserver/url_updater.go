@@ -120,8 +120,8 @@ func (u *URLUpdater) Bytes() ([]byte, error) {
 	return out, nil
 }
 
-// Path returns cachePath, which onDownloadComplete keeps in sync with the
-// active mapping by only promoting validated downloads into it.
+// Path returns cachePath. onDownloadComplete only sets active after a
+// validated download has been persisted there, so the file matches Bytes().
 func (u *URLUpdater) Path() (string, error) {
 	ready := concurrency.WithLock1(&u.mu, func() bool {
 		return len(u.active) > 0
@@ -132,10 +132,9 @@ func (u *URLUpdater) Path() (string, error) {
 	return u.cachePath, nil
 }
 
-// onDownloadComplete is filedownloader's OnComplete callback: it logs and
-// keeps the last-good mapping on failure, and validates the download
-// staged at stagingPath before promoting it to cachePath on success, so
-// an invalid fetch can never replace the persisted last-good mapping.
+// onDownloadComplete applies a staged download only after it validates
+// and persists to cachePath, so Bytes() and Path() stay aligned and a
+// failed persist is retried on the next identical fetch.
 func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	if err != nil {
 		log.Warnf("Downloading repo-to-CPE mapping: %v", err)
@@ -152,18 +151,20 @@ func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	}
 	hash := cpemapping.HashMapping(content)
 
-	unchanged := concurrency.WithLock1(&u.mu, func() bool {
-		unchanged := hash == u.activeHash
-		u.active = content
-		u.activeHash = hash
-		return unchanged
+	alreadyActive := concurrency.WithLock1(&u.mu, func() bool {
+		return hash == u.activeHash
 	})
-	if unchanged {
+	if alreadyActive {
 		return
 	}
 	if err := filedownloader.AtomicWriteFile(u.cachePath, content); err != nil {
 		log.Warnf("Persisting repo-to-CPE mapping cache to %q: %v", u.cachePath, err)
+		return
 	}
+	concurrency.WithLock(&u.mu, func() {
+		u.active = content
+		u.activeHash = hash
+	})
 	if u.onChange != nil {
 		u.onChange()
 	}

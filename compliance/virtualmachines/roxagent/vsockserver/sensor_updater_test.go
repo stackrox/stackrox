@@ -133,6 +133,22 @@ func TestNewSensorUpdater_InvalidCacheNoBundled_NotReady(t *testing.T) {
 	assert.Equal(t, 0, counter.count)
 }
 
+func TestSensorUpdater_Update_OwnsContent(t *testing.T) {
+	cachePath := filepath.Join(t.TempDir(), "cache.json")
+	u := NewSensorUpdater(cachePath, "", func() {})
+	content := []byte(validMappingJSON)
+
+	updated, err := u.Update(content)
+	require.NoError(t, err)
+	require.True(t, updated)
+	content[0] ^= 0xff
+
+	b, err := u.Bytes()
+	require.NoError(t, err)
+	assert.Equal(t, validMappingJSON, string(b), "mutating the caller's buffer must not change the active mapping")
+	waitForCacheContent(t, cachePath, validMappingJSON)
+}
+
 func TestSensorUpdater_Update_AppliesWhenIdle(t *testing.T) {
 	dir := t.TempDir()
 	cachePath := filepath.Join(dir, "cache.json")
