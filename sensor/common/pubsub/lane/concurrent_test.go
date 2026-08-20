@@ -3,6 +3,7 @@ package lane
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -318,16 +319,43 @@ func TestErrorHandling(t *testing.T) {
 
 func TestHandleEvent_StalledConsumerDoesNotLeakGoroutines(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
-	lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(newStalledConsumer)).NewLane()
+
+	const numEvents = 50
+	consumeCalled := make(chan struct{}, numEvents)
+	lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(newStalledConsumer(consumeCalled))).NewLane()
 	assert.NotNil(t, lane)
-	for range 50 {
+	defer lane.Stop()
+
+	require.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
+		return nil
+	}))
+
+	before := runtime.NumGoroutine()
+
+	for range numEvents {
 		require.NoError(t, lane.Publish(&concurrentTestEvent{}))
 	}
-	// Give handleEvent a chance to run for every published event before stopping.
-	// If it spawned a goroutine per event to watch stalledConsumer's never-resolving
-	// errC, goleak would catch the leak below regardless of this sleep's length.
-	time.Sleep(50 * time.Millisecond)
-	lane.Stop()
+
+	// Wait until the lane has actually dispatched Consume() for every published
+	// event before checking for leaks - otherwise the check could race ahead of
+	// dispatch and pass trivially regardless of what handleEvent does.
+	for i := range numEvents {
+		select {
+		case <-consumeCalled:
+		case <-time.After(time.Second):
+			t.Fatalf("timed out waiting for stalledConsumer.Consume to be called for event %d/%d", i+1, numEvents)
+		}
+	}
+
+	// This must be checked while the lane is still running, i.e. before Stop().
+	// stalledConsumer's errC is never resolved, and Stop() also releases any
+	// per-event watcher goroutine (they select on the same stop signal), which
+	// would hide a reintroduced leak if checked only after Stop() returns. The
+	// threshold is generous (half of numEvents) to absorb unrelated goroutine
+	// noise while still failing hard against a real one-per-event leak.
+	after := runtime.NumGoroutine()
+	assert.Less(t, after, before+numEvents/2,
+		"concurrentLane must not spawn a goroutine per event for a stalled consumer (before=%d after=%d)", before, after)
 }
 
 func TestStop(t *testing.T) {
@@ -397,16 +425,22 @@ func (m *mockConsumer) Stop() {
 	}
 }
 
-// newStalledConsumer builds a consumer whose Consume() returns a channel that is
-// never written to and never closed, simulating a consumer whose processing never
-// resolves.
-func newStalledConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
-	return &stalledConsumer{}, nil
+// newStalledConsumer builds a pubsub.NewConsumer factory whose Consume() returns
+// a channel that is never written to and never closed, simulating a consumer
+// whose processing never resolves. Every Consume() call is reported on
+// consumeCalled, so callers can deterministically wait for dispatch.
+func newStalledConsumer(consumeCalled chan<- struct{}) pubsub.NewConsumer {
+	return func(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
+		return &stalledConsumer{consumeCalled: consumeCalled}, nil
+	}
 }
 
-type stalledConsumer struct{}
+type stalledConsumer struct {
+	consumeCalled chan<- struct{}
+}
 
 func (c *stalledConsumer) Consume(_ concurrency.Waitable, _ pubsub.Event) <-chan error {
+	c.consumeCalled <- struct{}{}
 	return make(chan error)
 }
 
