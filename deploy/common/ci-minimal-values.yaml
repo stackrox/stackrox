@@ -12,6 +12,26 @@
 # Applied via ROX_CENTRAL_EXTRA_HELM_VALUES_FILE, i.e. after ci-values.yaml, so
 # these win. Keep in sync with deploy/common/local-dev-values.yaml.
 
+# Explicitly pin GOMEMLIMIT to ~70% of each Go service's memory limit (instead of
+# the code default of 95% of ROX_MEMLIMIT). pkg/memlimit respects an explicit
+# GOMEMLIMIT and skips the 95% path. At 70% the GC targets a lower heap, so pods
+# release memory instead of hoarding toward the limit — more headroom on a single
+# KinD node — while still allowed to burst above it (soft limit) for real need.
+# Postgres DBs are omitted (not Go). Experiment: measure matcher startup impact.
+customize:
+  central:
+    envVars:
+      GOMEMLIMIT: "1434MiB"   # 70% of 2Gi
+  scanner:
+    envVars:
+      GOMEMLIMIT: "717MiB"    # 70% of 1Gi
+  scanner-v4-indexer:
+    envVars:
+      GOMEMLIMIT: "1434MiB"   # 70% of 2Gi
+  scanner-v4-matcher:
+    envVars:
+      GOMEMLIMIT: "2867MiB"   # 70% of 4Gi
+
 central:
   resources:
     requests:

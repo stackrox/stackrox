@@ -17,10 +17,10 @@ on:
         required: false
         default: gke
       scanner:
-        description: Scanner flavor — 'default' (per-cluster), 'none', 'v2', or 'v4'.
+        description: Scanner flavor — 'v4' (customer default), 'v2', or 'none' (faster).
         type: string
         required: false
-        default: default
+        default: v4
       scanner_v4_allowlist:
         description: >
           Comma-separated Scanner v4 vuln bundle sources to load on KinD (matcher
@@ -45,14 +45,13 @@ on:
           - both
         default: kind
       scanner:
-        description: Scanner flavor (default = per-cluster; v2 on GKE, none on KinD).
+        description: Scanner flavor — v4 (customer default), v2, or none (faster).
         type: choice
         options:
-          - default
-          - none
-          - v2
           - v4
-        default: default
+          - v2
+          - none
+        default: v4
       scanner_v4_allowlist:
         description: Scanner v4 vuln sources on KinD (comma-separated; 'alpine' = fastest).
         type: string
@@ -82,7 +81,8 @@ jobs:
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ matrix.cluster }}-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
-      # Scanner v4 (indexer+matcher+db) — customer default. On when scanner=v4.
+      # Scanner v4 (indexer+matcher+db) is the customer default, so it's this
+      # workflow's default too. On unless scanner=v2 or none.
       ROX_SCANNER_V4: ${{ inputs.scanner == 'v4' && 'true' || 'false' }}
       # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
       # default (9 sources) takes ~30 min on KinD's capped CPU and stalls the
@@ -99,20 +99,17 @@ jobs:
       STORAGE: pvc
       # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2 (legacy): on when scanner=v2, or under 'default' on GKE (master's
-      # current behavior — kept non-breaking). 'default' on KinD, 'none', and 'v4'
-      # all leave v2 off. Scanner adds no coverage to this test (config round-trip),
-      # so KinD's default is scanner-less to keep the gate fast.
-      SCANNER_SUPPORT: ${{ (inputs.scanner == 'v2' && 'true') || (inputs.scanner == 'default' && matrix.cluster == 'gke' && 'true') || 'false' }}
+      # Scanner v2 (legacy): only when scanner=v2. Default is v4.
+      SCANNER_SUPPORT: ${{ inputs.scanner == 'v2' && 'true' || 'false' }}
       # Running the full stack incl. a scanner (v2 or v4) on one KinD node requires
       # shrinking resource *requests* (so everything schedules) while keeping modest
       # *limits* (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back
       # off instead of OOMing). These overrides only take effect on the Helm deploy
-      # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. The
-      # default scanner-less KinD path is left on the known-good kubectl deploy.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
-      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
-      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && 'helm' || '' }}
+      # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. When
+      # scanner=none, KinD stays on the leaner known-good kubectl deploy.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
+      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && 'helm' || '' }}
     timeout-minutes: 60
     steps:
 
