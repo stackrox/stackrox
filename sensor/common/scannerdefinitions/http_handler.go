@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc/codes"
@@ -214,14 +214,14 @@ func (h *Handler) attemptRepo2CPERefresh(ctx context.Context) bool {
 		h.recordRepo2CPEUnchanged(resp)
 		return true
 	case http.StatusOK:
-		body, err := io.ReadAll(io.LimitReader(resp.Body, repositorytocpe.MaxMappingBytes+1))
+		body, err := io.ReadAll(io.LimitReader(resp.Body, cpemapping.MaxMappingBytes+1))
 		if err != nil {
 			log.Warnf("Failed to read repo-to-CPE mapping response: %v", err)
 			h.recordRepo2CPEAttempt(false)
 			return false
 		}
-		if len(body) > repositorytocpe.MaxMappingBytes {
-			log.Warnf("Repo-to-CPE mapping response exceeds %d bytes, rejecting", repositorytocpe.MaxMappingBytes)
+		if len(body) > cpemapping.MaxMappingBytes {
+			log.Warnf("Repo-to-CPE mapping response exceeds %d bytes, rejecting", cpemapping.MaxMappingBytes)
 			h.recordRepo2CPEAttempt(false)
 			return false
 		}
@@ -272,7 +272,7 @@ func (h *Handler) recordRepo2CPEUnchanged(resp *http.Response) {
 // recordRepo2CPESuccess keeps the existing cached bytes when the new content
 // hashes the same as what's cached, treating a same-hash 200 like a 304.
 func (h *Handler) recordRepo2CPESuccess(body []byte, resp *http.Response) {
-	hash := repositorytocpe.HashMapping(body)
+	hash := cpemapping.HashMapping(body)
 	concurrency.WithLock(&h.cacheMu, func() {
 		h.cache.lastAttempt = time.Now()
 		h.cache.lastSuccess = h.cache.lastAttempt
