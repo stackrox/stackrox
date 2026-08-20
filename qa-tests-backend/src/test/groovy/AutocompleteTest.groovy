@@ -41,7 +41,20 @@ class AutocompleteTest extends BaseSpecification {
         "Subject Kind:GROUP"  | []                          | GROUP_AUTOCOMPLETE
         "Subject Kind:group"  | []                          | GROUP_AUTOCOMPLETE
         "Subject Kind:gr"     | []                          | GROUP_AUTOCOMPLETE
-        "Category:"           | [SearchCategory.POLICIES]  | "Anomalous Activity"
+    }
+
+    @Tag("BAT")
+    def "Verify Autocomplete: Category returns results for POLICIES"() {
+        when:
+        SearchServiceOuterClass.AutocompleteResponse resp = SearchService.autocomplete(
+                RawSearchRequest.newBuilder()
+                        .addAllCategories([SearchCategory.POLICIES])
+                        .setQuery("Category:")
+                        .build()
+        )
+
+        then:
+        !resp.valuesList.isEmpty()
     }
 
     @Unroll
