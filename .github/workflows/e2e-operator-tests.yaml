@@ -69,6 +69,7 @@ jobs:
       PYTHONUNBUFFERED: "1"
       CLUSTER_NAME_PREFIX: "${{ inputs.cluster-name-prefix }}"
       CLUSTER_NAME_PREFIX_MAX: "20"
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
     timeout-minutes: ${{ inputs.job-timeout-minutes }}
     steps:
       - name: Validate workflow input
