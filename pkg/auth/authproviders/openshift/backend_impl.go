@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/openshift/internal/dexconnector"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +23,11 @@ import (
 const (
 	openshiftAPIUrl    = "https://openshift.default.svc"
 	roxTokenExpiration = 5 * time.Minute
+)
+
+const (
+	ClientNameConfigKey   = "client_name"
+	ClientSecretConfigKey = "client_secret"
 )
 
 // This is the location for CA files which shall be used for certificate validation within
@@ -55,9 +61,12 @@ type callbackAndRefreshConnector interface {
 
 type backend struct {
 	id                      string
+	config                  map[string]string
 	baseRedirectURLPath     string
 	openshiftConnector      callbackAndRefreshConnector
 	openshiftConnectorMutex sync.Mutex
+
+	config map[string]string
 }
 
 type openShiftSettings struct {
@@ -92,6 +101,20 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (*backen
 	return b, nil
 }
 
+func newBackendWithACMAccessControlDelegation(id string, callbackURLPath string, config map[string]string) (*backend, error) {
+	openshiftConnector, err := createOpenshiftConnectorForACMAccessControlDelegation(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &backend{
+		id:                  id,
+		config:              config,
+		baseRedirectURLPath: callbackURLPath,
+		openshiftConnector:  openshiftConnector,
+	}, nil
+}
+
 func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 	settings, err := getOpenShiftSettings()
 	if err != nil {
@@ -105,7 +128,28 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 		TrustedCertPool: settings.trustedCertPool,
 	}
 
-	openshiftConnector, err := dexCfg.Open()
+	openshiftConnector, err := dexCfg.Open([]string{"user:info"})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
+	}
+
+	return openshiftConnector, nil
+}
+
+func createOpenshiftConnectorForACMAccessControlDelegation(config map[string]string) (callbackAndRefreshConnector, error) {
+	certPool, err := getSystemCertPoolWithAdditionalCA(serviceOperatorCAPath, internalServicesCAPath, injectedCAPath)
+	if err != nil {
+		return nil, err
+	}
+
+	dexCfg := dexconnector.Config{
+		Issuer:          openshiftAPIUrl,
+		ClientID:        config[ClientNameConfigKey],
+		ClientSecret:    config[ClientSecretConfigKey],
+		TrustedCertPool: certPool,
+	}
+
+	openshiftConnector, err := dexCfg.Open([]string{"user:info", "user:full"})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dex openshiftConnector for OpenShift's OAuth Server")
 	}
@@ -115,6 +159,9 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 
 // There is no config but static settings instead.
 func (b *backend) Config() map[string]string {
+	if features.ACMAccessControlDelegation.Enabled() {
+		return b.config
+	}
 	return nil
 }
 

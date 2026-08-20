@@ -1,12 +1,16 @@
 package tokens
 
 import (
+	"context"
 	"encoding/json"
 	"slices"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -192,4 +196,84 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 			IncludedNamespaces: includedNamespaces,
 		},
 	}
+}
+
+//go:generate mockgen-wrapper
+type ClusterResolver interface {
+	GetClusterID(ctx context.Context, name string) (string, bool, error)
+}
+
+// NewInternalRoleFromPermissionsAndScope instantiates an InternalRole object
+// based on the input PermissionSet and AccessScope.
+func NewInternalRoleFromPermissionsAndScope(
+	ctx context.Context,
+	roleName string,
+	permissions *storage.PermissionSet,
+	scope *storage.SimpleAccessScope,
+	clusterIDResolver ClusterResolver,
+) (*InternalRole, error) {
+	if clusterIDResolver == nil {
+		return nil, errors.New("missing cluster ID resolver")
+	}
+
+	output := &InternalRole{
+		RoleName: roleName,
+	}
+
+	// Fill permission set
+	reversedPermissionSet := make(map[storage.Access]set.StringSet)
+	for permission, access := range permissions.GetResourceToAccess() {
+		if _, accessFound := reversedPermissionSet[access]; !accessFound {
+			reversedPermissionSet[access] = set.NewStringSet()
+		}
+		permissionsForAccess := reversedPermissionSet[access]
+		permissionsForAccess.Add(permission)
+	}
+	output.Permissions = make(map[storage.Access][]string)
+	for access, permissionSet := range reversedPermissionSet {
+		output.Permissions[access] = permissionSet.AsSortedSlice(func(i, j string) bool {
+			return i < j
+		})
+	}
+
+	clusterIDResolutionCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Cluster),
+		),
+	)
+	// Resolve cluster scope
+	output.Clusters = make(ClusterScopes)
+	for _, clusterID := range scope.GetRules().GetIncludedClusterIds() {
+		output.Clusters[clusterID] = []string{"*"}
+	}
+	for _, clusterName := range scope.GetRules().GetIncludedClusters() {
+		clusterID, found, err := clusterIDResolver.GetClusterID(clusterIDResolutionCtx, clusterName)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to resolve cluster ID")
+		}
+		if !found {
+			continue
+		}
+		output.Clusters[clusterID] = []string{"*"}
+	}
+	for _, namespaceRule := range scope.GetRules().GetIncludedNamespaces() {
+		ns := namespaceRule.GetNamespaceName()
+		clusterID := namespaceRule.GetClusterId()
+		if clusterID == "" {
+			clusterName := namespaceRule.GetClusterName()
+			idForName, found, err := clusterIDResolver.GetClusterID(clusterIDResolutionCtx, clusterName)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to resolve cluster ID")
+			}
+			if !found {
+				continue
+			}
+			clusterID = idForName
+		}
+		output.Clusters[clusterID] = append(output.Clusters[clusterID], ns)
+	}
+
+	return output, nil
 }

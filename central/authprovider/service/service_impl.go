@@ -192,6 +192,7 @@ func (s *serviceImpl) GetAuthProviders(_ context.Context, request *v1.GetAuthPro
 // PostAuthProvider inserts a new auth provider into the system.
 func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
+	log.Info(providerReq.GetConfig())
 	if err := normalizeAuthProviderEndpoints(providerReq); err != nil {
 		return nil, err
 	}
@@ -236,12 +237,15 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	}
 
 	// Attempt to merge configs.
+	log.Info(request.GetConfig())
 	request.Config = provider.MergeConfigInto(request.GetConfig())
+	log.Info("Merged config: ", request.GetConfig())
 
 	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
 		return nil, errox.InvalidArgs.New("auth provider validation check failed").CausedBy(err)
 	}
 
+	log.Info("Config after provider validation: ", request.GetConfig())
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it.
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), false, false); err != nil {
 		return nil, err

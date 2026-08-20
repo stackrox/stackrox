@@ -71,6 +71,7 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 		if err := option(provider); err != nil {
 			return err
 		}
+		log.Info("Provider config after option ", provider.storedInfo.GetConfig())
 	}
 	return nil
 }

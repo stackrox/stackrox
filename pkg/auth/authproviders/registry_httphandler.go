@@ -256,16 +256,21 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	typ := parts[0]
+	log.Info("Getting auth provider factory for type ", typ)
 	factory := r.getFactory(typ)
 	if factory == nil {
 		log.Debugf("Factory with type %q not found", typ)
 		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
+	log.Info("Got auth provider factory for type ", typ)
 
+	log.Info("Provider HTTP Handler - passing request for factory for processing")
 	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
+	log.Info("Provider HTTP Handler - request processed by factory - pre-parse state - ", clientState)
 	clientState, mode := idputil.ParseClientState(clientState)
 	testMode := mode == idputil.TestAuthMode
+	log.Info("Provider HTTP Handler - request processed by factory - parsed state - ", clientState)
 
 	var provider Provider
 	if err == nil {
@@ -294,6 +299,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+	log.Info("Processed request (backend)")
 
 	if authResp == nil || authResp.Claims == nil {
 		r.error(w, errox.NoCredentials.CausedBy("authentication response is empty"), typ, clientState, testMode)
@@ -305,6 +311,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 			r.error(w, errox.NoCredentials.CausedBy(err), typ, clientState, testMode)
 			return
 		}
+		log.Info("Attributes verified by provider")
 	}
 
 	// We need all access for retrieving roles.
@@ -313,6 +320,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
 		return
 	}
+	log.Info("Role-based identity created")
 
 	if testMode {
 		user.IdpToken = authResp.IdpToken
@@ -327,6 +335,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		r.error(w, err, typ, clientState, testMode)
 		return
 	}
+	log.Info("user identity extracted")
 
 	userRoles := userInfo.GetRoles()
 	if len(userRoles) == 0 {
