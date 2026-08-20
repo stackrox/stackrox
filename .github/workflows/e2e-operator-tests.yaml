@@ -49,6 +49,10 @@ on:
         description: "Overall job timeout."
         type: number
         default: 361
+      reuse-infra-cluster:
+        description: "Name of an existing infra cluster to reuse (skip creation/deletion). Leave empty for normal provisioning."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -95,8 +99,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Reuse existing infra cluster
+        if: inputs.reuse-infra-cluster != ''
+        run: |
+          echo "CLUSTER_NAME=${{ inputs.reuse-infra-cluster }}" >> "$GITHUB_ENV"
+
       - name: Compute cluster name for infra-provisioned cluster
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: inputs.cluster-provisioning-method == 'infra' && inputs.reuse-infra-cluster == ''
         # infractl enforces a 28-char limit for cluster names.
         run: |
           cluster_name_max=28
@@ -119,7 +128,7 @@ jobs:
           echo "args=$args" >> "$GITHUB_OUTPUT"
 
       - name: Trigger cluster creation via infra
-        if: inputs.cluster-provisioning-method == 'infra'
+        if: inputs.cluster-provisioning-method == 'infra' && inputs.reuse-infra-cluster == ''
         uses: stackrox/actions/infra/create-cluster@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -217,6 +226,22 @@ jobs:
           from pre_tests import PreSystemTests
           PreSystemTests().run()
 
+      - name: Clean up previous test resources (reused cluster)
+        if: inputs.reuse-infra-cluster != ''
+        continue-on-error: true
+        timeout-minutes: 5
+        run: |
+          echo "Cleaning up resources from previous test runs on reused cluster"
+          echo "Deleting operand CRs first (so the operator can run finalizers)..."
+          kubectl delete securedclusters.platform.stackrox.io --all -A --ignore-not-found --timeout=120s 2>/dev/null || true
+          kubectl delete centrals.platform.stackrox.io --all -A --ignore-not-found --timeout=120s 2>/dev/null || true
+          echo "Deleting stackrox namespace (operand workloads)..."
+          kubectl delete namespace stackrox --ignore-not-found --timeout=120s 2>/dev/null || true
+          echo "Deleting operator namespace..."
+          kubectl delete namespace rhacs-operator-system --ignore-not-found --timeout=120s 2>/dev/null || true
+          echo "Deleting prefetch namespace..."
+          kubectl delete namespace prefetch-images --ignore-not-found --timeout=120s 2>/dev/null || true
+
       - name: Prepare OLM
         if: env.KUBERNETES_PROVIDER == 'ocp'
         timeout-minutes: 2
@@ -294,7 +319,7 @@ jobs:
           fi
 
       - name: Delete cluster via infra
-        if: always() && inputs.cluster-provisioning-method == 'infra'
+        if: always() && inputs.cluster-provisioning-method == 'infra' && inputs.reuse-infra-cluster == ''
         continue-on-error: true
         env:
           INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
