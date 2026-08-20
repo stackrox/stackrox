@@ -571,6 +571,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "'"${ROX_TELEMETRY_STORAGE_KEY_V1:-DISABLED}"'"'
     customize_envVars+=$'\n      - name: ROX_RISK_REPROCESSING_INTERVAL'
     customize_envVars+=$'\n        value: "15s"'
+    customize_envVars+=$'\n      - name: ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL'
+    customize_envVars+=$'\n        value: "5s"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_ENHANCEMENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_COMPLIANCE_REPORTING'
