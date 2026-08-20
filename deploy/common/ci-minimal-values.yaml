@@ -61,6 +61,7 @@ central:
   telemetry:
     enabled: false
 
+# Scanner v2 (legacy StackRox Scanner) — used when SCANNER_SUPPORT=true.
 scanner:
   replicas: 1
   autoscaling:
@@ -79,3 +80,40 @@ scanner:
     limits:
       cpu: 1
       memory: 1Gi
+
+# Scanner v4 (indexer + matcher + db) — used when ROX_SCANNER_V4=true. Single
+# replica, no autoscaling, small requests; matcher gets a slightly larger memory
+# limit because it loads the vulnerability match data.
+scannerV4:
+  indexer:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+  matcher:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 1
+        memory: 1500Mi
+  db:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 1
+        memory: 1Gi

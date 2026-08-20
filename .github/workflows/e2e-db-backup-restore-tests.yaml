@@ -17,7 +17,7 @@ on:
         required: false
         default: gke
       scanner:
-        description: Scanner v2 support — 'default' (per-cluster), 'on', or 'off'.
+        description: Scanner flavor — 'default' (per-cluster), 'none', 'v2', or 'v4'.
         type: string
         required: false
         default: default
@@ -36,12 +36,13 @@ on:
           - both
         default: kind
       scanner:
-        description: Scanner v2 support (default = per-cluster; on GKE, off on KinD).
+        description: Scanner flavor (default = per-cluster; v2 on GKE, none on KinD).
         type: choice
         options:
           - default
-          - "on"
-          - "off"
+          - none
+          - v2
+          - v4
         default: default
 
 permissions:
@@ -67,7 +68,8 @@ jobs:
       BUILD_TAG: ${{ inputs.tag }}
       CI_JOB_NAME: ${{ matrix.cluster }}-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
-      ROX_SCANNER_V4: "false"
+      # Scanner v4 (indexer+matcher+db) — customer default. On when scanner=v4.
+      ROX_SCANNER_V4: ${{ inputs.scanner == 'v4' && 'true' || 'false' }}
       PYTHONUNBUFFERED: "1"
       # Both cluster types expose Central via a LoadBalancer service. On KinD,
       # cloud-provider-kind (started by create-kind-cluster) assigns the service
@@ -77,19 +79,20 @@ jobs:
       STORAGE: pvc
       # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2: 'default' means per-cluster — on for GKE, off for KinD. Scanner
-      # adds no coverage to this test (config round-trip), so KinD leaves it off by
-      # default to keep the gate fast; use scanner=on to run the full stack.
-      SCANNER_SUPPORT: ${{ (inputs.scanner == 'on' && 'true') || (inputs.scanner == 'off' && 'false') || (matrix.cluster == 'gke' && 'true' || 'false') }}
-      # Running the full stack incl. Scanner v2 on one KinD node requires shrinking
-      # resource *requests* (so everything schedules) while keeping modest *limits*
-      # (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back off
-      # instead of OOMing). These overrides only take effect on the Helm deploy
-      # path, so scanner-on KinD also switches OUTPUT_FORMAT to helm. The default
-      # scanner-off KinD path is left on the known-good kubectl deploy untouched.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
-      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
-      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && 'helm' || '' }}
+      # Scanner v2 (legacy): on when scanner=v2, or under 'default' on GKE (master's
+      # current behavior — kept non-breaking). 'default' on KinD, 'none', and 'v4'
+      # all leave v2 off. Scanner adds no coverage to this test (config round-trip),
+      # so KinD's default is scanner-less to keep the gate fast.
+      SCANNER_SUPPORT: ${{ (inputs.scanner == 'v2' && 'true') || (inputs.scanner == 'default' && matrix.cluster == 'gke' && 'true') || 'false' }}
+      # Running the full stack incl. a scanner (v2 or v4) on one KinD node requires
+      # shrinking resource *requests* (so everything schedules) while keeping modest
+      # *limits* (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back
+      # off instead of OOMing). These overrides only take effect on the Helm deploy
+      # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. The
+      # default scanner-less KinD path is left on the known-good kubectl deploy.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
+      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && (inputs.scanner == 'v2' || inputs.scanner == 'v4')) && 'helm' || '' }}
     timeout-minutes: 60
     steps:
 
@@ -136,7 +139,7 @@ jobs:
         registry: quay.io/rhacs-eng
         memory-limit: 12g
         enable-loadbalancer: "true"
-        pull-scanner: ${{ inputs.scanner == 'on' && 'true' || 'false' }}
+        pull-scanner: ${{ inputs.scanner == 'v2' && 'true' || 'false' }}
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
