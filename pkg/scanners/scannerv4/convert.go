@@ -845,6 +845,11 @@ func splitVersionNumbers(v string) []int {
 // mergeScoringFields overwrites scoring-related fields on dst when src has more
 // complete or higher-severity scoring data. Priority: more CVSS metrics, higher
 // severity, higher CVSS base score.
+//
+// Origin is set here defensively so that if in the future multiple updaters
+// report the same CVE, Origin reflects the source that won the scoring
+// comparison, keeping the assignment deterministic rather than dependent
+// on input order.
 func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	c := cmp.Or(
 		cmp.Compare(len(src.GetCvssMetrics()), len(dst.GetCvssMetrics())),
@@ -888,7 +893,11 @@ var updaterOrigins = []struct {
 
 // vulnOrigin translates a Claircore updater name into VulnOrigin.
 //
-// TODO(ROX-36340): Replace this prefix based translation with something
+// ASSUMPTION: updater names follow prefix conventions observed in Claircore.
+// These names are exposed via the API but their values are not guaranteed
+// to be stable.
+//
+// TODO(ROX-36340): Replace this prefix-based translation with something
 // more stable.
 func vulnOrigin(updater string) storage.VulnOrigin {
 	for _, e := range updaterOrigins {
