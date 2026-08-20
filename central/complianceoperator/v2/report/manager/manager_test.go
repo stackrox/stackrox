@@ -720,6 +720,17 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
+	// Registered before GetClusterData: gomock matches same-method expectations in registration order.
+	allScans := getTestScansFromScanConfig(sc, timestamp)
+	expectedCalls = append(expectedCalls,
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
+	)
 	calls := []any{
 		// GetClusterData
 		m.scanDataStore.EXPECT().
@@ -756,13 +767,26 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 
 			})).
 			Times(numSnapshots).Return(nil),
-		// GetClusterData
+	}
+	expectedCalls = append(expectedCalls, calls...)
+	// Registered before GetClusterData: gomock matches same-method expectations in registration order.
+	allScans := getTestScansFromScanConfig(sc, timestamp)
+	expectedCalls = append(expectedCalls,
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
+	)
+	// GetClusterData
+	expectedCalls = append(expectedCalls,
 		m.scanDataStore.EXPECT().
 			SearchScans(gomock.Any(), gomock.Any()).
 			Times(len(sc.GetClusters())*numSnapshots).
 			Return(scans, nil),
-	}
-	expectedCalls = append(expectedCalls, calls...)
+	)
 	return expectedCalls
 }
 
@@ -823,6 +847,7 @@ func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfig
 func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
 	ret := &storage.ComplianceOperatorScanV2{
 		Id:              scan,
+		ScanName:        scan,
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
 		ScanConfigName:  scanConfigName,
