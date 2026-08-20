@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"testing"
 
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
@@ -66,7 +66,7 @@ func TestGetDeploymentRiskAISummary_Success(t *testing.T) {
 					Uid: 0,
 					Env: []*storage.ContainerConfig_EnvironmentConfig{
 						{Key: "SECRET_KEY", Value: "super-secret-123"},
-						{Key: "DB_URL", Value: "postgres://admin:pass@db:5432"},
+						{Key: "DB_URL", Value: "postgres://db.internal:5432/mydb"}, // #nosec G101
 					},
 				},
 				LivenessProbe:  &storage.LivenessProbe{Defined: true},
@@ -271,7 +271,7 @@ func TestGetDeploymentRiskAISummary_OLSError(t *testing.T) {
 	mockRisks.EXPECT().GetRiskForDeployment(gomock.Any(), deployment).Return(risk, true, nil)
 
 	olsMock := &mockOLSClient{
-		err: fmt.Errorf("Lightspeed API returned HTTP 503"),
+		err: errors.New("Lightspeed API returned HTTP 503"),
 	}
 
 	svc := &serviceImpl{
