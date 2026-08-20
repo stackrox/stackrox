@@ -9,8 +9,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { AuthMachineToMachineConfigsSchema() })
+}
+
 
 var (
 	// CreateTableAuthMachineToMachineConfigsStmt holds the create statement for table `auth_machine_to_machine_configs`.
@@ -25,14 +31,14 @@ var (
 	}
 
 	// AuthMachineToMachineConfigsSchema is the go schema for table `auth_machine_to_machine_configs`.
-	AuthMachineToMachineConfigsSchema = func() *walker.Schema {
+	AuthMachineToMachineConfigsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("auth_machine_to_machine_configs")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.AuthMachineToMachineConfig)(nil)), "auth_machine_to_machine_configs")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Role": RolesSchema,
+			"storage.Role": RolesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -41,8 +47,9 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableAuthMachineToMachineConfigsStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// AuthMachineToMachineConfigsTableName specifies the name of the table in postgres.
@@ -50,6 +57,7 @@ const (
 	// AuthMachineToMachineConfigsMappingsTableName specifies the name of the table in postgres.
 	AuthMachineToMachineConfigsMappingsTableName = "auth_machine_to_machine_configs_mappings"
 )
+
 
 // AuthMachineToMachineConfigs holds the Gorm model for Postgres table `auth_machine_to_machine_configs`.
 type AuthMachineToMachineConfigs struct {

@@ -14,8 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { DeploymentsSchema() })
+}
+
 
 var (
 	// CreateTableDeploymentsStmt holds the create statement for table `deployments`.
@@ -60,16 +66,16 @@ var (
 	}
 
 	// DeploymentsSchema is the go schema for table `deployments`.
-	DeploymentsSchema = func() *walker.Schema {
+	DeploymentsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("deployments")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Deployment)(nil)), "deployments")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Image":             ImagesSchema,
-			"storage.NamespaceMetadata": NamespacesSchema,
-			"storage.ImageV2":           ImagesV2Schema,
+			"storage.Image":             ImagesSchema(),
+			"storage.NamespaceMetadata": NamespacesSchema(),
+			"storage.ImageV2":           ImagesV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -91,8 +97,9 @@ var (
 		RegisterTable(schema, CreateTableDeploymentsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_DEPLOYMENTS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// DeploymentsTableName specifies the name of the table in postgres.
@@ -110,6 +117,7 @@ const (
 	// DeploymentsPortsExposureInfosTableName specifies the name of the table in postgres.
 	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
 )
+
 
 // Deployments holds the Gorm model for Postgres table `deployments`.
 type Deployments struct {

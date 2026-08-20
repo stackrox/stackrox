@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { RisksSchema() })
+}
+
 
 var (
 	// CreateTableRisksStmt holds the create statement for table `risks`.
@@ -25,7 +31,7 @@ var (
 	}
 
 	// RisksSchema is the go schema for table `risks`.
-	RisksSchema = func() *walker.Schema {
+	RisksSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("risks")
 		if schema != nil {
 			return schema
@@ -36,13 +42,15 @@ var (
 		RegisterTable(schema, CreateTableRisksStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_RISKS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// RisksTableName specifies the name of the table in postgres.
 	RisksTableName = "risks"
 )
+
 
 // Risks holds the Gorm model for Postgres table `risks`.
 type Risks struct {

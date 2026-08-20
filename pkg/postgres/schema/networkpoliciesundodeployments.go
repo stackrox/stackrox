@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkpoliciesundodeploymentsSchema() })
+}
+
 
 var (
 	// CreateTableNetworkpoliciesundodeploymentsStmt holds the create statement for table `networkpoliciesundodeployments`.
@@ -19,7 +25,7 @@ var (
 	}
 
 	// NetworkpoliciesundodeploymentsSchema is the go schema for table `networkpoliciesundodeployments`.
-	NetworkpoliciesundodeploymentsSchema = func() *walker.Schema {
+	NetworkpoliciesundodeploymentsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("networkpoliciesundodeployments")
 		if schema != nil {
 			return schema
@@ -28,13 +34,15 @@ var (
 		schema.ScopingResource = resources.NetworkPolicy
 		RegisterTable(schema, CreateTableNetworkpoliciesundodeploymentsStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// NetworkpoliciesundodeploymentsTableName specifies the name of the table in postgres.
 	NetworkpoliciesundodeploymentsTableName = "networkpoliciesundodeployments"
 )
+
 
 // Networkpoliciesundodeployments holds the Gorm model for Postgres table `networkpoliciesundodeployments`.
 type Networkpoliciesundodeployments struct {

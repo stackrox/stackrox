@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.RolesSchema
+	schema         = pkgSchema.RolesSchema()
 	targetResource = resources.Access
 )
 

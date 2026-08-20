@@ -27,7 +27,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ImageComponentV2Schema
+	schema         = pkgSchema.ImageComponentV2Schema()
 	targetResource = resources.Image
 )
 
@@ -73,7 +73,7 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
 		pgSearch.GetDefaultSort(search.Component.String(), false),
-		pkgSchema.ImagesSchema.OptionsMap,
+		pkgSchema.ImagesSchema().OptionsMap,
 	)
 }
 

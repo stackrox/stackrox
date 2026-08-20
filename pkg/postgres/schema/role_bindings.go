@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { RoleBindingsSchema() })
+}
+
 
 var (
 	// CreateTableRoleBindingsStmt holds the create statement for table `role_bindings`.
@@ -30,7 +36,7 @@ var (
 	}
 
 	// RoleBindingsSchema is the go schema for table `role_bindings`.
-	RoleBindingsSchema = func() *walker.Schema {
+	RoleBindingsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("role_bindings")
 		if schema != nil {
 			return schema
@@ -41,8 +47,9 @@ var (
 		RegisterTable(schema, CreateTableRoleBindingsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ROLEBINDINGS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// RoleBindingsTableName specifies the name of the table in postgres.
@@ -50,6 +57,7 @@ const (
 	// RoleBindingsSubjectsTableName specifies the name of the table in postgres.
 	RoleBindingsSubjectsTableName = "role_bindings_subjects"
 )
+
 
 // RoleBindings holds the Gorm model for Postgres table `role_bindings`.
 type RoleBindings struct {

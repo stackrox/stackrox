@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.ServiceIdentitiesSchema
+	schema         = pkgSchema.ServiceIdentitiesSchema()
 	targetResource = resources.Administration
 )
 

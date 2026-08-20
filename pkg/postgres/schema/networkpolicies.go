@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkpoliciesSchema() })
+}
+
 
 var (
 	// CreateTableNetworkpoliciesStmt holds the create statement for table `networkpolicies`.
@@ -25,7 +31,7 @@ var (
 	}
 
 	// NetworkpoliciesSchema is the go schema for table `networkpolicies`.
-	NetworkpoliciesSchema = func() *walker.Schema {
+	NetworkpoliciesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("networkpolicies")
 		if schema != nil {
 			return schema
@@ -36,13 +42,15 @@ var (
 		RegisterTable(schema, CreateTableNetworkpoliciesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_POLICIES, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// NetworkpoliciesTableName specifies the name of the table in postgres.
 	NetworkpoliciesTableName = "networkpolicies"
 )
+
 
 // Networkpolicies holds the Gorm model for Postgres table `networkpolicies`.
 type Networkpolicies struct {

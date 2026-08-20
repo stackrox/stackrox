@@ -18,7 +18,7 @@ var (
 func NewDeploymentView(db postgres.DB) DeploymentView {
 	return &deploymentViewImpl{
 		db:     db,
-		schema: schema.DeploymentsSchema,
+		schema: schema.DeploymentsSchema(),
 	}
 }
 

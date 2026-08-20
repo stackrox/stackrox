@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { GroupsSchema() })
+}
+
 
 var (
 	// CreateTableGroupsStmt holds the create statement for table `groups`.
@@ -19,7 +25,7 @@ var (
 	}
 
 	// GroupsSchema is the go schema for table `groups`.
-	GroupsSchema = func() *walker.Schema {
+	GroupsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("groups")
 		if schema != nil {
 			return schema
@@ -28,13 +34,15 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableGroupsStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// GroupsTableName specifies the name of the table in postgres.
 	GroupsTableName = "groups"
 )
+
 
 // Groups holds the Gorm model for Postgres table `groups`.
 type Groups struct {

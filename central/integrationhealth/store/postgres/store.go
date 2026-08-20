@@ -26,7 +26,7 @@ const (
 
 var (
 	log            = logging.LoggerForModule()
-	schema         = pkgSchema.IntegrationHealthsSchema
+	schema         = pkgSchema.IntegrationHealthsSchema()
 	targetResource = resources.Integration
 )
 

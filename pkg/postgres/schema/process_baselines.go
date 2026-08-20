@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ProcessBaselinesSchema() })
+}
+
 
 var (
 	// CreateTableProcessBaselinesStmt holds the create statement for table `process_baselines`.
@@ -26,7 +32,7 @@ var (
 	}
 
 	// ProcessBaselinesSchema is the go schema for table `process_baselines`.
-	ProcessBaselinesSchema = func() *walker.Schema {
+	ProcessBaselinesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("process_baselines")
 		if schema != nil {
 			return schema
@@ -37,13 +43,15 @@ var (
 		RegisterTable(schema, CreateTableProcessBaselinesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PROCESS_BASELINES, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ProcessBaselinesTableName specifies the name of the table in postgres.
 	ProcessBaselinesTableName = "process_baselines"
 )
+
 
 // ProcessBaselines holds the Gorm model for Postgres table `process_baselines`.
 type ProcessBaselines struct {

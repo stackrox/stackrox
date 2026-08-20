@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestChild1Schema() })
+}
+
 
 var (
 	// CreateTableTestChild1Stmt holds the create statement for table `test_child1`.
@@ -22,7 +28,7 @@ var (
 	}
 
 	// TestChild1Schema is the go schema for table `test_child1`.
-	TestChild1Schema = func() *walker.Schema {
+	TestChild1Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_child1")
 		if schema != nil {
 			return schema
@@ -33,13 +39,15 @@ var (
 		RegisterTable(schema, CreateTableTestChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(102), schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// TestChild1TableName specifies the name of the table in postgres.
 	TestChild1TableName = "test_child1"
 )
+
 
 // TestChild1 holds the Gorm model for Postgres table `test_child1`.
 type TestChild1 struct {

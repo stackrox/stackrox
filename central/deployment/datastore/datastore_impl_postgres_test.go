@@ -447,7 +447,7 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 		{1, "replicaset"},
 	}
 	var results []*deploymentCountByType
-	err = postgres.RunSelectRequestForSchemaFn[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema, q, func(r *deploymentCountByType) error {
+	err = postgres.RunSelectRequestForSchemaFn[deploymentCountByType](ctx, testDB.DB, schema.DeploymentsSchema(), q, func(r *deploymentCountByType) error {
 		results = append(results, r)
 		return nil
 	})

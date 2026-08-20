@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { RolesSchema() })
+}
+
 
 var (
 	// CreateTableRolesStmt holds the create statement for table `roles`.
@@ -19,7 +25,7 @@ var (
 	}
 
 	// RolesSchema is the go schema for table `roles`.
-	RolesSchema = func() *walker.Schema {
+	RolesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("roles")
 		if schema != nil {
 			return schema
@@ -28,13 +34,15 @@ var (
 		schema.ScopingResource = resources.Access
 		RegisterTable(schema, CreateTableRolesStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// RolesTableName specifies the name of the table in postgres.
 	RolesTableName = "roles"
 )
+
 
 // Roles holds the Gorm model for Postgres table `roles`.
 type Roles struct {

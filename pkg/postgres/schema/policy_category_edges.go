@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { PolicyCategoryEdgesSchema() })
+}
+
 
 var (
 	// CreateTablePolicyCategoryEdgesStmt holds the create statement for table `policy_category_edges`.
@@ -23,15 +29,15 @@ var (
 	}
 
 	// PolicyCategoryEdgesSchema is the go schema for table `policy_category_edges`.
-	PolicyCategoryEdgesSchema = func() *walker.Schema {
+	PolicyCategoryEdgesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("policy_category_edges")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.PolicyCategoryEdge)(nil)), "policy_category_edges")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Policy":         PoliciesSchema,
-			"storage.PolicyCategory": PolicyCategoriesSchema,
+			"storage.Policy":         PoliciesSchema(),
+			"storage.PolicyCategory": PolicyCategoriesSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -46,13 +52,15 @@ var (
 		RegisterTable(schema, CreateTablePolicyCategoryEdgesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_POLICY_CATEGORY_EDGE, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// PolicyCategoryEdgesTableName specifies the name of the table in postgres.
 	PolicyCategoryEdgesTableName = "policy_category_edges"
 )
+
 
 // PolicyCategoryEdges holds the Gorm model for Postgres table `policy_category_edges`.
 type PolicyCategoryEdges struct {

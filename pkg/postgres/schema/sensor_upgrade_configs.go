@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { SensorUpgradeConfigsSchema() })
+}
+
 
 var (
 	// CreateTableSensorUpgradeConfigsStmt holds the create statement for table `sensor_upgrade_configs`.
@@ -22,7 +28,7 @@ var (
 	}
 
 	// SensorUpgradeConfigsSchema is the go schema for table `sensor_upgrade_configs`.
-	SensorUpgradeConfigsSchema = func() *walker.Schema {
+	SensorUpgradeConfigsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("sensor_upgrade_configs")
 		if schema != nil {
 			return schema
@@ -31,13 +37,15 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableSensorUpgradeConfigsStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// SensorUpgradeConfigsTableName specifies the name of the table in postgres.
 	SensorUpgradeConfigsTableName = "sensor_upgrade_configs"
 )
+
 
 // SensorUpgradeConfigs holds the Gorm model for Postgres table `sensor_upgrade_configs`.
 type SensorUpgradeConfigs struct {

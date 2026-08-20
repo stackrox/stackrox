@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorRemediationV2Schema() })
+}
+
 
 var (
 	// CreateTableComplianceOperatorRemediationV2Stmt holds the create statement for table `compliance_operator_remediation_v2`.
@@ -26,7 +32,7 @@ var (
 	}
 
 	// ComplianceOperatorRemediationV2Schema is the go schema for table `compliance_operator_remediation_v2`.
-	ComplianceOperatorRemediationV2Schema = func() *walker.Schema {
+	ComplianceOperatorRemediationV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_remediation_v2")
 		if schema != nil {
 			return schema
@@ -37,13 +43,15 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorRemediationV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_REMEDIATIONS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ComplianceOperatorRemediationV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorRemediationV2TableName = "compliance_operator_remediation_v2"
 )
+
 
 // ComplianceOperatorRemediationV2 holds the Gorm model for Postgres table `compliance_operator_remediation_v2`.
 type ComplianceOperatorRemediationV2 struct {

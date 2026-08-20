@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ClusterCvesSchema() })
+}
+
 
 var (
 	// CreateTableClusterCvesStmt holds the create statement for table `cluster_cves`.
@@ -26,7 +32,7 @@ var (
 	}
 
 	// ClusterCvesSchema is the go schema for table `cluster_cves`.
-	ClusterCvesSchema = func() *walker.Schema {
+	ClusterCvesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("cluster_cves")
 		if schema != nil {
 			return schema
@@ -42,13 +48,15 @@ var (
 		RegisterTable(schema, CreateTableClusterCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_CLUSTER_VULNERABILITIES, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ClusterCvesTableName specifies the name of the table in postgres.
 	ClusterCvesTableName = "cluster_cves"
 )
+
 
 // ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {

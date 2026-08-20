@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkEntitiesSchema() })
+}
+
 
 var (
 	// CreateTableNetworkEntitiesStmt holds the create statement for table `network_entities`.
@@ -25,7 +31,7 @@ var (
 	}
 
 	// NetworkEntitiesSchema is the go schema for table `network_entities`.
-	NetworkEntitiesSchema = func() *walker.Schema {
+	NetworkEntitiesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_entities")
 		if schema != nil {
 			return schema
@@ -36,13 +42,15 @@ var (
 		RegisterTable(schema, CreateTableNetworkEntitiesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NETWORK_ENTITY, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// NetworkEntitiesTableName specifies the name of the table in postgres.
 	NetworkEntitiesTableName = "network_entities"
 )
+
 
 // NetworkEntities holds the Gorm model for Postgres table `network_entities`.
 type NetworkEntities struct {

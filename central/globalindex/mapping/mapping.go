@@ -13,34 +13,34 @@ import (
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	clusterToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.ClusterCvesSchema.OptionsMap,
-		schema.ClusterCveEdgesSchema.OptionsMap,
-		schema.ClustersSchema.OptionsMap,
+		schema.ClusterCvesSchema().OptionsMap,
+		schema.ClusterCveEdgesSchema().OptionsMap,
+		schema.ClustersSchema().OptionsMap,
 	)
 
 	deploymentsCustomSearchOptions := search.CombineOptionsMaps(
-		schema.DeploymentsSchema.OptionsMap,
-		schema.ImagesSchema.OptionsMap,
-		schema.ProcessIndicatorsSchema.OptionsMap,
+		schema.DeploymentsSchema().OptionsMap,
+		schema.ImagesSchema().OptionsMap,
+		schema.ProcessIndicatorsSchema().OptionsMap,
 	)
 
-	imageOptionsMap := schema.ImagesSchema.OptionsMap
+	imageOptionsMap := schema.ImagesSchema().OptionsMap
 	if features.FlattenImageData.Enabled() {
-		imageOptionsMap = schema.ImagesV2Schema.OptionsMap
+		imageOptionsMap = schema.ImagesV2Schema().OptionsMap
 	}
 	imageToVulnerabilityV2SearchOptions := search.CombineOptionsMaps(
-		schema.ImageCvesV2Schema.OptionsMap,
-		schema.ImageComponentV2Schema.OptionsMap,
+		schema.ImageCvesV2Schema().OptionsMap,
+		schema.ImageComponentV2Schema().OptionsMap,
 		imageOptionsMap,
-		schema.DeploymentsSchema.OptionsMap,
+		schema.DeploymentsSchema().OptionsMap,
 	)
 
 	nodeToVulnerabilitySearchOptions := search.CombineOptionsMaps(
-		schema.NodeCvesSchema.OptionsMap,
-		schema.NodeComponentsCvesEdgesSchema.OptionsMap,
-		schema.NodeComponentsSchema.OptionsMap,
-		schema.NodeComponentEdgesSchema.OptionsMap,
-		schema.NodesSchema.OptionsMap,
+		schema.NodeCvesSchema().OptionsMap,
+		schema.NodeComponentsCvesEdgesSchema().OptionsMap,
+		schema.NodeComponentsSchema().OptionsMap,
+		schema.NodeComponentEdgesSchema().OptionsMap,
+		schema.NodesSchema().OptionsMap,
 	)
 
 	// alerts has a reconciliation mechanism implemented in postgres mode in order to keep only search fields
@@ -49,7 +49,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 
 	subjectSearchOptions := search.CombineOptionsMaps(
 		subjectMapping.OptionsMap,
-		schema.RoleBindingsSchema.OptionsMap,
+		schema.RoleBindingsSchema().OptionsMap,
 	)
 
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
@@ -58,36 +58,36 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_ALERTS:                  alertSearchOptions,
 		v1.SearchCategory_CLUSTER_VULN_EDGE:       clusterToVulnerabilitySearchOptions,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: clusterToVulnerabilitySearchOptions,
-		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema.OptionsMap,
+		v1.SearchCategory_CLUSTERS:                schema.ClustersSchema().OptionsMap,
 		v1.SearchCategory_COMPLIANCE_STANDARD:     index.StandardOptions,
 		v1.SearchCategory_COMPLIANCE_CONTROL:      index.ControlOptions,
 		v1.SearchCategory_DEPLOYMENTS:             deploymentsCustomSearchOptions,
-		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema.OptionsMap,
-		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema.OptionsMap,
+		v1.SearchCategory_IMAGE_INTEGRATIONS:      schema.ImageIntegrationsSchema().OptionsMap,
+		v1.SearchCategory_NAMESPACES:              schema.NamespacesSchema().OptionsMap,
 		v1.SearchCategory_NODE_COMPONENT_EDGE:     nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODE_COMPONENTS:         nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODE_VULNERABILITIES:    nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODES:                   nodeToVulnerabilitySearchOptions,
-		v1.SearchCategory_PODS:                    schema.PodsSchema.OptionsMap,
-		v1.SearchCategory_POLICIES:                schema.PoliciesSchema.OptionsMap,
-		v1.SearchCategory_POLICY_CATEGORIES:       schema.PolicyCategoriesSchema.OptionsMap,
-		v1.SearchCategory_PROCESS_BASELINES:       schema.ProcessBaselinesSchema.OptionsMap,
-		v1.SearchCategory_PROCESS_INDICATORS:      schema.ProcessIndicatorsSchema.OptionsMap,
-		v1.SearchCategory_REPORT_CONFIGURATIONS:   schema.ReportConfigurationsSchema.OptionsMap,
-		v1.SearchCategory_RISKS:                   schema.RisksSchema.OptionsMap,
-		v1.SearchCategory_ROLES:                   schema.K8sRolesSchema.OptionsMap,
-		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema.OptionsMap,
-		v1.SearchCategory_SECRETS:                 schema.SecretsSchema.OptionsMap,
-		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
+		v1.SearchCategory_PODS:                    schema.PodsSchema().OptionsMap,
+		v1.SearchCategory_POLICIES:                schema.PoliciesSchema().OptionsMap,
+		v1.SearchCategory_POLICY_CATEGORIES:       schema.PolicyCategoriesSchema().OptionsMap,
+		v1.SearchCategory_PROCESS_BASELINES:       schema.ProcessBaselinesSchema().OptionsMap,
+		v1.SearchCategory_PROCESS_INDICATORS:      schema.ProcessIndicatorsSchema().OptionsMap,
+		v1.SearchCategory_REPORT_CONFIGURATIONS:   schema.ReportConfigurationsSchema().OptionsMap,
+		v1.SearchCategory_RISKS:                   schema.RisksSchema().OptionsMap,
+		v1.SearchCategory_ROLES:                   schema.K8sRolesSchema().OptionsMap,
+		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema().OptionsMap,
+		v1.SearchCategory_SECRETS:                 schema.SecretsSchema().OptionsMap,
+		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema().OptionsMap,
 		v1.SearchCategory_SUBJECTS:                subjectSearchOptions,
-		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema.OptionsMap,
+		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema().OptionsMap,
 	}
 
-	entityOptionsMap[v1.SearchCategory_REPORT_SNAPSHOT] = schema.ReportSnapshotsSchema.OptionsMap
+	entityOptionsMap[v1.SearchCategory_REPORT_SNAPSHOT] = schema.ReportSnapshotsSchema().OptionsMap
 
 	reportConfigurationSearchOptions := search.CombineOptionsMaps(
-		schema.ReportConfigurationsSchema.OptionsMap,
-		schema.ReportSnapshotsSchema.OptionsMap,
+		schema.ReportConfigurationsSchema().OptionsMap,
+		schema.ReportSnapshotsSchema().OptionsMap,
 	)
 	entityOptionsMap[v1.SearchCategory_REPORT_CONFIGURATIONS] = reportConfigurationSearchOptions
 

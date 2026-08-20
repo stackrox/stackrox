@@ -13,8 +13,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { AlertsSchema() })
+}
+
 
 var (
 	// CreateTableAlertsStmt holds the create statement for table `alerts`.
@@ -32,7 +38,7 @@ var (
 	}
 
 	// AlertsSchema is the go schema for table `alerts`.
-	AlertsSchema = func() *walker.Schema {
+	AlertsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("alerts")
 		if schema != nil {
 			return schema
@@ -43,13 +49,15 @@ var (
 		RegisterTable(schema, CreateTableAlertsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_ALERTS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// AlertsTableName specifies the name of the table in postgres.
 	AlertsTableName = "alerts"
 )
+
 
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {

@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { NodeCvesSchema() })
+}
+
 
 var (
 	// CreateTableNodeCvesStmt holds the create statement for table `node_cves`.
@@ -26,7 +32,7 @@ var (
 	}
 
 	// NodeCvesSchema is the go schema for table `node_cves`.
-	NodeCvesSchema = func() *walker.Schema {
+	NodeCvesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("node_cves")
 		if schema != nil {
 			return schema
@@ -45,13 +51,15 @@ var (
 		RegisterTable(schema, CreateTableNodeCvesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_NODE_VULNERABILITIES, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// NodeCvesTableName specifies the name of the table in postgres.
 	NodeCvesTableName = "node_cves"
 )
+
 
 // NodeCves holds the Gorm model for Postgres table `node_cves`.
 type NodeCves struct {

@@ -13,8 +13,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ImagesSchema() })
+}
+
 
 var (
 	// CreateTableImagesStmt holds the create statement for table `images`.
@@ -29,7 +35,7 @@ var (
 	}
 
 	// ImagesSchema is the go schema for table `images`.
-	ImagesSchema = func() *walker.Schema {
+	ImagesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("images")
 		if schema != nil {
 			return schema
@@ -48,8 +54,9 @@ var (
 		RegisterTable(schema, CreateTableImagesStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_IMAGES, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ImagesTableName specifies the name of the table in postgres.
@@ -57,6 +64,7 @@ const (
 	// ImagesLayersTableName specifies the name of the table in postgres.
 	ImagesLayersTableName = "images_layers"
 )
+
 
 // Images holds the Gorm model for Postgres table `images`.
 type Images struct {

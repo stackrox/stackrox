@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { PodsSchema() })
+}
+
 
 var (
 	// CreateTablePodsStmt holds the create statement for table `pods`.
@@ -31,14 +37,14 @@ var (
 	}
 
 	// PodsSchema is the go schema for table `pods`.
-	PodsSchema = func() *walker.Schema {
+	PodsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("pods")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.Pod)(nil)), "pods")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.Deployment": DeploymentsSchema,
+			"storage.Deployment": DeploymentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -49,8 +55,9 @@ var (
 		RegisterTable(schema, CreateTablePodsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_PODS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// PodsTableName specifies the name of the table in postgres.
@@ -58,6 +65,7 @@ const (
 	// PodsLiveInstancesTableName specifies the name of the table in postgres.
 	PodsLiveInstancesTableName = "pods_live_instances"
 )
+
 
 // Pods holds the Gorm model for Postgres table `pods`.
 type Pods struct {

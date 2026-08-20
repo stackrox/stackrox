@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestGrandChild1Schema() })
+}
+
 
 var (
 	// CreateTableTestGrandChild1Stmt holds the create statement for table `test_grand_child1`.
@@ -23,15 +29,15 @@ var (
 	}
 
 	// TestGrandChild1Schema is the go schema for table `test_grand_child1`.
-	TestGrandChild1Schema = func() *walker.Schema {
+	TestGrandChild1Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_grand_child1")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestGrandChild1)(nil)), "test_grand_child1")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestChild1":       TestChild1Schema,
-			"storage.TestGGrandChild1": TestGGrandChild1Schema,
+			"storage.TestChild1":       TestChild1Schema(),
+			"storage.TestGGrandChild1": TestGGrandChild1Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,13 +48,15 @@ var (
 		RegisterTable(schema, CreateTableTestGrandChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(108), schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// TestGrandChild1TableName specifies the name of the table in postgres.
 	TestGrandChild1TableName = "test_grand_child1"
 )
+
 
 // TestGrandChild1 holds the Gorm model for Postgres table `test_grand_child1`.
 type TestGrandChild1 struct {

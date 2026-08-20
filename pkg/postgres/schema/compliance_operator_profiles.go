@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorProfilesSchema() })
+}
+
 
 var (
 	// CreateTableComplianceOperatorProfilesStmt holds the create statement for table `compliance_operator_profiles`.
@@ -19,7 +25,7 @@ var (
 	}
 
 	// ComplianceOperatorProfilesSchema is the go schema for table `compliance_operator_profiles`.
-	ComplianceOperatorProfilesSchema = func() *walker.Schema {
+	ComplianceOperatorProfilesSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_profiles")
 		if schema != nil {
 			return schema
@@ -28,13 +34,15 @@ var (
 		schema.ScopingResource = resources.ComplianceOperator
 		RegisterTable(schema, CreateTableComplianceOperatorProfilesStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ComplianceOperatorProfilesTableName specifies the name of the table in postgres.
 	ComplianceOperatorProfilesTableName = "compliance_operator_profiles"
 )
+
 
 // ComplianceOperatorProfiles holds the Gorm model for Postgres table `compliance_operator_profiles`.
 type ComplianceOperatorProfiles struct {

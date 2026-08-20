@@ -8,8 +8,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
+
+func init() {
+	registerLazySchema(func() { NetworkGraphConfigsSchema() })
+}
+
 
 var (
 	// CreateTableNetworkGraphConfigsStmt holds the create statement for table `network_graph_configs`.
@@ -19,7 +25,7 @@ var (
 	}
 
 	// NetworkGraphConfigsSchema is the go schema for table `network_graph_configs`.
-	NetworkGraphConfigsSchema = func() *walker.Schema {
+	NetworkGraphConfigsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("network_graph_configs")
 		if schema != nil {
 			return schema
@@ -28,13 +34,15 @@ var (
 		schema.ScopingResource = resources.Administration
 		RegisterTable(schema, CreateTableNetworkGraphConfigsStmt)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// NetworkGraphConfigsTableName specifies the name of the table in postgres.
 	NetworkGraphConfigsTableName = "network_graph_configs"
 )
+
 
 // NetworkGraphConfigs holds the Gorm model for Postgres table `network_graph_configs`.
 type NetworkGraphConfigs struct {

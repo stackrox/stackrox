@@ -14,8 +14,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { ComplianceOperatorReportSnapshotV2Schema() })
+}
+
 
 var (
 	// CreateTableComplianceOperatorReportSnapshotV2Stmt holds the create statement for table `compliance_operator_report_snapshot_v2`.
@@ -30,15 +36,15 @@ var (
 	}
 
 	// ComplianceOperatorReportSnapshotV2Schema is the go schema for table `compliance_operator_report_snapshot_v2`.
-	ComplianceOperatorReportSnapshotV2Schema = func() *walker.Schema {
+	ComplianceOperatorReportSnapshotV2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("compliance_operator_report_snapshot_v2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorReportSnapshotV2)(nil)), "compliance_operator_report_snapshot_v2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
-			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema,
+			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema(),
+			"storage.ComplianceOperatorScanV2":              ComplianceOperatorScanV2Schema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -49,8 +55,9 @@ var (
 		RegisterTable(schema, CreateTableComplianceOperatorReportSnapshotV2Stmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_REPORT_SNAPSHOT, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// ComplianceOperatorReportSnapshotV2TableName specifies the name of the table in postgres.
@@ -58,6 +65,7 @@ const (
 	// ComplianceOperatorReportSnapshotV2ScansTableName specifies the name of the table in postgres.
 	ComplianceOperatorReportSnapshotV2ScansTableName = "compliance_operator_report_snapshot_v2_scans"
 )
+
 
 // ComplianceOperatorReportSnapshotV2 holds the Gorm model for Postgres table `compliance_operator_report_snapshot_v2`.
 type ComplianceOperatorReportSnapshotV2 struct {

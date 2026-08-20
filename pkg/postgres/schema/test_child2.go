@@ -12,8 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { TestChild2Schema() })
+}
+
 
 var (
 	// CreateTableTestChild2Stmt holds the create statement for table `test_child2`.
@@ -23,15 +29,15 @@ var (
 	}
 
 	// TestChild2Schema is the go schema for table `test_child2`.
-	TestChild2Schema = func() *walker.Schema {
+	TestChild2Schema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("test_child2")
 		if schema != nil {
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.TestChild2)(nil)), "test_child2")
 		referencedSchemas := map[string]*walker.Schema{
-			"storage.TestParent2":     TestParent2Schema,
-			"storage.TestGrandparent": TestGrandparentsSchema,
+			"storage.TestParent2":     TestParent2Schema(),
+			"storage.TestGrandparent": TestGrandparentsSchema(),
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -42,13 +48,15 @@ var (
 		RegisterTable(schema, CreateTableTestChild2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(104), schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// TestChild2TableName specifies the name of the table in postgres.
 	TestChild2TableName = "test_child2"
 )
+
 
 // TestChild2 holds the Gorm model for Postgres table `test_child2`.
 type TestChild2 struct {

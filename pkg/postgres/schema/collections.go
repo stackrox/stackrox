@@ -11,8 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pkgsync "github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
+
+func init() {
+	registerLazySchema(func() { CollectionsSchema() })
+}
+
 
 var (
 	// CreateTableCollectionsStmt holds the create statement for table `collections`.
@@ -27,7 +33,7 @@ var (
 	}
 
 	// CollectionsSchema is the go schema for table `collections`.
-	CollectionsSchema = func() *walker.Schema {
+	CollectionsSchema = pkgsync.OnceValue(func() *walker.Schema {
 		schema := GetSchemaForTable("collections")
 		if schema != nil {
 			return schema
@@ -38,8 +44,9 @@ var (
 		RegisterTable(schema, CreateTableCollectionsStmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COLLECTIONS, schema)
 		return schema
-	}()
+	})
 )
+
 
 const (
 	// CollectionsTableName specifies the name of the table in postgres.
@@ -47,6 +54,7 @@ const (
 	// CollectionsEmbeddedCollectionsTableName specifies the name of the table in postgres.
 	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
+
 
 // Collections holds the Gorm model for Postgres table `collections`.
 type Collections struct {
