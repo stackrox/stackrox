@@ -171,7 +171,7 @@ func TestSendGetReport_ErrorCarriesMeta(t *testing.T) {
 	go serveOnce(t, agentConn, &pb.VMServiceResponse{
 		Meta: &pb.ResponseMeta{
 			AgentVersion:             "test-agent",
-			RepoCpeMappingHash:       proto.String(""),
+			RepoCpeMappingHash:       new(""),
 			RepoCpeMappingUpdatePath: pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR.Enum(),
 		},
 		Result: &pb.VMServiceResponse_Error{
