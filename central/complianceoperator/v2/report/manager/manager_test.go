@@ -720,16 +720,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.Compli
 		}
 		expectedCalls = append(expectedCalls, calls...)
 	}
-	// checkCompletion() re-queries the scan configuration's scans exactly once, when the
-	// last outstanding scan result arrives and scansToWait empties out. Returning the full,
-	// already-tracked set of scans for the scan config means GetScansFromScanConfiguration's
-	// result set is empty once already-received results are subtracted, so the watcher
-	// converges immediately instead of waiting for scans that will never arrive.
-	// This expectation must be registered before the "GetClusterData" one below: gomock
-	// matches multiple non-prerequisite expectations for the same method in registration
-	// order, and checkCompletion's re-query always happens before report generation queries
-	// the cluster data, so it must be tried first or it would otherwise consume the
-	// "GetClusterData" expectation's budget.
+	// Registered before GetClusterData: gomock matches same-method expectations in registration order.
 	allScans := getTestScansFromScanConfig(sc, timestamp)
 	expectedCalls = append(expectedCalls,
 		m.profileDataStore.EXPECT().
@@ -778,17 +769,7 @@ func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.Complian
 			Times(numSnapshots).Return(nil),
 	}
 	expectedCalls = append(expectedCalls, calls...)
-	// checkCompletion() re-queries the scan configuration's scans exactly once, when the
-	// last outstanding scan result (even a timed-out one, which is still pushed to the
-	// ScanConfigWatcher) arrives and scansToWait empties out. Returning the full,
-	// already-tracked set of scans for the scan config means GetScansFromScanConfiguration's
-	// result set is empty once already-received results are subtracted, so the watcher
-	// converges immediately instead of waiting for scans that will never arrive.
-	// This expectation must be registered before the "GetClusterData" one below: gomock
-	// matches multiple non-prerequisite expectations for the same method in registration
-	// order, and checkCompletion's re-query always happens before report generation queries
-	// the cluster data, so it must be tried first or it would otherwise consume the
-	// "GetClusterData" expectation's budget.
+	// Registered before GetClusterData: gomock matches same-method expectations in registration order.
 	allScans := getTestScansFromScanConfig(sc, timestamp)
 	expectedCalls = append(expectedCalls,
 		m.profileDataStore.EXPECT().
@@ -865,12 +846,7 @@ func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfig
 
 func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
 	ret := &storage.ComplianceOperatorScanV2{
-		Id: scan,
-		// ScanName must be unique per (cluster, profile), matching the "scan" identifier used
-		// for Id above. scanConfigWatcher.removeStaleResult() uses (ClusterId, ScanName) to
-		// detect the Compliance Operator recycling a scan resource with a new ID; leaving
-		// ScanName empty would make every scan on the same cluster look like "the same scan",
-		// causing sibling profiles' results to be incorrectly evicted as stale.
+		Id:              scan,
 		ScanName:        scan,
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
