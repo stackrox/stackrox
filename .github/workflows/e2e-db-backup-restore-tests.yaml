@@ -21,6 +21,15 @@ on:
         type: string
         required: false
         default: default
+      scanner_v4_allowlist:
+        description: >
+          Comma-separated Scanner v4 vuln bundle sources to load on KinD (matcher
+          gates readiness on this). 'alpine' loads in <1 min; add sources a job's
+          scan assertions need, e.g. 'alpine,rhel-vex,nvd'. KinD-v4 only; GKE uses
+          the tests/e2e/lib.sh default.
+        type: string
+        required: false
+        default: alpine
   workflow_dispatch:
     inputs:
       tag:
@@ -44,6 +53,11 @@ on:
           - v2
           - v4
         default: default
+      scanner_v4_allowlist:
+        description: Scanner v4 vuln sources on KinD (comma-separated; 'alpine' = fastest).
+        type: string
+        required: false
+        default: alpine
 
 permissions:
   contents: read
@@ -70,11 +84,12 @@ jobs:
       ARTIFACT_DIR: ./junit-reports
       # Scanner v4 (indexer+matcher+db) — customer default. On when scanner=v4.
       ROX_SCANNER_V4: ${{ inputs.scanner == 'v4' && 'true' || 'false' }}
-      # Scanner v4's matcher gates readiness on the vuln bundle load. The default
-      # allowlist (9 sources) takes ~30 min on KinD's capped CPU and stalls the
-      # deploy. Restrict KinD to alpine only (<1 min) so v4 comes up fast; GKE
-      # keeps the fuller default set. (Empty -> tests/e2e/lib.sh default.)
-      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'v4') && 'alpine' || '' }}
+      # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
+      # default (9 sources) takes ~30 min on KinD's capped CPU and stalls the
+      # deploy, so KinD-v4 uses the configurable scanner_v4_allowlist input
+      # (default 'alpine', <1 min); jobs needing more sources override it. GKE
+      # keeps the tests/e2e/lib.sh default. (Empty -> that default.)
+      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'v4') && inputs.scanner_v4_allowlist || '' }}
       PYTHONUNBUFFERED: "1"
       # Both cluster types expose Central via a LoadBalancer service. On KinD,
       # cloud-provider-kind (started by create-kind-cluster) assigns the service
