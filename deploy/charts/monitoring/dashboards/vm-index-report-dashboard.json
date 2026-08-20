@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Sensor VMScraper pull mode: VSOCK scrape spreading, retries/NACKs, and Handler forward to Central.",
+  "description": "Sensor pull-mode VM scanning: Sensor dials each VM's agent when that VM is due, optionally forwards a new index report to Central, and retries on NACK. Use this board to see whether those Central sends are paced, and whether scrapes are failing or only unchanged.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -51,7 +51,7 @@
               "showLineNumbers": false,
               "showMiniMap": false
             },
-            "content": "Sensor **pulls** index reports: VMScraper ticks, dials each due VM's roxagent over VSOCK, and forwards a successful report through `vmIndex.Handler` to Central. Central ACK/NACKs. Handler enqueue metrics are a secondary \"send to Central\" story, not the scrape scheduler.\n\n```\n  roxagent (in VM)                    Sensor                         Central\n  ┌─────────────┐     VSOCK      ┌─────────────┐   SensorEvent   ┌─────────┐\n  │ GetReport   │◀──────────────▶│  VMScraper  │────────────────▶│ VM pipe │\n  └─────────────┘   when due     │ per-VM next │                 └────┬────┘\n                                 │ AttemptAt   │                      │\n                                 └──────┬──────┘              SensorACK│\n                                        │                    ACK | NACK│\n                                        └──────────────────────────────┘\n                                   NACK: clear report_generation, shared backoff\n```\n\n**Arrival smoothing** (read `pollInterval` from Sensor env; do not assume 5m):\n\n- First wave / Sensor restart: never-scraped VMs get `nextAttemptAt = now + U(0, catchUpWindow)` where `catchUpWindow = min(20m, pollInterval/3)`.\n- Per-tick start budget: `ceil(nTracked × tick / window)`. Window is catch-up if any never-forwarded VM is due, else steady width `W = pollInterval × spreadFraction` (default 2/3). `n` is tracked fleet size, not leftover due-pile size. `selectDueStarts` still cannot start more than are due. Concurrency (default 20) is a separate overlap cap.\n- Success and permanent failure reschedule at `pollInterval + U(0, W)`.\n- Retryable pull failures and NACKs share exponential backoff (`initialBackoff` default 10s, doubled, cap `min(pollInterval, 30m)`).\n\nDefaults: tick 10s, poll 5m, catch-up 100s, W 200s, concurrency 20. A 1h poll uses catch-up 20m and W 40m.\n",
+            "content": "Sensor **pulls** index reports: VMScraper ticks, dials each due VM's roxagent over VSOCK, and forwards a successful report through `vmIndex.Handler` to Central. Central ACK/NACKs. Handler enqueue metrics are a secondary \"send to Central\" story, not the scrape scheduler.\n\n```\n  roxagent (in VM)                    Sensor                         Central\n  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510     VSOCK      \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510   SensorEvent   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n  \u2502 GetReport   \u2502\u25c0\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25b6\u2502  VMScraper  \u2502\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u25b6\u2502 VM pipe \u2502\n  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518   when due     \u2502 per-VM next \u2502                 \u2514\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2518\n                                 \u2502 AttemptAt   \u2502                      \u2502\n                                 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2518              SensorACK\u2502\n                                        \u2502                    ACK | NACK\u2502\n                                        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n                                   NACK: clear report_generation, shared backoff\n```\n\n**Arrival smoothing** (read `pollInterval` from Sensor env; do not assume 5m):\n\n- First wave / Sensor restart: never-scraped VMs get `nextAttemptAt = now + U(0, catchUpWindow)` where `catchUpWindow = min(20m, pollInterval/3)`.\n- Per-tick start budget: `ceil(nTracked \u00d7 tick / window)`. Window is catch-up if any never-forwarded VM is due, else steady width `W = pollInterval \u00d7 spreadFraction` (default 2/3). `n` is tracked fleet size, not leftover due-pile size. `selectDueStarts` still cannot start more than are due. Concurrency (default 20) is a separate overlap cap.\n- Success and permanent failure reschedule at `pollInterval + U(0, W)`.\n- Retryable pull failures and NACKs share exponential backoff (`initialBackoff` default 10s, doubled, cap `min(pollInterval, 30m)`).\n\nDefaults: tick 10s, poll 5m, catch-up 100s, W 200s, concurrency 20. A 1h poll uses catch-up 20m and W 40m.\n",
             "mode": "markdown"
           },
           "pluginVersion": "10.4.17",
@@ -80,7 +80,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_tracked_vms. Fleet size n used in start budget ceil(n × tick / window).",
+      "description": "How many VMs Sensor is currently scheduling. The start budget is computed from this fleet size, not from how many happen to be due right now.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -145,7 +145,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_due_vms. Eligible VMs at the start of the last tick, before the start budget. Persistently high with small starts means the budget is pacing a backlog.",
+      "description": "How many VMs were eligible to scrape on the most recent 10s tick, before the budget capped how many could start. A high number with ~1 start per tick is pacing a backlog. Zero means the next attempts are still in the future.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -210,7 +210,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Cumulative rox_sensor_vsock_pull_requests_total{status=\"success\"}. Full reports forwarded to Central, not unchanged pulls.",
+      "description": "Lifetime count of full index reports Sensor sent to Central. Unchanged pulls are not included. This number stays flat while guests do not change.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -275,7 +275,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Cumulative status=\"unchanged\": agent had nothing newer; no new forward. Still a successful pull.",
+      "description": "Lifetime count of scrapes where the agent had nothing newer than last time. Sensor still talked to the VM; Central did not get a new report. This is the usual overnight case.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -340,7 +340,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Cumulative SensorACK NACK. Ongoing NACKs with success pulls means Sensor is retrying full reports after Central reject (common while Scanner V4 matcher is still initializing).",
+      "description": "How many times Central rejected a VM index report. Sensor clears the cached generation and retries on a short backoff. The reason (Scanner down, and so on) is in Central logs, not in this number.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -405,7 +405,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rate(rox_sensor_vsock_pull_ticks_total). Scheduler heartbeat; default tick 10s ≈ 0.1/s. Gaps mean the scraper loop is not running.",
+      "description": "How often the scraper loop wakes up. Default 10s tick is about 0.1 per second. A drop to zero means the loop is not running.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -483,7 +483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "How many successful forwards landed in each graph step: increase(rox_sensor_vsock_pull_requests_total{status=\"success\"}[$__interval]). Y is a count, not a per-second rate, so a dump is a tall bar (near fleet size) and pacing is short bars spread across the poll window. There is no scrape-timestamp metric; this is that picture. Zoom in to shrink the step. Bucket width follows the graph interval, not a fixed 5m cadence.",
+      "description": "How many reports Sensor sent to Central in each ~30s Prometheus scrape. Healthy pacing is mostly bars of 1. A tall bar is several reports in the same scrape (a dump). Unchanged pulls do not appear here. A Sensor restart can make one bar go negative (counter reset).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -595,7 +595,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_tracked_vms. Needed to interpret budget ceil(n × tick / window). Window is catch-up if any never-forwarded VM is due, else W = pollInterval × spreadFraction.",
+      "description": "How many VMs Sensor is scheduling, as a time series, so you can read the start budget against fleet size.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -707,7 +707,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Budget is pacing a backlog when due stays high while starts stay small. Dump: due and starts both jump toward fleet size (or concurrency). due_vms is the last-tick gauge. Avg/P95 starts come from rox_sensor_vsock_pull_starts_per_tick (observed only when len(due) > 0; idle ticks are omitted). Compare starts-per-tick _count to ticks_total if the histogram looks empty.",
+      "description": "Eligible VMs versus how many scrapes that tick actually started. Healthy catch-up: due stays high, starts stay near 1. A dump: both jump toward the fleet (or the concurrency cap). Starts are only recorded on ticks that had someone due; idle ticks are omitted.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -871,7 +871,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_starts_per_tick (buckets 0,1,2,3,5,…). Observed only when len(due) > 0; idle ticks are omitted, so compare _count to rox_sensor_vsock_pull_ticks_total. A small fleet with budget 1 should pile on le=\"1\". Healthy catch-up: mass on low buckets while due_vms is high. Dump: mass on fleet-size or concurrency buckets.",
+      "description": "Time on X, how many VMs started in that tick on Y, color = how often that happened. Budget 1 should glow on Y near 1. A bright band at Y near 8 (or 20) is a dump. Idle ticks do not appear.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -955,7 +955,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Snapshot of starts-per-tick buckets over the dashboard range (increase over $__range). Idle ticks are not sampled. Budget 1 piles on the 1 bucket. Compare sample count (le=+Inf) with tick rate if this looks empty.",
+      "description": "Totals over the selected time range: how many ticks started 0, 1, 2, ... VMs. For a small fleet with budget 1, almost everything should sit in the 1 bucket. If this looks empty but tick rate is healthy, most ticks had nobody due.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1362,7 +1362,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_forward_interarrival_seconds: Sensor-wide gaps between consecutive successful forwards (not per-VM). Spread fills a range of buckets. A dump fills near-zero. First forward after Sensor start is not observed.",
+      "description": "Time on X, gap between consecutive Central sends on Y (seconds), color = how often that gap occurred. This is Sensor-wide, not per VM, and only full forwards (not unchanged pulls). A paced wave is a bright band around ~10s. A dump is bright near 0s. Long quiet stretches show up as rare, large-Y cells, or as darkness if nothing was forwarded. The first forward after Sensor start is not recorded.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -1446,7 +1446,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Percentiles of Sensor-wide gaps between consecutive successful forwards. Healthy pacing sits well above ~0. Clump: P50 glued to near-zero. Empty until the second successful forward after Sensor start.",
+      "description": "Typical (P50) and large (P90/P99) gaps between consecutive Central sends over time. Use this to see when pacing changed. With few forwards the lines jump; a single hour-long hole between waves can lift P50 even if each wave was paced. Prefer the heatmap and distribution for gap sizes.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1636,7 +1636,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Cumulative histogram of Sensor-wide forward gaps over the dashboard range. Dump: mass in ≤0.1s. Spread: mass across seconds-to-minutes depending on pollInterval and fleet size.",
+      "description": "How many Central-send gaps fell in each size bucket over the selected range. Mass in 0.08s or less means reports left Sensor almost together (a dump). Mass around 10-41s is a paced wave at a 10s tick. Mass in minutes-or-more is the idle time between waves, which is normal when guests do not change.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1670,7 +1670,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "≤0.08s (dump)"
+              "options": "\u22640.08s (dump)"
             },
             "properties": [
               {
@@ -1823,7 +1823,7 @@
           },
           "editorMode": "code",
           "expr": "sum(increase(rox_sensor_vsock_pull_forward_interarrival_seconds_bucket{le=\"0.08\"}[$__range]))",
-          "legendFormat": "≤0.08s (dump)",
+          "legendFormat": "\u22640.08s (dump)",
           "range": true,
           "refId": "A"
         },
@@ -1913,7 +1913,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "rox_sensor_vsock_pull_schedule_offset_seconds: extra delay U(0, W) on return-to-cadence only (success / permanent failure). Catch-up offsets in reconcile are NOT recorded. NACK/retry backoff is NOT recorded. Empty after Sensor restart until the first cadence reschedule — that is expected, not a missing scrape. Samples can sit in large buckets when poll is 1h (W=40m).",
+      "description": "Time on X, extra random delay added on top of the poll interval on Y. Recorded only when a VM returns to normal cadence after a successful scrape or a permanent failure. Catch-up jitter and NACK/retry backoff are not on this chart. Empty after Sensor start until the first cadence reschedule is expected. With poll 20m this should light up somewhere under ~13 minutes (spread 2/3).",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -1997,7 +1997,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "U(0, W) extra delay on success / permanent failure only. Empty until the first cadence reschedule after Sensor start (catch-up and NACK/retry backoff do not observe this metric). With poll=1h, W=40m, percentiles can sit in the thousands of seconds.",
+      "description": "Typical extra delay on return-to-cadence, over time. Empty until the first success or permanent-failure reschedule. NACK retries will not move this chart.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2187,7 +2187,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Return-to-cadence U(0, W) only. Default W≈200s piles in 128–256s. Poll=1h (W=40m) piles in 1024–4096s. Empty until the first success/permanent-failure reschedule after Sensor start; do not treat empty as a scraper bug.",
+      "description": "Totals of those extra delays over the selected range. Default poll 5m piles around 0-200s. Poll 20m piles under ~13 minutes. This is the random band on the next poll, not the gap between Central forwards.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2221,7 +2221,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "≤32s"
+              "options": "\u226432s"
             },
             "properties": [
               {
@@ -2374,7 +2374,7 @@
           },
           "editorMode": "code",
           "expr": "sum(increase(rox_sensor_vsock_pull_schedule_offset_seconds_bucket{le=\"32\"}[$__range]))",
-          "legendFormat": "≤32s",
+          "legendFormat": "\u226432s",
           "range": true,
           "refId": "A"
         },
@@ -2477,7 +2477,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "sum by (status) (rate(rox_sensor_vsock_pull_requests_total)). Statuses: success, unchanged, dial_error, read_error, invalid_report, send_error, not_ready, unknown_method, timeout, busy. Retryable failures (dial_error, timeout, read_error, not_ready, busy, send_error) should keep ticking on backoff, not stall and not tight-loop at 1/tick for the whole fleet. unchanged is a successful pull that did not need a new forward.",
+      "description": "Rate of scrape results. success = new report sent to Central. unchanged = agent had nothing new. The rest are errors (dial, timeout, not_ready, busy, and so on). Retryable errors should continue at backoff, not at 1 per tick for the whole fleet.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2724,7 +2724,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "sum by (action) (rate(rox_sensor_virtual_machine_index_report_acks_received_total)). NACK volume with ongoing success pulls means Sensor is retrying full reports after Central reject (common while Scanner V4 matcher is still initializing). NACK also clears cached report_generation.",
+      "description": "Rate of Central acknowledgements. NACKs with ongoing success means Sensor is resending full reports after a reject. The NACK reason is in Central logs.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2851,7 +2851,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Stacked rates: success+unchanged (good pulls), retryable errors (dial_error, timeout, read_error, not_ready, busy, send_error), and permanent failures (invalid_report, unknown_method). Retryable should stay a modest fraction and decay on backoff. A retryable stack equal to fleet×1/tick is a tight loop, not backoff.",
+      "description": "Good pulls (success + unchanged) versus retryable errors versus permanent failures. A retryable stack as large as fleet times 1/tick is a tight loop, not backoff.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3015,7 +3015,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Running totals of Central ACK vs NACK. Use with the rate panel: a climbing NACK line plus ongoing success pulls is the retry-after-reject pattern, not a silent stall.",
+      "description": "Running totals of Central ACK vs NACK. A climbing NACK line plus continued success is retry-after-reject, not a silent stall.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3163,7 +3163,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: separates timeouts from slow agents. Dial is websocket setup (rox_sensor_vsock_pull_dial_duration_seconds). Read is waiting for the full agent response. Total is dial+read+send to Central. A high read P99 with a healthy dial points at a slow or stuck agent, not VSOCK connect.",
+          "description": "Time to connect to the agent, time to read the report, and end-to-end (dial + read + send). A high read P99 with a healthy dial points at a slow agent, not a VSOCK connect problem. Total is only recorded on successful forwards.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3314,7 +3314,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: tick overrun inflates the next start budget via budgetTickDuration = max(tick, elapsed). If P50 sits far above the configured tick (default 10s), the scraper is waiting on in-flight scrapes and the next tick may start more VMs than the nominal budget.",
+          "description": "How long a tick spent waiting on the scrapes it started. If this sits well above the configured tick (default 10s), the next tick's budget can grow because Sensor treats the long tick as an overrun.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3452,7 +3452,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: payload size vs the 16MB response-size ceiling (env.VirtualMachinesPullMaxResponseSizeKB). P95 climbing through several MB is early warning before reports are rejected as too large.",
+          "description": "Size of forwarded reports (not unchanged pulls). Watch this against the 16MB response ceiling. Climbing multi-MB P95 is early warning before rejects.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3631,7 +3631,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: package count per index report (rox_sensor_vsock_pull_report_packages). Complements payload bytes when diagnosing oversized reports.",
+          "description": "Package count in forwarded reports. Use with payload bytes when a report is oversized.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3810,7 +3810,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: starts-per-tick is omitted on idle ticks (len(due)==0). tick rate should be ~1/tickInterval. A large gap between ticks_total and starts_per_tick_count means most ticks had an empty due pile (steady state), not a broken histogram.",
+          "description": "Tick rate should stay about 1 per tick interval. Starts-per-tick samples are fewer because idle ticks are omitted. A large gap between the two means most ticks had an empty due pile (steady state), not a broken histogram.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -3962,7 +3962,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: after a successful pull, Handler still sends to Central. Outcomes diagnose drops after dequeue (success, vm_unknown_to_sensor, invalid_vsock_cid, nil_report). Not the scrape scheduler.",
+          "description": "After a successful pull, Handler sends to Central. This is dequeue/send outcomes (success, unknown VM, and so on), not the scrape scheduler.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4119,7 +4119,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: Handler-side send counter (rox_sensor_virtual_machine_index_reports_sent_total), distinct from vsock_pull success. Divergence vs pull success points at enqueue/send failure after a good scrape.",
+          "description": "Handler's send counter. If this diverges from pull success, the scrape worked but enqueue/send did not.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4246,7 +4246,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: Central send backpressure. Time waiting after the indexReports channel is full. Pull-mode spreading should keep this near zero; a rising P95 means Handler cannot drain as fast as VMScraper forwards.",
+          "description": "Time spent waiting because the Handler channel was full. Spreading should keep this near zero. Rising P95 means Central/Handler cannot drain as fast as VMScraper forwards.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4436,7 +4436,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: how often enqueue found the channel full (rox_sensor_virtual_machine_index_report_enqueue_blocked_total). Secondary to spreading; a climb here is Handler/Central backpressure, not a due-pile dump by itself.",
+          "description": "How often that channel was full. A climb is Handler/Central backpressure, not a due-pile dump by itself.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -4574,7 +4574,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Why this panel: time from dequeue to Central send on the success path. Spikes here delay the next Handler slot and can back up enqueue even when scrape spreading is healthy.",
+          "description": "Time from dequeue to a successful Central send. Spikes here can fill the enqueue channel even when scrape spreading is healthy.",
           "fieldConfig": {
             "defaults": {
               "color": {
