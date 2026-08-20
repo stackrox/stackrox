@@ -89,6 +89,11 @@ jobs:
       # sensor requests alone are cpu:2/mem:4Gi, which otherwise starve the node.
       ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
       ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
+      # Deploy via Helm on KinD so the *_EXTRA_HELM_VALUES_FILE overrides above
+      # actually take effect. The default OUTPUT_FORMAT=kubectl (roxctl generate)
+      # ignores those files, which is why earlier scanner-on runs deployed Scanner
+      # at its full default size and overcommitted the node. GKE keeps kubectl.
+      OUTPUT_FORMAT: ${{ matrix.cluster == 'kind' && 'helm' || '' }}
     timeout-minutes: 60
     steps:
 
