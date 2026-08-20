@@ -81,7 +81,7 @@ func parseBumpsData(data []byte) ([]parsedBump, error) {
 	if err := yaml.Unmarshal(data, &f); err != nil {
 		return nil, err
 	}
-	var result []parsedBump
+	result := make([]parsedBump, 0, len(f.Bumps))
 	for _, b := range f.Bumps {
 		from, err := parseXYVersion(b.From)
 		if err != nil {

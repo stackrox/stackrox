@@ -166,7 +166,7 @@ func (c *proxyConfig) Compile(envCfg environmentConfig) *compiledConfig {
 	}
 
 	// Set excludes (no_proxy)
-	var allExcludes []string
+	allExcludes := make([]string, 0, len(c.Excludes)+len(defaultExcludes)+1)
 	allExcludes = append(allExcludes, c.Excludes...)
 	if !c.OmitDefaultExcludes {
 		k8sHost := os.Getenv("KUBERNETES_SERVICE_HOST")

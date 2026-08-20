@@ -14,7 +14,7 @@ type or struct {
 }
 
 func (o *or) Authorized(ctx context.Context, fullMethodName string) error {
-	var errors []error
+	errors := make([]error, 0, len(o.authorizers))
 	for _, a := range o.authorizers {
 		err := a.Authorized(ctx, fullMethodName)
 		if err == nil {

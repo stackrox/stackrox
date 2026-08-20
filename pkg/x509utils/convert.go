@@ -32,12 +32,12 @@ func ConvertPEMToDERs(certBytes []byte) ([][]byte, error) {
 
 // ConvertPEMTox509Certs convert a PEM encoded certificate chain to a slice of x509 certificates.
 func ConvertPEMTox509Certs(certBytes []byte) ([]*x509.Certificate, error) {
-	var certs []*x509.Certificate
 	derCerts, err := ConvertPEMToDERs(certBytes)
 	if err != nil {
 		return nil, err
 	}
 
+	certs := make([]*x509.Certificate, 0, len(derCerts))
 	for _, derCert := range derCerts {
 		x509Cert, err := x509.ParseCertificate(derCert)
 		if err != nil {

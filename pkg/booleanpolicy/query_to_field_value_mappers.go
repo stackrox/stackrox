@@ -117,7 +117,7 @@ func envSrcCompoundMap(searchTerms []string) ([]string, bool) {
 }
 
 func numberOfDaysSinceMap(searchTerms []string) ([]string, bool) {
-	var policyCriteria []string
+	policyCriteria := make([]string, 0, len(searchTerms))
 	droppedTerms := false
 	for _, timeString := range searchTerms {
 		// Only convert time searches of the format ">NUMBERd"
@@ -165,7 +165,7 @@ func invertBooleanMap(searchTerms []string) ([]string, bool) {
 }
 
 func leftRightCompoundMap(searchTerms []string) ([]string, bool) {
-	var mustBeCompound []string
+	mustBeCompound := make([]string, 0, len(searchTerms))
 	for _, term := range searchTerms {
 		if !strings.Contains(term, "=") {
 			term = term + "="

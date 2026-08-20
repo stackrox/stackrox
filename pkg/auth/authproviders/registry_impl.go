@@ -92,11 +92,10 @@ func (r *registryImpl) GetProvider(id string) Provider {
 }
 
 func (r *registryImpl) GetProviders(name, typ *string) []Provider {
-	var result []Provider
-
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
+	result := make([]Provider, 0, len(r.providers))
 	for _, provider := range r.providers {
 		if typ != nil && *typ != provider.Type() {
 			continue

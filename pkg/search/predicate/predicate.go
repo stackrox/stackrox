@@ -254,7 +254,7 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	}
 
 	// Produce a predicate for each of the fields. Use the non common path.
-	var preds []internalPredicate
+	preds := make([]internalPredicate, 0, len(q.GetQuery()))
 	for _, fieldQuery := range q.GetQuery() {
 		path := tb.searchFields.Get(fieldQuery.GetField())
 		if path == nil {

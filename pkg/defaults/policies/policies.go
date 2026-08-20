@@ -33,8 +33,7 @@ func DefaultPolicies() ([]*storage.Policy, error) {
 	// Sanity check embedded directory.
 	utils.CrashOnError(err)
 
-	var policies []*storage.Policy
-
+	policies := make([]*storage.Policy, 0, len(files))
 	errList := errorhelpers.NewErrorList("Default policy validation")
 	for _, f := range files {
 		if flag, ok := featureFlagFileGuard[f.Name()]; ok && !flag.Enabled() {

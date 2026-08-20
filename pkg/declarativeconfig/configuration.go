@@ -129,7 +129,7 @@ func parseToConfiguration(contents []byte) ([]Configuration, error) {
 		}
 	}
 
-	var configurations []Configuration
+	configurations := make([]Configuration, 0, len(unstructuredObjs))
 	for _, unstructured := range unstructuredObjs {
 		// Special case: a list of objects.
 		listOfObj, ok := unstructured.([]interface{})

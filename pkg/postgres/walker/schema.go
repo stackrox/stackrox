@@ -593,7 +593,7 @@ func (f Field) NeedsSubMessageInit(prefix string) string {
 		return ""
 	}
 	// Build init chain for all but the last part
-	var initParts []string
+	initParts := make([]string, 0, len(parts)-1)
 	for _, p := range parts[:len(parts)-1] {
 		initParts = append(initParts, getterPartToField(p))
 	}
