@@ -471,13 +471,14 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	// Clean updaters that were deleted (not in the zip and older than this update).
 	// Safe to be run concurrently.
 	if len(bundles) > 0 {
-	names := make([]string, 0, len(bundles))
-	for _, f := range bundles {
-		names = append(names, f.Name)
-	}
-	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
-	if err != nil {
-		return false, errors.Join(fmt.Errorf("cleaning vuln updates: %w", err), errors.Join(bundleErrs...))
+		names := make([]string, 0, len(bundles))
+		for _, f := range bundles {
+			names = append(names, f.Name)
+		}
+		err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
+		if err != nil {
+			return false, errors.Join(fmt.Errorf("cleaning vuln updates: %w", err), errors.Join(bundleErrs...))
+		}
 	} else {
 		slog.WarnContext(ctx, "skipping vuln update cleanup: no bundle was processed")
 	}
