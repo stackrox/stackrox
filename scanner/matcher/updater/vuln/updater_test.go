@@ -525,7 +525,7 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 		Return(now, nil)
 
 	err := u.Update(test.Logging(t))
-	assert.Error(t, err)
+	assert.ErrorContains(t, err, "nvd.json.zst")
 	assert.Equal(t, 3, importCallCount, "all three bundles must be attempted")
 }
 

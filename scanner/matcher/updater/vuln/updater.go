@@ -476,12 +476,12 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
-		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+		return false, errors.Join(fmt.Errorf("cleaning vuln updates: %w", err), errors.Join(bundleErrs...))
 	}
 
 	err = u.distManager.update(ctx)
 	if err != nil {
-		return false, fmt.Errorf("updating known-distributions: %w", err)
+		return false, errors.Join(fmt.Errorf("updating known-distributions: %w", err), errors.Join(bundleErrs...))
 	}
 
 	_ = u.Initialized(ctx)
