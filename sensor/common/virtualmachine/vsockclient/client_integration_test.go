@@ -13,7 +13,7 @@ import (
 	roxagentvsock "github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -279,7 +279,7 @@ func TestSyncRepoCPEMappingIntegration_FullRoundTrip(t *testing.T) {
 	updated, syncMeta, err := syncOnce(t, client, mapping, handler.HandleConn)
 	require.NoError(t, err)
 	assert.True(t, updated)
-	wantHash := repositorytocpe.HashMapping(mapping)
+	wantHash := cpemapping.HashMapping(mapping)
 	assert.Equal(t, wantHash, syncMeta.GetRepoCpeMappingHash())
 
 	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil)
