@@ -267,7 +267,7 @@
           "refId": "A"
         }
       ],
-      "title": "Successful forwards",
+      "title": "Successful forwards to Central",
       "type": "stat"
     },
     {
@@ -483,7 +483,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "How many reports Sensor sent to Central in each ~30s Prometheus scrape. Healthy pacing is mostly bars of 1. A tall bar is several reports in the same scrape (a dump). Unchanged pulls do not appear here. A Sensor restart can make one bar go negative (counter reset).",
+      "description": "Running total of full index reports Sensor sent to Central (rox_sensor_vsock_pull_requests_total{status=\"success\"}). Each step up is one or more forwards. A paced wave is a run of +1 steps a few seconds apart. A dump is one large jump. A Sensor restart resets the counter to 0. Unchanged pulls are not counted.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -496,8 +496,8 @@
             "axisLabel": "forwards",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
-            "fillOpacity": 60,
+            "drawStyle": "line",
+            "fillOpacity": 20,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -505,8 +505,8 @@
               "viz": false
             },
             "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
@@ -561,7 +561,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "mean",
+            "lastNotNull",
             "max"
           ],
           "displayMode": "table",
@@ -581,13 +581,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "increase(rox_sensor_vsock_pull_requests_total{status=\"success\"}[$__interval])",
+          "expr": "sum(rox_sensor_vsock_pull_requests_total{status=\"success\"})",
           "legendFormat": "success",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Successful forwards",
+      "title": "Successful forwards to Central",
       "type": "timeseries"
     },
     {
@@ -871,7 +871,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Time on X, how many VMs started in that tick on Y, color = how often that happened. Budget 1 should glow on Y near 1. A bright band at Y near 8 (or 20) is a dump. Idle ticks do not appear.",
+      "description": "Time on X, how many VMs started in that tick on Y, color = how often that happened. Only ticks that had at least one due VM are recorded, so there is no 0 row. Budget 1 should glow on Y near 1. A bright band at Y near 8 (or 20) is a dump. Compare Tick rate if most wall-clock ticks are idle."
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -940,7 +940,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (le) (increase(rox_sensor_vsock_pull_starts_per_tick_bucket[$__rate_interval]))",
+          "expr": "sum by (le) (increase(rox_sensor_vsock_pull_starts_per_tick_bucket{le!=\"0\"}[$__rate_interval]))",
           "legendFormat": "{{le}}",
           "range": true,
           "refId": "A",
@@ -955,7 +955,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Totals over the selected time range: how many ticks started 0, 1, 2, ... VMs. For a small fleet with budget 1, almost everything should sit in the 1 bucket. If this looks empty but tick rate is healthy, most ticks had nobody due.",
+      "description": "How many observed ticks started 1, 2, 3, ... VMs. Idle ticks (nobody due) are not sampled, so there is no 0 bar; those ticks show up on Tick rate instead. For a small fleet with budget 1, mass should sit in 1. Mass in 8 or 20 is a dump."
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -986,21 +986,6 @@
           "unit": "short"
         },
         "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "0"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
           {
             "matcher": {
               "id": "byName",
@@ -1210,17 +1195,6 @@
       },
       "pluginVersion": "10.4.17",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum(increase(rox_sensor_vsock_pull_starts_per_tick_bucket{le=\"0\"}[$__range]))",
-          "legendFormat": "0",
-          "range": true,
-          "refId": "A"
-        },
         {
           "datasource": {
             "type": "prometheus",
