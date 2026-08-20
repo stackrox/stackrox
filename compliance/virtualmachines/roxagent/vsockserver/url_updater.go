@@ -9,8 +9,8 @@ import (
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/filedownloader"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 )
 
 // Retry/refresh policy for the periodic mapping download, mirroring
@@ -69,12 +69,12 @@ func (u *URLUpdater) bootstrap() bool {
 	if err != nil {
 		return false
 	}
-	if err := repositorytocpe.ValidateMapping(content); err != nil {
+	if err := cpemapping.ValidateMapping(content); err != nil {
 		log.Warnf("Ignoring invalid repo-to-CPE mapping cache at %q: %v", u.cachePath, err)
 		return false
 	}
 	u.active = content
-	u.activeHash = repositorytocpe.HashMapping(content)
+	u.activeHash = cpemapping.HashMapping(content)
 	return true
 }
 
@@ -146,11 +146,11 @@ func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 		log.Warnf("Reading downloaded repo-to-CPE mapping at %q: %v", u.stagingPath, err)
 		return
 	}
-	if err := repositorytocpe.ValidateMapping(content); err != nil {
+	if err := cpemapping.ValidateMapping(content); err != nil {
 		log.Warnf("Downloaded repo-to-CPE mapping failed validation, keeping last-good: %v", err)
 		return
 	}
-	hash := repositorytocpe.HashMapping(content)
+	hash := cpemapping.HashMapping(content)
 
 	unchanged := concurrency.WithLock1(&u.mu, func() bool {
 		unchanged := hash == u.activeHash

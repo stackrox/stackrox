@@ -8,8 +8,8 @@ import (
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/filedownloader"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 )
 
 var (
@@ -57,12 +57,12 @@ func (u *SensorUpdater) bootstrapFrom(path string) bool {
 	if err != nil {
 		return false
 	}
-	if err := repositorytocpe.ValidateMapping(content); err != nil {
+	if err := cpemapping.ValidateMapping(content); err != nil {
 		log.Warnf("Ignoring invalid repo-to-CPE mapping at %q: %v", path, err)
 		return false
 	}
 	u.active = content
-	u.activeHash = repositorytocpe.HashMapping(content)
+	u.activeHash = cpemapping.HashMapping(content)
 	return true
 }
 
@@ -117,10 +117,10 @@ func (u *SensorUpdater) Path() (string, error) {
 // for MarkScanIdleAndApplyPending to promote later if a scan is in
 // flight (busy), so it never mutates active out from under that scan.
 func (u *SensorUpdater) Update(content []byte) (updated bool, err error) {
-	if err := repositorytocpe.ValidateMapping(content); err != nil {
+	if err := cpemapping.ValidateMapping(content); err != nil {
 		return false, err
 	}
-	hash := repositorytocpe.HashMapping(content)
+	hash := cpemapping.HashMapping(content)
 
 	updated, deferred := concurrency.WithLock2(&u.mu, func() (bool, bool) {
 		if hash == u.activeHash {
@@ -169,7 +169,7 @@ func (u *SensorUpdater) MarkScanIdleAndApplyPending() {
 			return nil
 		}
 		u.pending = nil
-		u.applyLocked(pending, repositorytocpe.HashMapping(pending))
+		u.applyLocked(pending, cpemapping.HashMapping(pending))
 		return pending
 	})
 	if pending != nil {

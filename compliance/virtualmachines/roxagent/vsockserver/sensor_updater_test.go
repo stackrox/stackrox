@@ -7,7 +7,7 @@ import (
 	"time"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -72,7 +72,7 @@ func TestNewSensorUpdater_BootstrapFromCache(t *testing.T) {
 	u := NewSensorUpdater(cachePath, "", counter.fn)
 
 	require.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	b, err := u.Bytes()
 	require.NoError(t, err)
 	assert.Equal(t, validMappingJSON, string(b))
@@ -88,7 +88,7 @@ func TestNewSensorUpdater_BootstrapFromBundled_WhenNoCache(t *testing.T) {
 	u := NewSensorUpdater(filepath.Join(dir, "cache.json"), bundledPath, counter.fn)
 
 	require.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count)
 }
 
@@ -143,7 +143,7 @@ func TestSensorUpdater_Update_AppliesWhenIdle(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, updated)
 	assert.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count)
 	waitForCacheContent(t, cachePath, validMappingJSON)
 }
@@ -176,7 +176,7 @@ func TestSensorUpdater_Update_RejectsInvalidKeepsLastGood(t *testing.T) {
 
 func TestSensorUpdater_Update_OversizeRejected(t *testing.T) {
 	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
-	oversized := make([]byte, repositorytocpe.MaxMappingBytes+1)
+	oversized := make([]byte, cpemapping.MaxMappingBytes+1)
 
 	updated, err := u.Update(oversized)
 	assert.Error(t, err)
@@ -212,7 +212,7 @@ func TestSensorUpdater_UpdateWhileBusy_DefersUntilIdle(t *testing.T) {
 
 	u.MarkScanIdleAndApplyPending()
 
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(otherValidMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(otherValidMappingJSON)), u.Hash())
 	b, err = u.Bytes()
 	require.NoError(t, err)
 	assert.Equal(t, otherValidMappingJSON, string(b))
@@ -253,7 +253,7 @@ func TestSensorUpdater_UpdateWhileBusy_RevertToActive_ClearsStalePending(t *test
 
 	u.MarkScanIdleAndApplyPending()
 
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash(),
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash(),
 		"the newest push (matching active) must win over the stale pending mapping")
 }
 
@@ -269,7 +269,7 @@ func TestSensorUpdater_MarkScanIdleAndApplyPending_NoPending_NoOp(t *testing.T) 
 	u.MarkScanBusy()
 	u.MarkScanIdleAndApplyPending()
 
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count, "onChange must not fire when there is nothing pending to apply")
 }
 

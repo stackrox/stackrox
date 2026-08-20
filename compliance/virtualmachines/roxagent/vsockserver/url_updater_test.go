@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func TestNewURLUpdater_BootstrapFromCache(t *testing.T) {
 	u := NewURLUpdater(dummyMappingURL, cachePath, counter.fn)
 
 	require.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	b, err := u.Bytes()
 	require.NoError(t, err)
 	assert.Equal(t, validMappingJSON, string(b))
@@ -93,7 +93,7 @@ func TestURLUpdater_FailedDownload_KeepsLastGood(t *testing.T) {
 	u.onDownloadComplete(errors.New("connection refused"), 0)
 
 	assert.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count, "onChange must not re-fire when a failed refresh keeps the same content")
 }
 
@@ -110,7 +110,7 @@ func TestURLUpdater_SuccessfulDownload_AppliesNewContent(t *testing.T) {
 	u.onDownloadComplete(nil, 0)
 
 	require.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	b, err := u.Bytes()
 	require.NoError(t, err)
 	assert.Equal(t, validMappingJSON, string(b))
@@ -133,7 +133,7 @@ func TestURLUpdater_SuccessfulDownload_InvalidContentKeepsLastGood(t *testing.T)
 	u.onDownloadComplete(nil, 0)
 
 	assert.True(t, u.Ready())
-	assert.Equal(t, repositorytocpe.HashMapping([]byte(validMappingJSON)), u.Hash())
+	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count, "onChange must not fire when the refreshed content fails validation")
 }
 
