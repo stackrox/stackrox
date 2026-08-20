@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/scannerv4/repositorytocpe"
+	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -153,8 +153,8 @@ func newTestCentralClient(t *testing.T, handler http.HandlerFunc) *http.Client {
 func TestAttemptRepo2CPERefresh(t *testing.T) {
 	const mappingV1 = `{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`
 	const mappingV2 = `{"data":{"bar":{"cpes":["cpe:/o:bar"]}}}`
-	hashV1 := repositorytocpe.HashMapping([]byte(mappingV1))
-	hashV2 := repositorytocpe.HashMapping([]byte(mappingV2))
+	hashV1 := cpemapping.HashMapping([]byte(mappingV1))
+	hashV2 := cpemapping.HashMapping([]byte(mappingV2))
 
 	tests := map[string]struct {
 		seedCache     repo2CPECache
@@ -221,7 +221,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 		"an oversized response leaves the cache untouched": {
 			seedCache: repo2CPECache{mapping: []byte(mappingV1), hash: hashV1},
 			serverHandler: func(w http.ResponseWriter, _ *http.Request) {
-				_, _ = w.Write(bytes.Repeat([]byte("a"), repositorytocpe.MaxMappingBytes+1))
+				_, _ = w.Write(bytes.Repeat([]byte("a"), cpemapping.MaxMappingBytes+1))
 			},
 			wantOK:      false,
 			wantMapping: mappingV1,
@@ -262,7 +262,7 @@ func TestAttemptRepo2CPERefresh(t *testing.T) {
 // keeps serving the last good mapping and a later success can recover.
 func TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache(t *testing.T) {
 	const mapping = `{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`
-	hash := repositorytocpe.HashMapping([]byte(mapping))
+	hash := cpemapping.HashMapping([]byte(mapping))
 
 	var fail atomic.Bool
 	h := &Handler{centralClient: newTestCentralClient(t, func(w http.ResponseWriter, _ *http.Request) {
@@ -287,7 +287,7 @@ func TestAttemptRepo2CPERefresh_RetryRecoversWithoutLosingCache(t *testing.T) {
 
 func TestFetchRepo2CPE(t *testing.T) {
 	mapping := []byte(`{"data":{"foo":{"cpes":["cpe:/o:foo"]}}}`)
-	hash := repositorytocpe.HashMapping(mapping)
+	hash := cpemapping.HashMapping(mapping)
 
 	t.Run("never fetched returns ok=false", func(t *testing.T) {
 		h := &Handler{centralClient: &http.Client{}}
