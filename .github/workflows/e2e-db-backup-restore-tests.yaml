@@ -17,10 +17,10 @@ on:
         required: false
         default: gke
       scanner:
-        description: Scanner v2 support — 'on' or 'off'.
+        description: Scanner v2 support — 'default' (per-cluster), 'on', or 'off'.
         type: string
         required: false
-        default: "on"
+        default: default
   workflow_dispatch:
     inputs:
       tag:
@@ -36,12 +36,13 @@ on:
           - both
         default: kind
       scanner:
-        description: Scanner v2 support.
+        description: Scanner v2 support (default = per-cluster; on GKE, off on KinD).
         type: choice
         options:
+          - default
           - "on"
           - "off"
-        default: "on"
+        default: default
 
 permissions:
   contents: read
@@ -76,13 +77,14 @@ jobs:
       STORAGE: pvc
       # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
       STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2 on by default for both clusters (off only when explicitly requested).
-      SCANNER_SUPPORT: ${{ inputs.scanner == 'off' && 'false' || 'true' }}
-      # On KinD, apply minimal-footprint resource overrides so the full stack
-      # (incl. Scanner v2) fits on one runner-hosted node without OOM. GOMEMLIMIT
-      # is auto-derived from limits.memory (see ci-minimal-values.yaml). Empty on
-      # GKE, which uses ci-values.yaml sizing.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      # Scanner v2: 'default' means per-cluster — on for GKE, off for KinD.
+      # (Scanner adds no coverage to this test and overcommits a single KinD node:
+      # it runs, but pushes sensor to Pending. Use scanner=on to force it anyway.)
+      SCANNER_SUPPORT: ${{ (inputs.scanner == 'on' && 'true') || (inputs.scanner == 'off' && 'false') || (matrix.cluster == 'gke' && 'true' || 'false') }}
+      # When scanner is forced on for KinD, apply minimal-footprint resource
+      # overrides (small requests to schedule; modest limits so ROX_MEMLIMIT ->
+      # GOMEMLIMIT keeps pods under the limit instead of OOMing). Empty otherwise.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
     timeout-minutes: 60
     steps:
 
@@ -129,7 +131,7 @@ jobs:
         registry: quay.io/rhacs-eng
         memory-limit: 12g
         enable-loadbalancer: "true"
-        pull-scanner: "true"
+        pull-scanner: ${{ inputs.scanner == 'on' && 'true' || 'false' }}
         quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
