@@ -191,6 +191,7 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 		ReportSnapshot: &storage.ReportSnapshot{
 			ReportId:              "test-report-id",
 			ReportConfigurationId: "test-config-id",
+			Type:                  storage.ReportSnapshot_VULNERABILITY,
 			ReportStatus: &storage.ReportStatus{
 				RunState: storage.ReportStatus_WAITING,
 			},
@@ -239,6 +240,7 @@ func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 		ReportSnapshot: &storage.ReportSnapshot{
 			ReportId:              "running-report-id",
 			ReportConfigurationId: "test-config-id",
+			Type:                  storage.ReportSnapshot_VULNERABILITY,
 			ReportStatus: &storage.ReportStatus{
 				RunState: storage.ReportStatus_WAITING,
 			},
@@ -358,6 +360,7 @@ func TestCancelReportRequestUpdatesWaitingReportToFailure(t *testing.T) {
 			ReportId:              "waiting-report-id",
 			ReportConfigurationId: "test-config-id",
 			Name:                  "test-report",
+			Type:                  storage.ReportSnapshot_VULNERABILITY,
 			ReportStatus: &storage.ReportStatus{
 				RunState: storage.ReportStatus_WAITING,
 			},

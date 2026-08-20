@@ -293,6 +293,7 @@ func TestValidateReportFiltersQuery(t *testing.T) {
 	v := &Validator{}
 	baseFilters := func(query string) *apiV2.ReportConfiguration {
 		return &apiV2.ReportConfiguration{
+			Type: apiV2.ReportConfiguration_VULNERABILITY,
 			Filter: &apiV2.ReportConfiguration_VulnReportFilters{
 				VulnReportFilters: &apiV2.VulnerabilityReportFilters{
 					ImageTypes: []apiV2.VulnerabilityReportFilters_ImageType{apiV2.VulnerabilityReportFilters_DEPLOYED},
