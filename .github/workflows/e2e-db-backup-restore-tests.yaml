@@ -81,19 +81,15 @@ jobs:
       # adds no coverage to this test (config round-trip), so KinD leaves it off by
       # default to keep the gate fast; use scanner=on to run the full stack.
       SCANNER_SUPPORT: ${{ (inputs.scanner == 'on' && 'true') || (inputs.scanner == 'off' && 'false') || (matrix.cluster == 'gke' && 'true' || 'false') }}
-      # On KinD, always apply minimal-footprint resource overrides to both the
-      # central-services and secured-cluster-services charts. Small *requests* let
-      # everything (Central, DB, Sensor, Collector, Admission, and Scanner when on)
-      # schedule on one runner node; modest *limits* drive ROX_MEMLIMIT -> Go soft
-      # GC (95% of limits.memory) so pods back off instead of OOMing. The default
-      # sensor requests alone are cpu:2/mem:4Gi, which otherwise starve the node.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
-      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ matrix.cluster == 'kind' && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
-      # Deploy via Helm on KinD so the *_EXTRA_HELM_VALUES_FILE overrides above
-      # actually take effect. The default OUTPUT_FORMAT=kubectl (roxctl generate)
-      # ignores those files, which is why earlier scanner-on runs deployed Scanner
-      # at its full default size and overcommitted the node. GKE keeps kubectl.
-      OUTPUT_FORMAT: ${{ matrix.cluster == 'kind' && 'helm' || '' }}
+      # Running the full stack incl. Scanner v2 on one KinD node requires shrinking
+      # resource *requests* (so everything schedules) while keeping modest *limits*
+      # (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back off
+      # instead of OOMing). These overrides only take effect on the Helm deploy
+      # path, so scanner-on KinD also switches OUTPUT_FORMAT to helm. The default
+      # scanner-off KinD path is left on the known-good kubectl deploy untouched.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
+      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'on') && 'helm' || '' }}
     timeout-minutes: 60
     steps:
 
