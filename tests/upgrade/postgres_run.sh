@@ -190,6 +190,7 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
     wait_for_api
+    wait_for_background_migrations
 
     # Verify data is still there
     checkForPostgresAccessScopes
@@ -221,6 +222,7 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
 
     wait_for_api
+    wait_for_background_migrations
 
     # Cleanup the scaled sensor before smoke tests
     helm uninstall -n stackrox stackrox-secured-cluster-services

@@ -19,6 +19,7 @@ message VMServiceRequest {
   RequestMeta meta = 1;
   oneof method {
     GetReportRequest get_report = 2;
+    SyncRepoCPEMappingRequest sync_repo_cpe_mapping = 3;
   }
 }
 
@@ -29,6 +30,7 @@ message VMServiceResponse {
   oneof result {
     GetReportResponse get_report = 2;
     ErrorResponse error = 3;
+    SyncRepoCPEMappingResponse sync_repo_cpe_mapping = 4;
   }
 }
 
@@ -66,6 +68,11 @@ message ResponseMeta {
   // with Sensor's cached value for that VM. Zero means the agent predates this
   // field; Sensor falls back to generation-only comparison in that case.
   uint32 epoch = 6;
+  // XXH64 hex of active mapping; empty string means none. optional so absence
+  // means an older agent that does not report mapping metadata.
+  optional string repo_cpe_mapping_hash = 7;
+  // SENSOR or URL only; UNSPECIFIED means Sensor must not sync.
+  optional RepoCPEMappingUpdatePath repo_cpe_mapping_update_path = 8;
 }
 
 // --- Methods ---
@@ -91,6 +98,21 @@ message GetReportResponse {
   // True when agent's generation matches last_known_generation; index_report
   // is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
   bool unchanged = 2;
+}
+
+message SyncRepoCPEMappingRequest {
+  bytes mapping = 1;
+}
+
+message SyncRepoCPEMappingResponse {
+  // True when the agent accepted new content (applied or staged).
+  bool updated = 1;
+}
+
+enum RepoCPEMappingUpdatePath {
+  REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED = 0;
+  REPO_CPE_MAPPING_UPDATE_PATH_SENSOR = 1;
+  REPO_CPE_MAPPING_UPDATE_PATH_URL = 2;
 }
 
 // --- Errors ---
@@ -119,4 +141,8 @@ enum ErrorCode {
   ERROR_CODE_REQUEST_TOO_LARGE = 5;
   // Agent is already serving another connection; retry after a backoff.
   ERROR_CODE_BUSY = 6;
+  // No usable mapping yet; guest disk has not been scanned.
+  ERROR_CODE_MAPPING_REQUIRED = 7;
+  // SyncRepoCPEMapping rejected because updater is not Sensor-managed.
+  ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED = 8;
 }
