@@ -653,14 +653,6 @@ deploy_sensor() {
         ROX_CA_CERT_FILE="" # force sensor.sh to fetch the actual cert.
         CENTRAL_NAMESPACE="${central_namespace}" SENSOR_NAMESPACE="${sensor_namespace}" "${ROOT}/${DEPLOY_DIR}/sensor.sh"
     fi
-
-    if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]]; then
-        # Sensor is CPU starved under OpenShift causing all manner of test failures:
-        # https://stack-rox.atlassian.net/browse/ROX-5334
-        # https://stack-rox.atlassian.net/browse/ROX-6891
-        # et al.
-        retrying_kubectl </dev/null -n "${sensor_namespace}" set resources deploy/sensor -c sensor --requests 'cpu=2' --limits 'cpu=4'
-    fi
 }
 
 # shellcheck disable=SC2120
