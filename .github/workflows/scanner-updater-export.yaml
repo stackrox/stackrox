@@ -69,9 +69,31 @@ jobs:
         UPDATER_SOURCE: ${{ inputs.source }}
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
       run: |
+        config="$SOURCE_CONFIG"
+        default_interval=$(yq '.updaters.default.interval // "4h"' "$config")
+        interval=$(yq ".updaters.\"${UPDATER_SOURCE}\".interval // \"$default_interval\"" "$config")
+
+        duration_to_seconds() {
+            local dur="${1:?}"
+            local total=0 remaining="$dur"
+            while [[ -n "$remaining" ]]; do
+                if [[ "$remaining" =~ ^([0-9]+)h(.*)$ ]]; then
+                    total=$(( total + BASH_REMATCH[1] * 3600 )); remaining="${BASH_REMATCH[2]}"
+                elif [[ "$remaining" =~ ^([0-9]+)m(.*)$ ]]; then
+                    total=$(( total + BASH_REMATCH[1] * 60 )); remaining="${BASH_REMATCH[2]}"
+                elif [[ "$remaining" =~ ^([0-9]+)s(.*)$ ]]; then
+                    total=$(( total + BASH_REMATCH[1] )); remaining="${BASH_REMATCH[2]}"
+                else
+                    echo "::error::cannot parse duration: $remaining"; exit 2
+                fi
+            done
+            echo "$total"
+        }
+        interval_secs=$(duration_to_seconds "$interval")
+
         # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
         rc=0
-        ./.github/workflows/scripts/scanner-updater-check-freshness.sh || rc=$?
+        ./.github/workflows/scripts/scanner-updater-check-freshness.sh --max-age "$interval_secs" || rc=$?
         if [[ $rc -eq 0 ]]; then
             echo "result=skip" >> "$GITHUB_OUTPUT"
         elif [[ $rc -eq 1 ]]; then
