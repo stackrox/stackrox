@@ -223,6 +223,44 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullDueVMs is how many VMs were eligible to scrape at the start of the last
+// tick (nextAttemptAt had arrived and they were not already in flight).
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help:      "How many VMs were eligible to scrape at the beginning of the last scraper tick",
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central. The first forward after start is not observed.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. The first forward after Sensor start does not count.",
+		// 10ms to ~22min; 18 buckets so a 2h poll + W does not overflow +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 18),
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to cadence after success or a permanent non-retry outcome (retries/NACKs do not).
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
+		Buckets: prometheus.ExponentialBuckets(1, 2, 14), // 1s to ~4.5h
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
@@ -240,5 +278,8 @@ func init() {
 		PullRequestsTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullDueVMs,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
 }
