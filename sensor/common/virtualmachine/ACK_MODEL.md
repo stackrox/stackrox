@@ -4,7 +4,7 @@ VM index reports flow directly from Sensor to Central; Compliance is not involve
 
 `VMScraper` pulls reports from each running VM's roxagent over VSOCK and forwards successful reports to Central through `vmIndex.Handler`, the same handler used by every other producer of `v1.IndexReport`s.
 
-A short tick (`ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL`, default 10s) walks the per-VM schedule. Each VM is due at its own `nextAttemptAt`. Success and permanent failures reschedule at pollInterval + U(0, W), where W is `ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION` times the poll interval (default 2/3). Retryable pull failures and NACKs share one exponential backoff (`ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF`, default 10s, doubled each time, capped at `min(poll interval, 30m)`).
+A short tick (`ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL`, default 10s) walks the per-VM schedule. Each VM is due at its own `nextAttemptAt`. Success and permanent failures reschedule at pollInterval + U(0, W), where W is `ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION` times the poll interval (default 2/3). A tick starts at most `startBudget` of the due set (`ceil(nDue × tick / C)`, at least 1), then capped by concurrency. Retryable pull failures and NACKs share one exponential backoff (`ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF`, default 10s, doubled each time, capped at `min(poll interval, 30m)`).
 
 Central's `SensorACK` is delivered to Sensor components whose `Accepts()` matches. Only `VMScraper` accepts `SensorACK_VM_INDEX_REPORT`; `Handler` does not.
 

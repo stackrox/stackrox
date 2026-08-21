@@ -3,6 +3,7 @@ package vmscraper
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -17,6 +18,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// recordingDialer counts Dial calls so tests can assert how many scrapes a tick started.
+type recordingDialer struct {
+	calls atomic.Int32
+}
+
+func (d *recordingDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	d.calls.Add(1)
+	return nopCloser{}, nil
+}
 
 // sequencedRand returns successive values from seq, then the last value.
 func sequencedRand(seq []float64) func() float64 {
@@ -59,6 +70,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
+	s.tickInterval = catchUpWindow(s.interval)
 	s.reconcileEvery = reconcilePeriod(s.interval)
 	s.randFloat64 = sequencedRand([]float64{0, 0.25, 0.5, 0.75, 1})
 
@@ -189,6 +201,45 @@ func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 	s.handleNACK(string(vm.ID) + ":1")
 	assert.Equal(t, initialBackoff, cachedNextAttemptAt(t, s, "ns1/vm-a").Sub(start))
 	assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"))
+}
+
+func TestVMScraper_DuePileIsPacedByStartBudget(t *testing.T) {
+	const numVMs = 10
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.interval = time.Hour
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	catchUp := catchUpWindow(s.interval)
+	want := startBudget(numVMs, s.tickInterval, catchUp)
+	require.Equal(t, 1, want)
+	require.Greater(t, want, 0)
+	require.Less(t, want, numVMs)
+	require.LessOrEqual(t, want, s.concurrency)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load())
+
+	dialer.calls.Store(0)
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load(), "leftovers stay due for later ticks")
 }
 
 func TestSpreadFractionEnvDefault(t *testing.T) {
