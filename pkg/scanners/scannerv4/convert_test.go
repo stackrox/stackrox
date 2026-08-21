@@ -3567,3 +3567,38 @@ func TestCompareNumericSegments(t *testing.T) {
 		})
 	}
 }
+
+func TestVulnOrigin(t *testing.T) {
+	testcases := map[string]struct {
+		updater  string
+		expected storage.VulnOrigin
+	}{
+		"empty":                     {"", storage.VulnOrigin_VULN_ORIGIN_OTHER},
+		"unknown updater":           {"something-else", storage.VulnOrigin_VULN_ORIGIN_OTHER},
+		"alpine main":               {"alpine-main-v3.18-updater", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+		"alpine community":          {"alpine-community-v3.21-updater", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+		"alpine edge":               {"alpine-main-edge-updater", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+		"aws AL2":                   {"aws-AL2-updater", storage.VulnOrigin_VULN_ORIGIN_AMAZON},
+		"aws AL2023":                {"aws-AL2023-updater", storage.VulnOrigin_VULN_ORIGIN_AMAZON},
+		"debian":                    {"debian/updater", storage.VulnOrigin_VULN_ORIGIN_DEBIAN},
+		"oracle":                    {"oracle-2024-updater", storage.VulnOrigin_VULN_ORIGIN_ORACLE},
+		"osv go":                    {"osv/go", storage.VulnOrigin_VULN_ORIGIN_OSV},
+		"osv maven":                 {"osv/maven", storage.VulnOrigin_VULN_ORIGIN_OSV},
+		"osv npm":                   {"osv/npm", storage.VulnOrigin_VULN_ORIGIN_OSV},
+		"photon":                    {"photon-updater-photon3", storage.VulnOrigin_VULN_ORIGIN_PHOTON},
+		"rhel vex":                  {"rhel-vex", storage.VulnOrigin_VULN_ORIGIN_RED_HAT},
+		"suse leap":                 {"suse-updater-opensuse.leap.15.6", storage.VulnOrigin_VULN_ORIGIN_SUSE},
+		"suse enterprise":           {"suse-updater-suse.linux.enterprise.server.15", storage.VulnOrigin_VULN_ORIGIN_SUSE},
+		"ubuntu focal":              {"ubuntu/updater/focal", storage.VulnOrigin_VULN_ORIGIN_UBUNTU},
+		"ubuntu noble":              {"ubuntu/updater/noble", storage.VulnOrigin_VULN_ORIGIN_UBUNTU},
+		"prefix only alpine":        {"alpine-", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+		"near miss alpine no dash":  {"alpine", storage.VulnOrigin_VULN_ORIGIN_OTHER},
+		"near miss debian no slash": {"debian-updater", storage.VulnOrigin_VULN_ORIGIN_OTHER},
+	}
+	for name, tt := range testcases {
+		t.Run(name, func(t *testing.T) {
+			got := vulnOrigin(tt.updater)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}
