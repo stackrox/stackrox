@@ -132,7 +132,7 @@ spec:
         - name: SHOULD_REALLY_WORK
         steps:
         - name: determine
-          image: registry.redhat.io/ubi9-minimal:latest@sha256:dd334afa72444fa46238fcf9e6bd399245adf746378735348cf84b9dfdca38f1
+          image: registry.redhat.io/ubi9-minimal:latest@sha256:8eb2830d0936237fc13a1f2f7e45aecf90d69043380ad167fad0343632937f41
           imagePullPolicy: IfNotPresent
           # The script expresses the same condition as pipelinesascode.tekton.dev/on-cel-expression in other pipelines
           # but in a more verbose way because, as it turns out, both syntax and fields of CEL expressions are slightly
