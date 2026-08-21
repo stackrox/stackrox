@@ -1,6 +1,7 @@
 package vmscraper
 
 import (
+	"math"
 	"time"
 )
 
@@ -10,8 +11,10 @@ const (
 	maxReconcile   = 5 * time.Minute
 	// defaultTickInterval is the scraper scheduler step. Independent of retry-backoff.
 	defaultTickInterval = 10 * time.Second
-	// catchUpBound is the upper operand in catchUpWindow = min(bound, pollInterval/3).
-	catchUpBound = 20 * time.Minute
+	// maxNewVMIndexReportWindow caps the schedule window for a newly added VM's
+	// first index report when the poll interval is long.
+	maxNewVMIndexReportWindow         = 20 * time.Minute
+	newVMIndexReportWindowPollDivisor = 3
 )
 
 func backoffCap(pollInterval time.Duration) time.Duration {
@@ -40,13 +43,41 @@ func steadySpreadWidth(pollInterval time.Duration, spreadFraction float64) time.
 	return time.Duration(float64(pollInterval) * spreadFraction)
 }
 
-// catchUpWindow is how long a mass first-wave of never-scraped VMs may be
-// spread over (min(20m, pollInterval/3)), not the steady band.
-func catchUpWindow(pollInterval time.Duration) time.Duration {
+// newVMIndexReportWindow is the schedule window for a newly added VM's first
+// index report (min(maxNewVMIndexReportWindow, poll/3)).
+func newVMIndexReportWindow(pollInterval time.Duration) time.Duration {
 	if pollInterval <= 0 {
 		return 0
 	}
-	return min(catchUpBound, pollInterval/3)
+	return min(maxNewVMIndexReportWindow, pollInterval/newVMIndexReportWindowPollDivisor)
+}
+
+// suggestedPollInterval is the poll interval whose steady-state spread width
+// fits numVMs at roughly one VM per tick.
+func suggestedPollInterval(numVMs int, tick time.Duration, spreadFraction float64) time.Duration {
+	if numVMs <= 0 || tick <= 0 || spreadFraction <= 0 {
+		return 0
+	}
+	want := time.Duration(math.Ceil(float64(numVMs) * float64(tick) / spreadFraction))
+	return max(minPollInterval, want)
+}
+
+// maxVMsForSteadyState is how many VMs fit in the steady-state spread window
+// at one per tick.
+func maxVMsForSteadyState(tick, poll time.Duration, spreadFraction float64) int {
+	if tick <= 0 || spreadFraction <= 0 {
+		return 0
+	}
+	return int(steadySpreadWidth(poll, spreadFraction) / tick)
+}
+
+// maxVMsForNewVMIndexReportWindow is how many VMs fit in the new-VM index
+// report window at one per tick. Extra VMs share ticks; this is density, not a hard limit.
+func maxVMsForNewVMIndexReportWindow(tick, poll time.Duration) int {
+	if tick <= 0 {
+		return 0
+	}
+	return int(newVMIndexReportWindow(poll) / tick)
 }
 
 // randOffset draws a delay in [0, max] from a unit sample in [0, 1].

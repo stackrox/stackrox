@@ -243,8 +243,9 @@ var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
 		Name:      "vsock_pull_forward_interarrival_seconds",
 		Help: "Seconds between consecutive successful VM index-report forwards " +
 			"from this Sensor to Central. The first forward after Sensor start does not count.",
-		// 10ms to ~22min; 18 buckets so a 2h poll + W does not overflow +Inf.
-		Buckets: prometheus.ExponentialBuckets(0.01, 2, 18),
+		// 10ms to ~47h. Sized for a 24h poll in extreme cases so those
+		// gaps stay in a finite bucket instead of +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 25),
 	},
 )
 
@@ -257,7 +258,8 @@ var PullScheduleOffsetSeconds = prometheus.NewHistogram(
 		Name:      "vsock_pull_schedule_offset_seconds",
 		Help: "Random extra delay (seconds) added on top of the poll interval " +
 			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
-		Buckets: prometheus.ExponentialBuckets(1, 2, 14), // 1s to ~4.5h
+		// 250ms to ~36h. Sized for a 24h poll in extreme cases (W up to 24h).
+		Buckets: prometheus.ExponentialBuckets(0.25, 2, 20),
 	},
 )
 

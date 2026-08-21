@@ -94,7 +94,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 		"distinct RNG draws should spread nextAttemptAt across a wide band")
 }
 
-func TestVMScraper_MassFirstInsertSpansCatchUpWindow(t *testing.T) {
+func TestVMScraper_MassFirstInsertSpansNewVMIndexReportWindow(t *testing.T) {
 	const numVMs = 10
 	vms := make([]*virtualmachine.Info, 0, numVMs)
 	for i := range numVMs {
@@ -112,14 +112,14 @@ func TestVMScraper_MassFirstInsertSpansCatchUpWindow(t *testing.T) {
 
 	s.reconcile()
 
-	catchUp := catchUpWindow(s.interval)
+	newVMWindow := newVMIndexReportWindow(s.interval)
 	now := clock.Now()
 	var earliest, latest time.Time
 	concurrency.WithLock(&s.mu, func() {
 		require.Len(t, s.vmState, numVMs)
 		for _, st := range s.vmState {
 			assert.False(t, st.nextAttemptAt.Before(now))
-			assert.False(t, st.nextAttemptAt.After(now.Add(catchUp)))
+			assert.False(t, st.nextAttemptAt.After(now.Add(newVMWindow)))
 			if earliest.IsZero() || st.nextAttemptAt.Before(earliest) {
 				earliest = st.nextAttemptAt
 			}
@@ -130,10 +130,10 @@ func TestVMScraper_MassFirstInsertSpansCatchUpWindow(t *testing.T) {
 	})
 	assert.Greater(t, latest.Sub(earliest), time.Duration(0),
 		"mass insert must not schedule every VM at exactly now")
-	assert.GreaterOrEqual(t, latest.Sub(earliest), catchUp/2)
+	assert.GreaterOrEqual(t, latest.Sub(earliest), newVMWindow/2)
 }
 
-func TestVMScraper_SingleInsertUsesCatchUpSpread(t *testing.T) {
+func TestVMScraper_SingleInsertUsesNewVMIndexReportSpread(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns", "only", 1)}}
 	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
 	s.concurrency = 20
@@ -141,12 +141,12 @@ func TestVMScraper_SingleInsertUsesCatchUpSpread(t *testing.T) {
 
 	s.reconcile()
 
-	catchUp := catchUpWindow(s.interval)
-	assert.Equal(t, clock.Now().Add(catchUp/2), cachedNextAttemptAt(t, s, "ns/only"),
-		"every first schedule uses catchUp, including a lone insert with free slots")
+	newVMWindow := newVMIndexReportWindow(s.interval)
+	assert.Equal(t, clock.Now().Add(newVMWindow/2), cachedNextAttemptAt(t, s, "ns/only"),
+		"every first schedule uses the new-VM index report window, including a lone insert with free slots")
 }
 
-func TestVMScraper_MultiInsertUsesCatchUpSpread(t *testing.T) {
+func TestVMScraper_MultiInsertUsesNewVMIndexReportSpread(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns", "a", 1),
 		makeVM("ns", "b", 2),
@@ -157,9 +157,9 @@ func TestVMScraper_MultiInsertUsesCatchUpSpread(t *testing.T) {
 
 	s.reconcile()
 
-	catchUp := catchUpWindow(s.interval)
-	assert.Equal(t, clock.Now().Add(catchUp/4), cachedNextAttemptAt(t, s, "ns/a"))
-	assert.Equal(t, clock.Now().Add(3*catchUp/4), cachedNextAttemptAt(t, s, "ns/b"))
+	newVMWindow := newVMIndexReportWindow(s.interval)
+	assert.Equal(t, clock.Now().Add(newVMWindow/4), cachedNextAttemptAt(t, s, "ns/a"))
+	assert.Equal(t, clock.Now().Add(3*newVMWindow/4), cachedNextAttemptAt(t, s, "ns/b"))
 }
 
 func TestVMScraper_RetryPathDoesNotUseSteadyBand(t *testing.T) {
