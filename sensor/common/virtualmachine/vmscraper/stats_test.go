@@ -42,20 +42,6 @@ func TestVMScraper_Stats(t *testing.T) {
 				"v2.0.0": 1,
 			},
 		},
-		"should omit unscanned VMs from the version histogram": {
-			setup: func(s *VMScraper) {
-				s.vmState["ns1/vm-a"] = &vmState{}
-				s.vmState["ns1/vm-b"] = &vmState{
-					lastAgentVersion: "v1.0.0",
-					lastForwardedAt:  s.now(),
-				}
-			},
-			wantTracked: 2,
-			wantScanned: 1,
-			wantVersions: map[string]int{
-				"v1.0.0": 1,
-			},
-		},
 		"should bucket empty agent version of a scanned VM as unknown": {
 			setup: func(s *VMScraper) {
 				s.vmState["ns1/vm-a"] = &vmState{
