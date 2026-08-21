@@ -1311,6 +1311,7 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 	}
 
 	return retry.WithRetry(retryFunc,
+		retry.WithContext(ts.ctx),
 		retry.BetweenAttempts(betweenAttemptsFunc),
 		retry.Tries(deleScanDefaultMaxRetries),
 		retry.WithExponentialBackoff(),
