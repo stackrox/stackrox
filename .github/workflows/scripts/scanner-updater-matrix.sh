@@ -20,8 +20,6 @@
 
 set -euo pipefail
 
-config="${SOURCE_CONFIG:?SOURCE_CONFIG is required}"
-
 for cmd in yq jq; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "::error::$cmd is required but not found"
@@ -29,42 +27,23 @@ for cmd in yq jq; do
     fi
 done
 
-# Read storage location from config.
-bucket=$(yq '.storage.bucket' "$config")
-prefix=$(yq '.storage.prefix' "$config")
+sc="$(dirname "$0")/scanner-updater-config.sh"
 
-duration_to_seconds() {
-    local dur="${1:?}"
-    local total=0 remaining="$dur"
-    while [[ -n "$remaining" ]]; do
-        if [[ "$remaining" =~ ^([0-9]+)h(.*)$ ]]; then
-            total=$(( total + BASH_REMATCH[1] * 3600 )); remaining="${BASH_REMATCH[2]}"
-        elif [[ "$remaining" =~ ^([0-9]+)m(.*)$ ]]; then
-            total=$(( total + BASH_REMATCH[1] * 60 )); remaining="${BASH_REMATCH[2]}"
-        elif [[ "$remaining" =~ ^([0-9]+)s(.*)$ ]]; then
-            total=$(( total + BASH_REMATCH[1] )); remaining="${BASH_REMATCH[2]}"
-        else
-            echo "::error::cannot parse duration: $remaining"; return 1
-        fi
-    done
-    echo "$total"
-}
-
-default_interval=$(yq '.updaters.default.interval // "4h"' "$config")
+bucket=$("$sc" bucket)
+prefix=$("$sc" prefix)
 
 # Expand stream/ref/updater triples, check freshness, emit due pairs.
 ./.github/workflows/scripts/scanner-get-released-tags.sh \
     | jq -r '.[] | "\(.version) \(.ref)"' \
     | while read -r stream ref; do
-          yq ".bundles.\"$stream\" | .[]" "$config" \
+          "$sc" sources "$stream" \
               | while read -r updater; do
                     echo "$stream $ref $updater"
                 done
       done \
     | while read -r stream ref updater; do
           object="gs://${bucket}/${prefix}/${stream}/sources/${updater}.json.zst"
-          interval=$(yq ".updaters.\"${updater}\".interval // \"$default_interval\"" "$config")
-          interval_secs=$(duration_to_seconds "$interval")
+          interval_secs=$("$sc" interval-secs "$updater")
 
           # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
           if GCS_OBJECT="$object" \

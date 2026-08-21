@@ -75,13 +75,14 @@ jobs:
       run: |
         set -euo pipefail
 
-        bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
-        prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
+        bucket=$("$sc" bucket)
+        prefix=$("$sc" prefix)
 
         echo "GCS_BUCKET=$bucket" >> "$GITHUB_ENV"
         echo "GCS_PREFIX=$prefix" >> "$GITHUB_ENV"
 
-        bundle_obj="gs://${bucket}/${prefix}/${STREAM}/vulnerabilities.zip"
+        bundle_obj=$("$sc" bundle-object "$STREAM")
 
         # Get the bundle's creation timestamp. If the bundle does not
         # exist or the query fails, assume changes and proceed.
@@ -109,7 +110,7 @@ jobs:
                 changed=true
                 break
             fi
-        done < <(yq ".bundles.${STREAM}[]" "$SOURCE_CONFIG")
+        done < <("$sc" sources "$STREAM")
 
         echo "changed=${changed}" >> "$GITHUB_OUTPUT"
         if [ "$changed" = "false" ]; then
@@ -158,7 +159,7 @@ jobs:
                 echo "source '${source}': OK"
                 valid_files+=("$dest")
             fi
-        done < <(yq ".bundles.${STREAM}[]" "$SOURCE_CONFIG")
+        done < <(./.github/workflows/scripts/scanner-updater-config.sh sources "$STREAM")
 
         ( IFS=','; echo "failed=${failed_sources[*]}" >> "$GITHUB_OUTPUT" )
 
