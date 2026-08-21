@@ -89,7 +89,8 @@ type VMScraper struct {
 	started               atomic.Bool
 	now                   func() time.Time
 	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
-	randFloat64 func() float64
+	randFloat64          func() float64
+	lastPollAdviceNumVMs int
 
 	mu              sync.Mutex
 	vmState         map[string]*vmState
@@ -293,20 +294,21 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 }
 
 // reconcile syncs vmState with currently running VMs: drop gone ones, and
-// schedule first attempts for new ones spread over the catch-up window (new guests are
-// often still booting; Sensor restart rehydrates many at once).
+// schedule first attempts for new ones across the initial scan window (new
+// guests are often still booting; Sensor restart rehydrates many at once).
 func (s *VMScraper) reconcile() {
 	vms := s.store.ListRunning()
 	liveKeys := set.NewStringSet()
+	var numVMs int
 	concurrency.WithLock(&s.mu, func() {
 		now := s.now()
-		catchUp := catchUpWindow(s.interval)
+		newVMWindow := newVMIndexReportWindow(s.interval)
 		for _, vm := range vms {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
-				st = &vmState{nextAttemptAt: now.Add(randOffset(catchUp, s.randFloat64())), vmID: vm.ID}
+				st = &vmState{nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())), vmID: vm.ID}
 				s.vmState[key] = st
 			}
 			st.vmID = vm.ID
@@ -316,8 +318,34 @@ func (s *VMScraper) reconcile() {
 				delete(s.vmState, key)
 			}
 		}
+		numVMs = len(s.vmState)
 		s.lastReconcile = now
 	})
+	s.logPollIntervalAdvice(numVMs)
+}
+
+func (s *VMScraper) logPollIntervalAdvice(numVMs int) {
+	if s.tickInterval <= 0 || s.lastPollAdviceNumVMs == numVMs {
+		return
+	}
+	s.lastPollAdviceNumVMs = numVMs
+
+	capacity := maxVMsForSteadyState(s.tickInterval, s.interval, s.spreadFraction)
+	remaining := capacity - numVMs
+	safe := suggestedPollInterval(numVMs, s.tickInterval, s.spreadFraction)
+	log.Debugf("VMScraper: %d running VMs, poll interval %s, safe poll interval %s, current interval fits ~%d VMs in steady state (up to %d remaining)",
+		numVMs, s.interval, safe, capacity, remaining)
+
+	if remaining >= 0 {
+		return
+	}
+	// Let's advise the user to increase the poll interval if the current interval.
+	// Do not advise a shorter interval if the current interval is already safe.
+	log.Warnf("VMScraper: with ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%s, "+
+		"this Sensor can handle roughly %d VMs in steady state without stressing Central and Scanner. "+
+		"This cluster has %d running VMs. Set ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to at least %s "+
+		"or accept that Central may receive periodic load spikes.",
+		s.interval, capacity, numVMs, safe)
 }
 
 func (s *VMScraper) dueKeys() []string {
