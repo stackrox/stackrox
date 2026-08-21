@@ -117,7 +117,7 @@ func envSrcCompoundMap(searchTerms []string) ([]string, bool) {
 }
 
 func numberOfDaysSinceMap(searchTerms []string) ([]string, bool) {
-	policyCriteria := make([]string, 0, len(searchTerms))
+	var policyCriteria []string
 	droppedTerms := false
 	for _, timeString := range searchTerms {
 		// Only convert time searches of the format ">NUMBERd"
