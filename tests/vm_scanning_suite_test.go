@@ -326,7 +326,7 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 
 // mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
 // Pull-mode scraping fails without this; the Helm chart creates the binding when
-// spec.virtualMachines.mode is Enabled on the SecuredCluster CR.
+// virtualMachines.enabled follows ROX_VIRTUAL_MACHINES (on by default).
 func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 	t := s.T()
 	t.Helper()
@@ -334,7 +334,7 @@ func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
 	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
 		"Sensor cannot scrape guest agents over vsock without this RBAC "+
-		"(check that spec.virtualMachines.mode is Enabled on the SecuredCluster CR)")
+		"(check that Helm virtualMachines.enabled / ROX_VIRTUAL_MACHINES is on)")
 	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
 	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
 

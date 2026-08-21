@@ -122,7 +122,7 @@ describe('Virtual Machine CVEs - Overview Page', () => {
             sortByTableHeader('Virtual machine');
             cy.wait(`@${listVirtualMachinesAlias}`).then((interception) => {
                 const { url } = interception.request;
-                expect(url).to.include('Virtual Machine Name');
+                expect(decodeURIComponent(url)).to.include('Virtual Machine Name');
             });
         });
     });
