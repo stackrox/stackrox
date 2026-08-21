@@ -16,7 +16,7 @@ message ClusterMetrics {
 }
 
 message VirtualMachineMetrics {
-  int32 tracked_vms = 1;             // VMs currently tracked for scraping.
-  int32 vms_scanned = 2;             // Tracked VMs with at least one successful scrape ever.
+  int32 tracked_vms = 1; // VMs currently tracked for scraping.
+  int32 vms_scanned = 2; // Tracked VMs with at least one successful scrape ever.
   map<string, int32> roxagent_version_counts = 3; // Version (or "unknown"/"other") -> count of scanned VMs. Unscanned VMs are omitted.
 }
