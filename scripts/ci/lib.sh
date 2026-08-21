@@ -40,6 +40,7 @@ ci_export() {
             local delimiter="EOF_${env_name}_$$"
             printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
         else
+            # GHA needs the environment variables to be unquoted and unescaped, they are parsed literally.
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
     elif command -v cci-export >/dev/null; then
