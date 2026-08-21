@@ -414,6 +414,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	recordVMDiscoveredData(result.Meta.GetFacts())
 
+	vm.AgentFacts = virtualmachine.AgentFactsFromResponseFacts(result.Meta.GetFacts())
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()

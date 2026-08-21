@@ -141,6 +141,18 @@ func TestGetFacts(t *testing.T) {
 				pkgVM.GuestOSKey: pkgVM.UnknownGuestOS,
 			},
 		},
+		"should merge agent facts": {
+			vm: &sensorVirtualMachine.Info{
+				GuestOS: "Red Hat Enterprise Linux",
+				AgentFacts: map[string]string{
+					pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+				},
+			},
+			expected: map[string]string{
+				pkgVM.GuestOSKey:          "Red Hat Enterprise Linux",
+				pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(it *testing.T) {

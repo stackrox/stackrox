@@ -118,15 +118,17 @@ func (m *mockProtocolClient) reset() {
 }
 
 type mockSender struct {
-	sent []*v4.IndexReport
-	err  error
+	sent    []*v4.IndexReport
+	sentVMs []*virtualmachine.Info
+	err     error
 }
 
-func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (m *mockSender) Send(_ context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
 	if m.err != nil {
 		return m.err
 	}
 	m.sent = append(m.sent, report)
+	m.sentVMs = append(m.sentVMs, vm)
 	return nil
 }
 
@@ -227,6 +229,14 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+	require.Len(t, sender.sentVMs, 2)
+	expectedFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	})
+	assert.Equal(t, expectedFacts, sender.sentVMs[0].AgentFacts)
+	assert.Equal(t, expectedFacts, sender.sentVMs[1].AgentFacts)
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
