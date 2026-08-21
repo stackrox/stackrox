@@ -1,21 +1,43 @@
+import { interceptRequests } from '../../../helpers/request';
 import withAuth from '../../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { assertCannotFindThePage } from '../../../helpers/visit';
 
 import {
     getVirtualMachineAlias,
-    routeMatcherMapForVirtualMachine,
+    listVirtualMachineComponentsAlias,
+    listVirtualMachineCvesAlias,
+    routeMatcherMapForVirtualMachineComponents,
+    routeMatcherMapForVirtualMachineVulnerabilities,
     visitVirtualMachinePage,
     visitVirtualMachinePageWithStaticPermissions,
 } from './VirtualMachineCve.helpers';
 
 const vmId = 'vm-001';
-const fixturePathGetVM = 'vulnerabilities/virtualMachineCves/getVirtualMachine';
+const fixturePathGetVM = 'vulnerabilities/virtualMachineCves/getVM';
+const fixturePathListCves = 'vulnerabilities/virtualMachineCves/listVirtualMachineCves';
+const fixturePathListComponents = 'vulnerabilities/virtualMachineCves/listVirtualMachineComponents';
 
-function visitWithFixture() {
-    visitVirtualMachinePage(vmId, routeMatcherMapForVirtualMachine, {
-        [getVirtualMachineAlias]: { fixture: fixturePathGetVM },
+const staticResponseMapForVirtualMachineVulnerabilities = {
+    [getVirtualMachineAlias]: { fixture: fixturePathGetVM },
+    [listVirtualMachineCvesAlias]: { fixture: fixturePathListCves },
+};
+
+function visitWithVulnFixtures() {
+    visitVirtualMachinePage(
+        vmId,
+        routeMatcherMapForVirtualMachineVulnerabilities,
+        staticResponseMapForVirtualMachineVulnerabilities
+    );
+}
+
+function visitComponentsTab() {
+    visitWithVulnFixtures();
+    interceptRequests(routeMatcherMapForVirtualMachineComponents, {
+        [listVirtualMachineComponentsAlias]: { fixture: fixturePathListComponents },
     });
+    cy.get('button').contains('Components').click();
+    cy.wait(`@${listVirtualMachineComponentsAlias}`);
 }
 
 describe('Virtual Machine CVEs - Virtual Machine Page', () => {
@@ -36,17 +58,15 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
         visitVirtualMachinePageWithStaticPermissions(
             vmId,
             { Cluster: 'READ_ACCESS' },
-            routeMatcherMapForVirtualMachine,
-            {
-                [getVirtualMachineAlias]: { fixture: fixturePathGetVM },
-            }
+            routeMatcherMapForVirtualMachineVulnerabilities,
+            staticResponseMapForVirtualMachineVulnerabilities
         );
         cy.get('h1').contains('cypress-vm-1');
     });
 
     describe('Vulnerabilities tab', () => {
         it('should render CVE rows from fixture data', () => {
-            visitWithFixture();
+            visitWithVulnFixtures();
 
             cy.get('tbody tr:not([class*="expandable"])').should('have.length', 3);
 
@@ -54,47 +74,44 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
                 .eq(0)
                 .within(() => {
                     cy.get('td[data-label="CVE"]').contains('CVE-2024-0001');
-                    cy.get('td[data-label="CVE severity"]').should('exist');
-                    cy.get('td[data-label="CVE status"]').should('exist');
-                    cy.get('td[data-label="CVSS"]').should('exist');
-                    cy.get('td[data-label="EPSS probability"]').should('exist');
-                    cy.get('td[data-label="Affected components"]').contains('openssl');
+                    cy.get('td[data-label="CVE severity"]').contains('Critical');
+                    cy.get('td[data-label="CVE status"]').contains('Fixable');
+                    cy.get('td[data-label="CVSS"]').contains('9.8');
+                    cy.get('td[data-label="EPSS probability"]').contains('85.000%');
+                    cy.get('td[data-label="Affected components"]').contains('1 component');
                 });
         });
 
         it('should display the correct number of affected components', () => {
-            visitWithFixture();
+            visitWithVulnFixtures();
 
             cy.get('tbody tr:not([class*="expandable"])')
                 .eq(0)
                 .within(() => {
-                    cy.get('td[data-label="Affected components"]').contains('openssl');
+                    cy.get('td[data-label="CVE"]').contains('CVE-2024-0001');
+                    cy.get('td[data-label="Affected components"]').contains('1 component');
                 });
 
             cy.get('tbody tr:not([class*="expandable"])')
                 .eq(2)
                 .within(() => {
-                    cy.get('td[data-label="Affected components"]').contains('curl');
+                    cy.get('td[data-label="CVE"]').contains('CVE-2024-0003');
+                    cy.get('td[data-label="Affected components"]').contains('1 component');
                 });
         });
 
-        it('should expand a row to show the components sub-table', () => {
-            visitWithFixture();
+        it('should expand a row to show affected component details', () => {
+            visitWithVulnFixtures();
 
             cy.get('tbody tr:not([class*="expandable"])').eq(0).find('td button').first().click();
 
             cy.get('tbody tr[class*="expandable"]')
                 .eq(0)
-                .within(() => {
-                    cy.get('td[data-label="Component"]').contains('openssl');
-                    cy.get('td[data-label="Version"]').contains('3.0.7-20.el9');
-                    cy.get('td[data-label="CVE fixed in"]').contains('3.0.7-25.el9');
-                    cy.get('td[data-label="Advisory"]').contains('RHSA-2024:0001');
-                });
+                .should('contain.text', 'Affected component details coming soon');
         });
 
         it('should display an empty state when the VM has no vulnerabilities', () => {
-            visitVirtualMachinePage(vmId, routeMatcherMapForVirtualMachine, {
+            visitVirtualMachinePage(vmId, routeMatcherMapForVirtualMachineVulnerabilities, {
                 [getVirtualMachineAlias]: {
                     body: {
                         id: vmId,
@@ -102,16 +119,19 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
                         name: 'empty-vm',
                         clusterId: 'cluster-001',
                         clusterName: 'production-cluster',
-                        scan: {
-                            scanTime: '2025-04-15T10:30:00.000Z',
-                            operatingSystem: 'rhel:9',
-                            components: [],
-                            notes: [],
-                        },
+                        guestOs: 'Red Hat Enterprise Linux 9.2',
                         lastUpdated: '2025-04-15T10:30:00.000Z',
+                        facts: {},
+                        annotations: {},
+                        labels: {},
                         vsockCid: 3,
-                        state: 'RUNNING',
+                        notes: [],
+                        state: 'VM_STATE_RUNNING',
+                        agentStatus: 'AGENT_STATUS_ACTIVE',
                     },
+                },
+                [listVirtualMachineCvesAlias]: {
+                    body: { cves: [], totalCount: 0 },
                 },
             });
 
@@ -121,25 +141,37 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
 
     describe('Components tab', () => {
         it('should render component rows from fixture data', () => {
-            visitWithFixture();
-
-            cy.get('button').contains('Components').click();
+            visitComponentsTab();
 
             cy.get('tbody tr').should('have.length', 3);
 
             cy.get('tbody tr')
                 .eq(0)
                 .within(() => {
-                    cy.get('td[data-label="Name"]').should('exist');
-                    cy.get('td[data-label="Version"]').should('exist');
-                    cy.get('td[data-label="Status"]').should('exist');
+                    cy.get('td[data-label="Name"]').contains('openssl');
+                    cy.get('td[data-label="Version"]').contains('3.0.7-20.el9');
+                    cy.get('td[data-label="Status"]').contains('Scanned');
+                    cy.get('td[data-label="Source"]').contains('OS');
+                });
+
+            cy.get('tbody tr')
+                .eq(1)
+                .within(() => {
+                    cy.get('td[data-label="Name"]').contains('curl');
+                    cy.get('td[data-label="Version"]').contains('7.76.1-26.el9');
+                });
+
+            cy.get('tbody tr')
+                .eq(2)
+                .within(() => {
+                    cy.get('td[data-label="Name"]').contains('systemd');
+                    cy.get('td[data-label="Version"]').contains('252-18.el9');
+                    cy.get('td[data-label="Status"]').contains('Not scanned');
                 });
         });
 
         it('should show scanned and unscanned statuses', () => {
-            visitWithFixture();
-
-            cy.get('button').contains('Components').click();
+            visitComponentsTab();
 
             cy.get('td[data-label="Status"]').then(($cells) => {
                 const statuses = $cells.map((_, el) => el.innerText.trim()).get();
@@ -151,14 +183,14 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
 
     describe('Breadcrumb navigation', () => {
         it('should display VM name in breadcrumb', () => {
-            visitWithFixture();
+            visitWithVulnFixtures();
 
             cy.get('.pf-v6-c-breadcrumb__item').should('contain.text', 'Virtual Machines');
             cy.get('.pf-v6-c-breadcrumb__item').should('contain.text', 'cypress-vm-1');
         });
 
         it('should link back to the overview page', () => {
-            visitWithFixture();
+            visitWithVulnFixtures();
 
             cy.get('.pf-v6-c-breadcrumb__item a')
                 .contains('Virtual Machines')
