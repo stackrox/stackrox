@@ -294,11 +294,11 @@ func (s *VMScraper) reconcile() {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
-			if !ok {
+			if !ok || st.vmID != vm.ID {
+				// namespace/name can outlive a KubeVirt recreate; do not inherit scrape state.
 				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
 				s.vmState[key] = st
 			}
-			st.vmID = vm.ID
 		}
 		for key := range s.vmState {
 			if !liveKeys.Contains(key) {
