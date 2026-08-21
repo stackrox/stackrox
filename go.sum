@@ -90,8 +90,8 @@ github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24/go.mod h
 github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230919221257-8b5d3ce2d11d h1:zjqpY4C7H15HjRPEenkS4SAn3Jy2eRRjkjZbGR30TOg=
 github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230919221257-8b5d3ce2d11d/go.mod h1:XNqJ7hv2kY++g8XEHREpi+JqZo3+0l+CH2egBVN4yqM=
 github.com/Azure/azure-sdk-for-go v68.0.0+incompatible h1:fcYLmCpyNYRnvJbPerq7U0hS+6+I79yEDJBqVNcqUzU=
-github.com/Azure/azure-sdk-for-go-extensions v0.6.0 h1:LzJ4iAk3ZBZ0Y27uUm66XBQntbgMr3QXn2KIDb4Mx04=
-github.com/Azure/azure-sdk-for-go-extensions v0.6.0/go.mod h1:f/wRrqvvh197V5r4jGADV7528UdO/zfL+/Ud92BMSag=
+github.com/Azure/azure-sdk-for-go-extensions v0.7.0 h1:ko7jxarxFmfm3OAtIkKcnC2yK1H7a7wB7As38huaa4Y=
+github.com/Azure/azure-sdk-for-go-extensions v0.7.0/go.mod h1:f/wRrqvvh197V5r4jGADV7528UdO/zfL+/Ud92BMSag=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0 h1:4gRPBpN1f6xt88yi4WR26m7XaD9OlWtVT6bWPdGUIok=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0/go.mod h1:G7QVLxw1j1JVyrO1MA95S8m8HStaaleDZYTcfGgjB2o=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0 h1:CU4+EJeJi3TKYWEcYuSdWsjzw0nVsK/H0MSQOiPcymU=
