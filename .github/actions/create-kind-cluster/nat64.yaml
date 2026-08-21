@@ -1,0 +1,91 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nat64
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - "nodes"
+  verbs:
+  - "get"
+  - "watch"
+  - "list"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: nat64
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nat64
+subjects:
+- kind: ServiceAccount
+  name: nat64
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nat64
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nat64
+  namespace: kube-system
+  labels:
+    tier: node
+    app: nat64
+    k8s-app: nat64
+spec:
+  selector:
+    matchLabels:
+      app: nat64
+  template:
+    metadata:
+      labels:
+        tier: node
+        app: nat64
+        k8s-app: nat64
+    spec:
+      hostNetwork: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+      serviceAccountName: nat64
+      containers:
+      - name: nat64
+        image: registry.k8s.io/networking/nat64:v0.4.1
+        args:
+        - "/nat64"
+        - "--hostname=$(NODE_NAME)"
+        ports:
+        - name: "health-metrics"
+          containerPort: 8881
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: health-metrics
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "50Mi"
+          limits:
+            cpu: "100m"
+            memory: "50Mi"
+        securityContext:
+          privileged: true
+          capabilities:
+            add: ["NET_ADMIN", "BPF"]
+---
