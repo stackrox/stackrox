@@ -583,21 +583,37 @@ poll_for_system_test_images() {
 
     local tag
     local image
+    local success="true"
     while read -r image tag
     do
         while ! check_rhacs_eng_image_exists "$image" "$tag"
         do
             info "$image does not exist"
             if (( $(date '+%s') - start_time > time_limit )); then
-                check_build_workflows "$(get_commit_sha)"
-                die "ERROR: Timed out waiting for images after ${time_limit} seconds"
+                success="false"
+                break 2
             fi
             sleep 60
         done
     done < "$image_list"
 
-    info "All images exist."
-    touch "${STATE_IMAGES_AVAILABLE}"
+    local images_available=("Image_Availability" "Were the required images built successfully by GitHub Actions?")
+    if [[ "$success" == "true" ]]; then
+        save_junit_success "${images_available[@]}"
+        info "All images exist."
+        touch "${STATE_IMAGES_AVAILABLE}"
+    else
+        local commit_sha="$(get_commit_sha)"
+        local build_details="Build results are unknown"
+        local build_results
+        if build_results="$(check-workflow-run --workflow=build.yaml --head-SHA="${commit_sha}")"; then
+            build_details="GitHub Actions workflow status for build.yaml:
+$build_results"
+        fi
+        info "${build_details}"
+        save_junit_failure "${images_available[@]}" "${build_details}"
+        die "ERROR: Timed out waiting for images after ${time_limit} seconds"
+    fi
 }
 
 # Image prefetch is broken into two sets:
@@ -1078,18 +1094,6 @@ check_rhacs_eng_image_exists() {
     check=$(curl --location -sS "${extra_args[@]}" "$url")
     echo "$check"
     [[ "$(jq -r '.tags | first | .name' <<<"$check")" == "$tag" ]]
-}
-
-check_build_workflows() {
-    local commit_sha="$1"
-
-    {
-        echo
-        info "GitHub Actions workflow status for build.yaml:"
-        check-workflow-run \
-            --workflow=build.yaml \
-            --head-SHA="${commit_sha}"
-    } | tee "${STATE_BUILD_RESULTS}" || true
 }
 
 check_scanner_version() {
