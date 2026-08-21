@@ -19,7 +19,7 @@ import (
 // rejects a second connection with an ERROR_CODE_BUSY response while the first
 // is still being handled, and that cancelling the context drains gracefully.
 func TestServeAcceptLoop(t *testing.T) {
-	handler := NewHandler(&ReportCache{}, "test")
+	handler := NewHandler(&ReportCache{}, "test", readyProvider(), nil)
 	srv := NewServer(handler, nil)
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -77,7 +77,7 @@ func TestRejectConn(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			synctest.Test(t, func(t *testing.T) {
-				handler := NewHandler(&ReportCache{}, "test")
+				handler := NewHandler(&ReportCache{}, "test", readyProvider(), nil)
 				srv := NewServer(handler, nil)
 
 				serverConn, clientConn := net.Pipe()
@@ -133,7 +133,7 @@ func TestRejectConn(t *testing.T) {
 // ERROR_CODE_BUSY. That is enough to prove Accept() kept running: a blocked
 // accept loop would never handshake the second peer or write BUSY.
 func TestServeAcceptLoop_StalledHandshakeDoesNotBlockOtherConnections(t *testing.T) {
-	handler := NewHandler(&ReportCache{}, "test")
+	handler := NewHandler(&ReportCache{}, "test", readyProvider(), nil)
 	srv := NewServer(handler, &tls.Config{Certificates: []tls.Certificate{testServerCert(t)}})
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
