@@ -28,7 +28,8 @@ func DefaultPolicyCategories() ([]*storage.PolicyCategory, error) {
 	// Sanity check embedded directory.
 	utils.CrashOnError(err)
 
-	categories := make([]*storage.PolicyCategory, 0, len(files))
+	var categories []*storage.PolicyCategory
+
 	errList := errorhelpers.NewErrorList("Default policy category validation")
 	for _, f := range files {
 		c, err := readCategoryFile(filepath.Join(categoriesDir, f.Name()))
