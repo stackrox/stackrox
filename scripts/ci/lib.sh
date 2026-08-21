@@ -996,9 +996,12 @@ populate_stackrox_image_list() {
 
     local tag
     tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+
+    local operator_controller_tag
+    operator_controller_tag="$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)"
+
     local operator_metadata_tag
-    operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
-    local operator_controller_tag="${tag//x/0}"
+    operator_metadata_tag="v${operator_controller_tag}"
 
     # Require images based on the job
     case "$CI_JOB_NAME" in
@@ -1048,25 +1051,24 @@ roxctl ${tag}
 END
             ;;
         *qa-e2e-tests*)
-            local tag_sanitized; tag_sanitized="$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)"
             if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
                 cat >> "${image_list}" << END
-release-operator ${tag_sanitized}
-release-operator-bundle v${tag_sanitized}
-release-main ${tag_sanitized}
-release-central-db ${tag_sanitized}
-release-collector ${tag_sanitized}
-release-fact ${tag_sanitized}
-release-scanner ${tag_sanitized}
-release-scanner-db ${tag_sanitized}
-release-scanner-v4 ${tag_sanitized}
-release-scanner-v4-db ${tag_sanitized}
-release-roxctl ${tag_sanitized}
+release-operator ${operator_controller_tag}
+release-operator-bundle ${operator_metadata_tag}
+release-main ${operator_controller_tag}
+release-central-db ${operator_controller_tag}
+release-collector ${operator_controller_tag}
+release-fact ${operator_controller_tag}
+release-scanner ${operator_controller_tag}
+release-scanner-db ${operator_controller_tag}
+release-scanner-v4 ${operator_controller_tag}
+release-scanner-v4-db ${operator_controller_tag}
+release-roxctl ${operator_controller_tag}
 END
             else
                 cat >> "${image_list}" << END
-stackrox-operator ${tag_sanitized}
-stackrox-operator-bundle v${tag_sanitized}
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
 main ${tag}
 central-db ${tag}
 collector ${tag}
