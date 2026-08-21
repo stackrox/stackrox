@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -73,33 +72,6 @@ func (suite *PipelineTestSuite) TestClusterMetricsResetOnPipelineFinish() {
 	suite.telemetryMetrics.EXPECT().DeleteClusterMetrics(clusterID)
 
 	suite.pipeline.OnFinish(clusterID)
-}
-
-func TestHasVMTelemetryCap(t *testing.T) {
-	tests := map[string]struct {
-		injector common.MessageInjector
-		want     bool
-	}{
-		"should return false when injector is nil": {
-			injector: nil,
-			want:     false,
-		},
-		"should return false when Sensor lacks the capability": {
-			injector: &fakeInjector{},
-			want:     false,
-		},
-		"should return true when Sensor advertises the capability": {
-			injector: &fakeInjector{caps: map[centralsensor.SensorCapability]bool{
-				centralsensor.VirtualMachineTelemetryCap: true,
-			}},
-			want: true,
-		},
-	}
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, hasVMTelemetryCap(tc.injector))
-		})
-	}
 }
 
 func (suite *PipelineTestSuite) TestClusterMetricsMessageFromSensor_QueriesVMTelemetryCap() {

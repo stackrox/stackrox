@@ -172,36 +172,6 @@ func (s *ClusterMetricsTestSuite) TestNilVMStatsSource() {
 		"nil vmStatsSource must produce nil virtual_machine_metrics, not a zero-valued one")
 }
 
-func (s *ClusterMetricsTestSuite) TestVMStatsPopulated() {
-	src := &fakeVMStatsSource{
-		stats: vmscraper.Stats{
-			TrackedVMs: 10,
-			VMsScanned: 7,
-			VersionCounts: map[string]int{
-				"v1.0.0":  4,
-				"v2.0.0":  2,
-				"unknown": 1,
-			},
-		},
-	}
-	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, src)
-	impl, ok := metrics.(*clusterMetricsImpl)
-	s.Require().True(ok)
-
-	cm, err := impl.collectMetrics()
-	s.Require().NoError(err)
-
-	vmm := cm.GetVirtualMachineMetrics()
-	s.Require().NotNil(vmm, "non-nil vmStatsSource must produce non-nil virtual_machine_metrics")
-	s.Equal(int32(10), vmm.GetTrackedVms())
-	s.Equal(int32(7), vmm.GetVmsScanned())
-	s.Equal(map[string]int32{
-		"v1.0.0":  4,
-		"v2.0.0":  2,
-		"unknown": 1,
-	}, vmm.GetRoxagentVersionCounts())
-}
-
 func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 	src := &fakeVMStatsSource{
 		stats: vmscraper.Stats{
