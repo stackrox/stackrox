@@ -3,7 +3,6 @@ package lane
 import (
 	"errors"
 	"fmt"
-	"runtime"
 	"testing"
 	"time"
 
@@ -323,14 +322,17 @@ func TestHandleEvent_StalledConsumerDoesNotLeakGoroutines(t *testing.T) {
 	const numEvents = 50
 	consumeCalled := make(chan struct{}, numEvents)
 	lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(newStalledConsumer(consumeCalled))).NewLane()
-	assert.NotNil(t, lane)
+	require.NotNil(t, lane)
 	defer lane.Stop()
 
 	require.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
 		return nil
 	}))
 
-	before := runtime.NumGoroutine()
+	// Snapshot after the lane's own goroutines exist (run loop). Find must run
+	// before Stop(): the old watcher also selected on the stop signal, so
+	// checking only after Stop() would hide a reintroduced leak.
+	ignoreExisting := goleak.IgnoreCurrent()
 
 	for range numEvents {
 		require.NoError(t, lane.Publish(&concurrentTestEvent{}))
@@ -348,14 +350,10 @@ func TestHandleEvent_StalledConsumerDoesNotLeakGoroutines(t *testing.T) {
 	}
 
 	// This must be checked while the lane is still running, i.e. before Stop().
-	// stalledConsumer's errC is never resolved, and Stop() also releases any
-	// per-event watcher goroutine (they select on the same stop signal), which
-	// would hide a reintroduced leak if checked only after Stop() returns. The
-	// threshold is generous (half of numEvents) to absorb unrelated goroutine
-	// noise while still failing hard against a real one-per-event leak.
-	after := runtime.NumGoroutine()
-	assert.Less(t, after, before+numEvents/2,
-		"concurrentLane must not spawn a goroutine per event for a stalled consumer (before=%d after=%d)", before, after)
+	// stalledConsumer's errC is never resolved, so any per-event watcher
+	// goroutine would still be alive here.
+	require.NoError(t, goleak.Find(append([]goleak.Option{ignoreExisting}, goleak.CommonIgnores()...)...),
+		"concurrentLane must not spawn a goroutine per stalled consumer event")
 }
 
 func TestStop(t *testing.T) {
