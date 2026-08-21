@@ -33,7 +33,7 @@ func CollectToSlice(vec *prometheus.GaugeVec) ([]*dto.Metric, error) {
 		vec.Collect(metricC)
 	}()
 	errList := errorhelpers.NewErrorList("errors collecting metrics for vector")
-	metricSlice := make([]*dto.Metric, 0, 8)
+	var metricSlice []*dto.Metric
 	for metric := range metricC {
 		dtoMetric := &dto.Metric{}
 		errList.AddError(metric.Write(dtoMetric))
