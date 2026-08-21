@@ -268,6 +268,10 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	metrics.PullDueVMs.Set(float64(len(due)))
+	capN := min(s.concurrency, startBudget(len(due), s.tickInterval, catchUpWindow(s.interval)))
+	if capN < len(due) {
+		due = due[:capN]
+	}
 	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()
 	concurrency.WithLock(&s.mu, func() {
