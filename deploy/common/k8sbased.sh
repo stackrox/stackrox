@@ -381,6 +381,9 @@ function launch_central {
         )
       fi
 
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
           --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
@@ -500,6 +503,19 @@ function launch_central {
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
+
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      # Bake it into the manifest so Central starts with fast polling instead of
+      # requiring a second rollout via a post-launch `set env`.
+      central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
+      if [[ -f "${central_deployment}" ]]; then
+        ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
+          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
+        mv "${central_deployment}.tmp" "${central_deployment}"
+      else
+        echo >&2 "WARNING: ${central_deployment} not found; Central will deploy with the default signing key watch interval and rely on the test's set env fallback."
+      fi
+
       launch_service "${unzip_dir}" central
       echo
 

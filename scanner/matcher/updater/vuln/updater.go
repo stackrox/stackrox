@@ -373,9 +373,6 @@ func (u *Updater) Update(ctx context.Context) error {
 		err     error
 	)
 	updated, err = u.runMultiBundleUpdate(ctx)
-	if err != nil {
-		return err
-	}
 
 	// Only bother running the GC when it's not disabled
 	// and when the vulnerabilities have been updated.
@@ -386,7 +383,7 @@ func (u *Updater) Update(ctx context.Context) error {
 		slog.InfoContext(ctx, "no vulnerability updates: skipping GC")
 	}
 
-	return nil
+	return err
 }
 
 // runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
@@ -446,14 +443,29 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	slog.InfoContext(ctx, "pre-registered vulnerability bundles", "count", len(bundles))
 
 	// Process each vulnerability bundle in the .zip archive.
+	// Errors are collected so all bundles are attempted even when some fail.
+	//
+	// TODO(ROX-36437): succeeded counts lock-skipped and already-current
+	// bundles as successes; distinguish genuinely imported bundles from
+	// skipped ones.
+	var bundleErrs []error
+	succeeded := 0
 	for _, bundleF := range bundles {
 		bundleCtx := log.With(ctx, "bundle", bundleF.Name)
 		slog.InfoContext(bundleCtx, "starting bundle update")
 		if err := u.updateBundle(bundleCtx, bundleF, zipTime, prevTime); err != nil {
 			slog.ErrorContext(bundleCtx, "updating bundle failed", "reason", err)
-			return false, fmt.Errorf("updating bundle %s: %w", bundleF.Name, err)
+			bundleErrs = append(bundleErrs, fmt.Errorf("bundle %s: %w", bundleF.Name, err))
+			continue
 		}
 		slog.InfoContext(bundleCtx, "completed bundle update")
+		succeeded++
+	}
+
+	// Skip GC and distribution update only when every bundle that was
+	// attempted returned an error (i.e., no partial success to build on).
+	if len(bundleErrs) > 0 && succeeded == 0 {
+		return false, errors.Join(bundleErrs...)
 	}
 
 	// Clean updaters that were deleted (not in the zip and older than this update).
@@ -464,17 +476,17 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) (bool, error) {
 	}
 	err = u.metadataStore.GCVulnerabilityUpdates(ctx, names, zipTime)
 	if err != nil {
-		return false, fmt.Errorf("cleaning vuln updates: %w", err)
+		return false, errors.Join(fmt.Errorf("cleaning vuln updates: %w", err), errors.Join(bundleErrs...))
 	}
 
 	err = u.distManager.update(ctx)
 	if err != nil {
-		return false, fmt.Errorf("updating known-distributions: %w", err)
+		return false, errors.Join(fmt.Errorf("updating known-distributions: %w", err), errors.Join(bundleErrs...))
 	}
 
 	_ = u.Initialized(ctx)
 
-	return true, nil
+	return true, errors.Join(bundleErrs...)
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {

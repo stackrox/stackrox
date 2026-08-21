@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/klauspost/compress/zstd"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -424,6 +425,108 @@ func TestIsBundleAllowed(t *testing.T) {
 			assert.Equal(t, tc.want, u.isBundleAllowed(tc.filename))
 		})
 	}
+}
+
+func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
+	bundleNames := []string{"alpine.json.zst", "nvd.json.zst", "rhel-vex.json.zst"}
+
+	// Create a minimal valid zstd frame around empty content.
+	makeZstd := func() []byte {
+		var buf bytes.Buffer
+		w, err := zstd.NewWriter(&buf)
+		require.NoError(t, err)
+		require.NoError(t, w.Close())
+		return buf.Bytes()
+	}
+
+	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+		for _, name := range bundleNames {
+			f, err := zw.Create(name)
+			require.NoError(t, err)
+			_, err = f.Write(makeZstd())
+			require.NoError(t, err)
+		}
+		require.NoError(t, zw.Close())
+		return bytes.NewReader(buf.Bytes())
+	})
+
+	ctrl := gomock.NewController(t)
+	store := mocks.NewMockMatcherStore(ctrl)
+	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
+
+	prevTime := now.Add(-time.Minute)
+
+	// importFunc fails for the second call (nvd), succeeds for the others.
+	importCallCount := 0
+	u := &Updater{
+		locker:        &testLocker{locker: updates.NewLocalLockSource()},
+		store:         store,
+		metadataStore: metadataStore,
+		client:        srv.Client(),
+		urls:          []string{srv.URL},
+		root:          t.TempDir(),
+		skipGC:        true,
+		importFunc: func(_ context.Context, _ io.Reader) error {
+			importCallCount++
+			if importCallCount == 2 {
+				return errors.New("fake import error")
+			}
+			return nil
+		},
+		retryDelay:  1 * time.Second,
+		retryMax:    1,
+		distManager: newDistManager(store),
+	}
+
+	// Start of runMultiBundleUpdate.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(prevTime, nil)
+
+	// Pre-registration phase: one call per bundle.
+	preReg := make([]*gomock.Call, len(bundleNames))
+	for i, name := range bundleNames {
+		preReg[i] = metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), name, prevTime).
+			Return(prevTime, nil)
+	}
+
+	// Processing phase: return prevTime so each bundle proceeds to import.
+	for _, name := range bundleNames {
+		call := metadataStore.EXPECT().
+			GetOrSetLastVulnerabilityUpdate(gomock.Any(), name, prevTime).
+			Return(prevTime, nil)
+		for _, pre := range preReg {
+			call.After(pre)
+		}
+	}
+
+	// SetLastVulnerabilityUpdate is called only for the two bundles that succeed.
+	metadataStore.EXPECT().
+		SetLastVulnerabilityUpdate(gomock.Any(), "alpine.json.zst", now).
+		Return(nil)
+	metadataStore.EXPECT().
+		SetLastVulnerabilityUpdate(gomock.Any(), "rhel-vex.json.zst", now).
+		Return(nil)
+
+	// GC and distribution update run because at least one bundle succeeded.
+	metadataStore.EXPECT().
+		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
+		Return(nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(nil, nil)
+
+	// Initialized check at end of runMultiBundleUpdate.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+
+	err := u.Update(test.Logging(t))
+	assert.ErrorContains(t, err, "nvd.json.zst")
+	assert.Equal(t, 3, importCallCount, "all three bundles must be attempted")
 }
 
 func TestIsRetryableDialError(t *testing.T) {

@@ -171,7 +171,7 @@ func expectRegistryHelper(mockRegistryStore *imageMocks.MockregistryStore, times
 
 func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, retValue *v1.ScanImageInternalResponse, retErr error) expectFn {
 	return func() {
-		mockCentral.EXPECT().ScanImageInternal(gomock.Any(), gomock.Any()).Times(times).
+		mockCentral.EXPECT().ScanImageInternalForAdmission(gomock.Any(), gomock.Any()).Times(times).
 			Return(retValue, retErr)
 	}
 }
