@@ -86,11 +86,11 @@ func grantMatchingResources(
 	resource string, apiGroup string,
 	access storage.Access,
 ) {
-	if resource == "*" || apiGroup == "*" {
+	if resource == rbacWildcard || apiGroup == rbacWildcard {
 		for key, acsResource := range resourceMapping {
 			mappedResource, mappedGroup, _ := strings.Cut(key, ".")
-			if (resource == "*" || resource == mappedResource) &&
-				(apiGroup == "*" || apiGroup == mappedGroup) {
+			if (resource == rbacWildcard || resource == mappedResource) &&
+				(apiGroup == rbacWildcard || apiGroup == mappedGroup) {
 				grantAccessToResource(accessMapping, acsResource, access)
 			}
 		}
@@ -126,7 +126,7 @@ func computeAccessLevel(verbs []string) storage.Access {
 
 	for _, verb := range verbs {
 		// Wildcard grants full access
-		if verb == "*" {
+		if verb == rbacWildcard {
 			return storage.Access_READ_WRITE_ACCESS
 		}
 
