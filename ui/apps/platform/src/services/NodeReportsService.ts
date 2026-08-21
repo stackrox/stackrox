@@ -6,8 +6,41 @@ import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/
 import { makeCancellableAxiosRequest } from './cancellationUtils';
 import type { CancellableRequest } from './cancellationUtils';
 import type { NodeVulnerabilityReportConfiguration } from './ReportsService.types';
+import type { Empty } from './types';
 import axios from './instance';
 
+// https://github.com/stackrox/stackrox/blob/master/proto/api/v2/node_report_service.proto
+
+// Configuration of scheduled reports
+
+// PostNodeReportConfiguration
+export function createNodeReportConfiguration(
+    configuration: NodeVulnerabilityReportConfiguration
+): CancellableRequest<NodeVulnerabilityReportConfiguration> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .post<NodeVulnerabilityReportConfiguration>(
+                '/v2/reports/node/configurations',
+                configuration,
+                { signal }
+            )
+            .then((response) => response.data)
+    );
+}
+
+// UpdateNodeReportConfiguration
+export function updateNodeReportConfiguration(
+    reportId: string,
+    configuration: NodeVulnerabilityReportConfiguration
+): CancellableRequest<Empty> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .put<Empty>(`/v2/reports/node/configurations/${reportId}`, configuration, { signal })
+            .then((response) => response.data)
+    );
+}
+
+// ListNodeReportConfigurations
 export function fetchNodeReportConfigurations({
     searchFilter,
     page,
@@ -24,6 +57,7 @@ export function fetchNodeReportConfigurations({
     );
 }
 
+// CountNodeReportConfigurations
 export function fetchNodeReportConfigurationsCount(
     searchFilter: SearchFilter
 ): CancellableRequest<{ count: number }> {
@@ -39,3 +73,52 @@ export function fetchNodeReportConfigurationsCount(
             })
     );
 }
+
+// GetNodeReportConfiguration
+export function fetchNodeReportConfiguration(
+    reportId: string
+): CancellableRequest<NodeVulnerabilityReportConfiguration> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .get<NodeVulnerabilityReportConfiguration>(
+                `/v2/reports/node/configurations/${reportId}`,
+                { signal }
+            )
+            .then((response) => response.data)
+    );
+}
+
+// DeleteNodeReportConfiguration
+export function deleteNodeReportConfiguration(reportId: string): CancellableRequest<Empty> {
+    return makeCancellableAxiosRequest((signal) =>
+        axios
+            .delete<Empty>(`/v2/reports/node/configurations/${reportId}`, { signal })
+            .then((response) => response.data)
+    );
+}
+
+// Configuration-based jobs
+
+// RunNodeReport
+
+// GetNodeReportHistory
+
+// GetMyNodeReportHistory
+
+// Job management
+
+// GetNodeReportStatus
+
+// CancelNodeReport
+
+// DeleteNodeReport
+
+// View-based jobs
+
+// PostViewBasedNodeReport
+
+// GetViewBasedNodeReportHistory
+
+// GetViewBasedMyNodeReportHistory
+
+// Job download
