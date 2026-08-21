@@ -148,7 +148,7 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 				string(resources.K8sRoleBinding.GetResource()): storage.Access_READ_ACCESS,
 			},
 		},
-		"subresource access": {
+		"subresource rules produce no access": {
 			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
 				Rules: []rbacv1.PolicyRule{
 					{
@@ -158,9 +158,7 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 					},
 				},
 			},
-			expectedPermissions: map[string]storage.Access{
-				string(resources.Secret.GetResource()): storage.Access_READ_WRITE_ACCESS,
-			},
+			expectedPermissions: map[string]storage.Access{},
 		},
 		"non-base resources are ignored": {
 			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{

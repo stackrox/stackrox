@@ -65,9 +65,14 @@ func ConvertClusterRoleToPermissionSet(
 		access := computeAccessLevel(rule.Verbs)
 
 		for _, k8sResource := range rule.Resources {
-			baseResource := getBaseResourceFromResource(k8sResource)
+			// Subresource rules (e.g. "secrets/status") are narrower than
+			// base-resource rules; PermissionSet cannot represent that scope,
+			// so skip them to avoid granting broader access.
+			if strings.Contains(k8sResource, "/") {
+				continue
+			}
 			for _, apiGroup := range rule.APIGroups {
-				grantMatchingResources(resourceToAccess, baseResource, apiGroup, access)
+				grantMatchingResources(resourceToAccess, k8sResource, apiGroup, access)
 			}
 		}
 	}
