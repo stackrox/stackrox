@@ -179,6 +179,76 @@ func (Source) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cve_proto_rawDescGZIP(), []int{2}
 }
 
+type VulnOrigin int32
+
+const (
+	VulnOrigin_VULN_ORIGIN_OTHER   VulnOrigin = 0
+	VulnOrigin_VULN_ORIGIN_OSV     VulnOrigin = 1
+	VulnOrigin_VULN_ORIGIN_ALPINE  VulnOrigin = 2
+	VulnOrigin_VULN_ORIGIN_AMAZON  VulnOrigin = 3
+	VulnOrigin_VULN_ORIGIN_DEBIAN  VulnOrigin = 4
+	VulnOrigin_VULN_ORIGIN_ORACLE  VulnOrigin = 5
+	VulnOrigin_VULN_ORIGIN_PHOTON  VulnOrigin = 6
+	VulnOrigin_VULN_ORIGIN_RED_HAT VulnOrigin = 7
+	VulnOrigin_VULN_ORIGIN_SUSE    VulnOrigin = 8
+	VulnOrigin_VULN_ORIGIN_UBUNTU  VulnOrigin = 9
+)
+
+// Enum value maps for VulnOrigin.
+var (
+	VulnOrigin_name = map[int32]string{
+		0: "VULN_ORIGIN_OTHER",
+		1: "VULN_ORIGIN_OSV",
+		2: "VULN_ORIGIN_ALPINE",
+		3: "VULN_ORIGIN_AMAZON",
+		4: "VULN_ORIGIN_DEBIAN",
+		5: "VULN_ORIGIN_ORACLE",
+		6: "VULN_ORIGIN_PHOTON",
+		7: "VULN_ORIGIN_RED_HAT",
+		8: "VULN_ORIGIN_SUSE",
+		9: "VULN_ORIGIN_UBUNTU",
+	}
+	VulnOrigin_value = map[string]int32{
+		"VULN_ORIGIN_OTHER":   0,
+		"VULN_ORIGIN_OSV":     1,
+		"VULN_ORIGIN_ALPINE":  2,
+		"VULN_ORIGIN_AMAZON":  3,
+		"VULN_ORIGIN_DEBIAN":  4,
+		"VULN_ORIGIN_ORACLE":  5,
+		"VULN_ORIGIN_PHOTON":  6,
+		"VULN_ORIGIN_RED_HAT": 7,
+		"VULN_ORIGIN_SUSE":    8,
+		"VULN_ORIGIN_UBUNTU":  9,
+	}
+)
+
+func (x VulnOrigin) Enum() *VulnOrigin {
+	p := new(VulnOrigin)
+	*p = x
+	return p
+}
+
+func (x VulnOrigin) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VulnOrigin) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_cve_proto_enumTypes[3].Descriptor()
+}
+
+func (VulnOrigin) Type() protoreflect.EnumType {
+	return &file_storage_cve_proto_enumTypes[3]
+}
+
+func (x VulnOrigin) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VulnOrigin.Descriptor instead.
+func (VulnOrigin) EnumDescriptor() ([]byte, []int) {
+	return file_storage_cve_proto_rawDescGZIP(), []int{3}
+}
+
 // Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
 type CvssScoreVersion int32
 
@@ -213,11 +283,11 @@ func (x CvssScoreVersion) String() string {
 }
 
 func (CvssScoreVersion) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[3].Descriptor()
+	return file_storage_cve_proto_enumTypes[4].Descriptor()
 }
 
 func (CvssScoreVersion) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[3]
+	return &file_storage_cve_proto_enumTypes[4]
 }
 
 func (x CvssScoreVersion) Number() protoreflect.EnumNumber {
@@ -226,7 +296,7 @@ func (x CvssScoreVersion) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CvssScoreVersion.Descriptor instead.
 func (CvssScoreVersion) EnumDescriptor() ([]byte, []int) {
-	return file_storage_cve_proto_rawDescGZIP(), []int{3}
+	return file_storage_cve_proto_rawDescGZIP(), []int{4}
 }
 
 type CVE_CVEType int32
@@ -271,11 +341,11 @@ func (x CVE_CVEType) String() string {
 }
 
 func (CVE_CVEType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[4].Descriptor()
+	return file_storage_cve_proto_enumTypes[5].Descriptor()
 }
 
 func (CVE_CVEType) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[4]
+	return &file_storage_cve_proto_enumTypes[5]
 }
 
 func (x CVE_CVEType) Number() protoreflect.EnumNumber {
@@ -320,11 +390,11 @@ func (x CVE_ScoreVersion) String() string {
 }
 
 func (CVE_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[5].Descriptor()
+	return file_storage_cve_proto_enumTypes[6].Descriptor()
 }
 
 func (CVE_ScoreVersion) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[5]
+	return &file_storage_cve_proto_enumTypes[6]
 }
 
 func (x CVE_ScoreVersion) Number() protoreflect.EnumNumber {
@@ -370,11 +440,11 @@ func (x CVEInfo_ScoreVersion) String() string {
 }
 
 func (CVEInfo_ScoreVersion) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[6].Descriptor()
+	return file_storage_cve_proto_enumTypes[7].Descriptor()
 }
 
 func (CVEInfo_ScoreVersion) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[6]
+	return &file_storage_cve_proto_enumTypes[7]
 }
 
 func (x CVEInfo_ScoreVersion) Number() protoreflect.EnumNumber {
@@ -419,11 +489,11 @@ func (x CVSSV2_Impact) String() string {
 }
 
 func (CVSSV2_Impact) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[7].Descriptor()
+	return file_storage_cve_proto_enumTypes[8].Descriptor()
 }
 
 func (CVSSV2_Impact) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[7]
+	return &file_storage_cve_proto_enumTypes[8]
 }
 
 func (x CVSSV2_Impact) Number() protoreflect.EnumNumber {
@@ -468,11 +538,11 @@ func (x CVSSV2_AttackVector) String() string {
 }
 
 func (CVSSV2_AttackVector) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[8].Descriptor()
+	return file_storage_cve_proto_enumTypes[9].Descriptor()
 }
 
 func (CVSSV2_AttackVector) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[8]
+	return &file_storage_cve_proto_enumTypes[9]
 }
 
 func (x CVSSV2_AttackVector) Number() protoreflect.EnumNumber {
@@ -517,11 +587,11 @@ func (x CVSSV2_AccessComplexity) String() string {
 }
 
 func (CVSSV2_AccessComplexity) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[9].Descriptor()
+	return file_storage_cve_proto_enumTypes[10].Descriptor()
 }
 
 func (CVSSV2_AccessComplexity) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[9]
+	return &file_storage_cve_proto_enumTypes[10]
 }
 
 func (x CVSSV2_AccessComplexity) Number() protoreflect.EnumNumber {
@@ -566,11 +636,11 @@ func (x CVSSV2_Authentication) String() string {
 }
 
 func (CVSSV2_Authentication) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[10].Descriptor()
+	return file_storage_cve_proto_enumTypes[11].Descriptor()
 }
 
 func (CVSSV2_Authentication) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[10]
+	return &file_storage_cve_proto_enumTypes[11]
 }
 
 func (x CVSSV2_Authentication) Number() protoreflect.EnumNumber {
@@ -618,11 +688,11 @@ func (x CVSSV2_Severity) String() string {
 }
 
 func (CVSSV2_Severity) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[11].Descriptor()
+	return file_storage_cve_proto_enumTypes[12].Descriptor()
 }
 
 func (CVSSV2_Severity) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[11]
+	return &file_storage_cve_proto_enumTypes[12]
 }
 
 func (x CVSSV2_Severity) Number() protoreflect.EnumNumber {
@@ -667,11 +737,11 @@ func (x CVSSV3_Impact) String() string {
 }
 
 func (CVSSV3_Impact) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[12].Descriptor()
+	return file_storage_cve_proto_enumTypes[13].Descriptor()
 }
 
 func (CVSSV3_Impact) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[12]
+	return &file_storage_cve_proto_enumTypes[13]
 }
 
 func (x CVSSV3_Impact) Number() protoreflect.EnumNumber {
@@ -719,11 +789,11 @@ func (x CVSSV3_AttackVector) String() string {
 }
 
 func (CVSSV3_AttackVector) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[13].Descriptor()
+	return file_storage_cve_proto_enumTypes[14].Descriptor()
 }
 
 func (CVSSV3_AttackVector) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[13]
+	return &file_storage_cve_proto_enumTypes[14]
 }
 
 func (x CVSSV3_AttackVector) Number() protoreflect.EnumNumber {
@@ -765,11 +835,11 @@ func (x CVSSV3_Complexity) String() string {
 }
 
 func (CVSSV3_Complexity) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[14].Descriptor()
+	return file_storage_cve_proto_enumTypes[15].Descriptor()
 }
 
 func (CVSSV3_Complexity) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[14]
+	return &file_storage_cve_proto_enumTypes[15]
 }
 
 func (x CVSSV3_Complexity) Number() protoreflect.EnumNumber {
@@ -814,11 +884,11 @@ func (x CVSSV3_Privileges) String() string {
 }
 
 func (CVSSV3_Privileges) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[15].Descriptor()
+	return file_storage_cve_proto_enumTypes[16].Descriptor()
 }
 
 func (CVSSV3_Privileges) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[15]
+	return &file_storage_cve_proto_enumTypes[16]
 }
 
 func (x CVSSV3_Privileges) Number() protoreflect.EnumNumber {
@@ -860,11 +930,11 @@ func (x CVSSV3_UserInteraction) String() string {
 }
 
 func (CVSSV3_UserInteraction) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[16].Descriptor()
+	return file_storage_cve_proto_enumTypes[17].Descriptor()
 }
 
 func (CVSSV3_UserInteraction) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[16]
+	return &file_storage_cve_proto_enumTypes[17]
 }
 
 func (x CVSSV3_UserInteraction) Number() protoreflect.EnumNumber {
@@ -906,11 +976,11 @@ func (x CVSSV3_Scope) String() string {
 }
 
 func (CVSSV3_Scope) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[17].Descriptor()
+	return file_storage_cve_proto_enumTypes[18].Descriptor()
 }
 
 func (CVSSV3_Scope) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[17]
+	return &file_storage_cve_proto_enumTypes[18]
 }
 
 func (x CVSSV3_Scope) Number() protoreflect.EnumNumber {
@@ -964,11 +1034,11 @@ func (x CVSSV3_Severity) String() string {
 }
 
 func (CVSSV3_Severity) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_cve_proto_enumTypes[18].Descriptor()
+	return file_storage_cve_proto_enumTypes[19].Descriptor()
 }
 
 func (CVSSV3_Severity) Type() protoreflect.EnumType {
-	return &file_storage_cve_proto_enumTypes[18]
+	return &file_storage_cve_proto_enumTypes[19]
 }
 
 func (x CVSSV3_Severity) Number() protoreflect.EnumNumber {
@@ -1591,8 +1661,10 @@ type ImageCVEV2 struct {
 	// Timestamp when the fix for this CVE was made available according to the sources.
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV).
+	Origin        VulnOrigin `protobuf:"varint,18,opt,name=origin,proto3,enum=storage.VulnOrigin" json:"origin,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageCVEV2) Reset() {
@@ -1752,6 +1824,13 @@ func (x *ImageCVEV2) GetDatasource() string {
 		return x.Datasource
 	}
 	return ""
+}
+
+func (x *ImageCVEV2) GetOrigin() VulnOrigin {
+	if x != nil {
+		return x.Origin
+	}
+	return VulnOrigin_VULN_ORIGIN_OTHER
 }
 
 type isImageCVEV2_HasFixedBy interface {
@@ -2705,7 +2784,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xfc\x05\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xa9\x06\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -2728,7 +2807,8 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\x17fix_available_timestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12\x1e\n" +
 	"\n" +
 	"datasource\x18\x11 \x01(\tR\n" +
-	"datasourceB\x0e\n" +
+	"datasource\x12+\n" +
+	"\x06origin\x18\x12 \x01(\x0e2\x13.storage.VulnOriginR\x06originB\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
@@ -2866,7 +2946,19 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\n" +
 	"SOURCE_OSV\x10\x02\x12\x0e\n" +
 	"\n" +
-	"SOURCE_NVD\x10\x03*7\n" +
+	"SOURCE_NVD\x10\x03*\xf7\x01\n" +
+	"\n" +
+	"VulnOrigin\x12\x15\n" +
+	"\x11VULN_ORIGIN_OTHER\x10\x00\x12\x13\n" +
+	"\x0fVULN_ORIGIN_OSV\x10\x01\x12\x16\n" +
+	"\x12VULN_ORIGIN_ALPINE\x10\x02\x12\x16\n" +
+	"\x12VULN_ORIGIN_AMAZON\x10\x03\x12\x16\n" +
+	"\x12VULN_ORIGIN_DEBIAN\x10\x04\x12\x16\n" +
+	"\x12VULN_ORIGIN_ORACLE\x10\x05\x12\x16\n" +
+	"\x12VULN_ORIGIN_PHOTON\x10\x06\x12\x17\n" +
+	"\x13VULN_ORIGIN_RED_HAT\x10\a\x12\x14\n" +
+	"\x10VULN_ORIGIN_SUSE\x10\b\x12\x16\n" +
+	"\x12VULN_ORIGIN_UBUNTU\x10\t*7\n" +
 	"\x10CvssScoreVersion\x12\x13\n" +
 	"\x0fUNKNOWN_VERSION\x10\x00\x12\x06\n" +
 	"\x02V2\x10\x01\x12\x06\n" +
@@ -2885,123 +2977,125 @@ func file_storage_cve_proto_rawDescGZIP() []byte {
 	return file_storage_cve_proto_rawDescData
 }
 
-var file_storage_cve_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
+var file_storage_cve_proto_enumTypes = make([]protoimpl.EnumInfo, 20)
 var file_storage_cve_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_storage_cve_proto_goTypes = []any{
 	(VulnerabilityState)(0),       // 0: storage.VulnerabilityState
 	(VulnerabilitySeverity)(0),    // 1: storage.VulnerabilitySeverity
 	(Source)(0),                   // 2: storage.Source
-	(CvssScoreVersion)(0),         // 3: storage.CvssScoreVersion
-	(CVE_CVEType)(0),              // 4: storage.CVE.CVEType
-	(CVE_ScoreVersion)(0),         // 5: storage.CVE.ScoreVersion
-	(CVEInfo_ScoreVersion)(0),     // 6: storage.CVEInfo.ScoreVersion
-	(CVSSV2_Impact)(0),            // 7: storage.CVSSV2.Impact
-	(CVSSV2_AttackVector)(0),      // 8: storage.CVSSV2.AttackVector
-	(CVSSV2_AccessComplexity)(0),  // 9: storage.CVSSV2.AccessComplexity
-	(CVSSV2_Authentication)(0),    // 10: storage.CVSSV2.Authentication
-	(CVSSV2_Severity)(0),          // 11: storage.CVSSV2.Severity
-	(CVSSV3_Impact)(0),            // 12: storage.CVSSV3.Impact
-	(CVSSV3_AttackVector)(0),      // 13: storage.CVSSV3.AttackVector
-	(CVSSV3_Complexity)(0),        // 14: storage.CVSSV3.Complexity
-	(CVSSV3_Privileges)(0),        // 15: storage.CVSSV3.Privileges
-	(CVSSV3_UserInteraction)(0),   // 16: storage.CVSSV3.UserInteraction
-	(CVSSV3_Scope)(0),             // 17: storage.CVSSV3.Scope
-	(CVSSV3_Severity)(0),          // 18: storage.CVSSV3.Severity
-	(*EPSS)(nil),                  // 19: storage.EPSS
-	(*CVE)(nil),                   // 20: storage.CVE
-	(*CVEInfo)(nil),               // 21: storage.CVEInfo
-	(*Advisory)(nil),              // 22: storage.Advisory
-	(*ImageCVE)(nil),              // 23: storage.ImageCVE
-	(*ImageCVEV2)(nil),            // 24: storage.ImageCVEV2
-	(*NodeCVE)(nil),               // 25: storage.NodeCVE
-	(*ClusterCVE)(nil),            // 26: storage.ClusterCVE
-	(*CVSSScore)(nil),             // 27: storage.CVSSScore
-	(*CVSSV2)(nil),                // 28: storage.CVSSV2
-	(*CVSSV3)(nil),                // 29: storage.CVSSV3
-	(*ImageCVEInfo)(nil),          // 30: storage.ImageCVEInfo
-	(*CVE_DistroSpecific)(nil),    // 31: storage.CVE.DistroSpecific
-	(*CVE_Reference)(nil),         // 32: storage.CVE.Reference
-	nil,                           // 33: storage.CVE.DistroSpecificsEntry
-	(*CVEInfo_Reference)(nil),     // 34: storage.CVEInfo.Reference
-	(*timestamppb.Timestamp)(nil), // 35: google.protobuf.Timestamp
+	(VulnOrigin)(0),               // 3: storage.VulnOrigin
+	(CvssScoreVersion)(0),         // 4: storage.CvssScoreVersion
+	(CVE_CVEType)(0),              // 5: storage.CVE.CVEType
+	(CVE_ScoreVersion)(0),         // 6: storage.CVE.ScoreVersion
+	(CVEInfo_ScoreVersion)(0),     // 7: storage.CVEInfo.ScoreVersion
+	(CVSSV2_Impact)(0),            // 8: storage.CVSSV2.Impact
+	(CVSSV2_AttackVector)(0),      // 9: storage.CVSSV2.AttackVector
+	(CVSSV2_AccessComplexity)(0),  // 10: storage.CVSSV2.AccessComplexity
+	(CVSSV2_Authentication)(0),    // 11: storage.CVSSV2.Authentication
+	(CVSSV2_Severity)(0),          // 12: storage.CVSSV2.Severity
+	(CVSSV3_Impact)(0),            // 13: storage.CVSSV3.Impact
+	(CVSSV3_AttackVector)(0),      // 14: storage.CVSSV3.AttackVector
+	(CVSSV3_Complexity)(0),        // 15: storage.CVSSV3.Complexity
+	(CVSSV3_Privileges)(0),        // 16: storage.CVSSV3.Privileges
+	(CVSSV3_UserInteraction)(0),   // 17: storage.CVSSV3.UserInteraction
+	(CVSSV3_Scope)(0),             // 18: storage.CVSSV3.Scope
+	(CVSSV3_Severity)(0),          // 19: storage.CVSSV3.Severity
+	(*EPSS)(nil),                  // 20: storage.EPSS
+	(*CVE)(nil),                   // 21: storage.CVE
+	(*CVEInfo)(nil),               // 22: storage.CVEInfo
+	(*Advisory)(nil),              // 23: storage.Advisory
+	(*ImageCVE)(nil),              // 24: storage.ImageCVE
+	(*ImageCVEV2)(nil),            // 25: storage.ImageCVEV2
+	(*NodeCVE)(nil),               // 26: storage.NodeCVE
+	(*ClusterCVE)(nil),            // 27: storage.ClusterCVE
+	(*CVSSScore)(nil),             // 28: storage.CVSSScore
+	(*CVSSV2)(nil),                // 29: storage.CVSSV2
+	(*CVSSV3)(nil),                // 30: storage.CVSSV3
+	(*ImageCVEInfo)(nil),          // 31: storage.ImageCVEInfo
+	(*CVE_DistroSpecific)(nil),    // 32: storage.CVE.DistroSpecific
+	(*CVE_Reference)(nil),         // 33: storage.CVE.Reference
+	nil,                           // 34: storage.CVE.DistroSpecificsEntry
+	(*CVEInfo_Reference)(nil),     // 35: storage.CVEInfo.Reference
+	(*timestamppb.Timestamp)(nil), // 36: google.protobuf.Timestamp
 }
 var file_storage_cve_proto_depIdxs = []int32{
-	4,  // 0: storage.CVE.type:type_name -> storage.CVE.CVEType
-	4,  // 1: storage.CVE.types:type_name -> storage.CVE.CVEType
-	35, // 2: storage.CVE.published_on:type_name -> google.protobuf.Timestamp
-	35, // 3: storage.CVE.created_at:type_name -> google.protobuf.Timestamp
-	35, // 4: storage.CVE.last_modified:type_name -> google.protobuf.Timestamp
-	32, // 5: storage.CVE.references:type_name -> storage.CVE.Reference
-	5,  // 6: storage.CVE.score_version:type_name -> storage.CVE.ScoreVersion
-	28, // 7: storage.CVE.cvss_v2:type_name -> storage.CVSSV2
-	29, // 8: storage.CVE.cvss_v3:type_name -> storage.CVSSV3
-	35, // 9: storage.CVE.suppress_activation:type_name -> google.protobuf.Timestamp
-	35, // 10: storage.CVE.suppress_expiry:type_name -> google.protobuf.Timestamp
-	33, // 11: storage.CVE.distro_specifics:type_name -> storage.CVE.DistroSpecificsEntry
+	5,  // 0: storage.CVE.type:type_name -> storage.CVE.CVEType
+	5,  // 1: storage.CVE.types:type_name -> storage.CVE.CVEType
+	36, // 2: storage.CVE.published_on:type_name -> google.protobuf.Timestamp
+	36, // 3: storage.CVE.created_at:type_name -> google.protobuf.Timestamp
+	36, // 4: storage.CVE.last_modified:type_name -> google.protobuf.Timestamp
+	33, // 5: storage.CVE.references:type_name -> storage.CVE.Reference
+	6,  // 6: storage.CVE.score_version:type_name -> storage.CVE.ScoreVersion
+	29, // 7: storage.CVE.cvss_v2:type_name -> storage.CVSSV2
+	30, // 8: storage.CVE.cvss_v3:type_name -> storage.CVSSV3
+	36, // 9: storage.CVE.suppress_activation:type_name -> google.protobuf.Timestamp
+	36, // 10: storage.CVE.suppress_expiry:type_name -> google.protobuf.Timestamp
+	34, // 11: storage.CVE.distro_specifics:type_name -> storage.CVE.DistroSpecificsEntry
 	1,  // 12: storage.CVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 13: storage.CVEInfo.published_on:type_name -> google.protobuf.Timestamp
-	35, // 14: storage.CVEInfo.created_at:type_name -> google.protobuf.Timestamp
-	35, // 15: storage.CVEInfo.last_modified:type_name -> google.protobuf.Timestamp
-	6,  // 16: storage.CVEInfo.score_version:type_name -> storage.CVEInfo.ScoreVersion
-	28, // 17: storage.CVEInfo.cvss_v2:type_name -> storage.CVSSV2
-	29, // 18: storage.CVEInfo.cvss_v3:type_name -> storage.CVSSV3
-	34, // 19: storage.CVEInfo.references:type_name -> storage.CVEInfo.Reference
-	27, // 20: storage.CVEInfo.cvss_metrics:type_name -> storage.CVSSScore
-	19, // 21: storage.CVEInfo.epss:type_name -> storage.EPSS
-	21, // 22: storage.ImageCVE.cve_base_info:type_name -> storage.CVEInfo
+	36, // 13: storage.CVEInfo.published_on:type_name -> google.protobuf.Timestamp
+	36, // 14: storage.CVEInfo.created_at:type_name -> google.protobuf.Timestamp
+	36, // 15: storage.CVEInfo.last_modified:type_name -> google.protobuf.Timestamp
+	7,  // 16: storage.CVEInfo.score_version:type_name -> storage.CVEInfo.ScoreVersion
+	29, // 17: storage.CVEInfo.cvss_v2:type_name -> storage.CVSSV2
+	30, // 18: storage.CVEInfo.cvss_v3:type_name -> storage.CVSSV3
+	35, // 19: storage.CVEInfo.references:type_name -> storage.CVEInfo.Reference
+	28, // 20: storage.CVEInfo.cvss_metrics:type_name -> storage.CVSSScore
+	20, // 21: storage.CVEInfo.epss:type_name -> storage.EPSS
+	22, // 22: storage.ImageCVE.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 23: storage.ImageCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 24: storage.ImageCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 25: storage.ImageCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	27, // 26: storage.ImageCVE.cvss_metrics:type_name -> storage.CVSSScore
-	3,  // 27: storage.ImageCVE.nvd_score_version:type_name -> storage.CvssScoreVersion
-	21, // 28: storage.ImageCVEV2.cve_base_info:type_name -> storage.CVEInfo
+	36, // 24: storage.ImageCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	36, // 25: storage.ImageCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	28, // 26: storage.ImageCVE.cvss_metrics:type_name -> storage.CVSSScore
+	4,  // 27: storage.ImageCVE.nvd_score_version:type_name -> storage.CvssScoreVersion
+	22, // 28: storage.ImageCVEV2.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 29: storage.ImageCVEV2.severity:type_name -> storage.VulnerabilitySeverity
-	3,  // 30: storage.ImageCVEV2.nvd_score_version:type_name -> storage.CvssScoreVersion
-	35, // 31: storage.ImageCVEV2.first_image_occurrence:type_name -> google.protobuf.Timestamp
+	4,  // 30: storage.ImageCVEV2.nvd_score_version:type_name -> storage.CvssScoreVersion
+	36, // 31: storage.ImageCVEV2.first_image_occurrence:type_name -> google.protobuf.Timestamp
 	0,  // 32: storage.ImageCVEV2.state:type_name -> storage.VulnerabilityState
-	22, // 33: storage.ImageCVEV2.advisory:type_name -> storage.Advisory
-	35, // 34: storage.ImageCVEV2.fix_available_timestamp:type_name -> google.protobuf.Timestamp
-	21, // 35: storage.NodeCVE.cve_base_info:type_name -> storage.CVEInfo
-	1,  // 36: storage.NodeCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 37: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 38: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	35, // 39: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
-	21, // 40: storage.ClusterCVE.cve_base_info:type_name -> storage.CVEInfo
-	1,  // 41: storage.ClusterCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 42: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 43: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	4,  // 44: storage.ClusterCVE.type:type_name -> storage.CVE.CVEType
-	2,  // 45: storage.CVSSScore.source:type_name -> storage.Source
-	28, // 46: storage.CVSSScore.cvssv2:type_name -> storage.CVSSV2
-	29, // 47: storage.CVSSScore.cvssv3:type_name -> storage.CVSSV3
-	8,  // 48: storage.CVSSV2.attack_vector:type_name -> storage.CVSSV2.AttackVector
-	9,  // 49: storage.CVSSV2.access_complexity:type_name -> storage.CVSSV2.AccessComplexity
-	10, // 50: storage.CVSSV2.authentication:type_name -> storage.CVSSV2.Authentication
-	7,  // 51: storage.CVSSV2.confidentiality:type_name -> storage.CVSSV2.Impact
-	7,  // 52: storage.CVSSV2.integrity:type_name -> storage.CVSSV2.Impact
-	7,  // 53: storage.CVSSV2.availability:type_name -> storage.CVSSV2.Impact
-	11, // 54: storage.CVSSV2.severity:type_name -> storage.CVSSV2.Severity
-	13, // 55: storage.CVSSV3.attack_vector:type_name -> storage.CVSSV3.AttackVector
-	14, // 56: storage.CVSSV3.attack_complexity:type_name -> storage.CVSSV3.Complexity
-	15, // 57: storage.CVSSV3.privileges_required:type_name -> storage.CVSSV3.Privileges
-	16, // 58: storage.CVSSV3.user_interaction:type_name -> storage.CVSSV3.UserInteraction
-	17, // 59: storage.CVSSV3.scope:type_name -> storage.CVSSV3.Scope
-	12, // 60: storage.CVSSV3.confidentiality:type_name -> storage.CVSSV3.Impact
-	12, // 61: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
-	12, // 62: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
-	18, // 63: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
-	35, // 64: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
-	35, // 65: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
-	1,  // 66: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
-	5,  // 67: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
-	28, // 68: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
-	29, // 69: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
-	31, // 70: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
-	71, // [71:71] is the sub-list for method output_type
-	71, // [71:71] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	23, // 33: storage.ImageCVEV2.advisory:type_name -> storage.Advisory
+	36, // 34: storage.ImageCVEV2.fix_available_timestamp:type_name -> google.protobuf.Timestamp
+	3,  // 35: storage.ImageCVEV2.origin:type_name -> storage.VulnOrigin
+	22, // 36: storage.NodeCVE.cve_base_info:type_name -> storage.CVEInfo
+	1,  // 37: storage.NodeCVE.severity:type_name -> storage.VulnerabilitySeverity
+	36, // 38: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	36, // 39: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	36, // 40: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
+	22, // 41: storage.ClusterCVE.cve_base_info:type_name -> storage.CVEInfo
+	1,  // 42: storage.ClusterCVE.severity:type_name -> storage.VulnerabilitySeverity
+	36, // 43: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	36, // 44: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	5,  // 45: storage.ClusterCVE.type:type_name -> storage.CVE.CVEType
+	2,  // 46: storage.CVSSScore.source:type_name -> storage.Source
+	29, // 47: storage.CVSSScore.cvssv2:type_name -> storage.CVSSV2
+	30, // 48: storage.CVSSScore.cvssv3:type_name -> storage.CVSSV3
+	9,  // 49: storage.CVSSV2.attack_vector:type_name -> storage.CVSSV2.AttackVector
+	10, // 50: storage.CVSSV2.access_complexity:type_name -> storage.CVSSV2.AccessComplexity
+	11, // 51: storage.CVSSV2.authentication:type_name -> storage.CVSSV2.Authentication
+	8,  // 52: storage.CVSSV2.confidentiality:type_name -> storage.CVSSV2.Impact
+	8,  // 53: storage.CVSSV2.integrity:type_name -> storage.CVSSV2.Impact
+	8,  // 54: storage.CVSSV2.availability:type_name -> storage.CVSSV2.Impact
+	12, // 55: storage.CVSSV2.severity:type_name -> storage.CVSSV2.Severity
+	14, // 56: storage.CVSSV3.attack_vector:type_name -> storage.CVSSV3.AttackVector
+	15, // 57: storage.CVSSV3.attack_complexity:type_name -> storage.CVSSV3.Complexity
+	16, // 58: storage.CVSSV3.privileges_required:type_name -> storage.CVSSV3.Privileges
+	17, // 59: storage.CVSSV3.user_interaction:type_name -> storage.CVSSV3.UserInteraction
+	18, // 60: storage.CVSSV3.scope:type_name -> storage.CVSSV3.Scope
+	13, // 61: storage.CVSSV3.confidentiality:type_name -> storage.CVSSV3.Impact
+	13, // 62: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
+	13, // 63: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
+	19, // 64: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
+	36, // 65: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
+	36, // 66: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
+	1,  // 67: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
+	6,  // 68: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
+	29, // 69: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
+	30, // 70: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
+	32, // 71: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
+	72, // [72:72] is the sub-list for method output_type
+	72, // [72:72] is the sub-list for method input_type
+	72, // [72:72] is the sub-list for extension type_name
+	72, // [72:72] is the sub-list for extension extendee
+	0,  // [0:72] is the sub-list for field type_name
 }
 
 func init() { file_storage_cve_proto_init() }
@@ -3021,7 +3115,7 @@ func file_storage_cve_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_cve_proto_rawDesc), len(file_storage_cve_proto_rawDesc)),
-			NumEnums:      19,
+			NumEnums:      20,
 			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
