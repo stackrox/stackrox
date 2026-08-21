@@ -56,7 +56,7 @@ func renderHelmChart(chartFiles []*loader.BufferedFile, mode mode, valuesFiles [
 		return nil, errors.Wrap(err, "rendering Helm chart")
 	}
 
-	renderedFiles := make([]*zip.File, 0, len(rendered))
+	var renderedFiles []*zip.File
 	// Filter out non-empty YAML files, and partition them into central and scanner files.
 	for fileName, contents := range rendered {
 		if path.Ext(fileName) != ".yaml" {

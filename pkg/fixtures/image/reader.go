@@ -27,7 +27,7 @@ func GetTestImages(_ *testing.T) ([]*storage.Image, error) {
 	// Sanity check embedded directory.
 	utils.CrashOnError(err)
 
-	images := make([]*storage.Image, 0, len(files))
+	var images []*storage.Image
 	for _, f := range files {
 		image, err := readContents(filepath.Join(dir, f.Name()))
 		if err != nil {

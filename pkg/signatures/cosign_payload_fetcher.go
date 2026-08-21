@@ -124,7 +124,7 @@ func fetchSignaturesByReferrer(ctx context.Context, digestRef name.Digest, repo 
 		bundleDescs = bundleDescs[:maxReferrerManifests]
 	}
 
-	payloads := make([]signaturePayload, 0, len(bundleDescs))
+	var payloads []signaturePayload
 	for _, desc := range bundleDescs {
 		if ctx.Err() != nil {
 			return payloads, ctx.Err()

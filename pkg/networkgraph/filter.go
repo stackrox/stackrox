@@ -8,7 +8,7 @@ func FilterFlowsByPredicate(flows []*storage.NetworkFlow, pred func(*storage.Net
 		return flows
 	}
 
-	filtered := make([]*storage.NetworkFlow, 0, len(flows))
+	var filtered []*storage.NetworkFlow
 	for _, flow := range flows {
 		if !pred(flow.GetProps()) {
 			continue

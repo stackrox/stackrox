@@ -711,7 +711,7 @@ func entriesFromQueries(
 	queryFields map[string]searchFieldMetadata,
 	nowForQuery time.Time,
 ) ([]*pgsearch.QueryEntry, error) {
-	entries := make([]*pgsearch.QueryEntry, 0, len(queries))
+	var entries []*pgsearch.QueryEntry
 	for _, q := range queries {
 		entry, err := compileQueryToPostgres(table, q, queryFields, nowForQuery)
 		if err != nil {
