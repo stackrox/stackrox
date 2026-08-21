@@ -216,12 +216,18 @@ func TestMultiBundleUpdate_SkipsCleanupWhenNoBundleProcessed(t *testing.T) {
 
 func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 	bundleNames := []string{"alpine.json.zst", "nvd.json.zst", "rhel-vex.json.zst"}
+	entryModified, err := http.ParseTime(time.Now().Add(-2 * time.Hour).UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
 
 	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
 		for _, name := range bundleNames {
-			_, err := zw.Create(name)
+			_, err := zw.CreateHeader(&zip.FileHeader{
+				Name:     name,
+				Method:   zip.Deflate,
+				Modified: entryModified,
+			})
 			require.NoError(t, err)
 		}
 		require.NoError(t, zw.Close())
@@ -232,7 +238,7 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 	store := mocks.NewMockMatcherStore(ctrl)
 	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
 
-	prevTime := now.Add(-time.Minute)
+	prevTime := entryModified.Add(-time.Minute)
 
 	u := &Updater{
 		locker:        &testLocker{locker: updates.NewLocalLockSource()},
@@ -263,12 +269,12 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 	}
 
 	// Processing phase: each updateBundle calls GetOrSetLastVulnerabilityUpdate.
-	// Return zipTime (now) so updateBundle skips actual import (no zst decoding needed).
+	// Return entryModified so updateBundle skips actual import (no zst decoding needed).
 	// Constrained to happen AFTER all pre-registration calls.
 	for _, name := range bundleNames {
 		call := metadataStore.EXPECT().
 			GetOrSetLastVulnerabilityUpdate(gomock.Any(), name, prevTime).
-			Return(now, nil)
+			Return(entryModified, nil)
 		for _, pre := range preReg {
 			call.After(pre)
 		}
@@ -285,7 +291,7 @@ func TestMultiBundleUpdate_PreRegistration(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 
-	err := u.Update(test.Logging(t))
+	err = u.Update(test.Logging(t))
 	assert.NoError(t, err)
 }
 
