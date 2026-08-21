@@ -179,9 +179,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, internalMessageDispatcher, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 
-	var vmStatsProvider clustermetrics.VMStatsSource
 	var virtualMachineHandler vmIndex.Handler
-	var vmScraper common.SensorComponent
+	var vmScraper *vmscraper.VMScraper
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 
@@ -189,9 +188,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
 			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
-			vmStatsProvider = scraper
-			vmScraper = scraper
+			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
 		} else {
 			log.Warn("VSOCK pull mode disabled (no REST config available)")
 		}
@@ -204,7 +201,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.NewWithInterval(clusterID, cfg.k8sClient.Kubernetes(), 5*time.Minute, vmStatsProvider),
+		clustermetrics.NewWithInterval(clusterID, cfg.k8sClient.Kubernetes(), 5*time.Minute, vmScraper),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
