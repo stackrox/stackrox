@@ -21,34 +21,36 @@ defaults:
     shell: bash
 
 jobs:
-  build:
-    name: Build
-    uses: ./.github/workflows/build.yaml
-    secrets: inherit
+  #build:
+  #  name: Build
+  #  uses: ./.github/workflows/build.yaml
+  #  secrets: inherit
 
   images:
-    needs: [ build ]
+    #needs: [ build ]
     runs-on: ubuntu-slim
+    env:
+      tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
     outputs:
-      tag: ${{ steps.build-tag.outputs.tag }}
+      tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
       operator_tag: ${{ steps.build-tag.outputs.operator_tag }}
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-    - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
-      run: |
-        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
-        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
-        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+    # - name: Checkout repo
+    #   uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+    #   with:
+    #     fetch-depth: 0
+    #     ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    #     persist-credentials: false
+    # - uses: ./.github/actions/handle-tagged-build
+    # - name: Compute build tag
+    #   id: build-tag
+    #   run: |
+    #     tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+    #     echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+    #     echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
@@ -69,7 +71,8 @@ jobs:
           rhacs-eng/stackrox-operator:${{ env.operator_tag }}
 
   e2e-db-backup-restore-tests:
-    needs: [ build, images ]
+    needs: [ images ]
+    #needs: [ build, images ]
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
