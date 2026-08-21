@@ -20,8 +20,6 @@
 
 set -euo pipefail
 
-config="${SOURCE_CONFIG:?SOURCE_CONFIG is required}"
-
 for cmd in yq jq; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "::error::$cmd is required but not found"
@@ -29,27 +27,27 @@ for cmd in yq jq; do
     fi
 done
 
-# Read storage location from config.
-bucket=$(yq '.storage.bucket' "$config")
-prefix=$(yq '.storage.prefix' "$config")
+sc="$(dirname "$0")/scanner-updater-config.sh"
+
+bucket=$("$sc" bucket)
+prefix=$("$sc" prefix)
 
 # Expand stream/ref/updater triples, check freshness, emit due pairs.
 ./.github/workflows/scripts/scanner-get-released-tags.sh \
     | jq -r '.[] | "\(.version) \(.ref)"' \
     | while read -r stream ref; do
-          yq ".bundles.\"$stream\" | .[]" "$config" \
+          "$sc" sources "$stream" \
               | while read -r updater; do
                     echo "$stream $ref $updater"
                 done
       done \
     | while read -r stream ref updater; do
           object="gs://${bucket}/${prefix}/${stream}/sources/${updater}.json.zst"
+          interval_secs=$("$sc" interval-secs "$updater")
 
           # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
           if GCS_OBJECT="$object" \
-             UPDATER_SOURCE="$updater" \
-             SOURCE_CONFIG="$config" \
-             ./.github/workflows/scripts/scanner-updater-check-freshness.sh
+             ./.github/workflows/scripts/scanner-updater-check-freshness.sh --max-age "$interval_secs"
           then
               continue
           elif [[ $? -eq 1 ]]; then
