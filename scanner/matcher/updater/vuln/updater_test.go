@@ -693,11 +693,18 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 		return buf.Bytes()
 	}
 
+	entryModified, err := http.ParseTime(time.Now().Add(-2 * time.Hour).UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+
 	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
 		for _, name := range bundleNames {
-			f, err := zw.Create(name)
+			f, err := zw.CreateHeader(&zip.FileHeader{
+				Name:     name,
+				Method:   zip.Deflate,
+				Modified: entryModified,
+			})
 			require.NoError(t, err)
 			_, err = f.Write(makeZstd())
 			require.NoError(t, err)
@@ -710,7 +717,7 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 	store := mocks.NewMockMatcherStore(ctrl)
 	metadataStore := mocks.NewMockMatcherMetadataStore(ctrl)
 
-	prevTime := now.Add(-time.Minute)
+	prevTime := entryModified.Add(-time.Minute)
 
 	// importFunc fails for the second call (nvd), succeeds for the others.
 	importCallCount := 0
@@ -759,10 +766,14 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 
 	// SetLastVulnerabilityUpdate is called only for the two bundles that succeed.
 	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), "alpine.json.zst", now).
+		SetLastVulnerabilityUpdate(gomock.Any(), "alpine.json.zst", gomock.Cond(func(got time.Time) bool {
+			return got.Equal(entryModified)
+		})).
 		Return(nil)
 	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), "rhel-vex.json.zst", now).
+		SetLastVulnerabilityUpdate(gomock.Any(), "rhel-vex.json.zst", gomock.Cond(func(got time.Time) bool {
+			return got.Equal(entryModified)
+		})).
 		Return(nil)
 
 	// GC and distribution update run because at least one bundle succeeded.
@@ -778,7 +789,7 @@ func TestRunMultiBundleUpdate_PartialFailure(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now, nil)
 
-	err := u.Update(test.Logging(t))
+	err = u.Update(test.Logging(t))
 	assert.ErrorContains(t, err, "nvd.json.zst")
 	assert.Equal(t, 3, importCallCount, "all three bundles must be attempted")
 }
