@@ -600,8 +600,9 @@ func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]
 	s.store.AddOrUpdate(vm)
 }
 
-// forwardAgentFactsIfChanged stores roxagent facts and emits a VM update when
-// they changed, even if the index report itself is unchanged.
+// forwardAgentFactsIfChanged emits a VM update when roxagent facts changed
+// even if the index report is unchanged. The store is updated only after
+// Send succeeds so a failed send is retried on the next unchanged scrape.
 func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, facts map[string]string) {
 	if len(facts) > 0 {
 		recordVMDiscoveredData(facts)
@@ -613,10 +614,13 @@ func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualm
 	if prev := s.store.Get(vm.ID); prev != nil && maps.Equal(prev.AgentFacts, mapped) {
 		return
 	}
-	s.persistAgentFacts(vm, facts)
-	if err := s.sender.Send(ctx, vm, nil); err != nil {
-		log.Debugf("VMScraper: agent facts for %q stored locally; Central update deferred: %v", vm.Key(), err)
+	toSend := vm.Copy()
+	toSend.AgentFacts = mapped
+	if err := s.sender.Send(ctx, toSend, nil); err != nil {
+		log.Debugf("VMScraper: agent facts for %q not forwarded; will retry: %v", vm.Key(), err)
+		return
 	}
+	s.store.AddOrUpdate(toSend)
 }
 
 // recordVMDiscoveredData increments VMDiscoveredData from ResponseMeta.facts

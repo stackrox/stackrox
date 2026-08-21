@@ -347,6 +347,54 @@ func TestVMScraper_DoesNotResendUnchangedAgentFacts(t *testing.T) {
 	assert.Len(t, sender.sent, 1, "should not emit a VM update when agent facts are unchanged")
 }
 
+func TestVMScraper_RetriesAgentFactsAfterSendFailure(t *testing.T) {
+	vmID := virtualmachine.VMID("ns1/vm-a")
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+	initialFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	})
+	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
+
+	changedFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	}
+	sender.err = errors.New("central unreachable")
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	assert.Len(t, sender.sent, 1, "failed metadata send should not count as forwarded")
+	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
+
+	sender.err = nil
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 2)
+	assert.Nil(t, sender.sent[1], "retry should be metadata-only")
+	expected := virtualmachine.AgentFactsFromResponseFacts(changedFacts)
+	assert.Equal(t, expected, sender.sentVMs[1].AgentFacts)
+	assert.Equal(t, expected, store.Get(vmID).AgentFacts)
+}
+
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),

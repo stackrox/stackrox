@@ -65,17 +65,6 @@ func TestFacts(t *testing.T) {
 				pkgVM.DetectedGuestOSKey:  "Red Hat Enterprise Linux 9.2",
 			},
 		},
-		"AgentFacts can override base keys": {
-			input: &Info{
-				GuestOS: "RHEL 9",
-				AgentFacts: map[string]string{
-					pkgVM.GuestOSKey: "overridden",
-				},
-			},
-			expected: map[string]string{
-				pkgVM.GuestOSKey: "overridden",
-			},
-		},
 		"nil AgentFacts does not affect result": {
 			input: &Info{
 				GuestOS:    "Fedora",

@@ -49,9 +49,7 @@ func Facts(vm *Info) map[string]string {
 	if len(vm.CDRomDisks) > 0 {
 		facts[pkgVM.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
-	if vm.AgentFacts != nil {
-		maps.Copy(facts, vm.AgentFacts)
-	}
+	maps.Copy(facts, vm.AgentFacts)
 	return facts
 }
 
