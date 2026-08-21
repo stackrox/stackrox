@@ -15,7 +15,6 @@ var (
 	readVerbs = set.NewFrozenStringSet(
 		"get",
 		"list",
-		"read",
 		"watch",
 	)
 
@@ -26,7 +25,6 @@ var (
 		"deletecollection",
 		"patch",
 		"update",
-		"write",
 	)
 )
 
@@ -64,11 +62,7 @@ func ConvertClusterRoleToPermissionSet(
 
 		// Process each resource in the rule
 		for _, k8sResource := range rule.Resources {
-			// Handle subresources (e.g. "secrets/status") - extract base resource
-			baseResource := k8sResource
-			if idx := strings.Index(baseResource, "/"); idx != -1 {
-				baseResource = k8sResource[:idx]
-			}
+			baseResource := getBaseResourceFromResource(k8sResource)
 
 			// Handle wildcard resource
 			if baseResource == "*" {
