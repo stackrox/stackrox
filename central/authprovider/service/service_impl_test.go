@@ -58,6 +58,7 @@ func (s *mockedAuthProviderServiceTestSuite) SetupTest() {
 		s.providerMockStore,
 		tokenIssuerFactory,
 		mapperFactory,
+		nil,
 	)
 
 	s.providerMockBEFactory = authProviderMocks.NewMockBackendFactory(s.mockCtrl)
