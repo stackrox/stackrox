@@ -1,0 +1,141 @@
+# Minimal-footprint resource overrides for stackrox-central-services, for running
+# the full stack (incl. Scanner v2) on a single-node runner-hosted KinD cluster.
+#
+# Strategy (validated in PR #21334 for local KinD dev):
+#   - Small memory/CPU *requests* so every pod schedules on one small node.
+#   - Modest memory *limits* — the chart wires ROX_MEMLIMIT from limits.memory via
+#     the downward API (resourceFieldRef: limits.memory), and pkg/memlimit sets the
+#     Go soft memory limit to 95% of it. So GC gets aggressive before the limit and
+#     the process backs off instead of OOMing. Keeping a limit is what enables this;
+#     removing it would drop the GOMEMLIMIT signal.
+#
+# Applied via ROX_CENTRAL_EXTRA_HELM_VALUES_FILE, i.e. after ci-values.yaml, so
+# these win. Keep in sync with deploy/common/local-dev-values.yaml.
+
+# Explicitly pin GOMEMLIMIT to ~70% of each Go service's memory limit (instead of
+# the code default of 95% of ROX_MEMLIMIT). pkg/memlimit respects an explicit
+# GOMEMLIMIT and skips the 95% path. At 70% the GC targets a lower heap, so pods
+# release memory instead of hoarding toward the limit — more headroom on a single
+# KinD node — while still allowed to burst above it (soft limit) for real need.
+# Postgres DBs are omitted (not Go). Experiment: measure matcher startup impact.
+customize:
+  central:
+    envVars:
+      GOMEMLIMIT: "1434MiB"   # 70% of 2Gi
+  scanner:
+    envVars:
+      GOMEMLIMIT: "717MiB"    # 70% of 1Gi
+  scanner-v4-indexer:
+    envVars:
+      GOMEMLIMIT: "1434MiB"   # 70% of 2Gi
+  scanner-v4-matcher:
+    envVars:
+      GOMEMLIMIT: "2867MiB"   # 70% of 4Gi
+
+central:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 200Mi
+    limits:
+      cpu: 2
+      memory: 2Gi
+
+  db:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 200Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    # Postgres tuned for a ~2Gi limit so it does not assume a large machine.
+    postgresConfig: |
+      hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+      listen_addresses = '*'
+      max_connections = 100
+      password_encryption = scram-sha-256
+      ssl = on
+      ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+      ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+      ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+      shared_buffers = 256MB
+      work_mem = 10MB
+      maintenance_work_mem = 64MB
+      effective_cache_size = 512MB
+      hash_mem_multiplier = 2.0
+      dynamic_shared_memory_type = posix
+      max_wal_size = 1GB
+      min_wal_size = 80MB
+      log_timezone = 'Etc/UTC'
+      datestyle = 'iso, mdy'
+      timezone = 'Etc/UTC'
+      lc_messages = 'en_US.utf8'
+      lc_monetary = 'en_US.utf8'
+      lc_numeric = 'en_US.utf8'
+      lc_time = 'en_US.utf8'
+      default_text_search_config = 'pg_catalog.english'
+      shared_preload_libraries = 'pg_stat_statements'
+      log_min_duration_statement = 500
+
+  telemetry:
+    enabled: false
+
+# Scanner v2 (legacy StackRox Scanner) — used when SCANNER_SUPPORT=true.
+scanner:
+  replicas: 1
+  autoscaling:
+    disable: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  dbResources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+# Scanner v4 (indexer + matcher + db) — used when ROX_SCANNER_V4=true. Single
+# replica, no autoscaling. Requests stay tiny so everything still schedules on one
+# node; memory *limits* are generous so the matcher can burst through its startup
+# vulnerability load (which is large and slow — ~30 min for the full set) without
+# OOM-looping. GOMEMLIMIT (95% of limits.memory) still keeps each pod bounded.
+scannerV4:
+  indexer:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+  matcher:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 2
+        memory: 4Gi
+  db:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 2
+        memory: 2Gi

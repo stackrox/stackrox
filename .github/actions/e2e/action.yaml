@@ -1,0 +1,89 @@
+name: e2e-db-backup-restore-tests
+
+inputs:
+  tag:
+    type: string
+    required: true
+  kubeconfig:
+    description: File location of cluster kubeconfig
+    type: string
+    required: false
+    default: ~/.kube/config
+
+runs:
+  using: composite
+  steps:
+    - name: Setup env
+      shell: bash
+      run: |
+        echo "CI_JOB_NAME=e2e-db-backup-restore-tests" >> "${GITHUB_ENV}"
+
+    - name: Verify kubectl access and wait for cluster to stabilize
+      shell: bash
+      run: |
+        set +e
+        for i in {1..180}; do
+          kubectl cluster-info &>/dev/null && break
+          sleep 1
+        done
+        kubectl cluster-info
+        kubectl wait --for=condition=Ready nodes --all --timeout=180s
+        kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster || true
+
+    - name: Create artifact directory
+      shell: bash
+      run: mkdir -p "$ARTIFACT_DIR"
+
+    # KinD pre-test: the prefetcher/poll above do not apply — images are pre-pulled
+    # into the node's containerd by create-kind-cluster (from quay.io/stackrox-io,
+    # where PR builds publish) and kubelet pulls any remainder on demand during
+    # deploy. Mark images available so downstream junit reporting is accurate.
+    - name: Mark images available (KinD)
+      shell: bash
+      run: |
+        source scripts/ci/test_state.sh
+        touch "${STATE_IMAGES_AVAILABLE}"
+
+    - name: Deploy StackRox and run DB backup/restore test
+      shell: bash
+      env:
+        ORCHESTRATOR_FLAVOR: k8s
+      run: |
+        source tests/e2e/lib.sh
+        source tests/scripts/setup-certs.sh
+        source scripts/ci/sensor-wait.sh
+        export_test_environment
+        setup_deployment_env false false
+        deploy_stackrox
+        # Persist API_ENDPOINT for post-test steps (ci_export only sets it in this shell)
+        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
+        db_backup_and_restore_test /tmp/db-backup-restore-test
+
+    - name: Run post-test
+      if: always()
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import CheckStackroxLogs
+        CheckStackroxLogs(
+            check_for_errors_in_stackrox_logs=True,
+            artifact_destination_prefix="db-test",
+        ).run(['/tmp/db-backup-restore-test', '${{ env.ARTIFACT_DIR }}'])
+
+    - name: Run final-post
+      if: always()
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import FinalPost
+        FinalPost(store_qa_tests_data=False).run()
+
+    - name: Publish test summary
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all

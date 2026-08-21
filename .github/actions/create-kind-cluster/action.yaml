@@ -1,0 +1,115 @@
+name: Create KinD cluster with images
+description: >
+  Creates a KinD cluster on the runner, optionally starts cloud-provider-kind so
+  that Service type=LoadBalancer gets a real, host-reachable IP (making the KinD
+  cluster behave like a cloud for exposure), and pre-pulls product images into
+  the node's containerd via ctr to avoid kubelet image-pull backoff.
+
+  Cluster creation and image pre-pull run in the background — the step returns
+  immediately. Callers should wait on the readiness file and/or retry kubectl.
+
+  File-based outputs:
+    /tmp/kind-ready               — touched once the cluster is usable
+    /tmp/kind-create.log          — cluster creation + pre-pull log
+    /tmp/cloud-provider-kind.log  — cloud-provider-kind controller log
+
+inputs:
+  cluster-name:
+    description: Unique cluster name
+    required: true
+  tag:
+    description: Image tag for central-db and main
+    required: true
+  registry:
+    description: Image registry to pre-pull from (must match the deploy's image registry)
+    default: quay.io/rhacs-eng
+  memory-limit:
+    description: Docker container memory cap for the KinD node
+    default: 12g
+  enable-loadbalancer:
+    description: Install and run cloud-provider-kind so LoadBalancer services get an IP
+    default: "true"
+  cloud-provider-kind-version:
+    description: cloud-provider-kind release to install
+    default: v0.11.1
+  pull-scanner:
+    description: Also pre-pull scanner and scanner-db images (tag read from SCANNER_VERSION)
+    default: "false"
+  quay-user:
+    description: Quay.io username
+    required: true
+  quay-pass:
+    description: Quay.io password
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install cloud-provider-kind
+      if: inputs.enable-loadbalancer == 'true'
+      shell: bash
+      env:
+        CPK_VERSION: ${{ inputs.cloud-provider-kind-version }}
+      run: |
+        ver="${CPK_VERSION#v}"
+        url="https://github.com/kubernetes-sigs/cloud-provider-kind/releases/download/${CPK_VERSION}/cloud-provider-kind_${ver}_linux_amd64.tar.gz"
+        echo "Downloading cloud-provider-kind from $url"
+        curl -fsSL "$url" | sudo tar -xz -C /usr/local/bin cloud-provider-kind
+        cloud-provider-kind --version || true
+
+    - name: Create KinD cluster (background)
+      shell: bash
+      run: |
+        set +x
+        echo "${{ inputs.quay-pass }}" | docker login -u "${{ inputs.quay-user }}" --password-stdin quay.io
+        set -x
+
+        SCANNER_TAG=""
+        if [[ "${{ inputs.pull-scanner }}" == "true" && -f SCANNER_VERSION ]]; then
+          SCANNER_TAG=$(cat SCANNER_VERSION)
+        fi
+
+        (
+          NODE="${{ inputs.cluster-name }}-control-plane"
+          # Store credentials once — never trace them.
+          CTR_AUTH="${{ inputs.quay-user }}:${{ inputs.quay-pass }}"
+
+          kind create cluster --name "${{ inputs.cluster-name }}"
+
+          docker update --memory "${{ inputs.memory-limit }}" \
+            --memory-swap "${{ inputs.memory-limit }}" "$NODE"
+
+          # Start cloud-provider-kind so LoadBalancer services get a real IP.
+          # Detached (setsid) so it survives across GitHub Actions steps for the
+          # lifetime of the test. It watches Docker for KinD clusters and
+          # provisions an envoy LB container per LoadBalancer service.
+          if [[ "${{ inputs.enable-loadbalancer }}" == "true" ]]; then
+            setsid nohup cloud-provider-kind > /tmp/cloud-provider-kind.log 2>&1 < /dev/null &
+          fi
+
+          # The cluster is usable now — signal readiness immediately. Image
+          # pre-pull below is a best-effort optimization; if it fails, kubelet
+          # still pulls on demand during deploy using the pull secret. A pull
+          # failure must never block the job.
+          touch /tmp/kind-ready
+
+          # set +x around ctr pull to keep --user credentials out of the trace.
+          set +x
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/central-db:${{ inputs.tag }}" || true
+          docker exec "$NODE" ctr -n k8s.io images pull \
+            --user "$CTR_AUTH" --platform linux/amd64 \
+            "${{ inputs.registry }}/main:${{ inputs.tag }}" || true
+          if [[ -n "$SCANNER_TAG" ]]; then
+            docker exec "$NODE" ctr -n k8s.io images pull \
+              --user "$CTR_AUTH" --platform linux/amd64 \
+              "${{ inputs.registry }}/scanner:${SCANNER_TAG}" || true
+            docker exec "$NODE" ctr -n k8s.io images pull \
+              --user "$CTR_AUTH" --platform linux/amd64 \
+              "${{ inputs.registry }}/scanner-db:${SCANNER_TAG}" || true
+          fi
+          set -x
+        ) > /tmp/kind-create.log 2>&1 &
+
+        echo "KinD cluster creation started in background"
