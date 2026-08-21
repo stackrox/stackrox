@@ -35,7 +35,7 @@ import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import type { JobContextTab } from 'Components/ReportJob/types';
 import { ensureJobContextTab } from 'Components/ReportJob/utils';
 
-import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
+import ImageVulnerabilityReportView from '../../Reports/ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
 import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
     searchFilterConfigForImageVulnerabilityReport,
