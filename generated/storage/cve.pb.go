@@ -1755,7 +1755,7 @@ type ImageCVEV2 struct {
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
 	// origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV).
-	Origin        VulnOrigin `protobuf:"varint,18,opt,name=origin,proto3,enum=storage.VulnOrigin" json:"origin,omitempty"`
+	Origin        VulnOrigin `protobuf:"varint,18,opt,name=origin,proto3,enum=storage.VulnOrigin" json:"origin,omitempty" search:"CVE Origin,hidden"` // @gotags: search:"CVE Origin,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
