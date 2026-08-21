@@ -239,15 +239,14 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def deleteDeploymentWithCaution(Deployment deployment) {
+        orchestrator.deleteDeployment(deployment)
         def timer = new Timer(30, 1)
-        def deleted = false
-        while (!deleted && timer.IsValid()) {
-            orchestrator.deleteDeployment(deployment)
-            deleted = true
+        while (timer.IsValid()) {
+            if (orchestrator.getOrchestratorDeployment(deployment.namespace, deployment.name) == null) {
+                return
+            }
         }
-        if (!deleted) {
-            log.warn "Failed to delete deployment. Subsequent tests may be affected ..."
-        }
+        log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
     }
 
     // Retry to allow time for the admission controller to fetch scan data from
