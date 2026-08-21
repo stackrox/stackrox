@@ -125,11 +125,12 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		}
 	}
 
+	var typedServiceCerts []*storage.TypedServiceCertificate
 	if len(serviceCertMap) == 0 {
 		// We are expecting a non-zero number of services in valid `TypedServiceCertificateSet`.
 		return nil, nil, errors.New("no known service certificates in file map")
 	}
-	typedServiceCerts := make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
+	typedServiceCerts = make([]*storage.TypedServiceCertificate, 0, len(serviceCertMap))
 	for serviceType, serviceCert := range serviceCertMap {
 		if len(serviceCert.GetCertPem()) == 0 {
 			return nil, nil, errors.Errorf("missing certificate for service %s in file map", serviceType.String())

@@ -14,7 +14,7 @@ import (
 // results are returned as ZipFiles.
 func RenderFiles(filenames map[string]string, values interface{}) ([]*zip.File, error) {
 	helmImage := image.GetDefaultImage()
-	files := make([]*zip.File, 0, len(filenames))
+	var files []*zip.File
 	for f, tgtName := range filenames {
 		t, err := helmImage.ReadFileAndTemplate(f)
 		if err != nil {

@@ -96,11 +96,11 @@ func getResultFromBytes(bytes []byte, jsonPathExpression string) (gjson.Result, 
 // getRowsFromColumns retrieves all rows from the given columns.
 // NOTE: This function relies on the given columns array to not be jagged.
 func getRowsFromColumns(columns [][]string) [][]string {
+	var rows [][]string
 	if len(columns) == 0 {
-		return nil
+		return rows
 	}
 
-	rows := make([][]string, 0, len(columns[0]))
 	for colIndex := range columns[0] {
 		row := make([]string, 0, len(columns[0]))
 		for cellIndex := range columns {

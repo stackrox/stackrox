@@ -134,7 +134,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 		return nil, err
 	}
 
-	layers := make([]*storage.ImageLayer, 0, len(img.History))
+	var layers []*storage.ImageLayer
 	for _, h := range img.History {
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
 		layers = append(layers, &storage.ImageLayer{
