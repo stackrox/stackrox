@@ -332,6 +332,48 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 				string(resources.VulnerabilityManagementApprovals.GetResource()): storage.Access_READ_WRITE_ACCESS,
 			},
 		},
+		"named resource rules produce no access": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups:     []string{""},
+						Resources:     []string{"secrets"},
+						ResourceNames: []string{"my-secret"},
+						Verbs:         []string{"get", "list"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{},
+		},
+		"wildcard resources with specific API group": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"rbac.authorization.k8s.io"},
+						Resources: []string{"*"},
+						Verbs:     []string{"get", "list"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.K8sRole.GetResource()):        storage.Access_READ_ACCESS,
+				string(resources.K8sRoleBinding.GetResource()): storage.Access_READ_ACCESS,
+			},
+		},
+		"specific resource with wildcard API group": {
+			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
+				Rules: []rbacv1.PolicyRule{
+					{
+						APIGroups: []string{"*"},
+						Resources: []string{"nodes"},
+						Verbs:     []string{"get"},
+					},
+				},
+			},
+			expectedPermissions: map[string]storage.Access{
+				string(resources.Node.GetResource()): storage.Access_READ_ACCESS,
+			},
+		},
 		"StackRox API resources with wrong API group are ignored": {
 			clusterRoleDef: clusterviewv1alpha1.ClusterRoleDefinition{
 				Rules: []rbacv1.PolicyRule{
@@ -376,8 +418,8 @@ func TestConvertClusterRoleToPermissionSet(t *testing.T) {
 				assert.False(t, exists, "Did not expect resource %q to be present", resource)
 			}
 
-			// If we have exact expected permissions and no min count, verify exact match
-			if len(tc.expectedPermissions) > 0 && tc.minPermissionCount == 0 {
+			// If no min count is specified, verify exact match (including empty).
+			if tc.minPermissionCount == 0 {
 				assert.Len(t, permSet.GetResourceToAccess(), len(tc.expectedPermissions),
 					"Expected exactly %d permissions", len(tc.expectedPermissions))
 			}

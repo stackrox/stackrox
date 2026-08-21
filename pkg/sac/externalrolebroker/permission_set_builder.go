@@ -53,40 +53,21 @@ func ConvertClusterRoleToPermissionSet(
 	resourceToAccess := make(map[string]storage.Access)
 
 	for _, rule := range clusterRoleDef.Rules {
-		// Skip rules with empty APIGroups
 		if len(rule.APIGroups) == 0 {
+			continue
+		}
+		// PermissionSet cannot represent name-scoped access, so skip these
+		// to avoid granting broader access than the rule intended.
+		if len(rule.ResourceNames) > 0 {
 			continue
 		}
 
 		access := computeAccessLevel(rule.Verbs)
 
-		// Process each resource in the rule
 		for _, k8sResource := range rule.Resources {
 			baseResource := getBaseResourceFromResource(k8sResource)
-
-			// Handle wildcard resource
-			if baseResource == "*" {
-				// Grant access to all configured resources that match the rule's API groups
-				for _, apiGroup := range rule.APIGroups {
-					if apiGroup == "*" {
-						// Grant computed access to all resources
-						for _, acsResource := range resourceMapping {
-							grantAccessToResource(resourceToAccess, acsResource, access)
-						}
-						break
-					}
-					qualifiedK8sResource := qualifiedResource(baseResource, apiGroup)
-					if acsResource, found := resourceMapping[qualifiedK8sResource]; found {
-						grantAccessToResource(resourceToAccess, acsResource, access)
-					}
-				}
-				continue
-			}
 			for _, apiGroup := range rule.APIGroups {
-				qualifiedK8sResource := qualifiedResource(baseResource, apiGroup)
-				if acsResource, found := resourceMapping[qualifiedK8sResource]; found {
-					grantAccessToResource(resourceToAccess, acsResource, access)
-				}
+				grantMatchingResources(resourceToAccess, baseResource, apiGroup, access)
 			}
 		}
 	}
@@ -94,6 +75,29 @@ func ConvertClusterRoleToPermissionSet(
 	return &storage.PermissionSet{
 		Id:               uuid.NewV4().String(),
 		ResourceToAccess: resourceToAccess,
+	}
+}
+
+// grantMatchingResources finds all resourceMapping entries matching the
+// resource/apiGroup pair (supporting wildcards in either dimension) and
+// grants the given access level to each.
+func grantMatchingResources(
+	accessMapping map[string]storage.Access,
+	resource string, apiGroup string,
+	access storage.Access,
+) {
+	if resource == "*" || apiGroup == "*" {
+		for key, acsResource := range resourceMapping {
+			mappedResource, mappedGroup, _ := strings.Cut(key, ".")
+			if (resource == "*" || resource == mappedResource) &&
+				(apiGroup == "*" || apiGroup == mappedGroup) {
+				grantAccessToResource(accessMapping, acsResource, access)
+			}
+		}
+		return
+	}
+	if acsResource, found := resourceMapping[qualifiedResource(resource, apiGroup)]; found {
+		grantAccessToResource(accessMapping, acsResource, access)
 	}
 }
 
