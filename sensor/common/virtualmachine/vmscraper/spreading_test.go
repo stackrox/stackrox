@@ -7,9 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,6 +45,7 @@ func TestVMScraper_CadenceRescheduleUsesSteadyBand(t *testing.T) {
 	steadyWidth := steadySpreadWidth(s.interval, s.spreadFraction)
 	want := start.Add(s.interval + steadyWidth/2)
 	assert.Equal(t, want, cachedNextAttemptAt(t, s, "ns/vm-a"))
+	assert.Greater(t, histogramSampleCount(t, metrics.PullScheduleOffsetSeconds), uint64(0))
 }
 
 func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
@@ -190,4 +194,21 @@ func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 func TestSpreadFractionEnvDefault(t *testing.T) {
 	assert.InDelta(t, 2.0/3, env.VirtualMachinesScraperSteadySpreadFraction.DefaultValue(), 1e-9)
 	assert.InDelta(t, 2.0/3, env.VirtualMachinesScraperSteadySpreadFraction.FloatSetting(), 1e-9)
+}
+
+func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
+	s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	before := histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds)
+	s.observeForwardInterarrival()
+	assert.Equal(t, before, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds),
+		"first forward does not observe a gap")
+	s.observeForwardInterarrival()
+	assert.Equal(t, before+1, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds))
+}
+
+func histogramSampleCount(t *testing.T, h prometheus.Histogram) uint64 {
+	t.Helper()
+	var m dto.Metric
+	require.NoError(t, h.(prometheus.Metric).Write(&m))
+	return m.GetHistogram().GetSampleCount()
 }

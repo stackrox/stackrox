@@ -91,10 +91,11 @@ type VMScraper struct {
 	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
 	randFloat64 func() float64
 
-	mu            sync.Mutex
-	vmState       map[string]*vmState
-	lastReconcile time.Time
-	inFlight      set.StringSet
+	mu              sync.Mutex
+	vmState         map[string]*vmState
+	lastReconcile   time.Time
+	inFlight        set.StringSet
+	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
 }
 
 type vmState struct {
@@ -265,6 +266,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
+	metrics.PullDueVMs.Set(float64(len(due)))
 	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()
 	concurrency.WithLock(&s.mu, func() {
@@ -436,6 +438,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -446,6 +449,18 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(totalElapsed.Seconds())
 	return true
+}
+
+// observeForwardInterarrival records the Sensor-level gap between successful
+// forwards. The first forward after start does not observe a sample.
+func (s *VMScraper) observeForwardInterarrival() {
+	concurrency.WithLock(&s.mu, func() {
+		now := s.now()
+		if !s.lastForwardTime.IsZero() {
+			metrics.PullForwardInterarrivalSeconds.Observe(now.Sub(s.lastForwardTime).Seconds())
+		}
+		s.lastForwardTime = now
+	})
 }
 
 type scrapeOutcome int
@@ -474,6 +489,7 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 		case scrapeOK, scrapeNonRetryable:
 			st.backoff = 0
 			offset := randOffset(steadySpreadWidth(s.interval, s.spreadFraction), s.randFloat64())
+			metrics.PullScheduleOffsetSeconds.Observe(offset.Seconds())
 			delay := s.interval + offset
 			st.nextAttemptAt = now.Add(delay)
 			return delay
