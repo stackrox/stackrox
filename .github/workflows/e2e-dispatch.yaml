@@ -12,6 +12,7 @@ on:
     - ready_for_review
 
 permissions:
+  actions: read
   contents: read
   pull-requests: read
 
