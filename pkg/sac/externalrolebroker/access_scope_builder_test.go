@@ -69,6 +69,27 @@ func TestConvertBindingsToSimpleAccessScope(t *testing.T) {
 			expectedClusters:       []string{"cluster-a"},
 			expectedNamespaceCount: 0,
 		},
+		"duplicate namespace-scoped bindings": {
+			bindings: []clusterviewv1alpha1.ClusterBinding{
+				{
+					Cluster:    "cluster-a",
+					Scope:      clusterviewv1alpha1.BindingScopeNamespace,
+					Namespaces: []string{"default", "kube-system"},
+				},
+				{
+					Cluster:    "cluster-a",
+					Scope:      clusterviewv1alpha1.BindingScopeNamespace,
+					Namespaces: []string{"default", "monitoring"},
+				},
+			},
+			expectedClusters:       []string{},
+			expectedNamespaceCount: 3,
+			checkNamespaces: func(t *testing.T, namespaces []string) {
+				assert.Contains(t, namespaces, "cluster-a:default")
+				assert.Contains(t, namespaces, "cluster-a:kube-system")
+				assert.Contains(t, namespaces, "cluster-a:monitoring")
+			},
+		},
 		"single namespace-scoped binding": {
 			bindings: []clusterviewv1alpha1.ClusterBinding{
 				{
@@ -210,7 +231,6 @@ func TestConvertBindingsToSimpleAccessScope(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			scope := ConvertBindingsToSimpleAccessScope(tc.bindings)
 
-			// Verify SimpleAccessScope structure
 			require.NotNil(t, scope)
 			assert.NotEmpty(t, scope.GetId(), "SimpleAccessScope should have a generated ID")
 			require.NotNil(t, scope.GetRules())

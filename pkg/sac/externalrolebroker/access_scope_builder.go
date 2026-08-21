@@ -19,11 +19,12 @@ import (
 // This is mapped to ClusterName in the SimpleAccessScope structure.
 //
 // The returned SimpleAccessScope has a generated ID and an empty name/description.
+// Duplicate namespaces within the same cluster are deduplicated.
 func ConvertBindingsToSimpleAccessScope(
 	bindings []clusterviewv1alpha1.ClusterBinding,
 ) *storage.SimpleAccessScope {
-	// Use sets to avoid duplicates
 	clusterSet := set.NewStringSet()
+	namespaceSet := set.NewStringSet()
 	var namespaces []*storage.SimpleAccessScope_Rules_Namespace
 
 	for _, binding := range bindings {
@@ -41,12 +42,14 @@ func ConvertBindingsToSimpleAccessScope(
 					break
 				}
 
-				namespaces = append(namespaces, &storage.SimpleAccessScope_Rules_Namespace{
-					ClusterName:   binding.Cluster,
-					NamespaceName: ns,
-				})
+				key := binding.Cluster + ":" + ns
+				if namespaceSet.Add(key) {
+					namespaces = append(namespaces, &storage.SimpleAccessScope_Rules_Namespace{
+						ClusterName:   binding.Cluster,
+						NamespaceName: ns,
+					})
+				}
 			}
-
 		}
 	}
 
