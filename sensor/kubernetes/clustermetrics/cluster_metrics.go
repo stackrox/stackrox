@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -41,13 +42,14 @@ type ClusterMetrics interface {
 	common.SensorComponent
 }
 
-// New returns a new cluster metrics Sensor component.
-func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface) ClusterMetrics {
-	return NewWithInterval(clusterID, k8sClient, defaultInterval)
+// New returns a cluster metrics component using defaultInterval.
+// A nil vmStats omits VirtualMachineMetrics from each snapshot.
+func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, vmStats VMStatsSource) ClusterMetrics {
+	return NewWithInterval(clusterID, k8sClient, defaultInterval, vmStats)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.
-func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration, vmStats VMStatsSource) ClusterMetrics {
 	ticker := time.NewTicker(pollInterval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
@@ -58,11 +60,17 @@ func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, 
 		k8sClient:       k8sClient,
 		pollTicker:      ticker,
 		clusterID:       clusterID,
+		vmStats:         vmStats,
 	}
 }
 
 type clusterIDPeeker interface {
 	GetNoWait() string
+}
+
+// VMStatsSource provides a snapshot of VM scraper statistics for telemetry.
+type VMStatsSource interface {
+	Stats() vmscraper.Stats
 }
 
 type clusterMetricsImpl struct {
@@ -78,6 +86,7 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 
 	clusterID clusterIDPeeker
+	vmStats   VMStatsSource
 }
 
 func (cm *clusterMetricsImpl) Name() string {
@@ -174,5 +183,29 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 			coVersion = complianceOperUnavailable
 		}
 	}
-	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}, nil
+	result := &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}
+	if stats, ok := vmStatsSnapshot(cm.vmStats); ok {
+		versionCounts := make(map[string]int32, len(stats.VersionCounts))
+		for v, c := range stats.VersionCounts {
+			versionCounts[v] = int32(c)
+		}
+		result.VirtualMachineMetrics = &central.VirtualMachineMetrics{
+			TrackedVms:            int32(stats.TrackedVMs),
+			VmsScanned:            int32(stats.VMsScanned),
+			RoxagentVersionCounts: versionCounts,
+		}
+	}
+	return result, nil
+}
+
+// vmStatsSnapshot returns fleet stats when src is a usable VMStatsSource.
+// A typed-nil *VMScraper stored in the interface is treated as absent.
+func vmStatsSnapshot(src VMStatsSource) (vmscraper.Stats, bool) {
+	if src == nil {
+		return vmscraper.Stats{}, false
+	}
+	if scraper, ok := src.(*vmscraper.VMScraper); ok && scraper == nil {
+		return vmscraper.Stats{}, false
+	}
+	return src.Stats(), true
 }

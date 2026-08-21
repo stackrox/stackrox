@@ -178,6 +178,24 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, internalMessageDispatcher, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
+
+	var virtualMachineHandler vmIndex.Handler
+	var vmScraper *vmscraper.VMScraper
+	var vmStats clustermetrics.VMStatsSource
+	if features.VirtualMachines.Enabled() {
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+
+		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
+			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
+			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
+			vmStats = vmScraper
+		} else {
+			log.Warn("VSOCK pull mode disabled (no REST config available)")
+		}
+	}
+
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
 		enforcer,
@@ -185,7 +203,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
+		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),
@@ -198,21 +216,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		enhancer,
 		complianceService,
 	}
-
-	var virtualMachineHandler vmIndex.Handler
-	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
+	if virtualMachineHandler != nil {
 		components = append(components, virtualMachineHandler)
-
-		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
-			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
-			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
-			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
-			components = append(components, scraper)
-		} else {
-			log.Warn("VSOCK pull mode disabled (no REST config available)")
-		}
+	}
+	if vmScraper != nil {
+		components = append(components, vmScraper)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())

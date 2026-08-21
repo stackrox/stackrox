@@ -94,12 +94,13 @@ type VMScraper struct {
 }
 
 type vmState struct {
-	lastGeneration  uint32
-	lastEpoch       uint32
-	lastForwardedAt time.Time
-	nextAttemptAt   time.Time
-	backoff         time.Duration
-	vmID            virtualmachine.VMID
+	lastGeneration   uint32
+	lastEpoch        uint32
+	lastForwardedAt  time.Time
+	nextAttemptAt    time.Time
+	backoff          time.Duration
+	vmID             virtualmachine.VMID
+	lastAgentVersion string
 }
 
 var _ common.SensorComponent = (*VMScraper)(nil)
@@ -293,11 +294,11 @@ func (s *VMScraper) reconcile() {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
-			if !ok {
+			if !ok || st.vmID != vm.ID {
+				// namespace/name can outlive a KubeVirt recreate; do not inherit scrape state.
 				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
 				s.vmState[key] = st
 			}
-			st.vmID = vm.ID
 		}
 		for key := range s.vmState {
 			if !liveKeys.Contains(key) {
@@ -425,7 +426,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	newGen := result.Meta.GetReportGeneration()
-	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.commitVMState(key, newGen, result.Meta.GetEpoch(), result.Meta.GetAgentVersion())
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -580,7 +581,7 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 // then the NACK will overwrite lastGeneration / backoff / nextAttemptAt, and then this code
 // will set generation (and a later scheduleAfterAttempt(scrapeOK) will reset backoff schedule).
 // This race is accepted for v1 (same class as the historical lastGeneration-only race).
-func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
+func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32, agentVersion string) {
 	concurrency.WithLock(&s.mu, func() {
 		state, ok := s.vmState[key]
 		if !ok {
@@ -589,6 +590,7 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 		state.lastGeneration = newGen
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
+		state.lastAgentVersion = agentVersion
 	})
 }
 
