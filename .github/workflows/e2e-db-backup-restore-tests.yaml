@@ -4,63 +4,13 @@ on:
   workflow_call:
     inputs:
       tag:
-        description: Image tag to test.
         type: string
         required: true
-      should-run:
-        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
-        type: boolean
-        required: true
-      cluster:
-        description: Which cluster type(s) to run on — gke, kind, or both.
+      kubeconfig:
+        description: File location of cluster kubeconfig
         type: string
         required: false
-        default: gke
-      scanner:
-        description: >
-          Scanner flavor — 'v2', 'v4', or 'none'. This test only verifies a Central
-          config round-trip and does not exercise scanning, so it pins v2 (lighter,
-          and matches master's current GKE behavior). v4 is the customer default for
-          tests that actually scan.
-        type: string
-        required: false
-        default: v2
-      scanner_v4_allowlist:
-        description: >
-          Comma-separated Scanner v4 vuln bundle sources to load on KinD (matcher
-          gates readiness on this). 'alpine' loads in <1 min; add sources a job's
-          scan assertions need, e.g. 'alpine,rhel-vex,nvd'. KinD-v4 only; GKE uses
-          the tests/e2e/lib.sh default.
-        type: string
-        required: false
-        default: alpine
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Image tag to test.
-        type: string
-        required: true
-      cluster:
-        description: Which cluster type(s) to run on.
-        type: choice
-        options:
-          - kind
-          - gke
-          - both
-        default: kind
-      scanner:
-        description: Scanner flavor — v2 (this test's default), v4, or none (faster).
-        type: choice
-        options:
-          - v2
-          - v4
-          - none
-        default: v2
-      scanner_v4_allowlist:
-        description: Scanner v4 vuln sources on KinD (comma-separated; 'alpine' = fastest).
-        type: string
-        required: false
-        default: alpine
+        default: ~/.kube/config
 
 permissions:
   contents: read
@@ -70,31 +20,25 @@ defaults:
   run:
     shell: bash
 
+concurrency:
+  group: e2e-db-backup-restore-tests-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   db-backup-restore-tests:
-    if: github.event_name == 'workflow_dispatch' || inputs.should-run
-    strategy:
-      fail-fast: false
-      matrix:
-        # Derive the cluster list from the `cluster` input:
-        #   both -> [gke, kind]   kind -> [kind]   (default) -> [gke]
-        cluster: ${{ fromJSON(inputs.cluster == 'both' && '["gke","kind"]' || (inputs.cluster == 'kind' && '["kind"]' || '["gke"]')) }}
     runs-on: ubuntu-latest
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      CI_JOB_NAME: ${{ matrix.cluster }}-db-backup-restore-tests
+      CI_JOB_NAME: e2e-db-backup-restore-tests
       ARTIFACT_DIR: ./junit-reports
-      # Scanner v4 (indexer+matcher+db) — only when explicitly scanner=v4. This
-      # test defaults to v2 (see the scanner input); v4 is the customer default for
-      # tests that actually exercise scanning.
-      ROX_SCANNER_V4: ${{ inputs.scanner == 'v4' && 'true' || 'false' }}
+      ROX_SCANNER_V4: true
       # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
       # default (9 sources) takes ~30 min on KinD's capped CPU and stalls the
       # deploy, so KinD-v4 uses the configurable scanner_v4_allowlist input
       # (default 'alpine', <1 min); jobs needing more sources override it. GKE
       # keeps the tests/e2e/lib.sh default. (Empty -> that default.)
-      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: ${{ (matrix.cluster == 'kind' && inputs.scanner == 'v4') && inputs.scanner_v4_allowlist || '' }}
+      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: alpine
       PYTHONUNBUFFERED: "1"
       # Both cluster types expose Central via a LoadBalancer service. On KinD,
       # cloud-provider-kind (started by create-kind-cluster) assigns the service
@@ -102,133 +46,38 @@ jobs:
       # to GKE with no port-forward.
       LOAD_BALANCER: lb
       STORAGE: pvc
-      # GKE uses the pd-ssd "faster" class; KinD uses its default local-path class.
-      STORAGE_CLASS: ${{ matrix.cluster == 'gke' && 'faster' || '' }}
-      # Scanner v2 (legacy): only when scanner=v2. Default is v4.
-      SCANNER_SUPPORT: ${{ inputs.scanner == 'v2' && 'true' || 'false' }}
       # Running the full stack incl. a scanner (v2 or v4) on one KinD node requires
       # shrinking resource *requests* (so everything schedules) while keeping modest
       # *limits* (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back
       # off instead of OOMing). These overrides only take effect on the Helm deploy
       # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. When
       # scanner=none, KinD stays on the leaner known-good kubectl deploy.
-      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) || '' }}
-      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) || '' }}
-      OUTPUT_FORMAT: ${{ (matrix.cluster == 'kind' && inputs.scanner != 'none') && 'helm' || '' }}
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) }}
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) }}
+      OUTPUT_FORMAT: helm
     timeout-minutes: 60
     steps:
 
-    - name: Checkout repo
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.sha }}
-        persist-credentials: false
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    # --- GKE provisioning (matrix.cluster == 'gke') ---
-
-    - name: Set up Cloud SDK
-      if: matrix.cluster == 'gke'
-      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
-      with:
-        install_components: "gke-gcloud-auth-plugin,beta"
-
-    - name: Create GKE cluster
-      if: matrix.cluster == 'gke'
-      env:
-        MACHINE_TYPE: e2-standard-8
-        NUM_NODES: "3"
-        GKE_SPOT: "false"
-      timeout-minutes: 20
-      run: |
-        scripts/ci/gke.sh provision_gke_cluster dbbr
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-
-    # --- KinD provisioning (matrix.cluster == 'kind') ---
-
-    - name: Create KinD cluster
-      if: matrix.cluster == 'kind'
-      uses: ./.github/actions/create-kind-cluster
-      with:
-        cluster-name: dbbr
-        tag: ${{ inputs.tag }}
-        # Match the deploy's image registry (RHACS_BRANDING -> rhacs-eng) so the
-        # pre-pulled image refs are the ones kubelet looks up.
-        registry: quay.io/rhacs-eng
-        # 14g of the runner's 16g — leaves headroom for the runner agent while
-        # giving the full stack (incl. Scanner v4's memory-hungry startup) room.
-        memory-limit: 14g
-        enable-loadbalancer: "true"
-        pull-scanner: ${{ inputs.scanner == 'v2' && 'true' || 'false' }}
-        quay-user: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        quay-pass: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-
-    # --- Shared: build roxctl (used for central backup/restore) ---
-
-    - name: Build roxctl
-      run: |
-        make roxctl_linux-amd64
-        echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
-
-    # --- Cluster readiness ---
-
-    - name: Verify kubectl access and wait for GKE cluster to stabilize
-      if: matrix.cluster == 'gke'
+    - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5
       run: |
-        kubectl cluster-info
-        kubectl get nodes
-        scripts/ci/gke.sh wait_for_cluster
-
-    - name: Wait for KinD cluster to be ready
-      if: matrix.cluster == 'kind'
-      timeout-minutes: 10
-      run: |
-        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
-        export KUBECONFIG="${HOME}/.kube/config"
-        # create-kind-cluster runs in the background; wait for its readiness file.
-        for _ in $(seq 1 120); do
-          [[ -f /tmp/kind-ready ]] && break
-          sleep 5
+        set +e
+        while ! kubectl cluster-info &>/dev/null; do
+          sleep 1
         done
-        echo "=== KinD creation log ==="
-        cat /tmp/kind-create.log 2>/dev/null || true
-        if [[ ! -f /tmp/kind-ready ]]; then
-          echo "::error::KinD cluster did not become ready in time"
-          exit 1
-        fi
         kubectl cluster-info
         kubectl wait --for=condition=Ready nodes --all --timeout=180s
         kubectl get nodes
+        scripts/ci/gke.sh wait_for_cluster || true
 
     - name: Create artifact directory
       run: mkdir -p "$ARTIFACT_DIR"
-
-    # GKE pre-test: gather cluster debug, start the multi-node image prefetcher,
-    # and poll quay.io/rhacs-eng until the product images are published. This is
-    # GKE-specific machinery — the prefetcher spreads images across the node pool
-    # and the poll targets the rhacs-eng registry used by master/release builds.
-    - name: Run pre-test
-      if: matrix.cluster == 'gke'
-      shell: python
-      env:
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      run: |
-        import sys
-        sys.path.append('.openshift-ci')
-        from pre_tests import PreSystemTests
-        PreSystemTests().run()
 
     # KinD pre-test: the prefetcher/poll above do not apply — images are pre-pulled
     # into the node's containerd by create-kind-cluster (from quay.io/stackrox-io,
     # where PR builds publish) and kubelet pulls any remainder on demand during
     # deploy. Mark images available so downstream junit reporting is accurate.
     - name: Mark images available (KinD)
-      if: matrix.cluster == 'kind'
       run: |
         source scripts/ci/test_state.sh
         touch "${STATE_IMAGES_AVAILABLE}"
@@ -272,39 +121,9 @@ jobs:
         from post_tests import FinalPost
         FinalPost(store_qa_tests_data=False).run()
 
-    - name: Teardown GKE cluster
-      if: always() && matrix.cluster == 'gke'
-      continue-on-error: true
-      run: |
-        if [[ -z "${CLUSTER_NAME:-}" ]]; then
-          echo "No cluster to teardown"
-          exit 0
-        fi
-        if ! scripts/ci/gke.sh teardown_gke_cluster false; then
-          echo "::warning::WARNING: Could not tear down cluster ${CLUSTER_NAME}. See Teardown step logs for details."
-          exit 6
-        fi
-
-    - name: Teardown KinD cluster
-      if: always() && matrix.cluster == 'kind'
-      continue-on-error: true
-      run: |
-        kind delete cluster --name dbbr || true
-
     - name: Publish test summary
       uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
       if: always()
       with:
         paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
         show: all
-
-    - name: Report junit failures in jira
-      if: (!cancelled())
-      id: junit2jira
-      uses: ./.github/actions/junit2jira
-      with:
-        create-jiras: ${{ github.event_name == 'push' }}
-        jira-user: ${{ secrets.JIRA_USER }}
-        jira-token: ${{ secrets.JIRA_TOKEN }}
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: ${{ env.ARTIFACT_DIR }}
