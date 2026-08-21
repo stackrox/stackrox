@@ -73,3 +73,12 @@ func (ds *datastoreImpl) Flush(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (ds *datastoreImpl) DeleteEventsForResource(ctx context.Context, resourceID string) error {
+      if resourceID == "" {
+          return nil
+      }
+      q := search.NewQueryBuilder().AddExactMatches(search.ResourceID, resourceID).ProtoQuery()
+      return ds.store.DeleteByQuery(ctx, q)
+  }
+
