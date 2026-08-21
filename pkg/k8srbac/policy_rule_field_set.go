@@ -36,7 +36,7 @@ func (k *policyRuleFieldSet) Merge(to, from *storage.PolicyRule) bool {
 		} else if fIndex == len(k.fields)-1 { // all but last field.
 			matchFields = k.fields[:len(k.fields)-1]
 		} else { // all but some middle field.
-			matchFields = make([]PolicyRuleField, fIndex)
+			matchFields = make([]PolicyRuleField, fIndex, len(k.fields)-1)
 			copy(matchFields, k.fields[:fIndex])
 			matchFields = append(matchFields, k.fields[fIndex+1:]...)
 		}

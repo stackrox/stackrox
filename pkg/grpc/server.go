@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -365,8 +366,10 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 		preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, a.config.RateLimiter.GetHTTPInterceptor())
 	}
 
-	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
-	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
+	contextUpdaters := slices.Concat(
+		[]contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)},
+		a.config.PreAuthContextEnrichers,
+	)
 	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, contextutil.HTTPInterceptor(contextUpdaters...))
 
 	// Interceptors for HTTP/1.1 requests (in order of processing):

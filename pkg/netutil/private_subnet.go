@@ -1,6 +1,9 @@
 package netutil
 
-import "net"
+import (
+	"net"
+	"slices"
+)
 
 var (
 	// IPv4PrivateNetworks holds RFC1918 addresses plus other reserved IPv4 ranges.
@@ -44,11 +47,10 @@ var (
 
 // GetPrivateSubnets returns a slice of IPv4 and IPv6 addresses considered as private ranges including localhost addresses.
 func GetPrivateSubnets() []*net.IPNet {
-	var subnets []*net.IPNet
-	subnets = append(subnets, IPv4PrivateNetworks...)
-	subnets = append(subnets, IPv4LocalHost)
-	subnets = append(subnets, IPv6PrivateNetworks...)
-	subnets = append(subnets, IPv6LocalHost)
-	subnets = append(subnets, IPv4MappedIPv6Loopback)
-	return subnets
+	return slices.Concat(
+		IPv4PrivateNetworks,
+		[]*net.IPNet{IPv4LocalHost},
+		IPv6PrivateNetworks,
+		[]*net.IPNet{IPv6LocalHost, IPv4MappedIPv6Loopback},
+	)
 }

@@ -175,7 +175,7 @@ func (t *nRadixTree) getSuccessorWithValsNoLock(startNode *nRadixNode, curr *nRa
 		return []*storage.NetworkEntityInfo{curr.value}
 	}
 
-	var ret []*storage.NetworkEntityInfo
+	var ret []*storage.NetworkEntityInfo //nolint:prealloc // recursive tree traversal, unpredictable size
 	ret = append(ret, t.getSuccessorWithValsNoLock(startNode, curr.left)...)
 	ret = append(ret, t.getSuccessorWithValsNoLock(startNode, curr.right)...)
 	return ret
