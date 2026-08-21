@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -71,26 +72,32 @@ type ProtocolClient interface {
 
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
-	store                 RunningVMStore
-	sender                IndexReportSender
-	dialer                VMDialer
-	client                ProtocolClient
-	interval              time.Duration
+	store    RunningVMStore
+	sender   IndexReportSender
+	dialer   VMDialer
+	client   ProtocolClient
+	interval time.Duration
+	// tickInterval is the scheduler step and the start-budget time base.
 	tickInterval          time.Duration
 	initialBackoff        time.Duration
+	lastTickAt            time.Time
 	reconcileEvery        time.Duration
 	perVMTimeout          time.Duration
 	mandatoryRefreshAfter time.Duration
 	concurrency           int
+	spreadFraction        float64
 	warnMaxBytes          int
 	stopper               concurrency.Stopper
 	started               atomic.Bool
 	now                   func() time.Time
+	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
+	randFloat64 func() float64
 
-	mu            sync.Mutex
-	vmState       map[string]*vmState
-	lastReconcile time.Time
-	inFlight      set.StringSet
+	mu              sync.Mutex
+	vmState         map[string]*vmState
+	lastReconcile   time.Time
+	inFlight        set.StringSet
+	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
 }
 
 type vmState struct {
@@ -100,6 +107,7 @@ type vmState struct {
 	nextAttemptAt   time.Time
 	backoff         time.Duration
 	vmID            virtualmachine.VMID
+	orderHash       uint64 // stable selection hash; refreshed when vmID changes
 }
 
 var _ common.SensorComponent = (*VMScraper)(nil)
@@ -119,6 +127,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		perVMTimeout:          env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
 		mandatoryRefreshAfter: env.VirtualMachinesScraperMandatoryRefreshInterval.DurationSetting(),
 		concurrency:           env.VirtualMachinesScraperConcurrency.IntegerSetting(),
+		spreadFraction:        env.VirtualMachinesScraperSteadySpreadFraction.FloatSetting(),
 		// Warn once a report is halfway to the hard response-size ceiling,
 		// so operators get advance notice before reports start actually
 		// being rejected at that limit.
@@ -126,6 +135,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		vmState:      make(map[string]*vmState),
 		inFlight:     set.NewStringSet(),
 		now:          time.Now,
+		randFloat64:  rand.Float64,
 	}
 }
 
@@ -230,8 +240,12 @@ func (s *VMScraper) run() {
 	defer s.stopper.Flow().ReportStopped()
 	ctx := concurrency.AsContext(s.stopper.LowLevel().GetStopRequestSignal())
 
-	// Reconcile + scrape immediately so VMs don't wait a full tick on start.
+	// First tick forces reconcile so vmState is populated without waiting
+	// reconcileEvery; only VMs already due (catch-up offset 0) start now.
 	s.tick(ctx, true)
+	// lastTickAt is the start of that tick; reset so the first ticker fire
+	// does not count pre-ticker scrape time as an overrun.
+	s.lastTickAt = s.now()
 
 	ticker := time.NewTicker(s.tickInterval)
 	defer ticker.Stop()
@@ -246,8 +260,16 @@ func (s *VMScraper) run() {
 	}
 }
 
+// tick is one scheduler step: optionally refresh the VM set, find due VMs,
+// start a budgeted subset, and wait for those scrapes to finish.
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	tickStart := s.now()
+	var sinceLast time.Duration
+	if !s.lastTickAt.IsZero() {
+		sinceLast = tickStart.Sub(s.lastTickAt)
+	}
+	budgetTick := budgetTickDuration(s.tickInterval, sinceLast)
+	s.lastTickAt = tickStart
 	reconcile := forceReconcile
 	if !reconcile {
 		concurrency.WithLock(&s.mu, func() {
@@ -259,7 +281,13 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
-	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
+	metrics.PullDueVMs.Set(float64(len(due)))
+	toStart := s.selectStartsForTick(due, budgetTick)
+	if len(due) > 0 {
+		metrics.PullStartsPerTick.Observe(float64(len(toStart)))
+	}
+	log.Debugf("VMScraper: tick: %d due, starting %d (concurrency=%d, reconcile=%v)",
+		len(due), len(toStart), s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()
 	concurrency.WithLock(&s.mu, func() {
 		metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
@@ -269,7 +297,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(s.concurrency)
 
-	for _, key := range due {
+	for _, key := range toStart {
 		g.Go(func() error {
 			if s.scrapeKey(gCtx, key) {
 				successCount.Add(1)
@@ -280,24 +308,71 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	_ = g.Wait()
 
 	elapsed := s.now().Sub(tickStart)
-	log.Debugf("VMScraper: tick done: %d/%d due VMs succeeded in %s", successCount.Load(), len(due), elapsed.Truncate(time.Millisecond))
+	log.Debugf("VMScraper: tick done: %d due, %d/%d started succeeded in %s",
+		len(due), successCount.Load(), len(toStart), elapsed.Truncate(time.Millisecond))
 	metrics.PullTickDurationSeconds.Observe(elapsed.Seconds())
 }
 
+// selectStartsForTick chooses which due VMs may start now so forwards do not
+// clump: never-scraped first, then at most the per-tick budget (concurrency
+// still caps overlap in the errgroup).
+func (s *VMScraper) selectStartsForTick(due []string, budgetTick time.Duration) []string {
+	if len(due) == 0 {
+		return nil
+	}
+	var cands []dueCandidate
+	var nUrgent, nTracked int
+	concurrency.WithLock(&s.mu, func() {
+		nTracked = len(s.vmState)
+		cands = make([]dueCandidate, 0, len(due))
+		for _, key := range due {
+			st, ok := s.vmState[key]
+			if !ok {
+				continue
+			}
+			never := st.lastForwardedAt.IsZero()
+			if never {
+				nUrgent++
+			}
+			cands = append(cands, dueCandidate{
+				key:          key,
+				neverScraped: never,
+				hash:         st.orderHash,
+			})
+		}
+	})
+	budget := tickStartBudget(
+		nTracked, nUrgent, s.concurrency, budgetTick,
+		catchUpWindow(s.interval), steadySpreadWidth(s.interval, s.spreadFraction),
+	)
+	return selectDueStarts(cands, budget)
+}
+
+// reconcile syncs vmState with currently running VMs: drop gone ones, and
+// schedule first attempts for new ones spread over the catch-up window (new guests are
+// often still booting; Sensor restart rehydrates many at once).
 func (s *VMScraper) reconcile() {
 	vms := s.store.ListRunning()
 	liveKeys := set.NewStringSet()
 	concurrency.WithLock(&s.mu, func() {
 		now := s.now()
+		catchUp := catchUpWindow(s.interval)
 		for _, vm := range vms {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
-				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
-				s.vmState[key] = st
+				s.vmState[key] = &vmState{
+					nextAttemptAt: now.Add(randOffset(catchUp, s.randFloat64())),
+					vmID:          vm.ID,
+					orderHash:     hashVMID(vm.ID, key),
+				}
+				continue
 			}
-			st.vmID = vm.ID
+			if st.vmID != vm.ID {
+				st.vmID = vm.ID
+				st.orderHash = hashVMID(vm.ID, key)
+			}
 		}
 		for key := range s.vmState {
 			if !liveKeys.Contains(key) {
@@ -308,6 +383,8 @@ func (s *VMScraper) reconcile() {
 	})
 }
 
+// dueKeys lists tracked VMs whose nextAttemptAt has arrived and that are not
+// already mid-scrape.
 func (s *VMScraper) dueKeys() []string {
 	return concurrency.WithLock1(&s.mu, func() []string {
 		now := s.now()
@@ -426,6 +503,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -438,6 +516,18 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	return true
 }
 
+// observeForwardInterarrival records the Sensor-level gap between successful
+// forwards. The first forward after start does not observe a sample.
+func (s *VMScraper) observeForwardInterarrival() {
+	concurrency.WithLock(&s.mu, func() {
+		now := s.now()
+		if !s.lastForwardTime.IsZero() {
+			metrics.PullForwardInterarrivalSeconds.Observe(now.Sub(s.lastForwardTime).Seconds())
+		}
+		s.lastForwardTime = now
+	})
+}
+
 type scrapeOutcome int
 
 const (
@@ -446,8 +536,9 @@ const (
 	scrapeNonRetryable
 )
 
-// scheduleAfterAttempt updates nextAttemptAt/backoff for key and returns the
-// delay until the next attempt (0 if the slot was dropped).
+// scheduleAfterAttempt sets when this VM may be tried again and returns that
+// delay. Retries use short exponential backoff; success / permanent failure
+// return to poll cadence with a random offset in [0, steadyWidth].
 func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time.Duration {
 	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		st, ok := s.vmState[key]
@@ -461,10 +552,14 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 			st.nextAttemptAt = now.Add(st.backoff)
 			return st.backoff
 		case scrapeOK, scrapeNonRetryable:
-			// Both return to the normal poll cadence without growing backoff.
+			// Return to cadence with a fresh post-poll random offset in [0, steadyWidth].
 			st.backoff = 0
-			st.nextAttemptAt = now.Add(s.interval)
-			return s.interval
+			steadyWidth := steadySpreadWidth(s.interval, s.spreadFraction)
+			offset := randOffset(steadyWidth, s.randFloat64())
+			metrics.PullScheduleOffsetSeconds.Observe(offset.Seconds())
+			delay := s.interval + offset
+			st.nextAttemptAt = now.Add(delay)
+			return delay
 		default:
 			return 0
 		}

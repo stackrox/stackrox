@@ -55,12 +55,15 @@ func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 }
 
 type mockDialer struct {
+	mu       sync.Mutex
 	err      error
 	errQueue []error
 	callIdx  int
 }
 
 func (m *mockDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	idx := m.callIdx
 	m.callIdx++
 	if idx < len(m.errQueue) && m.errQueue[idx] != nil {
@@ -88,6 +91,7 @@ func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
 
 type mockProtocolClient struct {
+	mu          sync.Mutex
 	resultQueue []*vsockclient.GetReportResult
 	errQueue    []error
 	calls       []protocolCall
@@ -100,6 +104,8 @@ type protocolCall struct {
 }
 
 func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan, knownEpoch: knownEpoch})
 	idx := m.callIdx
 	m.callIdx++
@@ -113,16 +119,21 @@ func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 }
 
 func (m *mockProtocolClient) reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = nil
 	m.callIdx = 0
 }
 
 type mockSender struct {
+	mu   sync.Mutex
 	sent []*v4.IndexReport
 	err  error
 }
 
 func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.err != nil {
 		return m.err
 	}
@@ -221,12 +232,29 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	}
 
 	s, _ := newTestScraper(store, sender, dialer, client)
+	setTickToDrain(s)
 	discoveredBefore := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE"))
 	s.pollOnce(context.Background())
 
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+}
+
+func TestVMScraper_ProductionTickPacesTwoDueVMs(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+		makeVM("ns2", "vm-b", 200),
+	}}
+	sender := &mockSender{}
+	s, _ := newTestScraper(store, sender, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1), makeReport(1)},
+	})
+	require.Equal(t, defaultTickInterval, s.tickInterval)
+
+	s.pollOnce(context.Background())
+	assert.Len(t, sender.sent, 1, "production 10s tick over 100s catch-up should start 1 of 2 due VMs")
+	assert.Len(t, s.dueKeys(), 1, "the other VM should stay due for a later tick")
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
@@ -588,19 +616,21 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 		wantSent     int
 	}{
 		"should still send for vm-b when vm-a hits a protocol error": {
-			dialer:      &mockDialer{},
+			dialer: &mockDialer{},
+			// Start order is hash-based; fail the first GetReport call so one VM
+			// errors and the other still forwards.
 			resultQueue: []*vsockclient.GetReportResult{nil, makeReport(1)},
 			errQueue:    []error{errors.New("connection refused"), nil},
 			wantCalls:   2,
 			wantSent:    1,
 		},
 		"should still send for vm-b when vm-a dial fails": {
-			dialer: &mockDialer{
-				errQueue: []error{errors.New("dial failed"), nil},
+			dialer: &nameFailDialer{failName: "vm-a"},
+			resultQueue: []*vsockclient.GetReportResult{
+				makeReport(1),
 			},
-			resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
-			wantCalls:   1,
-			wantSent:    1,
+			wantCalls: 1,
+			wantSent:  1,
 		},
 		"should forward nothing when every dial times out": {
 			dialer:       blockingDialer{},
@@ -618,6 +648,7 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 				errQueue:    tc.errQueue,
 			}
 			s, _ := newTestScraper(&mockStore{vms: vms}, sender, tc.dialer, client)
+			setTickToDrain(s)
 			if tc.perVMTimeout > 0 {
 				s.perVMTimeout = tc.perVMTimeout
 			}
@@ -627,6 +658,19 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 			assert.Len(t, sender.sent, tc.wantSent)
 		})
 	}
+}
+
+// nameFailDialer fails Dial for a single VM name so multi-VM tests need not
+// depend on hash start order for errQueue alignment.
+type nameFailDialer struct {
+	failName string
+}
+
+func (d nameFailDialer) Dial(_ context.Context, _, name string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	if name == d.failName {
+		return nil, errors.New("dial failed")
+	}
+	return nopCloser{}, nil
 }
 
 func TestVMScraper_StartRejectsSecondCall(t *testing.T) {
@@ -711,6 +755,7 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 	}
 
 	s, clock := newTestScraper(store, sender, dialer, client)
+	setTickToDrain(s)
 	s.pollOnce(context.Background())
 	assert.Len(t, s.vmState, 2)
 	assert.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
@@ -751,29 +796,40 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 	clock := newTestClock()
 	interval := 5 * time.Minute
 	return &VMScraper{
-		store:                 store,
-		sender:                sender,
-		dialer:                dialer,
-		client:                client,
-		interval:              interval,
+		store:    store,
+		sender:   sender,
+		dialer:   dialer,
+		client:   client,
+		interval: interval,
+		// Production scheduler step. Tests that must scrape every due VM in
+		// one pollOnce call setTickToDrain.
 		tickInterval:          defaultTickInterval,
 		initialBackoff:        initialBackoff,
 		reconcileEvery:        reconcilePeriod(interval),
 		perVMTimeout:          10 * time.Second,
 		mandatoryRefreshAfter: 4 * time.Hour,
-		concurrency:           1,
+		concurrency:           20,
+		spreadFraction:        2.0 / 3,
 		// Half of the 16MiB default pull response-size ceiling — same
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
 		warnMaxBytes: 8 << 20,
 		vmState:      make(map[string]*vmState),
 		inFlight:     set.NewStringSet(),
 		now:          clock.Now,
+		// Zero offset keeps default schedule assertions deterministic - no randomization of the scrape schedule
+		randFloat64: func() float64 { return 0 },
 	}, clock
 }
 
-// pollOnce forces a reconcile and scrapes every due slot.
+// pollOnce forces a reconcile and starts a budgeted subset of due VMs.
 func (s *VMScraper) pollOnce(ctx context.Context) {
 	s.tick(ctx, true)
+}
+
+// setTickToDrain sets tickInterval to the catch-up window so one tick can
+// start every never-scraped due VM under concurrency.
+func setTickToDrain(s *VMScraper) {
+	s.tickInterval = catchUpWindow(s.interval)
 }
 
 // --- Thread-safe mocks for concurrent tests ---
@@ -845,6 +901,11 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 
 	s, _ := newTestScraper(store, sender, dialer, client)
 	s.concurrency = concurrency
+	// Catch-up budget is ceil(nUrgent × tick / catchUp); set tick >= catchUp
+	// so one tick can start the whole fleet and exercise errgroup concurrency.
+	s.interval = 30 * time.Second
+	s.tickInterval = 10 * time.Second // catchUp = interval/3 = 10s → budget = numVMs
+	s.reconcileEvery = reconcilePeriod(s.interval)
 	// This test measures real dial overlap via delayDialer's timers, so it
 	// needs the wall clock rather than the fake test clock.
 	s.now = time.Now
