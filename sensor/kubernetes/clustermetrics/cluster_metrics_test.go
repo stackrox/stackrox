@@ -174,6 +174,17 @@ func (s *ClusterMetricsTestSuite) TestNilVMStatsSource() {
 		"nil vmStatsSource must produce nil virtual_machine_metrics, not a zero-valued one")
 }
 
+func (s *ClusterMetricsTestSuite) TestTypedNilVMStatsSource() {
+	metrics := NewWithInterval(&fakeClusterIDPeeker{}, s.client, defaultInterval, (*vmscraper.VMScraper)(nil))
+	impl, ok := metrics.(*clusterMetricsImpl)
+	s.Require().True(ok)
+
+	cm, err := impl.collectMetrics()
+	s.Require().NoError(err)
+	s.Nil(cm.GetVirtualMachineMetrics(),
+		"typed-nil *VMScraper must not panic and must omit virtual_machine_metrics")
+}
+
 func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 	src := &fakeVMStatsSource{
 		stats: vmscraper.Stats{

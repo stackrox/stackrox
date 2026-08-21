@@ -181,6 +181,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	var virtualMachineHandler vmIndex.Handler
 	var vmScraper *vmscraper.VMScraper
+	var vmStats clustermetrics.VMStatsSource
 	if features.VirtualMachines.Enabled() {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 
@@ -191,6 +192,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		} else {
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
+			vmStats = vmScraper
 		}
 	}
 
@@ -201,7 +203,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.NewWithInterval(clusterID, cfg.k8sClient.Kubernetes(), 5*time.Minute, vmScraper),
+		clustermetrics.NewWithInterval(clusterID, cfg.k8sClient.Kubernetes(), 5*time.Minute, vmStats),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),

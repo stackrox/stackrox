@@ -183,8 +183,7 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		}
 	}
 	result := &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}
-	if src := cm.vmStats; src != nil {
-		stats := src.Stats()
+	if stats, ok := vmStatsSnapshot(cm.vmStats); ok {
 		versionCounts := make(map[string]int32, len(stats.VersionCounts))
 		for v, c := range stats.VersionCounts {
 			versionCounts[v] = int32(c)
@@ -196,4 +195,16 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		}
 	}
 	return result, nil
+}
+
+// vmStatsSnapshot returns fleet stats when src is a usable VMStatsSource.
+// A typed-nil *VMScraper stored in the interface is treated as absent.
+func vmStatsSnapshot(src VMStatsSource) (vmscraper.Stats, bool) {
+	if src == nil {
+		return vmscraper.Stats{}, false
+	}
+	if scraper, ok := src.(*vmscraper.VMScraper); ok && scraper == nil {
+		return vmscraper.Stats{}, false
+	}
+	return src.Stats(), true
 }
