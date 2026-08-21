@@ -79,17 +79,17 @@ const buildTableColumns = (match, location) => {
             sortField: subjectSortFields.SUBJECT_KIND,
         },
         {
-            Header: `Cluster Admin`,
+            Header: (
+                <span className="flex items-center">
+                    Cluster Admin
+                    {clusterAdminTooltip}
+                </span>
+            ),
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
-                return (
-                    <span className="flex items-center">
-                        {clusterAdmin ? 'Yes' : 'No'}
-                        {clusterAdminTooltip}
-                    </span>
-                );
+                return clusterAdmin ? 'Yes' : 'No';
             },
             accessor: 'clusterAdmin',
             sortable: false,
