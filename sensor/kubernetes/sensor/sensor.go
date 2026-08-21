@@ -203,7 +203,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
 		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
-		clustermetrics.NewWithInterval(clusterID, cfg.k8sClient.Kubernetes(), 5*time.Minute, vmStats),
+		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes(), vmStats),
 		complianceCommandHandler,
 		processSignals,
 		telemetry.NewCommandHandler(cfg.k8sClient.Kubernetes(), storeProvider),

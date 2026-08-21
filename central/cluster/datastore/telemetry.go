@@ -106,10 +106,11 @@ func buildVMTraits(hasCapability bool, vmm *central.VirtualMachineMetrics) map[s
 	}
 
 	traits := map[string]any{
-		"VM Scanning Enabled": true,
-		"VM Tracked Count":    vmm.GetTrackedVms(),
-		"VM Scanned Count":    vmm.GetVmsScanned(),
-		"VM Unscanned Count":  max(int32(0), vmm.GetTrackedVms()-vmm.GetVmsScanned()),
+		"VM Scanning Enabled":     true,
+		"VM Tracked Count":        vmm.GetTrackedVms(),
+		"VM Scanned Count":        vmm.GetVmsScanned(),
+		"VM Unscanned Count":      max(int32(0), vmm.GetTrackedVms()-vmm.GetVmsScanned()),
+		"Roxagent Version Counts": "[]",
 	}
 
 	if vc := vmm.GetRoxagentVersionCounts(); len(vc) > 0 {
@@ -124,8 +125,6 @@ func buildVMTraits(hasCapability bool, vmm *central.VirtualMachineMetrics) map[s
 		if err == nil {
 			traits["Roxagent Version Counts"] = string(raw)
 		}
-	} else {
-		traits["Roxagent Version Counts"] = "[]"
 	}
 
 	return traits

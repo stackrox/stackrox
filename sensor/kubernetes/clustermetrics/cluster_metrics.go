@@ -42,9 +42,10 @@ type ClusterMetrics interface {
 	common.SensorComponent
 }
 
-// New returns a new cluster metrics Sensor component with no VM stats source.
-func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface) ClusterMetrics {
-	return NewWithInterval(clusterID, k8sClient, defaultInterval, nil)
+// New returns a cluster metrics component using defaultInterval.
+// A nil vmStats omits VirtualMachineMetrics from each snapshot.
+func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, vmStats VMStatsSource) ClusterMetrics {
+	return NewWithInterval(clusterID, k8sClient, defaultInterval, vmStats)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.

@@ -762,13 +762,15 @@ func TestVMScraper_ReconcileVMState(t *testing.T) {
 			Running:   true,
 		}
 		store := &mockStore{vms: []*virtualmachine.Info{oldVM}}
-		s, _ := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+		s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
 			resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 		})
 
 		s.pollOnce(context.Background())
 		require.Equal(t, "1", cachedToken(t, s, key))
 		require.Equal(t, 1, s.Stats().VMsScanned)
+		require.Equal(t, clock.Now().Add(s.interval), cachedNextAttemptAt(t, s, key),
+			"successful scrape schedules the next poll")
 
 		store.vms = []*virtualmachine.Info{{
 			ID:        "uid-new",
@@ -785,6 +787,9 @@ func TestVMScraper_ReconcileVMState(t *testing.T) {
 		assert.Empty(t, cachedToken(t, s, key))
 		assert.Equal(t, 1, s.Stats().TrackedVMs)
 		assert.Zero(t, s.Stats().VMsScanned, "replacement must not inherit prior scrape state")
+		assert.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key),
+			"replacement must be due immediately, not on the prior poll timer")
+		assert.Contains(t, s.dueKeys(), key)
 	})
 }
 
