@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -82,15 +83,20 @@ type VMScraper struct {
 	perVMTimeout          time.Duration
 	mandatoryRefreshAfter time.Duration
 	concurrency           int
+	spreadFraction        float64
 	warnMaxBytes          int
 	stopper               concurrency.Stopper
 	started               atomic.Bool
 	now                   func() time.Time
+	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
+	randFloat64          func() float64
+	lastPollAdviceNumVMs int
 
-	mu            sync.Mutex
-	vmState       map[string]*vmState
-	lastReconcile time.Time
-	inFlight      set.StringSet
+	mu              sync.Mutex
+	vmState         map[string]*vmState
+	lastReconcile   time.Time
+	inFlight        set.StringSet
+	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
 }
 
 type vmState struct {
@@ -119,6 +125,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		perVMTimeout:          env.VirtualMachinesScraperPerVMTimeout.DurationSetting(),
 		mandatoryRefreshAfter: env.VirtualMachinesScraperMandatoryRefreshInterval.DurationSetting(),
 		concurrency:           env.VirtualMachinesScraperConcurrency.IntegerSetting(),
+		spreadFraction:        env.VirtualMachinesScraperSteadySpreadFraction.FloatSetting(),
 		// Warn once a report is halfway to the hard response-size ceiling,
 		// so operators get advance notice before reports start actually
 		// being rejected at that limit.
@@ -126,6 +133,7 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		vmState:      make(map[string]*vmState),
 		inFlight:     set.NewStringSet(),
 		now:          time.Now,
+		randFloat64:  rand.Float64,
 	}
 }
 
@@ -259,6 +267,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
+	metrics.PullDueVMs.Set(float64(len(due)))
 	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()
 	concurrency.WithLock(&s.mu, func() {
@@ -284,17 +293,22 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	metrics.PullTickDurationSeconds.Observe(elapsed.Seconds())
 }
 
+// reconcile syncs vmState with currently running VMs: drop gone ones, and
+// schedule first attempts for new ones across the initial scan window (new
+// guests are often still booting; Sensor restart rehydrates many at once).
 func (s *VMScraper) reconcile() {
 	vms := s.store.ListRunning()
 	liveKeys := set.NewStringSet()
+	var numVMs int
 	concurrency.WithLock(&s.mu, func() {
 		now := s.now()
+		newVMWindow := newVMIndexReportWindow(s.interval)
 		for _, vm := range vms {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
-				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
+				st = &vmState{nextAttemptAt: now.Add(randOffset(newVMWindow, s.randFloat64())), vmID: vm.ID}
 				s.vmState[key] = st
 			}
 			st.vmID = vm.ID
@@ -304,8 +318,34 @@ func (s *VMScraper) reconcile() {
 				delete(s.vmState, key)
 			}
 		}
+		numVMs = len(s.vmState)
 		s.lastReconcile = now
 	})
+	s.logPollIntervalAdvice(numVMs)
+}
+
+func (s *VMScraper) logPollIntervalAdvice(numVMs int) {
+	if s.tickInterval <= 0 || s.lastPollAdviceNumVMs == numVMs {
+		return
+	}
+	s.lastPollAdviceNumVMs = numVMs
+
+	capacity := maxVMsForSteadyState(s.tickInterval, s.interval, s.spreadFraction)
+	remaining := capacity - numVMs
+	safe := suggestedPollInterval(numVMs, s.tickInterval, s.spreadFraction)
+	log.Debugf("VMScraper: %d running VMs, poll interval %s, safe poll interval %s, current interval fits ~%d VMs in steady state (up to %d remaining)",
+		numVMs, s.interval, safe, capacity, remaining)
+
+	if remaining >= 0 {
+		return
+	}
+	// Let's advise the user to increase the poll interval if the current interval.
+	// Do not advise a shorter interval if the current interval is already safe.
+	log.Warnf("VMScraper: with ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%s, "+
+		"this Sensor can handle roughly %d VMs in steady state without stressing Central and Scanner. "+
+		"This cluster has %d running VMs. Set ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to at least %s "+
+		"or accept that Central may receive periodic load spikes.",
+		s.interval, capacity, numVMs, safe)
 }
 
 func (s *VMScraper) dueKeys() []string {
@@ -426,6 +466,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -438,6 +479,18 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	return true
 }
 
+// observeForwardInterarrival records the Sensor-level gap between successful
+// forwards. The first forward after start does not observe a sample.
+func (s *VMScraper) observeForwardInterarrival() {
+	concurrency.WithLock(&s.mu, func() {
+		now := s.now()
+		if !s.lastForwardTime.IsZero() {
+			metrics.PullForwardInterarrivalSeconds.Observe(now.Sub(s.lastForwardTime).Seconds())
+		}
+		s.lastForwardTime = now
+	})
+}
+
 type scrapeOutcome int
 
 const (
@@ -446,8 +499,9 @@ const (
 	scrapeNonRetryable
 )
 
-// scheduleAfterAttempt updates nextAttemptAt/backoff for key and returns the
-// delay until the next attempt (0 if the slot was dropped).
+// scheduleAfterAttempt sets when this VM may be tried again and returns that
+// delay. Retries use short exponential backoff; success / permanent failure
+// return to poll cadence with a random offset in [0, steadyWidth].
 func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time.Duration {
 	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		st, ok := s.vmState[key]
@@ -461,10 +515,12 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 			st.nextAttemptAt = now.Add(st.backoff)
 			return st.backoff
 		case scrapeOK, scrapeNonRetryable:
-			// Both return to the normal poll cadence without growing backoff.
 			st.backoff = 0
-			st.nextAttemptAt = now.Add(s.interval)
-			return s.interval
+			offset := randOffset(steadySpreadWidth(s.interval, s.spreadFraction), s.randFloat64())
+			metrics.PullScheduleOffsetSeconds.Observe(offset.Seconds())
+			delay := s.interval + offset
+			st.nextAttemptAt = now.Add(delay)
+			return delay
 		default:
 			return 0
 		}

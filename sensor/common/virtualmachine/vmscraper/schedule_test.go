@@ -64,3 +64,151 @@ func TestReconcilePeriod(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, reconcilePeriod(time.Hour))
 	assert.Equal(t, time.Minute, reconcilePeriod(time.Minute))
 }
+
+func TestSteadySpreadWidth(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, 40*time.Minute, steadySpreadWidth(time.Hour, 2.0/3))
+	assert.Equal(t, 0, int(steadySpreadWidth(time.Hour, 0)))
+	assert.Equal(t, 0, int(steadySpreadWidth(0, 2.0/3)))
+}
+
+func TestNewVMIndexReportWindow(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, maxNewVMIndexReportWindow, newVMIndexReportWindow(time.Hour))
+	assert.Equal(t, 100*time.Second, newVMIndexReportWindow(5*time.Minute))
+	assert.Equal(t, time.Duration(0), newVMIndexReportWindow(0))
+}
+
+func TestSuggestedPollInterval(t *testing.T) {
+	t.Parallel()
+	tick := 10 * time.Second
+	spreadFraction := 2.0 / 3
+	cases := map[string]struct {
+		numVMs         int
+		tick           time.Duration
+		spreadFraction float64
+		want           time.Duration
+	}{
+		"100 VMs at 10s tick": {
+			numVMs:         100,
+			tick:           tick,
+			spreadFraction: spreadFraction,
+			want:           25 * time.Minute,
+		},
+		"11 VMs at 10s tick": {
+			numVMs:         11,
+			tick:           tick,
+			spreadFraction: spreadFraction,
+			want:           2*time.Minute + 45*time.Second,
+		},
+		"one VM clamps to min poll": {
+			numVMs:         1,
+			tick:           tick,
+			spreadFraction: spreadFraction,
+			want:           minPollInterval,
+		},
+		"no VMs": {
+			tick:           tick,
+			spreadFraction: spreadFraction,
+		},
+		"zero tick": {
+			numVMs:         100,
+			spreadFraction: spreadFraction,
+		},
+		"zero spread fraction": {
+			numVMs: 100,
+			tick:   tick,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, suggestedPollInterval(tc.numVMs, tc.tick, tc.spreadFraction))
+		})
+	}
+}
+
+func TestMaxVMsForSteadyState(t *testing.T) {
+	t.Parallel()
+	tick := 10 * time.Second
+	spreadFraction := 2.0 / 3
+	cases := map[string]struct {
+		tick           time.Duration
+		poll           time.Duration
+		spreadFraction float64
+		want           int
+	}{
+		"5m poll fits 20 VMs at 10s tick": {
+			tick:           tick,
+			poll:           5 * time.Minute,
+			spreadFraction: spreadFraction,
+			want:           20,
+		},
+		"2h poll fits 480 VMs at 10s tick": {
+			tick:           tick,
+			poll:           2 * time.Hour,
+			spreadFraction: spreadFraction,
+			want:           480,
+		},
+		"zero tick": {
+			poll:           5 * time.Minute,
+			spreadFraction: spreadFraction,
+		},
+		"zero poll": {
+			tick:           tick,
+			spreadFraction: spreadFraction,
+		},
+		"zero spread fraction": {
+			tick: tick,
+			poll: 5 * time.Minute,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, maxVMsForSteadyState(tc.tick, tc.poll, tc.spreadFraction))
+		})
+	}
+}
+
+func TestMaxVMsForNewVMIndexReportWindow(t *testing.T) {
+	t.Parallel()
+	tick := 10 * time.Second
+	cases := map[string]struct {
+		tick time.Duration
+		poll time.Duration
+		want int
+	}{
+		"5m poll fits 10 VMs at 10s tick": {
+			tick: tick,
+			poll: 5 * time.Minute,
+			want: 10,
+		},
+		"2h poll fits 120 VMs at 10s tick": {
+			tick: tick,
+			poll: 2 * time.Hour,
+			want: 120,
+		},
+		"zero tick": {
+			poll: 5 * time.Minute,
+		},
+		"zero poll": {
+			tick: tick,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.want, maxVMsForNewVMIndexReportWindow(tc.tick, tc.poll))
+		})
+	}
+}
+
+func TestRandOffset(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, time.Duration(0), randOffset(0, 0.5))
+	assert.Equal(t, 20*time.Minute, randOffset(40*time.Minute, 0.5))
+	assert.Equal(t, time.Duration(0), randOffset(40*time.Minute, 0))
+	assert.Equal(t, 40*time.Minute, randOffset(40*time.Minute, 1))
+	assert.Equal(t, time.Duration(0), randOffset(40*time.Minute, -1))
+}

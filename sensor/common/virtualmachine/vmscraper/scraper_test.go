@@ -764,10 +764,12 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		concurrency:           1,
 		// Half of the 16MiB default pull response-size ceiling — same
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
-		warnMaxBytes: 8 << 20,
-		vmState:      make(map[string]*vmState),
-		inFlight:     set.NewStringSet(),
-		now:          clock.Now,
+		warnMaxBytes:   8 << 20,
+		spreadFraction: 2.0 / 3,
+		vmState:        make(map[string]*vmState),
+		inFlight:       set.NewStringSet(),
+		now:            clock.Now,
+		randFloat64:    func() float64 { return 0 },
 	}, clock
 }
 
