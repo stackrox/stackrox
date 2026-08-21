@@ -23,7 +23,6 @@ type Handler interface {
 type VirtualMachineStore interface {
 	Get(id virtualmachine.VMID) *virtualmachine.Info
 	GetFromCID(cid uint32) *virtualmachine.Info
-	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.

@@ -125,12 +125,6 @@ func (s *virtualMachineHandlerSuite) TestSendEmitsVirtualMachineUpdateForAgentFa
 			GuestOS:   "Red Hat Enterprise Linux 9",
 			Running:   true,
 		})
-	s.store.EXPECT().AddOrUpdate(gomock.AssignableToTypeOf(&virtualmachine.Info{})).Times(1).DoAndReturn(
-		func(vm *virtualmachine.Info) *virtualmachine.Info {
-			s.Equal(agentFacts, vm.AgentFacts)
-			return vm
-		},
-	)
 
 	go func() {
 		err := s.handler.Send(context.Background(), &virtualmachine.Info{
@@ -177,42 +171,43 @@ func (s *virtualMachineHandlerSuite) TestSendEmitsVirtualMachineUpdateForAgentFa
 	s.Equal("test-vm", secondEvent.GetVirtualMachineIndexReport().GetId())
 }
 
-func (s *virtualMachineHandlerSuite) TestSendSkipsVirtualMachineUpdateWhenAgentFactsUnchanged() {
+func (s *virtualMachineHandlerSuite) TestSendNilReportEmitsVirtualMachineUpdateOnly() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	s.handler.Notify(common.SensorComponentEventCentralReachable)
 	defer s.handler.Stop()
 
-	cid := uint32(1)
 	agentFacts := map[string]string{
 		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
 	}
 	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
 		&virtualmachine.Info{
-			ID:         "test-vm",
-			AgentFacts: agentFacts,
+			ID:      "test-vm",
+			GuestOS: "Red Hat Enterprise Linux 9",
 		})
 
 	go func() {
 		err := s.handler.Send(context.Background(), &virtualmachine.Info{
 			ID:         "test-vm",
-			VSOCKCID:   &cid,
 			AgentFacts: agentFacts,
-		}, &v4.IndexReport{State: "IndexFinished"})
+		}, nil)
 		s.Require().NoError(err)
 	}()
 
 	select {
 	case msg := <-s.handler.ResponsesC():
-		s.Equal(central.ResourceAction_SYNC_RESOURCE, msg.GetEvent().GetAction())
-		s.NotNil(msg.GetEvent().GetVirtualMachineIndexReport())
+		event := msg.GetEvent()
+		s.Require().NotNil(event)
+		s.Equal(central.ResourceAction_UPDATE_RESOURCE, event.GetAction())
+		s.Require().NotNil(event.GetVirtualMachine())
+		s.Equal(pkgVM.ActivationStatusActive, event.GetVirtualMachine().GetFacts()[pkgVM.ActivationStatusKey])
 	case <-time.After(time.Second):
-		s.Fail("Expected index report message to be sent to central")
+		s.Fail("Expected virtual machine update to be sent to central")
 	}
 
 	select {
 	case <-s.handler.ResponsesC():
-		s.Fail("Did not expect a second message when agent facts are unchanged")
+		s.Fail("Did not expect an index report when Send was called without a report")
 	case <-time.After(50 * time.Millisecond):
 	}
 }

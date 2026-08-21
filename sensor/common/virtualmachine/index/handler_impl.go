@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"maps"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -243,8 +241,16 @@ func (h *handlerImpl) handleIndexReport(
 		return
 	}
 
-	if vmMsg := h.maybeVirtualMachineUpdate(vmInfo, req.vm.AgentFacts); vmMsg != nil {
-		h.sendIndexReportEvent(toCentral, vmMsg)
+	if len(req.vm.AgentFacts) > 0 {
+		vmInfo.AgentFacts = req.vm.AgentFacts
+		if event := virtualmachine.SensorEvent(central.ResourceAction_UPDATE_RESOURCE, h.clusterIDString(), vmInfo); event != nil {
+			h.sendIndexReportEvent(toCentral, message.New(&central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{Event: event},
+			}))
+		}
+	}
+	if req.report == nil {
+		return
 	}
 	h.sendIndexReportEvent(toCentral, newIndexReportMessage(vmInfo, indexReport))
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
@@ -260,27 +266,6 @@ func indexReportFromRequest(req *indexReportRequest) *v1.IndexReport {
 		VmId:     string(req.vm.ID),
 		IndexV4:  req.report,
 	}
-}
-
-// maybeVirtualMachineUpdate persists changed agent facts and returns a VM
-// UPDATE event. Unchanged facts skip the extra event so pull-mode scrapes
-// do not flood Central.
-func (h *handlerImpl) maybeVirtualMachineUpdate(stored *virtualmachine.Info, agentFacts map[string]string) *message.ExpiringMessage {
-	if len(agentFacts) == 0 || maps.Equal(stored.AgentFacts, agentFacts) {
-		return nil
-	}
-	stored.AgentFacts = maps.Clone(agentFacts)
-	updated := h.store.AddOrUpdate(stored)
-	if updated == nil {
-		return nil
-	}
-	event := virtualmachine.SensorEvent(central.ResourceAction_UPDATE_RESOURCE, h.clusterIDString(), updated.Copy())
-	if event == nil {
-		return nil
-	}
-	return message.New(&central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{Event: event},
-	})
 }
 
 func (h *handlerImpl) clusterIDString() string {

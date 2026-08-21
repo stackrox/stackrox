@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"maps"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -52,6 +53,7 @@ func clampPollInterval(interval time.Duration) time.Duration {
 type RunningVMStore interface {
 	ListRunning() []*virtualmachine.Info
 	Get(id virtualmachine.VMID) *virtualmachine.Info
+	AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info
 }
 
 // VMDialer connects to a VM's VSOCK port.
@@ -391,6 +393,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	if result.Unchanged {
+		s.forwardAgentFactsIfChanged(vmCtx, vm, result.Meta.GetFacts())
 		next := s.scheduleAfterAttempt(key, scrapeOK)
 		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 		log.Debugf("VMScraper: unchanged report from roxagent on %q (generation=%d)", key, snap.lastGeneration)
@@ -413,8 +416,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
 	recordVMDiscoveredData(result.Meta.GetFacts())
-
-	vm.AgentFacts = virtualmachine.AgentFactsFromResponseFacts(result.Meta.GetFacts())
+	s.persistAgentFacts(vm, result.Meta.GetFacts())
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
@@ -591,6 +593,30 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
 	})
+}
+
+func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]string) {
+	vm.AgentFacts = virtualmachine.AgentFactsFromResponseFacts(facts)
+	s.store.AddOrUpdate(vm)
+}
+
+// forwardAgentFactsIfChanged stores roxagent facts and emits a VM update when
+// they changed, even if the index report itself is unchanged.
+func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, facts map[string]string) {
+	if len(facts) > 0 {
+		recordVMDiscoveredData(facts)
+	}
+	mapped := virtualmachine.AgentFactsFromResponseFacts(facts)
+	if len(mapped) == 0 {
+		return
+	}
+	if prev := s.store.Get(vm.ID); prev != nil && maps.Equal(prev.AgentFacts, mapped) {
+		return
+	}
+	s.persistAgentFacts(vm, facts)
+	if err := s.sender.Send(ctx, vm, nil); err != nil {
+		log.Debugf("VMScraper: agent facts for %q stored locally; Central update deferred: %v", vm.Key(), err)
+	}
 }
 
 // recordVMDiscoveredData increments VMDiscoveredData from ResponseMeta.facts
