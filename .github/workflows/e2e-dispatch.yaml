@@ -21,23 +21,20 @@ defaults:
     shell: bash
 
 jobs:
-  #build:
-  #  name: Build
-  #  uses: ./.github/workflows/build.yaml
-  #  secrets: inherit
+  build:
+    name: Build
+    uses: ./.github/workflows/build.yaml
+    secrets: inherit
 
   images:
+    needs: [ build ]
     runs-on: ubuntu-slim
     env:
-      tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
+      tag: ${{ needs.build.build-tag.outputs.tag }}
     outputs:
-      tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
-      ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
-      # env:
-      #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
+      tag: ${{ needs.build.build-tag.outputs.tag }}
     steps:
-    - name: Compute build tag
-      id: build-tag
+    - name: Show build tag
       run: |
         echo "tag=$tag"
 
