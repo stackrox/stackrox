@@ -93,7 +93,9 @@ function testModeSupported(provider) {
         provider.type === 'auth0' ||
         provider.type === 'oidc' ||
         provider.type === 'saml' ||
-        provider.type === 'openshift'
+        provider.type === 'openshift' ||
+        provider.type === 'openshift-with-acm-roles' ||
+        provider.type === 'oidc-with-acm-roles'
     );
 }
 
@@ -166,7 +168,7 @@ function AuthProviderForm({
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             .when('type', {
-                is: 'oidc',
+                is: (type) => type === 'oidc' || type === 'oidc-with-acm-roles',
                 then: (configSchema) =>
                     configSchema.shape({
                         client_id: yup.string().required('A client ID is required.'),
@@ -234,6 +236,14 @@ function AuthProviderForm({
                 then: (configSchema) =>
                     configSchema.shape({
                         audience: yup.string().required('An audience is required.'),
+                    }),
+            })
+            .when('type', {
+                is: 'openshift-with-acm-roles',
+                then: (configSchema) =>
+                    configSchema.shape({
+                        client_name: yup.string().required('A client name is required.'),
+                        client_secret: yup.string().required('A client secret is required.'),
                     }),
             }),
     });
@@ -523,7 +533,8 @@ function AuthProviderForm({
                             </p>
                         </Alert>
                     </div>
-                    {selectedAuthProvider.type === 'oidc' && (
+                    {(selectedAuthProvider.type === 'oidc' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
                         <FormSection
                             title="Required attributes for the authentication provider"
                             titleElement="h2"
@@ -639,7 +650,8 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    {selectedAuthProvider.type === 'oidc' && (
+                    {(selectedAuthProvider.type === 'oidc' ||
+                        selectedAuthProvider.type === 'oidc-with-acm-roles') && (
                         <FormSection
                             title="Claim mappings for the authentication provider"
                             titleElement="h2"

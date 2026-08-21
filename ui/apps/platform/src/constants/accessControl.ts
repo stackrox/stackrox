@@ -14,6 +14,8 @@ export const authProviderLabels = {
     userpki: 'User Certificates',
     iap: 'Google IAP',
     openshift: 'OpenShift Auth',
+    'openshift-with-acm-roles': 'OpenShift Auth with ACM Roles',
+    'oidc-with-acm-roles': 'OpenID Connect with ACM Roles',
 };
 
 export const oidcCallbackModes = [

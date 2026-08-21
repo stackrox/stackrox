@@ -19,7 +19,7 @@ export function transformInitialValues(
     // TODO-ivan: eventually logic for different auth provider type should live
     // with the form component that renders form for the corresponding auth provider
     // type, probably makes sense to refactor after moving away from redux-form
-    if (initialValues.type === 'oidc') {
+    if (initialValues.type === 'oidc' || initialValues.type === 'oidc-with-acm-roles') {
         const alteredConfig = { ...initialValues.config };
 
         // backend doesn't return the exact value for the client secret for the security reasons,
@@ -45,6 +45,18 @@ export function transformInitialValues(
             config: alteredConfig,
         };
     }
+    if (initialValues.type === 'openshift-with-acm-roles') {
+        const alteredConfig = { ...initialValues.config };
+
+        // backend doesn't return the exact value for the client secret for security reasons
+        // clean-up obfuscated value if any as we don't need to show it
+        alteredConfig.client_secret = '';
+
+        return {
+            ...initialValues,
+            config: alteredConfig,
+        };
+    }
     if (initialValues.type === 'saml') {
         const alteredConfig = { ...initialValues.config };
         // unless static config values are present, assume dynamic configuration is selected
@@ -61,7 +73,7 @@ function populateDefaultValues(authProvider: AuthProvider): AuthProvider {
     const newInitialValues: DisplayedAuthProvider = { ...authProvider };
     newInitialValues.uiEndpoint = window.location.host;
     newInitialValues.enabled = true;
-    if (authProvider.type === 'oidc') {
+    if (authProvider.type === 'oidc' || authProvider.type === 'oidc-with-acm-roles') {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         newInitialValues.config = {
@@ -116,7 +128,7 @@ export function transformValuesBeforeSaving(
     | Group[]
     | undefined
 > {
-    if (values.type === 'oidc') {
+    if (values.type === 'oidc' || values.type === 'oidc-with-acm-roles') {
         const alteredConfig = { ...(values.config as AuthProviderConfig) };
 
         // if client secret is stored on the backend and user didn't enter any value,
