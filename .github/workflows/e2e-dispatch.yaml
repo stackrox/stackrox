@@ -98,6 +98,10 @@ jobs:
       ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: /home/runner/work/stackrox/stackrox/deploy/common/ci-minimal-values.yaml
       ROX_SENSOR_EXTRA_HELM_VALUES_FILE: /home/runner/work/stackrox/stackrox/deploy/common/ci-minimal-secured-values.yaml
       OUTPUT_FORMAT: helm
+      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
     steps:
     - name: Checkout repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0

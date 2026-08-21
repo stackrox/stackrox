@@ -14,14 +14,16 @@ runs:
   using: composite
   steps:
     - name: Setup env
+      shell: bash
       run: |
         echo "CI_JOB_NAME=e2e-db-backup-restore-tests" >> "${GITHUB_ENV}"
 
     - name: Verify kubectl access and wait for cluster to stabilize
-      timeout-minutes: 5
+      shell: bash
       run: |
         set +e
-        while ! kubectl cluster-info &>/dev/null; do
+        for i in {1..180}; do
+          kubectl cluster-info &>/dev/null && break
           sleep 1
         done
         kubectl cluster-info
@@ -30,6 +32,7 @@ runs:
         scripts/ci/gke.sh wait_for_cluster || true
 
     - name: Create artifact directory
+      shell: bash
       run: mkdir -p "$ARTIFACT_DIR"
 
     # KinD pre-test: the prefetcher/poll above do not apply — images are pre-pulled
@@ -37,16 +40,14 @@ runs:
     # where PR builds publish) and kubelet pulls any remainder on demand during
     # deploy. Mark images available so downstream junit reporting is accurate.
     - name: Mark images available (KinD)
+      shell: bash
       run: |
         source scripts/ci/test_state.sh
         touch "${STATE_IMAGES_AVAILABLE}"
 
     - name: Deploy StackRox and run DB backup/restore test
+      shell: bash
       env:
-        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         ORCHESTRATOR_FLAVOR: k8s
       run: |
         source tests/e2e/lib.sh
