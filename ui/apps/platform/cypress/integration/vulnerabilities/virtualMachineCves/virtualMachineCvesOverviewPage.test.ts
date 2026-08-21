@@ -11,7 +11,7 @@ import {
     visitVirtualMachineCvesOverviewPageWithStaticPermissions,
 } from './VirtualMachineCve.helpers';
 
-const fixturePathListVMs = 'vulnerabilities/virtualMachineCves/listVirtualMachines';
+const fixturePathListVMs = 'vulnerabilities/virtualMachineCves/listVMs';
 
 describe('Virtual Machine CVEs - Overview Page', () => {
     withAuth();
@@ -103,7 +103,7 @@ describe('Virtual Machine CVEs - Overview Page', () => {
     it('should display an empty state when no VMs are returned', () => {
         visitVirtualMachineCvesOverviewPage(routeMatcherMapForVirtualMachines, {
             [listVirtualMachinesAlias]: {
-                body: { virtualMachines: [], totalCount: 0 },
+                body: { vms: [], totalCount: 0 },
             },
         });
 
@@ -130,15 +130,25 @@ describe('Virtual Machine CVEs - Overview Page', () => {
     it('should paginate through results', () => {
         const paginatedFixture = {
             body: {
-                virtualMachines: Array.from({ length: 20 }, (_, i) => ({
+                vms: Array.from({ length: 20 }, (_, i) => ({
                     id: `vm-${String(i + 1).padStart(3, '0')}`,
                     namespace: 'default',
                     name: `cypress-vm-${i + 1}`,
                     clusterId: 'cluster-001',
                     clusterName: 'production-cluster',
+                    guestOs: 'Red Hat Enterprise Linux 9.2',
                     lastUpdated: '2025-04-15T10:30:00.000Z',
+                    scanTime: '2025-04-15T10:30:00.000Z',
                     vsockCid: i + 3,
-                    state: 'RUNNING',
+                    state: 'VM_STATE_RUNNING',
+                    cveSeverityCounts: {
+                        critical: { total: 0, fixable: 0 },
+                        important: { total: 0, fixable: 0 },
+                        moderate: { total: 0, fixable: 0 },
+                        low: { total: 0, fixable: 0 },
+                        unknown: { total: 0, fixable: 0 },
+                    },
+                    componentScanCount: { scanned: 0, total: 0 },
                 })),
                 totalCount: 50,
             },
