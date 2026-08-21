@@ -181,8 +181,9 @@ func (u *SensorUpdater) applyLocked(content []byte, hash string) {
 	u.activeHash = hash
 }
 
-// persistAndNotify persists the active mapping in the background, then
-// fires onChange so later reads already see it.
+// persistAndNotify fires onChange now and persists cachePath in the
+// background. Path is the write barrier if the file is needed before
+// that goroutine finishes.
 func (u *SensorUpdater) persistAndNotify() {
 	go func() {
 		if _, err := u.persistActive(); err != nil {

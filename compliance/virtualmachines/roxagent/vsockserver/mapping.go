@@ -11,6 +11,8 @@ type MappingProvider interface {
 	Hash() string
 	UpdatePath() pb.RepoCPEMappingUpdatePath
 	Bytes() ([]byte, error)
+	// Path returns a file matching Bytes(). It may write that file if a
+	// background persist has not landed yet.
 	Path() (string, error)
 }
 
