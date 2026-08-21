@@ -223,6 +223,22 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central (across all VMs). A burst of near-zero gaps
+// means many reports left Sensor in a short window. The first forward after
+// Sensor start does not observe a sample.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. Healthy jitter produces spread gaps; " +
+			"a burst of near-zero gaps signals a clump hitting Central at once.",
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 18), // 10ms to ~22min
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
@@ -240,5 +256,6 @@ func init() {
 		PullRequestsTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullForwardInterarrivalSeconds,
 	)
 }

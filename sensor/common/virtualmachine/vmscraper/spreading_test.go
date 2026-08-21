@@ -6,8 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -109,4 +112,21 @@ func TestVMScraper_NACKDoesNotUseSteadyBand(t *testing.T) {
 	s.handleNACK(string(vm.ID) + ":1")
 	assert.Equal(t, initialBackoff, cachedNextAttemptAt(t, s, "ns1/vm-a").Sub(start),
 		"NACK must use backoff, not interval+offset")
+}
+
+func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
+	s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	before := histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds)
+	s.observeForwardInterarrival()
+	assert.Equal(t, before, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds),
+		"first forward does not observe a gap")
+	s.observeForwardInterarrival()
+	assert.Equal(t, before+1, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds))
+}
+
+func histogramSampleCount(t *testing.T, h prometheus.Histogram) uint64 {
+	t.Helper()
+	var m dto.Metric
+	require.NoError(t, h.(prometheus.Metric).Write(&m))
+	return m.GetHistogram().GetSampleCount()
 }

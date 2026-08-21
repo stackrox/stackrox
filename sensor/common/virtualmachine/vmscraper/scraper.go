@@ -91,10 +91,11 @@ type VMScraper struct {
 	// tests inject a fixed source for determinism.
 	randFloat64 func() float64
 
-	mu            sync.Mutex
-	vmState       map[string]*vmState
-	lastReconcile time.Time
-	inFlight      set.StringSet
+	mu              sync.Mutex
+	vmState         map[string]*vmState
+	lastReconcile   time.Time
+	inFlight        set.StringSet
+	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
 }
 
 type vmState struct {
@@ -439,6 +440,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -605,6 +607,18 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 		state.lastGeneration = newGen
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
+	})
+}
+
+// observeForwardInterarrival records the Sensor-level gap between successful
+// forwards. The first forward after start does not observe a sample.
+func (s *VMScraper) observeForwardInterarrival() {
+	concurrency.WithLock(&s.mu, func() {
+		now := s.now()
+		if !s.lastForwardTime.IsZero() {
+			metrics.PullForwardInterarrivalSeconds.Observe(now.Sub(s.lastForwardTime).Seconds())
+		}
+		s.lastForwardTime = now
 	})
 }
 
