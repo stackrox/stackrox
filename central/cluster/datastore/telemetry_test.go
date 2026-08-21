@@ -19,9 +19,9 @@ func TestBuildVMTraits(t *testing.T) {
 				TrackedVms: 10,
 				VmsScanned: 7,
 				RoxagentVersionCounts: map[string]int32{
-					"v1.0.0":  4,
-					"v2.0.0":  2,
-					"unknown": 1,
+					"4.7.0-12-gabcdef0123": 4,
+					"4.8.0-3-gfedcba9876":  2,
+					"unknown":              1,
 				},
 			},
 			wantTraits: map[string]any{
@@ -29,7 +29,7 @@ func TestBuildVMTraits(t *testing.T) {
 				"VM Tracked Count":        int32(10),
 				"VM Scanned Count":        int32(7),
 				"VM Unscanned Count":      int32(3),
-				"Roxagent Version Counts": `[{"version":"unknown","count":1},{"version":"v1.0.0","count":4},{"version":"v2.0.0","count":2}]`,
+				"Roxagent Version Counts": `[{"version":"4.7.0-12-gabcdef0123","count":4},{"version":"4.8.0-3-gfedcba9876","count":2},{"version":"unknown","count":1}]`,
 			},
 		},
 		"should zero traits including version counts when capable Sensor sends nil metrics (feature off)": {
@@ -60,7 +60,7 @@ func TestBuildVMTraits(t *testing.T) {
 				TrackedVms: 4,
 				VmsScanned: 4,
 				RoxagentVersionCounts: map[string]int32{
-					"v1.0.0": 4,
+					"4.7.0-12-gabcdef0123": 4,
 				},
 			},
 			wantTraits: map[string]any{
@@ -68,7 +68,7 @@ func TestBuildVMTraits(t *testing.T) {
 				"VM Tracked Count":        int32(4),
 				"VM Scanned Count":        int32(4),
 				"VM Unscanned Count":      int32(0),
-				"Roxagent Version Counts": `[{"version":"v1.0.0","count":4}]`,
+				"Roxagent Version Counts": `[{"version":"4.7.0-12-gabcdef0123","count":4}]`,
 			},
 		},
 		"should return nil traits when Sensor lacks capability (old Sensor)": {

@@ -7,6 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testAgentVersion470  = "4.7.0-12-gabcdef0123" // typical ldflags / git describe build
+	testAgentVersion480  = "4.8.0-3-gfedcba9876"
+	testAgentDevelopment = "development" // local default before ldflags injection
+)
+
+// testGitDescribeBuild returns git-describe-shaped version strings; commitNum is
+// zero-padded so lexical order matches numeric order in the cap tie-break test.
+func testGitDescribeBuild(commitNum int) string {
+	return fmt.Sprintf("4.7.0-%02d-g01234567%02d", commitNum, commitNum)
+}
+
 func TestVMScraper_Stats(t *testing.T) {
 	tests := map[string]struct {
 		setup        func(s *VMScraper)
@@ -25,21 +37,21 @@ func TestVMScraper_Stats(t *testing.T) {
 				now := s.now()
 				s.vmState["ns1/vm-a"] = &vmState{
 					lastForwardedAt:  now,
-					lastAgentVersion: "v1.0.0",
+					lastAgentVersion: testAgentVersion470,
 				}
 				s.vmState["ns1/vm-b"] = &vmState{
-					lastAgentVersion: "v1.0.0",
+					lastAgentVersion: testAgentVersion470,
 				}
 				s.vmState["ns2/vm-c"] = &vmState{
 					lastForwardedAt:  now,
-					lastAgentVersion: "v2.0.0",
+					lastAgentVersion: testAgentVersion480,
 				}
 			},
 			wantTracked: 3,
 			wantScanned: 2,
 			wantVersions: map[string]int{
-				"v1.0.0": 1,
-				"v2.0.0": 1,
+				testAgentVersion470: 1,
+				testAgentVersion480: 1,
 			},
 		},
 		"should bucket empty agent version of a scanned VM as unknown": {
@@ -48,23 +60,22 @@ func TestVMScraper_Stats(t *testing.T) {
 					lastForwardedAt: s.now(),
 				}
 				s.vmState["ns1/vm-b"] = &vmState{
-					lastAgentVersion: "v1.0.0",
+					lastAgentVersion: testAgentDevelopment,
 					lastForwardedAt:  s.now(),
 				}
 			},
 			wantTracked: 2,
 			wantScanned: 2,
 			wantVersions: map[string]int{
-				unknownAgentVersion: 1,
-				"v1.0.0":            1,
+				unknownAgentVersion:  1,
+				testAgentDevelopment: 1,
 			},
 		},
 		"should cap version map to top N and fold remainder into other": {
 			setup: func(s *VMScraper) {
 				for i := range maxVersionBuckets + 5 {
-					ver := fmt.Sprintf("v0.0.%d", i)
 					s.vmState[fmt.Sprintf("ns/vm-%d", i)] = &vmState{
-						lastAgentVersion: ver,
+						lastAgentVersion: testGitDescribeBuild(i),
 						lastForwardedAt:  s.now(),
 					}
 				}
@@ -73,14 +84,11 @@ func TestVMScraper_Stats(t *testing.T) {
 			wantScanned: maxVersionBuckets + 5,
 			wantVersions: func() map[string]int {
 				m := make(map[string]int, maxVersionBuckets+1)
-				for i := range maxVersionBuckets + 5 {
-					m[fmt.Sprintf("v0.0.%d", i)] = 1
+				for i := range maxVersionBuckets {
+					m[testGitDescribeBuild(i)] = 1
 				}
-				// After capping, we expect maxVersionBuckets entries + 1 "other" entry.
-				// Since all counts are 1, any maxVersionBuckets are kept; 5 go to "other".
-				// The exact set kept is deterministic only if we sort; the test checks
-				// sum(values) == tracked and len(m) <= maxVersionBuckets+1.
-				return nil // We'll assert structurally below instead
+				m[otherAgentVersion] = 5
+				return m
 			}(),
 		},
 	}
@@ -94,19 +102,7 @@ func TestVMScraper_Stats(t *testing.T) {
 			assert.Equal(t, tc.wantTracked, stats.TrackedVMs)
 			assert.Equal(t, tc.wantScanned, stats.VMsScanned)
 
-			if tc.wantVersions != nil {
-				assert.Equal(t, tc.wantVersions, stats.VersionCounts)
-			} else {
-				// Structural check for the top-N cap test case
-				assert.LessOrEqual(t, len(stats.VersionCounts), maxVersionBuckets+1,
-					"version map should not exceed maxVersionBuckets + 1 (other)")
-				total := 0
-				for _, c := range stats.VersionCounts {
-					total += c
-				}
-				assert.Equal(t, tc.wantScanned, total,
-					"sum of version counts should equal scanned VMs")
-			}
+			assert.Equal(t, tc.wantVersions, stats.VersionCounts)
 		})
 	}
 }

@@ -20,6 +20,8 @@ const (
 	// Must be larger than defaultInterval. You may want to increase it if you plan
 	// to step through the code with a debugger.
 	metricsTimeout = 300 * time.Millisecond
+
+	testAgentVersion470 = "4.7.0-12-gabcdef0123"
 )
 
 func TestClusterMetrics(t *testing.T) {
@@ -178,8 +180,8 @@ func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 			TrackedVMs: 5,
 			VMsScanned: 3,
 			VersionCounts: map[string]int{
-				"v1.0.0":  2,
-				"unknown": 1,
+				testAgentVersion470: 2,
+				"unknown":           1,
 			},
 		},
 	}
@@ -194,7 +196,7 @@ func (s *ClusterMetricsTestSuite) TestVMMetricsEndToEnd() {
 		s.Require().NotNil(vmm, "VirtualMachineMetrics must be present when vmStatsSource is non-nil")
 		s.Equal(int32(5), vmm.GetTrackedVms())
 		s.Equal(int32(3), vmm.GetVmsScanned())
-		s.Equal(map[string]int32{"v1.0.0": 2, "unknown": 1}, vmm.GetRoxagentVersionCounts())
+		s.Equal(map[string]int32{testAgentVersion470: 2, "unknown": 1}, vmm.GetRoxagentVersionCounts())
 	case <-time.After(metricsTimeout):
 		s.Fail("timeout waiting for cluster metrics with VM data")
 	}
