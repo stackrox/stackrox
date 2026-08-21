@@ -11,36 +11,11 @@ inputs:
     default: ~/.kube/config
 
 runs:
-  using: "composite"
-  env:
-    MAIN_IMAGE_TAG: ${{ inputs.tag }}
-    BUILD_TAG: ${{ inputs.tag }}
-    CI_JOB_NAME: e2e-db-backup-restore-tests
-    ARTIFACT_DIR: ./junit-reports
-    ROX_SCANNER_V4: true
-    # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
-    # default (9 sources) takes ~30 min on KinD's capped CPU and stalls the
-    # deploy, so KinD-v4 uses the configurable scanner_v4_allowlist input
-    # (default 'alpine', <1 min); jobs needing more sources override it. GKE
-    # keeps the tests/e2e/lib.sh default. (Empty -> that default.)
-    SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: alpine
-    PYTHONUNBUFFERED: "1"
-    # Both cluster types expose Central via a LoadBalancer service. On KinD,
-    # cloud-provider-kind (started by create-kind-cluster) assigns the service
-    # a real, host-reachable IP, so the deploy + wait_for_api path is identical
-    # to GKE with no port-forward.
-    LOAD_BALANCER: lb
-    STORAGE: pvc
-    # Running the full stack incl. a scanner (v2 or v4) on one KinD node requires
-    # shrinking resource *requests* (so everything schedules) while keeping modest
-    # *limits* (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back
-    # off instead of OOMing). These overrides only take effect on the Helm deploy
-    # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. When
-    # scanner=none, KinD stays on the leaner known-good kubectl deploy.
-    ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: ${{ format('{0}/deploy/common/ci-minimal-values.yaml', github.workspace) }}
-    ROX_SENSOR_EXTRA_HELM_VALUES_FILE: ${{ format('{0}/deploy/common/ci-minimal-secured-values.yaml', github.workspace) }}
-    OUTPUT_FORMAT: helm
+  using: composite
   steps:
+    - name: Setup env
+      run: |
+        echo "CI_JOB_NAME=e2e-db-backup-restore-tests" >> "${GITHUB_ENV}"
 
     - name: Verify kubectl access and wait for cluster to stabilize
       timeout-minutes: 5

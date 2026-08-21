@@ -71,6 +71,33 @@ jobs:
   e2e-db-backup-restore-tests:
     needs: [ build, images ]
     runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      ARTIFACT_DIR: ./junit-reports
+      ROX_SCANNER_V4: true
+      # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
+      # default (9 sources) takes ~30 min on KinD's capped CPU and stalls the
+      # deploy, so KinD-v4 uses the configurable scanner_v4_allowlist input
+      # (default 'alpine', <1 min); jobs needing more sources override it. GKE
+      # keeps the tests/e2e/lib.sh default. (Empty -> that default.)
+      SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST: alpine
+      PYTHONUNBUFFERED: "1"
+      # Both cluster types expose Central via a LoadBalancer service. On KinD,
+      # cloud-provider-kind (started by create-kind-cluster) assigns the service
+      # a real, host-reachable IP, so the deploy + wait_for_api path is identical
+      # to GKE with no port-forward.
+      LOAD_BALANCER: lb
+      STORAGE: pvc
+      # Running the full stack incl. a scanner (v2 or v4) on one KinD node requires
+      # shrinking resource *requests* (so everything schedules) while keeping modest
+      # *limits* (ROX_MEMLIMIT -> Go soft GC at 95% of limits.memory, so pods back
+      # off instead of OOMing). These overrides only take effect on the Helm deploy
+      # path, so a scanner-on KinD run also switches OUTPUT_FORMAT to helm. When
+      # scanner=none, KinD stays on the leaner known-good kubectl deploy.
+      ROX_CENTRAL_EXTRA_HELM_VALUES_FILE: /home/runner/work/stackrox/stackrox/deploy/common/ci-minimal-values.yaml
+      ROX_SENSOR_EXTRA_HELM_VALUES_FILE: /home/runner/work/stackrox/stackrox/deploy/common/ci-minimal-secured-values.yaml
+      OUTPUT_FORMAT: helm
     steps:
     - name: Checkout repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
