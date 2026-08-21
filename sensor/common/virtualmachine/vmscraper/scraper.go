@@ -596,22 +596,45 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 }
 
 func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]string) {
-	vm.AgentFacts = virtualmachine.AgentFactsFromResponseFacts(facts)
+	mapped, ok := snapshotAgentFacts(facts)
+	if !ok {
+		return
+	}
+	vm.AgentFacts = mapped
 	s.store.AddOrUpdate(vm)
+}
+
+// snapshotAgentFacts maps ResponseMeta.facts. ok is false when the response
+// carried no facts, so stored values stay as they are. An empty mapped map
+// means every reported value was unspecified or unsupported.
+func snapshotAgentFacts(facts map[string]string) (mapped map[string]string, ok bool) {
+	if len(facts) == 0 {
+		return nil, false
+	}
+	mapped = virtualmachine.AgentFactsFromResponseFacts(facts)
+	if mapped == nil {
+		mapped = map[string]string{}
+	}
+	return mapped, true
 }
 
 // forwardAgentFactsIfChanged emits a VM update when roxagent facts changed
 // even if the index report is unchanged. The store is updated only after
 // Send succeeds so a failed send is retried on the next unchanged scrape.
 func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualmachine.Info, facts map[string]string) {
-	if len(facts) > 0 {
-		recordVMDiscoveredData(facts)
-	}
-	mapped := virtualmachine.AgentFactsFromResponseFacts(facts)
-	if len(mapped) == 0 {
+	mapped, ok := snapshotAgentFacts(facts)
+	if !ok {
 		return
 	}
-	if prev := s.store.Get(vm.ID); prev != nil && maps.Equal(prev.AgentFacts, mapped) {
+	recordVMDiscoveredData(facts)
+	var prevFacts map[string]string
+	if prev := s.store.Get(vm.ID); prev != nil {
+		prevFacts = prev.AgentFacts
+	}
+	if len(mapped) == 0 && len(prevFacts) == 0 {
+		return
+	}
+	if maps.Equal(prevFacts, mapped) {
 		return
 	}
 	toSend := vm.Copy()

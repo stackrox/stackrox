@@ -241,7 +241,9 @@ func (h *handlerImpl) handleIndexReport(
 		return
 	}
 
-	if len(req.vm.AgentFacts) > 0 {
+	// nil AgentFacts means this request does not carry a facts snapshot.
+	// An empty map clears previously forwarded agent keys.
+	if req.vm.AgentFacts != nil {
 		vmInfo.AgentFacts = req.vm.AgentFacts
 		if event := virtualmachine.SensorEvent(central.ResourceAction_UPDATE_RESOURCE, h.clusterIDString(), vmInfo); event != nil {
 			h.sendIndexReportEvent(toCentral, message.New(&central.MsgFromSensor{

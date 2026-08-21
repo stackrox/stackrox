@@ -212,6 +212,47 @@ func (s *virtualMachineHandlerSuite) TestSendNilReportEmitsVirtualMachineUpdateO
 	}
 }
 
+func (s *virtualMachineHandlerSuite) TestSendEmptyAgentFactsClearsAgentKeysOnUpdate() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
+		&virtualmachine.Info{
+			ID:         "test-vm",
+			GuestOS:    "Red Hat Enterprise Linux 9",
+			AgentFacts: map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive},
+		})
+
+	go func() {
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			ID:         "test-vm",
+			AgentFacts: map[string]string{},
+		}, nil)
+		s.Require().NoError(err)
+	}()
+
+	select {
+	case msg := <-s.handler.ResponsesC():
+		event := msg.GetEvent()
+		s.Require().NotNil(event)
+		s.Equal(central.ResourceAction_UPDATE_RESOURCE, event.GetAction())
+		s.Equal(
+			map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux 9"},
+			event.GetVirtualMachine().GetFacts(),
+		)
+	case <-time.After(time.Second):
+		s.Fail("Expected virtual machine update to be sent to central")
+	}
+
+	select {
+	case <-s.handler.ResponsesC():
+		s.Fail("Did not expect an index report when Send was called without a report")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
 func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	err := s.handler.Start()
 	s.Require().NoError(err)

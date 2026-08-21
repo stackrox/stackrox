@@ -395,6 +395,37 @@ func TestVMScraper_RetriesAgentFactsAfterSendFailure(t *testing.T) {
 	assert.Equal(t, expected, store.Get(vmID).AgentFacts)
 }
 
+func TestVMScraper_ClearsAgentFactsWhenResponseValuesUnspecified(t *testing.T) {
+	vmID := virtualmachine.VMID("ns1/vm-a")
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+	require.NotEmpty(t, store.Get(vmID).AgentFacts)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         pb.DetectedOS_UNKNOWN.String(),
+		"activation_status":   pb.ActivationStatus_ACTIVATION_UNSPECIFIED.String(),
+		"dnf_metadata_status": pb.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED.String(),
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 2)
+	assert.Nil(t, sender.sent[1], "clearing facts should be metadata-only")
+	assert.Empty(t, sender.sentVMs[1].AgentFacts)
+	assert.Empty(t, store.Get(vmID).AgentFacts)
+}
+
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{
 		makeVM("ns1", "vm-a", 100),
