@@ -102,6 +102,11 @@ export const vulnerabilityReportsPath = `${vulnerabilitiesBasePath}/reports`;
 export const vulnerabilityConfigurationReportsPath = `${vulnerabilityReportsPath}/configuration`;
 export const vulnerabilityViewBasedReportsPath = `${vulnerabilityReportsPath}/view-based`;
 
+export const vulnerabilityNodeReportsPath = `${vulnerabilityReportsPath}/node`;
+export const vulnerabilityNodeConfigurationReportsPath = `${vulnerabilityNodeReportsPath}/configuration`;
+export const vulnerabilityNodeConfigurationReportDetailsPath = `${vulnerabilityNodeConfigurationReportsPath}/:reportId`;
+export const vulnerabilityNodeViewBasedReportsPath = `${vulnerabilityNodeReportsPath}/view-based`;
+
 // Vulnerability Management 1.0 path for links from Dashboard:
 
 export const vulnManagementImagesPath = `${vulnManagementPath}/images`;
@@ -193,6 +198,7 @@ export type RouteKey =
     | 'violations'
     | 'vulnerabilities/exception-management'
     | 'vulnerabilities/node-cves'
+    | 'vulnerabilities/node-reports'
     | 'vulnerabilities/reports'
     | 'vulnerabilities/user-workloads'
     | 'vulnerabilities/platform'
@@ -364,6 +370,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'vulnerabilities/node-cves': {
         resourceAccessRequirements: everyResource(['Cluster', 'Node']),
+    },
+    'vulnerabilities/node-reports': {
+        featureFlagRequirements: allEnabled(['ROX_NODE_VULNERABILITY_REPORTS']),
+        resourceAccessRequirements: everyResource(['Node']),
     },
     'vulnerabilities/platform-cves': {
         featureFlagRequirements: allEnabled(['ROX_LEGACY_SCANNER']),

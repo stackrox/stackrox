@@ -23,7 +23,7 @@ require (
 	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.20.1
+	github.com/adhocore/gronx v1.20.3
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.43.4
 	github.com/aws/aws-sdk-go-v2/config v1.32.35

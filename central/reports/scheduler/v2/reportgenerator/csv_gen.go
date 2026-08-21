@@ -4,12 +4,14 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -38,7 +40,13 @@ var (
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
 func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
 	// add header for component version
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
+	csvHeaderCols := csvHeader
+	if features.KnownExploitedVulnerabilities.Enabled() {
+		csvHeaderCols = append(csvHeaderCols[:0:0], csvHeader...)
+		epssIdx := slices.Index(csvHeaderCols, "EPSS Probability Percentage")
+		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV")
+	}
+	csvWriter := csv.NewGenericWriter(csvHeaderCols, true)
 
 	for _, r := range cveResponses {
 		var epssScore string
@@ -61,11 +69,22 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
 			epssScore,
+		}
+		if features.KnownExploitedVulnerabilities.Enabled() {
+			var cisaKev string
+			if r.GetCisaKev() != nil {
+				cisaKev = strconv.FormatBool(*r.GetCisaKev())
+			} else {
+				cisaKev = "Not Available"
+			}
+			row = append(row, cisaKev)
+		}
+		row = append(row,
 			r.GetDiscoveredAtImage(),
 			r.Link,
 			r.GetAdvisoryName(),
 			r.GetAdvisoryLink(),
-		}
+		)
 		csvWriter.AddValue(row)
 	}
 

@@ -2251,6 +2251,928 @@ func TestFilterNotAffectedVulnerabilities(t *testing.T) {
 	}
 }
 
+func TestFilterOSVSupersededByRedHatVEX(t *testing.T) {
+	layerSHAToIndex := map[string]int32{
+		"sha256:layer0": 0,
+		"sha256:layer1": 1,
+		"sha256:layer2": 2,
+	}
+
+	testcases := []struct {
+		name             string
+		report           *v4.VulnerabilityReport
+		expectedPkgVulns map[string][]string
+	}{
+		{
+			name: "nil/empty PackageVulnerabilities - no-op",
+			report: &v4.VulnerabilityReport{
+				PackageVulnerabilities: nil,
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-1111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+				},
+			},
+			expectedPkgVulns: map[string][]string{},
+		},
+		{
+			name: "no rhel-vex vuln in the report - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"go-pkg-1": {"osv-vuln"},
+			},
+		},
+		{
+			name: "two packages, same layer, share a CVE alias - OSV suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1": {"vex-vuln"},
+			},
+		},
+		{
+			name: "two packages share a CVE alias, OSV package on a later layer - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer2"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln"},
+				"go-pkg-1": {"osv-vuln"},
+			},
+		},
+		{
+			name: "two packages, same layer, different vuln names, share a CVE alias - OSV suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "GHSA-8r3f-844c-mc37",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "ghsa", Name: "GHSA-8r3f-844c-mc37"},
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1": {"vex-vuln"},
+			},
+		},
+		{
+			name: "no shared alias between an OSV vuln and a rhel-vex vuln - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-2222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-1111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln"},
+				"go-pkg-1": {"osv-vuln"},
+			},
+		},
+		{
+			name: "non-osv vuln sharing an alias with a rhel-vex vuln, same layer - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"nvd-vuln": {
+						Id:      "nvd-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "nvd",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"nvd-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln"},
+				"go-pkg-1": {"nvd-vuln"},
+			},
+		},
+		{
+			name: "two pairs of packages, each pair sharing its own CVE alias - both OSV vulns suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
+						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer1"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln-1": {
+						Id:      "vex-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vex-vuln-2": {
+						Id:      "vex-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln-1"}},
+					"bin-2":    {Values: []string{"vex-vuln-2"}},
+					"go-pkg-1": {Values: []string{"osv-vuln-1"}},
+					"go-pkg-2": {Values: []string{"osv-vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1": {"vex-vuln-1"},
+				"bin-2": {"vex-vuln-2"},
+			},
+		},
+		{
+			name: "partial suppression - only the matching OSV id is removed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-match": {
+						Id:      "osv-match",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-other": {
+						Id:      "osv-other",
+						Name:    "CVE-2024-3333",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-3333"},
+						},
+					},
+					"nvd-other": {
+						Id:      "nvd-other",
+						Name:    "CVE-2024-24786",
+						Updater: "nvd",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-match", "osv-other", "nvd-other"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln"},
+				"go-pkg-1": {"osv-other", "nvd-other"},
+			},
+		},
+		{
+			name: "OSV package has no resolvable layer - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						// go-pkg-1 intentionally has no Environments entry.
+						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:unknown-layer"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln-1": {
+						Id:      "vex-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vex-vuln-2": {
+						Id:      "vex-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln-1"}},
+					"bin-2":    {Values: []string{"vex-vuln-2"}},
+					"go-pkg-1": {Values: []string{"osv-vuln-1"}},
+					"go-pkg-2": {Values: []string{"osv-vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln-1"},
+				"bin-2":    {"vex-vuln-2"},
+				"go-pkg-1": {"osv-vuln-1"},
+				"go-pkg-2": {"osv-vuln-2"},
+			},
+		},
+		{
+			name: "vuln ID missing from report.Vulnerabilities - kept, no panic",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln-1": {
+						Id:      "vex-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vex-vuln-2": {
+						Id:      "vex-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln-1"}},
+					"bin-2":    {Values: []string{"vex-vuln-2"}},
+					"go-pkg-1": {Values: []string{"missing-vuln-id"}},
+					"go-pkg-2": {Values: []string{"osv-vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln-1"},
+				"bin-2":    {"vex-vuln-2"},
+				"go-pkg-1": {"missing-vuln-id"},
+			},
+		},
+		{
+			name: "rhel-vex package has no resolvable layer - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"bin-2":    {Id: "bin-2", Kind: "binary", Name: "rhel8-container"},
+						"bin-3":    {Id: "bin-3", Kind: "binary", Name: "other-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "pkg1"},
+						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "pkg2"},
+						"go-pkg-3": {Id: "go-pkg-3", Kind: "binary", Name: "pkg3"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						// bin-1 intentionally has no Environments entry.
+						"bin-2":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:unknown-layer", RepositoryIds: []string{"rhcc-repo"}}}},
+						"bin-3":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-3": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln-1": {
+						Id:      "vex-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"vex-vuln-2": {
+						Id:      "vex-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"vex-vuln-3": {
+						Id:      "vex-vuln-3",
+						Name:    "CVE-2024-3333",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-3333"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-1111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-1111"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-2222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-2222"},
+						},
+					},
+					"osv-vuln-3": {
+						Id:      "osv-vuln-3",
+						Name:    "CVE-2024-3333",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-3333"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln-1"}},
+					"bin-2":    {Values: []string{"vex-vuln-2"}},
+					"bin-3":    {Values: []string{"vex-vuln-3"}},
+					"go-pkg-1": {Values: []string{"osv-vuln-1"}},
+					"go-pkg-2": {Values: []string{"osv-vuln-2"}},
+					"go-pkg-3": {Values: []string{"osv-vuln-3"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln-1"},
+				"bin-2":    {"vex-vuln-2"},
+				"bin-3":    {"vex-vuln-3"},
+				"go-pkg-1": {"osv-vuln-1"},
+				"go-pkg-2": {"osv-vuln-2"},
+			},
+		},
+		{
+			name: "one rhel-vex vuln suppresses OSV vulns on two different packages",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+						"go-pkg-2": {Id: "go-pkg-2", Kind: "binary", Name: "github.com/other/vendored-copy"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+						"go-pkg-2": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln-1"}},
+					"go-pkg-2": {Values: []string{"osv-vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1": {"vex-vuln"},
+			},
+		},
+		{
+			name: "rhel-vex package also has a different-updater vuln alongside it",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+					"other-vuln": {
+						Id:      "other-vuln",
+						Name:    "CVE-2024-9999",
+						Updater: "nvd",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-9999"},
+						},
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln", "other-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1": {"vex-vuln", "other-vuln"},
+			},
+		},
+		{
+			name: "rhel-vex vuln with an empty alias list - not suppressed",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+						"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"vex-vuln": {
+						Id:      "vex-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "rhel-vex",
+						// Intentionally no aliases.
+					},
+					"osv-vuln": {
+						Id:      "osv-vuln",
+						Name:    "CVE-2024-24786",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-24786"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"bin-1":    {Values: []string{"vex-vuln"}},
+					"go-pkg-1": {Values: []string{"osv-vuln"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"bin-1":    {"vex-vuln"},
+				"go-pkg-1": {"osv-vuln"},
+			},
+		},
+		{
+			name: "Mixed RHCC (OCI) and RPM packages: only RHCC suppresses OSV",
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"rhcc-pkg": {Id: "rhcc-pkg", Kind: "binary", Name: "ubi9-container"},
+						"rpm-pkg":  {Id: "rpm-pkg", Kind: "binary", Name: "some-rpm-package"},
+						"go-pkg":   {Id: "go-pkg", Kind: "binary", Name: "google.golang.org/protobuf"},
+					},
+					Repositories: map[string]*v4.Repository{
+						"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+						"rhel-repo": {Id: "rhel-repo", Key: "rhel-cpe-repository"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"rhcc-pkg": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+						"rpm-pkg":  {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhel-repo"}}}},
+						"go-pkg":   {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+					},
+				},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"rhcc-vex-vuln": {
+						Id:      "rhcc-vex-vuln",
+						Name:    "CVE-2024-11111",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-11111"},
+						},
+					},
+					"rpm-vex-vuln": {
+						Id:      "rpm-vex-vuln",
+						Name:    "CVE-2024-22222",
+						Updater: "rhel-vex",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-22222"},
+						},
+					},
+					"osv-vuln-1": {
+						Id:      "osv-vuln-1",
+						Name:    "CVE-2024-11111",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-11111"},
+						},
+					},
+					"osv-vuln-2": {
+						Id:      "osv-vuln-2",
+						Name:    "CVE-2024-22222",
+						Updater: "osv/go",
+						Aliases: []*v4.VulnerabilityReport_Alias{
+							{Space: "cve", Name: "CVE-2024-22222"},
+						},
+					},
+				},
+				PackageVulnerabilities: map[string]*v4.StringList{
+					"rhcc-pkg": {Values: []string{"rhcc-vex-vuln"}},
+					"rpm-pkg":  {Values: []string{"rpm-vex-vuln"}},
+					"go-pkg":   {Values: []string{"osv-vuln-1", "osv-vuln-2"}},
+				},
+			},
+			expectedPkgVulns: map[string][]string{
+				"rhcc-pkg": {"rhcc-vex-vuln"},
+				"rpm-pkg":  {"rpm-vex-vuln"},
+				"go-pkg":   {"osv-vuln-2"},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			filterOSVSupersededByRedHatVEX(tc.report, layerSHAToIndex)
+
+			got := make(map[string][]string)
+			for pkgID, vulns := range tc.report.GetPackageVulnerabilities() {
+				got[pkgID] = vulns.GetValues()
+			}
+			assert.Equal(t, tc.expectedPkgVulns, got)
+		})
+	}
+}
+
+func TestFilterOSVSupersededByRedHatVEX_FeatureFlag(t *testing.T) {
+	newReport := func() *v4.VulnerabilityReport {
+		return &v4.VulnerabilityReport{
+			Contents: &v4.Contents{
+				Packages: map[string]*v4.Package{
+					"bin-1":    {Id: "bin-1", Kind: "binary", Name: "ubi9-container"},
+					"go-pkg-1": {Id: "go-pkg-1", Kind: "binary", Name: "google.golang.org/protobuf"},
+				},
+				Repositories: map[string]*v4.Repository{
+					"rhcc-repo": {Id: "rhcc-repo", Key: "rhcc-container-repository"},
+				},
+				Environments: map[string]*v4.Environment_List{
+					"bin-1":    {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0", RepositoryIds: []string{"rhcc-repo"}}}},
+					"go-pkg-1": {Environments: []*v4.Environment{{IntroducedIn: "sha256:layer0"}}},
+				},
+			},
+			Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"vex-vuln": {
+					Id:      "vex-vuln",
+					Name:    "CVE-2024-24786",
+					Updater: "rhel-vex",
+					Aliases: []*v4.VulnerabilityReport_Alias{
+						{Space: "cve", Name: "CVE-2024-24786"},
+					},
+				},
+				"osv-vuln": {
+					Id:      "osv-vuln",
+					Name:    "GHSA-osv-flag-test",
+					Updater: "osv/go",
+					Aliases: []*v4.VulnerabilityReport_Alias{
+						{Space: "ghsa", Name: "GHSA-osv-flag-test"},
+						{Space: "cve", Name: "CVE-2024-24786"},
+					},
+				},
+			},
+			PackageVulnerabilities: map[string]*v4.StringList{
+				"bin-1":    {Values: []string{"vex-vuln"}},
+				"go-pkg-1": {Values: []string{"osv-vuln"}},
+			},
+		}
+	}
+	metadata := &storage.ImageMetadata{
+		V2:        &storage.V2Metadata{},
+		V1:        &storage.V1Metadata{Layers: []*storage.ImageLayer{{Empty: false}}},
+		LayerShas: []string{"sha256:layer0"},
+	}
+	const osvCVE = "GHSA-osv-flag-test"
+
+	t.Run("flag off - OSV vuln survives", func(t *testing.T) {
+		t.Setenv(features.ScannerV4SuppressOSVWithRedHatVEX.EnvVar(), "false")
+		scan := imageScan(metadata, newReport(), scannerVersion)
+		assert.True(t, hasCVE(scan, osvCVE), "expected %s to survive with the flag disabled", osvCVE)
+	})
+
+	t.Run("flag on - OSV vuln suppressed", func(t *testing.T) {
+		t.Setenv(features.ScannerV4SuppressOSVWithRedHatVEX.EnvVar(), "true")
+		scan := imageScan(metadata, newReport(), scannerVersion)
+		assert.False(t, hasCVE(scan, osvCVE), "expected %s to be suppressed with the flag enabled", osvCVE)
+	})
+}
+
+// hasCVE reports whether any component in scan carries a vulnerability whose
+// Cve field matches cve.
+func hasCVE(scan *storage.ImageScan, cve string) bool {
+	for _, c := range scan.GetComponents() {
+		for _, v := range c.GetVulns() {
+			if v.GetCve() == cve {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // TestVulnDataSource
 //
 // If this test fails due to a datasource format change

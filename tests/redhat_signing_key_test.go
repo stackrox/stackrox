@@ -71,28 +71,24 @@ func TestRedHatSigningKey(t *testing.T) {
 
 func (s *RedHatSigningKeySuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
+
+	// Deploy scripts (tests/e2e/lib.sh, deploy/common/k8sbased.sh) set
+	// watchIntervalEnv=5s at deploy time, so Central already polls quickly.
+	// This is a same-value no-op safety net for setups that deploy Central
+	// without the baked-in env var (e.g. local dev clusters).
+	ns := namespaces.StackRox
+	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
+	defer cancel()
+	s.logf("Ensuring %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	currentVal, _ := s.getDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv)
+	if currentVal == shortWatchInterval {
+		s.logf("%s already set to %s, skipping patch", watchIntervalEnv, shortWatchInterval)
+	} else {
+		s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	}
+
 	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
-
-	// Set once for the whole suite instead of per sub-test: every sub-test
-	// needs the watcher to poll quickly, and each Central restart costs
-	// ~30s, so sharing this one restart across sub-tests instead of paying
-	// it twice per sub-test saves several minutes of suite time.
-	ns := namespaces.StackRox
-	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
-	defer cancel()
-	s.logf("Setting %s=%s on central for the whole suite", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
-}
-
-// TearDownSuite reverts the watch-interval override applied in SetupSuite.
-func (s *RedHatSigningKeySuite) TearDownSuite() {
-	ns := namespaces.StackRox
-	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
-	defer cancel()
-	s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-	s.mustDeleteDeploymentEnvVar(ctx, ns, "central", watchIntervalEnv)
-	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
+	s.waitForCentralReady(ctx)
 }
 
 func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient {
@@ -101,6 +97,20 @@ func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient 
 
 func (s *RedHatSigningKeySuite) listIntegrations(ctx context.Context) (*v1.ListSignatureIntegrationsResponse, error) {
 	return s.siClient().ListSignatureIntegrations(ctx, &v1.Empty{})
+}
+
+// waitForCentralReady waits for Central's k8s deployment readiness AND gRPC
+// API responsiveness. On OCP with HAProxy Routes, gRPC connection recovery
+// after a backend restart lags 10-30s beyond k8s deployment readiness.
+func (s *RedHatSigningKeySuite) waitForCentralReady(ctx context.Context) {
+	ns := namespaces.StackRox
+	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
+	mustEventually(s.T(), ctx, func() error {
+		rpcCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		_, err := s.listIntegrations(rpcCtx)
+		return err
+	}, 2*time.Second, "Central gRPC API not yet responsive after restart")
 }
 
 // waitForIntegrationKeys polls until the Red Hat integration has exactly the expected key names.
@@ -431,7 +441,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	defer func() {
 		s.logf("Cleanup: removing updater env var from Central")
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", bundleURLEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+		s.waitForCentralReady(overallCtx)
 	}()
 
 	// The update interval isn't set: it always gets clamped to a 5-minute
@@ -439,7 +449,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	// depends on the unconditional first download at startup (see above).
 	s.logf("Setting %s on central", bundleURLEnv)
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", bundleURLEnv, bundleURL)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+	s.waitForCentralReady(testCtx)
 
 	s.logf("Waiting for updater to download the bundle and watcher to upsert keys")
 	s.waitForIntegrationKeys(testCtx, []string{"updater-key-1", "updater-key-2"},
@@ -567,7 +577,7 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 		s.logf("Cleanup: removing env vars from Central")
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", offlineModeEnv)
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", bundleURLEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+		s.waitForCentralReady(overallCtx)
 	}()
 
 	// The update interval isn't set here for the same reason as in
@@ -578,7 +588,7 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 
 	// --- Step 3: Wait for Central to restart ---
 
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+	s.waitForCentralReady(testCtx)
 
 	// --- Step 4: Verify the HTTP updater did NOT fetch the decoy bundle ---
 
