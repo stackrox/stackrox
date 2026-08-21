@@ -584,6 +584,10 @@ func startGRPCServer() {
 		}
 	}
 
+	if features.ACMAccessControlDelegation.Enabled() {
+		authProviderBackendFactories[oidc.TypeNameWithACMAccessControlDelegation] = openshift.NewFactory
+	}
+
 	for typeName, factoryCreator := range authProviderBackendFactories {
 		if err := registry.RegisterBackendFactory(authProviderRegisteringCtx, typeName, factoryCreator); err != nil {
 			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
