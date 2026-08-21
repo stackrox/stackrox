@@ -12,6 +12,7 @@ var (
 	resourceMapping = map[string]permissions.ResourceMetadata{
 		// Core Kubernetes resources
 		"namespaces.":      resources.Namespace,
+		"nodes.":           resources.Node,
 		"secrets.":         resources.Secret,
 		"serviceaccounts.": resources.ServiceAccount,
 		// Kubernetes RBAC resources
@@ -43,31 +44,19 @@ var (
 		"workflowadministration.api.stackrox.io":           resources.WorkflowAdministration,
 	}
 
-	supportedK8sAPIGroups = listSupportedK8sAPIGroups(resourceMapping)
-
-	supportedK8sRawResources = listSupportedK8sRawResources(resourceMapping)
+	supportedK8sAPIGroups, supportedK8sRawResources = listSupportedK8sGroupsAndResources(resourceMapping)
 )
 
-func listSupportedK8sAPIGroups(mapping map[string]permissions.ResourceMetadata) set.StringSet {
-	output := set.NewStringSet()
-	for resource := range mapping {
-		_, after, found := strings.Cut(resource, ".")
+func listSupportedK8sGroupsAndResources(mapping map[string]permissions.ResourceMetadata) (set.StringSet, set.StringSet) {
+	groups := set.NewStringSet()
+	rawResources := set.NewStringSet()
+	for key := range mapping {
+		resource, apiGroup, found := strings.Cut(key, ".")
 		if !found {
 			continue
 		}
-		output.Add(after)
+		groups.Add(apiGroup)
+		rawResources.Add(resource)
 	}
-	return output
-}
-
-func listSupportedK8sRawResources(mapping map[string]permissions.ResourceMetadata) set.StringSet {
-	output := set.NewStringSet()
-	for k := range mapping {
-		resource, _, found := strings.Cut(k, ".")
-		if !found {
-			continue
-		}
-		output.Add(resource)
-	}
-	return output
+	return groups, rawResources
 }

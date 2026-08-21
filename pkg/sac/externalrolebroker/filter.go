@@ -8,6 +8,8 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
+const rbacWildcard = "*"
+
 // FilterUserPermissionsForSupportedK8sResources filters a list of UserPermission objects
 // to return only those that reference resources supported by ACS
 // (some core Kubernetes resources, some Kubernetes RBAC resources and Stackrox API resources).
@@ -47,7 +49,7 @@ func ruleHasSupportedK8sResource(rule rbacv1.PolicyRule) bool {
 	for _, resource := range rule.Resources {
 		baseResource := getBaseResourceFromResource(resource)
 		for _, apiGroup := range rule.APIGroups {
-			if matches(baseResource, apiGroup) {
+			if isSupportedResourceInAPIGroup(baseResource, apiGroup) {
 				return true
 			}
 		}
@@ -55,14 +57,14 @@ func ruleHasSupportedK8sResource(rule rbacv1.PolicyRule) bool {
 	return false
 }
 
-func matches(resource string, apiGroup string) bool {
-	if resource == "*" && apiGroup == "*" {
+func isSupportedResourceInAPIGroup(resource string, apiGroup string) bool {
+	if resource == rbacWildcard && apiGroup == rbacWildcard {
 		return true
 	}
-	if apiGroup == "*" {
+	if apiGroup == rbacWildcard {
 		return supportedK8sRawResources.Contains(resource)
 	}
-	if resource == "*" {
+	if resource == rbacWildcard {
 		return supportedK8sAPIGroups.Contains(apiGroup)
 	}
 	resourceWithApiGroup := strings.Join([]string{resource, apiGroup}, ".")
