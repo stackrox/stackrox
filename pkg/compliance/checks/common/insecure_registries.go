@@ -15,7 +15,7 @@ func insecureRegistries(info *compliance.ContainerRuntimeInfo) []*storage.Compli
 	}
 
 	var failed bool
-	results := make([]*storage.ComplianceResultValue_Evidence, 0, 1)
+	var results []*storage.ComplianceResultValue_Evidence
 	for _, cidrStr := range info.GetInsecureRegistries().GetInsecureCidrs() {
 		_, cidr, _ := net.ParseCIDR(cidrStr)
 		isPrivate := false
