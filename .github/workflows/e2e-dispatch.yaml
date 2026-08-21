@@ -27,56 +27,27 @@ jobs:
   #  secrets: inherit
 
   images:
-    #needs: [ build ]
     runs-on: ubuntu-slim
     env:
       tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
     outputs:
       tag: 5.0.x-47-g86a8e24cb9  #${{ steps.build-tag.outputs.tag }}
-      operator_tag: ${{ steps.build-tag.outputs.operator_tag }}
       ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
       # env:
       #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     steps:
-    # - name: Checkout repo
-    #   uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-    #   with:
-    #     fetch-depth: 0
-    #     ref: ${{ github.event.pull_request.head.sha || github.sha }}
-    #     persist-credentials: false
-    # - uses: ./.github/actions/handle-tagged-build
-    # - name: Compute build tag
-    #   id: build-tag
-    #   run: |
-    #     tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
-    #     echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
-    #     echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
-    - name: Wait for images
-      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
-      with:
-        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: |
-          rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/collector:${{ env.tag }}
-          rhacs-eng/fact:${{ env.tag }}
-          rhacs-eng/main:${{ env.tag }}
-          rhacs-eng/roxctl:${{ env.tag }}
-          rhacs-eng/scanner-db-slim:${{ env.tag }}
-          rhacs-eng/scanner-db:${{ env.tag }}
-          rhacs-eng/scanner-slim:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner:${{ env.tag }}
-          rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
-          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
+    - name: Compute build tag
+      id: build-tag
+      run: |
+        echo "tag=$tag"
 
   e2e-db-backup-restore-tests:
     needs: [ images ]
     #needs: [ build, images ]
     runs-on: ubuntu-latest
     env:
-      MAIN_IMAGE_TAG: ${{ inputs.tag }}
-      BUILD_TAG: ${{ inputs.tag }}
+      MAIN_IMAGE_TAG: ${{ needs.images.outputs.tag }}
+      BUILD_TAG: ${{ needs.images.outputs.tag }}
       ARTIFACT_DIR: ./junit-reports
       ROX_SCANNER_V4: true
       # Scanner v4's matcher gates readiness on the vuln bundle load. The lib
