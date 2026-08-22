@@ -9,11 +9,14 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	lightspeedBroker "github.com/stackrox/rox/central/lightspeed/broker"
+	lightspeedStore "github.com/stackrox/rox/central/lightspeed/store"
 	processBaselineStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -29,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -45,9 +49,15 @@ var (
 			v1.DeploymentService_GetLabels_FullMethodName,
 			v1.DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName,
 			v1.DeploymentService_ExportDeployments_FullMethodName,
+			v1.DeploymentService_GetDeploymentRiskSummary_FullMethodName,
 		},
 	})
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
+)
+
+const (
+	lightspeedQueryTimeout = 60 * time.Second
+	lightspeedPrompt       = "Summarize the risk posture of this deployment. Highlight the top risk factors and suggest mitigations."
 )
 
 // serviceImpl provides APIs for deployments.
@@ -60,6 +70,10 @@ type serviceImpl struct {
 	processBaselineResults processBaselineResultsStore.DataStore
 	risks                  riskDataStore.DataStore
 	manager                manager.Manager
+
+	lightspeedStore  *lightspeedStore.Store
+	lightspeedBroker *lightspeedBroker.Broker
+	connMgr          connection.Manager
 }
 
 func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.DeploymentService_ExportDeploymentsServer) error {
@@ -278,4 +292,41 @@ func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.Deploym
 	slices.Sort(values)
 
 	return keyValuesMap, values
+}
+
+func (s *serviceImpl) GetDeploymentRiskSummary(ctx context.Context, request *v1.ResourceByID) (*v1.DeploymentRiskSummaryResponse, error) {
+	riskResp, err := s.GetDeploymentWithRisk(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterID := riskResp.GetDeployment().GetClusterId()
+
+	host, info := s.lightspeedStore.Get(clusterID)
+	if host == "" {
+		return nil, errox.InvalidArgs.New("Lightspeed is not configured for this cluster")
+	}
+	if info != nil && !info.GetIsReady() {
+		return nil, errox.ResourceExhausted.Newf("Lightspeed is not ready: %s", info.GetStatusError())
+	}
+	if info != nil && !info.GetHasQueryAccess() {
+		return nil, errox.NotAuthorized.Newf("Sensor lacks Lightspeed access: %s", info.GetStatusError())
+	}
+
+	conn := s.connMgr.GetConnection(clusterID)
+	if conn == nil {
+		return nil, errox.ResourceExhausted.New("no active sensor connection for this cluster")
+	}
+
+	contextJSON, err := protojson.Marshal(riskResp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal deployment risk data")
+	}
+
+	summary, err := s.lightspeedBroker.SendAndWaitForSummary(ctx, conn, lightspeedPrompt, string(contextJSON), lightspeedQueryTimeout)
+	if err != nil {
+		return nil, errors.Wrap(err, "Lightspeed query failed")
+	}
+
+	return &v1.DeploymentRiskSummaryResponse{Summary: summary}, nil
 }

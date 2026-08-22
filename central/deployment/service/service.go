@@ -4,11 +4,14 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
+	lightspeedBroker "github.com/stackrox/rox/central/lightspeed/broker"
+	lightspeedStore "github.com/stackrox/rox/central/lightspeed/store"
 	processBaselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processBaselineResultsStore "github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -24,7 +27,8 @@ type Service interface {
 
 // New returns a new Service instance using the given DataStore.
 func New(datastore datastore.DataStore, processIndicators processIndicatorDataStore.DataStore, processBaselines processBaselineDataStore.DataStore,
-	processBaselineResults processBaselineResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager) Service {
+	processBaselineResults processBaselineResultsStore.DataStore, risks riskDataStore.DataStore, manager riskManager.Manager,
+	lsStore *lightspeedStore.Store, lsBroker *lightspeedBroker.Broker, connMgr connection.Manager) Service {
 	return &serviceImpl{
 		datastore:              datastore,
 		processIndicators:      processIndicators,
@@ -32,5 +36,8 @@ func New(datastore datastore.DataStore, processIndicators processIndicatorDataSt
 		processBaselineResults: processBaselineResults,
 		risks:                  risks,
 		manager:                manager,
+		lightspeedStore:        lsStore,
+		lightspeedBroker:       lsBroker,
+		connMgr:                connMgr,
 	}
 }

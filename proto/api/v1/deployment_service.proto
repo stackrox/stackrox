@@ -48,6 +48,10 @@ message ExportDeploymentRequest {
   string query = 2;
 }
 
+message DeploymentRiskSummaryResponse {
+  string summary = 1;
+}
+
 message ExportDeploymentResponse {
   storage.Deployment deployment = 1;
 }
@@ -86,5 +90,11 @@ service DeploymentService {
 
   rpc ExportDeployments(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
     option (google.api.http) = {get: "/v1/export/deployments"};
+  }
+
+  // GetDeploymentRiskSummary sends deployment risk data to OpenShift Lightspeed
+  // and returns an AI-generated summary.
+  rpc GetDeploymentRiskSummary(ResourceByID) returns (DeploymentRiskSummaryResponse) {
+    option (google.api.http) = {get: "/v1/deploymentswithrisk/{id}/lightspeed-summary"};
   }
 }

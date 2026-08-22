@@ -27,6 +27,7 @@ const (
 	DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName = "/v1.DeploymentService/ListDeploymentsWithProcessInfo"
 	DeploymentService_GetLabels_FullMethodName                      = "/v1.DeploymentService/GetLabels"
 	DeploymentService_ExportDeployments_FullMethodName              = "/v1.DeploymentService/ExportDeployments"
+	DeploymentService_GetDeploymentRiskSummary_FullMethodName       = "/v1.DeploymentService/GetDeploymentRiskSummary"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -48,6 +49,9 @@ type DeploymentServiceClient interface {
 	// GetLabels returns the labels used by deployments.
 	GetLabels(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DeploymentLabelsResponse, error)
 	ExportDeployments(ctx context.Context, in *ExportDeploymentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportDeploymentResponse], error)
+	// GetDeploymentRiskSummary sends deployment risk data to OpenShift Lightspeed
+	// and returns an AI-generated summary.
+	GetDeploymentRiskSummary(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*DeploymentRiskSummaryResponse, error)
 }
 
 type deploymentServiceClient struct {
@@ -137,6 +141,16 @@ func (c *deploymentServiceClient) ExportDeployments(ctx context.Context, in *Exp
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_ExportDeploymentsClient = grpc.ServerStreamingClient[ExportDeploymentResponse]
 
+func (c *deploymentServiceClient) GetDeploymentRiskSummary(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*DeploymentRiskSummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeploymentRiskSummaryResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_GetDeploymentRiskSummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeploymentServiceServer is the server API for DeploymentService service.
 // All implementations should embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
@@ -156,6 +170,9 @@ type DeploymentServiceServer interface {
 	// GetLabels returns the labels used by deployments.
 	GetLabels(context.Context, *Empty) (*DeploymentLabelsResponse, error)
 	ExportDeployments(*ExportDeploymentRequest, grpc.ServerStreamingServer[ExportDeploymentResponse]) error
+	// GetDeploymentRiskSummary sends deployment risk data to OpenShift Lightspeed
+	// and returns an AI-generated summary.
+	GetDeploymentRiskSummary(context.Context, *ResourceByID) (*DeploymentRiskSummaryResponse, error)
 }
 
 // UnimplementedDeploymentServiceServer should be embedded to have
@@ -185,6 +202,9 @@ func (UnimplementedDeploymentServiceServer) GetLabels(context.Context, *Empty) (
 }
 func (UnimplementedDeploymentServiceServer) ExportDeployments(*ExportDeploymentRequest, grpc.ServerStreamingServer[ExportDeploymentResponse]) error {
 	return status.Error(codes.Unimplemented, "method ExportDeployments not implemented")
+}
+func (UnimplementedDeploymentServiceServer) GetDeploymentRiskSummary(context.Context, *ResourceByID) (*DeploymentRiskSummaryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDeploymentRiskSummary not implemented")
 }
 func (UnimplementedDeploymentServiceServer) testEmbeddedByValue() {}
 
@@ -325,6 +345,24 @@ func _DeploymentService_ExportDeployments_Handler(srv interface{}, stream grpc.S
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_ExportDeploymentsServer = grpc.ServerStreamingServer[ExportDeploymentResponse]
 
+func _DeploymentService_GetDeploymentRiskSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).GetDeploymentRiskSummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_GetDeploymentRiskSummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).GetDeploymentRiskSummary(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeploymentService_ServiceDesc is the grpc.ServiceDesc for DeploymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -355,6 +393,10 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLabels",
 			Handler:    _DeploymentService_GetLabels_Handler,
+		},
+		{
+			MethodName: "GetDeploymentRiskSummary",
+			Handler:    _DeploymentService_GetDeploymentRiskSummary_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

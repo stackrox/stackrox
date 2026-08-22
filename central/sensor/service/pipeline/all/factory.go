@@ -26,6 +26,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/enhancements"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/lightspeedinfo"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/lightspeedquery"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
@@ -89,6 +91,8 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorscans.GetPipeline(),
 		nodeinventory.GetPipeline(),
 		enhancements.GetPipeline(),
+		lightspeedinfo.GetPipeline(),
+		lightspeedquery.GetPipeline(),
 		complianceoperatorinfo.GetPipeline(),
 		complianceoperatorrulesv2.GetPipeline(),
 		complianceoperatorresultsv2.GetPipeline(),
