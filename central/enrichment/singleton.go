@@ -33,8 +33,10 @@ import (
 	pkgNodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/sac"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	vmEnricher "github.com/stackrox/rox/pkg/virtualmachine/enricher"
 )
 
 var (
@@ -43,6 +45,7 @@ var (
 	imgEnricher            imageEnricher.ImageEnricher
 	imgEnricherV2          imageEnricher.ImageEnricherV2
 	nodeEnricher           pkgNodeEnricher.NodeEnricher
+	vmScannerEnricher      vmEnricher.VirtualMachineEnricher
 	depEnricher            Enricher
 	orchestratorCVEManager fetcher.OrchestratorIstioCVEManager
 	manager                Manager
@@ -70,14 +73,30 @@ func initialize() {
 	}
 
 	nodeEnricher = pkgNodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
+	vmScannerEnricher = vmEnricher.Singleton(func() scannerTypes.VirtualMachineScanner {
+		// Preserve the pre-category behavior until an explicit VM-scanner
+		// integration is configured: reuse the active Scanner V4 integration
+		// if it supports the VM-scanner interface.
+		for _, scanner := range imageintegration.Set().ScannerSet().GetAll() {
+			if scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
+				if vmScanner, ok := scanner.GetScanner().(scannerTypes.VirtualMachineScanner); ok {
+					return vmScanner
+				}
+			}
+		}
+		return nil
+	})
 	depEnricher = New(datastore.Singleton(), imageV2DataStore.Singleton(), imgEnricher, imgEnricherV2)
 	orchestratorCVEManager = fetcher.SingletonManager()
 	initializeManager()
 }
 
+// initializeManager replays persisted image integrations through the shared
+// manager so all derived enrichers rebuild their in-memory state consistently
+// after startup.
 func initializeManager() {
 	ctx := sac.WithAllAccess(context.Background())
-	manager = newManager(imageintegration.Set(), nodeEnricher, orchestratorCVEManager)
+	manager = newManager(imageintegration.Set(), nodeEnricher, vmScannerEnricher, orchestratorCVEManager)
 
 	imageIntegrationStore = imageIntegrationDS.Singleton()
 	integrations, err := imageIntegrationStore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
