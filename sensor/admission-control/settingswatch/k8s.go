@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,7 +104,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var config storage.DynamicClusterConfig
-	if err := config.UnmarshalVTUnsafe(configData); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&config, configData); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 

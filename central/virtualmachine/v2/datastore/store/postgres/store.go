@@ -212,7 +212,7 @@ func (s *storeImpl) getVirtualMachine(ctx context.Context, tx *postgres.Tx, id s
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	var vm storage.VirtualMachineV2
-	if err := vm.UnmarshalVTUnsafe(data); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&vm, data); err != nil {
 		return nil, err
 	}
 	return &vm, nil
@@ -324,7 +324,7 @@ func (s *storeImpl) getScanForVM(ctx context.Context, tx *postgres.Tx, vmID stri
 		return nil, pgutils.ErrNilIfNoRows(err)
 	}
 	var scan storage.VirtualMachineScanV2
-	if err := scan.UnmarshalVTUnsafe(data); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&scan, data); err != nil {
 		return nil, err
 	}
 	return &scan, nil

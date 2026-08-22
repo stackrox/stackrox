@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -51,7 +52,7 @@ func (s *service) handleRestore(req *http.Request) error {
 	}
 
 	var header v1.DBRestoreRequestHeader
-	if err := header.UnmarshalVTUnsafe(headerBytes); err != nil {
+	if err := pgutils.UnmarshalVTMessage(&header, headerBytes); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "could not parse restore request header: %v", err)
 	}
 

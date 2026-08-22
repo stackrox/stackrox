@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -170,7 +171,7 @@ func (c *configuration) getCredentials() (string, string, error) {
 		return "", "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
 	}
 	creds := &storage.AWSSecurityHub_Credentials{}
-	err = creds.UnmarshalVTUnsafe([]byte(decCredsStr))
+	err = pgutils.UnmarshalVTMessage(creds, []byte(decCredsStr))
 	if err != nil {
 		return "", "", errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
 	}
