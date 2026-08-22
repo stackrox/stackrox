@@ -19,6 +19,7 @@ const (
 	OutputQueueConsumer
 	NetworkFlowManagerResourceSyncConsumer
 	SensorSoftRestartConsumer
+	CentralBoundBridgeConsumer
 )
 
 var (
@@ -39,6 +40,7 @@ var (
 		OutputQueueConsumer:                    "OutputQueue",
 		NetworkFlowManagerResourceSyncConsumer: "NetworkFlowManagerResourceSync",
 		SensorSoftRestartConsumer:              "SensorSoftRestart",
+		CentralBoundBridgeConsumer:             "CentralBoundBridge",
 	}
 )
 
