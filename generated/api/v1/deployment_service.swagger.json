@@ -6,7 +6,8 @@
   },
   "tags": [
     {
-      "name": "DeploymentService"
+      "name": "DeploymentService",
+      "description": "DeploymentService APIs can be used to manage deployments."
     }
   ],
   "consumes": [
@@ -425,7 +426,7 @@
         "UNKNOWN"
       ],
       "default": "UNSET",
-      "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+      "description": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
     "LabelSelectorRequirement": {
       "type": "object",
@@ -996,7 +997,7 @@
         "CLUSTER_ADMIN"
       ],
       "default": "UNSET",
-      "title": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
+      "description": "For any update to PermissionLevel, also update:\n- pkg/searchbasedpolicies/builders/k8s_rbac.go\n- ui/src/messages/common.js"
     },
     "storagePortConfig": {
       "type": "object",
@@ -1110,7 +1111,7 @@
         "SERVICEACCOUNT"
       ],
       "default": "UNKNOWN",
-      "title": "Next tag: 9"
+      "description": "Next tag: 9"
     },
     "storageSecurityContext": {
       "type": "object",
