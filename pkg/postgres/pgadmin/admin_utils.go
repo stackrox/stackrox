@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -58,14 +59,16 @@ func DropDB(sourceMap map[string]string, adminConfig *postgres.Config, databaseN
 	}
 
 	// Set the options for pg_dump from the connection config
-	options := []string{
-		"-f",
-		"--if-exists",
-		databaseName,
-	}
+	options := slices.Concat(
+		[]string{
+			"-f",
+			"--if-exists",
+			databaseName,
+		},
+		GetConnectionOptions(adminConfig),
+	)
 
 	// Get the common DB connection info
-	options = append(options, GetConnectionOptions(adminConfig)...)
 
 	cmd := exec.Command("dropdb", options...)
 
@@ -88,14 +91,16 @@ func CreateDB(sourceMap map[string]string, adminConfig *postgres.Config, dbTempl
 	log.Infof("CreateDB %q", dbName)
 
 	// Set the options for pg_dump from the connection config
-	options := []string{
-		"-T",
-		dbTemplate,
-		dbName,
-	}
+	options := slices.Concat(
+		[]string{
+			"-T",
+			dbTemplate,
+			dbName,
+		},
+		GetConnectionOptions(adminConfig),
+	)
 
 	// Get the common DB connection info
-	options = append(options, GetConnectionOptions(adminConfig)...)
 
 	cmd := exec.Command("createdb", options...)
 

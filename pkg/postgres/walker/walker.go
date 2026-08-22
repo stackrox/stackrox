@@ -82,7 +82,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 		}
 	} else {
 		// Child table: add parent FK fields and idx column.
-		var additionalFields []Field
+		additionalFields := make([]Field, 0, len(parentPrimaryKeys)+1)
 		for _, parentPrimaryKey := range parentPrimaryKeys {
 			var columnNameInChild string
 			var columnNameInChildForCodeVariables string
