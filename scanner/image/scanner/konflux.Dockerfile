@@ -6,15 +6,16 @@ ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGS="release,no_openssl"
 ENV CI=1
+ENV CGO_ENABLED=0
+ENV GOFIPS140=certified
+ENV GOLANG_FIPS=0
 
 COPY . /src
 WORKDIR /src
 
-RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
+RUN make -C scanner NODEPS=1 image/scanner/bin/scanner copy-scripts
 
 FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:7e7f79ab747bf2b452e3043dd89f388e92be4c7fdcc8b815b58adf6c99c39c95 AS ubi-micro-base
 
@@ -31,7 +32,6 @@ RUN dnf install -y \
     ca-certificates \
     gzip \
     less \
-    openssl \
     tar && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
@@ -85,6 +85,8 @@ RUN \
     chown -R 65534:65534 /etc/pki/ca-trust && save-dir-contents /etc/pki/ca-trust/source
 
 COPY LICENSE /licenses/LICENSE
+
+ENV GODEBUG="fips140=on"
 
 # This is equivalent to nobody:nobody.
 USER 65534:65534
