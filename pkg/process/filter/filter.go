@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"hash"
 	"strings"
 	"unsafe"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // BinaryHash represents a 64-bit hash for memory-efficient key storage.
@@ -95,23 +97,41 @@ type Filter interface {
 	DeleteByPod(pod *storage.Pod)
 }
 
+type child struct {
+	hash BinaryHash
+	node *level
+}
+
 type level struct {
 	hits     int
-	children map[BinaryHash]*level
+	children []child
 }
 
 func newLevel() *level {
-	return &level{
-		children: make(map[BinaryHash]*level),
-	}
+	return &level{}
 }
 
-type filterImpl struct {
-	maxExactPathMatches int   // maximum number of exact path (same pod + container and same process and args) matches to tolerate
-	maxUniqueProcesses  int   // maximum number of unique process exec file paths
-	maxFanOut           []int // maximum fan out starting at the process level
+func (l *level) findChild(h BinaryHash) *level {
+	for _, c := range l.children {
+		if c.hash == h {
+			return c.node
+		}
+	}
+	return nil
+}
 
-	containersInDeployment map[string]map[string]*level
+// containerNode is the per-container root of the filter tree, keyed by process
+// executable path. The process layer is unbounded (Sensor sets maxUniqueProcesses
+// to math.MaxInt), so a map keeps lookup and insertion O(1); argument levels below
+// each process are bounded by fanOut and use slices (see level).
+type containerNode = map[BinaryHash]*level
+
+type filterImpl struct {
+	maxExactPathMatches int     // maximum number of exact path (same pod + container and same process and args) matches to tolerate
+	maxUniqueProcesses  int     // maximum number of unique process exec file paths
+	maxFanOut           []uint8 // maximum fan out starting at the process level
+
+	containersInDeployment map[string]map[string]containerNode
 	rootLock               sync.Mutex
 
 	// Hash instance for computing BinaryHash keys
@@ -138,14 +158,14 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 	// 2. Using BinaryHash as map key is reducing memory requirements for the filter
 	argHash := hashString(f.h, truncated)
 
-	nextLevel := level.children[argHash]
+	nextLevel := level.findChild(argHash)
 	if nextLevel == nil {
 		// If this level has already hit its max fan out then return false
-		if len(level.children) >= f.maxFanOut[levelNum] {
+		if len(level.children) >= int(f.maxFanOut[levelNum]) {
 			return false
 		}
 		nextLevel = newLevel()
-		level.children[argHash] = nextLevel
+		level.children = append(level.children, child{hash: argHash, node: nextLevel})
 	}
 
 	return f.siftNoLock(nextLevel, args[1:], levelNum+1)
@@ -153,26 +173,40 @@ func (f *filterImpl) siftNoLock(level *level, args []string, levelNum int) bool 
 
 // NewFilter returns an empty filter to start loading processes into
 func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter {
+	maxFanOut := make([]uint8, len(fanOut))
+	for i, v := range fanOut {
+		if v < 1 {
+			// Guard the boundary: uint8(negative) wraps to a large value (e.g. -1 -> 255).
+			// Mirror the env layer's MinimumElementValue(1) so invalid values cannot become max fan out.
+			utils.Should(fmt.Errorf("fanOut[%d]=%d is below minimum, clamping to 1", i, v))
+			v = 1
+		}
+		if v > 255 {
+			utils.Should(fmt.Errorf("fanOut[%d]=%d exceeds uint8 max, clamping to 255", i, v))
+			v = 255
+		}
+		maxFanOut[i] = uint8(v)
+	}
 	return &filterImpl{
 		maxExactPathMatches: maxExactPathMatches,
 		maxUniqueProcesses:  maxUniqueProcesses,
-		maxFanOut:           fanOut,
+		maxFanOut:           maxFanOut,
 
-		containersInDeployment: make(map[string]map[string]*level),
+		containersInDeployment: make(map[string]map[string]containerNode),
 		h:                      xxhash.New(),
 	}
 }
 
-func (f *filterImpl) getOrAddRootLevelNoLock(indicator *storage.ProcessIndicator) *level {
+func (f *filterImpl) getOrAddRootLevelNoLock(indicator *storage.ProcessIndicator) containerNode {
 	containerMap := f.containersInDeployment[indicator.GetDeploymentId()]
 	if containerMap == nil {
-		containerMap = make(map[string]*level)
+		containerMap = make(map[string]containerNode)
 		f.containersInDeployment[indicator.GetDeploymentId()] = containerMap
 	}
 
 	rootLevel := containerMap[indicator.GetSignal().GetContainerId()]
 	if rootLevel == nil {
-		rootLevel = newLevel()
+		rootLevel = make(containerNode)
 		containerMap[indicator.GetSignal().GetContainerId()] = rootLevel
 	}
 
@@ -192,13 +226,13 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	execFilePathHash := hashString(f.h, execFilePath)
 
 	// Handle the process level independently as we will never reject a new process
-	processLevel := rootLevel.children[execFilePathHash]
+	processLevel := rootLevel[execFilePathHash]
 	if processLevel == nil {
-		if len(rootLevel.children) >= f.maxUniqueProcesses {
+		if len(rootLevel) >= f.maxUniqueProcesses {
 			return false
 		}
 		processLevel = newLevel()
-		rootLevel.children[execFilePathHash] = processLevel
+		rootLevel[execFilePathHash] = processLevel
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
