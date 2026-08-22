@@ -14,8 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	"github.com/stretchr/testify/suite"
@@ -24,6 +26,12 @@ import (
 
 func TestVirtualMachineHandler(t *testing.T) {
 	suite.Run(t, new(virtualMachineHandlerSuite))
+}
+
+type staticClusterIDGetter string
+
+func (c staticClusterIDGetter) GetNoWait() string {
+	return string(c)
 }
 
 type virtualMachineHandlerSuite struct {
@@ -37,6 +45,7 @@ func (s *virtualMachineHandlerSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
 	s.handler = &handlerImpl{
+		clusterID:    staticClusterIDGetter("test-cluster"),
 		centralReady: concurrency.NewSignal(),
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
@@ -92,6 +101,155 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		s.Assert().Equal("IndexFinished", index.GetIndexV4().GetState())
 	case <-time.After(time.Second):
 		s.Fail("Expected message to be sent to central")
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendEmitsVirtualMachineUpdateForAgentFacts() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
+
+	cid := uint32(1)
+	agentFacts := map[string]string{
+		pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.2",
+		pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusInactive,
+		pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusUnavailable,
+	}
+	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
+		&virtualmachine.Info{
+			ID:        "test-vm",
+			Name:      "test-vm-name",
+			Namespace: "test-namespace",
+			GuestOS:   "Red Hat Enterprise Linux 9",
+			Running:   true,
+		})
+
+	go func() {
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			ID:         "test-vm",
+			VSOCKCID:   &cid,
+			AgentFacts: agentFacts,
+		}, &v4.IndexReport{State: "IndexFinished"})
+		s.Require().NoError(err)
+	}()
+
+	var msgs []*message.ExpiringMessage
+	for range 2 {
+		select {
+		case msg := <-s.handler.ResponsesC():
+			msgs = append(msgs, msg)
+		case <-time.After(time.Second):
+			s.Fail("Expected virtual machine update and index report messages to be sent to central")
+		}
+	}
+
+	s.Require().Len(msgs, 2)
+
+	firstEvent := msgs[0].GetEvent()
+	s.Require().NotNil(firstEvent)
+	s.Equal("test-vm", firstEvent.GetId())
+	s.Equal(central.ResourceAction_UPDATE_RESOURCE, firstEvent.GetAction())
+	s.Require().NotNil(firstEvent.GetVirtualMachine())
+	s.Equal("test-cluster", firstEvent.GetVirtualMachine().GetClusterId())
+	s.Equal(
+		map[string]string{
+			pkgVM.GuestOSKey:           "Red Hat Enterprise Linux 9",
+			pkgVM.DetectedGuestOSKey:   "Red Hat Enterprise Linux 9.2",
+			pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusInactive,
+			pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusUnavailable,
+		},
+		firstEvent.GetVirtualMachine().GetFacts(),
+	)
+
+	secondEvent := msgs[1].GetEvent()
+	s.Require().NotNil(secondEvent)
+	s.Equal("test-vm", secondEvent.GetId())
+	s.Equal(central.ResourceAction_SYNC_RESOURCE, secondEvent.GetAction())
+	s.Require().NotNil(secondEvent.GetVirtualMachineIndexReport())
+	s.Equal("test-vm", secondEvent.GetVirtualMachineIndexReport().GetId())
+}
+
+func (s *virtualMachineHandlerSuite) TestSendNilReportEmitsVirtualMachineUpdateOnly() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	agentFacts := map[string]string{
+		pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive,
+	}
+	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
+		&virtualmachine.Info{
+			ID:      "test-vm",
+			GuestOS: "Red Hat Enterprise Linux 9",
+		})
+
+	go func() {
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			ID:         "test-vm",
+			AgentFacts: agentFacts,
+		}, nil)
+		s.Require().NoError(err)
+	}()
+
+	select {
+	case msg := <-s.handler.ResponsesC():
+		event := msg.GetEvent()
+		s.Require().NotNil(event)
+		s.Equal(central.ResourceAction_UPDATE_RESOURCE, event.GetAction())
+		s.Require().NotNil(event.GetVirtualMachine())
+		s.Equal(pkgVM.ActivationStatusActive, event.GetVirtualMachine().GetFacts()[pkgVM.ActivationStatusKey])
+	case <-time.After(time.Second):
+		s.Fail("Expected virtual machine update to be sent to central")
+	}
+
+	select {
+	case <-s.handler.ResponsesC():
+		s.Fail("Did not expect an index report when Send was called without a report")
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSendEmptyAgentFactsClearsAgentKeysOnUpdate() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+
+	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
+		&virtualmachine.Info{
+			ID:         "test-vm",
+			GuestOS:    "Red Hat Enterprise Linux 9",
+			AgentFacts: map[string]string{pkgVM.ActivationStatusKey: pkgVM.ActivationStatusActive},
+		})
+
+	go func() {
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			ID:         "test-vm",
+			AgentFacts: map[string]string{},
+		}, nil)
+		s.Require().NoError(err)
+	}()
+
+	select {
+	case msg := <-s.handler.ResponsesC():
+		event := msg.GetEvent()
+		s.Require().NotNil(event)
+		s.Equal(central.ResourceAction_UPDATE_RESOURCE, event.GetAction())
+		s.Equal(
+			map[string]string{pkgVM.GuestOSKey: "Red Hat Enterprise Linux 9"},
+			event.GetVirtualMachine().GetFacts(),
+		)
+	case <-time.After(time.Second):
+		s.Fail("Expected virtual machine update to be sent to central")
+	}
+
+	select {
+	case <-s.handler.ResponsesC():
+		s.Fail("Did not expect an index report when Send was called without a report")
+	case <-time.After(50 * time.Millisecond):
 	}
 }
 
@@ -201,6 +359,7 @@ func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
 		s.Run(name, func() {
 			synctest.Test(s.T(), func(t *testing.T) {
 				handler := &handlerImpl{
+					clusterID:    staticClusterIDGetter("test-cluster"),
 					centralReady: concurrency.NewSignal(),
 					lock:         &sync.RWMutex{},
 					stopper:      concurrency.NewStopper(),

@@ -54,6 +54,24 @@ func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 	return nil
 }
 
+func (m *mockStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachine.Info {
+	if vm == nil {
+		return nil
+	}
+	for i, existing := range m.vms {
+		if existing.ID != vm.ID {
+			continue
+		}
+		if vm.AgentFacts == nil {
+			vm.AgentFacts = existing.AgentFacts
+		}
+		m.vms[i] = vm
+		return vm
+	}
+	m.vms = append(m.vms, vm)
+	return vm
+}
+
 type mockDialer struct {
 	err      error
 	errQueue []error
@@ -118,15 +136,17 @@ func (m *mockProtocolClient) reset() {
 }
 
 type mockSender struct {
-	sent []*v4.IndexReport
-	err  error
+	sent    []*v4.IndexReport
+	sentVMs []*virtualmachine.Info
+	err     error
 }
 
-func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+func (m *mockSender) Send(_ context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error {
 	if m.err != nil {
 		return m.err
 	}
 	m.sent = append(m.sent, report)
+	m.sentVMs = append(m.sentVMs, vm)
 	return nil
 }
 
@@ -187,6 +207,16 @@ func unchangedResult() *vsockclient.GetReportResult {
 	}
 }
 
+func unchangedResultWithFacts(facts map[string]string) *vsockclient.GetReportResult {
+	return &vsockclient.GetReportResult{
+		Unchanged: true,
+		Meta: &pb.ResponseMeta{
+			ReportGeneration: 1,
+			Facts:            facts,
+		},
+	}
+}
+
 func makeReportWithEpoch(gen, epoch uint32) *vsockclient.GetReportResult {
 	return &vsockclient.GetReportResult{
 		IndexReport: &v4.IndexReport{
@@ -227,6 +257,14 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+	require.Len(t, sender.sentVMs, 2)
+	expectedFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	})
+	assert.Equal(t, expectedFacts, sender.sentVMs[0].AgentFacts)
+	assert.Equal(t, expectedFacts, sender.sentVMs[1].AgentFacts)
 }
 
 func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
@@ -250,6 +288,142 @@ func TestVMScraper_SkipsUnchangedGeneration(t *testing.T) {
 	clock.Advance(s.interval)
 	s.pollOnce(context.Background())
 	assert.Len(t, sender.sent, 1, "should not forward unchanged report")
+}
+
+func TestVMScraper_ForwardsChangedAgentFactsOnUnchangedReport(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 2)
+	assert.Nil(t, sender.sent[1], "unchanged report should not be forwarded")
+	assert.Equal(t, virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	}), sender.sentVMs[1].AgentFacts)
+}
+
+func TestVMScraper_DoesNotResendUnchangedAgentFacts(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+	assert.Len(t, sender.sent, 1, "should not emit a VM update when agent facts are unchanged")
+}
+
+func TestVMScraper_RetriesAgentFactsAfterSendFailure(t *testing.T) {
+	vmID := virtualmachine.VMID("ns1/vm-a")
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+	initialFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "ACTIVE",
+		"dnf_metadata_status": "AVAILABLE",
+	})
+	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
+
+	changedFacts := map[string]string{
+		"detected_os":         "RHEL",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
+	}
+	sender.err = errors.New("central unreachable")
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	assert.Len(t, sender.sent, 1, "failed metadata send should not count as forwarded")
+	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
+
+	sender.err = nil
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 2)
+	assert.Nil(t, sender.sent[1], "retry should be metadata-only")
+	expected := virtualmachine.AgentFactsFromResponseFacts(changedFacts)
+	assert.Equal(t, expected, sender.sentVMs[1].AgentFacts)
+	assert.Equal(t, expected, store.Get(vmID).AgentFacts)
+}
+
+func TestVMScraper_ClearsAgentFactsWhenResponseValuesUnspecified(t *testing.T) {
+	vmID := virtualmachine.VMID("ns1/vm-a")
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	}
+
+	s, clock := newTestScraper(store, sender, dialer, client)
+	s.pollOnce(context.Background())
+	require.Len(t, sender.sent, 1)
+	require.NotEmpty(t, store.Get(vmID).AgentFacts)
+
+	client.reset()
+	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
+		"detected_os":         pb.DetectedOS_UNKNOWN.String(),
+		"activation_status":   pb.ActivationStatus_ACTIVATION_UNSPECIFIED.String(),
+		"dnf_metadata_status": pb.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED.String(),
+	})}
+	clock.Advance(s.interval)
+	s.pollOnce(context.Background())
+
+	require.Len(t, sender.sent, 2)
+	assert.Nil(t, sender.sent[1], "clearing facts should be metadata-only")
+	assert.Empty(t, sender.sentVMs[1].AgentFacts)
+	assert.Empty(t, store.Get(vmID).AgentFacts)
 }
 
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {

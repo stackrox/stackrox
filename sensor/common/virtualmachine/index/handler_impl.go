@@ -33,13 +33,23 @@ var (
 	errVirtualMachineNotFound = errors.New("virtual machine not found")
 )
 
+type clusterIDGetter interface {
+	GetNoWait() string
+}
+
+type indexReportRequest struct {
+	vm     *virtualmachine.Info
+	report *v4.IndexReport
+}
+
 type handlerImpl struct {
+	clusterID    clusterIDGetter
 	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC(), Send() [reader].
 	lock         *sync.RWMutex
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
-	indexReports chan *v1.IndexReport
+	indexReports chan *indexReportRequest
 	store        VirtualMachineStore
 }
 
@@ -51,14 +61,9 @@ func (h *handlerImpl) Send(ctx context.Context, vm *virtualmachine.Info, report 
 	if vm == nil {
 		return errors.New("virtual machine info is nil")
 	}
-	var cidStr string
-	if vm.VSOCKCID != nil {
-		cidStr = strconv.FormatUint(uint64(*vm.VSOCKCID), 10)
-	}
-	indexReport := &v1.IndexReport{
-		VsockCid: cidStr,
-		VmId:     string(vm.ID),
-		IndexV4:  report,
+	req := &indexReportRequest{
+		vm:     vm.Copy(),
+		report: report,
 	}
 
 	if h.stopper.Client().Stopped().IsDone() {
@@ -68,7 +73,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *virtualmachine.Info, report 
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 	if !h.centralReady.IsDone() {
-		log.Warnf("Cannot send index report for virtual machine with vsock_cid=%q to Central because Central is not reachable", indexReport.GetVsockCid())
+		log.Warnf("Cannot send index report for virtual machine %q to Central because Central is not reachable", vm.ID)
 		metrics.IndexReportsSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
@@ -91,7 +96,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *virtualmachine.Info, report 
 	select {
 	case <-ctx.Done():
 		// Handled in the next select statement
-	case h.indexReports <- indexReport:
+	case h.indexReports <- req:
 		return nil
 	default:
 		blocked = true
@@ -107,7 +112,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *virtualmachine.Info, report 
 		}
 		outcome = metrics.IndexReportEnqueueOutcomeCanceled
 		return ctx.Err() //nolint:wrapcheck
-	case h.indexReports <- indexReport:
+	case h.indexReports <- req:
 		return nil
 	}
 }
@@ -155,7 +160,7 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.indexReports != nil {
 		return errStartMoreThanOnce
 	}
-	h.indexReports = make(chan *v1.IndexReport, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
+	h.indexReports = make(chan *indexReportRequest, env.VirtualMachinesIndexReportsBufferSize.IntegerSetting())
 	h.toCentral = h.run(h.indexReports)
 	return nil
 }
@@ -183,7 +188,7 @@ func (h *handlerImpl) Stop() {
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run(indexReports <-chan *indexReportRequest) (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
@@ -195,12 +200,12 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 			select {
 			case <-h.stopper.Flow().StopRequested():
 				return
-			case indexReport, ok := <-indexReports:
+			case req, ok := <-indexReports:
 				if !ok {
 					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				h.handleIndexReport(ch2Central, indexReport)
+				h.handleIndexReport(ch2Central, req)
 			}
 		}
 	}()
@@ -209,7 +214,7 @@ func (h *handlerImpl) run(indexReports <-chan *v1.IndexReport) (toCentral <-chan
 
 func (h *handlerImpl) handleIndexReport(
 	toCentral chan *message.ExpiringMessage,
-	indexReport *v1.IndexReport,
+	req *indexReportRequest,
 ) {
 	startTime := time.Now()
 	outcome := metrics.IndexReportHandlingMessageToCentralSuccess
@@ -219,30 +224,60 @@ func (h *handlerImpl) handleIndexReport(
 			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
-	if indexReport == nil {
+	if req == nil || req.vm == nil {
 		outcome = metrics.IndexReportHandlingMessageToCentralNilReport
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
+
+	indexReport := indexReportFromRequest(req)
 	log.Debugf("Handling virtual machine index report (vm_id=%q vsock_cid=%q)...",
 		indexReport.GetVmId(), indexReport.GetVsockCid())
 
-	msg, outcome, err := h.newMessageToCentral(indexReport)
+	vmInfo, outcome, err := h.resolveVM(indexReport)
 	if err != nil {
 		log.Warnf("unable to send index report message for virtual machine (vm_id=%q vsock_cid=%q) to central: %v",
 			indexReport.GetVmId(), indexReport.GetVsockCid(), err)
 		return
 	}
-	h.sendIndexReportEvent(toCentral, msg)
+
+	// nil AgentFacts means this request does not carry a facts snapshot.
+	// An empty map clears previously forwarded agent keys.
+	if req.vm.AgentFacts != nil {
+		vmInfo.AgentFacts = req.vm.AgentFacts
+		if event := virtualmachine.SensorEvent(central.ResourceAction_UPDATE_RESOURCE, h.clusterIDString(), vmInfo); event != nil {
+			h.sendIndexReportEvent(toCentral, message.New(&central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{Event: event},
+			}))
+		}
+	}
+	if req.report == nil {
+		return
+	}
+	h.sendIndexReportEvent(toCentral, newIndexReportMessage(vmInfo, indexReport))
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
-func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, string, error) {
-	vmInfo, outcome, err := h.resolveVM(indexReport)
-	if err != nil {
-		return nil, outcome, err
+func indexReportFromRequest(req *indexReportRequest) *v1.IndexReport {
+	var cidStr string
+	if req.vm.VSOCKCID != nil {
+		cidStr = strconv.FormatUint(uint64(*req.vm.VSOCKCID), 10)
 	}
+	return &v1.IndexReport{
+		VsockCid: cidStr,
+		VmId:     string(req.vm.ID),
+		IndexV4:  req.report,
+	}
+}
 
+func (h *handlerImpl) clusterIDString() string {
+	if h.clusterID == nil {
+		return ""
+	}
+	return h.clusterID.GetNoWait()
+}
+
+func newIndexReportMessage(vmInfo *virtualmachine.Info, indexReport *v1.IndexReport) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
@@ -256,7 +291,7 @@ func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message
 				},
 			},
 		},
-	}), metrics.IndexReportHandlingMessageToCentralSuccess, nil
+	})
 }
 
 // resolveVM prefers vm_id; vsock_cid is only used when the report has no UID.
