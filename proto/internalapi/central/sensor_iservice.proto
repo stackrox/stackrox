@@ -11,6 +11,7 @@ import "internalapi/central/delegated_registry_config.proto";
 import "internalapi/central/deployment_enhancement.proto";
 import "internalapi/central/hello.proto";
 import "internalapi/central/image.proto";
+import "internalapi/central/lightspeed.proto";
 import "internalapi/central/local_scanner.proto";
 import "internalapi/central/network_baseline_sync.proto";
 import "internalapi/central/network_flow.proto";
@@ -25,7 +26,7 @@ import "storage/image.proto";
 
 option go_package = "./internalapi/central;central";
 
-// next available tag: 20
+// next available tag: 21
 message MsgFromSensor {
   string hash_key = 7;
   string dedupe_key = 8;
@@ -47,6 +48,7 @@ message MsgFromSensor {
     ComplianceResponse compliance_response = 17;
     DeploymentEnhancementResponse deployment_enhancement_response = 18;
     IssueSecuredClusterCertsRequest issue_secured_cluster_certs_request = 19;
+    LightspeedInfo lightspeed_info = 20;
   }
 }
 

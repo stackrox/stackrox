@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package central;
+
+option go_package = "./internalapi/central;central";
+
+// LightspeedInfo carries OpenShift Lightspeed availability status from Sensor to Central.
+message LightspeedInfo {
+  bool is_available = 1;
+  string endpoint = 2;
+  string status_error = 3;
+}
