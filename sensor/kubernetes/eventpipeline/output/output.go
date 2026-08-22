@@ -10,18 +10,20 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
-type pubSubRegister interface {
+type pubSubDispatcher interface {
 	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	Publish(pubsub.Event) error
 }
 
 // New instantiates an output Queue component.
-func New(detector detector.Detector, queueSize int, dispatcher pubSubRegister) (component.OutputQueue, error) {
+func New(detector detector.Detector, queueSize int, dispatcher pubSubDispatcher) (component.OutputQueue, error) {
 	ch := make(chan *component.ResourceEvent, queueSize)
 	forwardQueue := make(chan *message.ExpiringMessage, queueSize)
 	outputQueue := &outputQueueImpl{
 		detector:     detector,
 		innerQueue:   ch,
 		forwardQueue: forwardQueue,
+		dispatcher:   dispatcher,
 		stopper:      concurrency.NewStopper(),
 	}
 	if features.SensorInternalPubSub.Enabled() {
