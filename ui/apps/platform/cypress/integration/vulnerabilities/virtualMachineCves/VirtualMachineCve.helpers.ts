@@ -4,18 +4,35 @@ import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/v
 
 export const listVirtualMachinesAlias = 'listVirtualMachines';
 export const getVirtualMachineAlias = 'getVirtualMachine';
+export const listVirtualMachineCvesAlias = 'listVirtualMachineCves';
+export const listVirtualMachineComponentsAlias = 'listVirtualMachineComponents';
 
 export const routeMatcherMapForVirtualMachines = {
     [listVirtualMachinesAlias]: {
         method: 'GET',
-        url: '/v2/virtualmachines?*',
+        url: '/v2/virtualmachines/vms?*',
     },
 };
 
 export const routeMatcherMapForVirtualMachine = {
     [getVirtualMachineAlias]: {
         method: 'GET',
-        url: '/v2/virtualmachines/*',
+        url: '/v2/virtualmachines/vms/*',
+    },
+};
+
+export const routeMatcherMapForVirtualMachineVulnerabilities = {
+    ...routeMatcherMapForVirtualMachine,
+    [listVirtualMachineCvesAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/cves?*',
+    },
+};
+
+export const routeMatcherMapForVirtualMachineComponents = {
+    [listVirtualMachineComponentsAlias]: {
+        method: 'GET',
+        url: '/v2/virtualmachines/*/components?*',
     },
 };
 
@@ -23,7 +40,11 @@ export function visitVirtualMachineCvesOverviewPage(
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
     staticResponseMap?: Record<string, RouteHandler>
 ) {
-    visit('/main/vulnerabilities/virtual-machine-cves', routeMatcherMap, staticResponseMap);
+    visit(
+        '/main/vulnerabilities/virtual-machine-cves?entityTab=VirtualMachine',
+        routeMatcherMap,
+        staticResponseMap
+    );
 }
 
 export function visitVirtualMachineCvesOverviewPageWithStaticPermissions(
@@ -32,7 +53,7 @@ export function visitVirtualMachineCvesOverviewPageWithStaticPermissions(
     staticResponseMap?: Record<string, RouteHandler>
 ) {
     visitWithStaticResponseForPermissions(
-        '/main/vulnerabilities/virtual-machine-cves',
+        '/main/vulnerabilities/virtual-machine-cves?entityTab=VirtualMachine',
         { body: { resourceToAccess } },
         routeMatcherMap,
         staticResponseMap
