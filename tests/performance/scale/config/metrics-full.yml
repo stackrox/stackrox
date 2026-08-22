@@ -556,12 +556,6 @@
 - query: rox_central_process_filter{namespace="stackrox",container="central"}
   metricName: central_rox_central_process_filter
 
-- query: rox_central_process_pruning_cache_hits{namespace="stackrox",container="central"}
-  metricName: central_rox_central_process_pruning_cache_hits
-
-- query: rox_central_process_pruning_cache_misses{namespace="stackrox",container="central"}
-  metricName: central_rox_central_process_pruning_cache_misses
-
 - query: rox_central_process_queue_length{namespace="stackrox",container="central"}
   metricName: central_rox_central_process_queue_length
 

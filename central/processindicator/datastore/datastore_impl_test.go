@@ -5,28 +5,18 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
-	"time"
 
-	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/central/processindicator/pruner"
-	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
-	"github.com/stackrox/rox/central/processindicator/store"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -38,9 +28,7 @@ func TestIndicatorDatastore(t *testing.T) {
 
 type IndicatorDataStoreTestSuite struct {
 	suite.Suite
-	datastore   DataStore
-	storage     store.Store
-	plopStorage plopStore.Store
+	datastore DataStore
 
 	postgres *pgtest.TestPostgres
 
@@ -65,8 +53,6 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension)))
 
 	suite.postgres = pgtest.ForT(suite.T())
-	suite.storage = postgresStore.New(suite.postgres.DB)
-	suite.plopStorage = plopStore.New(suite.postgres.DB)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
@@ -96,12 +82,12 @@ func (suite *IndicatorDataStoreTestSuite) initPodToIndicatorsMap() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
-	suite.datastore = New(suite.postgres.DB, suite.storage, suite.plopStorage, nil)
+	suite.datastore = New(suite.postgres.DB, postgresStore.New(suite.postgres.DB), plopStore.New(suite.postgres.DB))
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() *storeMocks.MockStore {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	suite.datastore = New(suite.postgres.DB, mockStorage, nil, nil)
+	suite.datastore = New(suite.postgres.DB, mockStorage, nil)
 
 	return mockStorage
 }
@@ -120,8 +106,9 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 	}
 	suite.ElementsMatch(resultIDs, indicatorIDs)
 
+	store := postgresStore.New(suite.postgres.DB)
 	var foundIndicators []*storage.ProcessIndicator
-	err = suite.storage.Walk(suite.hasReadCtx, func(pi *storage.ProcessIndicator) error {
+	err = store.Walk(suite.hasReadCtx, func(pi *storage.ProcessIndicator) error {
 		foundIndicators = append(foundIndicators, pi)
 		return nil
 	})
@@ -269,117 +256,6 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalBatch() {
 	suite.verifyIndicatorsAre(indicators[0])
 }
 
-func (suite *IndicatorDataStoreTestSuite) TestPruning() {
-	suite.T().Setenv(env.ProcessPruningEnabled.EnvVar(), "true")
-
-	const prunePeriod = 100 * time.Millisecond
-	mockPrunerFactory := prunerMocks.NewMockFactory(suite.mockCtrl)
-	mockPrunerFactory.EXPECT().Period().Return(prunePeriod)
-	indicators, _ := getIndicators()
-
-	prunedSignal := concurrency.NewSignal()
-	mockPruner := prunerMocks.NewMockPruner(suite.mockCtrl)
-	mockPruner.EXPECT().Finish().AnyTimes().Do(func() {
-		prunedSignal.Signal()
-	})
-
-	pruneTurnstile := concurrency.NewTurnstile()
-	mockPrunerFactory.EXPECT().StartPruning().AnyTimes().DoAndReturn(func() pruner.Pruner {
-		pruneTurnstile.Wait()
-		return mockPruner
-	})
-
-	matcher := func(expectedIndicators ...*storage.ProcessIndicator) gomock.Matcher {
-		return testutils.PredMatcher(fmt.Sprintf("id with args matcher for %+v", expectedIndicators), func(passed []processindicator.IDAndArgs) bool {
-			ourIDsAndArgs := make([]processindicator.IDAndArgs, 0, len(expectedIndicators))
-			for _, indicator := range expectedIndicators {
-				ourIDsAndArgs = append(ourIDsAndArgs, processindicator.IDAndArgs{ID: indicator.GetId(), Args: indicator.GetSignal().GetArgs()})
-			}
-			sort.Slice(ourIDsAndArgs, func(i, j int) bool {
-				return ourIDsAndArgs[i].ID < ourIDsAndArgs[j].ID
-			})
-			sort.Slice(passed, func(i, j int) bool {
-				return passed[i].ID < passed[j].ID
-			})
-			if len(ourIDsAndArgs) != len(passed) {
-				return false
-			}
-			for i, idAndArg := range ourIDsAndArgs {
-				if idAndArg.ID != passed[i].ID || idAndArg.Args != passed[i].Args {
-					return false
-				}
-			}
-			return true
-		})
-	}
-	suite.datastore = New(suite.postgres.DB, suite.storage, suite.plopStorage, mockPrunerFactory)
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
-	suite.verifyIndicatorsAre(indicators...)
-
-	mockPruner.EXPECT().Prune(matcher(indicators...)).Return(nil)
-	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
-	suite.verifyIndicatorsAre(indicators...)
-
-	// Allow the next prune to go through. However, the prune function should not be
-	// called because we should have a cache hit.
-	prunedSignal.Reset()
-	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
-	suite.verifyIndicatorsAre(indicators...)
-
-	// Now add an extra indicator; this should cause a cache miss, and we should hit the pruning.
-	extraIndicator := indicators[0].CloneVT()
-	extraIndicator.Id = uuid.NewV4().String()
-	extraIndicator.Signal.Args = uuid.NewV4().String()
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, extraIndicator))
-
-	// Allow the next prune to go through; this time, prune something.
-	expectedIndicators := make([]*storage.ProcessIndicator, 0, 1+len(indicators))
-	expectedIndicators = append(expectedIndicators, extraIndicator)
-	expectedIndicators = append(expectedIndicators, indicators...)
-	mockPruner.EXPECT().Prune(matcher(expectedIndicators...)).Return([]string{indicators[0].GetId()})
-	prunedSignal.Reset()
-	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 5*prunePeriod))
-	expectedIndicators = make([]*storage.ProcessIndicator, 0, len(indicators))
-	expectedIndicators = append(expectedIndicators, extraIndicator)
-	expectedIndicators = append(expectedIndicators, indicators[1:]...)
-	suite.verifyIndicatorsAre(expectedIndicators...)
-
-	// Allow the next prune to go through; we should have a cache hit, so no need to mock a call.
-	prunedSignal.Reset()
-	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
-
-	suite.Len(suite.datastore.(*datastoreImpl).prunedArgsLengthCache, 1)
-
-	// Delete all the indicators.
-	uniquePodIDs := set.NewStringSet()
-	for _, indicator := range expectedIndicators {
-		uniquePodIDs.Add(indicator.GetPodUid())
-	}
-	for podID := range uniquePodIDs {
-		suite.NoError(suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, podID))
-	}
-
-	// Allow one more prune through.
-	// All the indicators have been deleted, so no call to Prune is expected.
-	prunedSignal.Reset()
-	pruneTurnstile.AllowOne()
-	suite.True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
-
-	// This is not great because we're testing an implementation detail, but whatever.
-	// The goal is to make sure that there's no memory leak here.
-	suite.Len(suite.datastore.(*datastoreImpl).prunedArgsLengthCache, 0)
-
-	// Close the prune turnstile to allow all the prunes to go through, else the Stop will be blocked on the turnstile.
-	pruneTurnstile.Close()
-
-	suite.datastore.Stop()
-	suite.True(suite.datastore.Wait(concurrency.Timeout(3 * prunePeriod)))
-}
-
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesGet() {
 	mockStore := suite.setupDataStoreWithMocks()
 	mockStore.EXPECT().Get(suite.hasNoneCtx, gomock.Any()).Return(nil, false, nil)
@@ -437,7 +313,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
 		ids := suite.buildIDsToPrune(batchSize)
 
 		// Try to remove indicators by id
-		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids, PruneReasonSimilarity)
+		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids, PruneReasonOrphanedByDeployment)
 		suite.Require().NoError(err)
 		suite.Require().Equal(batchSize, indicatorCount)
 	}
