@@ -348,7 +348,9 @@ func (s *scheduler) SubmitReportRequest(ctx context.Context, request *reportGen.
 		return "", err
 	}
 
-	s.appendToReportsQueue(request)
+	if s.isStarted.Load() {
+		s.appendToReportsQueue(request)
+	}
 
 	return request.ReportSnapshot.GetReportId(), nil
 }

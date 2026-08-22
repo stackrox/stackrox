@@ -69,7 +69,7 @@ func (s *ReportServiceTestSuite) SetupTest() {
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
 	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, nil)
 }
 
 func (s *ReportServiceTestSuite) TearDownSuite() {
