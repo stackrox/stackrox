@@ -1,5 +1,7 @@
 import { useContext } from 'react';
 import { gql } from '@apollo/client';
+import { Tooltip } from '@patternfly/react-core';
+import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -138,8 +140,29 @@ const ConfigManagementEntitySubject = ({
                 const metadataKeyValuePairs = [
                     { key: 'Role type', value: type },
                     {
-                        key: 'Cluster Admin Role',
-                        value: clusterAdmin ? 'Enabled' : 'Disabled',
+                        key: 'Cluster Admin',
+                        value: (
+                            <span className="flex items-center">
+                                {clusterAdmin ? 'Yes' : 'No'}
+                                <Tooltip
+                                    content={
+                                        <div>
+                                            Yes only if this subject is bound to Kubernetes&apos;
+                                            built-in cluster-admin role, or an equivalent
+                                            ClusterRole with unrestricted access to everything in
+                                            the cluster. A subject can still hold other powerful
+                                            ClusterRoles (see Roles below) without this being Yes.
+                                        </div>
+                                    }
+                                    isContentLeftAligned
+                                    maxWidth="24rem"
+                                >
+                                    <span className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
+                                        <OutlinedQuestionCircleIcon />
+                                    </span>
+                                </Tooltip>
+                            </span>
+                        ),
                     },
                 ];
 
