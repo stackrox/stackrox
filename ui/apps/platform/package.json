@@ -46,7 +46,7 @@
         "js-base64": "^3.7.2",
         "lodash": "^4.17.23",
         "mobx": "^6.13.7",
-        "mobx-react": "^7.6.0",
+        "mobx-react": "^9.2.2",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
