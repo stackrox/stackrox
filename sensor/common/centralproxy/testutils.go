@@ -18,7 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
@@ -93,10 +97,29 @@ func newTestHandlerWithTransportError(t *testing.T, baseURL *url.URL, authorizer
 	}
 }
 
+// registerAllResources configures the fake client's Discovery API to report all resources
+// from allResourcesToCheck as available. This ensures that filterAvailableResources
+// retains all resources during authorizer construction in tests.
+func registerAllResources(fakeClient *fake.Clientset) {
+	resourcesByGV := make(map[string][]metav1.APIResource)
+	for _, r := range allResourcesToCheck {
+		gv := r.groupVersion()
+		resourcesByGV[gv] = append(resourcesByGV[gv], metav1.APIResource{Name: r.Resource})
+	}
+	fd := fakeClient.Discovery().(*fakediscovery.FakeDiscovery)
+	for gv, resources := range resourcesByGV {
+		fd.Resources = append(fd.Resources, &metav1.APIResourceList{
+			GroupVersion: gv,
+			APIResources: resources,
+		})
+	}
+}
+
 // newAllowingAuthorizer creates a k8sAuthorizer with a fake client that allows all authorization requests.
 func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
 	fakeClient := fake.NewClientset()
+	registerAllResources(fakeClient)
 
 	// Mock TokenReview to return authenticated
 	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -127,6 +150,7 @@ func newAllowingAuthorizer(t testing.TB) *k8sAuthorizer {
 func newDenyingAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
 	fakeClient := fake.NewClientset()
+	registerAllResources(fakeClient)
 
 	// Mock TokenReview to return authenticated
 	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -157,6 +181,7 @@ func newDenyingAuthorizer(t testing.TB) *k8sAuthorizer {
 func newUnauthenticatedAuthorizer(t testing.TB) *k8sAuthorizer {
 	t.Helper()
 	fakeClient := fake.NewClientset()
+	registerAllResources(fakeClient)
 
 	// Mock TokenReview to return unauthenticated (invalid token)
 	fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
@@ -234,4 +259,34 @@ func (f *proxyTestFixture) serveHTTP(t *testing.T, method, path string, headers 
 	w := httptest.NewRecorder()
 	f.handler.ServeHTTP(w, req)
 	return w
+}
+
+// transientDiscoveryClient wraps a kubernetes.Interface to inject transient
+// discovery errors for specific API group versions via a custom Discovery
+// implementation.
+type transientDiscoveryClient struct {
+	kubernetes.Interface
+	disc discovery.DiscoveryInterface
+}
+
+func (c *transientDiscoveryClient) Discovery() discovery.DiscoveryInterface {
+	return c.disc
+}
+
+// transientDiscovery wraps FakeDiscovery and returns transient (non-NotFound)
+// errors for the specified group versions.
+type transientDiscovery struct {
+	*fakediscovery.FakeDiscovery
+	transientGroups map[string]bool
+}
+
+func (d *transientDiscovery) ServerResourcesForGroupVersion(groupVersion string) (*metav1.APIResourceList, error) {
+	if d.transientGroups[groupVersion] {
+		return nil, errors.New("transient API server error")
+	}
+	res, err := d.FakeDiscovery.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "discovering resources")
+	}
+	return res, nil
 }
