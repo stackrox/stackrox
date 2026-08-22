@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 	"strings"
-
+    adminEventsDS "github.com/stackrox/rox/central/administration/events/datastore"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,6 +22,7 @@ var (
 
 type datastoreImpl struct {
 	storage store.Store
+	adminEvents adminEventsDS.DataStore
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
@@ -104,13 +105,18 @@ func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration
 
 // RemoveImageIntegration is pass-through to the underlying store.
 func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) error {
-	if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	return ds.storage.Delete(ctx, id)
-}
+      if ok, err := integrationSAC.WriteAllowed(ctx); err != nil {
+          return err
+      } else if !ok {
+          return sac.ErrResourceAccessDenied
+      }
+      if err := ds.storage.Delete(ctx, id); err != nil {
+          return err
+      }
+      _ = ds.adminEvents.DeleteEventsForResource(ctx, id)
+      return nil
+  }
+
 
 // SearchImageIntegrations
 func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
