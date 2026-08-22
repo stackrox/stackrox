@@ -592,17 +592,26 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			ReportJobId:        snapshot.GetReportId(),
 			Name:               snapshot.GetName(),
 			Description:        snapshot.GetDescription(),
+			Type:               apiV2.ReportSnapshot_ReportType(snapshot.GetType()),
 			CollectionSnapshot: s.convertProtoReportCollectiontoV2(snapshot.GetCollection()),
 			User: &apiV2.SlimUser{
 				Id:   snapshot.GetRequester().GetId(),
 				Name: snapshot.GetRequester().GetName(),
 			},
-			Schedule: s.convertProtoScheduleToV2(snapshot.GetSchedule()),
-			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
-			},
+			Schedule:            s.convertProtoScheduleToV2(snapshot.GetSchedule()),
 			ResourceScope:       resourceScope,
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+		}
+
+		switch snapshot.GetType() {
+		case storage.ReportSnapshot_VULNERABILITY:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
+			}
+		case storage.ReportSnapshot_NODE_VULNERABILITY:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_NodeVulnReportFilters{
+				NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
+			}
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)
@@ -639,4 +648,24 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 	}
 
 	return search.ResultsToIDSet(results), nil
+}
+
+// convertProtoNodeReportFiltersToV2 converts storage.NodeVulnerabilityReportFilters to apiV2.NodeVulnerabilityReportFilters
+func convertProtoNodeReportFiltersToV2(filters *storage.NodeVulnerabilityReportFilters) *apiV2.NodeVulnerabilityReportFilters {
+	if filters == nil {
+		return nil
+	}
+
+	ret := &apiV2.NodeVulnerabilityReportFilters{
+		Query: filters.GetQuery(),
+	}
+
+	switch filters.GetCvesSince().(type) {
+	case *storage.NodeVulnerabilityReportFilters_AllVuln:
+		ret.CvesSince = &apiV2.NodeVulnerabilityReportFilters_AllVuln{
+			AllVuln: filters.GetAllVuln(),
+		}
+	}
+
+	return ret
 }
