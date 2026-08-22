@@ -146,6 +146,7 @@ func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *t
 		Certificates:             certs,
 	}
 	cfg.NextProtos = []string{"h2"}
+	applyServerConnectionLogging(cfg)
 	return cfg
 }
 
