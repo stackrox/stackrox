@@ -16,12 +16,14 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	kubeAPIErr "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -51,6 +53,7 @@ type handlerImpl struct {
 	handlerMaxRetries     int
 	handlerAPICallTimeout time.Duration
 	handlerRetryTimeout   time.Duration
+	pubSubDispatcher      common.PubSubDispatcher
 }
 
 func (m *handlerImpl) Name() string {
@@ -66,7 +69,7 @@ type scanScheduleConfiguration struct {
 }
 
 // NewRequestHandler returns instance of common.SensorComponent interface which can handle compliance requests from Central.
-func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal) common.SensorComponent {
+func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusInfo, coIsReady *concurrency.Signal, pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
 	return &handlerImpl{
 		client:                 client,
 		complianceOperatorInfo: complianceOperatorInfo,
@@ -81,12 +84,23 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		handlerMaxRetries:     defaultMaxRetries,
 		handlerAPICallTimeout: defaultAPICallTimeout,
 		handlerRetryTimeout:   defaultRetryTimeout,
+		pubSubDispatcher:      pubSubDispatcher,
 	}
 }
 
 func (m *handlerImpl) Start() error {
 	defer m.started.Store(true)
 	// TODO: create default scan setting for ad-hoc scan
+	if features.SensorInternalPubSub.Enabled() && m.pubSubDispatcher != nil {
+		if err := m.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceOperatorRequestConsumer,
+			pubsub.ComplianceOperatorRequestTopic,
+			pubsub.ComplianceOperatorRequestLane,
+			m.handleComplianceRequestEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance operator request consumer")
+		}
+	}
 	go m.run()
 	return nil
 }
@@ -123,6 +137,20 @@ func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 		return errors.Errorf("the compliance operator handler was not started ignoring message %v to avoid blocking", msg.GetComplianceRequest())
 	}
 
+	if features.SensorInternalPubSub.Enabled() && m.pubSubDispatcher != nil {
+		select {
+		case <-ctx.Done():
+			return errors.Wrapf(ctx.Err(), "message processing in component %s", m.Name())
+		case <-m.stopSignal.Done():
+			return errors.Errorf("Could not process compliance request: %s", protoutils.NewWrapper(msg))
+		default:
+		}
+		if err := m.pubSubDispatcher.Publish(&ComplianceOperatorRequestEvent{Request: req}); err != nil {
+			return errors.Wrap(err, "publishing compliance operator request event")
+		}
+		return nil
+	}
+
 	select {
 	case <-ctx.Done():
 		// TODO(ROX-30333): Pass this context together with `req` to `m.request`
@@ -142,30 +170,46 @@ func (m *handlerImpl) run() {
 	for !m.stopSignal.IsDone() {
 		select {
 		case req := <-m.request:
-			var requestProcessed bool
-			operationName := fmt.Sprintf("%T", req.GetRequest())
-			switch r := req.GetRequest().(type) {
-			case *central.ComplianceRequest_EnableCompliance:
-				requestProcessed = m.enableCompliance(r.EnableCompliance)
-			case *central.ComplianceRequest_DisableCompliance:
-				requestProcessed = m.disableCompliance(r.DisableCompliance)
-			case *central.ComplianceRequest_ApplyScanConfig:
-				requestProcessed = m.processApplyScanCfgRequest(r.ApplyScanConfig)
-			case *central.ComplianceRequest_DeleteScanConfig:
-				requestProcessed = m.processDeleteScanCfgRequest(r.DeleteScanConfig)
-			}
-			commandsFromCentral.With(prometheus.Labels{
-				"operation": operationName,
-				"processed": strconv.FormatBool(requestProcessed)},
-			).Inc()
-
-			if !requestProcessed {
-				log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
-			}
+			m.handleRequest(req)
 		case <-m.stopSignal.Done():
 			return
 		}
 	}
+}
+
+// handleRequest dispatches a ComplianceRequest to its handler and records the outcome. It is
+// called from run()'s legacy select loop and, in PubSub mode, from handleComplianceRequestEvent.
+func (m *handlerImpl) handleRequest(req *central.ComplianceRequest) {
+	var requestProcessed bool
+	operationName := fmt.Sprintf("%T", req.GetRequest())
+	switch r := req.GetRequest().(type) {
+	case *central.ComplianceRequest_EnableCompliance:
+		requestProcessed = m.enableCompliance(r.EnableCompliance)
+	case *central.ComplianceRequest_DisableCompliance:
+		requestProcessed = m.disableCompliance(r.DisableCompliance)
+	case *central.ComplianceRequest_ApplyScanConfig:
+		requestProcessed = m.processApplyScanCfgRequest(r.ApplyScanConfig)
+	case *central.ComplianceRequest_DeleteScanConfig:
+		requestProcessed = m.processDeleteScanCfgRequest(r.DeleteScanConfig)
+	}
+	commandsFromCentral.With(prometheus.Labels{
+		"operation": operationName,
+		"processed": strconv.FormatBool(requestProcessed)},
+	).Inc()
+
+	if !requestProcessed {
+		log.Errorf("Could not send response for compliance request: %s", protoutils.NewWrapper(req))
+	}
+}
+
+// handleComplianceRequestEvent adapts a PubSub ComplianceOperatorRequestEvent to handleRequest.
+func (m *handlerImpl) handleComplianceRequestEvent(event pubsub.Event) error {
+	requestEvent, ok := event.(*ComplianceOperatorRequestEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	m.handleRequest(requestEvent.Request)
+	return nil
 }
 
 func (m *handlerImpl) enableCompliance(request *central.EnableComplianceRequest) bool {
