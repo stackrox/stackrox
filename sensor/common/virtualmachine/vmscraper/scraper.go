@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -86,11 +87,15 @@ type VMScraper struct {
 	stopper               concurrency.Stopper
 	started               atomic.Bool
 	now                   func() time.Time
+	// randFloat64 returns a unit sample in [0, 1] for schedule jitter;
+	// tests inject a fixed source for determinism.
+	randFloat64 func() float64
 
-	mu            sync.Mutex
-	vmState       map[string]*vmState
-	lastReconcile time.Time
-	inFlight      set.StringSet
+	mu              sync.Mutex
+	vmState         map[string]*vmState
+	lastReconcile   time.Time
+	inFlight        set.StringSet
+	lastForwardTime time.Time // Sensor-level; for forward interarrival metric
 }
 
 type vmState struct {
@@ -123,9 +128,10 @@ func New(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client
 		// so operators get advance notice before reports start actually
 		// being rejected at that limit.
 		warnMaxBytes: env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting() * 1024 / 2,
-		vmState:      make(map[string]*vmState),
-		inFlight:     set.NewStringSet(),
-		now:          time.Now,
+		vmState:     make(map[string]*vmState),
+		inFlight:    set.NewStringSet(),
+		now:         time.Now,
+		randFloat64: rand.Float64,
 	}
 }
 
@@ -289,13 +295,21 @@ func (s *VMScraper) reconcile() {
 	liveKeys := set.NewStringSet()
 	concurrency.WithLock(&s.mu, func() {
 		now := s.now()
+		catchUp := catchUpWindow(s.interval)
 		for _, vm := range vms {
 			key := vm.Key()
 			liveKeys.Add(key)
 			st, ok := s.vmState[key]
 			if !ok {
-				st = &vmState{nextAttemptAt: now, vmID: vm.ID}
+				// Spread first-wave inserts (new guests, Sensor restart)
+				// over the catch-up window so they don't all fire on
+				// the same tick.
+				st = &vmState{
+					nextAttemptAt: now.Add(randOffset(catchUp, s.randFloat64())),
+					vmID:          vm.ID,
+				}
 				s.vmState[key] = st
+				continue
 			}
 			st.vmID = vm.ID
 		}
@@ -426,6 +440,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 
 	newGen := result.Meta.GetReportGeneration()
 	s.commitVMState(key, newGen, result.Meta.GetEpoch())
+	s.observeForwardInterarrival()
 	next := s.scheduleAfterAttempt(key, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
@@ -461,10 +476,13 @@ func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time
 			st.nextAttemptAt = now.Add(st.backoff)
 			return st.backoff
 		case scrapeOK, scrapeNonRetryable:
-			// Both return to the normal poll cadence without growing backoff.
+			// Return to cadence with a random post-poll offset so VMs
+			// don't re-align on the same wall-clock minute.
 			st.backoff = 0
-			st.nextAttemptAt = now.Add(s.interval)
-			return s.interval
+			offset := randOffset(steadySpreadWidth(s.interval), s.randFloat64())
+			delay := s.interval + offset
+			st.nextAttemptAt = now.Add(delay)
+			return delay
 		default:
 			return 0
 		}
@@ -589,6 +607,18 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 		state.lastGeneration = newGen
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
+	})
+}
+
+// observeForwardInterarrival records the Sensor-level gap between successful
+// forwards. The first forward after start does not observe a sample.
+func (s *VMScraper) observeForwardInterarrival() {
+	concurrency.WithLock(&s.mu, func() {
+		now := s.now()
+		if !s.lastForwardTime.IsZero() {
+			metrics.PullForwardInterarrivalSeconds.Observe(now.Sub(s.lastForwardTime).Seconds())
+		}
+		s.lastForwardTime = now
 	})
 }
 
