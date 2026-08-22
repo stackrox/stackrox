@@ -1,0 +1,134 @@
+name: e2e-operator-backup-restore-test
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  gke-operator-backup-restore-test:
+    if: inputs.should-run
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG: ${{ inputs.tag }}
+      BUILD_TAG: ${{ inputs.tag }}
+      CI_JOB_NAME: gke-operator-backup-restore-test
+      ARTIFACT_DIR: ./junit-reports
+      LOAD_BALANCER: lb
+      DEPLOY_STACKROX_VIA_OPERATOR: "true"
+      ORCHESTRATOR_FLAVOR: k8s
+      PYTHONUNBUFFERED: "1"
+    timeout-minutes: 90
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # ratchet:actions/checkout@v6
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Create GKE cluster
+      id: gke
+      uses: ./.github/actions/create-gke-cluster
+      with:
+        cluster-name: e2e-opbr-${{ github.run_id }}-${{ github.run_attempt }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Build roxctl
+      run: |
+        make roxctl_linux-amd64
+        echo "$(pwd)/bin/linux_amd64" >> "$GITHUB_PATH"
+
+    - name: Run pre-test
+      shell: python
+      env:
+        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from pre_tests import PreSystemTests
+        PreSystemTests().run()
+
+    - name: Deploy StackRox via Operator and run backup/restore test
+      env:
+        QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+      run: |
+        source tests/e2e/lib.sh
+        source tests/e2e/lib-compat.sh
+        source scripts/ci/sensor-wait.sh
+        export_test_environment
+
+        ci_export DEPLOY_STACKROX_VIA_OPERATOR true
+
+        setup_deployment_env false false
+
+        # Deploy via roxie compat layer (handles GKE without OLM).
+        # Roxie does not pause reconciliation by default, which is what we need:
+        # the Operator must remain active to re-adopt orphaned secrets after restore.
+        deploy_stackrox_with_roxie_compat
+
+        echo "API_ENDPOINT=${API_ENDPOINT}" >> "$GITHUB_ENV"
+
+        operator_backup_and_restore_test /tmp/operator-backup-restore-test
+
+    - name: Run post-test
+      if: failure() || github.event_name == 'push'
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import CheckStackroxLogs
+        CheckStackroxLogs(
+            check_for_errors_in_stackrox_logs=True,
+            artifact_destination_prefix="operator-br-test",
+        ).run(['/tmp/operator-backup-restore-test', '${{ env.ARTIFACT_DIR }}'])
+
+    - name: Run final-post
+      if: always()
+      shell: python
+      run: |
+        import sys
+        sys.path.append('.openshift-ci')
+        from post_tests import FinalPost
+        FinalPost(store_qa_tests_data=False).run()
+
+    - name: Publish test summary
+      uses: test-summary/action@37b508cfee6d4d080eedd00b5bb240a6a784a6a5 # ratchet:test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all
+
+    - name: Report junit failures in jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: ${{ env.ARTIFACT_DIR }}
