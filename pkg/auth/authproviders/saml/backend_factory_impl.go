@@ -51,21 +51,27 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) processACSRequest(r *http.Request) (string, error) {
+func (f *factory) processACSRequest(r *http.Request) (string, string, error) {
 	if r.Method != http.MethodPost {
-		return "", httputil.NewError(http.StatusMethodNotAllowed, "only POST requests are allowed to this URL")
+		return "", "", httputil.NewError(http.StatusMethodNotAllowed, "only POST requests are allowed to this URL")
 	}
 	if err := r.ParseForm(); err != nil {
-		return "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
+		return "", "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
 	}
 
-	state := r.FormValue("RelayState")
-	providerID, _ := idputil.SplitState(state)
-	if providerID != "" {
-		// Preferred option: specified via relay state
-		return providerID, nil
+	relayState := r.FormValue("RelayState")
+	if relayState != "" {
+		providerID, clientState, err := idputil.RedeemStateNonce(relayState)
+		if err != nil {
+			return "", "", httputil.Errorf(http.StatusBadRequest, "invalid state: %v", err)
+		}
+		if providerID == "" {
+			return "", clientState, httputil.NewError(http.StatusBadRequest, "malformed state")
+		}
+		return providerID, clientState, nil
 	}
-	return f.autoRouteACSRequest(r)
+	providerID, err := f.autoRouteACSRequest(r)
+	return providerID, "", err
 }
 
 func (f *factory) getBackendsByIssuer(issuerName string) []*backendImpl {
@@ -117,20 +123,19 @@ func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (st
 		return "", "", httputil.NewError(http.StatusInternalServerError, "received invalid request")
 	}
 
-	relayState := r.FormValue("RelayState")
-	_, clientState := idputil.SplitState(relayState)
-
 	relativePath := r.URL.Path[len(f.urlPathPrefix):]
 	if relativePath == acsRelativePath {
-		providerID, err := f.processACSRequest(r)
-		return providerID, clientState, err
+		return f.processACSRequest(r)
 	}
 
-	return "", clientState, httputil.NewError(http.StatusNotFound, "Not Found")
+	return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 }
 
 func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
-	providerID, clientState := idputil.SplitState(state)
+	providerID, clientState, err := idputil.LookupStateNonce(state)
+	if err != nil {
+		return "", "", fmt.Errorf("invalid state: %w", err)
+	}
 	if providerID == "" {
 		return "", clientState, fmt.Errorf("malformed state %q", state)
 	}

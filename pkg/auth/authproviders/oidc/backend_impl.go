@@ -97,7 +97,10 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*
 	}
 	responseValues.Set("state", state)
 
-	_, clientState := idputil.SplitState(state)
+	_, clientState, nonceErr := idputil.LookupStateNonce(state)
+	if nonceErr != nil {
+		return nil, "", errors.Wrap(nonceErr, "invalid state")
+	}
 	authResp, err := p.processIDPResponse(ctx, responseValues)
 	return authResp, clientState, err
 }
@@ -450,7 +453,10 @@ func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Co
 }
 
 func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) (string, error) {
-	state := idputil.MakeState(p.id, clientState)
+	state, err := idputil.IssueStateNonce(p.id, clientState)
+	if err != nil {
+		return "", err
+	}
 	options := make([]oauth2.AuthCodeOption, len(p.baseOptions), len(p.baseOptions)+1)
 	copy(options, p.baseOptions)
 

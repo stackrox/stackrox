@@ -65,7 +65,11 @@ func (p *backendImpl) loginURL(clientState string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "could not construct auth request")
 	}
-	authURL, err := p.sp.BuildAuthURLRedirect(idputil.MakeState(p.id, clientState), doc)
+	nonce, err := idputil.IssueStateNonce(p.id, clientState)
+	if err != nil {
+		return "", errors.Wrap(err, "could not issue state nonce")
+	}
+	authURL, err := p.sp.BuildAuthURLRedirect(nonce, doc)
 	if err != nil {
 		return "", errors.Wrap(err, "could not construct auth URL")
 	}
