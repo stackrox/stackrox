@@ -43,12 +43,16 @@ message AuthMachineToMachineConfig {
   string id = 1;
 
   // The type of the auth machine to machine config.
-  // Currently supports GitHub actions or any other generic OIDC provider to use for verifying and
-  // exchanging the token.
+  // Currently supports GitHub actions, SPIFFE/SPIRE, or any other generic OIDC provider to use
+  // for verifying and exchanging the token.
   enum Type {
     GENERIC = 0;
     GITHUB_ACTIONS = 1;
     KUBE_SERVICE_ACCOUNT = 2;
+    // SPIFFE JWT-SVID authentication via a SPIRE OIDC Discovery Provider.
+    // The issuer must be the HTTPS URL of the SPIRE OIDC Discovery Provider,
+    // not the SPIFFE trust domain URI.
+    SPIFFE = 3;
   }
   Type type = 2;
 
@@ -77,11 +81,12 @@ message AuthMachineToMachineConfig {
 
   // The issuer of the related OIDC provider issuing the ID tokens to exchange.
   //
-  // Must be non-empty string containing URL when type is GENERIC.
+  // Must be non-empty string containing URL when type is GENERIC or SPIFFE.
   // In case of GitHub actions, this must be empty or set to https://token.actions.githubusercontent.com.
+  // For SPIFFE, this must be the HTTPS URL of the SPIRE OIDC Discovery Provider.
   //
   // Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
-  // GENERIC config must have a distinct issuer.
+  // GENERIC/SPIFFE config must have a distinct issuer.
   string issuer = 5;
 
   Traits traits = 6;
