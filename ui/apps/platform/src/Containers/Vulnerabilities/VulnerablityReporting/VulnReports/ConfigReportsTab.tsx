@@ -47,7 +47,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
 import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
 
-import type { ImageVulnerabilityResourceScope } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
+import type { ImageVulnerabilityResourceScope } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
