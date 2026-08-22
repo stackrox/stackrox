@@ -168,8 +168,15 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
+	// References a ConfigMap containing the Red Hat signing key bundle. The ConfigMap must
+	// contain a key named `bundle.json`. This allows air-gapped customers to provide or
+	// update the signing keys used for image signature verification. The ConfigMap is
+	// managed externally; key rotation requires only editing the ConfigMap, not a CR update.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	SigningKeyBundle *SigningKeyBundleSpec `json:"signingKeyBundle,omitempty"`
+
 	// Configures the encryption of notifier secrets stored in the Central DB.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
 
 	// Configures the rollout strategy for the Central deployment.
@@ -227,6 +234,14 @@ type DeclarativeConfiguration struct {
 	// List of secrets containing declarative configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Secrets containing declarative configuration"
 	Secrets []LocalSecretReference `json:"secrets,omitempty"`
+}
+
+// SigningKeyBundleSpec references a ConfigMap containing the Red Hat signing key bundle.
+type SigningKeyBundleSpec struct {
+	// Name of a ConfigMap in the same namespace containing a `bundle.json` key
+	// with the Red Hat signing key bundle content.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ConfigMap Name",xDescriptors={"urn:alm:descriptor:io.kubernetes:ConfigMap"}
+	ConfigMapName string `json:"configMapName"`
 }
 
 // NotifierSecretsEncryption defines settings for encrypting notifier secrets in the Central DB.

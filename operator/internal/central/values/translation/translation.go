@@ -271,6 +271,12 @@ func getCentralComponentValues(ctx context.Context, c *platform.CentralComponent
 
 	cv.AddChild("declarativeConfiguration", getDeclarativeConfigurationValues(c.DeclarativeConfiguration))
 
+	if c.SigningKeyBundle != nil && c.SigningKeyBundle.ConfigMapName != "" {
+		signingKeyBundle := translation.NewValuesBuilder()
+		signingKeyBundle.SetStringValue("configMapName", c.SigningKeyBundle.ConfigMapName)
+		cv.AddChild("signingKeyBundle", &signingKeyBundle)
+	}
+
 	if c.GetNotifierSecretsEncryptionEnabled() {
 		notifierSecretsEncryption := translation.NewValuesBuilder()
 		notifierSecretsEncryption.SetBoolValue("enabled", true)
