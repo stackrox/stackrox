@@ -456,6 +456,16 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
 		imageEnrichmentRequired)
 
+	f.registerFieldMetadataRegex(fieldnames.CisaKev,
+		querybuilders.ForCisaKev(),
+		violationmessages.VulnContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return booleanValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden,
+		imageEnrichmentRequired)
+
 	f.registerFieldMetadataRegex(fieldnames.FixedBy,
 		querybuilders.ForFixedBy(),
 		violationmessages.VulnContextFields,

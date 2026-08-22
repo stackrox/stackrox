@@ -41,6 +41,7 @@ var (
 		fieldnames.EnvironmentVariable:            {{required: set.NewStringSet(augmentedobjs.EnvironmentVarCustomTag), printerFuncKey: printer.EnvKey}},
 		fieldnames.ExposedNodePort:                {{required: set.NewStringSet(search.ExposedNodePort.String()), printerFuncKey: printer.NodePortKey}},
 		fieldnames.ExposedPort:                    {{required: set.NewStringSet(search.Port.String()), printerFuncKey: printer.PortKey}},
+		fieldnames.CisaKev:                        {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.Fixable:                        {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.FixedBy:                        {{required: set.NewStringSet(search.CVE.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.HostIPC:                        {{required: set.NewStringSet(search.HostIPC.String()), printerFuncKey: printer.HostIPCKey}},
