@@ -340,7 +340,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest, scanRequest.GetNodeRoles())
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {
