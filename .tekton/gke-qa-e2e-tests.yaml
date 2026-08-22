@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: main-test-pipeline
+spec:
+  tasks:
+  - name:
+    description: ls the workspace
+    taskSpec:
+      steps:
+      - image: registry.access.redhat.com/ubi9/skopeo:9.4@sha256:23557ecf3de07618968affb59adfb3db80336b976501032b5da9e4e92b943776
+        script: |
+          ls
+
+#apiVersion: tekton.dev/v1
+#kind: Pipeline
+#metadata:
+#  name: gke-qa-e2e-tests
+#spec:
+#  params:
+#  - description: Source Repository URL
+#    name: git-url
+#    type: string
+#  - default: ""
+#    description: Revision of the Source Repository
+#    name: revision
+#    type: string
+#  - default: "0"
+#    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+#    name: clone-depth
+#    type: string
+#  - default: "true"
+#    description: Fetch tags with git clone
+#    name: clone-fetch-tags
+#    type: string
+#  tasks:
+#  - name: clone-repository
+#    params:
+#    - name: url
+#      value: $(params.git-url)
+#    - name: revision
+#      value: $(params.revision)
+#    - name: depth
+#      value: $(params.clone-depth)
+#    - name: fetchTags
+#      value: $(params.clone-fetch-tags)
+#    taskRef:
+#      params:
+#      - name: name
+#        value: git-clone
+#      - name: bundle
+#        value: quay.io/redhat-appstudio-tekton-catalog/task-git-clone:0.1
+#      - name: kind
+#        value: task
+#      resolver: bundles
+#    workspaces:
+#    - name: basic-auth
+#      workspace: git-auth
