@@ -151,6 +151,12 @@ var (
 
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
 	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
+
+	// AIIntegrations enables AI integrations management
+	AIIntegrations = registerFeature("Enable AI integrations management", "ROX_AI_INTEGRATIONS")
+
+	// LightspeedRiskSummary enables Lightspeed AI risk summary
+	LightspeedRiskSummary = registerFeature("Enable Lightspeed AI risk summary", "ROX_LIGHTSPEED_RISK_SUMMARY")
 )
 
 // The following feature flags are related to Scanner V4.
