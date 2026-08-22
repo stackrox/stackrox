@@ -95,7 +95,7 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 			"total_policies": policies.LazyLabels.GetLabels(),
 		}),
 	}, {
-		expiry.New(ds.expiry),
+		expiry.New(ds.expiry, ds.clusters),
 		withHardcodedConfiguration(60, map[string][]string{
 			// rox_central_cert_exp_hours
 			"hours": expiry.LazyLabels.GetLabels(),
