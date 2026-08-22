@@ -39,7 +39,6 @@ var (
 	Administration = newResourceMetadata("Administration", permissions.GlobalScope)
 
 	Alert      = newResourceMetadata("Alert", permissions.NamespaceScope)
-	CVE        = newResourceMetadata("CVE", permissions.NamespaceScope)
 	Cluster    = newResourceMetadata("Cluster", permissions.ClusterScope)
 	Compliance = newResourceMetadata("Compliance", permissions.ClusterScope)
 	Deployment = newResourceMetadata("Deployment", permissions.NamespaceScope)
