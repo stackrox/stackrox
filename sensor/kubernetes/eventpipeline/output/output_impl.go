@@ -7,6 +7,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/centralbound"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -14,10 +16,13 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 )
 
+var log = logging.LoggerForModule()
+
 type outputQueueImpl struct {
 	innerQueue   chan *component.ResourceEvent
 	forwardQueue chan *message.ExpiringMessage
 	detector     detector.Detector
+	dispatcher   pubSubDispatcher
 	stopper      concurrency.Stopper
 }
 
@@ -28,8 +33,12 @@ func (q *outputQueueImpl) Send(msg *component.ResourceEvent) {
 	metrics.IncOutputChannelSize()
 }
 
-// ResponsesC returns the MsgFromSensor channel
+// ResponsesC returns the MsgFromSensor channel. In PubSub mode, messages are
+// published to the CentralBound topic instead, so this returns nil.
 func (q *outputQueueImpl) ResponsesC() <-chan *message.ExpiringMessage {
+	if features.SensorInternalPubSub.Enabled() {
+		return nil
+	}
 	return q.forwardQueue
 }
 
@@ -78,7 +87,14 @@ func (q *outputQueueImpl) processMsg(msg *component.ResourceEvent) bool {
 	}
 	for _, resourceUpdates := range msg.ForwardMessages {
 		expiringMessage := message.NewExpiring(msg.Context, wrapSensorEvent(resourceUpdates))
-		if !expiringMessage.IsExpired() {
+		if expiringMessage.IsExpired() {
+			continue
+		}
+		if features.SensorInternalPubSub.Enabled() {
+			if err := q.dispatcher.Publish(&centralbound.CentralBoundEvent{Msg: expiringMessage}); err != nil {
+				log.Errorf("Failed to publish central-bound event: %v", err)
+			}
+		} else {
 			select {
 			case q.forwardQueue <- expiringMessage:
 			case <-q.stopper.Flow().StopRequested():
