@@ -570,10 +570,13 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configures the encryption of notifier secrets stored in the Central
-          DB.
-        displayName: Notifier Secrets Encryption
-        path: central.notifierSecretsEncryption
+      - description: |-
+          References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+          This allows air-gapped customers to provide or update the signing keys used for
+          image signature verification. The ConfigMap is managed externally; key rotation
+          requires only editing the ConfigMap, not a CR update.
+        displayName: Signing Key Bundle
+        path: central.signingKeyBundle
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Overlays
@@ -581,16 +584,22 @@ spec:
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Configures the rollout strategy for the Central deployment.
-          The default is: Recreate.
-        displayName: Rollout Strategy
-        path: central.rolloutStrategy
+      - description: Configures the encryption of notifier secrets stored in the Central
+          DB.
+        displayName: Notifier Secrets Encryption
+        path: central.notifierSecretsEncryption
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
         displayName: Monitoring
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
+          Configures the rollout strategy for the Central deployment.
+          The default is: Recreate.
+        displayName: Rollout Strategy
+        path: central.rolloutStrategy
       - description: Network configuration.
         displayName: Network
         path: network
@@ -925,6 +934,11 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.signingKeyBundle.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name

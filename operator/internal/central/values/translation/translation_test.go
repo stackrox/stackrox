@@ -243,6 +243,41 @@ func TestTranslate(t *testing.T) {
 			},
 		},
 
+		"signing key bundle with empty name is not emitted": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							SigningKeyBundle: &platform.LocalConfigMapReference{
+								Name: "",
+							},
+						},
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+
 		"empty spec no pvc": {
 			args: args{
 				c: platform.Central{
@@ -389,8 +424,8 @@ func TestTranslate(t *testing.T) {
 									},
 								},
 							},
-							SigningKeyBundle: &platform.SigningKeyBundleSpec{
-								ConfigMapName: "redhat-signing-key-bundle",
+							SigningKeyBundle: &platform.LocalConfigMapReference{
+								Name: "redhat-signing-key-bundle",
 							},
 							NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
 								Enabled: pointer.Bool(true),

@@ -217,6 +217,11 @@ func (in *CentralComponentSpec) DeepCopyInto(out *CentralComponentSpec) {
 		*out = new(DeclarativeConfiguration)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.SigningKeyBundle != nil {
+		in, out := &in.SigningKeyBundle, &out.SigningKeyBundle
+		*out = new(LocalConfigMapReference)
+		**out = **in
+	}
 	if in.NotifierSecretsEncryption != nil {
 		in, out := &in.NotifierSecretsEncryption, &out.NotifierSecretsEncryption
 		*out = new(NotifierSecretsEncryption)
