@@ -8,6 +8,15 @@ type Event interface {
 	Lane() LaneID
 }
 
+// Mergeable is an optional interface that events can implement to merge
+// state from an existing event when a duplicate key is detected in a
+// deduplicating lane. If the new event implements Mergeable, MergeFrom
+// is called with the old event before the old event is removed from the queue.
+type Mergeable[K comparable] interface {
+	Event
+	MergeFrom(old Event)
+}
+
 type EventCallback func(Event) error
 
 type LaneOption[T Lane] func(T)

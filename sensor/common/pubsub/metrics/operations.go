@@ -9,6 +9,8 @@ const (
 	PublishError
 	ConsumerError
 	NoConsumers
+	Deduped
+	Requeued
 )
 
 var (
@@ -18,6 +20,8 @@ var (
 		PublishError:  "error",
 		ConsumerError: "error",
 		NoConsumers:   "no_consumers",
+		Deduped:       "deduped",
+		Requeued:      "requeued",
 	}
 )
 
