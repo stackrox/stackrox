@@ -2,6 +2,7 @@ package tree
 
 import (
 	"net"
+	"slices"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -175,10 +176,9 @@ func (t *nRadixTree) getSuccessorWithValsNoLock(startNode *nRadixNode, curr *nRa
 		return []*storage.NetworkEntityInfo{curr.value}
 	}
 
-	var ret []*storage.NetworkEntityInfo //nolint:prealloc // recursive tree traversal, unpredictable size
-	ret = append(ret, t.getSuccessorWithValsNoLock(startNode, curr.left)...)
-	ret = append(ret, t.getSuccessorWithValsNoLock(startNode, curr.right)...)
-	return ret
+	left := t.getSuccessorWithValsNoLock(startNode, curr.left)
+	right := t.getSuccessorWithValsNoLock(startNode, curr.right)
+	return slices.Concat(left, right)
 }
 
 func (t *nRadixTree) Get(key string) *storage.NetworkEntityInfo {
