@@ -83,7 +83,7 @@ done < <(./.github/workflows/scripts/scanner-output-release-versions.sh | jq -r 
 # (see redirect below).
 while read -r line; do
     # Skip lines that are comments or empty
-    echo "$line" | grep -qE '^\s*(#.*|$)' && continue
+    grep -qE '^\s*(#.*|$)' <<< "$line" && continue
 
     read -r version ref <<< "$line"
 
