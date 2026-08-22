@@ -28,15 +28,15 @@ func validateMetricName(name string) error {
 	return nil
 }
 
-// validateLabels checks if the labels exist in the labelOrder map and returns
+// validateLabels checks if the labels exist in the known labels and returns
 // a sorted label list.
-func (tracker *TrackerBase[F]) validateLabels(labels []string, metricName string) ([]Label, error) {
+func validateLabels(labels []string, metricName string, knownLabels []Label) ([]Label, error) {
 	if len(labels) == 0 {
 		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
 	}
 	metricLabels := make([]Label, 0, len(labels))
 	for _, label := range labels {
-		validated, err := tracker.validateLabel(label, metricName)
+		validated, err := validateLabel(label, metricName, knownLabels)
 		if err != nil {
 			return nil, err
 		}
@@ -46,22 +46,22 @@ func (tracker *TrackerBase[F]) validateLabels(labels []string, metricName string
 	return metricLabels, nil
 }
 
-func (tracker *TrackerBase[F]) validateLabel(label string, metricName string) (Label, error) {
-	if _, ok := tracker.getters[Label(label)]; !ok {
-		return "", errInvalidConfiguration.CausedByf("label %q for metric %q is not in the list of known labels %v", label,
-			metricName, tracker.getters.GetLabels())
+func validateLabel(label string, metricName string, knownLabels []Label) (Label, error) {
+	if slices.Contains(knownLabels, Label(label)) {
+		return Label(label), nil
 	}
-	return Label(label), nil
+	return "", errInvalidConfiguration.CausedByf("label %q for metric %q is not in the list of known labels %v", label,
+		metricName, knownLabels)
 }
 
 // parseFilters parses a map of label names to regex patterns, validating each label and pattern.
-func (tracker *TrackerBase[F]) parseFilters(filters map[string]string, metricName, filterType string) (map[Label]*regexp.Regexp, error) {
+func parseFilters(filters map[string]string, metricName, filterType string, knownLabels []Label) (map[Label]*regexp.Regexp, error) {
 	if len(filters) == 0 {
 		return nil, nil
 	}
 	patterns := make(map[Label]*regexp.Regexp, len(filters))
 	for label, pattern := range filters {
-		validated, err := tracker.validateLabel(label, metricName)
+		validated, err := validateLabel(label, metricName, knownLabels)
 		if err != nil {
 			return nil, err
 		}
@@ -83,26 +83,25 @@ func (tracker *TrackerBase[F]) parseFilters(filters map[string]string, metricNam
 
 // translateStorageConfiguration converts the storage object to the usable map,
 // validating the values.
-func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels) (MetricDescriptors, LabelFilters, LabelFilters, error) {
+func translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels, metricPrefix string, knownLabels []Label) (MetricDescriptors, LabelFilters, LabelFilters, error) {
 	result := make(MetricDescriptors, len(config))
-	metricPrefix := tracker.metricPrefix
 	if metricPrefix != "" {
 		metricPrefix += "_"
 	}
 	includeFilters := make(LabelFilters)
 	excludeFilters := make(LabelFilters)
-	for metricName, labels := range config {
-		metricName = metricPrefix + metricName
+	for descriptorKey, labels := range config {
+		metricName := metricPrefix + descriptorKey
 		if err := validateMetricName(metricName); err != nil {
 			return nil, nil, nil, errInvalidConfiguration.CausedByf(
 				"invalid metric name %q: %v", metricName, err)
 		}
-		metricLabels, err := tracker.validateLabels(labels.GetLabels(), metricName)
+		metricLabels, err := validateLabels(labels.GetLabels(), metricName, knownLabels)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 
-		incPatterns, err := tracker.parseFilters(labels.GetIncludeFilters(), metricName, "include_filter")
+		incPatterns, err := parseFilters(labels.GetIncludeFilters(), metricName, "include_filter", knownLabels)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -110,7 +109,7 @@ func (tracker *TrackerBase[F]) translateStorageConfiguration(config map[string]*
 			includeFilters[MetricName(metricName)] = incPatterns
 		}
 
-		excPatterns, err := tracker.parseFilters(labels.GetExcludeFilters(), metricName, "exclude_filter")
+		excPatterns, err := parseFilters(labels.GetExcludeFilters(), metricName, "exclude_filter", knownLabels)
 		if err != nil {
 			return nil, nil, nil, err
 		}
