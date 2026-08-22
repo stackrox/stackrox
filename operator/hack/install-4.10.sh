@@ -14,5 +14,9 @@ git worktree add "${dir}" "${version}"
 trap 'git worktree remove --force "${dir}"' EXIT
 
 cd "${dir}"
+# Ensure Go module dependencies are available in the cache. In Prow CI, the
+# module cache is pre-warmed by an earlier binary build step; in GHA there is
+# no such step, so protogen.mk fails resolving the scanner module.
+go mod download
 export VERSION="${version}" ROX_PRODUCT_BRANDING=RHACS_BRANDING
 make -C operator/ build-installer deploy-via-installer TEST_NAMESPACE="rhacs-operator-system"
