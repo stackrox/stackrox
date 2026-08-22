@@ -33,6 +33,7 @@ import (
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
+	watchedImageDatastore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -40,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -76,6 +78,8 @@ var (
 	pruningCtx                = sac.WithAllAccess(context.Background())
 	lastClusterPruneTime      time.Time
 	lastLogImbuePruneTime     time.Time
+	lastV1ImagePruneTime      time.Time
+	lastPrunedV1ImageID       string
 	pruningTimeout            = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
 	prunedPLOPsWithoutPodUIDs = false
 
@@ -127,6 +131,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	blobStore blobDatastore.Datastore,
 	nodeCVEStore nodeCVEDS.DataStore,
 	roleStore roleDataStore.DataStore,
+	watchedImages watchedImageDatastore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -153,6 +158,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		blobStore:       blobStore,
 		nodeCVEStore:    nodeCVEStore,
 		roleStore:       roleStore,
+		watchedImages:   watchedImages,
 	}
 }
 
@@ -182,6 +188,7 @@ type garbageCollectorImpl struct {
 	blobStore       blobDatastore.Datastore
 	nodeCVEStore    nodeCVEDS.DataStore
 	roleStore       roleDataStore.DataStore
+	watchedImages   watchedImageDatastore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -229,6 +236,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.OrphanedCVEsKeepAlive.BooleanSetting() {
 		g.pruneOrphanedNodeCVEs()
 	}
+	if features.FlattenImageData.Enabled() && env.PruneV1Images.BooleanSetting() {
+		g.pruneImageV1s()
+	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -238,6 +248,7 @@ func (g *garbageCollectorImpl) runGC() {
 
 	lastClusterPruneTime = time.Now().Add(-24 * time.Hour)
 	lastLogImbuePruneTime = time.Now().Add(-24 * time.Hour)
+	lastV1ImagePruneTime = time.Now().Add(-env.V1ImagePruneInterval.DurationSetting())
 	g.pruneBasedOnConfig()
 
 	t := time.NewTicker(pruneInterval)
@@ -249,6 +260,212 @@ func (g *garbageCollectorImpl) runGC() {
 			return
 		}
 	}
+}
+
+func (g *garbageCollectorImpl) pruneImageV1s() {
+	if time.Since(lastV1ImagePruneTime) < env.V1ImagePruneInterval.DurationSetting() {
+		return
+	}
+	defer func() { lastV1ImagePruneTime = time.Now() }()
+	defer metrics.SetPruningDuration(time.Now(), "V1Images")
+
+	log.Info("[Pruning] Pruning V1 images with V2 twins")
+	g.pruneImageV1Batch()
+}
+
+// pruneImageV1Batch prunes V1 images from the old images table whose CVE data
+// has been migrated to V2.
+func (g *garbageCollectorImpl) pruneImageV1Batch() {
+	// Algorithm:
+	// 1. Fetch a batch of V1 images ordered by SHA, using cursor-based pagination.
+	// 2. Delete images with 0 CVEs (no scan data to preserve).
+	// 3. For images with CVEs, look up V2 twins from deployment containers;
+	//    for watched (undeployed) images, generate V2 IDs from watched names.
+	// 4. Delete undeployed, unwatched images (no V2 twin to check).
+	// 5. Delete images whose V2 twins are all enriched (have >0 CVEs).
+	//
+	// We check V2 twin enrichment rather than per-CVE migration because reprocessing
+	// already replaces the full scan — a partial scan loses first-discovered timestamps
+	// regardless of image model, so this doesn't make things worse.
+	batchSize := env.V1ImagePruneBatchSize.IntegerSetting()
+
+	sortOpt := search.NewSortOption(search.ImageSHA)
+	// Cursor-based pagination: fetch images with SHA > last processed SHA.
+	if lastPrunedV1ImageID != "" {
+		sortOpt = sortOpt.SearchAfter(lastPrunedV1ImageID)
+	}
+	q := search.NewQueryBuilder().
+		WithPagination(
+			search.NewPagination().
+				AddSortOption(sortOpt).
+				Limit(int32(batchSize)),
+		).ProtoQuery()
+
+	// Fetch a batch of V1 images
+	var v1Images []*storage.Image
+	err := g.images.WalkMetadataByQuery(pruningCtx, q, func(img *storage.Image) error {
+		v1Images = append(v1Images, img)
+		return nil
+	})
+	if err != nil {
+		log.Errorf("[Pruning] Error fetching V1 images: %v", err)
+		return
+	}
+	if len(v1Images) == 0 {
+		lastPrunedV1ImageID = ""
+		return
+	}
+
+	deleteIDs := g.filterV1ImageIDsToPrune(v1Images)
+
+	if len(deleteIDs) > 0 {
+		if err := g.images.DeleteImages(pruningCtx, deleteIDs...); err != nil {
+			log.Errorf("[Pruning] Error deleting V1 images: %v", err)
+			return
+		}
+		log.Infof("[Pruning] Deleted %d V1 images", len(deleteIDs))
+	}
+
+	if len(v1Images) < batchSize {
+		lastPrunedV1ImageID = ""
+	} else {
+		lastPrunedV1ImageID = v1Images[len(v1Images)-1].GetId()
+	}
+}
+
+func (g *garbageCollectorImpl) filterV1ImageIDsToPrune(v1Images []*storage.Image) []string {
+	var deleteIDs []string
+	var v1ImagesWithCVEs []*storage.Image
+
+	for _, img := range v1Images {
+		// V1 images with 0 CVEs have no scan data worth preserving, safe to delete.
+		if img.GetCves() == 0 {
+			deleteIDs = append(deleteIDs, img.GetId())
+		} else {
+			// V1 images with CVEs need to be checked against V2 twins. If all V2 twins have been enriched, we can delete the V1 image.
+			v1ImagesWithCVEs = append(v1ImagesWithCVEs, img)
+		}
+	}
+
+	if len(v1ImagesWithCVEs) == 0 {
+		return deleteIDs
+	}
+
+	var v1Digests []string
+	for _, img := range v1ImagesWithCVEs {
+		v1Digests = append(v1Digests, img.GetId())
+	}
+
+	// Image V2 twin IDs for the V1 image digests
+	digestToV2IDs, err := g.deployments.GetV2ImageIDsForDigests(pruningCtx, v1Digests)
+	if err != nil {
+		log.Errorf("[Pruning] Error fetching V2 image IDs for digests: %v", err)
+		return deleteIDs
+	}
+
+	watchedNames, err := g.getWatchedNameSet()
+	if err != nil {
+		log.Errorf("[Pruning] Error fetching watched images: %v", err)
+		return deleteIDs
+	}
+
+	for _, img := range v1ImagesWithCVEs {
+		digest := img.GetId()
+		v2IDs := digestToV2IDs[digest]
+
+		if len(v2IDs) == 0 {
+			// V2 twins of a digest can also be generated from watched images. So check if the image name is watched.
+			watchedV2IDs := g.watchedV2IDsForImage(img, watchedNames)
+			if len(watchedV2IDs) == 0 {
+				deleteIDs = append(deleteIDs, digest)
+				continue
+			}
+			digestToV2IDs[digest] = watchedV2IDs
+		}
+	}
+
+	// Get Image V2 twins from the IDs gathered above.
+	v2ImageMap := g.buildV2ImageMap(digestToV2IDs)
+	if v2ImageMap == nil {
+		return deleteIDs
+	}
+
+	for _, img := range v1ImagesWithCVEs {
+		digest := img.GetId()
+		v2IDs := digestToV2IDs[digest]
+		if len(v2IDs) == 0 {
+			continue
+		}
+		// If all V2 twins of a v1 image are enriched, we can delete the v1 image.
+		if g.allV2TwinsEnriched(v2IDs, v2ImageMap) {
+			deleteIDs = append(deleteIDs, digest)
+		}
+	}
+
+	return deleteIDs
+}
+
+func (g *garbageCollectorImpl) getWatchedNameSet() (set.StringSet, error) {
+	if g.watchedImages == nil {
+		return set.NewStringSet(), nil
+	}
+	watched, err := g.watchedImages.GetAllWatchedImages(pruningCtx)
+	if err != nil {
+		return nil, err
+	}
+	names := set.NewStringSet()
+	for _, w := range watched {
+		names.Add(w.GetName())
+	}
+	return names, nil
+}
+
+func (g *garbageCollectorImpl) watchedV2IDsForImage(img *storage.Image, watchedNames set.StringSet) []string {
+	var v2IDs []string
+	for _, name := range img.GetNames() {
+		if watchedNames.Contains(name.GetFullName()) {
+			v2IDs = append(v2IDs, imageUtils.NewImageV2ID(name, img.GetId()))
+		}
+	}
+	return v2IDs
+}
+
+func (g *garbageCollectorImpl) buildV2ImageMap(digestToV2IDs map[string][]string) map[string]*storage.ImageV2 {
+	var allV2IDs []string
+	for _, v2IDs := range digestToV2IDs {
+		allV2IDs = append(allV2IDs, v2IDs...)
+	}
+	if len(allV2IDs) == 0 {
+		return make(map[string]*storage.ImageV2)
+	}
+
+	v2Images, err := g.imagesV2.GetManyImageMetadata(pruningCtx, allV2IDs)
+	if err != nil {
+		log.Errorf("[Pruning] Error fetching V2 image metadata: %v", err)
+		return nil
+	}
+
+	v2Map := make(map[string]*storage.ImageV2, len(v2Images))
+	for _, img := range v2Images {
+		v2Map[img.GetId()] = img
+	}
+	return v2Map
+}
+
+// allV2TwinsEnriched returns true only if every V2 twin exists and has CVEs.
+// A V2 twin with 0 CVEs (remember that corresponging V1 image has CVEs) indicates it may not have been enriched yet.
+func (g *garbageCollectorImpl) allV2TwinsEnriched(v2IDs []string, v2ImageMap map[string]*storage.ImageV2) bool {
+	for _, v2ID := range v2IDs {
+		v2Img, exists := v2ImageMap[v2ID]
+		// It is enough to just check if the V2 twin has any CVEs.
+		// We don't check per-CVE migration because reprocessing already replaces the full
+		// scan result — a partial scan loses first-discovered timestamps regardless of
+		// image model, so this doesn't make things worse than they already are.
+		if !exists || v2Img.GetScanStats().GetCveCount() == 0 {
+			return false
+		}
+	}
+	return true
 }
 
 // Remove vulnerability requests that have expired and past the retention period.

@@ -488,6 +488,11 @@ func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query
 	return ds.deploymentStore.GetContainerImageViews(ctx, q)
 }
 
+func (ds *datastoreImpl) GetV2ImageIDsForDigests(ctx context.Context, digests []string) (map[string][]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetV2ImageIDsForDigests")
+	return ds.deploymentStore.GetV2ImageIDsForDigests(ctx, digests)
+}
+
 type DeploymentSearchResultConverter struct{}
 
 func (c *DeploymentSearchResultConverter) BuildName(result *pkgSearch.Result) string {
