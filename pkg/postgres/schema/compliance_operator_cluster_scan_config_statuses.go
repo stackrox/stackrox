@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -33,7 +31,21 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.ComplianceOperatorClusterScanConfigStatus)(nil)), "compliance_operator_cluster_scan_config_statuses")
+		schema = &walker.Schema{
+			Table:    "compliance_operator_cluster_scan_config_statuses",
+			Type:     "*storage.ComplianceOperatorClusterScanConfigStatus",
+			TypeName: "ComplianceOperatorClusterScanConfigStatus",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}},
+			{Schema: schema, Name: "ClusterId", ProtoBufName: "cluster_id", ColumnName: "ClusterId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetClusterId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Cluster ID", Enabled: true}},
+			{Schema: schema, Name: "ScanConfigId", ProtoBufName: "scan_config_id", ColumnName: "ScanConfigId", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetScanConfigId()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Compliance Scan Config ID", Enabled: true}},
+			{Schema: schema, Name: "LastUpdatedTime", ProtoBufName: "last_updated_time", ColumnName: "LastUpdatedTime", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetLastUpdatedTime()", false), Search: walker.SearchField{FieldName: "Compliance Scan Config Last Updated Time", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("Cluster", "id", true, false, false, false)
+		schema.Fields[2].SetReference("ComplianceOperatorScanConfigurationV2", "id", true, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Cluster": ClustersSchema,
 			"storage.ComplianceOperatorScanConfigurationV2": ComplianceOperatorScanConfigurationV2Schema,
@@ -42,7 +54,11 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, "complianceoperatorclusterscanconfigstatus", (*storage.ComplianceOperatorClusterScanConfigStatus)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, map[search.FieldLabel]*search.Field{
+			"Cluster ID":                               {FieldPath: "complianceoperatorclusterscanconfigstatus.cluster_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS},
+			"Compliance Scan Config ID":                {FieldPath: "complianceoperatorclusterscanconfigstatus.scan_config_id", Type: v1.SearchDataType_SEARCH_STRING, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS},
+			"Compliance Scan Config Last Updated Time": {FieldPath: "complianceoperatorclusterscanconfigstatus.last_updated_time.seconds", Type: v1.SearchDataType_SEARCH_DATETIME, Hidden: true, Category: v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS},
+		}))
 		schema.ScopingResource = resources.Compliance
 		RegisterTable(schema, CreateTableComplianceOperatorClusterScanConfigStatusesStmt, features.ComplianceEnhancements.Enabled)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS, schema)

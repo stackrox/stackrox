@@ -4,11 +4,9 @@ package schema
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/lib/pq"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -29,7 +27,36 @@ var (
 
 	// TestParent1Schema is the go schema for table `test_parent1`.
 	TestParent1Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestParent1)(nil)), "test_parent1")
+		var schema *walker.Schema
+		schema = &walker.Schema{
+			Table:    "test_parent1",
+			Type:     "*storage.TestParent1",
+			TypeName: "TestParent1",
+		}
+		child0 := &walker.Schema{
+			Parent:       schema,
+			Table:        "test_parent1_childrens",
+			Type:         "*storage.TestParent1_Child1Ref",
+			TypeName:     "TestParent1_Child1Ref",
+			ObjectGetter: "GetChildren()",
+		}
+		child0.Fields = []walker.Field{
+			{Schema: child0, Name: "testParent1ID", ProtoBufName: "", ColumnName: "test_parent1_Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("testParent1ID", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "idx", ProtoBufName: "", ColumnName: "idx", Type: "int", DataType: postgres.Integer, SQLType: "integer", ModelType: "int", ObjectGetter: walker.MakeObjectGetter("idx", true), Options: walker.PostgresOptions{PrimaryKey: true}},
+			{Schema: child0, Name: "ChildId", ProtoBufName: "child_id", ColumnName: "ChildId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetChildId()", false)},
+		}
+		child0.Fields[0].SetParentReference(schema, "Id")
+		child0.Fields[2].SetReference("TestChild1", "id", true, false, false, false)
+		schema.Children = []*walker.Schema{child0}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test Parent1 ID", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test parent1 count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "ParentId", ProtoBufName: "parent_id", ColumnName: "ParentId", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetParentId()", false)},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test Parent1 Val", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test parent1 val count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "StringSlice", ProtoBufName: "string_slice", ColumnName: "StringSlice", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetStringSlice()", false), Search: walker.SearchField{FieldName: "Test Parent1 String Slice", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test parent1 string slice count", DerivationType: search.CountDerivationType, DerivedDataType: postgres.DataType("")}}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+		schema.Fields[1].SetReference("TestGrandparent", "id", false, false, false, false)
+
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.TestGrandparent": TestGrandparentsSchema,
 			"storage.TestChild1":      TestChild1Schema,
@@ -38,7 +65,11 @@ var (
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
 			return referencedSchemas[fmt.Sprintf("storage.%s", messageTypeName)]
 		})
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(62), "testparent1", (*storage.TestParent1)(nil)))
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(62), map[search.FieldLabel]*search.Field{
+			"Test Parent1 ID":           {FieldPath: "testparent1.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(62)},
+			"Test Parent1 String Slice": {FieldPath: "testparent1.string_slice", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(62)},
+			"Test Parent1 Val":          {FieldPath: "testparent1.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(62)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		return schema
 	}()

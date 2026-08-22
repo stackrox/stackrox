@@ -27,6 +27,35 @@ func Add(path string, enumDescriptor *descriptorpb.EnumDescriptorProto) {
 	}
 }
 
+// AddValues registers enum values for a field path using a pre-computed name→number map.
+// Names in the values map should be in their ORIGINAL case (e.g., "UNSET", "LOW").
+// The forward lookup map stores lowercased keys; the reverse map stores original-case values.
+func AddValues(path string, values map[string]int32) {
+	if _, ok := enumMap[path]; !ok {
+		enumMap[path] = make(map[string]int32)
+		reverseEnumMap[path] = make(map[int32]string)
+	}
+	for name, num := range values {
+		enumMap[path][strings.ToLower(name)] = num
+		reverseEnumMap[path][num] = name
+	}
+}
+
+// Snapshot returns a deep copy of the current enum registry state.
+// The returned map is path → (original_case_name → number), suitable
+// for round-tripping through AddValues.
+func Snapshot() map[string]map[string]int32 {
+	result := make(map[string]map[string]int32, len(reverseEnumMap))
+	for path, values := range reverseEnumMap {
+		pathCopy := make(map[string]int32, len(values))
+		for num, name := range values {
+			pathCopy[name] = num
+		}
+		result[path] = pathCopy
+	}
+	return result
+}
+
 // GetComplement takes in a field path and a string to evaluate against, and returns the int32 form.
 // of the complement of matching enums.
 func GetComplement(fieldPath string, s string) []int32 {

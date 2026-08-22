@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -14,13 +15,15 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/spf13/cobra"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	_ "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/tools/generate-helpers/common"
 )
 
@@ -133,9 +136,11 @@ func main() {
 		Use: "generate store implementations",
 	}
 
+	var generateRegistryFiles bool
+	c.Flags().BoolVar(&generateRegistryFiles, "generate-registry-files", false, "generate enum_registry_list.go and *_search.go files")
+
 	var props properties
 	c.Flags().StringVar(&props.Type, "type", "", "the (Go) name of the object")
-	utils.Must(c.MarkFlagRequired("type"))
 
 	c.Flags().StringVar(&props.FeatureFlag, "feature-flag", "", "the feature flag that registers the schema")
 	c.Flags().StringVar(&props.RegisteredType, "registered-type", "", "the type this is registered in proto as storage.X")
@@ -156,7 +161,6 @@ func main() {
 	c.Flags().StringVar(&props.DefaultSortField, "default-sort", "", "if set, provides a default sort for search if one is not present")
 	c.Flags().BoolVar(&props.ReverseDefaultSort, "reverse-default-sort", false, "if true, reverses the default sort")
 	c.Flags().StringVar(&props.TransformSortOptions, "transform-sort-options", "", "if set, provides an option map for sort transforms")
-	utils.Must(c.MarkFlagRequired("schema-directory"))
 
 	c.Flags().StringVar(&props.Cycle, "cycle", "", "indicates that there is a cyclical foreign key reference, should be the path to the embedded foreign key")
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
@@ -164,6 +168,18 @@ func main() {
 	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
 	c.Flags().BoolVar(&props.NoSerialized, "no-serialized", false, "if true, all proto fields become individual DB columns with no serialized bytea blob")
 	c.RunE = func(*cobra.Command, []string) error {
+		// Handle --generate-registry-files mode
+		if generateRegistryFiles {
+			return batchGenerateRegistryFiles()
+		}
+
+		// Normal per-schema generation mode requires --type and --schema-directory flags
+		if props.Type == "" {
+			return fmt.Errorf("--type flag is required when not using --generate-registry-files")
+		}
+		if props.SchemaDirectory == "" {
+			return fmt.Errorf("--schema-directory flag is required when not using --generate-registry-files")
+		}
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
 		mt := protoutils.MessageType(typ)
@@ -186,6 +202,8 @@ func main() {
 			log.Fatal("Multiple primary keys defined, please check relevant proto file and ensure a primary key is specified once using the \"sql:\"pk\"\" tag")
 		}
 
+		schemaBuilder := SerializeSchema(schema, "schema")
+
 		var searchCategory string
 		if props.SearchCategory != "" {
 			if asInt, err := strconv.Atoi(props.SearchCategory); err == nil {
@@ -193,6 +211,21 @@ func main() {
 			} else {
 				searchCategory = fmt.Sprintf("SearchCategory_%s", props.SearchCategory)
 			}
+		}
+
+		var searchFieldsLiteral string
+		var enumRegistration string
+		if props.SearchCategory != "" {
+			categoryEnum := parseSearchCategory(props.SearchCategory)
+			prefix := strings.ToLower(schema.TypeName)
+			protoInstance := reflect.New(mt.Elem()).Interface()
+
+			beforeEnums := enumregistry.Snapshot()
+			optionsMap := search.Walk(categoryEnum, prefix, protoInstance)
+			afterEnums := enumregistry.Snapshot()
+
+			searchFieldsLiteral = SerializeSearchFields(optionsMap, "v1."+searchCategory)
+			enumRegistration = SerializeEnumEntries(beforeEnums, afterEnums)
 		}
 
 		searchScope := make([]string, 0, len(props.SearchScope))
@@ -257,6 +290,11 @@ func main() {
 
 			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
 			"NoSerialized":             props.NoSerialized,
+
+			"SchemaBuilder":        schemaBuilder,
+			"SearchFieldsLiteral":  searchFieldsLiteral,
+			"SearchFieldsVariable": strings.ReplaceAll(schema.Table, "_", "") + "SearchFields",
+			"EnumRegistration":     enumRegistration,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
@@ -331,4 +369,15 @@ func v1SearchCategoryString(category string) string {
 		return fmt.Sprintf("v1.SearchCategory(%d)", asInt)
 	}
 	return fmt.Sprintf("v1.SearchCategory_%s", category)
+}
+
+func parseSearchCategory(category string) v1.SearchCategory {
+	if asInt, err := strconv.Atoi(category); err == nil {
+		return v1.SearchCategory(asInt)
+	}
+	if val, ok := v1.SearchCategory_value[category]; ok {
+		return v1.SearchCategory(val)
+	}
+	log.Fatalf("unknown search category: %s", category)
+	return 0
 }

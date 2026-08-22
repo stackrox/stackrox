@@ -3,10 +3,7 @@
 package schema
 
 import (
-	"reflect"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -27,8 +24,21 @@ var (
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.TestG3GrandChild1)(nil)), "test_g3_grand_child1")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory(106), "testg3grandchild1", (*storage.TestG3GrandChild1)(nil)))
+		schema = &walker.Schema{
+			Table:    "test_g3_grand_child1",
+			Type:     "*storage.TestG3GrandChild1",
+			TypeName: "TestG3GrandChild1",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Id", ProtoBufName: "id", ColumnName: "Id", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetId()", false), Options: walker.PostgresOptions{PrimaryKey: true}, Search: walker.SearchField{FieldName: "Test G3Grandchild1 ID", Enabled: true}},
+			{Schema: schema, Name: "Val", ProtoBufName: "val", ColumnName: "Val", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetVal()", false), Search: walker.SearchField{FieldName: "Test G3Grandchild1 Val", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory(106), map[search.FieldLabel]*search.Field{
+			"Test G3Grandchild1 ID":  {FieldPath: "testg3grandchild1.id", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(106)},
+			"Test G3Grandchild1 Val": {FieldPath: "testg3grandchild1.val", Type: v1.SearchDataType_SEARCH_STRING, Category: v1.SearchCategory(106)},
+		}))
 		schema.ScopingResource = resources.Namespace
 		RegisterTable(schema, CreateTableTestG3GrandChild1Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory(106), schema)

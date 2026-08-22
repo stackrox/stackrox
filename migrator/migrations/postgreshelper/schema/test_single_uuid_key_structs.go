@@ -3,7 +3,6 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
 	"github.com/lib/pq"
@@ -13,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -27,9 +27,35 @@ var (
 
 	// TestSingleUUIDKeyStructsSchema is the go schema for table `test_single_uuid_key_structs`.
 	TestSingleUUIDKeyStructsSchema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.TestSingleUUIDKeyStruct)(nil)), "test_single_uuid_key_structs")
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_SEARCH_UNSET, "testsingleuuidkeystruct", (*storage.TestSingleUUIDKeyStruct)(nil)))
+		schema := GetSchemaForTable("test_single_uuid_key_structs")
+		if schema != nil {
+			return schema
+		}
+		schema = &walker.Schema{
+			Table:    "test_single_uuid_key_structs",
+			Type:     "*storage.TestSingleUUIDKeyStruct",
+			TypeName: "TestSingleUUIDKeyStruct",
+		}
+		schema.Fields = []walker.Field{
+			{Schema: schema, Name: "Key", ProtoBufName: "key", ColumnName: "Key", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetKey()", false), Options: walker.PostgresOptions{PrimaryKey: true, ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test Key", Enabled: true}},
+			{Schema: schema, Name: "Name", ProtoBufName: "name", ColumnName: "Name", Type: "string", DataType: postgres.String, SQLType: "varchar", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetName()", false), Options: walker.PostgresOptions{Unique: true}, Search: walker.SearchField{FieldName: "Test Name", Enabled: true}},
+			{Schema: schema, Name: "StringSlice", ProtoBufName: "string_slice", ColumnName: "StringSlice", Type: "[]string", DataType: postgres.StringArray, SQLType: "text[]", ModelType: "*pq.StringArray", ObjectGetter: walker.MakeObjectGetter("GetStringSlice()", false), Search: walker.SearchField{FieldName: "Test String Slice", Enabled: true}},
+			{Schema: schema, Name: "Bool", ProtoBufName: "bool", ColumnName: "Bool", Type: "bool", DataType: postgres.Bool, SQLType: "bool", ModelType: "bool", ObjectGetter: walker.MakeObjectGetter("GetBool()", false), Search: walker.SearchField{FieldName: "Test Bool", Enabled: true}},
+			{Schema: schema, Name: "Uint64", ProtoBufName: "uint64", ColumnName: "Uint64", Type: "uint64", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "uint64", ObjectGetter: walker.MakeObjectGetter("GetUint64()", false), Search: walker.SearchField{FieldName: "Test Uint64", Enabled: true}},
+			{Schema: schema, Name: "Int64", ProtoBufName: "int64", ColumnName: "Int64", Type: "int64", DataType: postgres.BigInteger, SQLType: "bigint", ModelType: "int64", ObjectGetter: walker.MakeObjectGetter("GetInt64()", false), Search: walker.SearchField{FieldName: "Test Int64", Enabled: true}},
+			{Schema: schema, Name: "Float", ProtoBufName: "float", ColumnName: "Float", Type: "float32", DataType: postgres.Numeric, SQLType: "numeric", ModelType: "float32", ObjectGetter: walker.MakeObjectGetter("GetFloat()", false), Search: walker.SearchField{FieldName: "Test Float", Enabled: true}},
+			{Schema: schema, Name: "Labels", ProtoBufName: "labels", ColumnName: "Labels", Type: "map[string]string", DataType: postgres.Map, SQLType: "jsonb", ModelType: "map[string]string", ObjectGetter: walker.MakeObjectGetter("GetLabels()", false), Search: walker.SearchField{FieldName: "Test Labels", Enabled: true}},
+			{Schema: schema, Name: "Timestamp", ProtoBufName: "timestamp", ColumnName: "Timestamp", Type: "*timestamppb.Timestamp", DataType: postgres.DateTime, SQLType: "timestamp", ModelType: "*time.Time", ObjectGetter: walker.MakeObjectGetter("GetTimestamp()", false), Search: walker.SearchField{FieldName: "Test Timestamp", Enabled: true}},
+			{Schema: schema, Name: "Enum", ProtoBufName: "enum", ColumnName: "Enum", Type: "storage.TestSingleUUIDKeyStruct_Enum", DataType: postgres.Enum, SQLType: "integer", ModelType: "storage.TestSingleUUIDKeyStruct_Enum", ObjectGetter: walker.MakeObjectGetter("GetEnum()", false), Search: walker.SearchField{FieldName: "Test Enum", Enabled: true}, DerivedSearchFields: []walker.DerivedSearchField{{DerivedFrom: "test string affected by enum2", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "invalid test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}, {DerivedFrom: "test string affected by enum1", DerivationType: search.CustomFieldType, DerivedDataType: postgres.Integer}}},
+			{Schema: schema, Name: "Enums", ProtoBufName: "enums", ColumnName: "Enums", Type: "[]storage.TestSingleUUIDKeyStruct_Enum", DataType: postgres.EnumArray, SQLType: "int[]", ModelType: "*pq.Int32Array", ObjectGetter: walker.MakeObjectGetter("GetEnums()", false), Search: walker.SearchField{FieldName: "Test Enum Slice", Enabled: true}},
+			{Schema: schema, Name: "OptionalUuid", ProtoBufName: "optional_uuid", ColumnName: "OptionalUuid", Type: "string", DataType: postgres.String, SQLType: "uuid", ModelType: "string", ObjectGetter: walker.MakeObjectGetter("GetOptionalUuid()", false), Options: walker.PostgresOptions{ColumnType: "uuid"}, Search: walker.SearchField{FieldName: "Test UUID", Enabled: true}},
+			{Schema: schema, Name: "serialized", ProtoBufName: "", ColumnName: "serialized", Type: "[]byte", DataType: postgres.DataType(""), SQLType: "bytea", ModelType: "[]byte", ObjectGetter: walker.MakeObjectGetter("serialized", true)},
+		}
+
+		schema.SetOptionsMap(search.OptionsMapFromMap(v1.SearchCategory_SEARCH_UNSET, testsingleuuidkeystructsSearchFields))
 		schema.ScopingResource = resources.Namespace
+		RegisterTable(schema, CreateTableTestSingleUUIDKeyStructsStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_SEARCH_UNSET, schema)
 		return schema
 	}()
 )
