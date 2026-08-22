@@ -81,6 +81,15 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     return (
         <>
             <PageTitle title="Collections" />
+            <Alert
+                title="Collections are deprecated and will be removed in a future release"
+                component="p"
+                variant="info"
+                isInline
+            >
+                Collection usage in automated reports has been replaced with a native scoping
+                implementation.
+            </Alert>
             <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex direction={{ default: 'column' }}>

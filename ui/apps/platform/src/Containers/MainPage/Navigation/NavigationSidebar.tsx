@@ -247,7 +247,9 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'link',
-                    content: 'Collections',
+                    content: (
+                        <NavigationContent variant="Deprecated">Collections</NavigationContent>
+                    ),
                     path: collectionsBasePath,
                     routeKey: 'collections',
                 },
