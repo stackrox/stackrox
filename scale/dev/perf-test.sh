@@ -21,7 +21,6 @@ PROCESS_BASELINE_SCRIPT="${STACKROX_DIR}/scratch/process-baselines/lock-all-proc
 
 num_sensors=$1
 run_time=$2
-lock_baselines=$3
 num_deployments=$4
 
 logmein_script="${HOME}/go/src/github.com/stackrox/workflow/bin/logmein"
@@ -32,7 +31,7 @@ export ROX_SCANNER_V4=false
 
 kubectl delete ns stackrox1 || true
 
-results_dir="process_baseline_results_${num_sensors}_${run_time}_${lock_baselines}_${num_deployments}"
+results_dir="perf/results_${num_sensors}_${run_time}_${num_deployments}"
 rm -r "$results_dir" || mkdir "$results_dir"
 
 script_start_time=$(date +%s)
