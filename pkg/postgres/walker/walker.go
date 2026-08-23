@@ -3,6 +3,7 @@ package walker
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/postgres"
@@ -114,7 +115,7 @@ func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
 			})
 		}
 		additionalFields = append(additionalFields, getIdxField(s))
-		s.Fields = append(additionalFields, s.Fields...)
+		s.Fields = slices.Concat(additionalFields, s.Fields)
 	}
 
 	if len(s.Children) > 0 {
