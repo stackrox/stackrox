@@ -23,7 +23,7 @@ describe('Vulnerability Reports Overview Navigation', () => {
     });
 
     it('navigates to the node vulnerability reports page', () => {
-        interceptAndOverridePermissions({ Node: 'READ_ACCESS' });
+        interceptAndOverridePermissions({ Cluster: 'READ_ACCESS', Node: 'READ_ACCESS' });
         interceptAndOverrideFeatureFlags({ ROX_NODE_VULNERABILITY_REPORTS: true });
 
         visit(vulnerabilityReportsOverviewPath);
