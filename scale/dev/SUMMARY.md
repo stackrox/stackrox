@@ -206,6 +206,65 @@ Before running full test suite:
 4. **Comparison**: How does this compare to process event handling?
 5. **Database**: What is the alert storage rate (MB/sec)?
 
+## Plotting Scripts
+
+Three plotting scripts are provided to visualize test results:
+
+### 1. plot-file-activity.py
+Python script for comparing two metric files (without policy vs with policy).
+
+Usage:
+```bash
+python3 plot-file-activity.py \
+  results1/metrics_central_cpu.txt "Without Policy" \
+  results2/metrics_central_cpu.txt "With Policy" \
+  "Central CPU" "CPU Cores" \
+  output.png
+```
+
+### 2. MakePlots-file-activity.sh
+Generates all comparison plots for a single batch size.
+
+Usage:
+```bash
+./MakePlots-file-activity.sh \
+  <without_policy_dir> \
+  <with_policy_dir> \
+  <output_dir>
+```
+
+Generates 10 plots:
+- CPU usage for central, central-db, sensor
+- Memory usage for central, central-db, sensor
+- Row counts for alerts, deployments tables
+- Size in bytes for alerts, deployments tables
+
+### 3. MakeAllPlots-file-activity.sh
+Batch processes all test results.
+
+Usage:
+```bash
+./MakeAllPlots-file-activity.sh [base_dir] [num_sensors] [run_time]
+```
+
+Default: `./MakeAllPlots-file-activity.sh perf 1 10m`
+
+### 4. plot-batch-comparison.py
+Advanced script showing how metrics scale with event rate.
+
+Usage:
+```bash
+python3 plot-batch-comparison.py <base_dir> [output_dir]
+```
+
+Generates 6 scaling plots:
+- Central CPU vs event rate
+- Central memory vs event rate
+- Central-DB CPU vs event rate
+- Alert count vs event rate
+- Alert size vs event rate
+- Policy overhead percentage vs event rate
+
 ## Files Modified/Created
 
 ```
@@ -215,6 +274,10 @@ scale/dev/
 ├── enable-file-activity-policy.sh      (new)
 ├── prometheus-query-file-activity.sh   (new)
 ├── run-file-activity-tests.sh          (new)
+├── plot-file-activity.py               (new)
+├── MakePlots-file-activity.sh          (new)
+├── MakeAllPlots-file-activity.sh       (new)
+├── plot-batch-comparison.py            (new)
 ├── FILE_ACTIVITY_TESTING.md            (new)
 └── SUMMARY.md                          (this file)
 
@@ -225,6 +288,29 @@ scale/workloads/
 ├── file-activity-batch-250.yaml        (new)
 └── file-activity-batch-500.yaml        (new)
 ```
+
+## Typical Workflow
+
+1. **Run tests** (automated):
+   ```bash
+   ./run-file-activity-tests.sh 1 10m
+   ```
+
+2. **Generate individual plots**:
+   ```bash
+   ./MakeAllPlots-file-activity.sh perf 1 10m
+   ```
+
+3. **Generate scaling comparison**:
+   ```bash
+   python3 plot-batch-comparison.py perf
+   ```
+
+4. **Review results**:
+   ```bash
+   ls -R perf/plots_*
+   ls perf/comparison_plots/
+   ```
 
 ---
 

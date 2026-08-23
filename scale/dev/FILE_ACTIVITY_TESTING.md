@@ -165,6 +165,48 @@ For production testing, you may want to create more specific policies that match
 - Specific file operations (create, delete, modify, permission change)
 - Specific containers or deployments
 
+## Visualizing Results
+
+### Generate Plots for a Single Test
+
+Compare without policy vs with policy for one batch size:
+
+```bash
+./MakePlots-file-activity.sh \
+  perf/file_activity_results_1_10m_file-activity-batch-100_policy_false \
+  perf/file_activity_results_1_10m_file-activity-batch-100_policy_true \
+  perf/plots_batch-100
+```
+
+This generates comparison plots for:
+- CPU usage (central, central-db, sensor)
+- Memory usage (central, central-db, sensor)
+- Database table sizes (alerts, deployments)
+
+### Generate Plots for All Tests
+
+Process all batch sizes at once:
+
+```bash
+./MakeAllPlots-file-activity.sh perf 1 10m
+```
+
+### Generate Scaling Comparison Plots
+
+See how metrics scale with event rate:
+
+```bash
+python3 plot-batch-comparison.py perf perf/comparison_plots
+```
+
+This creates plots showing:
+- CPU/memory usage vs event rate
+- Alert count and size vs event rate
+- Policy enforcement overhead percentage
+- Scaling trends across all batch sizes
+
+All plots are saved as PNG files with 150 DPI resolution.
+
 ## Tips
 
 1. **Start with low batch sizes** (10-50) to establish baseline performance
@@ -172,6 +214,7 @@ For production testing, you may want to create more specific policies that match
 3. **Compare with and without policy** to isolate policy enforcement overhead
 4. **Use diagnostic bundles** to check for errors or warnings in component logs
 5. **Run multiple iterations** at the same configuration to check for consistency
+6. **Generate plots after each test run** to visualize trends immediately
 
 ## Cleanup
 
@@ -184,9 +227,9 @@ kubectl delete ns stackrox stackrox1
 ## Future Enhancements
 
 Potential improvements to the testing framework:
-- [ ] Add plotting scripts to visualize results (similar to MakePlots.sh)
 - [ ] Test with multiple policies active simultaneously
 - [ ] Vary nodeEventPercent to test container vs node event handling
 - [ ] Test with different numPaths values (path diversity impact)
-- [ ] Add alerts table query to show alert growth rate over time
+- [ ] Add real-time alert generation rate monitoring
 - [ ] Compare performance across different StackRox versions
+- [ ] Add automated regression detection in plots
