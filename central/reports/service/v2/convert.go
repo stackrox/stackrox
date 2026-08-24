@@ -612,6 +612,10 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			snapshotv2.Filter = &apiV2.ReportSnapshot_NodeVulnReportFilters{
 				NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
 			}
+		default:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
+			}
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)
