@@ -57,12 +57,11 @@ func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 type mockDialer struct {
 	err      error
 	errQueue []error
-	callIdx  int
+	callIdx  atomic.Int32
 }
 
 func (m *mockDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
-	idx := m.callIdx
-	m.callIdx++
+	idx := int(m.callIdx.Add(1) - 1)
 	if idx < len(m.errQueue) && m.errQueue[idx] != nil {
 		return nil, m.errQueue[idx]
 	}
