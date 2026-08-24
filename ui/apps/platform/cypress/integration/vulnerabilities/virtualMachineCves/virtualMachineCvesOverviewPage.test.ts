@@ -12,6 +12,7 @@ import {
 } from './VirtualMachineCve.helpers';
 
 const fixturePathListVMs = 'vulnerabilities/virtualMachineCves/listVMs';
+const virtualMachineTabParams = { entityTab: 'VirtualMachine' };
 
 describe('Virtual Machine CVEs - Overview Page', () => {
     withAuth();
@@ -35,28 +36,37 @@ describe('Virtual Machine CVEs - Overview Page', () => {
                 [listVirtualMachinesAlias]: {
                     fixture: fixturePathListVMs,
                 },
-            }
+            },
+            virtualMachineTabParams
         );
         cy.get('h1').contains('Virtual machine vulnerabilities');
     });
 
     it('should render the overview page heading and description', () => {
-        visitVirtualMachineCvesOverviewPage(routeMatcherMapForVirtualMachines, {
-            [listVirtualMachinesAlias]: {
-                fixture: fixturePathListVMs,
+        visitVirtualMachineCvesOverviewPage(
+            routeMatcherMapForVirtualMachines,
+            {
+                [listVirtualMachinesAlias]: {
+                    fixture: fixturePathListVMs,
+                },
             },
-        });
+            virtualMachineTabParams
+        );
 
         cy.get('h1').contains('Virtual machine vulnerabilities');
         cy.get('body').contains('Prioritize and remediate observed CVEs across virtual machines');
     });
 
     it('should render VM rows from fixture data', () => {
-        visitVirtualMachineCvesOverviewPage(routeMatcherMapForVirtualMachines, {
-            [listVirtualMachinesAlias]: {
-                fixture: fixturePathListVMs,
+        visitVirtualMachineCvesOverviewPage(
+            routeMatcherMapForVirtualMachines,
+            {
+                [listVirtualMachinesAlias]: {
+                    fixture: fixturePathListVMs,
+                },
             },
-        });
+            virtualMachineTabParams
+        );
 
         cy.get('tbody tr').should('have.length', 3);
 
@@ -84,11 +94,15 @@ describe('Virtual Machine CVEs - Overview Page', () => {
     });
 
     it('should link VM names to the correct detail page', () => {
-        visitVirtualMachineCvesOverviewPage(routeMatcherMapForVirtualMachines, {
-            [listVirtualMachinesAlias]: {
-                fixture: fixturePathListVMs,
+        visitVirtualMachineCvesOverviewPage(
+            routeMatcherMapForVirtualMachines,
+            {
+                [listVirtualMachinesAlias]: {
+                    fixture: fixturePathListVMs,
+                },
             },
-        });
+            virtualMachineTabParams
+        );
 
         cy.get('tbody tr td[data-label="Virtual machine"] a')
             .first()
@@ -101,11 +115,15 @@ describe('Virtual Machine CVEs - Overview Page', () => {
     });
 
     it('should display an empty state when no VMs are returned', () => {
-        visitVirtualMachineCvesOverviewPage(routeMatcherMapForVirtualMachines, {
-            [listVirtualMachinesAlias]: {
-                body: { vms: [], totalCount: 0 },
+        visitVirtualMachineCvesOverviewPage(
+            routeMatcherMapForVirtualMachines,
+            {
+                [listVirtualMachinesAlias]: {
+                    body: { vms: [], totalCount: 0 },
+                },
             },
-        });
+            virtualMachineTabParams
+        );
 
         cy.get('body').contains('No CVEs have been detected');
     });
@@ -116,7 +134,11 @@ describe('Virtual Machine CVEs - Overview Page', () => {
                 fixture: fixturePathListVMs,
             },
         }).then(({ waitForRequests }) => {
-            visitVirtualMachineCvesOverviewPage();
+            visitVirtualMachineCvesOverviewPage(
+                undefined,
+                undefined,
+                virtualMachineTabParams
+            );
             waitForRequests();
 
             sortByTableHeader('Virtual machine');
@@ -157,7 +179,11 @@ describe('Virtual Machine CVEs - Overview Page', () => {
         interceptAndWatchRequests(routeMatcherMapForVirtualMachines, {
             [listVirtualMachinesAlias]: paginatedFixture,
         }).then(({ waitForRequests }) => {
-            visitVirtualMachineCvesOverviewPage();
+            visitVirtualMachineCvesOverviewPage(
+                undefined,
+                undefined,
+                virtualMachineTabParams
+            );
             waitForRequests();
 
             paginateNext();

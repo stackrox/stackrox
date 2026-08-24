@@ -36,24 +36,27 @@ export const routeMatcherMapForVirtualMachineComponents = {
     },
 };
 
+function virtualMachineCvesOverviewPath(params?: Record<string, string>): string {
+    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return `/main/vulnerabilities/virtual-machine-cves${query}`;
+}
+
 export function visitVirtualMachineCvesOverviewPage(
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
-    staticResponseMap?: Record<string, RouteHandler>
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
 ) {
-    visit(
-        '/main/vulnerabilities/virtual-machine-cves?entityTab=VirtualMachine',
-        routeMatcherMap,
-        staticResponseMap
-    );
+    visit(virtualMachineCvesOverviewPath(params), routeMatcherMap, staticResponseMap);
 }
 
 export function visitVirtualMachineCvesOverviewPageWithStaticPermissions(
     resourceToAccess: Record<string, string>,
     routeMatcherMap?: Record<string, RouteMatcherOptions>,
-    staticResponseMap?: Record<string, RouteHandler>
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
 ) {
     visitWithStaticResponseForPermissions(
-        '/main/vulnerabilities/virtual-machine-cves?entityTab=VirtualMachine',
+        virtualMachineCvesOverviewPath(params),
         { body: { resourceToAccess } },
         routeMatcherMap,
         staticResponseMap
