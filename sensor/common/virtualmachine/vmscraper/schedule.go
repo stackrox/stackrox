@@ -1,7 +1,6 @@
 package vmscraper
 
 import (
-	"math"
 	"time"
 )
 
@@ -50,25 +49,6 @@ func newVMIndexReportWindow(pollInterval time.Duration) time.Duration {
 		return 0
 	}
 	return min(maxNewVMIndexReportWindow, pollInterval/newVMIndexReportWindowPollDivisor)
-}
-
-// suggestedPollInterval is the poll interval whose steady-state spread width
-// fits numVMs at roughly one VM per tick.
-func suggestedPollInterval(numVMs int, tick time.Duration, spreadFraction float64) time.Duration {
-	if numVMs <= 0 || tick <= 0 || spreadFraction <= 0 {
-		return 0
-	}
-	want := time.Duration(math.Ceil(float64(numVMs) * float64(tick) / spreadFraction))
-	return max(minPollInterval, want)
-}
-
-// maxVMsForSteadyState is how many VMs fit in the steady-state spread window
-// at one per tick.
-func maxVMsForSteadyState(tick, poll time.Duration, spreadFraction float64) int {
-	if tick <= 0 || spreadFraction <= 0 {
-		return 0
-	}
-	return int(steadySpreadWidth(poll, spreadFraction) / tick)
 }
 
 // randOffset draws a delay in [0, max] from a unit sample in [0, 1].

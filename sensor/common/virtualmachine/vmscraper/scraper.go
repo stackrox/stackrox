@@ -90,7 +90,7 @@ type VMScraper struct {
 	now                   func() time.Time
 	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
 	randFloat64          func() float64
-	lastPollAdviceNumVMs int
+	lastSpreadWarnNumVMs int
 
 	mu              sync.Mutex
 	vmState         map[string]*vmState
@@ -327,29 +327,22 @@ func (s *VMScraper) reconcile() {
 		numVMs = len(s.vmState)
 		s.lastReconcile = now
 	})
-	s.logPollIntervalAdvice(numVMs)
+	s.warnIfSpreadSaturated(numVMs)
 }
 
-func (s *VMScraper) logPollIntervalAdvice(numVMs int) {
-	if s.tickInterval <= 0 || s.lastPollAdviceNumVMs == numVMs {
+// warnIfSpreadSaturated logs when running VMs exceed what this Sensor's
+// cadence spread can serialize at one scrape per tick.
+func (s *VMScraper) warnIfSpreadSaturated(numVMs int) {
+	if s.tickInterval <= 0 || s.lastSpreadWarnNumVMs == numVMs {
 		return
 	}
-	s.lastPollAdviceNumVMs = numVMs
-
-	capacity := maxVMsForSteadyState(s.tickInterval, s.interval, s.spreadFraction)
-	remaining := capacity - numVMs
-	safe := suggestedPollInterval(numVMs, s.tickInterval, s.spreadFraction)
-	log.Debugf("VMScraper: %d running VMs, poll interval %s, safe poll interval %s, current interval fits ~%d VMs in steady state (up to %d remaining)",
-		numVMs, s.interval, safe, capacity, remaining)
-
-	if remaining >= 0 {
+	s.lastSpreadWarnNumVMs = numVMs
+	capacity := int(steadySpreadWidth(s.interval, s.spreadFraction) / s.tickInterval)
+	if capacity <= 0 || numVMs <= capacity {
 		return
 	}
-	log.Warnf("VMScraper: with ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%s, "+
-		"this Sensor can handle roughly %d VMs in steady state without stressing Central and Scanner. "+
-		"This cluster has %d running VMs. Set ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to at least %s "+
-		"or accept that Central may receive periodic load spikes.",
-		s.interval, capacity, numVMs, safe)
+	log.Warnf("VMScraper: %d running VMs exceed what ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%s can space out on this Sensor (about %d); index reports may be forwarded in bursts.",
+		numVMs, s.interval, capacity)
 }
 
 func (s *VMScraper) dueKeys() []string {
