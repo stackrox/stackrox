@@ -479,7 +479,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
-			converted := s.service.convertProtoScheduleToV2(c.schedule)
+			converted := ConvertProtoScheduleToV2(c.schedule)
 			protoassert.Equal(t, c.result, converted)
 		})
 	}
@@ -515,7 +515,7 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 				Hour:         c.hour,
 				Minute:       c.minute,
 			}
-			converted := s.service.convertV2ScheduleToProto(v2Schedule)
+			converted := ConvertV2ScheduleToProto(v2Schedule)
 			assert.Equal(t, c.hour, converted.GetHour())
 			assert.Equal(t, c.minute, converted.GetMinute())
 			assert.Equal(t, storage.Schedule_DAILY, converted.GetIntervalType())
@@ -527,7 +527,7 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 				Hour:         c.hour,
 				Minute:       c.minute,
 			}
-			converted := s.service.convertProtoScheduleToV2(storageSchedule)
+			converted := ConvertProtoScheduleToV2(storageSchedule)
 			assert.Equal(t, c.hour, converted.GetHour())
 			assert.Equal(t, c.minute, converted.GetMinute())
 			assert.Equal(t, apiV2.ReportSchedule_DAILY, converted.GetIntervalType())
@@ -542,8 +542,8 @@ func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
 					DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: []int32{1}},
 				},
 			}
-			storage := s.service.convertV2ScheduleToProto(v2Schedule)
-			roundTripped := s.service.convertProtoScheduleToV2(storage)
+			storage := ConvertV2ScheduleToProto(v2Schedule)
+			roundTripped := ConvertProtoScheduleToV2(storage)
 			assert.Equal(t, c.hour, roundTripped.GetHour())
 			assert.Equal(t, c.minute, roundTripped.GetMinute())
 		})
@@ -580,7 +580,7 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
-			converted := s.service.convertV2ScheduleToProto(c.schedule)
+			converted := ConvertV2ScheduleToProto(c.schedule)
 			protoassert.Equal(t, c.result, converted)
 		})
 	}

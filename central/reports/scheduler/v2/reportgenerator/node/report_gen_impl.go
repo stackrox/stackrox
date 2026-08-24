@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
@@ -24,8 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-
-	blobDS "github.com/stackrox/rox/central/blob/datastore"
 )
 
 var (

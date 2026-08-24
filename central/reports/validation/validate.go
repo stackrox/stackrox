@@ -333,8 +333,8 @@ func (v *Validator) validateNodeFilters(filters *apiV2.NodeVulnerabilityReportFi
 		return errors.Wrap(errox.InvalidArgs, "Node vulnerability report filters cannot be nil")
 	}
 
-	// TODO(ROX-36250): Add support for since_last_sent_scheduled_report and since_start_date
-	// filters once FirstNodeOccurrence timestamp is available in the data model
+	// TODO: Add support for since_last_sent_scheduled_report and since_start_date filters
+	// once FirstNodeOccurrence timestamp is available in the data model
 	if filters.GetCvesSince() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Node vulnerability report filters must specify CVE time filter")
 	}
