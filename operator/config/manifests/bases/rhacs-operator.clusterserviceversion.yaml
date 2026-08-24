@@ -1136,14 +1136,9 @@ spec:
           * for new installations starting with ACS 4.8, the default is: AutoSense.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
-      - description: |-
-          Whether virtual machine scanning and VSOCK RBAC are enabled.
-          The default is: Disabled.
-        displayName: Mode
-        path: virtualMachines.mode
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
-        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: Settings for the virtual machine scraper running in Sensor.
+        displayName: Scraper
+        path: virtualMachines.scraper
       - description: |-
           Maximum number of virtual machines scraped concurrently in each poll cycle.
           The default is: 20.
@@ -1227,9 +1222,6 @@ spec:
           The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - description: Settings for the virtual machine scraper running in Sensor.
-        displayName: Scraper
-        path: virtualMachines.scraper
       - description: |-
           Maximum response size in KB from a virtual machine agent.
           Responses larger than this are rejected and that virtual machine is skipped until the next poll.
@@ -1306,7 +1298,7 @@ spec:
           How often the scraper polls virtual machines for new reports.
           Minimum interval is 1m; shorter values are rounded up.
           Shorter intervals refresh scans more often but increase the load on kubevirt API server.
-          The default is: 5m.
+          The default is: 4h.
         displayName: Poll Interval
         path: virtualMachines.scraper.pollInterval
       - description: |-
@@ -1426,7 +1418,7 @@ spec:
         path: processIndicators
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Settings for virtual machine scanning (VSOCK RBAC and scraper).
+      - description: Settings for the virtual machine scraper.
         displayName: Virtual Machines Settings
         path: virtualMachines
       - description: |-
