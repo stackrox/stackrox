@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -30,8 +29,6 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	nodeReportGenCtx = sac.WithAllAccess(context.Background())
 
 	nodeQueryParts = &reportGen.ReportQueryParts{

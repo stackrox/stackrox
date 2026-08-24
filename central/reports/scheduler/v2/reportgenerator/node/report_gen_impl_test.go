@@ -6,13 +6,12 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"time"
-
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -99,7 +98,7 @@ func (s *NodeReportGeneratorTestSuite) testNodes() []*storage.Node {
 
 	var nodes []*storage.Node
 	for _, cluster := range s.clusters {
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			nodeName := fmt.Sprintf("%s_node%d", cluster.GetName(), i)
 			node := &storage.Node{
 				Id:          uuid.NewV4().String(),
