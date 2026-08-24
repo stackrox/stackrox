@@ -120,7 +120,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		storage.ReportSnapshot_VULNERABILITY: imageQueue,
 	}
 
-	if features.NodeVulnerabilityReports.Enabled() {
+	if features.NodeVulnerabilityReports.Enabled() && nodeReportGenerator != nil {
 		nodeQueue := reportqueue.New()
 		queues = append(queues, queueGeneratorBinding{queue: nodeQueue, generator: nodeReportGenerator})
 		queueByType[storage.ReportSnapshot_NODE_VULNERABILITY] = nodeQueue
@@ -134,6 +134,7 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		notifierDatastore:      notifierDatastore,
 		validator:              validator,
 		queues:                 queues,
+		nextQueueIdx:           0,
 		queueByType:            queueByType,
 		readyForReports:        concurrency.NewSignal(),
 		Schema:                 schema,
