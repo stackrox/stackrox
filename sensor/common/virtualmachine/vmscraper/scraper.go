@@ -274,8 +274,10 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 		metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
 	})
 
-	if len(due) > 0 {
-		metrics.PullStartsPerTick.Observe(float64(len(due)))
+	// A tick launches every due VM, so this is the start count.
+	started := len(due)
+	if started > 0 {
+		metrics.PullStartsPerTick.Observe(float64(started))
 	}
 
 	var successCount atomic.Int32
@@ -343,8 +345,6 @@ func (s *VMScraper) logPollIntervalAdvice(numVMs int) {
 	if remaining >= 0 {
 		return
 	}
-	// Let's advise the user to increase the poll interval if the current interval.
-	// Do not advise a shorter interval if the current interval is already safe.
 	log.Warnf("VMScraper: with ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=%s, "+
 		"this Sensor can handle roughly %d VMs in steady state without stressing Central and Scanner. "+
 		"This cluster has %d running VMs. Set ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to at least %s "+

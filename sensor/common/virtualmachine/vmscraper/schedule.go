@@ -71,15 +71,6 @@ func maxVMsForSteadyState(tick, poll time.Duration, spreadFraction float64) int 
 	return int(steadySpreadWidth(poll, spreadFraction) / tick)
 }
 
-// maxVMsForNewVMIndexReportWindow is how many VMs fit in the new-VM index
-// report window at one per tick. Extra VMs share ticks; this is density, not a hard limit.
-func maxVMsForNewVMIndexReportWindow(tick, poll time.Duration) int {
-	if tick <= 0 {
-		return 0
-	}
-	return int(newVMIndexReportWindow(poll) / tick)
-}
-
 // randOffset draws a delay in [0, max] from a unit sample in [0, 1].
 func randOffset(max time.Duration, unit float64) time.Duration {
 	if max <= 0 {

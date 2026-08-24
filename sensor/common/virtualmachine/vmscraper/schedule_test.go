@@ -171,39 +171,6 @@ func TestMaxVMsForSteadyState(t *testing.T) {
 	}
 }
 
-func TestMaxVMsForNewVMIndexReportWindow(t *testing.T) {
-	t.Parallel()
-	tick := 10 * time.Second
-	cases := map[string]struct {
-		tick time.Duration
-		poll time.Duration
-		want int
-	}{
-		"5m poll fits 10 VMs at 10s tick": {
-			tick: tick,
-			poll: 5 * time.Minute,
-			want: 10,
-		},
-		"2h poll fits 120 VMs at 10s tick": {
-			tick: tick,
-			poll: 2 * time.Hour,
-			want: 120,
-		},
-		"zero tick": {
-			poll: 5 * time.Minute,
-		},
-		"zero poll": {
-			tick: tick,
-		},
-	}
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tc.want, maxVMsForNewVMIndexReportWindow(tc.tick, tc.poll))
-		})
-	}
-}
-
 func TestRandOffset(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, time.Duration(0), randOffset(0, 0.5))

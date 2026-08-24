@@ -196,7 +196,7 @@ func TestSpreadFractionEnvDefault(t *testing.T) {
 	assert.InDelta(t, 2.0/3, env.VirtualMachinesScraperSteadySpreadFraction.FloatSetting(), 1e-9)
 }
 
-func TestVMScraper_StartsPerTickObservesDueCount(t *testing.T) {
+func TestVMScraper_StartsPerTickObservesLaunchCount(t *testing.T) {
 	const numVMs = 5
 	vms := make([]*virtualmachine.Info, 0, numVMs)
 	for i := range numVMs {
