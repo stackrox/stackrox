@@ -196,6 +196,47 @@ func TestSpreadFractionEnvDefault(t *testing.T) {
 	assert.InDelta(t, 2.0/3, env.VirtualMachinesScraperSteadySpreadFraction.FloatSetting(), 1e-9)
 }
 
+func TestVMScraper_StartsPerTickObservesDueCount(t *testing.T) {
+	const numVMs = 5
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(10+i)))
+	}
+	s, clock := newTestScraper(&mockStore{vms: vms}, &safeSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := clock.Now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	beforeCount := histogramSampleCount(t, metrics.PullStartsPerTick)
+	beforeSum := histogramSampleSum(t, metrics.PullStartsPerTick)
+	s.tick(context.Background(), false)
+	assert.Equal(t, beforeCount+1, histogramSampleCount(t, metrics.PullStartsPerTick))
+	assert.InDelta(t, beforeSum+float64(numVMs), histogramSampleSum(t, metrics.PullStartsPerTick), 1e-9)
+}
+
+func TestVMScraper_StartsPerTickSkipsIdleTicks(t *testing.T) {
+	s, clock := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	now := clock.Now()
+	concurrency.WithLock(&s.mu, func() {
+		s.lastReconcile = now
+	})
+
+	before := histogramSampleCount(t, metrics.PullStartsPerTick)
+	s.tick(context.Background(), false)
+	assert.Equal(t, before, histogramSampleCount(t, metrics.PullStartsPerTick),
+		"idle ticks must not observe starts-per-tick")
+}
+
 func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
 	s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
 	before := histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds)
@@ -208,7 +249,17 @@ func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
 
 func histogramSampleCount(t *testing.T, h prometheus.Histogram) uint64 {
 	t.Helper()
+	return histogramMetric(t, h).GetSampleCount()
+}
+
+func histogramSampleSum(t *testing.T, h prometheus.Histogram) float64 {
+	t.Helper()
+	return histogramMetric(t, h).GetSampleSum()
+}
+
+func histogramMetric(t *testing.T, h prometheus.Histogram) *dto.Histogram {
+	t.Helper()
 	var m dto.Metric
 	require.NoError(t, h.(prometheus.Metric).Write(&m))
-	return m.GetHistogram().GetSampleCount()
+	return m.GetHistogram()
 }

@@ -234,6 +234,20 @@ var PullDueVMs = prometheus.NewGauge(
 	},
 )
 
+// PullStartsPerTick is how many VM scrapes each tick launches. Idle ticks
+// (nobody due) are omitted so the histogram is not dominated by zeros.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick. " +
+			"Idle ticks are not observed. Compare with vsock_pull_due_vms: " +
+			"spread due times keep both small; a mass of large starts is a dump.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
 // PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
 // successful forwards to Central. The first forward after start is not observed.
 var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
@@ -281,6 +295,7 @@ func init() {
 		PullTicksTotal,
 		PullTrackedVMs,
 		PullDueVMs,
+		PullStartsPerTick,
 		PullForwardInterarrivalSeconds,
 		PullScheduleOffsetSeconds,
 	)

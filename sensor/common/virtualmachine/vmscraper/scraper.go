@@ -274,6 +274,10 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 		metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
 	})
 
+	if len(due) > 0 {
+		metrics.PullStartsPerTick.Observe(float64(len(due)))
+	}
+
 	var successCount atomic.Int32
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(s.concurrency)
