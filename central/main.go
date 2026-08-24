@@ -145,6 +145,7 @@ import (
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
+	nodeReportServiceV2 "github.com/stackrox/rox/central/reports/service/v2/node"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -490,6 +491,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+
+	if features.NodeVulnerabilityReports.Enabled() {
+		servicesToRegister = append(servicesToRegister, nodeReportServiceV2.Singleton())
+	}
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
