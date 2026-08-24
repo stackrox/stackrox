@@ -82,7 +82,7 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 
 func TestGenerateCSV_LongConfigNameIsTruncated(t *testing.T) {
 	longName := ""
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		longName += "a"
 	}
 	buf, err := generateCSV(nil, longName)
