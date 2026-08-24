@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reports/common"
+	v2 "github.com/stackrox/rox/central/reports/service/v2"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -47,7 +48,7 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          storage.ReportConfiguration_NODE_VULNERABILITY,
-		Schedule:      s.convertV2ScheduleToProto(config.GetSchedule()),
+		Schedule:      v2.ConvertV2ScheduleToProto(config.GetSchedule()),
 		ResourceScope: s.convertV2ResourceScopeToProto(config.GetResourceScope()),
 		Creator:       creator,
 		Version:       2,
@@ -151,35 +152,6 @@ func v2MatchTypeToStorage(m apiV2.MatchType) storage.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *storage.Schedule {
-	if schedule == nil {
-		return nil
-	}
-
-	ret := &storage.Schedule{
-		IntervalType: v2IntervalTypeToStorage[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
-
-	switch schedule.GetInterval().(type) {
-	case *apiV2.ReportSchedule_DaysOfWeek_:
-		ret.Interval = &storage.Schedule_DaysOfWeek_{
-			DaysOfWeek: &storage.Schedule_DaysOfWeek{
-				Days: schedule.GetDaysOfWeek().GetDays(),
-			},
-		}
-	case *apiV2.ReportSchedule_DaysOfMonth_:
-		ret.Interval = &storage.Schedule_DaysOfMonth_{
-			DaysOfMonth: &storage.Schedule_DaysOfMonth{
-				Days: schedule.GetDaysOfMonth().GetDays(),
-			},
-		}
-	}
-
-	return ret
-}
-
 func (s *serviceImpl) convertV2NotifierConfigToProto(config *apiV2.NotifierConfiguration) *storage.NotifierConfiguration {
 	if config == nil {
 		return nil
@@ -218,7 +190,7 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          apiV2.ReportConfiguration_NODE_VULNERABILITY,
-		Schedule:      s.convertProtoScheduleToV2(config.GetSchedule()),
+		Schedule:      v2.ConvertProtoScheduleToV2(config.GetSchedule()),
 		ResourceScope: resourceScope,
 	}
 
@@ -322,35 +294,6 @@ func storageMatchTypeToV2(m storage.MatchType) apiV2.MatchType {
 	}
 }
 
-func (s *serviceImpl) convertProtoScheduleToV2(schedule *storage.Schedule) *apiV2.ReportSchedule {
-	if schedule == nil {
-		return nil
-	}
-
-	ret := &apiV2.ReportSchedule{
-		IntervalType: storageIntervalTypeToV2[schedule.GetIntervalType()],
-		Hour:         schedule.GetHour(),
-		Minute:       schedule.GetMinute(),
-	}
-
-	switch schedule.GetInterval().(type) {
-	case *storage.Schedule_DaysOfWeek_:
-		ret.Interval = &apiV2.ReportSchedule_DaysOfWeek_{
-			DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{
-				Days: schedule.GetDaysOfWeek().GetDays(),
-			},
-		}
-	case *storage.Schedule_DaysOfMonth_:
-		ret.Interval = &apiV2.ReportSchedule_DaysOfMonth_{
-			DaysOfMonth: &apiV2.ReportSchedule_DaysOfMonth{
-				Days: schedule.GetDaysOfMonth().GetDays(),
-			},
-		}
-	}
-
-	return ret
-}
-
 func (s *serviceImpl) convertProtoNotifierConfigToV2(config *storage.NotifierConfiguration) (*apiV2.NotifierConfiguration, error) {
 	if config == nil {
 		return nil, nil
@@ -397,7 +340,7 @@ func (s *serviceImpl) convertProtoReportSnapshotToV2(snapshot *storage.ReportSna
 			Id:   snapshot.GetRequester().GetId(),
 			Name: snapshot.GetRequester().GetName(),
 		},
-		Schedule:            s.convertProtoScheduleToV2(snapshot.GetSchedule()),
+		Schedule:            v2.ConvertProtoScheduleToV2(snapshot.GetSchedule()),
 		ResourceScope:       resourceScope,
 		IsDownloadAvailable: isDownloadAvailable(blobNames, snapshot.GetReportConfigurationId(), snapshot.GetReportId()),
 	}
