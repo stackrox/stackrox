@@ -326,7 +326,7 @@ func (s *NodeReportSuite) TestMyNodeReportHistory() {
 
 	snapshot := histResp.GetReportSnapshots()[0]
 	assert.Equal(s.T(), created.GetId(), snapshot.GetReportConfigId())
-	s.Require().NotNil(snapshot.GetRequester(), "snapshot should have requester information")
+	s.Require().NotNil(snapshot.GetUser(), "snapshot should have user information")
 }
 
 func (s *NodeReportSuite) TestInvalidEntityScope_NonClusterType() {
