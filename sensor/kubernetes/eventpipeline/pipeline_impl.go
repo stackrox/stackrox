@@ -80,8 +80,12 @@ func (p *eventPipeline) ProcessMessage(_ context.Context, msg *central.MsgToSens
 	return nil
 }
 
-// ResponsesC implements common.SensorComponent
+// ResponsesC implements common.SensorComponent. In PubSub mode, messages are
+// published to the CentralBound topic via the output queue, so this returns nil.
 func (p *eventPipeline) ResponsesC() <-chan *message.ExpiringMessage {
+	if features.SensorInternalPubSub.Enabled() {
+		return nil
+	}
 	return p.eventsC
 }
 
@@ -117,12 +121,17 @@ func (p *eventPipeline) Start() error {
 		return errors.Wrap(err, "starting resolver component")
 	}
 
-	go p.forwardMessages()
+	if !features.SensorInternalPubSub.Enabled() {
+		go p.forwardMessages()
+	}
 	return nil
 }
 
 // Stop implements common.SensorComponent
 func (p *eventPipeline) Stop() {
+	if features.SensorInternalPubSub.Enabled() {
+		p.stopper.Flow().ReportStopped()
+	}
 	if !p.stopper.Client().Stopped().IsDone() {
 		defer func() {
 			_ = p.stopper.Client().Stopped().Wait()

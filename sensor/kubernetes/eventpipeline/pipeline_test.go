@@ -99,6 +99,8 @@ func (s *eventPipelineSuite) readExpired() {
 }
 
 func (s *eventPipelineSuite) Test_OfflineModeCases() {
+	s.T().Setenv(features.SensorInternalPubSub.EnvVar(), "false")
+
 	outputC := make(chan *message.ExpiringMessage, 10)
 	s.outputQueue.EXPECT().ResponsesC().
 		AnyTimes().Return(outputC)
@@ -132,6 +134,8 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 }
 
 func (s *eventPipelineSuite) Test_OfflineMode() {
+	s.T().Setenv(features.SensorInternalPubSub.EnvVar(), "false")
+
 	outputC := make(chan *message.ExpiringMessage, 10)
 	s.outputQueue.EXPECT().ResponsesC().
 		AnyTimes().Return(outputC)
