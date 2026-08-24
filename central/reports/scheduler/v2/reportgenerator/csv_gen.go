@@ -31,7 +31,6 @@ var (
 		"CVSS",
 		"NVDCVSS",
 		"EPSS Probability Percentage",
-		"CISA KEV",
 		"Discovered At",
 		"Reference",
 		"Advisory Name",
@@ -70,15 +69,6 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		epssScore = "Not Available"
 	}
 
-	if features.KnownExploitedVulnerabilities.Enabled() {
-		var cisaKev string
-		if r.GetCisaKev() != nil {
-			cisaKev = strconv.FormatBool(*r.GetCisaKev())
-		} else {
-			cisaKev = "Not Available"
-		}
-	}
-
 	csvRow := []string{
 		r.GetCluster(),
 		r.GetNamespace(),
@@ -92,12 +82,25 @@ func formatCSVRow(r *ImageCVEQueryResponse) []string {
 		strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 		strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 		strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
-		epssScore,
+		epssScore}
+
+	if features.KnownExploitedVulnerabilities.Enabled() {
+		var cisaKev string
+		if r.GetCisaKev() != nil {
+			cisaKev = strconv.FormatBool(*r.GetCisaKev())
+		} else {
+			cisaKev = "Not Available"
+		}
+		csvRow = append(csvRow, cisaKev)
+	}
+
+	csvRow = append(csvRow,
 		r.GetDiscoveredAtImage(),
 		r.Link,
 		r.GetAdvisoryName(),
 		r.GetAdvisoryLink(),
-	}
+		originDisplayName(r.GetOrigin()),
+	)
 
 	return csvRow
 }
@@ -123,7 +126,6 @@ func csvReportName(configName string) string {
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
 func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
-
 	csvWriter := csv.NewGenericWriter(formatCol(), true)
 
 	for _, r := range cveResponses {

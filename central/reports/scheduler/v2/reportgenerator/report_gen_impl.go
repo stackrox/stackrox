@@ -181,7 +181,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		return err
 	}
 
-	defaultEmailSubject, err := formatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
+	defaultEmailSubject, err := FormatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)
 	if err != nil {
 		return errors.Wrap(err, "Error generating email subject")
 	}
@@ -191,8 +191,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		templateStr = defaultNoVulnsEmailBodyTemplate
 	}
 
-	case storage.ReportStatus_EMAIL:
-		defaultEmailSubject, err := FormatEmailSubject(defaultEmailSubjectTemplate, req.ReportSnapshot)EmailBody, err := formatEmailBody(templateStr)
+	defaultEmailBody, err := FormatEmailBody(templateStr)
 	if err != nil {
 		return errors.Wrap(err, "Error generating email body")
 	}
@@ -221,7 +220,7 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
-		emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
+		emailBodyWithConfigDetails := AddReportConfigDetails(emailBody, configDetailsHTML)
 		reportName := req.ReportSnapshot.GetName()
 		err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
 			zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
@@ -236,7 +235,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(ctx context.Context, req 
 	return nil
 }
 
-		defaultEmailBody, err := FormatEmailBody(templateStr)
 // generateReportInMemoryDownload accumulates report data in memory, builds the CSV/ZIP, and stores it in blob storage.
 func (rg *reportGeneratorImpl) generateReportInMemoryDownload(ctx context.Context, req *ReportRequest) error {
 	snap := req.ReportSnapshot
@@ -291,30 +289,6 @@ func (rg *reportGeneratorImpl) buildReportQueries(ctx context.Context, req *Repo
 		if err != nil {
 			return nil, err
 		}
-
-		errorList := errorhelpers.NewErrorList("Error sending email notifications: ")
-		for _, notifierSnap := range req.ReportSnapshot.GetNotifiers() {
-			nf := rg.notificationProcessor.GetNotifier(reportGenCtx, notifierSnap.GetEmailConfig().GetNotifierId())
-			reportNotifier, ok := nf.(notifiers.ReportNotifier)
-			if !ok {
-				errorList.AddError(errors.Errorf("incorrect type of notifier '%s'", notifierSnap.GetEmailConfig().GetNotifierId()))
-				continue
-			}
-			customBody := notifierSnap.GetEmailConfig().GetCustomBody()
-			emailBody := defaultEmailBody
-			if customBody != "" {
-				emailBody = customBody
-			}
-			customSubject := notifierSnap.GetEmailConfig().GetCustomSubject()
-			emailSubject := defaultEmailSubject
-			if customSubject != "" {
-				emailSubject = customSubject
-			}
-			emailBodyWithConfigDetails := AddReportConfigDetails(emailBody, configDetailsHTML)
-			reportName := req.ReportSnapshot.GetName()
-			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
-		if filterOnImageType(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 		if slices.Contains(snap.GetVulnReportFilters().GetImageTypes(), storage.VulnerabilityReportFilters_DEPLOYED) {
 			q := search.ConjunctionQuery(rQuery.DeploymentsQuery, cveFilterQuery)
 			q.Pagination = deployedImagesQueryParts.Pagination
@@ -412,7 +386,7 @@ func (rg *reportGeneratorImpl) generateReportTransaction(ctx context.Context, re
 		}
 		csvW := csv.NewWriter(zipEntry)
 		csvW.UseCRLF = true
-		if err := csvW.Write(csvHeader); err != nil {
+		if err := csvW.Write(formatCol()); err != nil {
 			return errors.Wrap(err, "writing CSV header")
 		}
 
@@ -595,64 +569,63 @@ func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *stora
 	}, nil
 }
 
-	func (rg *reportGeneratorImpl) getReportDataViewBased(ctx context.Context, snap *storage.ReportSnapshot) (*ReportData, error) {
-		watchedImages, err := rg.getWatchedImages(ctx)
-		if err != nil {
-			return nil, err
-		}
-		query, err := rg.buildReportQueryViewBased(ctx, snap, watchedImages)
-		if err != nil {
-			return nil, err
-		}
+func (rg *reportGeneratorImpl) getReportDataViewBased(ctx context.Context, snap *storage.ReportSnapshot) (*ReportData, error) {
+	watchedImages, err := rg.getWatchedImages(ctx)
+	if err != nil {
+		return nil, err
+	}
+	query, err := rg.buildReportQueryViewBased(ctx, snap, watchedImages)
+	if err != nil {
+		return nil, err
+	}
 
-		numDeployedImageResults := 0
-		var cveResponses []*ImageCVEQueryResponse
+	numDeployedImageResults := 0
+	var cveResponses []*ImageCVEQueryResponse
 
-		query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
-		query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
-		err = pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](ctx, rg.db,
-			deployedImagesQueryParts.Schema, query.DeployedImagesQuery, func(r *ImageCVEQueryResponse) error {
+	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
+	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+	err = pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](ctx, rg.db,
+		deployedImagesQueryParts.Schema, query.DeployedImagesQuery, func(r *ImageCVEQueryResponse) error {
+			cveResponses = append(cveResponses, r)
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+	}
+	numDeployedImageResults = len(cveResponses)
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	numWatchedImageResults := 0
+
+	if len(watchedImages) != 0 {
+		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
+		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+		err := pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](ctx, rg.db,
+			watchedImagesQueryParts.Schema, query.WatchedImagesQuery, func(r *ImageCVEQueryResponse) error {
 				cveResponses = append(cveResponses, r)
+				numWatchedImageResults++
 				return nil
 			})
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 		}
-		numDeployedImageResults = len(cveResponses)
-
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
-
-		numWatchedImageResults := 0
-
-		if len(watchedImages) != 0 {
-			query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
-			query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
-			err := pgSearch.RunSelectRequestForSchemaFn[ImageCVEQueryResponse](ctx, rg.db,
-				watchedImagesQueryParts.Schema, query.WatchedImagesQuery, func(r *ImageCVEQueryResponse) error {
-					cveResponses = append(cveResponses, r)
-					numWatchedImageResults++
-					return nil
-				})
-			if err != nil {
-				return nil, errors.Wrap(err, "Failed to collect report data for watched images")
-			}
-		}
-
-		cveResponses, err = rg.withCVEReferenceLinks(ctx, cveResponses)
-		if err != nil {
-			return nil, err
-		}
-
-		return &ReportData{
-			CVEResponses:            cveResponses,
-			NumDeployedImageResults: numDeployedImageResults,
-			NumWatchedImageResults:  numWatchedImageResults,
-		}, nil
-
 	}
 
+	cveResponses, err = rg.withCVEReferenceLinks(ctx, cveResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReportData{
+		CVEResponses:            cveResponses,
+		NumDeployedImageResults: numDeployedImageResults,
+		NumWatchedImageResults:  numWatchedImageResults,
+	}, nil
+
+}
 
 func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC(ctx context.Context) ([]effectiveaccessscope.Cluster, []effectiveaccessscope.Namespace, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(ctx)
