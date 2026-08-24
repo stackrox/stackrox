@@ -99,16 +99,14 @@ jobs:
         changed=false
         while IFS= read -r source; do
             object="gs://${bucket}/${prefix}/${STREAM}/sources/${source}.json.zst"
-            if GCS_OBJECT="$object" \
-               ./.github/workflows/scripts/scanner-updater-check-freshness.sh --newer-than "$bundle_epoch"
-            then
-                echo "Source '${source}' is newer than bundle"
-                changed=true
-                break
-            elif [ $? -eq 2 ]; then
+            newer=$(GCS_OBJECT="$object" \
+                ./.github/workflows/scripts/scanner-updater-check-freshness.sh --newer-than "$bundle_epoch") || {
                 echo "Source '${source}': check failed; assuming changes"
-                changed=true
-                break
+                changed=true; break
+            }
+            if [[ "$newer" == "true" ]]; then
+                echo "Source '${source}' is newer than bundle"
+                changed=true; break
             fi
         done < <("$sc" sources "$STREAM")
 
