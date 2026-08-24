@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -43,19 +45,42 @@ type configMapPersister struct {
 	client v1client.ConfigMapInterface
 
 	settingsStreamIt concurrency.ValueStreamIter[*v1.ConfigMap]
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
-func NewConfigMapPersister(name, namespace string, k8s kubernetes.Interface, settings concurrency.ValueStreamIter[*v1.ConfigMap]) common.SensorComponent {
+// NewConfigMapPersister creates a SensorComponent that persists the values published on settings
+// to a ConfigMap. pubSubDispatcher is only used when PubSub is enabled; pass nil for producers that
+// have not migrated to the PubSub topic yet, which keeps this persister on the legacy settings path
+// unconditionally.
+func NewConfigMapPersister(name, namespace string, k8s kubernetes.Interface, settings concurrency.ValueStreamIter[*v1.ConfigMap], pubSubDispatcher common.PubSubDispatcher) common.SensorComponent {
 	return &configMapPersister{
 		name:             name,
 		client:           k8s.CoreV1().ConfigMaps(namespace),
 		settingsStreamIt: settings,
+		pubSubDispatcher: pubSubDispatcher,
 	}
+}
+
+func (p *configMapPersister) pubSubEnabled() bool {
+	return features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil
 }
 
 func (p *configMapPersister) Start() error {
 	if !p.stopSig.Reset() {
 		return errors.New("config persister was already started")
+	}
+
+	if p.pubSubEnabled() {
+		if err := p.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.AdmCtrlConfigMapConsumer,
+			pubsub.AdmCtrlConfigMapTopic,
+			pubsub.AdmCtrlConfigMapLane,
+			p.handleConfigMapEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register config map consumer")
+		}
+		return nil
 	}
 
 	go p.run()
@@ -86,7 +111,7 @@ func (p *configMapPersister) ctx() context.Context {
 
 func (p *configMapPersister) run() {
 	// Attempt to apply the initial config, if any.
-	if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
+	if err := p.applyCurrentConfigMap(p.ctx(), p.settingsStreamIt.Value()); err != nil {
 		log.Errorf("Could not apply %s config map: %v", p.name, err)
 	}
 
@@ -98,15 +123,26 @@ func (p *configMapPersister) run() {
 		case <-p.settingsStreamIt.Done():
 			p.settingsStreamIt = p.settingsStreamIt.TryNext()
 
-			if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
+			if err := p.applyCurrentConfigMap(p.ctx(), p.settingsStreamIt.Value()); err != nil {
 				log.Errorf("Could not apply %s config map: %v", p.name, err)
 			}
 		}
 	}
 }
 
-func (p *configMapPersister) applyCurrentConfigMap(ctx context.Context) error {
-	configMap := p.settingsStreamIt.Value()
+// handleConfigMapEvent adapts a PubSub ConfigMapUpdatedEvent to applyCurrentConfigMap.
+func (p *configMapPersister) handleConfigMapEvent(event pubsub.Event) error {
+	configMapEvent, ok := event.(*ConfigMapUpdatedEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	if err := p.applyCurrentConfigMap(p.ctx(), configMapEvent.ConfigMap); err != nil {
+		log.Errorf("Could not apply %s config map: %v", p.name, err)
+	}
+	return nil
+}
+
+func (p *configMapPersister) applyCurrentConfigMap(ctx context.Context, configMap *v1.ConfigMap) error {
 	if configMap == nil {
 		return nil
 	}
