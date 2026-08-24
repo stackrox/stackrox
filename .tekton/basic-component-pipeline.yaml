@@ -380,11 +380,6 @@ spec:
       values: ["false"]
 
   - name: roxctl-scan
-    matrix:
-      params:
-      - name: image-platform
-        value:
-        - $(params.build-platforms)
     params:
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
@@ -395,7 +390,7 @@ spec:
       - name: name
         value: roxctl-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:97e2b2cdca9110fdc8a93ba585a1a1a743f989f2fd85f4073f6e5ea9ad2ce828
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:d2f9f4f58bbbe2fde3538ae4695be29cf1505f76d8ac08b54a5a2838bbbd1453
       - name: kind
         value: task
       resolver: bundles
