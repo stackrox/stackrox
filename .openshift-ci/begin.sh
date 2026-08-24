@@ -22,6 +22,26 @@ openshift_ci_mods
 openshift_ci_import_creds
 
 setup_gcp
+
+# Pre-flight DNS check for cluster creation (mitigation for DPTP-5138)
+# GCP-based jobs (OCP, GKE) will fail if DNS is broken, so we check early and fail fast with context
+if [[ "${JOB_NAME:-}" =~ -ocp-|-gke- ]]; then
+    info "Pre-flight DNS health check (DPTP-5138 mitigation)"
+    dns_check_failed=false
+    for domain in oauth2.googleapis.com compute.googleapis.com storage.googleapis.com; do
+        if ! nslookup "$domain" >/dev/null 2>&1; then
+            warn "⚠️  DNS resolution FAILED for $domain"
+            dns_check_failed=true
+        else
+            info "✓ DNS OK for $domain"
+        fi
+    done
+
+    if [[ "$dns_check_failed" == "true" ]]; then
+        die "DNS is broken (likely node-resolver not ready - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
+    fi
+fi
+
 set_ci_shared_export started_at "$(date -u +%s)"
 
 if [[ -z "${SHARED_DIR:-}" ]]; then
