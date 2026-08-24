@@ -50,7 +50,7 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.client = fake.NewSimpleDynamicClient(runtime.NewScheme(), &v1alpha1.ScanSettingBinding{TypeMeta: v1.TypeMeta{Kind: "ScanSetting", APIVersion: complianceoperator.GetGroupVersion().String()}})
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
-	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
+	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal, nil)
 	handler, ok := s.requestHandler.(*handlerImpl)
 	s.Require().True(ok)
 	handler.handlerAPICallTimeout = 500 * time.Millisecond

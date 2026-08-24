@@ -224,7 +224,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	coReadySignal := concurrency.NewSignal()
 	coInfoUpdater := complianceoperator.NewInfoUpdater(cfg.k8sClient.Kubernetes(), 0, &coReadySignal)
-	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal))
+	components = append(components, coInfoUpdater, complianceoperator.NewRequestHandler(cfg.k8sClient.Dynamic(), coInfoUpdater, &coReadySignal, internalMessageDispatcher))
 
 	if !cfg.localSensor {
 		upgradeCmdHandler, err := upgrade.NewCommandHandler(clusterID, configHandler)
