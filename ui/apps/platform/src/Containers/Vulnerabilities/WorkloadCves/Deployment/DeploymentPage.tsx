@@ -31,7 +31,7 @@ import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/s
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';

@@ -65,7 +65,7 @@ import DefaultFilterModal from '../components/DefaultFilterModal';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
-import { createScheduledReportForImageVulnerabilitiesURL } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.utils';
+import { createScheduledReportForImageVulnerabilitiesURL } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.utils';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 import VulnerabilitiesOverview from './VulnerabilitiesOverview';
 
