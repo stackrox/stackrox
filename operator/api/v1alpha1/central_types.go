@@ -170,8 +170,8 @@ type CentralComponentSpec struct {
 
 	// References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
 	// This allows air-gapped customers to provide or update the signing keys used for
-	// image signature verification. The ConfigMap is managed externally; key rotation
-	// requires only editing the ConfigMap, not a CR update.
+	// signature verification of Red Hat container images. The ConfigMap is managed
+	// externally; key rotation requires only editing the ConfigMap, not a CR update.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	SigningKeyBundle *LocalConfigMapReference `json:"signingKeyBundle,omitempty"`
 

@@ -233,8 +233,8 @@
 #   signingKeyBundle:
 #     configMapName: "redhat-signing-key-bundle"
 #
-#     # Additional volume mounts for the Central container. Only few people will require this.
-#     extraMounts:
+#   # Additional volume mounts for the Central container. Only few people will require this.
+#   extraMounts:
 #     - name: my-configmap  # the name of the volume
 #       # The source of the volume. This will be embedded as-is in the `volume:` section of the
 #       # pod spec.
