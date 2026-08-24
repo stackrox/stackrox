@@ -127,7 +127,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		start := time.Now()
 		resp, err := v1.NewImageServiceClient(s.centralConn).ScanImageInternalForAdmission(ctx, &v1.ScanImageInternalRequest{
 			Image:      img,
-			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+			CachedOnly: false,
 		})
 		observeImageFetch(fetchSourceCentral, time.Since(start), err)
 		if err != nil {
@@ -139,7 +139,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 	start := time.Now()
 	resp, err := m.client.GetImage(ctx, &sensor.GetImageRequest{
 		Image:      img,
-		ScanInline: s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
+		ScanInline: true,
 		Namespace:  deployment.GetNamespace(),
 	})
 	observeImageFetch(fetchSourceSensor, time.Since(start), err)
@@ -220,20 +220,16 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, shouldF
 	pendingCount.Store(1)
 	fetchCount := 0
 
-	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
-
 	for idx, container := range deployment.GetContainers() {
 		image := container.GetImage()
-		if image.GetId() != "" || scanInline {
-			cachedImage := m.getCachedImage(image, s, true)
-			if cachedImage != nil {
-				images[idx] = cachedImage
-			}
-			if shouldFetch && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
-				pendingCount.Add(1)
-				fetchCount++
-				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
-			}
+		cachedImage := m.getCachedImage(image, s, true)
+		if cachedImage != nil {
+			images[idx] = cachedImage
+		}
+		if shouldFetch && (cachedImage == nil || cachedImage.GetScan() == nil) {
+			pendingCount.Add(1)
+			fetchCount++
+			go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image, deployment)
 		}
 		if images[idx] == nil {
 			images[idx] = types.ToImage(container.GetImage())

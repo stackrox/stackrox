@@ -71,6 +71,7 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -210,15 +211,45 @@ class Kubernetes {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
+    @CompileDynamic
     boolean updateDeploymentNoWait(Deployment deployment, int maxRetries = 0) {
-        K8sDeployment k8sdeployment = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
-        if (k8sdeployment) {
-            log.debug "Deployment ${deployment.name} with version ${k8sdeployment.metadata.resourceVersion} " +
-                    "found in namespace ${deployment.namespace}. Updating..."
-        } else {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+        K8sDeployment existing = deployments.inNamespace(deployment.namespace).withName(deployment.name).get()
+        if (!existing) {
             log.debug "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+            return createDeploymentNoWait(deployment, maxRetries)
         }
-        return createDeploymentNoWait(deployment, maxRetries)
+        log.debug "Deployment ${deployment.name} with version ${existing.metadata.resourceVersion} " +
+                "found in namespace ${deployment.namespace}. Updating..."
+        // Edit the live object rather than createOrReplace (CREATE then REPLACE) or
+        // replacing with a newly built spec. createOrReplace is recorded as CREATE
+        // enforcement; a reconstructed object can fail apiserver validation after
+        // admission allows it (immutable spec.selector).
+        K8sDeployment desired = toK8sDeployment(deployment)
+        try {
+            withK8sClientRetry(maxRetries, 1) {
+                this.deployments.inNamespace(deployment.namespace)
+                        .withName(deployment.name)
+                        .edit { K8sDeployment current ->
+                            new DeploymentBuilder(current)
+                                    .editMetadata()
+                                    .withLabels(desired.metadata.labels)
+                                    .withAnnotations(desired.metadata.annotations)
+                                    .endMetadata()
+                                    .editSpec()
+                                    .withReplicas(desired.spec.replicas)
+                                    .withMinReadySeconds(desired.spec.minReadySeconds)
+                                    .withTemplate(desired.spec.template)
+                                    .endSpec()
+                                    .build()
+                        }
+                log.debug "Told the orchestrator to update " + deployment.name
+            }
+            return true
+        } catch (Exception e) {
+            log.warn("Error updating k8s deployment: ", e)
+            return false
+        }
     }
 
     void updateDeployment(Deployment deployment) {
@@ -2089,15 +2120,8 @@ class Kubernetes {
     */
 
     @CompileDynamic
-    boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
-        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
-
-        // Create service if needed
-        if (deployment.exposeAsService) {
-            createService(deployment)
-        }
-
-        K8sDeployment d = new K8sDeployment(
+    private K8sDeployment toK8sDeployment(Deployment deployment) {
+        return new K8sDeployment(
                 metadata: new ObjectMeta(
                         name: deployment.name,
                         namespace: deployment.namespace,
@@ -2116,9 +2140,20 @@ class Kubernetes {
                                 ),
                                 spec: generatePodSpec(deployment)
                         )
-
                 )
         )
+    }
+
+    @CompileDynamic
+    boolean createDeploymentNoWait(Deployment deployment, int maxNumRetries = 0) {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
+        // Create service if needed
+        if (deployment.exposeAsService) {
+            createService(deployment)
+        }
+
+        K8sDeployment d = toK8sDeployment(deployment)
 
         try {
             withK8sClientRetry(maxNumRetries, 1) {
