@@ -137,6 +137,27 @@ func ComputeEffectiveAccessScope(scopeRules *storage.SimpleAccessScope_Rules, cl
 	return root, nil
 }
 
+// ComputeEffectiveClusterAccessScope applies a simple access scope to provided
+// clusters and yields a ScopeTree. Unlike ComputeEffectiveAccessScope, it does
+// not consider namespace-level rules — only cluster-level inclusion is evaluated.
+// This is appropriate for cluster-scoped resources such as nodes.
+func ComputeEffectiveClusterAccessScope(scopeRules *storage.SimpleAccessScope_Rules, clusters []Cluster, detail v1.ComputeEffectiveAccessScopeRequest_Detail) (*ScopeTree, error) {
+	root := newEffectiveAccessScopeTree(Excluded)
+
+	ruleSelectors, err := convertRulesToSelectors(scopeRules)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cluster := range clusters {
+		root.populateStateForCluster(cluster, ruleSelectors, detail)
+	}
+
+	root.bubbleUpStatesAndCompactify(detail)
+
+	return root, nil
+}
+
 // Compactify yields a compact representation of the scope tree.
 func (root *ScopeTree) Compactify() ScopeTreeCompacted {
 	compacted := make(ScopeTreeCompacted)

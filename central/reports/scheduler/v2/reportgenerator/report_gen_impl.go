@@ -36,13 +36,11 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -486,18 +484,7 @@ func (rg *reportGeneratorImpl) streamQueryToCSV(
 }
 
 func (rg *reportGeneratorImpl) saveReportData(ctx context.Context, configID, reportID string, data *bytes.Buffer) error {
-	if data == nil {
-		return errors.Errorf("No data found for report config %q and id %q", configID, reportID)
-	}
-
-	// Store downloadable report in blob storage
-	b := &storage.Blob{
-		Name:         common.GetReportBlobPath(configID, reportID),
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       int64(data.Len()),
-	}
-	return rg.blobStore.Upsert(ctx, b, data)
+	return SaveReportData(ctx, rg.blobStore, configID, reportID, data)
 }
 
 func (rg *reportGeneratorImpl) getReportDataSQF(ctx context.Context, snap *storage.ReportSnapshot, collection *storage.ResourceCollection,
@@ -673,16 +660,8 @@ func (rg *reportGeneratorImpl) buildReportQuery(ctx context.Context, snap *stora
 
 func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, emailSubject, emailBody, baseFilename string) error {
-	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, baseFilename)
-	},
-		retry.OnlyRetryableErrors(),
-		retry.Tries(3),
-		retry.BetweenAttempts(func(previousAttempt int) {
-			wait := time.Duration(previousAttempt * previousAttempt * 100)
-			time.Sleep(wait * time.Millisecond)
-		}),
-	)
+	return RetryableSendReportResults(reportGenCtx, reportNotifier, mailingList,
+		zippedCSVData, emailSubject, emailBody, baseFilename)
 }
 
 func (rg *reportGeneratorImpl) lastSuccessfulScheduledReportTime(snap *storage.ReportSnapshot) (time.Time, error) {
@@ -755,30 +734,11 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(ctx context.Context, imageC
 }
 
 func (rg *reportGeneratorImpl) updateReportStatus(snapshot *storage.ReportSnapshot, status storage.ReportStatus_RunState) error {
-	snapshot.ReportStatus.RunState = status
-	return rg.reportSnapshotStore.UpdateReportSnapshot(reportGenCtx, snapshot)
+	return UpdateReportStatus(reportGenCtx, rg.reportSnapshotStore, snapshot, status)
 }
 
 func (rg *reportGeneratorImpl) logAndUpsertError(ctx context.Context, reportErr error, req *ReportRequest) {
-	if req.ReportSnapshot == nil || req.ReportSnapshot.GetReportStatus() == nil {
-		utils.Should(errors.New("Request does not have non-nil report snapshot with a non-nil report status"))
-		return
-	}
-	if errors.Is(context.Cause(ctx), ErrUserCancelled) {
-		log.Infof("Report for config '%s' was cancelled by user", req.ReportSnapshot.GetName())
-		req.ReportSnapshot.ReportStatus.ErrorMsg = ErrUserCancelled.Error()
-	} else if reportErr != nil {
-		log.Errorf("Error while running report for config '%s': %s", req.ReportSnapshot.GetName(), reportErr)
-		req.ReportSnapshot.ReportStatus.ErrorMsg = reportErr.Error()
-	}
-	req.ReportSnapshot.ReportStatus.CompletedAt = protocompat.TimestampNow()
-	// Use reportGenCtx for status update since the request context may be cancelled
-	err := rg.updateReportStatus(req.ReportSnapshot, storage.ReportStatus_FAILURE)
-
-	if err != nil {
-		log.Errorf("Error changing report status to FAILURE for report config '%s', report ID '%s': %s",
-			req.ReportSnapshot.GetName(), req.ReportSnapshot.GetReportId(), err)
-	}
+	LogAndUpsertError(ctx, reportGenCtx, rg.reportSnapshotStore, reportErr, req)
 }
 
 func selectSchema() *walker.Schema {

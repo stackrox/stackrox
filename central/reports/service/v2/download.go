@@ -110,7 +110,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	)
 
 	parentDir := rep.GetReportConfigurationId()
-	if rep.GetViewBasedVulnReportFilters() != nil {
+	if status.GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
 		parentDir = "view-based-report"
 	}
 	_, exists, err := h.blobStore.Get(ctx, common.GetReportBlobPath(parentDir, id), buf)
