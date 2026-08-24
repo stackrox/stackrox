@@ -11,6 +11,12 @@ on:
   schedule:
   - cron: "47 * * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force rebuild even if no sources are newer than the bundle"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -72,6 +78,8 @@ jobs:
 
     - name: Check for changes
       id: check-changes
+      env:
+        FORCE: ${{ inputs.force == true }}
       run: |
         set -euo pipefail
 
@@ -81,6 +89,12 @@ jobs:
 
         echo "GCS_BUCKET=$bucket" >> "$GITHUB_ENV"
         echo "GCS_PREFIX=$prefix" >> "$GITHUB_ENV"
+
+        if [[ "$FORCE" == "true" ]]; then
+            echo "Force rebuild requested"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
 
         bundle_obj=$("$sc" bundle-object "$STREAM")
 
@@ -120,25 +134,33 @@ jobs:
       run: |
         set -euo pipefail
 
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
         mkdir -p bundles
-        gcloud storage cp "gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/sources/*.json.zst" bundles/
 
-    - name: Set source timestamps
-      if: steps.check-changes.outputs.changed == 'true'
-      run: |
-        set -euo pipefail
+        while IFS= read -r source; do
+            object="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/sources/${source}.json.zst"
+            dest="bundles/${source}.json.zst"
 
-        # The exporter writes refresh-completed-at to each source object's
-        # custom metadata. Setting file mtimes from it ensures ZIP entries
-        # carry per-source update times instead of the bundler's download time.
-        for file in bundles/*.json.zst; do
-            [ -f "$file" ] || continue
-            filename=$(basename "$file")
-            object="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/sources/${filename}"
-            gcloud storage objects describe "$object" --format=json > "bundles/${filename}.metadata.json"
-            timestamp=$(jq -re '.metadata["refresh-completed-at"]' "bundles/${filename}.metadata.json")
-            touch -d "$timestamp" "$file"
-        done
+            # Retry if the source is overwritten between describe and cp.
+            downloaded=false
+            for attempt in 1 2 3; do
+                meta=$(gcloud storage objects describe "$object" --format=json)
+                gen=$(jq -r '.generation' <<< "$meta")
+                timestamp=$(jq -re '.metadata["refresh-completed-at"]' <<< "$meta")
+
+                if gcloud storage cp "$object" "$dest" --if-generation-match="$gen"; then
+                    touch -d "$timestamp" "$dest"
+                    downloaded=true
+                    break
+                fi
+                echo "Source '${source}': download attempt ${attempt} failed, retrying"
+            done
+
+            if [[ "$downloaded" != "true" ]]; then
+                echo "::error::${source}: download failed after 3 attempts"
+                exit 1
+            fi
+        done < <("$sc" sources "$STREAM")
 
     - name: Validate sources
       id: download-validate
