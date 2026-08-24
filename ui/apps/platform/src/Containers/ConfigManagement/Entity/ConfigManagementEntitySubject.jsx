@@ -144,19 +144,7 @@ const ConfigManagementEntitySubject = ({
                         value: (
                             <span className="flex items-center">
                                 {clusterAdmin ? 'Yes' : 'No'}
-                                <Tooltip
-                                    content={
-                                        <div>
-                                            Yes only if this subject is bound to Kubernetes&apos;
-                                            built-in cluster-admin role, or an equivalent
-                                            ClusterRole with unrestricted access to everything in
-                                            the cluster. A subject can still hold other powerful
-                                            ClusterRoles (see Roles below) without this being Yes.
-                                        </div>
-                                    }
-                                    isContentLeftAligned
-                                    maxWidth="24rem"
-                                >
+                                <Tooltip content="Full, unrestricted cluster access">
                                     <span className="pf-v6-c-button pf-m-plain pf-m-smallest pf-v6-u-ml-sm">
                                         <OutlinedQuestionCircleIcon />
                                     </span>
