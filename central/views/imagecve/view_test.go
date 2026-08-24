@@ -1263,6 +1263,62 @@ func standardizeImages(images ...*storage.Image) {
 	}
 }
 
+// TestImageCVECountFiltering confirms the filter added in ROX-36389 doesn't drop
+// any CVEs from the Workload CVEs CVE tab.
+func (s *ImageCVEViewTestSuite) TestImageCVECountFiltering() {
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("Image CVE Count only maps to images_v2.ScanStats.CveCount when FlattenImageData is enabled")
+	}
+
+	ctx := s.suiteCtx
+
+	imageV2Store := imageV2DS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	zeroCveImage := &storage.ImageV2{
+		Id:     imageUtils.NewImageV2ID(&storage.ImageName{Registry: "reg-zero", FullName: "reg-zero"}, "sha-zero"),
+		Digest: "sha-zero",
+		Name:   &storage.ImageName{Registry: "reg-zero", FullName: "reg-zero"},
+		Scan: &storage.ImageScan{
+			OperatingSystem: "zero-os",
+			Components:      []*storage.EmbeddedImageScanComponent{},
+		},
+	}
+	s.Require().NoError(imageV2Store.UpsertImage(ctx, zeroCveImage))
+	actualZeroCve, found, err := imageV2Store.GetImage(ctx, zeroCveImage.GetId())
+	s.Require().NoError(err)
+	s.Require().True(found)
+	s.Require().Equal(int32(0), actualZeroCve.GetScanStats().GetCveCount())
+
+	noFilterQuery := search.EmptyQuery()
+	filteredQuery := search.NewQueryBuilder().AddStrings(search.ImageCVECount, ">0").ProtoQuery()
+
+	noFilterCount, err := s.cveView.Count(ctx, noFilterQuery)
+	s.Require().NoError(err)
+	filteredCount, err := s.cveView.Count(ctx, filteredQuery)
+	s.Require().NoError(err)
+
+	s.T().Logf("ImageCVEView.Count() with no filter: %d; with 'Image CVE Count > 0': %d", noFilterCount, filteredCount)
+
+	s.Equal(noFilterCount, filteredCount,
+		"expected 'Image CVE Count > 0' to be a no-op on the CVE count")
+
+	noFilterResults, err := s.cveView.Get(ctx, noFilterQuery, views.ReadOptions{})
+	s.Require().NoError(err)
+	filteredResults, err := s.cveView.Get(ctx, filteredQuery, views.ReadOptions{})
+	s.Require().NoError(err)
+
+	getCVESet := func(results []CveCore) []string {
+		ids := make([]string, 0, len(results))
+		for _, r := range results {
+			ids = append(ids, r.GetCVE())
+		}
+		sort.Strings(ids)
+		return ids
+	}
+
+	s.Equal(getCVESet(noFilterResults), getCVESet(filteredResults),
+		"expected the exact same set of CVEs to be returned with and without the 'Image CVE Count > 0' filter")
+}
+
 func TestImageCVEUnknownSeverity(t *testing.T) {
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
