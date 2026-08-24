@@ -2,11 +2,21 @@ package signatures
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
+	"encoding/pem"
 	"os"
 	"testing"
 
+	"github.com/sigstore/cosign/v3/pkg/cosign"
 	"github.com/sigstore/cosign/v3/pkg/cosign/bundle"
+	"github.com/sigstore/cosign/v3/pkg/oci/static"
+	"github.com/sigstore/sigstore-go/pkg/root"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -901,4 +911,179 @@ func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string,
 		},
 	}
 	return img, nil
+}
+
+func TestTransparencyLogsFromKeys(t *testing.T) {
+	ecKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	validLogID := hex.EncodeToString([]byte("valid-log-id-0123456789ab"))
+
+	cases := map[string]struct {
+		keys     *cosign.TrustedTransparencyLogPubKeys
+		expected int
+	}{
+		"nil keys returns nil": {
+			keys:     nil,
+			expected: 0,
+		},
+		"empty keys map returns nil": {
+			keys:     &cosign.TrustedTransparencyLogPubKeys{Keys: map[string]cosign.TransparencyLogPubKey{}},
+			expected: 0,
+		},
+		"valid key is converted": {
+			keys: &cosign.TrustedTransparencyLogPubKeys{
+				Keys: map[string]cosign.TransparencyLogPubKey{
+					validLogID: {PubKey: ecKey.Public()},
+				},
+			},
+			expected: 1,
+		},
+		"malformed hex log ID is skipped": {
+			keys: &cosign.TrustedTransparencyLogPubKeys{
+				Keys: map[string]cosign.TransparencyLogPubKey{
+					"not-valid-hex!": {PubKey: ecKey.Public()},
+				},
+			},
+			expected: 0,
+		},
+		"mixed valid and invalid log IDs": {
+			keys: &cosign.TrustedTransparencyLogPubKeys{
+				Keys: map[string]cosign.TransparencyLogPubKey{
+					validLogID:       {PubKey: ecKey.Public()},
+					"not-valid-hex!": {PubKey: ecKey.Public()},
+				},
+			},
+			expected: 1,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := transparencyLogsFromKeys(tc.keys)
+			if tc.expected == 0 {
+				assert.Empty(t, result)
+				return
+			}
+			assert.Len(t, result, tc.expected)
+			for _, tl := range result {
+				assert.NotNil(t, tl.PublicKey)
+				assert.Equal(t, crypto.SHA256, tl.HashFunc)
+				assert.Equal(t, crypto.SHA256, tl.SignatureHashFunc)
+				assert.False(t, tl.ValidityPeriodStart.IsZero(), "ValidityPeriodStart must be non-zero for sigstore-go.")
+			}
+		})
+	}
+}
+
+func TestTrustedMaterialFromCertificateChain(t *testing.T) {
+	certPEM, err := os.ReadFile("testdata/cert.pem")
+	require.NoError(t, err)
+	chainPEM, err := os.ReadFile("testdata/chain.pem")
+	require.NoError(t, err)
+
+	parseCert := func(t *testing.T, pemData []byte) *x509.Certificate {
+		block, _ := pem.Decode(pemData)
+		require.NotNil(t, block)
+		cert, err := x509.ParseCertificate(block.Bytes)
+		require.NoError(t, err)
+		return cert
+	}
+	leafCert := parseCert(t, certPEM)
+	rootCert := parseCert(t, chainPEM)
+
+	cases := map[string]struct {
+		chain                 []*x509.Certificate
+		expectedIntermediates int
+	}{
+		"single cert becomes root with no intermediates": {
+			chain:                 []*x509.Certificate{rootCert},
+			expectedIntermediates: 0,
+		},
+		"two certs: first is intermediate, last is root": {
+			chain:                 []*x509.Certificate{leafCert, rootCert},
+			expectedIntermediates: 1,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			tm, err := trustedMaterialFromCertificateChain(tc.chain, cosign.CheckOpts{})
+			require.NoError(t, err)
+			require.NotNil(t, tm)
+
+			cas := tm.FulcioCertificateAuthorities()
+			require.Len(t, cas, 1)
+			fca, ok := cas[0].(*root.FulcioCertificateAuthority)
+			require.True(t, ok)
+			assert.Equal(t, tc.chain[len(tc.chain)-1], fca.Root, "Last cert in chain should be root.")
+			assert.Len(t, fca.Intermediates, tc.expectedIntermediates)
+		})
+	}
+}
+
+func TestAugmentTrustedMaterialWithSigChain(t *testing.T) {
+	certPEM, err := os.ReadFile("testdata/cert.pem")
+	require.NoError(t, err)
+	chainPEM, err := os.ReadFile("testdata/chain.pem")
+	require.NoError(t, err)
+
+	parseCert := func(t *testing.T, pemData []byte) *x509.Certificate {
+		block, _ := pem.Decode(pemData)
+		require.NotNil(t, block)
+		cert, err := x509.ParseCertificate(block.Bytes)
+		require.NoError(t, err)
+		return cert
+	}
+	rootCert := parseCert(t, chainPEM)
+
+	// Build a TrustedMaterial with one CA that has only a root (no intermediates).
+	baseTM, err := root.NewTrustedRoot(
+		root.TrustedRootMediaType01,
+		[]root.CertificateAuthority{
+			&root.FulcioCertificateAuthority{Root: rootCert},
+		},
+		nil, nil, nil,
+	)
+	require.NoError(t, err)
+
+	t.Run("short chain is a no-op", func(t *testing.T) {
+		// Chain() returns only the root (1 cert) => no intermediates to add.
+		sig, err := static.NewSignature(nil, "", static.WithCertChain(certPEM, chainPEM))
+		require.NoError(t, err)
+
+		opts := &cosign.CheckOpts{TrustedMaterial: baseTM}
+		err = augmentTrustedMaterialWithSigChain(opts, sig)
+		assert.NoError(t, err)
+		// TrustedMaterial should be unchanged because chain has only 1 cert.
+		assert.Equal(t, baseTM, opts.TrustedMaterial)
+	})
+
+	t.Run("no chain is a no-op", func(t *testing.T) {
+		sig, err := static.NewSignature(nil, "")
+		require.NoError(t, err)
+
+		opts := &cosign.CheckOpts{TrustedMaterial: baseTM}
+		err = augmentTrustedMaterialWithSigChain(opts, sig)
+		assert.NoError(t, err)
+		assert.Equal(t, baseTM, opts.TrustedMaterial)
+	})
+
+	t.Run("multi-cert chain merges intermediates", func(t *testing.T) {
+		// Create a chain PEM with cert + root so Chain() returns 2 certs.
+		multiChainPEM := append(append([]byte{}, certPEM...), chainPEM...)
+		sig, err := static.NewSignature(nil, "", static.WithCertChain(certPEM, multiChainPEM))
+		require.NoError(t, err)
+
+		opts := &cosign.CheckOpts{TrustedMaterial: baseTM}
+		err = augmentTrustedMaterialWithSigChain(opts, sig)
+		require.NoError(t, err)
+
+		// The TrustedMaterial should now have the intermediate from the sig chain.
+		assert.NotEqual(t, baseTM, opts.TrustedMaterial, "TrustedMaterial should be replaced.")
+		cas := opts.TrustedMaterial.FulcioCertificateAuthorities()
+		require.Len(t, cas, 1)
+		fca, ok := cas[0].(*root.FulcioCertificateAuthority)
+		require.True(t, ok)
+		assert.Len(t, fca.Intermediates, 1, "One intermediate should be merged from sig chain.")
+	})
 }
