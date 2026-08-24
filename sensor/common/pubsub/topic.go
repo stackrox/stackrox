@@ -18,6 +18,9 @@ const (
 	ResolvedResourceEventTopic
 	SoftRestartTopic
 	ResourceSyncFinishedTopic
+	CentralReachableTopic
+	SensorOfflineTopic
+	HandshakeSyncFinishedTopic
 )
 
 var (
@@ -37,6 +40,9 @@ var (
 		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
 		SoftRestartTopic:                "SoftRestart",
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
+		CentralReachableTopic:           "CentralReachable",
+		SensorOfflineTopic:              "SensorOffline",
+		HandshakeSyncFinishedTopic:      "HandshakeSyncFinished",
 	}
 )
 

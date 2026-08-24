@@ -49,6 +49,9 @@ func buildPubSubDispatcher(eventPipelineQueueSize int) (common.PubSubDispatcher,
 			lane.NewBlockingLane(pubsub.DetectorDeployAlertOutputLane),
 			lane.NewBlockingLane(pubsub.SoftRestartLane),
 			lane.NewBlockingLane(pubsub.ResourceSyncFinishedLane),
+			lane.NewBlockingLane(pubsub.CentralReachableLane),
+			lane.NewBlockingLane(pubsub.SensorOfflineLane),
+			lane.NewBlockingLane(pubsub.HandshakeSyncFinishedLane),
 		},
 	))
 	if err != nil {
