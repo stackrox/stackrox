@@ -226,19 +226,20 @@
 #       reencrypt:
 #         enabled: true
 #
-#     # Offline signing key bundle: mount a pre-created ConfigMap containing the
-#     # Red Hat signing key bundle. This allows air-gapped customers to update the
-#     # baked-in signing keys without internet access.
-#     # Steps:
-#     #   1. Copy the bundle format from /tmp/redhat-signing-keys/bundle.example.json
-#     #      inside the Central container (or see documentation for the JSON schema).
-#     #   2. Create the ConfigMap:
-#     #      kubectl create configmap redhat-signing-key-bundle \
-#     #        --from-file=bundle.json=<your-bundle-file> -n stackrox
-#     #   3. Uncomment the line below and run helm upgrade.
-#     # To rotate keys, edit the ConfigMap directly — no helm upgrade needed.
-#     signingKeyBundle:
-#       configMapName: "redhat-signing-key-bundle"
+#
+#   # Offline signing key bundle: mount a pre-created ConfigMap containing the
+#   # Red Hat signing key bundle. This allows air-gapped customers to update the
+#   # baked-in signing keys without internet access.
+#   # Steps:
+#   #   1. Copy the bundle format from /tmp/redhat-signing-keys/bundle.example.json
+#   #      inside the Central container (or see documentation for the JSON schema).
+#   #   2. Create the ConfigMap:
+#   #      kubectl create configmap redhat-signing-key-bundle \
+#   #        --from-file=bundle.json=<your-bundle-file> -n stackrox
+#   #   3. Uncomment the line below and run helm upgrade.
+#   # To rotate keys, edit the ConfigMap directly — no helm upgrade needed.
+#   signingKeyBundle:
+#     configMapName: "redhat-signing-key-bundle"
 #
 #     # Additional volume mounts for the Central container. Only few people will require this.
 #     extraMounts:
