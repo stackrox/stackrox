@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/sensor/common/centralbound"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
+	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
@@ -25,21 +27,29 @@ func benchOutputQueue(b *testing.B, pubsubEnabled bool, forwardCount int, makeEv
 	det.EXPECT().ReprocessDeployments(gomock.Any()).AnyTimes()
 	det.EXPECT().ProcessDeployment(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	var disp testDispatcher
-	var reg pubSubRegister
+	var disp pubSubDispatcher
+	var responsesC <-chan *message.ExpiringMessage
 	if pubsubEnabled {
 		d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs([]pubsub.LaneConfig{
 			lane.NewBlockingLane(pubsub.ResolvedResourceEventLane),
+			lane.NewBlockingLane(pubsub.CentralBoundLane),
 		}))
 		if err != nil {
 			b.Fatal(err)
 		}
 		b.Cleanup(d.Stop)
+
+		bridge, err := centralbound.NewBridge(d)
+		if err != nil {
+			b.Fatal(err)
+		}
+		b.Cleanup(bridge.Stop)
+
 		disp = d
-		reg = d
+		responsesC = bridge.ResponsesC()
 	}
 
-	q, err := New(det, 1024, reg)
+	q, err := New(det, 1024, disp)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -47,6 +57,10 @@ func benchOutputQueue(b *testing.B, pubsubEnabled bool, forwardCount int, makeEv
 		b.Fatal(err)
 	}
 	b.Cleanup(q.Stop)
+
+	if !pubsubEnabled {
+		responsesC = q.ResponsesC()
+	}
 
 	b.ResetTimer()
 	for b.Loop() {
@@ -60,7 +74,7 @@ func benchOutputQueue(b *testing.B, pubsubEnabled bool, forwardCount int, makeEv
 			q.Send(event)
 		}
 		for range forwardCount {
-			<-q.ResponsesC()
+			<-responsesC
 		}
 	}
 }

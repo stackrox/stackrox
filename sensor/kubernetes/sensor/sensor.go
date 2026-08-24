@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/centralbound"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/configmap"
@@ -197,6 +198,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
+	}
+
+	if features.SensorInternalPubSub.Enabled() {
+		centralBoundBridge, err := centralbound.NewBridge(internalMessageDispatcher)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating central-bound bridge")
+		}
+		components = append(components, centralBoundBridge)
 	}
 
 	var virtualMachineHandler vmIndex.Handler
