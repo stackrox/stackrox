@@ -346,8 +346,8 @@ func (s *serviceImpl) getReportHistory(ctx context.Context, queryBuilder *search
 
 	baseQuery := queryBuilder.ProtoQuery()
 	if userID != "" {
-		queryBuilder.AddExactMatches(search.RequesterUserID, userID)
-		baseQuery = queryBuilder.ProtoQuery()
+		userIDQuery := search.NewQueryBuilder().AddExactMatches(search.RequesterUserID, userID).ProtoQuery()
+		baseQuery = search.ConjunctionQuery(baseQuery, userIDQuery)
 	}
 
 	conjunctionQuery := search.ConjunctionQuery(baseQuery, parsedQuery)
