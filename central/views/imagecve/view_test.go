@@ -1311,7 +1311,7 @@ func (s *ImageCVEViewTestSuite) TestImageCVECountFiltering() {
 		for _, r := range results {
 			ids = append(ids, r.GetCVE())
 		}
-		sort.Strings(ids)
+		slices.Sort(ids)
 		return ids
 	}
 
