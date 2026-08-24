@@ -11,11 +11,14 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 // sequencedRand returns successive values from seq, then the last value.
@@ -235,6 +238,54 @@ func TestVMScraper_StartsPerTickSkipsIdleTicks(t *testing.T) {
 	s.tick(context.Background(), false)
 	assert.Equal(t, before, histogramSampleCount(t, metrics.PullStartsPerTick),
 		"idle ticks must not observe starts-per-tick")
+}
+
+func TestVMScraper_WarnIfSpreadSaturated(t *testing.T) {
+	// newTestScraper uses a 5m poll, 2/3 spread, 10s tick (capacity 20).
+	cases := map[string]struct {
+		numVMs         int
+		tickInterval   time.Duration
+		spreadFraction float64
+		wantLogs       int
+	}{
+		"under capacity does not warn": {
+			numVMs:         20,
+			tickInterval:   defaultTickInterval,
+			spreadFraction: 2.0 / 3,
+		},
+		"over capacity warns": {
+			numVMs:         21,
+			tickInterval:   defaultTickInterval,
+			spreadFraction: 2.0 / 3,
+			wantLogs:       1,
+		},
+		"zero tick does not warn": {
+			numVMs:         100,
+			tickInterval:   time.Duration(0),
+			spreadFraction: 2.0 / 3,
+		},
+		"zero spread does not warn": {
+			numVMs:         100,
+			tickInterval:   defaultTickInterval,
+			spreadFraction: 0,
+		},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			// Must not use t.Parallel() because it temporarily modifies the package logger.
+			core, logs := observer.New(zap.WarnLevel)
+			orig := log
+			log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+			t.Cleanup(func() { log = orig })
+
+			s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s.tickInterval = tc.tickInterval
+			s.spreadFraction = tc.spreadFraction
+			s.warnIfSpreadSaturated(tc.numVMs)
+			// Counting the number of Warn logs emitted to not assert on the log msg text.
+			assert.Equal(t, tc.wantLogs, logs.Len())
+		})
+	}
 }
 
 func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
