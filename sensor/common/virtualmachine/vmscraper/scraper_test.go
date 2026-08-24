@@ -779,10 +779,10 @@ func (s *VMScraper) pollOnce(ctx context.Context) {
 	s.tick(ctx, true)
 }
 
-// setTickToDrain sets tickInterval to the catch-up window so one tick can
-// start every never-scraped due VM under concurrency.
+// setTickToDrain sets tickInterval to the new-VM index report window so one
+// tick can start every never-scraped due VM under concurrency.
 func setTickToDrain(s *VMScraper) {
-	s.tickInterval = catchUpWindow(s.interval)
+	s.tickInterval = newVMIndexReportWindow(s.interval)
 }
 
 // --- Thread-safe mocks for concurrent tests ---

@@ -268,7 +268,7 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 
 	due := s.dueKeys()
 	metrics.PullDueVMs.Set(float64(len(due)))
-	capN := min(s.concurrency, startBudget(len(due), s.tickInterval, catchUpWindow(s.interval)))
+	capN := min(s.concurrency, startBudget(len(due), s.tickInterval, newVMIndexReportWindow(s.interval)))
 	if capN < len(due) {
 		due = due[:capN]
 	}

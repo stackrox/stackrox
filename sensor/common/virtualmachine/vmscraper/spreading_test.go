@@ -73,7 +73,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
-	s.tickInterval = catchUpWindow(s.interval)
+	s.tickInterval = newVMIndexReportWindow(s.interval)
 	s.reconcileEvery = reconcilePeriod(s.interval)
 	s.randFloat64 = sequencedRand([]float64{0, 0.25, 0.5, 0.75, 1})
 
@@ -230,8 +230,8 @@ func TestVMScraper_DuePileIsPacedByStartBudget(t *testing.T) {
 		s.lastReconcile = now
 	})
 
-	catchUp := catchUpWindow(s.interval)
-	want := startBudget(numVMs, s.tickInterval, catchUp)
+	window := newVMIndexReportWindow(s.interval)
+	want := startBudget(numVMs, s.tickInterval, window)
 	require.Equal(t, 1, want)
 	require.Greater(t, want, 0)
 	require.Less(t, want, numVMs)
