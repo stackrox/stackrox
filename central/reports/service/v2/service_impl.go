@@ -652,7 +652,7 @@ func notifyWithRetry(ctx context.Context, db postgres.DB, channel, payload strin
 }
 
 func (s *serviceImpl) persistSnapshotAndNotify(ctx context.Context, reportReq *reportGen.ReportRequest, channel string) (string, error) {
-	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
+	reportID, err := s.validator.PersistReportSnapshot(ctx, reportReq.ReportSnapshot)
 	if err != nil {
 		return "", err
 	}

@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -365,6 +366,71 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 		return errors.Wrap(errox.NotAuthorized, "Report job cannot be cancelled by a user who did not request the report.")
 	}
 	return nil
+}
+
+// PersistReportSnapshot validates that the user does not already have a pending
+// report for the same config, sets the snapshot to WAITING, and persists it to
+// the database. Returns the report ID.
+func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error) {
+	if snapshot.GetVulnReportFilters() != nil && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+		hasPending, err := v.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+		if err != nil {
+			return "", err
+		}
+		if hasPending {
+			return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+				snapshot.GetReportConfigurationId())
+		}
+	}
+
+	if snapshot.GetViewBasedVulnReportFilters() != nil {
+		hasPending, err := v.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId())
+		if err != nil {
+			return "", err
+		}
+		if hasPending {
+			return "", errors.New("User already has a view based report queued")
+		}
+	}
+
+	snapshot.ReportStatus.RunState = storage.ReportStatus_WAITING
+	snapshot.ReportStatus.QueuedAt = protocompat.TimestampNow()
+	reportID, err := v.snapshotDatastore.AddReportSnapshot(ctx, snapshot)
+	if err != nil {
+		return "", err
+	}
+	return reportID, nil
+}
+
+func (v *Validator) doesUserHavePendingReport(configID string, userID string) (bool, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ReportConfigID, configID).
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
+		AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
+		ProtoQuery()
+	snapshots, err := v.snapshotDatastore.SearchReportSnapshots(allAccessCtx, query)
+	if err != nil {
+		return false, err
+	}
+	for _, snap := range snapshots {
+		if snap.GetRequester().GetId() == userID {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (v *Validator) doesUserHaveViewBasedPendingReport(userID string) (bool, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
+		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+		AddExactMatches(search.UserID, userID).
+		ProtoQuery()
+	count, err := v.snapshotDatastore.Count(allAccessCtx, query)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func collectionSnapshot(collection *storage.ResourceCollection) *storage.CollectionSnapshot {
