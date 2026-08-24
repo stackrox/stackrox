@@ -707,7 +707,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Eligible VMs versus how many scrapes that tick actually started. Healthy catch-up with the start cap: due stays high, starts stay near 1. Jitter-only (no cap): due and starts move together. A dump: both jump toward the fleet. Starts are only recorded on ticks that had someone due; idle ticks are omitted. Needs vsock_pull_starts_per_tick (add to the start-cap PR if empty).",
+      "description": "Eligible VMs versus how many scrapes that tick actually started. Healthy catch-up with the start cap: due stays high, starts stay near 1. Jitter-only (no cap): due and starts move together. A dump: both jump toward the fleet. Starts are only recorded on ticks that had someone due; idle ticks are omitted.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -871,7 +871,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Time on X, how many VMs started in that tick on Y, color = how often that happened. Only ticks that had at least one due VM are recorded, so there is no 0 row. Cap 1 should glow on Y near 1. A bright band at Y near the fleet (or 20) is a dump. Compare Tick rate if most wall-clock ticks are idle. Needs vsock_pull_starts_per_tick.",
+      "description": "Time on X, how many VMs started in that tick on Y, color = how often that happened. Only ticks that had at least one due VM are recorded, so there is no 0 row. Cap 1 should glow on Y near 1. A bright band at Y near the fleet (or 20) is a dump. Compare Tick rate if most wall-clock ticks are idle.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -955,7 +955,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "How many observed ticks started 1, 2, 3, ... VMs. Idle ticks (nobody due) are not sampled, so there is no 0 bar; those ticks show up on Tick rate instead. For a small fleet with start cap 1, mass should sit in 1. Mass in 8 or 20 is a dump. Needs vsock_pull_starts_per_tick.",
+      "description": "How many observed ticks started 1, 2, 3, ... VMs. Idle ticks (nobody due) are not sampled, so there is no 0 bar; those ticks show up on Tick rate instead. For a small fleet with start cap 1, mass should sit in 1. Mass in 8 or 20 is a dump.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -3850,7 +3850,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "description": "Tick rate should stay about 1 per tick interval. Starts-per-tick samples are fewer because idle ticks are omitted. A large gap between the two means most ticks had an empty due pile (steady state), not a broken histogram. Needs vsock_pull_starts_per_tick.",
+          "description": "Tick rate should stay about 1 per tick interval. Starts-per-tick samples are fewer because idle ticks are omitted. A large gap between the two means most ticks had an empty due pile (steady state), not a broken histogram.",
           "fieldConfig": {
             "defaults": {
               "color": {
