@@ -633,7 +633,7 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 	blobNames := make([]string, 0)
 	for _, snap := range snapshots {
 		status := snap.GetReportStatus()
-		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+		if status != nil && status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
 				parentDir := snap.GetReportConfigurationId()
