@@ -197,6 +197,10 @@ func (v *Validator) validateNodeResourceScope(scope *apiV2.ResourceScope) error 
 		return errors.Wrap(errox.InvalidArgs, "Node vulnerability reports must use entity scope (cluster-based scoping only)")
 	}
 
+	if entityScope.EntityScope == nil {
+		return errors.Wrap(errox.InvalidArgs, "Entity scope cannot be nil")
+	}
+
 	if err := validateEntityScope(entityScope.EntityScope); err != nil {
 		return err
 	}
@@ -465,8 +469,6 @@ func generateReportSnapshot(
 		snapshotType = storage.ReportSnapshot_VULNERABILITY
 	case storage.ReportConfiguration_NODE_VULNERABILITY:
 		snapshotType = storage.ReportSnapshot_NODE_VULNERABILITY
-	default:
-		snapshotType = storage.ReportSnapshot_VULNERABILITY
 	}
 
 	snapshot := &storage.ReportSnapshot{
