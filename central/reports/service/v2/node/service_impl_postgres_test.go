@@ -28,10 +28,6 @@ func (s *NodeReportServicePostgresTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *NodeReportServicePostgresTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *NodeReportServicePostgresTestSuite) TearDownTest() {
 	s.truncateTable("nodes")
 	s.truncateTable("node_cves")
@@ -54,12 +50,12 @@ func (s *NodeReportServicePostgresTestSuite) TestAccessScopeRulesPreservation() 
 func (s *NodeReportServicePostgresTestSuite) TestNodeReportFilters_QueryGeneration() {
 	clusterID := uuid.NewV4().String()
 
-	node1 := fixtures.GetNodeWithUniqueComponents(2, 5)
+	node1 := fixtures.GetNodeWithUniqueComponents(5, 2)
 	node1.Id = uuid.NewV4().String()
 	node1.ClusterId = clusterID
 	node1.Name = "test-node-1"
 
-	node2 := fixtures.GetNodeWithUniqueComponents(2, 3)
+	node2 := fixtures.GetNodeWithUniqueComponents(3, 2)
 	node2.Id = uuid.NewV4().String()
 	node2.ClusterId = clusterID
 	node2.Name = "test-node-2"

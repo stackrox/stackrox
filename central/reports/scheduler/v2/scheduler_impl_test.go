@@ -173,7 +173,7 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 	cronScheduler.Start()
 	defer cronScheduler.Stop()
 
-	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, cronScheduler, nil)
+	s := newSchedulerImpl(nil, nil, nil, nil, mockReportGen, nil, nil, cronScheduler, nil)
 
 	started := make(chan struct{})
 	done := make(chan struct{})
@@ -202,10 +202,12 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 	err := s.concurrencySema.Acquire(context.Background(), 1)
 	assert.NoError(t, err)
 
-	go s.runSingleReport(req)
+	queue := s.queueByType[storage.ReportSnapshot_VULNERABILITY]
+	go s.runSingleReport(queue, mockReportGen, req)
 	<-started
 
-	cancelled := s.tryCancelRunningReport("test-report-id")
+	cancelled, err := s.CancelReportRequest(context.Background(), "test-report-id")
+	assert.NoError(t, err)
 	assert.True(t, cancelled)
 
 	assert.Error(t, capturedCtx.Err())
@@ -213,7 +215,6 @@ func TestCancelRunningReportCancelsContext(t *testing.T) {
 
 	close(done)
 }
-
 
 func TestCancelReportRequestCancelsRunningReport(t *testing.T) {
 	ctrl := gomock.NewController(t)
