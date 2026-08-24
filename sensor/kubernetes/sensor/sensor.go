@@ -126,7 +126,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
-	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID)
+	auditLogCollectionManager := compliance.NewAuditLogCollectionManager(clusterID, internalMessageDispatcher)
 
 	o := orchestrator.New(cfg.k8sClient.Kubernetes())
 	complianceMultiplexer := compliance.NewMultiplexer()

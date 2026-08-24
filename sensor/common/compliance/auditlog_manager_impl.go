@@ -4,15 +4,18 @@ import (
 	"maps"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -44,6 +47,8 @@ type auditLogCollectionManagerImpl struct {
 
 	fileStateLock  sync.RWMutex
 	connectionLock sync.RWMutex
+
+	pubSubDispatcher common.PubSubDispatcher
 }
 
 func (a *auditLogCollectionManagerImpl) Name() string {
@@ -51,7 +56,18 @@ func (a *auditLogCollectionManagerImpl) Name() string {
 }
 
 func (a *auditLogCollectionManagerImpl) Start() error {
-	go a.runStateSaver()
+	if features.SensorInternalPubSub.Enabled() && a.pubSubDispatcher != nil {
+		if err := a.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.AuditLogManagerAuditEventsConsumer,
+			pubsub.AuditLogManagerTopic,
+			pubsub.AuditLogManagerLane,
+			a.handleAuditLogManagerEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register audit log manager consumer")
+		}
+	} else {
+		go a.runStateSaver()
+	}
 	go a.runUpdater(a.updaterTicker.C)
 	return nil
 }
@@ -96,21 +112,35 @@ func (a *auditLogCollectionManagerImpl) runStateSaver() {
 		case <-a.stopper.Flow().StopRequested():
 			return
 		case msg := <-a.auditEventMsgs:
-			node := msg.GetNode()
-			if events := msg.GetAuditEvents(); len(events.GetEvents()) > 0 {
-				// Given how audit logs are always in chronological order, and given how compliance is parsing it in said order,
-				// we can make an assumption that the earliest event in this message is still later than the state before
-				// But we won't check it, in case there is a corner case where the time is out of order.
-				latestEvent := events.GetEvents()[0]
-				for _, e := range events.GetEvents()[1:] {
-					if protoutils.After(e.GetTimestamp(), latestEvent.GetTimestamp()) {
-						latestEvent = e
-					}
-				}
-				a.updateFileState(node, latestEvent)
-			}
+			a.handleAuditEvents(msg.GetNode(), msg.GetAuditEvents())
 		}
 	}
+}
+
+// handleAuditLogManagerEvent adapts a PubSub AuditLogManagerEvent to handleAuditEvents.
+func (a *auditLogCollectionManagerImpl) handleAuditLogManagerEvent(event pubsub.Event) error {
+	auditLogManagerEvent, ok := event.(*AuditLogManagerEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	a.handleAuditEvents(auditLogManagerEvent.Node, auditLogManagerEvent.AuditEvents)
+	return nil
+}
+
+func (a *auditLogCollectionManagerImpl) handleAuditEvents(node string, events *sensor.AuditEvents) {
+	if len(events.GetEvents()) == 0 {
+		return
+	}
+	// Given how audit logs are always in chronological order, and given how compliance is parsing it in said order,
+	// we can make an assumption that the earliest event in this message is still later than the state before
+	// But we won't check it, in case there is a corner case where the time is out of order.
+	latestEvent := events.GetEvents()[0]
+	for _, e := range events.GetEvents()[1:] {
+		if protoutils.After(e.GetTimestamp(), latestEvent.GetTimestamp()) {
+			latestEvent = e
+		}
+	}
+	a.updateFileState(node, latestEvent)
 }
 
 func (a *auditLogCollectionManagerImpl) updateFileState(node string, latestEvent *storage.KubernetesEvent) {
