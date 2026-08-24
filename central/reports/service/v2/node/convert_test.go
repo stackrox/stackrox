@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDSMocks "github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
-	nodeGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/node/mocks"
+	v2 "github.com/stackrox/rox/central/reports/service/v2"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
@@ -42,7 +42,6 @@ func (s *ConversionTestSuite) SetupTest() {
 	notifierDataStore := notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	blobStore := blobDSMocks.NewMockDatastore(s.mockCtrl)
 	scheduler := schedulerMocks.NewMockScheduler(s.mockCtrl)
-	nodeGenerator := nodeGenMocks.NewMockNodeReportGenerator(s.mockCtrl)
 	validator := validation.New(reportConfigDataStore, reportSnapshotDataStore, collectionDataStore, notifierDataStore)
 
 	s.service = &serviceImpl{
@@ -53,7 +52,6 @@ func (s *ConversionTestSuite) SetupTest() {
 		scheduler:           scheduler,
 		blobStore:           blobStore,
 		validator:           validator,
-		nodeGenerator:       nodeGenerator,
 	}
 }
 
@@ -104,12 +102,12 @@ func (s *ConversionTestSuite) TestScheduleConversions() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			protoSchedule := s.service.convertV2ScheduleToProto(tc.v2Schedule)
+			protoSchedule := v2.ConvertV2ScheduleToProto(tc.v2Schedule)
 			assert.NotNil(s.T(), protoSchedule)
 			assert.Equal(s.T(), tc.v2Schedule.GetHour(), protoSchedule.GetHour())
 			assert.Equal(s.T(), tc.v2Schedule.GetMinute(), protoSchedule.GetMinute())
 
-			v2Schedule := s.service.convertProtoScheduleToV2(protoSchedule)
+			v2Schedule := v2.ConvertProtoScheduleToV2(protoSchedule)
 			assert.NotNil(s.T(), v2Schedule)
 			assert.Equal(s.T(), tc.v2Schedule.GetIntervalType(), v2Schedule.GetIntervalType())
 			assert.Equal(s.T(), tc.v2Schedule.GetHour(), v2Schedule.GetHour())
@@ -334,8 +332,8 @@ func (s *ConversionTestSuite) TestReportConfigurationRoundTrip() {
 }
 
 func (s *ConversionTestSuite) TestNilConversions() {
-	assert.Nil(s.T(), s.service.convertV2ScheduleToProto(nil))
-	assert.Nil(s.T(), s.service.convertProtoScheduleToV2(nil))
+	assert.Nil(s.T(), v2.ConvertV2ScheduleToProto(nil))
+	assert.Nil(s.T(), v2.ConvertProtoScheduleToV2(nil))
 	assert.Nil(s.T(), s.service.convertV2NotifierConfigToProto(nil))
 
 	result, err := s.service.convertProtoNotifierConfigToV2(nil)

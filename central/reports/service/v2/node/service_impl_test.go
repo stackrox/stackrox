@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDSMocks "github.com/stackrox/rox/central/reports/config/datastore/mocks"
 	schedulerMocks "github.com/stackrox/rox/central/reports/scheduler/v2/mocks"
-	nodeGenMocks "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/node/mocks"
 	reportSnapshotDSMocks "github.com/stackrox/rox/central/reports/snapshot/datastore/mocks"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
@@ -42,7 +41,6 @@ type NodeReportServiceTestSuite struct {
 	notifierDataStore       *notifierDSMocks.MockDataStore
 	blobStore               *blobDSMocks.MockDatastore
 	scheduler               *schedulerMocks.MockScheduler
-	nodeGenerator           *nodeGenMocks.MockNodeReportGenerator
 	service                 Service
 }
 
@@ -55,9 +53,8 @@ func (s *NodeReportServiceTestSuite) SetupTest() {
 	s.notifierDataStore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
-	s.nodeGenerator = nodeGenMocks.NewMockNodeReportGenerator(s.mockCtrl)
 	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, s.nodeGenerator)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator)
 }
 
 func (s *NodeReportServiceTestSuite) TearDownSuite() {
