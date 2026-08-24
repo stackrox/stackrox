@@ -10,10 +10,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -24,7 +26,8 @@ type commandHandlerImpl struct {
 	commands chan *central.ScrapeCommand
 	updates  chan *message.ExpiringMessage
 
-	service Service
+	service          Service
+	pubSubDispatcher common.PubSubDispatcher
 
 	scrapeIDToState map[string]*scrapeState
 
@@ -41,6 +44,16 @@ func (c *commandHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 func (c *commandHandlerImpl) Start() error {
+	if features.SensorInternalPubSub.Enabled() && c.pubSubDispatcher != nil {
+		if err := c.pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.ComplianceCommandHandlerReturnConsumer,
+			pubsub.ComplianceReturnTopic,
+			pubsub.ComplianceReturnLane,
+			c.handleComplianceReturnEvent,
+		); err != nil {
+			return errors.Wrap(err, "failed to register compliance command handler return consumer")
+		}
+	}
 	go c.run()
 	return nil
 }
@@ -113,11 +126,24 @@ func (c *commandHandlerImpl) run() {
 				c.stopper.Flow().StopWithError(errors.New("compliance return input closed"))
 				return
 			}
-			if updates := c.commitResult(result); len(updates) > 0 {
-				c.sendUpdates(updates)
-			}
+			c.handleComplianceReturn(result)
 		}
 	}
+}
+
+func (c *commandHandlerImpl) handleComplianceReturn(result *compliance.ComplianceReturn) {
+	if updates := c.commitResult(result); len(updates) > 0 {
+		c.sendUpdates(updates)
+	}
+}
+
+func (c *commandHandlerImpl) handleComplianceReturnEvent(event pubsub.Event) error {
+	returnEvent, ok := event.(*ComplianceReturnEvent)
+	if !ok {
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+	c.handleComplianceReturn(returnEvent.Return)
+	return nil
 }
 
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {

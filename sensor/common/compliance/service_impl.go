@@ -243,7 +243,13 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		switch t := msg.GetMsg().(type) {
 		case *sensor.MsgFromCompliance_Return:
 			log.Infof("Received compliance return from %q", msg.GetNode())
-			s.output <- t.Return
+			if features.SensorInternalPubSub.Enabled() && s.pubSubDispatcher != nil {
+				if err := s.pubSubDispatcher.Publish(&ComplianceReturnEvent{Return: t.Return}); err != nil {
+					logging.GetRateLimitedLogger().ErrorL("compliance-return-publish", "Failed to publish compliance return event: %v", err)
+				}
+			} else {
+				s.output <- t.Return
+			}
 		case *sensor.MsgFromCompliance_AuditEvents:
 			// if we are offline we do not send more audit logs to the manager nor the detector.
 			// Upon reconnection Central will sync the last state and Sensor will request to Compliance to start
