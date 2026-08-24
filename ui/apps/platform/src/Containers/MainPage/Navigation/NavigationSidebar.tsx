@@ -46,7 +46,7 @@ import {
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesViewPath,
     vulnerabilitiesVirtualMachineCvesPath,
-    vulnerabilityImageReportsPath,
+    vulnerabilityReportsPath,
 } from 'routePaths';
 
 import NavigationContent from './NavigationContent';
@@ -98,9 +98,8 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
         {
             type: 'link',
             content: 'Reports',
-            // TODO: point to the vulnerability reports overview page once it exists.
-            path: vulnerabilityImageReportsPath,
-            routeKey: 'vulnerabilities/reports',
+            path: vulnerabilityReportsPath,
+            routeKey: ['vulnerabilities/reports/images', 'vulnerabilities/reports/nodes'],
         },
         {
             type: 'separator',
