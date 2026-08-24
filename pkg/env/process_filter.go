@@ -25,8 +25,9 @@ var (
 	// An empty array "[]" means only unique processes are tracked without argument tracking.
 	// This setting can be overridden by ROX_PROCESS_FILTER_MODE presets.
 	// Default: [8,6,4,2]
+	// TODO(janisz): change maximum element Value to 255 to avoid implicit clamping in filter.go
 	ProcessFilterFanOutLevels = RegisterIntegerArraySetting(
 		"ROX_PROCESS_FILTER_FAN_OUT_LEVELS",
 		[]int{8, 6, 4, 2},
-	).WithMinimumElementValue(1).WithMaximumElementValue(255).WithMinLength(0).WithMaxLength(10)
+	).WithMinimumElementValue(1).WithMaximumElementValue(1000).WithMinLength(0).WithMaxLength(10)
 )

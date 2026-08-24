@@ -182,7 +182,7 @@ func NewFilter(maxExactPathMatches, maxUniqueProcesses int, fanOut []int) Filter
 			v = 1
 		}
 		if v > 255 {
-			utils.Should(fmt.Errorf("fanOut[%d]=%d exceeds uint8 max, clamping to 255", i, v))
+			utils.Should(fmt.Errorf("ROX_PROCESS_FILTER_FAN_OUT_LEVELS[%d]=%d exceeds uint8 max, clamping to 255", i, v))
 			v = 255
 		}
 		maxFanOut[i] = uint8(v)
