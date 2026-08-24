@@ -227,7 +227,7 @@
 #         enabled: true
 #
 #
-#   # Name of a ConfigMap containing a Red Hat signing key bundle (bundle.json).
+#   # Name of a ConfigMap containing a Red Hat signing key bundle. The bundle must be stored with the key `bundle.json`.
 #   # When set, the ConfigMap is mounted into Central at /tmp/redhat-signing-keys/.
 #   # To rotate keys, update the ConfigMap directly — no helm upgrade needed.
 #   signingKeyBundle:
