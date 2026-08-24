@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
-	nodeGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/node"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -82,7 +81,6 @@ type serviceImpl struct {
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore
 	validator           *validation.Validator
-	nodeGenerator       nodeGen.NodeReportGenerator
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

@@ -5,7 +5,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
-	nodeGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator/node"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
@@ -29,7 +28,6 @@ func Singleton() Service {
 			schedulerV2.Singleton(),
 			blobDS.Singleton(),
 			validation.Singleton(),
-			nodeGen.NewStub(),
 		)
 	})
 	return svc
