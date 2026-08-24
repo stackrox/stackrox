@@ -82,8 +82,6 @@ func (s *serviceImpl) convertV2NodeReportFiltersToProto(filters *apiV2.NodeVulne
 		ret.CvesSince = &storage.NodeVulnerabilityReportFilters_AllVuln{
 			AllVuln: filters.GetAllVuln(),
 		}
-	default:
-		return nil
 	}
 
 	return ret
