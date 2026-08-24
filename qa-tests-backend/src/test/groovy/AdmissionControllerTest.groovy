@@ -143,21 +143,7 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify admission controller enforcement on create: #desc"() {
         when:
         "Create a deployment that violates an enforced policy"
-        // Retry to allow time for the admission controller to fetch scan data from
-        // Central. Policies that require image enrichment (e.g. severity) may not
-        // evaluate on the first attempt if the AC pod handling this request hasn't
-        // cached the scan results yet. The retry is harmless for fast-path policies
-        // (latest tag, bypass) since they pass on the first attempt.
-        def created
-        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
-            created = orchestrator.createDeploymentNoWait(deployment)
-            if (created != launched) {
-                if (created) {
-                    deleteDeploymentWithCaution(deployment)
-                }
-                assert created == launched
-            }
-        }
+        def created = createDeploymentWithEnforcementRetry(deployment, launched)
 
         then:
         "Verify the admission controller allows or blocks based on policy and bypass annotation"
@@ -253,15 +239,33 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def deleteDeploymentWithCaution(Deployment deployment) {
+        orchestrator.deleteDeployment(deployment)
         def timer = new Timer(30, 1)
-        def deleted = false
-        while (!deleted && timer.IsValid()) {
-            orchestrator.deleteDeployment(deployment)
-            deleted = true
+        while (timer.IsValid()) {
+            if (orchestrator.getOrchestratorDeployment(deployment.namespace, deployment.name) == null) {
+                return
+            }
         }
-        if (!deleted) {
-            log.warn "Failed to delete deployment. Subsequent tests may be affected ..."
+        log.warn "Failed to confirm deletion of deployment ${deployment.name}. Subsequent tests may be affected ..."
+    }
+
+    // Retry to allow time for the admission controller to fetch scan data from
+    // Central. Policies that require image enrichment (e.g. severity) may not
+    // evaluate on the first attempt if the AC pod handling this request hasn't
+    // cached the scan results yet. The retry is harmless for fast-path policies
+    // (latest tag, bypass) since they pass on the first attempt.
+    private boolean createDeploymentWithEnforcementRetry(Deployment deployment, boolean expected) {
+        def created
+        withRetry(ClusterService.isOpenShift4() ? 40 : 20, 1) {
+            created = orchestrator.createDeploymentNoWait(deployment)
+            if (created != expected) {
+                if (created) {
+                    deleteDeploymentWithCaution(deployment)
+                }
+                assert created == expected
+            }
         }
+        return created
     }
 
     @Unroll
@@ -433,7 +437,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .addLabel("app", "test")
                 .addInitContainer("init-0", initImage)
 
-        def created = orchestrator.createDeploymentNoWait(deployment)
+        def created = createDeploymentWithEnforcementRetry(deployment, allowed)
 
         then:
         "Verify admission controller allows or blocks based on init container image"

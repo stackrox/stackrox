@@ -381,6 +381,9 @@ function launch_central {
         )
       fi
 
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      helm_args+=(--set customize.central.envVars.ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s)
+
       if [[ -n "$POD_SECURITY_POLICIES" ]]; then
         helm_args+=(
           --set system.enablePodSecurityPolicies="${POD_SECURITY_POLICIES}"
@@ -500,6 +503,19 @@ function launch_central {
         ROX_NAMESPACE="${central_namespace}" "${unzip_dir}/central/scripts/setup.sh"
       fi
       central_scripts_dir="$unzip_dir/central/scripts"
+
+      # Shorten signing key watcher poll for e2e tests (production default is 4h).
+      # Bake it into the manifest so Central starts with fast polling instead of
+      # requiring a second rollout via a post-launch `set env`.
+      central_deployment="${unzip_dir}/central/01-central-13-deployment.yaml"
+      if [[ -f "${central_deployment}" ]]; then
+        ${ORCH_CMD} set env --local -o yaml -f "${central_deployment}" -c central \
+          ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL=5s > "${central_deployment}.tmp"
+        mv "${central_deployment}.tmp" "${central_deployment}"
+      else
+        echo >&2 "WARNING: ${central_deployment} not found; Central will deploy with the default signing key watch interval and rely on the test's set env fallback."
+      fi
+
       launch_service "${unzip_dir}" central
       echo
 
@@ -896,11 +912,12 @@ function launch_sensor {
       fi
 
       if [[ "${ROX_VIRTUAL_MACHINES:-}" == "true" ]]; then
-        # Enables Sensor VSOCK RBAC and ROX_VIRTUAL_MACHINES on Sensor.
         extra_helm_config+=(--set "virtualMachines.enabled=true")
-        # Shorten pull-mode scraper cadence for VM e2e (production default is 5m).
+        # Shorten pull-mode scraper cadence for VM e2e (production default is 4h).
         # Floor is 1m (vmscraper.clampPollInterval); values below that are raised to 1m.
         extra_helm_config+=(--set "customize.envVars.ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL=${ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL:-1m}")
+      elif [[ "${ROX_VIRTUAL_MACHINES:-}" == "false" ]]; then
+        extra_helm_config+=(--set "virtualMachines.enabled=false")
       fi
 
       if [[ -n "$LOGLEVEL" ]]; then
@@ -1045,6 +1062,10 @@ function launch_sensor {
 
       if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
         sensor_env+=("ROX_NETFLOW_CACHE_LIMITING=${ROX_NETFLOW_CACHE_LIMITING}")
+      fi
+
+      if [[ -n "${ROX_VIRTUAL_MACHINES:-}" ]]; then
+        sensor_env+=("ROX_VIRTUAL_MACHINES=${ROX_VIRTUAL_MACHINES}")
       fi
 
       if [[ "${#sensor_env[@]}" -gt 0 ]]; then

@@ -18,6 +18,7 @@ const (
 	ResolvedResourceEventTopic
 	SoftRestartTopic
 	ResourceSyncFinishedTopic
+	FakeFileActivityTopic
 )
 
 var (
@@ -37,6 +38,7 @@ var (
 		ResolvedResourceEventTopic:      "ResolvedResourceEvent",
 		SoftRestartTopic:                "SoftRestart",
 		ResourceSyncFinishedTopic:       "ResourceSyncFinished",
+		FakeFileActivityTopic:           "FakeFileActivity",
 	}
 )
 

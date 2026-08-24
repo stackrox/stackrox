@@ -155,6 +155,18 @@ scrape_component() {
 # Metric math
 # ---------------------------------------------------------------------------
 
+# Print n in fixed-point form. awk's default OFMT (%.6g) emits 1.23e+06 for
+# values >= 1e6, and bc cannot parse the '+' ("Parse error: bad character '+'").
+_awk_fmt='
+function fmt(n) {
+    x = sprintf("%.6f", n+0)
+    sub(/0+$/, "", x)
+    sub(/\.$/, "", x)
+    if (x == "" || x == "-" || x == "-0") x = "0"
+    return x
+}
+'
+
 # Sum a Prometheus counter/gauge across all lines matching metric + optional labels.
 extract() {
     local file="$1" metric="$2" labels="${3:-}"
@@ -164,31 +176,29 @@ extract() {
     fi
     if [[ -n "$labels" ]]; then
         { grep "^${metric}[{ ]" "$file" 2>/dev/null | grep "$labels" || true; } \
-            | awk '{s+=$NF} END{print s+0}'
+            | awk "${_awk_fmt}"'{s+=$NF} END{print fmt(s)}'
     else
         { grep "^${metric}[{ ]" "$file" 2>/dev/null || true; } \
-            | awk '{s+=$NF} END{print s+0}'
+            | awk "${_awk_fmt}"'{s+=$NF} END{print fmt(s)}'
     fi
 }
 
-delta() { echo "$2 - $1" | bc; }
+delta() {
+    awk -v a="$1" -v b="$2" "${_awk_fmt}"'BEGIN{print fmt(b-a)}'
+}
 
 avg_or_na() {
-    local sum_d="$1" count_d="$2"
-    if (( $(echo "$count_d > 0" | bc -l) )); then
-        echo "scale=4; $sum_d / $count_d" | bc
-    else
-        echo "N/A"
-    fi
+    awk -v s="$1" -v c="$2" 'BEGIN{
+        if (c+0 > 0) printf "%.4f\n", s/c
+        else print "N/A"
+    }'
 }
 
 pct_or_na() {
-    local numerator="$1" denominator="$2"
-    if (( $(echo "$denominator > 0" | bc -l) )); then
-        echo "scale=1; $numerator * 100 / $denominator" | bc
-    else
-        echo "N/A"
-    fi
+    awk -v n="$1" -v d="$2" 'BEGIN{
+        if (d+0 > 0) printf "%.1f\n", n*100/d
+        else print "N/A"
+    }'
 }
 
 row() { printf "  %-50s %s\n" "$1" "$2"; }
@@ -244,18 +254,23 @@ YAML
     } > "$outfile"
 }
 
-generate_slow_path_manifests() {
-    UNIQUE_COUNT=$(( BURST_SIZE * UNIQUE_PCT / 100 ))
-    [[ "$UNIQUE_COUNT" -lt 1 ]] && UNIQUE_COUNT=1
-
-    load_image_pool "$UNIQUE_COUNT"
-
+# write_slow_path_manifests writes BURST_SIZE deployments from SCANNABLE_POOL.
+# Requires: BURST_SIZE, UNIQUE_COUNT, SCANNABLE_POOL, WORK_DIR, NAMESPACE
+write_slow_path_manifests() {
     for (( i = 0; i < BURST_SIZE; i++ )); do
         generate_slow_path_deployment "burst-${i}" \
             "${WORK_DIR}/deploy-${i}.yaml" \
             "${SCANNABLE_POOL[$(( i % UNIQUE_COUNT ))]}"
     done
     echo "  Generated ${BURST_SIZE} manifests (${UNIQUE_COUNT} unique images)."
+}
+
+generate_slow_path_manifests() {
+    UNIQUE_COUNT=$(( BURST_SIZE * UNIQUE_PCT / 100 ))
+    [[ "$UNIQUE_COUNT" -lt 1 ]] && UNIQUE_COUNT=1
+
+    load_image_pool "$UNIQUE_COUNT"
+    write_slow_path_manifests
 }
 
 # ---------------------------------------------------------------------------
@@ -322,6 +337,87 @@ trigger_and_wait_for_reprocessor() {
 
     kill "$log_pid" 2>/dev/null || true
     wait "$log_pid" 2>/dev/null || true
+}
+
+# ---------------------------------------------------------------------------
+# Pre-scan helpers (warm Central DB via REST API)
+# ---------------------------------------------------------------------------
+
+# prescan_image <image-ref>
+#   Triggers a ScanImage request to Central to populate scan data in the DB.
+#   Requires: ROX_CENTRAL_ADDRESS, ROX_ADMIN_USER, ROX_PASSWORD
+# Prints the HTTP status code on stdout. Returns 0 only for HTTP 200.
+prescan_image() {
+    local image="$1"
+    local http_code
+    http_code=$(curl -sk -o /dev/null -w '%{http_code}' \
+        -u "${ROX_ADMIN_USER}:${ROX_PASSWORD}" \
+        --max-time 120 \
+        -X POST "https://${ROX_CENTRAL_ADDRESS}/v1/images/scan" \
+        -H "Content-Type: application/json" \
+        -d "{\"image_name\": \"${image}\", \"force\": true}")
+    echo "$http_code"
+    [[ "$http_code" == "200" ]]
+}
+
+# prescan_pool <parallel>
+#   Pre-scans SCANNABLE_POOL[0..UNIQUE_COUNT-1] via Central's ScanImage API.
+#   Requires: ROX_CENTRAL_ADDRESS, ROX_ADMIN_USER, ROX_PASSWORD,
+#             SCANNABLE_POOL, UNIQUE_COUNT
+prescan_pool() {
+    local parallel="${1:-5}"
+    local completed=0 failed=0
+    local pids=()
+
+    for (( i = 0; i < UNIQUE_COUNT; i++ )); do
+        local img="${SCANNABLE_POOL[$i]}"
+        (
+            if code=$(prescan_image "$img"); then
+                echo "ok ${img}"
+            else
+                echo "fail ${img} http=${code}"
+            fi
+        ) >> "${WORK_DIR}/prescan.log" &
+        pids+=($!)
+
+        if [[ "${#pids[@]}" -ge "$parallel" ]]; then
+            wait "${pids[@]}" 2>/dev/null || true
+            pids=()
+        fi
+    done
+    if [[ "${#pids[@]}" -gt 0 ]]; then
+        wait "${pids[@]}" 2>/dev/null || true
+    fi
+
+    completed=$(grep -c "^ok " "${WORK_DIR}/prescan.log" 2>/dev/null || true)
+    failed=$(grep -c "^fail " "${WORK_DIR}/prescan.log" 2>/dev/null || true)
+    echo "  Pre-scan complete: ${completed} succeeded, ${failed} failed (of ${UNIQUE_COUNT})."
+
+    if [[ "$failed" -gt 0 ]]; then
+        echo "  Failed images:" >&2
+        grep "^fail " "${WORK_DIR}/prescan.log" | while read -r _ rest; do
+            echo "    ${rest}" >&2
+        done
+    fi
+}
+
+# filter_pool_to_prescan_success keeps only images that returned HTTP 200.
+# Sets SCANNABLE_POOL, UNIQUE_COUNT, BURST_SIZE, and POOL_SIZE to that set so
+# the burst never includes tags that were not stored in Central's DB.
+filter_pool_to_prescan_success() {
+    local ok_file="${WORK_DIR}/prescan.ok"
+    grep "^ok " "${WORK_DIR}/prescan.log" 2>/dev/null | awk '{print $2}' > "$ok_file" || true
+    mapfile -t SCANNABLE_POOL < "$ok_file"
+    UNIQUE_COUNT=${#SCANNABLE_POOL[@]}
+    if [[ "$UNIQUE_COUNT" -eq 0 ]]; then
+        echo "ERROR: every prescan failed. Check ROX_PASSWORD, ROX_CENTRAL_ADDRESS, and Scanner health." >&2
+        echo "  Sample failures:" >&2
+        grep "^fail " "${WORK_DIR}/prescan.log" | head -5 >&2 || true
+        exit 1
+    fi
+    BURST_SIZE=$UNIQUE_COUNT
+    POOL_SIZE=$UNIQUE_COUNT
+    echo "  Bursting ${BURST_SIZE} unique pre-scanned images (failed prescans dropped)."
 }
 
 # ---------------------------------------------------------------------------

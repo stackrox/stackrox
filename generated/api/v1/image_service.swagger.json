@@ -1040,9 +1040,13 @@
         },
         "cisaKev": {
           "type": "boolean"
+        },
+        "origin": {
+          "$ref": "#/definitions/storageVulnOrigin",
+          "description": "origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV)."
         }
       },
-      "title": "Next Tag: 29"
+      "title": "Next Tag: 30"
     },
     "storageExploit": {
       "type": "object",
@@ -1482,6 +1486,22 @@
           "type": "string"
         }
       }
+    },
+    "storageVulnOrigin": {
+      "type": "string",
+      "enum": [
+        "VULN_ORIGIN_OTHER",
+        "VULN_ORIGIN_OSV",
+        "VULN_ORIGIN_ALPINE",
+        "VULN_ORIGIN_AMAZON",
+        "VULN_ORIGIN_DEBIAN",
+        "VULN_ORIGIN_ORACLE",
+        "VULN_ORIGIN_PHOTON",
+        "VULN_ORIGIN_RED_HAT",
+        "VULN_ORIGIN_SUSE",
+        "VULN_ORIGIN_UBUNTU"
+      ],
+      "default": "VULN_ORIGIN_OTHER"
     },
     "storageVulnerabilitySeverity": {
       "type": "string",

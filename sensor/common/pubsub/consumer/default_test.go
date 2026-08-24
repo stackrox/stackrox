@@ -27,22 +27,26 @@ func (s *defaultConsumerSuite) TestConsume() {
 		s.Assert().Error(err)
 		s.Assert().Nil(c)
 	})
-	s.Run("should unblock if waitable is done", func() {
+	s.Run("should not leak even if nobody ever reads errC", func() {
+		// concurrentLane fires Consume() and discards the returned channel without
+		// reading it, relying on the consumer to report its own errors. The internal
+		// goroutine must still exit on its own (errC is buffered so the send never
+		// blocks on a reader) rather than depend on the waitable firing.
 		callbackDone := concurrency.NewSignal()
 		c, err := NewDefaultConsumer()(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(_ pubsub.Event) error {
 			defer callbackDone.Signal()
 			return errors.New("some error")
 		})
 		s.Assert().NoError(err)
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx := context.Background()
 		_ = c.Consume(ctx, &testEvent{})
 		select {
 		case <-callbackDone.Done():
 		case <-time.After(500 * time.Millisecond):
 			s.FailNow("callback should be done")
 		}
-		cancel()
-		// The test will fail if there are goroutine leaks
+		// errC is intentionally never read here.
+		// The test will fail if there are goroutine leaks.
 	})
 	s.Run("consume event error", func() {
 		data := "some data"

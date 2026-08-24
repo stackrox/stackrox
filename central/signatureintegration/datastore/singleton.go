@@ -71,7 +71,7 @@ func startKeyBundleUpdater() {
 
 	rawURL := env.RedHatSigningKeyBundleURL.Setting()
 	if rawURL == "" {
-		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
+		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL is empty, key bundle updater will not start")
 		return
 	}
 	bundleURL := urlfmt.FormatURL(rawURL, urlfmt.HTTPS, urlfmt.HonorInputSlash)

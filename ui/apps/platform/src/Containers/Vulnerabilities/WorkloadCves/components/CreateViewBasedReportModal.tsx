@@ -4,7 +4,7 @@ import { Modal } from '@patternfly/react-core/deprecated';
 import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';
-import { vulnerabilityViewBasedReportsPath } from 'routePaths';
+import { vulnerabilityViewBasedJobsPath } from 'routePaths';
 import useAnalytics, { VIEW_BASED_REPORT_GENERATED } from 'hooks/useAnalytics';
 
 type Message =
@@ -132,10 +132,7 @@ function CreateViewBasedReportModal({
                                         variant="link"
                                         isInline
                                         component={(props) => (
-                                            <Link
-                                                {...props}
-                                                to={vulnerabilityViewBasedReportsPath}
-                                            />
+                                            <Link {...props} to={vulnerabilityViewBasedJobsPath} />
                                         )}
                                     >
                                         View status in reports table

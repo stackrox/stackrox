@@ -170,6 +170,7 @@ type WorkloadManager struct {
 	networkManager       manager.Manager
 	vmIndexReportHandler index.Handler
 	vmStore              *vmStore.VirtualMachineStore
+	pubSubDispatcher     common.PubSubDispatcher
 
 	// VM readiness coordinator
 	vmPrerequisitesReady *vmReadiness
@@ -359,6 +360,11 @@ func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
 	w.vmStore = store
 	w.vmPrerequisitesReady.signalStoreReady()
 	log.Debugf("SetVMStore completed (VMs will be populated by informer events)")
+}
+
+// SetPubSubDispatcher sets the pub/sub dispatcher for publishing synthetic file activities
+func (w *WorkloadManager) SetPubSubDispatcher(dispatcher common.PubSubDispatcher) {
+	w.pubSubDispatcher = dispatcher
 }
 
 // Notify implements common.Notifiable to receive Sensor component event notifications
@@ -551,6 +557,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	w.wg.Add(1)
 	go w.manageFlows(w.shutdownCtx)
+
+	if w.workload.FileActivityWorkload.ActivityInterval > 0 {
+		w.wg.Add(1)
+		go w.manageFileActivity(w.shutdownCtx)
+	}
 
 	// Start VirtualMachine/VirtualMachineInstance workload if configured.
 	// This unified workload handles both informer events AND index reports.

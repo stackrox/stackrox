@@ -2,6 +2,9 @@ package datastore
 
 import (
 	"context"
+	"errors"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,6 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -181,29 +186,42 @@ func TestVirtualMachineTelemetry(t *testing.T) {
 	}
 }
 
-func TestVirtualMachineTelemetryWithFeatureFlagDisabled(t *testing.T) {
-	// Disable the feature flag using t.Setenv for automatic cleanup
-	t.Setenv(features.VirtualMachines.EnvVar(), "false")
-
-	ctx := sac.WithAllAccess(context.Background())
-
-	// Create a mock datastore with VMs (which should NOT be queried)
-	ds := &mockDataStore{
-		vms: []*storage.VirtualMachine{
-			{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
-			{Id: "vm2", ClusterId: "cluster2", Name: "test-vm2", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+func TestVirtualMachineTelemetrySkipGather(t *testing.T) {
+	tests := map[string]struct {
+		virtualMachinesEnabled bool
+		enhancedDataModel      bool
+	}{
+		"should return empty map when virtual machines flag is disabled": {
+			virtualMachinesEnabled: false,
+			enhancedDataModel:      false,
+		},
+		"should return empty map when enhanced data model is enabled": {
+			virtualMachinesEnabled: true,
+			enhancedDataModel:      true,
 		},
 	}
 
-	gatherer := gatherWithTime(ds, arbitraryNowFunc)
-	props, err := gatherer(ctx)
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachines.EnvVar(), strconv.FormatBool(tc.virtualMachinesEnabled))
+			t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), strconv.FormatBool(tc.enhancedDataModel))
 
-	require.NoError(t, err)
-	require.NotNil(t, props)
+			ctx := sac.WithAllAccess(context.Background())
+			ds := &mockDataStore{
+				vms: []*storage.VirtualMachine{
+					{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachine_RUNNING, Scan: createScanWithAge(1 * time.Hour)},
+				},
+			}
 
-	// When feature flag is disabled, should return empty map
-	// No database query should have been performed
-	assert.Empty(t, props, "Should return empty map when feature flag is disabled")
+			gatherer := gatherWithTime(ds, arbitraryNowFunc)
+			props, err := gatherer(ctx)
+
+			require.NoError(t, err)
+			require.NotNil(t, props)
+			assert.Empty(t, props)
+			assert.False(t, ds.walked)
+		})
+	}
 }
 
 // createScanWithAge creates a scan with a timestamp at the specified duration before arbitraryNow.
@@ -216,8 +234,9 @@ func createScanWithAge(age time.Duration) *storage.VirtualMachineScan {
 }
 
 type mockDataStore struct {
-	vms []*storage.VirtualMachine
-	err error
+	vms    []*storage.VirtualMachine
+	err    error
+	walked bool
 }
 
 func (m *mockDataStore) CountVirtualMachines(ctx context.Context, query *v1.Query) (int, error) {
@@ -252,6 +271,7 @@ func (m *mockDataStore) SearchRawVirtualMachines(ctx context.Context, query *v1.
 }
 
 func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMachine) error) error {
+	m.walked = true
 	if m.err != nil {
 		return m.err
 	}
@@ -261,4 +281,191 @@ func (m *mockDataStore) Walk(ctx context.Context, fn func(vm *storage.VirtualMac
 		}
 	}
 	return nil
+}
+
+// --- V2 mock types ---
+
+type mockVMV2DataStore struct {
+	vms []*storage.VirtualMachineV2
+	err error
+}
+
+func (m *mockVMV2DataStore) Walk(_ context.Context, fn func(vm *storage.VirtualMachineV2) error) error {
+	if m.err != nil {
+		return m.err
+	}
+	for _, vm := range m.vms {
+		if err := fn(vm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type mockScanV2DataStore struct {
+	count     int
+	err       error
+	lastQuery *v1.Query
+}
+
+func (m *mockScanV2DataStore) Count(_ context.Context, q *v1.Query) (int, error) {
+	m.lastQuery = q
+	return m.count, m.err
+}
+
+func TestVirtualMachineTelemetryV2(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+
+	tests := map[string]struct {
+		vms                            []*storage.VirtualMachineV2
+		scanCount                      int
+		expectedClustersWithRunningVMs int
+		expectedTotalVMs               int
+		expectedVMsWithActiveAgents    int
+	}{
+		"should return zero for all metrics when no V2 VMs exist": {
+			vms:                            nil,
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 0,
+			expectedTotalVMs:               0,
+			expectedVMsWithActiveAgents:    0,
+		},
+		"should count single cluster with one running V2 VM and one recent scan": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "test-vm", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      1,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               1,
+			expectedVMsWithActiveAgents:    1,
+		},
+		"should count total V2 VMs including stopped ones": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachineV2_STOPPED},
+				{Id: "vm3", ClusterId: "cluster2", Name: "vm-3", State: storage.VirtualMachineV2_UNKNOWN},
+			},
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               3,
+			expectedVMsWithActiveAgents:    0,
+		},
+		"should count multiple distinct clusters with running V2 VMs": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster2", Name: "vm-2", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm3", ClusterId: "cluster3", Name: "vm-3", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      2,
+			expectedClustersWithRunningVMs: 3,
+			expectedTotalVMs:               3,
+			expectedVMsWithActiveAgents:    2,
+		},
+		"should exclude V2 VMs with empty cluster id from cluster count": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "", Name: "vm-orphan", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      1,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               2,
+			expectedVMsWithActiveAgents:    1,
+		},
+		"should handle V2 VM with no scan row yet (never scanned)": {
+			vms: []*storage.VirtualMachineV2{
+				{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				{Id: "vm2", ClusterId: "cluster1", Name: "vm-2", State: storage.VirtualMachineV2_RUNNING},
+			},
+			scanCount:                      0,
+			expectedClustersWithRunningVMs: 1,
+			expectedTotalVMs:               2,
+			expectedVMsWithActiveAgents:    0,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := sac.WithAllAccess(context.Background())
+
+			vmV2DS := &mockVMV2DataStore{vms: tc.vms}
+			scanV2DS := &mockScanV2DataStore{count: tc.scanCount}
+
+			gatherer := gatherV2WithTime(vmV2DS, scanV2DS, arbitraryNowFunc)
+			props, err := gatherer(ctx)
+
+			require.NoError(t, err)
+			require.NotNil(t, props)
+			assert.Equal(t, tc.expectedClustersWithRunningVMs, props[metricClustersWithVMs])
+			assert.Equal(t, tc.expectedTotalVMs, props[metricTotalVMs])
+			assert.Equal(t, tc.expectedVMsWithActiveAgents, props[metricVMsWithActiveAgents])
+			assertActiveAgentScanQuery(t, scanV2DS.lastQuery)
+		})
+	}
+}
+
+func TestVirtualMachineTelemetryV2Errors(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+
+	walkErr := errors.New("walk failed")
+	countErr := errors.New("count failed")
+
+	tests := map[string]struct {
+		walkErr  error
+		countErr error
+		wantErr  error
+	}{
+		"should return Walk error and nil props": {
+			walkErr: walkErr,
+			wantErr: walkErr,
+		},
+		"should return Count error and nil props": {
+			countErr: countErr,
+			wantErr:  countErr,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := sac.WithAllAccess(context.Background())
+			vmV2DS := &mockVMV2DataStore{
+				vms: []*storage.VirtualMachineV2{
+					{Id: "vm1", ClusterId: "cluster1", Name: "vm-1", State: storage.VirtualMachineV2_RUNNING},
+				},
+				err: tc.walkErr,
+			}
+			scanV2DS := &mockScanV2DataStore{count: 1, err: tc.countErr}
+
+			props, err := gatherV2WithTime(vmV2DS, scanV2DS, arbitraryNowFunc)(ctx)
+
+			require.ErrorIs(t, err, tc.wantErr)
+			assert.Nil(t, props)
+			if tc.walkErr != nil {
+				assert.Nil(t, scanV2DS.lastQuery)
+				return
+			}
+			assertActiveAgentScanQuery(t, scanV2DS.lastQuery)
+		})
+	}
+}
+
+func assertActiveAgentScanQuery(t *testing.T, q *v1.Query) {
+	t.Helper()
+	require.NotNil(t, q)
+	mfq := q.GetBaseQuery().GetMatchFieldQuery()
+	require.NotNil(t, mfq)
+	assert.Equal(t, search.VirtualMachineScanTime.String(), mfq.GetField())
+
+	value, ok := strings.CutPrefix(mfq.GetValue(), search.TimeRangePrefix)
+	require.True(t, ok)
+	fromStr, toStr, ok := strings.Cut(value, "-")
+	require.True(t, ok)
+	from, err := strconv.ParseInt(fromStr, 10, 64)
+	require.NoError(t, err)
+	to, err := strconv.ParseInt(toStr, 10, 64)
+	require.NoError(t, err)
+
+	assert.Equal(t, arbitraryNow.Add(-activeVMAgentMaxAgeLimitTelemetry).UnixMilli(), from)
+	assert.Equal(t, timestamp.InfiniteFuture.GoTime().UnixMilli(), to)
 }
