@@ -190,6 +190,7 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
+	// VirtualMachines gates VM inventory, scanning, and VSOCK RBAC in Sensor.
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES", enabled)
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.

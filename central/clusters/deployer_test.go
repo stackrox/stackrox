@@ -314,7 +314,7 @@ func (s *deployerTestSuite) TestFieldsFromClusterAndRenderOpts() {
 }
 
 // TestGetFeatureFlagsAsManifestBundleEnv_OmitsChartOwnedFlags checks that
-// flags already set from chart config are not also injected as EnvVars.
+// certain flags (normally already set from chart config) are not also injected as EnvVars.
 func TestGetFeatureFlagsAsManifestBundleEnv_OmitsChartOwnedFlags(t *testing.T) {
 	t.Parallel()
 	env := getFeatureFlagsAsManifestBundleEnv()

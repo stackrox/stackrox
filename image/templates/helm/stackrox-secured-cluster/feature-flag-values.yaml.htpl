@@ -1,6 +1,6 @@
 [<- if .FeatureFlags >]
 [</* The chart already sets these from its own config (scanner V4 enablement,
-     virtualMachines.enabled). Injecting them again produces duplicate env names,
+     virtualMachines.enabled). Injecting them again would produce duplicate env names,
      which kubectl apply cannot patch onto an existing Sensor Deployment. */>]
 [<- $skipFeatureFlags := list "ROX_SCANNER_V4" "ROX_VIRTUAL_MACHINES" >]
 envVars:

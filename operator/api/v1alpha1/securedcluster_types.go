@@ -545,7 +545,7 @@ func (v ProcessIndicatorConfigSwitch) Pointer() *ProcessIndicatorConfigSwitch {
 	return &v
 }
 
-// VirtualMachinesSpec configures the virtual machine scraper.
+// VirtualMachinesSpec configures virtual machine scanning.
 type VirtualMachinesSpec struct {
 	// Settings for the virtual machine scraper running in Sensor.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
