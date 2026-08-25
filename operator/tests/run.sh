@@ -39,12 +39,11 @@ _EO_KUTTL_HELP_
                    "${kuttl_help}" \
                    "make" "-C" "operator" "deploy-previous-via-olm" TEST_NAMESPACE="rhacs-operator-system"
    else
-        # TODO(ROX-33128): change to use helm after release 4.11
         junit_wrap deploy-previous-operator \
-                   "Deploy version 4.10 of the operator using install manifest." \
+                   "Deploy previous version of the operator using helm chart." \
                    "${kuttl_help}" \
-                   ./operator/hack/install-4.10.sh
-        info "Preparing operator helm chart"
+                   "make" "-C" "operator" "deploy-previous-via-chart" TEST_NAMESPACE="rhacs-operator-system"
+        info "Preparing current operator helm chart"
         junit_wrap prepare-operator-helm-chart \
                    "Prepare operator helm chart." \
                    "${kuttl_help}" \

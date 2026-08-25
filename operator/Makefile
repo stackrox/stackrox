@@ -449,6 +449,12 @@ deploy-via-chart: ## Deploy current version of operator via helm chart produced 
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
 		rhacs-operator ./dist/chart
 
+.PHONY: deploy-previous-via-chart
+deploy-previous-via-chart: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using helm chart.
+	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	set -x ;\
+	./hack/generate-and-install-chart.sh "$${replaced_version}"
+
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
