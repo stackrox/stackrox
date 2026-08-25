@@ -9,6 +9,10 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
+# Export default value for PAGERDUTY_INTEGRATION_KEY to fix Helm validation error
+# Only set if not already set to preserve user's value
+export PAGERDUTY_INTEGRATION_KEY="${PAGERDUTY_INTEGRATION_KEY:-dummy-key-for-dev-testing}"
+
 if ! kubectl -n stackrox get deploy/central; then
   "$DIR"/launch_central-jv.sh
   kubectl -n stackrox wait --for=condition=ready pod -l app=central --timeout 5m
