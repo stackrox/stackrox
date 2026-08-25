@@ -15,6 +15,7 @@ import (
 	collectionDSMocks "github.com/stackrox/rox/central/resourcecollection/datastore/mocks"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
@@ -243,7 +244,7 @@ func (s *ConversionTestSuite) TestNodeFiltersConversion() {
 	assert.NotNil(s.T(), protoFilters)
 	assert.Equal(s.T(), "Cluster:prod", protoFilters.GetQuery())
 	assert.True(s.T(), protoFilters.GetAllVuln())
-	assert.Equal(s.T(), accessScopeRules, protoFilters.GetAccessScopeRules())
+	protoassert.SlicesEqual(s.T(), accessScopeRules, protoFilters.GetAccessScopeRules())
 
 	v2FiltersBack := s.service.convertProtoNodeReportFiltersToV2(protoFilters)
 	assert.NotNil(s.T(), v2FiltersBack)
@@ -321,7 +322,7 @@ func (s *ConversionTestSuite) TestReportConfigurationRoundTrip() {
 	assert.Equal(s.T(), v2Config.GetId(), protoConfig.GetId())
 	assert.Equal(s.T(), v2Config.GetName(), protoConfig.GetName())
 	assert.Equal(s.T(), storage.ReportConfiguration_NODE_VULNERABILITY, protoConfig.GetType())
-	assert.Equal(s.T(), creator, protoConfig.GetCreator())
+	protoassert.Equal(s.T(), creator, protoConfig.GetCreator())
 
 	v2ConfigBack, err := s.service.convertProtoReportConfigurationToV2(protoConfig)
 	assert.NoError(s.T(), err)

@@ -18,6 +18,7 @@ import (
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -154,7 +155,7 @@ func (s *NodeReportServiceTestSuite) TestPostNodeReportConfiguration() {
 	s.reportConfigDataStore.EXPECT().AddReportConfiguration(gomock.Any(), gomock.Any()).
 		DoAndReturn(func(_ context.Context, cfg *storage.ReportConfiguration) (string, error) {
 			s.Equal(storage.ReportConfiguration_NODE_VULNERABILITY, cfg.GetType())
-			s.Equal(creator, cfg.GetCreator())
+			protoassert.Equal(s.T(), creator, cfg.GetCreator())
 			s.NotNil(cfg.GetNodeVulnReportFilters())
 			return cfg.GetId(), nil
 		}).Times(1)
