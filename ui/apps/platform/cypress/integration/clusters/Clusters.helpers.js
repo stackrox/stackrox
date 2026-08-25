@@ -6,7 +6,6 @@ import {
 } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 
-export const sensorUpgradesConfigAlias = 'sensorupgrades/config';
 export const clustersAlias = 'clusters';
 export const clusterDefaultsAlias = 'cluster-defaults';
 export const delegatedRegistryConfigAlias = 'delegatedregistryconfig';
@@ -20,15 +19,7 @@ const routeMatcherMapForClusterDefaults = {
     },
 };
 
-// With conditional rendering of side panel,
-// commented requests only when it opens.
 const routeMatcherMapForClusters = {
-    /*
-    [sensorUpgradesConfigAlias]: {
-        method: 'GET',
-        url: '/v1/sensorupgrades/config',
-    },
-    */
     [clustersAlias]: {
         method: 'GET',
         url: 'v1/clusters',

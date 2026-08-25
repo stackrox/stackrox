@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
@@ -15,7 +15,6 @@ import {
 } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
-import CloseButton from 'Components/CloseButton';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import {
@@ -34,16 +33,10 @@ import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';
-import {
-    deleteClusters,
-    fetchClustersWithRetentionInfo,
-    upgradeCluster,
-    upgradeClusters,
-} from 'services/ClustersService';
+import { deleteClusters, fetchClustersWithRetentionInfo } from 'services/ClustersService';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     applyRegexSearchModifiers,
     convertToRestSearch,
@@ -60,9 +53,8 @@ import {
 } from 'routePaths';
 
 import ClustersTable from './ClustersTable';
-import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './ClusterRegistrationSecrets/SecureClusterModal';
-import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
+import { clusterTablePollingInterval } from './cluster.helpers';
 import NoClustersPage from './NoClustersPage';
 import { searchFilterConfig } from './searchFilterConfig';
 
@@ -77,17 +69,12 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
-    const hasWriteAccessForAdministration = hasReadWriteAccess('Administration');
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
     const { currentUser } = useAuthStatus();
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const isSensorCompatibilityStatusEnabled = isFeatureFlagEnabled(
-        'ROX_SENSOR_COMPATIBILITY_STATUS'
-    );
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -115,7 +102,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     );
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
-    const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
     const [showDialog, setShowDialog] = useState(false);
     const [errorForClustersWithRetentionInfo, setErrorForClustersWithRetentionInfo] = useState<
         Error | undefined
@@ -131,41 +117,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
         useState<ClusterIdToRetentionInfo>({});
-
-    type NotificationAction = {
-        type: 'ADD_NOTIFICATION' | 'REMOVE_NOTIFICATION';
-        payload: string;
-    };
-
-    function notificationsReducer(state: string[], action: NotificationAction) {
-        switch (action.type) {
-            case 'ADD_NOTIFICATION': {
-                return [...state, action.payload];
-            }
-            case 'REMOVE_NOTIFICATION': {
-                return state.filter((note) => note !== action.payload);
-            }
-            default: {
-                return state;
-            }
-        }
-    }
-    const [notifications, dispatch] = useReducer(notificationsReducer, []);
-
-    const messages = notifications.map((note) => (
-        <div
-            key={note}
-            className="flex flex-1 border-b border-base-400 items-center justify-end relative py-0 pl-3 w-full"
-        >
-            <span className="w-full">{note}</span>
-            <CloseButton
-                onClose={() => {
-                    dispatch({ type: 'REMOVE_NOTIFICATION', payload: note });
-                }}
-                className="border-base-400 border-l"
-            />
-        </div>
-    ));
 
     const fetchClustersList = useCallback(
         (showLoadingSpinner: boolean) => {
@@ -209,31 +160,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
-    function upgradeSingleCluster(id) {
-        upgradeCluster(id)
-            .then(() => {
-                fetchClustersList(true);
-            })
-            .catch((error) => {
-                const serverError = getAxiosErrorMessage(error);
-                const givenCluster = currentClusters.find((cluster) => cluster.id === id);
-                const clusterName = givenCluster ? givenCluster.name : '-';
-                const payload = `Failed to trigger upgrade for cluster ${clusterName}. Error: ${serverError}`;
-
-                dispatch({ type: 'ADD_NOTIFICATION', payload });
-            });
-    }
-
-    function upgradeSelectedClusters() {
-        // Although return works around typescript-eslint/no-floating-promises error,
-        // catch block would be better.
-        return upgradeClusters(checkedClusterIds).then(() => {
-            setCheckedClusterIds([]);
-
-            fetchClustersList(true);
-        });
-    }
-
     function deleteSelectedClusters() {
         setShowDialog(true);
     }
@@ -260,16 +186,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
             });
     }
 
-    function calculateUpgradeableClusters(selection) {
-        const currentlySelectedClusters = currentClusters.filter((cluster) =>
-            selection.includes(cluster.id)
-        );
-
-        const upgradeableList = getUpgradeableClusters(currentlySelectedClusters);
-
-        setUpgradableClusters(upgradeableList);
-    }
-
     const onDeleteHandler = (cluster: Cluster) => (e) => {
         e.stopPropagation();
         setCheckedClusterIds([cluster.id]);
@@ -282,7 +198,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
             : [...checkedClusterIds, id];
 
         setCheckedClusterIds(selection);
-        calculateUpgradeableClusters(selection);
     }
 
     function toggleAllClusters() {
@@ -293,7 +208,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                 ? []
                 : currentClusters.map(({ id }) => id);
         setCheckedClusterIds(selection);
-        calculateUpgradeableClusters(selection);
     }
 
     // After there is a response, if there are clusters or search filter.
@@ -405,27 +319,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                             }
                         />
                         <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
-                            {!isSensorCompatibilityStatusEnabled &&
-                                hasWriteAccessForAdministration && (
-                                    <ToolbarItem className="pf-v6-u-align-self-center">
-                                        <AutoUpgradeToggle />
-                                    </ToolbarItem>
-                                )}
-                            {!isSensorCompatibilityStatusEnabled &&
-                                hasWriteAccessForAdministration && (
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={upgradeSelectedClusters}
-                                            isDisabled={
-                                                upgradableClusters.length === 0 ||
-                                                !!selectedClusterId
-                                            }
-                                        >
-                                            {`Upgrade (${upgradableClusters.length})`}
-                                        </Button>
-                                    </ToolbarItem>
-                                )}
                             {hasWriteAccessForCluster && (
                                 <ToolbarItem>
                                     <Button
@@ -450,11 +343,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                {messages.length > 0 && (
-                    <div className="flex flex-col w-full items-center bg-warning-200 text-warning-8000 justify-center font-700 text-center">
-                        {messages}
-                    </div>
-                )}
                 <ClustersTable
                     centralVersion={metadata.version}
                     clusterIdToRetentionInfo={clusterIdToRetentionInfo}
@@ -464,7 +352,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                     onDeleteCluster={onDeleteHandler}
                     toggleAllClusters={toggleAllClusters}
                     toggleCluster={toggleCluster}
-                    upgradeSingleCluster={upgradeSingleCluster}
                 />
             </PageSection>
             <Dialog
