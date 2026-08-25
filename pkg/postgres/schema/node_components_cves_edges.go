@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { NodeComponentsCvesEdgesSchema() })
 }
 
-
 var (
 	// CreateTableNodeComponentsCvesEdgesStmt holds the create statement for table `node_components_cves_edges`.
 	CreateTableNodeComponentsCvesEdgesStmt = &postgres.CreateStmts{
@@ -63,12 +62,10 @@ var (
 	})
 )
 
-
 const (
 	// NodeComponentsCvesEdgesTableName specifies the name of the table in postgres.
 	NodeComponentsCvesEdgesTableName = "node_components_cves_edges"
 )
-
 
 // NodeComponentsCvesEdges holds the Gorm model for Postgres table `node_components_cves_edges`.
 type NodeComponentsCvesEdges struct {

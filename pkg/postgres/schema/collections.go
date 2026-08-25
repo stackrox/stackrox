@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { CollectionsSchema() })
 }
 
-
 var (
 	// CreateTableCollectionsStmt holds the create statement for table `collections`.
 	CreateTableCollectionsStmt = &postgres.CreateStmts{
@@ -47,14 +46,12 @@ var (
 	})
 )
 
-
 const (
 	// CollectionsTableName specifies the name of the table in postgres.
 	CollectionsTableName = "collections"
 	// CollectionsEmbeddedCollectionsTableName specifies the name of the table in postgres.
 	CollectionsEmbeddedCollectionsTableName = "collections_embedded_collections"
 )
-
 
 // Collections holds the Gorm model for Postgres table `collections`.
 type Collections struct {

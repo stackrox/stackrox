@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { ListeningEndpointsSchema() })
 }
 
-
 var (
 	// CreateTableListeningEndpointsStmt holds the create statement for table `listening_endpoints`.
 	CreateTableListeningEndpointsStmt = &postgres.CreateStmts{
@@ -60,12 +59,10 @@ var (
 	})
 )
 
-
 const (
 	// ListeningEndpointsTableName specifies the name of the table in postgres.
 	ListeningEndpointsTableName = "listening_endpoints"
 )
-
 
 // ListeningEndpoints holds the Gorm model for Postgres table `listening_endpoints`.
 type ListeningEndpoints struct {

@@ -17,7 +17,6 @@ func init() {
 	registerLazySchema(func() { VersionsSchema() })
 }
 
-
 var (
 	// CreateTableVersionsStmt holds the create statement for table `versions`.
 	CreateTableVersionsStmt = &postgres.CreateStmts{
@@ -41,12 +40,10 @@ var (
 	})
 )
 
-
 const (
 	// VersionsTableName specifies the name of the table in postgres.
 	VersionsTableName = "versions"
 )
-
 
 // Versions holds the Gorm model for Postgres table `versions`.
 type Versions struct {

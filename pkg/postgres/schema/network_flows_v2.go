@@ -13,7 +13,6 @@ func init() {
 	registerLazySchema(func() { NetworkFlowsSchema() })
 }
 
-
 var (
 	// CreateTableNetworkFlowsStmt holds the create statement for table `network_flows_v2`.
 	// The flow store only deals with the identifying information, so this table has been shrunk accordingly
@@ -57,7 +56,6 @@ var (
 		return schema
 	})
 )
-
 
 const (
 	// NetworkFlowsTableName holds the database table name

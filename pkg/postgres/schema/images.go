@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { ImagesSchema() })
 }
 
-
 var (
 	// CreateTableImagesStmt holds the create statement for table `images`.
 	CreateTableImagesStmt = &postgres.CreateStmts{
@@ -57,14 +56,12 @@ var (
 	})
 )
 
-
 const (
 	// ImagesTableName specifies the name of the table in postgres.
 	ImagesTableName = "images"
 	// ImagesLayersTableName specifies the name of the table in postgres.
 	ImagesLayersTableName = "images_layers"
 )
-
 
 // Images holds the Gorm model for Postgres table `images`.
 type Images struct {

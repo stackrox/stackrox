@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { K8sRolesSchema() })
 }
 
-
 var (
 	// CreateTableK8sRolesStmt holds the create statement for table `k8s_roles`.
 	CreateTableK8sRolesStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// K8sRolesTableName specifies the name of the table in postgres.
 	K8sRolesTableName = "k8s_roles"
 )
-
 
 // K8sRoles holds the Gorm model for Postgres table `k8s_roles`.
 type K8sRoles struct {

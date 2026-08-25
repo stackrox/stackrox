@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { TestSingleUUIDKeyStructsSchema() })
 }
 
-
 var (
 	// CreateTableTestSingleUUIDKeyStructsStmt holds the create statement for table `test_single_uuid_key_structs`.
 	CreateTableTestSingleUUIDKeyStructsStmt = &postgres.CreateStmts{
@@ -47,12 +46,10 @@ var (
 	})
 )
 
-
 const (
 	// TestSingleUUIDKeyStructsTableName specifies the name of the table in postgres.
 	TestSingleUUIDKeyStructsTableName = "test_single_uuid_key_structs"
 )
-
 
 // TestSingleUUIDKeyStructs holds the Gorm model for Postgres table `test_single_uuid_key_structs`.
 type TestSingleUUIDKeyStructs struct {

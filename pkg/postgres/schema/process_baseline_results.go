@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { ProcessBaselineResultsSchema() })
 }
 
-
 var (
 	// CreateTableProcessBaselineResultsStmt holds the create statement for table `process_baseline_results`.
 	CreateTableProcessBaselineResultsStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// ProcessBaselineResultsTableName specifies the name of the table in postgres.
 	ProcessBaselineResultsTableName = "process_baseline_results"
 )
-
 
 // ProcessBaselineResults holds the Gorm model for Postgres table `process_baseline_results`.
 type ProcessBaselineResults struct {

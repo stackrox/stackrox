@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { ConfigsSchema() })
 }
 
-
 var (
 	// CreateTableConfigsStmt holds the create statement for table `configs`.
 	CreateTableConfigsStmt = &postgres.CreateStmts{
@@ -40,12 +39,10 @@ var (
 	})
 )
 
-
 const (
 	// ConfigsTableName specifies the name of the table in postgres.
 	ConfigsTableName = "configs"
 )
-
 
 // Configs holds the Gorm model for Postgres table `configs`.
 type Configs struct {

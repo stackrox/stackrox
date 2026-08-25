@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { ReportSnapshotsSchema() })
 }
 
-
 var (
 	// CreateTableReportSnapshotsStmt holds the create statement for table `report_snapshots`.
 	CreateTableReportSnapshotsStmt = &postgres.CreateStmts{
@@ -51,12 +50,10 @@ var (
 	})
 )
 
-
 const (
 	// ReportSnapshotsTableName specifies the name of the table in postgres.
 	ReportSnapshotsTableName = "report_snapshots"
 )
-
 
 // ReportSnapshots holds the Gorm model for Postgres table `report_snapshots`.
 type ReportSnapshots struct {

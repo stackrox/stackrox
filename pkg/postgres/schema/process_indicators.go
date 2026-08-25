@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { ProcessIndicatorsSchema() })
 }
 
-
 var (
 	// CreateTableProcessIndicatorsStmt holds the create statement for table `process_indicators`.
 	CreateTableProcessIndicatorsStmt = &postgres.CreateStmts{
@@ -57,12 +56,10 @@ var (
 	})
 )
 
-
 const (
 	// ProcessIndicatorsTableName specifies the name of the table in postgres.
 	ProcessIndicatorsTableName = "process_indicators"
 )
-
 
 // ProcessIndicators holds the Gorm model for Postgres table `process_indicators`.
 type ProcessIndicators struct {

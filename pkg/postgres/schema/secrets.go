@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { SecretsSchema() })
 }
 
-
 var (
 	// CreateTableSecretsStmt holds the create statement for table `secrets`.
 	CreateTableSecretsStmt = &postgres.CreateStmts{
@@ -56,7 +55,6 @@ var (
 	})
 )
 
-
 const (
 	// SecretsTableName specifies the name of the table in postgres.
 	SecretsTableName = "secrets"
@@ -65,7 +63,6 @@ const (
 	// SecretsFilesRegistriesTableName specifies the name of the table in postgres.
 	SecretsFilesRegistriesTableName = "secrets_files_registries"
 )
-
 
 // Secrets holds the Gorm model for Postgres table `secrets`.
 type Secrets struct {

@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { ClustersSchema() })
 }
 
-
 var (
 	// CreateTableClustersStmt holds the create statement for table `clusters`.
 	CreateTableClustersStmt = &postgres.CreateStmts{
@@ -42,12 +41,10 @@ var (
 	})
 )
 
-
 const (
 	// ClustersTableName specifies the name of the table in postgres.
 	ClustersTableName = "clusters"
 )
-
 
 // Clusters holds the Gorm model for Postgres table `clusters`.
 type Clusters struct {

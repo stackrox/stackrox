@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { ComplianceRunMetadataSchema() })
 }
 
-
 var (
 	// CreateTableComplianceRunMetadataStmt holds the create statement for table `compliance_run_metadata`.
 	CreateTableComplianceRunMetadataStmt = &postgres.CreateStmts{
@@ -46,12 +45,10 @@ var (
 	})
 )
 
-
 const (
 	// ComplianceRunMetadataTableName specifies the name of the table in postgres.
 	ComplianceRunMetadataTableName = "compliance_run_metadata"
 )
-
 
 // ComplianceRunMetadata holds the Gorm model for Postgres table `compliance_run_metadata`.
 type ComplianceRunMetadata struct {

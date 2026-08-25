@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { NotificationSchedulesSchema() })
 }
 
-
 var (
 	// CreateTableNotificationSchedulesStmt holds the create statement for table `notification_schedules`.
 	CreateTableNotificationSchedulesStmt = &postgres.CreateStmts{
@@ -40,12 +39,10 @@ var (
 	})
 )
 
-
 const (
 	// NotificationSchedulesTableName specifies the name of the table in postgres.
 	NotificationSchedulesTableName = "notification_schedules"
 )
-
 
 // NotificationSchedules holds the Gorm model for Postgres table `notification_schedules`.
 type NotificationSchedules struct {

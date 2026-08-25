@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { ComplianceDomainsSchema() })
 }
 
-
 var (
 	// CreateTableComplianceDomainsStmt holds the create statement for table `compliance_domains`.
 	CreateTableComplianceDomainsStmt = &postgres.CreateStmts{
@@ -42,12 +41,10 @@ var (
 	})
 )
 
-
 const (
 	// ComplianceDomainsTableName specifies the name of the table in postgres.
 	ComplianceDomainsTableName = "compliance_domains"
 )
-
 
 // ComplianceDomains holds the Gorm model for Postgres table `compliance_domains`.
 type ComplianceDomains struct {

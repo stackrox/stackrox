@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { TestParent4Schema() })
 }
 
-
 var (
 	// CreateTableTestParent4Stmt holds the create statement for table `test_parent4`.
 	CreateTableTestParent4Stmt = &postgres.CreateStmts{
@@ -54,12 +53,10 @@ var (
 	})
 )
 
-
 const (
 	// TestParent4TableName specifies the name of the table in postgres.
 	TestParent4TableName = "test_parent4"
 )
-
 
 // TestParent4 holds the Gorm model for Postgres table `test_parent4`.
 type TestParent4 struct {

@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { ClusterCveEdgesSchema() })
 }
 
-
 var (
 	// CreateTableClusterCveEdgesStmt holds the create statement for table `cluster_cve_edges`.
 	CreateTableClusterCveEdgesStmt = &postgres.CreateStmts{
@@ -59,12 +58,10 @@ var (
 	})
 )
 
-
 const (
 	// ClusterCveEdgesTableName specifies the name of the table in postgres.
 	ClusterCveEdgesTableName = "cluster_cve_edges"
 )
-
 
 // ClusterCveEdges holds the Gorm model for Postgres table `cluster_cve_edges`.
 type ClusterCveEdges struct {

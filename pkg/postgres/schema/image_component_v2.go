@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { ImageComponentV2Schema() })
 }
 
-
 var (
 	// CreateTableImageComponentV2Stmt holds the create statement for table `image_component_v2`.
 	CreateTableImageComponentV2Stmt = &postgres.CreateStmts{
@@ -64,12 +63,10 @@ var (
 	})
 )
 
-
 const (
 	// ImageComponentV2TableName specifies the name of the table in postgres.
 	ImageComponentV2TableName = "image_component_v2"
 )
-
 
 // ImageComponentV2 holds the Gorm model for Postgres table `image_component_v2`.
 type ImageComponentV2 struct {

@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { SensorUpgradeConfigsSchema() })
 }
 
-
 var (
 	// CreateTableSensorUpgradeConfigsStmt holds the create statement for table `sensor_upgrade_configs`.
 	CreateTableSensorUpgradeConfigsStmt = &postgres.CreateStmts{
@@ -40,12 +39,10 @@ var (
 	})
 )
 
-
 const (
 	// SensorUpgradeConfigsTableName specifies the name of the table in postgres.
 	SensorUpgradeConfigsTableName = "sensor_upgrade_configs"
 )
-
 
 // SensorUpgradeConfigs holds the Gorm model for Postgres table `sensor_upgrade_configs`.
 type SensorUpgradeConfigs struct {

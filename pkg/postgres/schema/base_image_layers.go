@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { BaseImageLayersSchema() })
 }
 
-
 var (
 	// CreateTableBaseImageLayersStmt holds the create statement for table `base_image_layers`.
 	CreateTableBaseImageLayersStmt = &postgres.CreateStmts{
@@ -54,12 +53,10 @@ var (
 	})
 )
 
-
 const (
 	// BaseImageLayersTableName specifies the name of the table in postgres.
 	BaseImageLayersTableName = "base_image_layers"
 )
-
 
 // BaseImageLayers holds the Gorm model for Postgres table `base_image_layers`.
 type BaseImageLayers struct {

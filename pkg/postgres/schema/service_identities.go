@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { ServiceIdentitiesSchema() })
 }
 
-
 var (
 	// CreateTableServiceIdentitiesStmt holds the create statement for table `service_identities`.
 	CreateTableServiceIdentitiesStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// ServiceIdentitiesTableName specifies the name of the table in postgres.
 	ServiceIdentitiesTableName = "service_identities"
 )
-
 
 // ServiceIdentities holds the Gorm model for Postgres table `service_identities`.
 type ServiceIdentities struct {

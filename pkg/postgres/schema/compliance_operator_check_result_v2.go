@@ -22,7 +22,6 @@ func init() {
 	registerLazySchema(func() { ComplianceOperatorCheckResultV2Schema() })
 }
 
-
 var (
 	// CreateTableComplianceOperatorCheckResultV2Stmt holds the create statement for table `compliance_operator_check_result_v2`.
 	CreateTableComplianceOperatorCheckResultV2Stmt = &postgres.CreateStmts{
@@ -59,12 +58,10 @@ var (
 	})
 )
 
-
 const (
 	// ComplianceOperatorCheckResultV2TableName specifies the name of the table in postgres.
 	ComplianceOperatorCheckResultV2TableName = "compliance_operator_check_result_v2"
 )
-
 
 // ComplianceOperatorCheckResultV2 holds the Gorm model for Postgres table `compliance_operator_check_result_v2`.
 type ComplianceOperatorCheckResultV2 struct {

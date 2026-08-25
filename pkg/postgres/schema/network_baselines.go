@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { NetworkBaselinesSchema() })
 }
 
-
 var (
 	// CreateTableNetworkBaselinesStmt holds the create statement for table `network_baselines`.
 	CreateTableNetworkBaselinesStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// NetworkBaselinesTableName specifies the name of the table in postgres.
 	NetworkBaselinesTableName = "network_baselines"
 )
-
 
 // NetworkBaselines holds the Gorm model for Postgres table `network_baselines`.
 type NetworkBaselines struct {

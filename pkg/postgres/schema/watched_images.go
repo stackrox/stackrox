@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { WatchedImagesSchema() })
 }
 
-
 var (
 	// CreateTableWatchedImagesStmt holds the create statement for table `watched_images`.
 	CreateTableWatchedImagesStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// WatchedImagesTableName specifies the name of the table in postgres.
 	WatchedImagesTableName = "watched_images"
 )
-
 
 // WatchedImages holds the Gorm model for Postgres table `watched_images`.
 type WatchedImages struct {

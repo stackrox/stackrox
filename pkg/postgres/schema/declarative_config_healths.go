@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { DeclarativeConfigHealthsSchema() })
 }
 
-
 var (
 	// CreateTableDeclarativeConfigHealthsStmt holds the create statement for table `declarative_config_healths`.
 	CreateTableDeclarativeConfigHealthsStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// DeclarativeConfigHealthsTableName specifies the name of the table in postgres.
 	DeclarativeConfigHealthsTableName = "declarative_config_healths"
 )
-
 
 // DeclarativeConfigHealths holds the Gorm model for Postgres table `declarative_config_healths`.
 type DeclarativeConfigHealths struct {

@@ -17,7 +17,6 @@ func init() {
 	registerLazySchema(func() { BaseImageTagsSchema() })
 }
 
-
 var (
 	// CreateTableBaseImageTagsStmt holds the create statement for table `base_image_tags`.
 	CreateTableBaseImageTagsStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// BaseImageTagsTableName specifies the name of the table in postgres.
 	BaseImageTagsTableName = "base_image_tags"
 )
-
 
 // BaseImageTags holds the Gorm model for Postgres table `base_image_tags`.
 type BaseImageTags struct {

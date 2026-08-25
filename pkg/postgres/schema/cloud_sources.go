@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { CloudSourcesSchema() })
 }
 
-
 var (
 	// CreateTableCloudSourcesStmt holds the create statement for table `cloud_sources`.
 	CreateTableCloudSourcesStmt = &postgres.CreateStmts{
@@ -42,12 +41,10 @@ var (
 	})
 )
 
-
 const (
 	// CloudSourcesTableName specifies the name of the table in postgres.
 	CloudSourcesTableName = "cloud_sources"
 )
-
 
 // CloudSources holds the Gorm model for Postgres table `cloud_sources`.
 type CloudSources struct {

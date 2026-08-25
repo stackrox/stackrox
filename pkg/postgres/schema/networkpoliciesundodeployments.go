@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { NetworkpoliciesundodeploymentsSchema() })
 }
 
-
 var (
 	// CreateTableNetworkpoliciesundodeploymentsStmt holds the create statement for table `networkpoliciesundodeployments`.
 	CreateTableNetworkpoliciesundodeploymentsStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// NetworkpoliciesundodeploymentsTableName specifies the name of the table in postgres.
 	NetworkpoliciesundodeploymentsTableName = "networkpoliciesundodeployments"
 )
-
 
 // Networkpoliciesundodeployments holds the Gorm model for Postgres table `networkpoliciesundodeployments`.
 type Networkpoliciesundodeployments struct {

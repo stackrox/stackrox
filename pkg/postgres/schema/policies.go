@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { PoliciesSchema() })
 }
 
-
 var (
 	// CreateTablePoliciesStmt holds the create statement for table `policies`.
 	CreateTablePoliciesStmt = &postgres.CreateStmts{
@@ -47,12 +46,10 @@ var (
 	})
 )
 
-
 const (
 	// PoliciesTableName specifies the name of the table in postgres.
 	PoliciesTableName = "policies"
 )
-
 
 // Policies holds the Gorm model for Postgres table `policies`.
 type Policies struct {

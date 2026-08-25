@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { NetworkGraphConfigsSchema() })
 }
 
-
 var (
 	// CreateTableNetworkGraphConfigsStmt holds the create statement for table `network_graph_configs`.
 	CreateTableNetworkGraphConfigsStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// NetworkGraphConfigsTableName specifies the name of the table in postgres.
 	NetworkGraphConfigsTableName = "network_graph_configs"
 )
-
 
 // NetworkGraphConfigs holds the Gorm model for Postgres table `network_graph_configs`.
 type NetworkGraphConfigs struct {

@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { ServiceAccountsSchema() })
 }
 
-
 var (
 	// CreateTableServiceAccountsStmt holds the create statement for table `service_accounts`.
 	CreateTableServiceAccountsStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// ServiceAccountsTableName specifies the name of the table in postgres.
 	ServiceAccountsTableName = "service_accounts"
 )
-
 
 // ServiceAccounts holds the Gorm model for Postgres table `service_accounts`.
 type ServiceAccounts struct {

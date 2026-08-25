@@ -22,7 +22,6 @@ func init() {
 	registerLazySchema(func() { DeploymentsSchema() })
 }
 
-
 var (
 	// CreateTableDeploymentsStmt holds the create statement for table `deployments`.
 	CreateTableDeploymentsStmt = &postgres.CreateStmts{
@@ -100,7 +99,6 @@ var (
 	})
 )
 
-
 const (
 	// DeploymentsTableName specifies the name of the table in postgres.
 	DeploymentsTableName = "deployments"
@@ -117,7 +115,6 @@ const (
 	// DeploymentsPortsExposureInfosTableName specifies the name of the table in postgres.
 	DeploymentsPortsExposureInfosTableName = "deployments_ports_exposure_infos"
 )
-
 
 // Deployments holds the Gorm model for Postgres table `deployments`.
 type Deployments struct {

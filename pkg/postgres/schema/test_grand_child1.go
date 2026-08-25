@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { TestGrandChild1Schema() })
 }
 
-
 var (
 	// CreateTableTestGrandChild1Stmt holds the create statement for table `test_grand_child1`.
 	CreateTableTestGrandChild1Stmt = &postgres.CreateStmts{
@@ -51,12 +50,10 @@ var (
 	})
 )
 
-
 const (
 	// TestGrandChild1TableName specifies the name of the table in postgres.
 	TestGrandChild1TableName = "test_grand_child1"
 )
-
 
 // TestGrandChild1 holds the Gorm model for Postgres table `test_grand_child1`.
 type TestGrandChild1 struct {

@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { RisksSchema() })
 }
 
-
 var (
 	// CreateTableRisksStmt holds the create statement for table `risks`.
 	CreateTableRisksStmt = &postgres.CreateStmts{
@@ -45,12 +44,10 @@ var (
 	})
 )
 
-
 const (
 	// RisksTableName specifies the name of the table in postgres.
 	RisksTableName = "risks"
 )
-
 
 // Risks holds the Gorm model for Postgres table `risks`.
 type Risks struct {

@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { PodsSchema() })
 }
 
-
 var (
 	// CreateTablePodsStmt holds the create statement for table `pods`.
 	CreateTablePodsStmt = &postgres.CreateStmts{
@@ -58,14 +57,12 @@ var (
 	})
 )
 
-
 const (
 	// PodsTableName specifies the name of the table in postgres.
 	PodsTableName = "pods"
 	// PodsLiveInstancesTableName specifies the name of the table in postgres.
 	PodsLiveInstancesTableName = "pods_live_instances"
 )
-
 
 // Pods holds the Gorm model for Postgres table `pods`.
 type Pods struct {

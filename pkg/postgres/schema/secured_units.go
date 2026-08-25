@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { SecuredUnitsSchema() })
 }
 
-
 var (
 	// CreateTableSecuredUnitsStmt holds the create statement for table `secured_units`.
 	CreateTableSecuredUnitsStmt = &postgres.CreateStmts{
@@ -43,12 +42,10 @@ var (
 	})
 )
 
-
 const (
 	// SecuredUnitsTableName specifies the name of the table in postgres.
 	SecuredUnitsTableName = "secured_units"
 )
-
 
 // SecuredUnits holds the Gorm model for Postgres table `secured_units`.
 type SecuredUnits struct {

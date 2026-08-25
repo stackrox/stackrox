@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { VirtualMachineCvev2Schema() })
 }
 
-
 var (
 	// CreateTableVirtualMachineCvev2Stmt holds the create statement for table `virtual_machine_cvev2`.
 	CreateTableVirtualMachineCvev2Stmt = &postgres.CreateStmts{
@@ -67,12 +66,10 @@ var (
 	})
 )
 
-
 const (
 	// VirtualMachineCvev2TableName specifies the name of the table in postgres.
 	VirtualMachineCvev2TableName = "virtual_machine_cvev2"
 )
-
 
 // VirtualMachineCvev2 holds the Gorm model for Postgres table `virtual_machine_cvev2`.
 type VirtualMachineCvev2 struct {

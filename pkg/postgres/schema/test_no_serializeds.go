@@ -21,7 +21,6 @@ func init() {
 	registerLazySchema(func() { TestNoSerializedsSchema() })
 }
 
-
 var (
 	// CreateTableTestNoSerializedsStmt holds the create statement for table `test_no_serializeds`.
 	CreateTableTestNoSerializedsStmt = &postgres.CreateStmts{
@@ -49,14 +48,12 @@ var (
 	})
 )
 
-
 const (
 	// TestNoSerializedsTableName specifies the name of the table in postgres.
 	TestNoSerializedsTableName = "test_no_serializeds"
 	// TestNoSerializedsLabelsTableName specifies the name of the table in postgres.
 	TestNoSerializedsLabelsTableName = "test_no_serializeds_labels"
 )
-
 
 // TestNoSerializeds holds the Gorm model for Postgres table `test_no_serializeds`.
 type TestNoSerializeds struct {

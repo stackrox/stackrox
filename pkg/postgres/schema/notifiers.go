@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { NotifiersSchema() })
 }
 
-
 var (
 	// CreateTableNotifiersStmt holds the create statement for table `notifiers`.
 	CreateTableNotifiersStmt = &postgres.CreateStmts{
@@ -37,12 +36,10 @@ var (
 	})
 )
 
-
 const (
 	// NotifiersTableName specifies the name of the table in postgres.
 	NotifiersTableName = "notifiers"
 )
-
 
 // Notifiers holds the Gorm model for Postgres table `notifiers`.
 type Notifiers struct {

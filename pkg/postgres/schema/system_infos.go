@@ -16,7 +16,6 @@ func init() {
 	registerLazySchema(func() { SystemInfosSchema() })
 }
 
-
 var (
 	// CreateTableSystemInfosStmt holds the create statement for table `system_infos`.
 	CreateTableSystemInfosStmt = &postgres.CreateStmts{
@@ -40,12 +39,10 @@ var (
 	})
 )
 
-
 const (
 	// SystemInfosTableName specifies the name of the table in postgres.
 	SystemInfosTableName = "system_infos"
 )
-
 
 // SystemInfos holds the Gorm model for Postgres table `system_infos`.
 type SystemInfos struct {

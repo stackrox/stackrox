@@ -19,7 +19,6 @@ func init() {
 	registerLazySchema(func() { AuthProvidersSchema() })
 }
 
-
 var (
 	// CreateTableAuthProvidersStmt holds the create statement for table `auth_providers`.
 	CreateTableAuthProvidersStmt = &postgres.CreateStmts{
@@ -42,12 +41,10 @@ var (
 	})
 )
 
-
 const (
 	// AuthProvidersTableName specifies the name of the table in postgres.
 	AuthProvidersTableName = "auth_providers"
 )
-
 
 // AuthProviders holds the Gorm model for Postgres table `auth_providers`.
 type AuthProviders struct {

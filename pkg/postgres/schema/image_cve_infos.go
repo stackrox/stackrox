@@ -20,7 +20,6 @@ func init() {
 	registerLazySchema(func() { ImageCveInfosSchema() })
 }
 
-
 var (
 	// CreateTableImageCveInfosStmt holds the create statement for table `image_cve_infos`.
 	CreateTableImageCveInfosStmt = &postgres.CreateStmts{
@@ -46,12 +45,10 @@ var (
 	})
 )
 
-
 const (
 	// ImageCveInfosTableName specifies the name of the table in postgres.
 	ImageCveInfosTableName = "image_cve_infos"
 )
-
 
 // ImageCveInfos holds the Gorm model for Postgres table `image_cve_infos`.
 type ImageCveInfos struct {

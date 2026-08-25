@@ -17,7 +17,6 @@ func init() {
 	registerLazySchema(func() { AuthMachineToMachineConfigsSchema() })
 }
 
-
 var (
 	// CreateTableAuthMachineToMachineConfigsStmt holds the create statement for table `auth_machine_to_machine_configs`.
 	CreateTableAuthMachineToMachineConfigsStmt = &postgres.CreateStmts{
@@ -50,14 +49,12 @@ var (
 	})
 )
 
-
 const (
 	// AuthMachineToMachineConfigsTableName specifies the name of the table in postgres.
 	AuthMachineToMachineConfigsTableName = "auth_machine_to_machine_configs"
 	// AuthMachineToMachineConfigsMappingsTableName specifies the name of the table in postgres.
 	AuthMachineToMachineConfigsMappingsTableName = "auth_machine_to_machine_configs_mappings"
 )
-
 
 // AuthMachineToMachineConfigs holds the Gorm model for Postgres table `auth_machine_to_machine_configs`.
 type AuthMachineToMachineConfigs struct {
