@@ -1,6 +1,6 @@
 // Package vsockdialer dials KubeVirt VM VSOCK ports via the Kubernetes API.
 //
-// It wraps kubevirt.io/client-go's kubecli VSOCK helper so Sensor can keep a
+// It uses kubevirt client-go's AsyncSubresourceHelper so Sensor can keep a
 // small Dial(namespace, name, port) surface for the pull-mode scraper.
 package vsockdialer
 
@@ -8,15 +8,17 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
+	"strconv"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
-	v1 "kubevirt.io/api/core/v1"
-	"kubevirt.io/client-go/kubecli"
+	"k8s.io/client-go/rest"
+	kvcorev1 "kubevirt.io/client-go/kubevirt/typed/core/v1"
 )
 
 // MultiDialer dials VMs across namespaces via the KubeVirt subresource API.
 type MultiDialer struct {
-	client kubecli.KubevirtClient
+	config *rest.Config
 }
 
 // NewMultiDialer creates a dialer from in-cluster Kubernetes config.
@@ -25,38 +27,31 @@ func NewMultiDialer() (*MultiDialer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("loading in-cluster config: %w", err)
 	}
-	client, err := kubecli.GetKubevirtClientFromRESTConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("creating kubevirt client: %w", err)
-	}
-	return NewMultiDialerFromClient(client), nil
+	return NewMultiDialerFromConfig(config), nil
 }
 
-// NewMultiDialerFromClient creates a dialer from an existing KubeVirt client.
-func NewMultiDialerFromClient(client kubecli.KubevirtClient) *MultiDialer {
-	return &MultiDialer{client: client}
+// NewMultiDialerFromConfig builds a dialer from an existing REST config so
+// tests and local runs can skip in-cluster service-account lookup.
+func NewMultiDialerFromConfig(config *rest.Config) *MultiDialer {
+	return &MultiDialer{config: config}
 }
 
 // Dial connects to the named VMI's VSOCK port in the given namespace.
-// When ctx carries a deadline, it is applied to the established connection's
-// read/write deadlines only. kubecli's VSOCK path does not take ctx into the
-// WebSocket handshake, so cancellation/deadline do not abort dial or upgrade.
-//
-// GetReport closes the stream on ctx cancel so an in-flight read can still
-// stop when the parent context ends without a nearer deadline (e.g. Sensor
-// shutdown).
+// ctx's deadline is applied to the established connection only: the
+// WebSocket handshake does not take ctx, so it cannot be cancelled.
 func (d *MultiDialer) Dial(ctx context.Context, namespace, name string, port uint32, useTLS bool) (io.ReadWriteCloser, error) {
-	stream, err := d.client.VirtualMachineInstance(namespace).VSOCK(name, &v1.VSOCKOptions{
-		TargetPort: port,
-		UseTLS:     &useTLS,
-	})
+	params := url.Values{}
+	params.Set("port", strconv.FormatUint(uint64(port), 10))
+	params.Set("tls", strconv.FormatBool(useTLS))
+	stream, err := kvcorev1.AsyncSubresourceHelper(
+		d.config, "virtualmachineinstances", namespace, name, "vsock", params,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("VSOCK dial %s/%s:%d: %w", namespace, name, port, err)
 	}
 	conn := stream.AsConn()
 	if deadline, ok := ctx.Deadline(); ok {
-		_ = conn.SetReadDeadline(deadline)
-		_ = conn.SetWriteDeadline(deadline)
+		_ = conn.SetDeadline(deadline)
 	}
 	return conn, nil
 }
