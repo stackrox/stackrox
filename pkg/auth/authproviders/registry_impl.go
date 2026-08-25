@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -63,13 +62,12 @@ func (r *registryImpl) Init() error {
 	r.providers = make(map[string]Provider)
 	err := r.store.ForEachAuthProvider(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
-		options := slices.Concat(
-			[]ProviderOption{
-				WithStorageView(storedValue),
-				WithAttributeVerifier(storedValue),
-			},
-			DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL),
-		)
+		//nolint:prealloc // Preallocating would not improve performance here
+		options := []ProviderOption{
+			WithStorageView(storedValue),
+			WithAttributeVerifier(storedValue),
+		}
+		options = append(options, DefaultOptionsForStoredProvider(r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
 
 		// Use the options to build the provider.
 		provider, err := NewProvider(options...)
