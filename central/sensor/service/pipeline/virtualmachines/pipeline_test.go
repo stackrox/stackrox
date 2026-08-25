@@ -300,6 +300,62 @@ func TestPipelineReconcile(t *testing.T) {
 	}
 }
 
+func TestPipelineRun_FeatureDisabledDoesNotWrite(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "false")
+	testClusterID := fixtureconsts.Cluster1
+	upsertTestVM := &virtualMachineV1.VirtualMachine{
+		Id:        uuid.NewTestUUID(1).String(),
+		Namespace: "test-namespace",
+		Name:      "test-virtual-machine",
+		ClusterId: testClusterID,
+	}
+	msgs := map[string]*central.MsgFromSensor{
+		"create": getVirtualMachineAdditionMessage(upsertTestVM),
+		"remove": getVirtualMachineRemovalMessage("removed_vm_id"),
+	}
+	models := map[string]bool{
+		"v1": false,
+		"v2": true,
+	}
+	for model, enhanced := range models {
+		t.Run(model, func(t *testing.T) {
+			t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), strconv.FormatBool(enhanced))
+			for name, msg := range msgs {
+				t.Run(name, func(t *testing.T) {
+					mockCtrl := gomock.NewController(t)
+					pipeline := newPipeline(
+						clusterDSMocks.NewMockDataStore(mockCtrl),
+						virtualMachineDSMocks.NewMockDataStore(mockCtrl),
+						virtualMachineV2DSMocks.NewMockDataStore(mockCtrl),
+					)
+					assert.NoError(t, pipeline.Run(t.Context(), testClusterID, msg, nil))
+				})
+			}
+		})
+	}
+}
+
+func TestPipelineReconcile_FeatureDisabledDoesNotDelete(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "false")
+	testClusterID := fixtureconsts.Cluster1
+	cases := map[string]bool{
+		"v1": false,
+		"v2": true,
+	}
+	for name, enhanced := range cases {
+		t.Run(name, func(t *testing.T) {
+			t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), strconv.FormatBool(enhanced))
+			mockCtrl := gomock.NewController(t)
+			pipeline := newPipeline(
+				nil,
+				virtualMachineDSMocks.NewMockDataStore(mockCtrl),
+				virtualMachineV2DSMocks.NewMockDataStore(mockCtrl),
+			)
+			assert.NoError(t, pipeline.Reconcile(t.Context(), testClusterID, reconciliation.NewStoreMap()))
+		})
+	}
+}
+
 func TestPipelineRunV2(t *testing.T) {
 	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
 	testClusterID := fixtureconsts.Cluster1
