@@ -443,18 +443,6 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 	set -x ;\
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
-.PHONY: deploy-via-installer
-deploy-via-installer: ## Deploy current version of operator via distribution manifest file.
-	./hack/retry-kubectl.sh </dev/null apply -f dist/install.yaml
-# A hack for the NO_PROXY assertions in the e2e tests.
-	./hack/retry-kubectl.sh </dev/null set env -n $(TEST_NAMESPACE) deployment/rhacs-operator-controller-manager NO_PROXY=127.1.2.3/8
-# Need to hardcode the deployment name here and above, since kubectl barfs on the CRDs in the manifest when working on deployment:
-# $ oc rollout status  -f operator/dist/install.yaml --timeout=300s
-# deployment "rhacs-operator-controller-manager" successfully rolled out
-# unable to decode "operator/dist/install.yaml": no kind "CustomResourceDefinition" is registered for version "apiextensions.k8s.io/v1" in scheme "k8s.io/kubectl/pkg/scheme/scheme.go:28"
-# TODO(ROX-11901): work this around somehow to make it possible to deploy and e2e-test the community build
-	./hack/retry-kubectl.sh </dev/null rollout status deployment -n $(TEST_NAMESPACE) rhacs-operator-controller-manager --timeout=300s
-
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
 	helm install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
