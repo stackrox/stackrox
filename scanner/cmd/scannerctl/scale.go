@@ -159,7 +159,11 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			// Open the metrics endpoint before anything else, so scrapping will get data.
 			go func() {
 				http.Handle("/metrics", promhttp.Handler())
-				log.Fatal(http.ListenAndServe(":9090", nil))
+				metricsSrv := &http.Server{
+					Addr:              ":9090",
+					ReadHeaderTimeout: 5 * time.Second,
+				}
+				log.Fatal(metricsSrv.ListenAndServe())
 			}()
 		}
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -29,5 +30,10 @@ func main() {
 }
 
 func listenAndServe(port int, dir string) error {
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), http.FileServer(http.Dir(dir)))
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           http.FileServer(http.Dir(dir)),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	return server.ListenAndServe()
 }
