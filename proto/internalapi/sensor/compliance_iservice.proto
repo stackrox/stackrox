@@ -54,7 +54,7 @@ message MsgToCompliance {
     }
   }
   // ComplianceACK is a generic acknowledgement message from Sensor to Compliance
-  // for any compliance-originated message (node inventory, node index, VM index, etc.)
+  // for any compliance-originated message (node inventory, node index, etc.)
   message ComplianceACK {
     Action action = 1;
     enum Action {
@@ -66,10 +66,11 @@ message MsgToCompliance {
     enum MessageType {
       NODE_INVENTORY = 0; // v2 node scanning (being deprecated)
       NODE_INDEX_REPORT = 1; // v4 node scanning
-      VM_INDEX_REPORT = 2; // VM vulnerability scanning
+      reserved 2;
+      reserved "VM_INDEX_REPORT";
     }
 
-    string resource_id = 3; // Resource identifier (node name, VM ID, etc.)
+    string resource_id = 3; // Resource identifier (node name, etc.)
     string reason = 4; // Optional reason for NACK (e.g., "rate limit exceeded")
   }
 

@@ -29,11 +29,14 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
 		NvdCvss:               vuln.GetNvdcvss(),
 		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
+		Exploit:               vuln.GetCveBaseInfo().GetExploit(),
+		CisaKev:               vuln.GetCveBaseInfo().GetExploit() != nil,
 		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
 		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 		State:                 vuln.GetState(),
 		Datasource:            vuln.GetDatasource(),
+		Origin:                vuln.GetOrigin(),
 	}
 
 	if vuln.GetIsFixable() {
@@ -94,6 +97,8 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 			CvssV3:       from.GetCvssV3(),
 			CvssMetrics:  from.GetCvssMetrics(),
 			Epss:         from.GetEpss(),
+			Exploit:      from.GetExploit(),
+			CisaKev:      from.GetExploit() != nil,
 			ScoreVersion: scoreVersion,
 		},
 		Cvss:                  from.GetCvss(),
@@ -107,6 +112,7 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 		ImpactScore:           impactScore,
 		Advisory:              from.GetAdvisory(),
 		Datasource:            from.GetDatasource(),
+		Origin:                from.GetOrigin(),
 	}
 	if !features.FlattenImageData.Enabled() {
 		ret.ImageId = imageID

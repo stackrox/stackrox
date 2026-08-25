@@ -299,9 +299,12 @@ func (x *DiscoveredData) GetDnfMetadataStatus() DnfMetadataStatus {
 // The index report is collected from the virtual machine agent and contains
 // the package information.
 type IndexReport struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	VsockCid      string                 `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
-	IndexV4       *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4,proto3" json:"index_v4,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	VsockCid string                 `protobuf:"bytes,1,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	IndexV4  *v4.IndexReport        `protobuf:"bytes,2,opt,name=index_v4,json=indexV4,proto3" json:"index_v4,omitempty"`
+	// Kubernetes VirtualMachine resource UID. Set by Sensor when the UID is
+	// already known.
+	VmId          string `protobuf:"bytes,3,opt,name=vm_id,json=vmId,proto3" json:"vm_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -348,6 +351,13 @@ func (x *IndexReport) GetIndexV4() *v4.IndexReport {
 		return x.IndexV4
 	}
 	return nil
+}
+
+func (x *IndexReport) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
 }
 
 // The index report event is sent to Central and contains additional information
@@ -420,10 +430,11 @@ const file_internalapi_virtualmachine_v1_index_report_proto_rawDesc = "" +
 	"\n" +
 	"os_version\x18\x02 \x01(\tR\tosVersion\x12P\n" +
 	"\x11activation_status\x18\x03 \x01(\x0e2#.virtualmachine.v1.ActivationStatusR\x10activationStatus\x12T\n" +
-	"\x13dnf_metadata_status\x18\x04 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\"^\n" +
+	"\x13dnf_metadata_status\x18\x04 \x01(\x0e2$.virtualmachine.v1.DnfMetadataStatusR\x11dnfMetadataStatus\"s\n" +
 	"\vIndexReport\x12\x1b\n" +
 	"\tvsock_cid\x18\x01 \x01(\tR\bvsockCid\x122\n" +
-	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\"X\n" +
+	"\bindex_v4\x18\x02 \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\x12\x13\n" +
+	"\x05vm_id\x18\x03 \x01(\tR\x04vmId\"X\n" +
 	"\x10IndexReportEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
 	"\x05index\x18\x02 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\x05index*#\n" +

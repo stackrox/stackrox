@@ -19,19 +19,7 @@ var (
 	StatusTimeoutLabels         = prometheus.Labels{"status": "timeout"}
 )
 
-// IndexReportsReceived is a counter for the number of virtual machine index reports received.
-// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
-var IndexReportsReceived = prometheus.NewCounter(
-	prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_reports_received_total",
-		Help:      "Total number of virtual machine index reports received by this Sensor",
-	},
-)
-
 // IndexReportsSent is a counter for the number of virtual machine index reports sent.
-// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportsSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -40,17 +28,6 @@ var IndexReportsSent = prometheus.NewCounterVec(
 		Help:      "Total number of virtual machine index reports sent by this Sensor",
 	},
 	[]string{"status"},
-)
-
-// VirtualMachineIndexReportHandlingDurationMilliseconds captures how long it takes to handle a virtual machine index report.
-var VirtualMachineIndexReportHandlingDurationMilliseconds = prometheus.NewHistogram(
-	prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machine_index_report_handling_duration_milliseconds",
-		Help:      "Distribution of time spent (in ms) handling virtual machine index reports in Sensor, including the enqueue step",
-		Buckets:   prometheus.ExponentialBuckets(10, 2, 12), // 10ms to ~40s
-	},
 )
 
 // IndexReportProcessingDuration label values.
@@ -97,7 +74,6 @@ var IndexReportBlockingEnqueueDurationMilliseconds = prometheus.NewHistogramVec(
 )
 
 // IndexReportEnqueueBlockedTotal counts how often the enqueue channel was full.
-// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -107,7 +83,7 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
-// VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
+// VMDiscoveredData counts VM discovered-data observations grouped by detected OS and status values.
 var VMDiscoveredData = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -119,7 +95,6 @@ var VMDiscoveredData = prometheus.NewCounterVec(
 )
 
 // IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
-// Asserted in VM E2E tests (tests/vm_scanning_metrics_test.go). Update tests when renaming or removing.
 var IndexReportAcksReceived = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -130,15 +105,198 @@ var IndexReportAcksReceived = prometheus.NewCounterVec(
 	[]string{"action"}, // "ACK" or "NACK"
 )
 
+// Pull-mode request status label values for PullRequestsTotal.
+const (
+	PullStatusSuccess       = "success"
+	PullStatusUnchanged     = "unchanged"
+	PullStatusDialError     = "dial_error"
+	PullStatusReadError     = "read_error"
+	PullStatusInvalidReport = "invalid_report"
+	PullStatusSendError     = "send_error"
+	PullStatusNotReady      = "not_ready"
+	PullStatusUnknownMethod = "unknown_method"
+	PullStatusTimeout       = "timeout"
+	PullStatusBusy          = "busy"
+)
+
+// PullDialDurationSeconds measures time to establish a websocket connection per VM.
+var PullDialDurationSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_dial_duration_seconds",
+		Help:      "Time to establish websocket connection to a VM agent",
+		Buckets:   prometheus.ExponentialBuckets(0.01, 2, 12), // 10ms to ~20s
+	},
+)
+
+// PullReadDurationSeconds measures time to receive the full response from a VM agent.
+var PullReadDurationSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_read_duration_seconds",
+		Help:      "Time to receive full response from a VM agent",
+		Buckets:   prometheus.ExponentialBuckets(0.05, 2, 11), // 50ms to ~51s
+	},
+)
+
+// PullTotalDurationSeconds measures end-to-end time per VM (dial + read + send to Central).
+var PullTotalDurationSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_total_duration_seconds",
+		Help:      "End-to-end duration per VM: dial + read + send to Central",
+		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 11), // 100ms to ~102s
+	},
+)
+
+// PullTickDurationSeconds measures how long each scraper tick spends
+// scraping the VMs that were due, not a poll of the whole VM set: VMs are
+// scraped on independent per-VM schedules, not in lockstep.
+var PullTickDurationSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_tick_duration_seconds",
+		Help:      "Duration of a scraper tick spent scraping the VMs due at that tick",
+		Buckets:   prometheus.ExponentialBuckets(1, 2, 10), // 1s to ~512s
+	},
+)
+
+// PullReportBytes measures response payload size in bytes.
+var PullReportBytes = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_report_bytes",
+		Help:      "Response payload size in bytes from VM agent",
+		// 1KB to ~32MB brackets the 16MB default response-size ceiling
+		// (env.VirtualMachinesPullMaxResponseSizeKB) with a bucket to spare,
+		// giving the >8MB range that reportcheck.IsViable flags as
+		// "unusually large" its own resolution up to that ceiling.
+		Buckets: prometheus.ExponentialBuckets(1024, 2, 16),
+	},
+)
+
+// PullReportPackages measures package count per report.
+var PullReportPackages = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_report_packages",
+		Help:      "Number of packages per VM index report",
+		Buckets:   prometheus.ExponentialBuckets(10, 2, 10), // 10 to ~5120
+	},
+)
+
+// PullRequestsTotal counts per-VM pull attempts by status.
+var PullRequestsTotal = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_requests_total",
+		Help:      "Per-VM pull attempts by outcome status",
+	},
+	[]string{"status"},
+)
+
+// PullTicksTotal counts scraper ticks executed.
+var PullTicksTotal = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_ticks_total",
+		Help:      "Total number of scraper ticks executed",
+	},
+)
+
+// PullTrackedVMs tracks the number of VMs currently tracked for pull-mode
+// scraping, regardless of how many were due at the last tick.
+var PullTrackedVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_tracked_vms",
+		Help:      "Number of VMs currently tracked for pull-mode scraping",
+	},
+)
+
+// PullDueVMs is how many VMs were eligible to scrape at the start of the last
+// tick (nextAttemptAt had arrived and they were not already in flight).
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help:      "How many VMs were eligible to scrape at the beginning of the last scraper tick",
+	},
+)
+
+// PullStartsPerTick is how many VM scrapes each tick launches. Idle ticks
+// (nobody due) are omitted so the histogram is not dominated by zeros.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick. " +
+			"Idle ticks are not observed. Compare with vsock_pull_due_vms: " +
+			"spread due times keep both small; a mass of large starts is a dump.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central. The first forward after start is not observed.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. The first forward after Sensor start does not count.",
+		// 10ms to ~47h. Sized for a 24h poll in extreme cases so those
+		// gaps stay in a finite bucket instead of +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 25),
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to cadence after success or a permanent non-retry outcome (retries/NACKs do not).
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
+		// 250ms to ~36h. Sized for a 24h poll in extreme cases (W up to 24h).
+		Buckets: prometheus.ExponentialBuckets(0.25, 2, 20),
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
-		IndexReportsReceived,
 		IndexReportsSent,
-		VirtualMachineIndexReportHandlingDurationMilliseconds,
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
 		IndexReportAcksReceived,
+		PullDialDurationSeconds,
+		PullReadDurationSeconds,
+		PullTotalDurationSeconds,
+		PullTickDurationSeconds,
+		PullReportBytes,
+		PullReportPackages,
+		PullRequestsTotal,
+		PullTicksTotal,
+		PullTrackedVMs,
+		PullDueVMs,
+		PullStartsPerTick,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
 }

@@ -7,7 +7,8 @@ Central around image cache and reprocessor ("reassess all") workflows.
 
 - Kubernetes/OpenShift cluster with StackRox deployed
 - `admissionControl.enforcement` enabled in the SecuredCluster CR
-- `spec.monitoring.exposeEndpoint: Enabled` in the SecuredCluster CR
+- `spec.monitoring.exposeEndpoint: Enabled` on **both** the SecuredCluster and Central CRs
+  (AC metrics for all modes; Central metrics required for `prescan-slow-path`)
 
 ## Common Environment Variables
 
@@ -49,6 +50,58 @@ All scripts follow the same pattern:
 3. Run again, save output
 4. `diff` the two outputs (or use `go tool pprof -diff_base` for profiles)
 
+### Example: prescan-slow-path comparison
+
+This workflow proves whether Central skips Scanner `GetScan` for tag-only
+admission after a Central pre-scan (`ScanImageInternalForAdmission`).
+
+**Policy (required):** enable **90-Day Image Age**, Deploy lifecycle, **Fail**
+on admission. Spec-only policies (Privileged Container, Latest tag) will not
+fetch images and the run is invalid.
+
+**Why these flags:** `UNIQUE_PCT=100` and `PARALLEL=1` make every review a
+Central fetch of a distinct pre-scanned tag. Cache hits and coalescing no
+longer move the averages. Failed prescans are dropped from the burst so the
+PR cannot pick up extra Scanner calls for uncached tags.
+
+Scrape happens **after** prescan so `scan_duration_count` from
+`POST /v1/images/scan` is not counted in the burst delta.
+
+```bash
+# 1. Deploy master image. Enforce 90-Day Image Age (Fail on admission).
+ROX_PASSWORD=<pw> ROX_CENTRAL_ADDRESS=<host:port> \
+  BURST_SIZE=20 UNIQUE_PCT=100 PARALLEL=1 \
+  ./tools/admission-control/burst-test.sh prescan-slow-path \
+  | tee /tmp/prescan-master.txt
+
+# 2. Redeploy Central + Sensor with PR branch image
+#    (AC pods will be restarted by the script itself).
+#    Re-export ROX_PASSWORD if the redeploy minted a new one.
+
+# 3. Run again on PR branch
+ROX_PASSWORD=<pw> ROX_CENTRAL_ADDRESS=<host:port> \
+  BURST_SIZE=20 UNIQUE_PCT=100 PARALLEL=1 \
+  ./tools/admission-control/burst-test.sh prescan-slow-path \
+  | tee /tmp/prescan-pr.txt
+
+# 4. Compare
+diff -y /tmp/prescan-master.txt /tmp/prescan-pr.txt
+```
+
+Pass bar (both runs must have `image_fetch_total` ≈ unique images):
+
+| Metric | Master | PR branch |
+|--------|--------|-----------|
+| `scan_duration_count` (Central) | ≈ unique images | **~0** |
+| `image_fetch_duration (avg)` | metadata + GetScan | metadata only (lower) |
+| `image_fetch_total` | ≈ unique | ≈ unique |
+| `review_duration_seconds (avg)` | ignore | ignore (diluted by hits) |
+
+`scan_duration_count` is the Scanner-trip proof. Fetch duration is supporting
+latency. Do not treat `review_duration_seconds` as a Scanner proxy: after
+prescan, Scanner's index is warm so GetScan can be cheap, and review avg mixes
+in cache hits.
+
 ---
 
 ### `burst-test.sh`
@@ -60,6 +113,7 @@ Run with `-h` for all options.
 |------|---------------|-------------------|
 | `fast-path` | Spec-only evaluation (no image fetching) | Privileged Container, Latest tag |
 | `slow-path` | Image coalescing + caching (enrichment) | Any enrichment-required (e.g. Image Age) |
+| `prescan-slow-path` | Scan reuse for pre-scanned tag-only images | Any enrichment-required (e.g. Image Age) |
 
 Slow-path runs two phases automatically: **cold cache** (pods restarted) then
 **warm cache** (immediate re-burst).
@@ -77,6 +131,31 @@ IMAGES_FILE=/tmp/my-images.txt BURST_SIZE=500 UNIQUE_PCT=50 ./burst-test.sh slow
 # Create persistent deployments (replicas=0) for reprocessor profiling
 BURST_SIZE=1000 UNIQUE_PCT=60 ./burst-test.sh slow-path --no-dry-run
 ```
+
+**Prescan-slow-path** pre-scans unique images via Central's `POST /v1/images/scan`
+API (warming the DB), drops failures, restarts AC (not Scanner), then bursts
+**one tag-only deployment per successful prescan**. Central `scan_duration_count`
+during the burst is the Scanner-trip proof; AC `image_fetch_duration_seconds`
+is the latency proof.
+
+```bash
+# Prescan + one-fetch-per-unique-image burst
+ROX_PASSWORD=<pw> ROX_CENTRAL_ADDRESS=<host:port> \
+  BURST_SIZE=20 UNIQUE_PCT=100 PARALLEL=1 PRESCAN_PARALLEL=5 \
+  ./tools/admission-control/burst-test.sh prescan-slow-path
+```
+
+Requires **90-Day Image Age** (or another enrichment-required policy) enabled
+with **Fail on admission**. `UNIQUE_PCT` is forced to 100.
+
+Additional environment variables for `prescan-slow-path`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ROX_CENTRAL_ADDRESS` | *(required)* | Central host:port |
+| `ROX_PASSWORD` | *(required)* | Central admin password |
+| `ROX_ADMIN_USER` | `admin` | Central admin username |
+| `PRESCAN_PARALLEL` | `5` | Max concurrent prescan API calls |
 
 ---
 

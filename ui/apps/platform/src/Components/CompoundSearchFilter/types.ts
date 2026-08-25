@@ -14,12 +14,12 @@ export type InputType =
     | 'select-exclusive-double'
     | 'select-exclusive-single';
 
-export type SelectSearchFilterOption = {
+export type SelectSearchFilterOption<T extends string = string> = {
     label: string;
-    value: string;
+    value: T;
 };
-export type SelectSearchFilterOptions = {
-    options: SelectSearchFilterOption[];
+export type SelectSearchFilterOptions<T extends string = string> = {
+    options: SelectSearchFilterOption<T>[];
 };
 
 export type SelectSearchFilterGroupedOption = {

@@ -34,6 +34,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, 
 	if features.ScannerV4RedHatVEXNotAffected.Enabled() {
 		filterNotAffectedVulnerabilities(report, layerSHAToIndex)
 	}
+	if features.ScannerV4SuppressOSVWithRedHatVEX.Enabled() {
+		filterOSVSupersededByRedHatVEX(report, layerSHAToIndex)
+	}
 
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
@@ -146,18 +149,20 @@ func envOS(env *v4.Environment, report *v4.VulnerabilityReport) string {
 	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
-func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+// environmentList returns the *v4.Environment_List associated with the given
+// package ID, falling back to the deprecated environments map if the
+// current one is unset.
+func environmentList(report *v4.VulnerabilityReport, id string) *v4.Environment_List {
 	environments := report.GetContents().GetEnvironments()
 	if environments == nil {
 		// Fallback to deprecated environments.
 		environments = report.GetContents().GetEnvironmentsDEPRECATED()
 	}
-	envList, ok := environments[id]
-	if !ok {
-		return nil
-	}
+	return environments[id]
+}
 
-	envs := envList.GetEnvironments()
+func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
+	envs := environmentList(report, id).GetEnvironments()
 	if len(envs) > 0 {
 		// Just use the first environment.
 		// It is possible there are multiple environments associated with this package;
@@ -168,6 +173,20 @@ func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
 	}
 
 	return nil
+}
+
+// packageHasRepositoryKey reports whether pkgID is associated, via any of
+// its Environment entries, with a Repository whose Key matches key.
+func packageHasRepositoryKey(report *v4.VulnerabilityReport, pkgID, key string) bool {
+	repos := report.GetContents().GetRepositories()
+	for _, env := range environmentList(report, pkgID).GetEnvironments() {
+		for _, repoID := range env.GetRepositoryIds() {
+			if repos[repoID].GetKey() == key {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // ParsePackageDB parses the given packageDB into its source type + filepath.
@@ -272,8 +291,11 @@ func buildEmbeddedVulnerability(ccVuln *v4.VulnerabilityReport_Vulnerability, en
 		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
 		Epss:                  epss(ccVuln.GetEpssMetrics()),
+		Exploit:               cisaKevExploit(ccVuln),
+		CisaKev:               cisaKevEnabled(ccVuln),
 		FixAvailableTimestamp: ccVuln.GetFixedDate(),
 		Datasource:            vulnDataSource(ccVuln, envOS),
+		Origin:                vulnOrigin(ccVuln.GetUpdater()),
 	}
 	if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 		utils.Should(err)
@@ -340,6 +362,30 @@ func epss(epssDetail *v4.VulnerabilityReport_Vulnerability_EPSS) *storage.EPSS {
 		EpssProbability: epssDetail.GetProbability(),
 		EpssPercentile:  epssDetail.GetPercentile(),
 	}
+}
+
+func exploit(e *v4.VulnerabilityReport_Vulnerability_CISAExploit) *storage.Exploit {
+	if e == nil {
+		return nil
+	}
+	return &storage.Exploit{
+		DateAdded:                  e.GetDateAdded(),
+		ShortDescription:           e.GetShortDescription(),
+		RequiredAction:             e.GetRequiredAction(),
+		DueDate:                    e.GetDueDate(),
+		KnownRansomwareCampaignUse: e.GetKnownRansomwareCampaignUse(),
+	}
+}
+
+func cisaKevExploit(ccVuln *v4.VulnerabilityReport_Vulnerability) *storage.Exploit {
+	if !features.KnownExploitedVulnerabilities.Enabled() {
+		return nil
+	}
+	return exploit(ccVuln.GetExploit())
+}
+
+func cisaKevEnabled(ccVuln *v4.VulnerabilityReport_Vulnerability) bool {
+	return features.KnownExploitedVulnerabilities.Enabled() && ccVuln.GetExploit() != nil
 }
 
 func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
@@ -522,6 +568,15 @@ func getPackageLayerSHA(report *v4.VulnerabilityReport, pkgID string) (string, b
 	return env.GetIntroducedIn(), true
 }
 
+func getPackageLayerIndex(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32, pkgID string) (int32, bool) {
+	layerSHA, ok := getPackageLayerSHA(report, pkgID)
+	if !ok {
+		return 0, false
+	}
+	layerIdx, ok := layerSHAToIndex[layerSHA]
+	return layerIdx, ok
+}
+
 // filterNotAffectedVulnerabilities removes vulnerabilities from PackageVulnerabilities
 // when they are covered by VEX not-affected assertions via AncestryPackage entries.
 // A package is covered if it was introduced at or below the AncestryPackage's layer
@@ -531,58 +586,42 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 		return
 	}
 
-	// Find AncestryPackage entries and collect their boundaries with aliases.
-	type boundary struct {
-		layerIndex      int32
-		notAffectedKeys set.StringSet
-	}
-	var boundaries []boundary
-
+	// Find AncestryPackage entries. A package introduced at or before that
+	// layer is also not affected, so keep the highest layer index per alias.
+	aliasKeyToLayerIndex := make(map[string]int32)
 	for pkgID, vulnIDs := range report.GetPackageNotVulnerable() {
 		pkg := report.GetContents().GetPackages()[pkgID]
 		if pkg == nil || pkg.GetKind() != "ancestry" {
 			continue
 		}
 
-		layerSHA, ok := getPackageLayerSHA(report, pkgID)
-		if !ok {
-			continue
-		}
-		layerIdx, ok := layerSHAToIndex[layerSHA]
+		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
 		}
 
-		aliasKeys := set.NewStringSet()
 		for _, vulnID := range vulnIDs.GetValues() {
 			vuln := report.GetVulnerabilities()[vulnID]
 			if vuln == nil {
 				continue
 			}
 			for _, alias := range vuln.GetAliases() {
-				aliasKeys.Add(aliasKey(alias))
+				key := aliasKey(alias)
+				if cur, ok := aliasKeyToLayerIndex[key]; !ok || layerIdx > cur {
+					aliasKeyToLayerIndex[key] = layerIdx
+				}
 			}
-		}
-
-		if aliasKeys.Cardinality() > 0 {
-			boundaries = append(boundaries, boundary{
-				layerIndex:      layerIdx,
-				notAffectedKeys: aliasKeys,
-			})
 		}
 	}
 
-	if len(boundaries) == 0 {
+	if len(aliasKeyToLayerIndex) == 0 {
 		return
 	}
 
-	// Filter PackageVulnerabilities based on boundaries.
+	// Remove PackageVulnerabilities entries covered by a same-or-lower-layer
+	// not-affected assertion.
 	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
-		pkgLayerSHA, ok := getPackageLayerSHA(report, pkgID)
-		if !ok {
-			continue
-		}
-		pkgLayerIdx, ok := layerSHAToIndex[pkgLayerSHA]
+		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
 		if !ok {
 			continue
 		}
@@ -595,24 +634,103 @@ func filterNotAffectedVulnerabilities(report *v4.VulnerabilityReport, layerSHATo
 				continue
 			}
 
-			suppressed := false
-			for _, b := range boundaries {
-				if pkgLayerIdx > b.layerIndex {
-					continue
-				}
-				for _, alias := range vuln.GetAliases() {
-					if b.notAffectedKeys.Contains(aliasKey(alias)) {
-						suppressed = true
-						break
-					}
-				}
-				if suppressed {
+			removed := false
+			for _, alias := range vuln.GetAliases() {
+				if layerIdx, ok := aliasKeyToLayerIndex[aliasKey(alias)]; ok && pkgLayerIdx <= layerIdx {
+					removed = true
 					break
 				}
 			}
 
-			if suppressed {
+			if removed {
 				log.Debugf("Suppressing vuln %q for package %q due to VEX not-affected assertion", vuln.GetName(), pkgID)
+			} else {
+				filtered = append(filtered, vulnID)
+			}
+		}
+
+		if len(filtered) == 0 {
+			delete(report.PackageVulnerabilities, pkgID) //nolint:protogetter // mutation requires direct field access
+		} else {
+			report.PackageVulnerabilities[pkgID] = &v4.StringList{Values: filtered}
+		}
+	}
+}
+
+// filterOSVSupersededByRedHatVEX removes osv/*-sourced vulnerabilities from
+// PackageVulnerabilities when a rhel-vex updater vulnerability shares a
+// CVE alias at or above the OSV package's layer.
+func filterOSVSupersededByRedHatVEX(report *v4.VulnerabilityReport, layerSHAToIndex map[string]int32) {
+	const (
+		osvUpdaterPrefix     = "osv/"
+		redHatVEXUpdaterName = "rhel-vex"
+		// redHatContainerRepositoryKey matches
+		// github.com/quay/claircore/rhel/rhcc.RepositoryKey: it is set on
+		// every Repository indexed by claircore's RHCC (container) ecosystem.
+		redHatContainerRepositoryKey = "rhcc-container-repository"
+	)
+
+	if len(report.GetPackageVulnerabilities()) == 0 {
+		return
+	}
+
+	// Find packages with a rhel-vex vulnerability. An OSV package introduced
+	// at or before that layer is superseded too, so keep the highest layer per alias.
+	aliasKeyToLayerIndex := make(map[string]int32)
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		// Only consider OCI (RHCC) packages.
+		if !packageHasRepositoryKey(report, pkgID, redHatContainerRepositoryKey) {
+			continue
+		}
+
+		layerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok {
+			continue
+		}
+
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil || vuln.GetUpdater() != redHatVEXUpdaterName {
+				continue
+			}
+			for _, alias := range vuln.GetAliases() {
+				key := aliasKey(alias)
+				if cur, ok := aliasKeyToLayerIndex[key]; !ok || layerIdx > cur {
+					aliasKeyToLayerIndex[key] = layerIdx
+				}
+			}
+		}
+	}
+
+	if len(aliasKeyToLayerIndex) == 0 {
+		return
+	}
+
+	// Remove osv/* vulnerabilities covered by a same-or-lower-layer rhel-vex vulnerability.
+	for pkgID, vulnIDs := range report.GetPackageVulnerabilities() {
+		pkgLayerIdx, ok := getPackageLayerIndex(report, layerSHAToIndex, pkgID)
+		if !ok {
+			continue
+		}
+
+		var filtered []string
+		for _, vulnID := range vulnIDs.GetValues() {
+			vuln := report.GetVulnerabilities()[vulnID]
+			if vuln == nil || !strings.HasPrefix(vuln.GetUpdater(), osvUpdaterPrefix) {
+				filtered = append(filtered, vulnID)
+				continue
+			}
+
+			removed := false
+			for _, alias := range vuln.GetAliases() {
+				if layerIdx, ok := aliasKeyToLayerIndex[aliasKey(alias)]; ok && pkgLayerIdx <= layerIdx {
+					removed = true
+					break
+				}
+			}
+
+			if removed {
+				log.Debugf("Suppressing OSV vuln %q for package %q in favor of Red Hat VEX", vuln.GetName(), pkgID)
 			} else {
 				filtered = append(filtered, vulnID)
 			}
@@ -727,6 +845,11 @@ func splitVersionNumbers(v string) []int {
 // mergeScoringFields overwrites scoring-related fields on dst when src has more
 // complete or higher-severity scoring data. Priority: more CVSS metrics, higher
 // severity, higher CVSS base score.
+//
+// Origin is set here defensively so that if in the future multiple updaters
+// report the same CVE, Origin reflects the source that won the scoring
+// comparison, keeping the assignment deterministic rather than dependent
+// on input order.
 func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	c := cmp.Or(
 		cmp.Compare(len(src.GetCvssMetrics()), len(dst.GetCvssMetrics())),
@@ -748,4 +871,39 @@ func mergeScoringFields(dst, src *storage.EmbeddedVulnerability) {
 	dst.Link = src.GetLink()
 	dst.PublishedOn = src.GetPublishedOn()
 	dst.Epss = src.GetEpss()
+	dst.Exploit = src.GetExploit()
+	dst.CisaKev = src.GetExploit() != nil
+	dst.Origin = src.GetOrigin()
+}
+
+var updaterOrigins = []struct {
+	prefix string
+	origin storage.VulnOrigin
+}{
+	{"alpine-", storage.VulnOrigin_VULN_ORIGIN_ALPINE},
+	{"aws-", storage.VulnOrigin_VULN_ORIGIN_AMAZON},
+	{"debian/", storage.VulnOrigin_VULN_ORIGIN_DEBIAN},
+	{"oracle-", storage.VulnOrigin_VULN_ORIGIN_ORACLE},
+	{"osv/", storage.VulnOrigin_VULN_ORIGIN_OSV},
+	{"photon-", storage.VulnOrigin_VULN_ORIGIN_PHOTON},
+	{"rhel-", storage.VulnOrigin_VULN_ORIGIN_RED_HAT},
+	{"suse-", storage.VulnOrigin_VULN_ORIGIN_SUSE},
+	{"ubuntu/", storage.VulnOrigin_VULN_ORIGIN_UBUNTU},
+}
+
+// vulnOrigin translates a Claircore updater name into VulnOrigin.
+//
+// ASSUMPTION: updater names follow prefix conventions observed in Claircore.
+// These names are exposed via the API but their values are not guaranteed
+// to be stable.
+//
+// TODO(ROX-36340): Replace this prefix-based translation with something
+// more stable.
+func vulnOrigin(updater string) storage.VulnOrigin {
+	for _, e := range updaterOrigins {
+		if strings.HasPrefix(updater, e.prefix) {
+			return e.origin
+		}
+	}
+	return storage.VulnOrigin_VULN_ORIGIN_OTHER
 }

@@ -17,7 +17,7 @@ export type LinkDescription = {
     type: 'link';
     content: string | TitleCallback | ReactElement;
     path: string;
-    routeKey: RouteKey;
+    routeKey: RouteKey | RouteKey[];
     description?: string;
     isActive?: IsActiveCallback; // for example, exact match
 };

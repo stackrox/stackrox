@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"k8s.io/utils/ptr"
 )
 
 var (
@@ -39,7 +38,7 @@ func centralDBPersistenceDefaulting(_ logr.Logger, _ *platform.CentralStatus, _ 
 			DB: &platform.CentralDBSpec{
 				Persistence: &platform.DBPersistence{
 					PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-						ClaimName: ptr.To("central-db"),
+						ClaimName: new("central-db"),
 					},
 				},
 			},

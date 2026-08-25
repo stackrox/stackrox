@@ -30,9 +30,14 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 		return nil, errors.Wrap(err, "failed to get postgres config")
 	}
 
-	dbSize, err := pgadmin.GetDatabaseSize(config, pgconfig.GetActiveDB())
+	dbName := pgconfig.GetActiveDB()
+	if pgconfig.IsExternalDatabase() {
+		dbName = config.ConnConfig.Database
+	}
+
+	dbSize, err := pgadmin.GetDatabaseSize(config, dbName)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get databaze size")
+		return nil, errors.Wrap(err, "failed to get database size")
 	}
 
 	db := GetPostgres()

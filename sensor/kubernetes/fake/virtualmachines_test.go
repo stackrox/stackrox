@@ -196,7 +196,7 @@ func TestToUnstructuredVMI(t *testing.T) {
 		expectClampedRun bool
 	}{
 		"should normalize vsock CID and runtime user": {
-			vsockCID:        pointerToUint32(1234),
+			vsockCID:        new(uint32(1234)),
 			expectVSOCKCID:  true,
 			wantVSOCKCID:    1234,
 			runtimeUser:     42,
@@ -252,8 +252,4 @@ func TestToUnstructuredVMI(t *testing.T) {
 			}
 		})
 	}
-}
-
-func pointerToUint32(val uint32) *uint32 {
-	return &val
 }

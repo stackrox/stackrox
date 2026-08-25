@@ -8,6 +8,7 @@ import type {
     ApiSortOptionSingle,
     GraphQLSortOption,
     SearchFilter,
+    SearchQueryOptions,
 } from 'types/search';
 import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
@@ -219,16 +220,11 @@ export function flattenFilterValue<UndefinedFallback>(
  * @param options.perPage The number of items per page
  */
 export function getListQueryParams({
-    searchFilter,
+    searchFilter = {},
     sortOption,
     page,
     perPage,
-}: {
-    searchFilter: SearchFilter;
-    sortOption: ApiSortOption;
-    page: number;
-    perPage: number;
-}): string {
+}: SearchQueryOptions): string {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
@@ -237,6 +233,34 @@ export function getListQueryParams({
         },
         { allowDots: true }
     );
+}
+
+/**
+ * Builds query parameters for API endpoints where RawQuery is nested within
+ * the request message (e.g. `{ query: { query, pagination } }`), rather than
+ * being the top-level request parameter.
+ *
+ * @param options - Search query options (page, perPage, sortOption, searchFilter)
+ * @param paramName - The name of the nested parameter (defaults to 'query').
+ *                    Use 'reportParamQuery' for report history endpoints.
+ * @param additionalParams - Additional top-level parameters to include alongside the nested query
+ *                          (e.g., { includeRelationships: true })
+ */
+export function buildNestedRawQueryParams(
+    { page, perPage, sortOption, searchFilter = {} }: SearchQueryOptions,
+    paramName = 'query',
+    additionalParams: Record<string, unknown> = {}
+): string {
+    const query = getRequestQueryStringForSearchFilter(searchFilter);
+    const pagination = getPaginationParams({ page, perPage, sortOption });
+    const queryParameters = {
+        [paramName]: {
+            query,
+            pagination,
+        },
+        ...additionalParams,
+    };
+    return qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
 }
 
 /**

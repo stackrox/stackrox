@@ -8,28 +8,34 @@ import (
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/vsockframing"
 	"golang.org/x/sync/semaphore"
 )
 
-// maxConcurrentConns is the number of connections handled simultaneously.
-// intentional simplification: set to 1 because the agent serves a single
-// Sensor poller; raising this would require a request queue instead of
-// the current reject-and-retry approach.
-const maxConcurrentConns = 1
-
-// Backoff bounds for retrying transient (non-context) Accept() errors.
 const (
+	// maxConcurrentConns is the number of connections handled simultaneously.
+	// intentional simplification: set to 1 because the agent serves a single
+	// Sensor poller; raising this would require a request queue instead of
+	// the current reject-and-retry approach.
+	maxConcurrentConns = 1
+
+	// minAcceptRetryDelay and maxAcceptRetryDelay bound backoff for retrying
+	// transient (non-context) Accept() errors.
 	minAcceptRetryDelay = 5 * time.Millisecond
 	maxAcceptRetryDelay = 1 * time.Second
-)
 
-// DefaultConnDeadline bounds the entire lifetime of one accepted connection -
-// TLS handshake plus request/response - so a stalled or malicious peer
-// can hold at most one goroutine and one semaphore slot for this long,
-// never more, and never blocks Serve's accept loop itself (see below).
-// Overridable via WithConnDeadline; see that option's doc for the
-// availability/DoS trade-off involved in changing it.
-const DefaultConnDeadline = 30 * time.Second
+	// DefaultConnDeadline bounds the entire lifetime of one accepted connection -
+	// TLS handshake plus request/response - so a stalled or malicious peer
+	// can hold at most one goroutine and one semaphore slot for this long,
+	// never more, and never blocks Serve's accept loop itself (see below).
+	// Overridable via WithConnDeadline; see that option's doc for the
+	// availability/DoS trade-off involved in changing it.
+	DefaultConnDeadline = 30 * time.Second
+
+	// rejectAbsorbTimeout bounds how long rejectConn waits to absorb a racing
+	// peer's request before closing.
+	rejectAbsorbTimeout = 2 * time.Second
+)
 
 // Server listens on a VSOCK port and dispatches connections to the Handler.
 // tlsCfg must be non-nil in production: sensor always dials TLS, so a
@@ -151,6 +157,9 @@ func (s *Server) serveConn(ctx context.Context, conn net.Conn) {
 // in-flight-connection slot. Handshaking here (rather than closing the raw
 // socket outright) costs a little CPU but lets Sensor tell "agent is busy,
 // retry me" apart from an unexplained connection drop.
+//
+// After writing BUSY, rejectConn absorbs one framed request before closing
+// so a racing peer's write never sees a reset instead of the busy reply.
 func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
 	log.Warnf("Rejecting connection from %s: another request is in flight", conn.RemoteAddr())
 	if !completeHandshake(ctx, conn) {
@@ -158,6 +167,14 @@ func (s *Server) rejectConn(ctx context.Context, conn net.Conn) {
 	}
 	defer func() { _ = conn.Close() }()
 	s.handler.writeError(conn, pb.ErrorCode_ERROR_CODE_BUSY, "agent is already serving another request; retry after a backoff")
+
+	_ = conn.SetReadDeadline(time.Now().Add(rejectAbsorbTimeout))
+	// Outcome never affects control flow: timeout/EOF means the peer never
+	// wrote (or wrote late). DiscardFrame avoids allocating a payload buffer
+	// for a request we only need to drain.
+	if err := vsockframing.DiscardFrame(conn, maxRequestSize); err != nil {
+		log.Debugf("No request absorbed from rejected peer %s before closing: %v", conn.RemoteAddr(), err)
+	}
 }
 
 // completeHandshake finishes the TLS handshake on conn, if it is a TLS

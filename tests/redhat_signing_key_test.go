@@ -14,8 +14,9 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	appsV1 "k8s.io/api/apps/v1"
@@ -27,7 +28,7 @@ const (
 	redHatIntegrationID = "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
 	watchIntervalEnv    = "ROX_REDHAT_SIGNING_KEY_WATCH_INTERVAL"
 	offlineModeEnv      = "ROX_OFFLINE_MODE"
-	shortWatchInterval  = "10s"
+	shortWatchInterval  = "5s"
 
 	testPublicKeyPEM1 = `-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE16IoQbiiB5exTRLTkl2rn5FuyXys
@@ -70,7 +71,24 @@ func TestRedHatSigningKey(t *testing.T) {
 
 func (s *RedHatSigningKeySuite) SetupSuite() {
 	s.KubernetesSuite.SetupSuite()
+
+	// Deploy scripts (tests/e2e/lib.sh, deploy/common/k8sbased.sh) set
+	// watchIntervalEnv=5s at deploy time, so Central already polls quickly.
+	// This is a same-value no-op safety net for setups that deploy Central
+	// without the baked-in env var (e.g. local dev clusters).
+	ns := namespaces.StackRox
+	ctx, cancel := context.WithTimeout(context.Background(), waitTimeout+time.Minute)
+	defer cancel()
+	s.logf("Ensuring %s=%s on central", watchIntervalEnv, shortWatchInterval)
+	currentVal, _ := s.getDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv)
+	if currentVal == shortWatchInterval {
+		s.logf("%s already set to %s, skipping patch", watchIntervalEnv, shortWatchInterval)
+	} else {
+		s.mustSetDeploymentEnvVal(ctx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
+	}
+
 	s.conn = centralgrpc.GRPCConnectionToCentral(s.T())
+	s.waitForCentralReady(ctx)
 }
 
 func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient {
@@ -79,6 +97,20 @@ func (s *RedHatSigningKeySuite) siClient() v1.SignatureIntegrationServiceClient 
 
 func (s *RedHatSigningKeySuite) listIntegrations(ctx context.Context) (*v1.ListSignatureIntegrationsResponse, error) {
 	return s.siClient().ListSignatureIntegrations(ctx, &v1.Empty{})
+}
+
+// waitForCentralReady waits for Central's k8s deployment readiness AND gRPC
+// API responsiveness. On OCP with HAProxy Routes, gRPC connection recovery
+// after a backend restart lags 10-30s beyond k8s deployment readiness.
+func (s *RedHatSigningKeySuite) waitForCentralReady(ctx context.Context) {
+	ns := namespaces.StackRox
+	s.waitUntilK8sDeploymentReady(ctx, ns, "central")
+	mustEventually(s.T(), ctx, func() error {
+		rpcCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		_, err := s.listIntegrations(rpcCtx)
+		return err
+	}, 2*time.Second, "Central gRPC API not yet responsive after restart")
 }
 
 // waitForIntegrationKeys polls until the Red Hat integration has exactly the expected key names.
@@ -118,46 +150,35 @@ func (s *RedHatSigningKeySuite) waitForIntegrationKeys(ctx context.Context, expe
 
 func (s *RedHatSigningKeySuite) TestDefaultIntegrationExists() {
 	t := s.T()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	resp, err := s.listIntegrations(ctx)
-	s.Require().NoError(err, "listing signature integrations")
-
 	var matched int
-	for _, si := range resp.GetIntegrations() {
-		if si.GetId() != redHatIntegrationID {
-			continue
+	s.Require().EventuallyWithT(func(c *assert.CollectT) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		resp, err := s.listIntegrations(ctx)
+		require.NoError(c, err, "listing signature integrations")
+		for _, si := range resp.GetIntegrations() {
+			if si.GetId() != redHatIntegrationID {
+				continue
+			}
+			matched = len(si.GetCosign().GetPublicKeys())
+			assert.Equal(c, "Red Hat", si.GetName())
+			assert.GreaterOrEqual(c, matched, 1, "expected at least one cosign public key")
+			for _, pk := range si.GetCosign().GetPublicKeys() {
+				assert.NotEmpty(c, pk.GetName(), "key name must not be empty")
+				assert.NotEmpty(c, pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
+			}
+			break
 		}
-		matched = len(si.GetCosign().GetPublicKeys())
-		s.Assert().Equal("Red Hat", si.GetName())
-		s.Assert().GreaterOrEqual(matched, 1,
-			"expected at least one cosign public key")
-		for _, pk := range si.GetCosign().GetPublicKeys() {
-			s.Assert().NotEmpty(pk.GetName(), "key name must not be empty")
-			s.Assert().NotEmpty(pk.GetPublicKeyPemEnc(), "key PEM must not be empty")
-		}
-		break
-	}
-	s.Require().NotZero(matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+		assert.NotZero(c, matched, "Red Hat signature integration %q not found", redHatIntegrationID)
+	}, 30*time.Second, 5*time.Second, "waiting for default Red Hat integration")
 	t.Logf("Red Hat integration found with %d key(s)", matched)
 }
 
 func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 	t := s.T()
 	ns := namespaces.StackRox
-	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherPicksUpBundleFile", 10*time.Minute)
+	testCtx, _, cancel := testContexts(t, "TestWatcherPicksUpBundleFile", 10*time.Minute)
 	defer cancel()
-
-	defer func() {
-		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
-	}()
-
-	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	bundle := keyBundle{
 		SchemaVersion: "1.0",
@@ -190,18 +211,8 @@ func (s *RedHatSigningKeySuite) TestWatcherPicksUpBundleFile() {
 func (s *RedHatSigningKeySuite) TestWatcherSkipsUnknownKeyGroups() {
 	t := s.T()
 	ns := namespaces.StackRox
-	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherSkipsUnknownKeyGroups", 10*time.Minute)
+	testCtx, _, cancel := testContexts(t, "TestWatcherSkipsUnknownKeyGroups", 10*time.Minute)
 	defer cancel()
-
-	defer func() {
-		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
-	}()
-
-	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	// Bundle with cosign keys + an unknown key group; only cosign keys should appear.
 	bundleMap := map[string]any{
@@ -237,18 +248,8 @@ func (s *RedHatSigningKeySuite) TestWatcherSkipsUnknownKeyGroups() {
 func (s *RedHatSigningKeySuite) TestWatcherAcceptsUnknownSchemaVersion() {
 	t := s.T()
 	ns := namespaces.StackRox
-	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherAcceptsUnknownSchemaVersion", 10*time.Minute)
+	testCtx, _, cancel := testContexts(t, "TestWatcherAcceptsUnknownSchemaVersion", 10*time.Minute)
 	defer cancel()
-
-	defer func() {
-		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
-	}()
-
-	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	bundle := keyBundle{
 		SchemaVersion: "3.0",
@@ -280,18 +281,8 @@ func (s *RedHatSigningKeySuite) TestWatcherAcceptsUnknownSchemaVersion() {
 func (s *RedHatSigningKeySuite) TestWatcherBadBundleDoesNotOverwriteExistingKeys() {
 	t := s.T()
 	ns := namespaces.StackRox
-	testCtx, overallCtx, cancel := testContexts(t, "TestWatcherBadBundleDoesNotOverwriteExistingKeys", 10*time.Minute)
+	testCtx, _, cancel := testContexts(t, "TestWatcherBadBundleDoesNotOverwriteExistingKeys", 10*time.Minute)
 	defer cancel()
-
-	defer func() {
-		s.logf("Cleanup: removing %s env var", watchIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
-	}()
-
-	s.logf("Setting %s=%s on central", watchIntervalEnv, shortWatchInterval)
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
 
 	goodBundle := keyBundle{
 		SchemaVersion: "1.0",
@@ -342,7 +333,6 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	configMapName := "rh-signing-key-bundle-test"
 	deploymentName := "key-bundle-server"
 	bundleURLEnv := "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL"
-	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
 	bundle := keyBundle{
 		SchemaVersion: "1.0",
@@ -372,7 +362,7 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 			Labels:    map[string]string{"app": deploymentName},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(1),
+			Replicas: new(int32(1)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -448,21 +438,18 @@ func (s *RedHatSigningKeySuite) TestUpdaterDownloadsBundleFromHTTP() {
 	}, 2*time.Second, "bundle URL not yet reachable")
 	s.logf("Bundle URL is reachable")
 
-	// The watcher must poll frequently so it picks up the file the updater writes.
 	defer func() {
-		s.logf("Cleanup: removing updater env vars from Central")
+		s.logf("Cleanup: removing updater env var from Central")
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", bundleURLEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", updateIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+		s.waitForCentralReady(overallCtx)
 	}()
 
-	s.logf("Setting %s, %s, and %s on central", bundleURLEnv, updateIntervalEnv, watchIntervalEnv)
+	// The update interval isn't set: it always gets clamped to a 5-minute
+	// minimum anyway (see filedownloader.minInterval), and this test only
+	// depends on the unconditional first download at startup (see above).
+	s.logf("Setting %s on central", bundleURLEnv)
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", bundleURLEnv, bundleURL)
-	// The interval gets clamped to 5m minimum, but the first download runs immediately on startup.
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", updateIntervalEnv, "10s")
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+	s.waitForCentralReady(testCtx)
 
 	s.logf("Waiting for updater to download the bundle and watcher to upsert keys")
 	s.waitForIntegrationKeys(testCtx, []string{"updater-key-1", "updater-key-2"},
@@ -482,7 +469,6 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 	configMapName := "rh-signing-key-offline-test"
 	deploymentName := "key-bundle-offline-server"
 	bundleURLEnv := "ROX_REDHAT_SIGNING_KEY_BUNDLE_URL"
-	updateIntervalEnv := "ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL"
 
 	decoyBundle := keyBundle{
 		SchemaVersion: "1.0",
@@ -511,7 +497,7 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 			Labels:    map[string]string{"app": deploymentName},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(1),
+			Replicas: new(int32(1)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -591,48 +577,57 @@ func (s *RedHatSigningKeySuite) TestOfflineModeIgnoresHTTPUpdater() {
 		s.logf("Cleanup: removing env vars from Central")
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", offlineModeEnv)
 		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", bundleURLEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", updateIntervalEnv)
-		s.mustDeleteDeploymentEnvVar(overallCtx, ns, "central", watchIntervalEnv)
-		s.waitUntilK8sDeploymentReady(overallCtx, ns, "central")
+		s.waitForCentralReady(overallCtx)
 	}()
 
+	// The update interval isn't set here for the same reason as in
+	// TestUpdaterDownloadsBundleFromHTTP: it wouldn't change what this test observes.
 	s.logf("Setting offline mode and updater env vars on central")
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", offlineModeEnv, "true")
 	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", bundleURLEnv, bundleURL)
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", updateIntervalEnv, "10s")
-	s.mustSetDeploymentEnvVal(testCtx, ns, "central", "central", watchIntervalEnv, shortWatchInterval)
 
 	// --- Step 3: Wait for Central to restart ---
 
-	s.waitUntilK8sDeploymentReady(testCtx, ns, "central")
+	s.waitForCentralReady(testCtx)
 
 	// --- Step 4: Verify the HTTP updater did NOT fetch the decoy bundle ---
 
-	s.logf("Waiting 30s to confirm the HTTP updater is disabled in offline mode")
-	time.Sleep(30 * time.Second)
-
-	rpcCtx, rpcCancel := context.WithTimeout(testCtx, 10*time.Second)
-	defer rpcCancel()
-	resp, err := s.listIntegrations(rpcCtx)
-	s.Require().NoError(err, "listing integrations after offline-mode wait")
-
+	// The updater (if wrongly left enabled) downloads immediately on Central
+	// startup, so a violation would show up within a few seconds. Poll for a
+	// bounded window and fail as soon as a violation is seen, rather than
+	// blindly sleeping for the whole window and checking only once at the end.
+	s.logf("Confirming the HTTP updater stays disabled in offline mode")
 	var found bool
-	for _, si := range resp.GetIntegrations() {
-		if si.GetId() != redHatIntegrationID {
-			continue
+	var names []string
+	s.Require().Never(func() bool {
+		rpcCtx, cancel := context.WithTimeout(testCtx, 5*time.Second)
+		defer cancel()
+		resp, err := s.listIntegrations(rpcCtx)
+		if err != nil {
+			s.logf("listing integrations while confirming offline mode: %v", err)
+			return false
 		}
-		found = true
-		keys := si.GetCosign().GetPublicKeys()
-		names := make([]string, len(keys))
-		for i, k := range keys {
-			names[i] = k.GetName()
+		found = false
+		names = nil
+		for _, si := range resp.GetIntegrations() {
+			if si.GetId() != redHatIntegrationID {
+				continue
+			}
+			found = true
+			keys := si.GetCosign().GetPublicKeys()
+			names = make([]string, len(keys))
+			for i, k := range keys {
+				names[i] = k.GetName()
+			}
+			slices.Sort(names)
+			break
 		}
-		slices.Sort(names)
-		s.Assert().Equal([]string{"release-key-3"}, names,
-			"in offline mode, the HTTP updater should be disabled — only the default key should be present")
-		break
-	}
+		return found && !slices.Equal(names, []string{"release-key-3"})
+	}, 15*time.Second, 3*time.Second, "HTTP updater fetched the decoy bundle even though offline mode is enabled")
+
 	s.Require().True(found, "Red Hat integration %q not found", redHatIntegrationID)
+	s.Assert().Equal([]string{"release-key-3"}, names,
+		"in offline mode, the HTTP updater should be disabled — only the default key should be present")
 	t.Log("Confirmed: HTTP updater is disabled in offline mode, only default key present")
 
 	// --- Step 5: Mount a custom bundle via the file watcher path ---

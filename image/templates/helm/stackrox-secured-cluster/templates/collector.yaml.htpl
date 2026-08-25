@@ -21,7 +21,6 @@ spec:
       labels:
         service: collector
         app: collector
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "daemonset" "collector") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}

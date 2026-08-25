@@ -1,12 +1,9 @@
 import { differenceInDays, differenceInMinutes } from 'date-fns';
-import get from 'lodash/get';
-import { DownloadCloud } from 'react-feather';
 import {
     BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
-    InProgressIcon,
     InfoCircleIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
@@ -14,9 +11,9 @@ import {
 } from '@patternfly/react-icons';
 
 import type {
-    Cluster,
     ClusterHealthStatusLabel,
     ClusterProviderMetadata,
+    SensorVersionCompatibility,
 } from 'types/cluster.proto';
 import { getDate, getDistanceStrict } from 'utils/dateUtils';
 
@@ -186,110 +183,47 @@ export const delayedScannerStatusStyle = {
     fgColor: '',
 };
 
-export const sensorUpgradeStyles = {
-    current: styleHealthy,
-    progress: {
-        Icon: InProgressIcon,
-        fgColor: 'pf-v6-u-icon-color-primary',
+export const sensorCompatibilityMap = {
+    SENSOR_VERSION_COMPATIBILITY_MATCHED: {
+        displayValue: 'Matched',
+        zoneLabel: 'Matched',
+        Icon: CheckCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-success',
     },
-    download: {
-        Icon: DownloadCloud,
-        fgColor: 'pf-v6-u-text-color-link',
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_BEHIND: {
+        displayValue: 'Compatible (Behind)',
+        zoneLabel: 'Behind',
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
     },
-    intervention: styleDegraded,
-    failure: styleUnhealthy,
-};
+    SENSOR_VERSION_COMPATIBILITY_COMPATIBLE_AHEAD: {
+        displayValue: 'Compatible (Ahead)',
+        zoneLabel: 'Ahead',
+        Icon: InfoCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-info',
+    },
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_BEHIND: {
+        displayValue: 'Incompatible (Behind)',
+        zoneLabel: 'Incompatible',
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    SENSOR_VERSION_COMPATIBILITY_INCOMPATIBLE_AHEAD: {
+        displayValue: 'Incompatible (Ahead)',
+        zoneLabel: 'Incompatible',
+        Icon: ExclamationCircleIcon,
+        fgColor: 'pf-v6-u-icon-color-status-danger',
+    },
+    SENSOR_VERSION_COMPATIBILITY_UNKNOWN: {
+        displayValue: 'Unknown',
+        zoneLabel: '',
+        Icon: UnknownIcon,
+        fgColor: 'pf-v6-u-icon-color-subtle',
+    },
+} as const;
 
-type UpgradeState = {
-    displayValue: string;
-    type: string;
-    actionText?: string;
-};
-type UpgradeStates = Record<string, UpgradeState>;
-
-// @TODO: add optional button text and func
-const upgradeStates: UpgradeStates = {
-    UP_TO_DATE: {
-        displayValue: 'Up to date with Central',
-        type: 'current',
-    },
-    MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Sensor is not running the same version as Central',
-        type: 'intervention',
-    },
-    UPGRADE_AVAILABLE: {
-        displayValue: 'Upgrade available',
-        type: 'download',
-        actionText: 'Upgrade sensor',
-    },
-    DOWNGRADE_POSSIBLE: {
-        displayValue: 'Downgrade possible',
-        type: 'download',
-        actionText: 'Downgrade sensor',
-    },
-    UPGRADE_INITIALIZING: {
-        displayValue: 'Upgrade initializing',
-        type: 'progress',
-    },
-    UPGRADER_LAUNCHING: {
-        displayValue: 'Upgrader launching',
-        type: 'progress',
-    },
-    UPGRADER_LAUNCHED: {
-        displayValue: 'Upgrader launched',
-        type: 'progress',
-    },
-    PRE_FLIGHT_CHECKS_COMPLETE: {
-        displayValue: 'Pre-flight checks complete',
-        type: 'progress',
-    },
-    UPGRADE_OPERATIONS_DONE: {
-        displayValue: 'Upgrade operations done',
-        type: 'progress',
-    },
-    UPGRADE_COMPLETE: {
-        displayValue: 'Upgrade complete',
-        type: 'current',
-    },
-    UPGRADE_INITIALIZATION_ERROR: {
-        displayValue: 'Upgrade initialization error',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    PRE_FLIGHT_CHECKS_FAILED: {
-        displayValue: 'Pre-flight checks failed',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    UPGRADE_ERROR_ROLLING_BACK: {
-        displayValue: 'Upgrade failed. Rolling back…',
-        type: 'failure',
-    },
-    UPGRADE_ERROR_ROLLED_BACK: {
-        displayValue: 'Upgrade failed. Rolled back.',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    UPGRADE_ERROR_ROLLBACK_FAILED: {
-        displayValue: 'Upgrade failed. Rollback failed.',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    UPGRADE_TIMED_OUT: {
-        displayValue: 'Upgrade timed out.',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    UPGRADE_ERROR_UNKNOWN: {
-        displayValue: 'Upgrade error unknown',
-        type: 'failure',
-        actionText: 'Retry upgrade',
-    },
-    unknown: {
-        displayValue: 'Unknown upgrade state. Contact Support.',
-        type: 'intervention',
-    },
-};
+export type SensorCompatibilityInfo =
+    (typeof sensorCompatibilityMap)[keyof typeof sensorCompatibilityMap];
 
 export function formatKubernetesVersion(orchestratorMetadata: { version: string }) {
     return orchestratorMetadata?.version || 'Not available';
@@ -301,7 +235,7 @@ export function formatBuildDate(orchestratorMetadata) {
         : 'Not available';
 }
 
-export function formatCloudProvider(providerMetadata: ClusterProviderMetadata) {
+export function formatCloudProvider(providerMetadata: ClusterProviderMetadata | undefined) {
     if (providerMetadata) {
         const { region } = providerMetadata;
 
@@ -387,160 +321,6 @@ export const isCertificateExpiringSoon = (
 export const isDelayedSensorHealthStatus = (sensorHealthStatus) =>
     sensorHealthStatus === 'UNHEALTHY' || sensorHealthStatus === 'DEGRADED';
 
-export function formatUpgradeMessage(upgradeStateObject, detail) {
-    if (upgradeStateObject.type === 'current') {
-        return null;
-    }
-    const message = {
-        message:
-            upgradeStateObject.displayValue || upgradeStateObject.actionText || 'Unknown status',
-        type: '',
-        detail,
-    };
-    switch (upgradeStateObject.type) {
-        case 'failure': {
-            message.type = 'error';
-            break;
-        }
-        case 'intervention': {
-            message.type = 'warn';
-            break;
-        }
-        default: {
-            message.type = 'info';
-        }
-    }
-    return message;
-}
-
-// This function looks at a cluster upgrade status, and figures out whether the most recent
-// upgrade has any information that is of relevance to the user.
-function hasRelevantInformationFromMostRecentUpgrade(upgradeStatus) {
-    // No information from the most recent upgrade -- probably means no upgrade has been done before.
-    // Not interesting.
-    if (get(upgradeStatus, 'mostRecentProcess', null) === null) {
-        return false;
-    }
-    const isActive = get(upgradeStatus, 'mostRecentProcess.active', false);
-    // The upgrade is currently active. Definitely show the user information about it.
-    if (isActive) {
-        return true;
-    }
-
-    // The upgrade is not active. This means that this is the most recently completed upgrade.
-    // If it was COMPLETE, the information is not interesting to the user.
-    // Else, we show the user the information.
-    return (
-        get(upgradeStatus, 'mostRecentProcess.progress.upgradeState', undefined) !==
-        'UPGRADE_COMPLETE'
-    );
-}
-
-export function getUpgradeStatusDetail(upgradeStatus: string): string {
-    return get(upgradeStatus, 'mostRecentProcess.progress.upgradeStatusDetail', '') as string;
-}
-
-export type UpgradeStatus = {
-    mostRecentProcess: {
-        type: string;
-        progress?: {
-            upgradeState: string;
-        };
-        initiatedAt?: string;
-        active?: boolean;
-        upgradability?: string;
-    };
-};
-
-/**
- * If the most recent upgrade was a cert rotation, return the initiation time.
- * Else, return null.
- */
-export function initiationOfCertRotationIfApplicable(upgradeStatus: UpgradeStatus) {
-    const mostRecentProcess = upgradeStatus?.mostRecentProcess;
-    if (mostRecentProcess?.type !== 'CERT_ROTATION') {
-        return null;
-    }
-    if (mostRecentProcess?.progress?.upgradeState !== 'UPGRADE_COMPLETE') {
-        return null;
-    }
-    return mostRecentProcess.initiatedAt;
-}
-
-export function findUpgradeState(
-    upgradeStatus: UpgradeStatus | null | undefined
-): UpgradeState | null {
-    const upgradability = get(upgradeStatus, 'upgradability', null);
-    if (!upgradability || upgradability === 'UNSET') {
-        return null;
-    }
-
-    switch (upgradability) {
-        case 'UP_TO_DATE': {
-            if (!upgradeStatus?.mostRecentProcess?.active) {
-                return upgradeStates.UP_TO_DATE;
-            }
-
-            // Display active progress while using automatic upgrade to re-issue certificates.
-            const upgradeState: string = get(
-                upgradeStatus,
-                'mostRecentProcess.progress.upgradeState',
-                'unknown'
-            );
-
-            return upgradeStates[upgradeState] || upgradeStates.unknown;
-        }
-        case 'MANUAL_UPGRADE_REQUIRED': {
-            return upgradeStates[upgradability];
-        }
-        // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
-        // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
-        // trigger an upgrade unless asked to by the user.
-        case 'SENSOR_VERSION_HIGHER': {
-            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
-                return upgradeStates.DOWNGRADE_POSSIBLE;
-            }
-
-            const upgradeState = get(
-                upgradeStatus,
-                'mostRecentProcess.progress.upgradeState',
-                'unknown'
-            );
-
-            return upgradeStates[upgradeState] || upgradeStates.unknown;
-        }
-        case 'AUTO_UPGRADE_POSSIBLE': {
-            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
-                return upgradeStates.UPGRADE_AVAILABLE;
-            }
-
-            const upgradeState = get(
-                upgradeStatus,
-                'mostRecentProcess.progress.upgradeState',
-                'unknown'
-            );
-
-            return upgradeStates[upgradeState] || upgradeStates.unknown;
-        }
-        default: {
-            return upgradeStates.unknown;
-        }
-    }
-}
-
-export function isUpToDateStateObject(upgradeStateObject) {
-    return upgradeStateObject?.type === 'current';
-}
-
-export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
-    return clusters.filter((cluster) => {
-        const upgradeStatus: UpgradeStatus | null = get(cluster, 'status.upgradeStatus', null);
-        const upgradeStateObject = findUpgradeState(upgradeStatus);
-
-        return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade
-    });
-}
-
 export function buildStatusMessage(
     healthStatus: ClusterHealthStatusLabel,
     lastContact: string | null | undefined,
@@ -558,12 +338,31 @@ export function buildStatusMessage(
     return message;
 }
 
+const defaultSensorCompatibility = sensorCompatibilityMap.SENSOR_VERSION_COMPATIBILITY_UNKNOWN;
+
+export function getSensorCompatibilityInfo(compatibility: SensorVersionCompatibility | undefined) {
+    return compatibility
+        ? (sensorCompatibilityMap[compatibility] ?? defaultSensorCompatibility)
+        : defaultSensorCompatibility;
+}
+
+// The version range chart can only be rendered when the compatibility state is
+// known and Central has advertised a compatible sensor version range.
+export function shouldShowSensorVersionRangeChart(
+    compatibility: SensorVersionCompatibility | undefined,
+    compatibleVersions: string[]
+): boolean {
+    return (
+        compatibility !== undefined &&
+        compatibility !== 'SENSOR_VERSION_COMPATIBILITY_UNKNOWN' &&
+        compatibleVersions.length > 0
+    );
+}
+
 export default {
     runtimeOptions,
     clusterTypeOptions,
     clusterTablePollingInterval,
     clusterDetailPollingInterval,
     newClusterDefault,
-    findUpgradeState,
-    isUpToDateStateObject,
 };

@@ -47,7 +47,6 @@ _compatibility_test() {
     local short_sensor_tag="$4"
 
     export_test_environment
-    ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     if [[ "${SKIP_DEPLOY:-false}" = "false" ]]; then
         if [[ "${CI:-false}" = "true" ]]; then
@@ -58,14 +57,20 @@ _compatibility_test() {
 
         setup_deployment_env false false
         setup_podsecuritypolicies_config
-        remove_existing_stackrox_resources
+        "$ROOT/scripts/roxie.sh" teardown all --single-namespace || true
         setup_default_TLS_certs
 
         deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
-        echo "Stackrox deployed"
         kubectl -n stackrox get deploy,ds -o wide
 
-        deploy_default_psp
+        # Wait for scanner v2 deployment to be ready so that it can register its
+        # Clairify integration with Central before CertExpiryTest runs.
+        # TODO(https://github.com/stackrox/roxie/issues/269): replace with --early-readiness=false roxie flag,
+        # once we no longer need to deploy 4.9
+        if retrying_kubectl </dev/null -n stackrox get deployment scanner >/dev/null 2>&1; then
+            wait_for_ready_deployment stackrox scanner 600
+        fi
+
         deploy_webhook_server
         get_ECR_docker_pull_password
     fi
