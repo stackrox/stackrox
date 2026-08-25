@@ -96,6 +96,11 @@ COPY bin/central-worker     /stackrox/bin/central-worker
 COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
+RUN cd /assets/downloads/cli && \
+    find . -maxdepth 1 -type f -name 'roxctl-*' | while read f; do \
+        tar czf "${f#./}.tar.gz" "${f#./}"; \
+    done
+
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl
 
 EXPOSE 8443
