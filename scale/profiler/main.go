@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/httputil"
 )
 
 func main() {
@@ -30,10 +30,6 @@ func main() {
 }
 
 func listenAndServe(port int, dir string) error {
-	server := &http.Server{
-		Addr:              fmt.Sprintf(":%d", port),
-		Handler:           http.FileServer(http.Dir(dir)),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	server := httputil.NewServer(fmt.Sprintf(":%d", port), http.FileServer(http.Dir(dir)))
 	return server.ListenAndServe()
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -159,10 +160,7 @@ func scaleCmd(ctx context.Context) *cobra.Command {
 			// Open the metrics endpoint before anything else, so scrapping will get data.
 			go func() {
 				http.Handle("/metrics", promhttp.Handler())
-				metricsSrv := &http.Server{
-					Addr:              ":9090",
-					ReadHeaderTimeout: 5 * time.Second,
-				}
+				metricsSrv := httputil.NewServer(":9090", nil)
 				log.Fatal(metricsSrv.ListenAndServe())
 			}()
 		}
