@@ -25,6 +25,8 @@ test_with_policy=${4:-false}  # true or false - whether to enable file activity 
 
 logmein_script="${HOME}/go/src/github.com/stackrox/workflow/bin/logmein"
 
+# Export default value for PAGERDUTY_INTEGRATION_KEY to fix Helm validation error
+export PAGERDUTY_INTEGRATION_KEY="${PAGERDUTY_INTEGRATION_KEY:-dummy-key-for-dev-testing}"
 export MONITORING_SUPPORT=true
 export ROX_SCANNER_V4=false
 
