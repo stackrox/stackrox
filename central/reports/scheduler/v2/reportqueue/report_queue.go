@@ -1,12 +1,12 @@
 package reportqueue
 
 import (
-	"container/list"
 	"context"
 
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -17,7 +17,7 @@ import (
 // to support user-initiated cancellation.
 type ReportQueue struct {
 	mu                sync.Mutex
-	queue             *list.List
+	queue             *queue.Queue[*reportGen.ReportRequest]
 	runningConfigs    set.StringSet
 	jobIDToCancelFunc map[string]context.CancelCauseFunc
 }
@@ -25,17 +25,16 @@ type ReportQueue struct {
 // New creates a new empty ReportQueue.
 func New() *ReportQueue {
 	return &ReportQueue{
-		queue:             list.New(),
+		queue:             queue.NewQueue[*reportGen.ReportRequest](),
 		runningConfigs:    set.NewStringSet(),
 		jobIDToCancelFunc: make(map[string]context.CancelCauseFunc),
 	}
 }
 
 // Enqueue adds a report request to the back of the queue.
+// The underlying queue is internally synchronized, so no additional locking is needed.
 func (q *ReportQueue) Enqueue(req *reportGen.ReportRequest) {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-	q.queue.PushBack(req)
+	q.queue.Push(req)
 }
 
 // Dequeue removes and returns the first runnable report request from the queue.
@@ -47,13 +46,13 @@ func (q *ReportQueue) Dequeue() *reportGen.ReportRequest {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	req := findAndRemove(q.queue, func(req *reportGen.ReportRequest) bool {
+	req, ok := q.queue.PullWithPred(func(req *reportGen.ReportRequest) bool {
 		if req.ReportSnapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
 			return true
 		}
 		return !q.runningConfigs.Contains(req.ReportSnapshot.GetReportConfigurationId())
 	})
-	if req == nil {
+	if !ok {
 		return nil
 	}
 	if req.ReportSnapshot.GetReportStatus().GetReportRequestType() != storage.ReportStatus_VIEW_BASED {
@@ -64,13 +63,12 @@ func (q *ReportQueue) Dequeue() *reportGen.ReportRequest {
 
 // Remove removes a queued (not yet running) request by report snapshot ID.
 // Returns the removed request, or nil if not found.
+// The underlying queue is internally synchronized, so no additional locking is needed.
 func (q *ReportQueue) Remove(reportID string) *reportGen.ReportRequest {
-	q.mu.Lock()
-	defer q.mu.Unlock()
-
-	return findAndRemove(q.queue, func(req *reportGen.ReportRequest) bool {
+	req, _ := q.queue.PullWithPred(func(req *reportGen.ReportRequest) bool {
 		return req.ReportSnapshot.GetReportId() == reportID
 	})
+	return req
 }
 
 // MarkReportDoneForConfig removes a config ID from the running set, allowing
@@ -110,22 +108,7 @@ func (q *ReportQueue) TryCancel(reportID string) bool {
 }
 
 // Len returns the number of items in the queue.
+// The underlying queue is internally synchronized, so no additional locking is needed.
 func (q *ReportQueue) Len() int {
-	q.mu.Lock()
-	defer q.mu.Unlock()
 	return q.queue.Len()
-}
-
-// findAndRemove walks the queue front-to-back and removes the first element
-// matching the predicate. Returns the removed request, or nil if none matched.
-func findAndRemove(queue *list.List, pred func(req *reportGen.ReportRequest) bool) *reportGen.ReportRequest {
-	cur := queue.Front()
-	for cur != nil {
-		req, ok := cur.Value.(*reportGen.ReportRequest)
-		if ok && pred(req) {
-			return queue.Remove(cur).(*reportGen.ReportRequest)
-		}
-		cur = cur.Next()
-	}
-	return nil
 }
