@@ -44,10 +44,9 @@ type URLUpdater struct {
 	mu          sync.Mutex
 }
 
-// NewURLUpdater seeds active from cachePath if it holds a validated
-// mapping (e.g. left by a prior process's successful download), else
-// stays empty until the first successful fetch. There is no bundled-file
-// fallback: a URL-backed agent has exactly one mapping source.
+// NewURLUpdater seeds active from cachePath (last-good from a prior
+// successful download), else stays empty until the first fetch. Bundled
+// image content is not used: a never-working URL would look configured.
 func NewURLUpdater(url, cachePath string, onChange func()) *URLUpdater {
 	u := &URLUpdater{cachePath: cachePath, stagingPath: cachePath + urlMappingStagingSuffix, onChange: onChange}
 	if u.bootstrap() && onChange != nil {
@@ -67,6 +66,10 @@ func NewURLUpdater(url, cachePath string, onChange func()) *URLUpdater {
 func (u *URLUpdater) bootstrap() bool {
 	content, err := os.ReadFile(u.cachePath)
 	if err != nil {
+		// First boot always misses cache; do not treat that as an error.
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warnf("Reading repo-to-CPE mapping cache at %q: %v", u.cachePath, err)
+		}
 		return false
 	}
 	if err := cpemapping.ValidateMapping(content); err != nil {
@@ -137,7 +140,7 @@ func (u *URLUpdater) Path() (string, error) {
 // failed persist is retried on the next identical fetch.
 func (u *URLUpdater) onDownloadComplete(err error, _ time.Duration) {
 	if err != nil {
-		log.Warnf("Downloading repo-to-CPE mapping: %v", err)
+		log.Warnf("Error downloading repo-to-CPE mapping: %v", err)
 		return
 	}
 	content, err := os.ReadFile(u.stagingPath)

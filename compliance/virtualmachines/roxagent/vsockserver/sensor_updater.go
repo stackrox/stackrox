@@ -58,6 +58,10 @@ func (u *SensorUpdater) bootstrapFrom(path string) bool {
 	}
 	content, err := os.ReadFile(path)
 	if err != nil {
+		// First boot always misses cache; do not treat that as an error.
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warnf("Reading repo-to-CPE mapping at %q: %v", path, err)
+		}
 		return false
 	}
 	if err := cpemapping.ValidateMapping(content); err != nil {

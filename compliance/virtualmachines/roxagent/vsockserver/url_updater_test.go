@@ -57,9 +57,8 @@ func TestNewURLUpdater_InvalidCacheStaysNotReady_NoBundledFallback(t *testing.T)
 	writeFile(t, cachePath, invalidMappingJSON)
 	counter := &onChangeCounter{}
 
-	// The URL updater has no bundled-file parameter and no secondary
-	// source at all: an invalid cachePath must leave it not Ready, not
-	// fall back to anything else.
+	// Cache is last-good from a successful URL fetch. An invalid cache
+	// must leave the updater not Ready, not seed from anything else.
 	u := NewURLUpdater(dummyMappingURL, cachePath, counter.fn)
 
 	assert.False(t, u.Ready())
