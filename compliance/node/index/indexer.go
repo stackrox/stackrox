@@ -195,7 +195,8 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		log.Debugf("Not adding RHCOS package to index report: %v", err)
 	} else {
 		arch := extractArch(ccReport, pkgs)
-		addRHCOS(rhcosRel, arch, ccReport)
+		labels := resolveBuildLabels(l.cfg.HostPath, l.cfg.OSReleasePath)
+		addRHCOS(rhcosRel, labels, arch, ccReport)
 	}
 
 	ccReport.Success = true
@@ -391,16 +392,57 @@ func osRelease(ctx context.Context, osRelPath string) (rhcosRelease, error) {
 	return rel, nil
 }
 
-func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
+// resolveBuildLabels reads labels.json from hostPath, falling back to
+// osReleasePath when they differ (tests and split mounts).
+func resolveBuildLabels(hostPath, osReleasePath string) buildLabels {
+	for _, p := range []string{hostPath, osReleasePath} {
+		if p == "" {
+			continue
+		}
+		lb, path, err := parseLabelsJSON(p)
+		switch {
+		case err == nil:
+			log.Debugf("Using build labels from %s (name=%q cpe=%q arch=%q)", path, lb.Name, lb.CPE, lb.Architecture)
+			return lb
+		case errors.Is(err, errLabelsNotFound):
+			continue
+		default:
+			log.Warnf("Failed to read labels.json under %q: %v", p, err)
+		}
+	}
+	return buildLabels{}
+}
+
+func addRHCOS(rel rhcosRelease, labels buildLabels, arch string, report *claircore.IndexReport) {
 	const (
 		rhcosPkgID  = "rhcos-pkg"
 		rhcosSrcID  = "rhcos-src"
 		rhcosRepoID = "rhcos-repo"
+		// legacyRHCOSName is used when labels.json is absent so existing
+		// inventories keep working until nodes expose OCI build labels.
+		legacyRHCOSName = "rhcos"
 	)
+
+	name := labels.Name
+	if name == "" {
+		name = legacyRHCOSName
+	}
+	if labels.Architecture != "" {
+		arch = labels.Architecture
+	}
+
+	repoCPE := rel.repoCPE
+	if labels.CPE != "" {
+		if wfn, err := cpe.Unbind(labels.CPE); err != nil {
+			log.Warnf("Ignoring invalid CPE from labels.json %q: %v", labels.CPE, err)
+		} else {
+			repoCPE = wfn
+		}
+	}
 
 	srcPkg := &claircore.Package{
 		ID:                rhcosSrcID,
-		Name:              "rhcos",
+		Name:              name,
 		Version:           rel.version,
 		Kind:              types.SourcePackage,
 		NormalizedVersion: rel.normVersion,
@@ -408,7 +450,7 @@ func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
 	}
 	binPkg := &claircore.Package{
 		ID:                rhcosPkgID,
-		Name:              "rhcos",
+		Name:              name,
 		Version:           rel.version,
 		Kind:              types.BinaryPackage,
 		NormalizedVersion: rel.normVersion,
@@ -419,9 +461,9 @@ func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
 	}
 	repo := &claircore.Repository{
 		ID:   rhcosRepoID,
-		Name: rel.repoCPE.String(),
+		Name: repoCPE.String(),
 		Key:  rhcc.RepositoryKey,
-		CPE:  rel.repoCPE,
+		CPE:  repoCPE,
 	}
 
 	if report.Packages == nil {
@@ -445,7 +487,7 @@ func addRHCOS(rel rhcosRelease, arch string, report *claircore.IndexReport) {
 		},
 	}
 
-	log.Debugf("Added RHCOS package: version=%s, cpe=%s", rel.version, rel.repoCPE.String())
+	log.Debugf("Added RHCOS package: name=%s version=%s cpe=%s", name, rel.version, repoCPE.String())
 }
 
 // extractArch attempts to determine the RHCOS architecture from the current list

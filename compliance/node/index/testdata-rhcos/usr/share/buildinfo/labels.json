@@ -1,0 +1,6 @@
+{
+    "name": "openshift/ose-rhel-coreos-9",
+    "org.opencontainers.image.created": "2025-03-24T10:34:00Z",
+    "cpe": "cpe:/a:redhat:openshift:4.21::el9",
+    "architecture": "x86_64"
+}

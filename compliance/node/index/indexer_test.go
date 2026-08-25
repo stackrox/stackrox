@@ -339,13 +339,13 @@ func (s *nodeIndexerSuite) TestIndexerE2ESeparateOSReleasePath() {
 
 	var hasRHCOS bool
 	for _, pkg := range report.GetContents().GetPackages() {
-		if pkg.GetName() == "rhcos" {
+		if pkg.GetName() == "openshift/ose-rhel-coreos-9" {
 			hasRHCOS = true
 			s.Equal("9.6.20260324-0", pkg.GetVersion())
 			break
 		}
 	}
-	s.True(hasRHCOS, "Expected rhcos package in report")
+	s.True(hasRHCOS, "Expected ose-rhel-coreos package from labels.json in report")
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
@@ -405,7 +405,7 @@ func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 		Environments: make(map[string][]*claircore.Environment),
 	}
 
-	addRHCOS(rel, "x86_64", report)
+	addRHCOS(rel, buildLabels{}, "x86_64", report)
 
 	s.Len(report.Packages, 2)
 	s.Len(report.Repositories, 1)
@@ -432,6 +432,45 @@ func (s *nodeIndexerSuite) TestAddRHCOSPackageToReport() {
 	s.Require().NotNil(repo)
 	s.Equal("rhcc-container-repository", repo.Key)
 	s.Contains(repo.Name, "cpe:")
+	s.Contains(repo.Name, "openshift")
+	s.Contains(repo.Name, "4.21")
+}
+
+func (s *nodeIndexerSuite) TestAddRHCOSPackageFromLabels() {
+	rel, err := osRelease(context.Background(), "testdata-rhcos")
+	s.Require().NoError(err)
+
+	labels, path, err := parseLabelsJSON("testdata-rhcos")
+	s.Require().NoError(err)
+	s.Contains(path, "labels.json")
+	s.Equal("openshift/ose-rhel-coreos-9", labels.Name)
+
+	report := &claircore.IndexReport{
+		Packages:     make(map[string]*claircore.Package),
+		Repositories: make(map[string]*claircore.Repository),
+		Environments: make(map[string][]*claircore.Environment),
+	}
+
+	addRHCOS(rel, labels, "", report)
+
+	var binPkg *claircore.Package
+	for _, p := range report.Packages {
+		if p.Kind == types.BinaryPackage {
+			binPkg = p
+			break
+		}
+	}
+	s.Require().NotNil(binPkg)
+	s.Equal("openshift/ose-rhel-coreos-9", binPkg.Name)
+	s.Equal("9.6.20260324-0", binPkg.Version, "version still comes from os-release")
+	s.Equal("x86_64", binPkg.Arch)
+
+	var repo *claircore.Repository
+	for _, r := range report.Repositories {
+		repo = r
+		break
+	}
+	s.Require().NotNil(repo)
 	s.Contains(repo.Name, "openshift")
 	s.Contains(repo.Name, "4.21")
 }
