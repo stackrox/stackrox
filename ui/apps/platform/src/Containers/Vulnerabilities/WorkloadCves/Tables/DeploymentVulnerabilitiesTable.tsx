@@ -59,6 +59,10 @@ export const defaultColumns = {
         title: 'EPSS probability',
         isShownByDefault: true,
     },
+    origin: {
+        title: 'CVE origin',
+        isShownByDefault: true,
+    },
     affectedComponents: {
         title: 'Affected components',
         isShownByDefault: true,
@@ -152,6 +156,7 @@ function DeploymentVulnerabilitiesTable({
                     >
                         EPSS probability
                     </Th>
+                    <Th className={getVisibilityClass('origin')}>CVE origin</Th>
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -175,6 +180,7 @@ function DeploymentVulnerabilitiesTable({
                             severity,
                             summary,
                             isFixable,
+                            origin,
                             images,
                             affectedComponentsText,
                             discoveredAtImage,
@@ -267,6 +273,12 @@ function DeploymentVulnerabilitiesTable({
                                         dataLabel="EPSS probability"
                                     >
                                         {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('origin')}
+                                        dataLabel="CVE origin"
+                                    >
+                                        {origin}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}

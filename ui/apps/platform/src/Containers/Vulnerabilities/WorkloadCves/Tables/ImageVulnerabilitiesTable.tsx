@@ -32,6 +32,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import {
+    getAggregateOrigin,
     getIsSomeVulnerabilityFixable,
     hasKnownExploit,
     hasKnownRansomwareCampaignUse,
@@ -91,6 +92,10 @@ export const defaultColumns = {
     },
     epssProbability: {
         title: 'EPSS probability',
+        isShownByDefault: true,
+    },
+    origin: {
+        title: 'CVE origin',
         isShownByDefault: true,
     },
     affectedComponents: {
@@ -224,6 +229,7 @@ function ImageVulnerabilitiesTable({
                     >
                         EPSS probability
                     </Th>
+                    <Th className={getVisibilityClass('origin')}>CVE origin</Th>
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -271,6 +277,7 @@ function ImageVulnerabilitiesTable({
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
+                        const aggregateOrigin = getAggregateOrigin(vulnerabilities);
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
 
                         const labels: ReactNode[] = [];
@@ -382,6 +389,12 @@ function ImageVulnerabilitiesTable({
                                         dataLabel="EPSS probability"
                                     >
                                         {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('origin')}
+                                        dataLabel="CVE origin"
+                                    >
+                                        {aggregateOrigin}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}

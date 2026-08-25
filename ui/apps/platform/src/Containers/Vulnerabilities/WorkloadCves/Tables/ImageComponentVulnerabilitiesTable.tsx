@@ -6,6 +6,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
 
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
+import { getOriginDisplayName } from '../../utils/vulnerabilityUtils';
 import {
     flattenImageComponentVulns,
     imageMetadataContextFragment,
@@ -30,6 +31,7 @@ export const imageComponentVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query) {
             severity
             fixedByVersion
+            origin
             advisory {
                 name
                 link
@@ -57,7 +59,7 @@ function ImageComponentVulnerabilitiesTable({
     const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
 
     const colSpanForDockerfileLayer =
-        5 + (isAdvisoryColumnEnabled ? 1 : 0) + (isLayerTypeColumnEnabled ? 1 : 0);
+        6 + (isAdvisoryColumnEnabled ? 1 : 0) + (isLayerTypeColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -75,6 +77,7 @@ function ImageComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
+                    <Th>CVE origin</Th>
                     {isLayerTypeColumnEnabled && <Th>Layer type</Th>}
                     <Th>Location</Th>
                 </Tr>
@@ -85,6 +88,7 @@ function ImageComponentVulnerabilitiesTable({
                     name,
                     version,
                     fixedByVersion,
+                    origin,
                     advisory,
                     location,
                     source,
@@ -114,6 +118,7 @@ function ImageComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
+                            <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
                             {isLayerTypeColumnEnabled && (
                                 <Td dataLabel="Layer type">
                                     <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>

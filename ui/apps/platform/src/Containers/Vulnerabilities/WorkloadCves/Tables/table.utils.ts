@@ -9,6 +9,7 @@ import type { SourceType } from 'types/image.proto';
 import type { ApiSortOptionSingle } from 'types/search';
 
 import {
+    getAggregateOrigin,
     getHighestVulnerabilitySeverity,
     getIsSomeVulnerabilityFixable,
 } from '../../utils/vulnerabilityUtils';
@@ -83,6 +84,7 @@ export type ComponentVulnerabilityBase = {
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
+        origin?: string;
         advisory?: Advisory | null;
         pendingExceptionCount: number;
     }[];
@@ -99,6 +101,7 @@ export type DeploymentComponentVulnerability = Omit<
         cvss: number;
         scoreVersion: string;
         fixedByVersion: string;
+        origin?: string;
         advisory?: Advisory | null;
         discoveredAtImage: string | null;
         publishedOn: string | null;
@@ -128,6 +131,7 @@ export type TableDataRow = {
         instruction: string;
         value: string;
     } | null;
+    origin?: string;
     pendingExceptionCount: number;
     inBaseImageLayer?: boolean;
 };
@@ -204,6 +208,7 @@ function extractCommonComponentFields(
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
+    const origin = vulnerability?.origin;
     const advisory = vulnerability?.advisory;
     const pendingExceptionCount = vulnerability?.pendingExceptionCount ?? 0;
 
@@ -220,6 +225,7 @@ function extractCommonComponentFields(
         layer,
         severity,
         fixedByVersion,
+        origin,
         advisory,
         pendingExceptionCount,
         inBaseImageLayer,
@@ -277,6 +283,7 @@ export type FormattedDeploymentVulnerability = {
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
+    origin: string;
     discoveredAtImage: Date | null;
     publishedOn: Date | null;
     summary: string;
@@ -310,6 +317,7 @@ export function formatVulnerabilityData(
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
         const highestVulnSeverity = getHighestVulnerabilitySeverity(allVulnerabilities);
         const isFixableInDeployment = getIsSomeVulnerabilityFixable(allVulnerabilities);
+        const origin = getAggregateOrigin(allVulnerabilities);
         const allDiscoveredDates = allVulnerableComponents
             .flatMap((c) => c.imageVulnerabilities.map((v) => v.discoveredAtImage))
             .filter((d): d is string => d !== null);
@@ -343,6 +351,7 @@ export function formatVulnerabilityData(
             operatingSystem,
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
+            origin,
             discoveredAtImage: oldestDiscoveredVulnDate,
             publishedOn: publishedOnDate,
             summary,
