@@ -45,7 +45,8 @@ type ImageCVEQueryResponse struct {
 	CVSS              *float64                       `db:"cvss"`
 	NVDCVSS           *float64                       `db:"nvd_cvss"`
 	EPSSProbability   *float64                       `db:"epss_probability"`
-	CisaKev           *bool                          `db:"cisa_kev"`
+	CisaKev                 *bool                          `db:"cisa_kev"`
+	KnownRansomwareCampaign *bool                          `db:"known_ransomware_campaign"`
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
@@ -158,6 +159,10 @@ func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
 
 func (res *ImageCVEQueryResponse) GetCisaKev() *bool {
 	return res.CisaKev
+}
+
+func (res *ImageCVEQueryResponse) GetKnownRansomwareCampaign() *bool {
+	return res.KnownRansomwareCampaign
 }
 
 func (res *ImageCVEQueryResponse) GetAdvisoryName() string {

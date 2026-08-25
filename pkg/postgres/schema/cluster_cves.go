@@ -52,17 +52,18 @@ const (
 
 // ClusterCves holds the Gorm model for Postgres table `cluster_cves`.
 type ClusterCves struct {
-	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
-	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
-	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
-	CveBaseInfoCisaKev             bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
-	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
-	Snoozed                        bool                          `gorm:"column:snoozed;type:bool"`
-	SnoozeExpiry                   *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
-	Type                           storage.CVE_CVEType           `gorm:"column:type;type:integer"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
+	ID                                 string                        `gorm:"column:id;type:varchar;primaryKey"`
+	CveBaseInfoCve                     string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoPublishedOn             *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
+	CveBaseInfoCreatedAt               *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	CveBaseInfoEpssEpssProbability     float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoCisaKev                 bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
+	CveBaseInfoKnownRansomwareCampaign bool                          `gorm:"column:cvebaseinfo_knownransomwarecampaign;type:bool"`
+	Cvss                               float32                       `gorm:"column:cvss;type:numeric"`
+	Severity                           storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	ImpactScore                        float32                       `gorm:"column:impactscore;type:numeric"`
+	Snoozed                            bool                          `gorm:"column:snoozed;type:bool"`
+	SnoozeExpiry                       *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
+	Type                               storage.CVE_CVEType           `gorm:"column:type;type:integer"`
+	Serialized                         []byte                        `gorm:"column:serialized;type:bytea"`
 }

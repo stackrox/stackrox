@@ -110,7 +110,7 @@ func formatCol() []string {
 	if features.KnownExploitedVulnerabilities.Enabled() {
 		csvHeaderCols = append(csvHeaderCols[:0:0], csvHeader...)
 		epssIdx := slices.Index(csvHeaderCols, "EPSS Probability Percentage")
-		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV")
+		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV", "Known Ransomware Campaign")
 	}
 	return csvHeaderCols
 }
@@ -157,7 +157,13 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			} else {
 				cisaKev = "Not Available"
 			}
-			row = append(row, cisaKev)
+			var knownRansomware string
+			if r.GetKnownRansomwareCampaign() != nil {
+				knownRansomware = strconv.FormatBool(*r.GetKnownRansomwareCampaign())
+			} else {
+				knownRansomware = "Not Available"
+			}
+			row = append(row, cisaKev, knownRansomware)
 		}
 		row = append(row,
 			r.GetDiscoveredAtImage(),

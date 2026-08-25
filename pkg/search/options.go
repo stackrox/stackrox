@@ -73,7 +73,8 @@ var (
 	EPSSProbablity     = newFieldLabel("EPSS Probability")
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
-	CisaKev            = newFieldLabel("CISA KEV")
+	CisaKev                    = newFieldLabel("CISA KEV")
+	KnownRansomwareCampaign = newFieldLabel("Known Ransomware Campaign")
 
 	CVEInfo = newFieldLabel("CVE Info")
 
