@@ -11,6 +11,12 @@ on:
   schedule:
   - cron: "47 * * * *"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Force rebuild even if no sources are newer than the bundle"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -70,21 +76,95 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
 
-    - name: Download sources
+    - name: Check for changes
+      id: check-changes
+      env:
+        FORCE: ${{ inputs.force == true }}
       run: |
         set -euo pipefail
 
-        bucket=$(yq '.storage.bucket' "$SOURCE_CONFIG")
-        prefix=$(yq '.storage.prefix' "$SOURCE_CONFIG")
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
+        bucket=$("$sc" bucket)
+        prefix=$("$sc" prefix)
 
         echo "GCS_BUCKET=$bucket" >> "$GITHUB_ENV"
         echo "GCS_PREFIX=$prefix" >> "$GITHUB_ENV"
 
+        if [[ "$FORCE" == "true" ]]; then
+            echo "Force rebuild requested"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+
+        bundle_obj=$("$sc" bundle-object "$STREAM")
+
+        # Get the bundle's creation timestamp. If the bundle does not
+        # exist or the query fails, assume changes and proceed.
+        if ! bundle_ts=$(gcloud storage objects describe "$bundle_obj" \
+            --format="value(creation_time)" 2>/dev/null) || [ -z "$bundle_ts" ]; then
+            echo "Bundle not found or query failed; assuming changes"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+        bundle_epoch=$(date -d "$bundle_ts" +%s)
+        echo "Bundle created: $bundle_ts (epoch: $bundle_epoch)"
+
+        # Check if any source has been updated after the bundle.
+        changed=false
+        while IFS= read -r source; do
+            object="gs://${bucket}/${prefix}/${STREAM}/sources/${source}.json.zst"
+            newer=$(GCS_OBJECT="$object" \
+                ./.github/workflows/scripts/scanner-updater-check-freshness.sh --newer-than "$bundle_epoch") || {
+                echo "Source '${source}': check failed; assuming changes"
+                changed=true; break
+            }
+            if [[ "$newer" == "true" ]]; then
+                echo "Source '${source}' is newer than bundle"
+                changed=true; break
+            fi
+        done < <("$sc" sources "$STREAM")
+
+        echo "changed=${changed}" >> "$GITHUB_OUTPUT"
+        if [ "$changed" = "false" ]; then
+            echo "No sources newer than bundle; skipping"
+        fi
+
+    - name: Download sources
+      if: steps.check-changes.outputs.changed == 'true'
+      run: |
+        set -euo pipefail
+
+        sc=./.github/workflows/scripts/scanner-updater-config.sh
         mkdir -p bundles
-        gcloud storage cp "gs://${bucket}/${prefix}/${STREAM}/sources/*.json.zst" bundles/
+
+        while IFS= read -r source; do
+            object="gs://${GCS_BUCKET}/${GCS_PREFIX}/${STREAM}/sources/${source}.json.zst"
+            dest="bundles/${source}.json.zst"
+
+            # Retry if the source is overwritten between describe and cp.
+            downloaded=false
+            for attempt in 1 2 3; do
+                meta=$(gcloud storage objects describe "$object" --format=json)
+                gen=$(jq -r '.generation' <<< "$meta")
+                timestamp=$(jq -re '.metadata["refresh-completed-at"]' <<< "$meta")
+
+                if gcloud storage cp "$object" "$dest" --if-generation-match="$gen"; then
+                    touch -d "$timestamp" "$dest"
+                    downloaded=true
+                    break
+                fi
+                echo "Source '${source}': download attempt ${attempt} failed, retrying"
+            done
+
+            if [[ "$downloaded" != "true" ]]; then
+                echo "::error::${source}: download failed after 3 attempts"
+                exit 1
+            fi
+        done < <("$sc" sources "$STREAM")
 
     - name: Validate sources
       id: download-validate
+      if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
 
@@ -99,7 +179,7 @@ jobs:
                 echo "source '${source}': OK"
                 valid_files+=("$dest")
             fi
-        done < <(yq ".bundles.${STREAM}[]" "$SOURCE_CONFIG")
+        done < <(./.github/workflows/scripts/scanner-updater-config.sh sources "$STREAM")
 
         ( IFS=','; echo "failed=${failed_sources[*]}" >> "$GITHUB_OUTPUT" )
 
@@ -112,6 +192,7 @@ jobs:
         echo "Validated: ${#valid_files[@]} of $(( ${#valid_files[@]} + ${#failed_sources[@]} )) source(s) OK"
 
     - name: Assemble and upload bundle
+      if: steps.check-changes.outputs.changed == 'true'
       run: |
         set -euo pipefail
 
