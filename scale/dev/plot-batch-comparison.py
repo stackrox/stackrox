@@ -9,6 +9,7 @@ This script generates plots that show:
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 import sys
 import os
 import glob
@@ -122,6 +123,33 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None):
         return None
 
     return max(filtered_values)
+
+def add_trendline(x_data, y_data, label, color, linestyle='--'):
+    """
+    Add a linear trend line to the current plot.
+
+    Args:
+        x_data: X-axis values (event rates)
+        y_data: Y-axis values (metric values)
+        label: Label for the trend line
+        color: Color for the trend line
+        linestyle: Line style for the trend line
+    """
+    # Filter out None values
+    valid_points = [(x, y) for x, y in zip(x_data, y_data) if y is not None]
+    if len(valid_points) < 2:
+        return  # Need at least 2 points for a trend line
+
+    x_valid = [p[0] for p in valid_points]
+    y_valid = [p[1] for p in valid_points]
+
+    # Fit linear trend line
+    coeffs = np.polyfit(x_valid, y_valid, 1)
+    trend_y = np.polyval(coeffs, x_valid)
+
+    # Plot trend line
+    plt.plot(x_valid, trend_y, linestyle=linestyle, linewidth=1.5, color=color,
+             alpha=0.7, label=label)
 
 def plot_scaling_comparison(base_dir, output_dir):
     """
@@ -243,8 +271,10 @@ def plot_scaling_comparison(base_dir, output_dir):
 
     # Plot 1: Central CPU vs Event Rate
     plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['central_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, metrics['central_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, metrics['central_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['central_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, metrics['central_cpu_without'], 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, metrics['central_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Central CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -259,8 +289,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     mem_without_gb = [m / (1024**3) if m else None for m in metrics['central_mem_without']]
     mem_with_gb = [m / (1024**3) if m else None for m in metrics['central_mem_with']]
-    plt.plot(event_rates, mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, mem_without_gb, 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -273,8 +305,10 @@ def plot_scaling_comparison(base_dir, output_dir):
 
     # Plot 3: Central-DB CPU vs Event Rate
     plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['centraldb_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, metrics['centraldb_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, metrics['centraldb_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['centraldb_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, metrics['centraldb_cpu_without'], 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, metrics['centraldb_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -287,8 +321,10 @@ def plot_scaling_comparison(base_dir, output_dir):
 
     # Plot 4: Alert Count vs Event Rate
     plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['alerts_count_without'], 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, metrics['alerts_count_with'], 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, metrics['alerts_count_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['alerts_count_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, metrics['alerts_count_without'], 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, metrics['alerts_count_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Alert Count', fontsize=12)
     plt.title(f'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -303,8 +339,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     size_without_mb = [s / (1024**2) if s else None for s in metrics['alerts_size_without']]
     size_with_mb = [s / (1024**2) if s else None for s in metrics['alerts_size_with']]
-    plt.plot(event_rates, size_without_mb, 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, size_with_mb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, size_without_mb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, size_with_mb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, size_without_mb, 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, size_with_mb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Table Size (MB)', fontsize=12)
     plt.title(f'Alerts Table Size vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -325,11 +363,13 @@ def plot_scaling_comparison(base_dir, output_dir):
         else:
             cpu_overhead.append(None)
 
-    plt.plot(event_rates, cpu_overhead, 'o-', linewidth=2, markersize=8, color='red')
+    plt.plot(event_rates, cpu_overhead, 'o-', linewidth=2, markersize=8, color='red', label='CPU Overhead')
+    add_trendline(event_rates, cpu_overhead, 'Trend', 'red')
     plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('CPU Overhead (%)', fontsize=12)
     plt.title(f'Policy Enforcement CPU Overhead\n(Central CPU increase when policy enabled, {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'policy_cpu_overhead.png'), dpi=150)
@@ -340,8 +380,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     centraldb_mem_without_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_without']]
     centraldb_mem_with_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_with']]
-    plt.plot(event_rates, centraldb_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, centraldb_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, centraldb_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, centraldb_mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -354,8 +396,10 @@ def plot_scaling_comparison(base_dir, output_dir):
 
     # Plot 8: Sensor CPU vs Event Rate
     plt.figure(figsize=(12, 7))
-    plt.plot(event_rates, metrics['sensor_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, metrics['sensor_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, metrics['sensor_cpu_without'], 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, metrics['sensor_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
@@ -370,8 +414,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     sensor_mem_without_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_without']]
     sensor_mem_with_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_with']]
-    plt.plot(event_rates, sensor_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8)
-    plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, sensor_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
+    plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
+    add_trendline(event_rates, sensor_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    add_trendline(event_rates, sensor_mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
