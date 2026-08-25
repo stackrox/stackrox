@@ -87,6 +87,7 @@ func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
 
 type mockProtocolClient struct {
+	mu          sync.Mutex
 	resultQueue []*vsockclient.GetReportResult
 	errQueue    []error
 	calls       []protocolCall
@@ -99,6 +100,8 @@ type protocolCall struct {
 }
 
 func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan, knownEpoch: knownEpoch})
 	idx := m.callIdx
 	m.callIdx++
@@ -112,16 +115,21 @@ func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 }
 
 func (m *mockProtocolClient) reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = nil
 	m.callIdx = 0
 }
 
 type mockSender struct {
+	mu   sync.Mutex
 	sent []*v4.IndexReport
 	err  error
 }
 
 func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.err != nil {
 		return m.err
 	}
