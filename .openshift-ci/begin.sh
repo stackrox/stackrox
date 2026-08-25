@@ -25,20 +25,28 @@ setup_gcp
 
 # Pre-flight DNS check for cluster creation (mitigation for DPTP-5138)
 # GCP-based jobs (OCP, GKE) will fail if DNS is broken, so we check early and fail fast with context
+# DPTP-5138 is a transient timing issue where DNS needs a few seconds to become ready
 if [[ "${JOB_NAME:-}" =~ -ocp-|-gke- ]]; then
     info "Pre-flight DNS health check (DPTP-5138 mitigation)"
+
+    _check_dns() {
+        local domain="$1"
+        nslookup "$domain" >/dev/null 2>&1
+    }
+
     dns_check_failed=false
     for domain in oauth2.googleapis.com compute.googleapis.com storage.googleapis.com; do
-        if ! nslookup "$domain" >/dev/null 2>&1; then
-            warn "⚠️  DNS resolution FAILED for $domain"
-            dns_check_failed=true
-        else
+        # Retry with exponential backoff (up to ~30 seconds total: 1s + 2s + 4s + 8s + 16s)
+        if retry 5 true _check_dns "$domain"; then
             info "✓ DNS OK for $domain"
+        else
+            warn "⚠️  DNS resolution FAILED for $domain after retries"
+            dns_check_failed=true
         fi
     done
 
     if [[ "$dns_check_failed" == "true" ]]; then
-        die "DNS is broken (likely node-resolver not ready - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
+        die "DNS is broken after retries (likely persistent node-resolver issue - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
     fi
 fi
 
