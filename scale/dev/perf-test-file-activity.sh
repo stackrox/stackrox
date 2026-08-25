@@ -27,6 +27,8 @@ logmein_script="${HOME}/go/src/github.com/stackrox/workflow/bin/logmein"
 
 # Export default value for PAGERDUTY_INTEGRATION_KEY to fix Helm validation error
 export PAGERDUTY_INTEGRATION_KEY="${PAGERDUTY_INTEGRATION_KEY:-dummy-key-for-dev-testing}"
+export STORAGE="pvc"
+export MONITORING_LOAD_BALANCER="none"
 export MONITORING_SUPPORT=true
 export ROX_SCANNER_V4=false
 

@@ -46,7 +46,7 @@ def read_file(file_path, base_time=None):
         return [], []
 
     # Normalize time (subtract base timestamp if provided, otherwise use first timestamp)
-    if base_time is None:
+    if base_time is None or base_time == '':
         base_time = timestamps[0]
     else:
         base_time = int(base_time)

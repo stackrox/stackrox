@@ -145,6 +145,12 @@ def plot_scaling_comparison(base_dir, output_dir):
         'central_mem_with': [],
         'centraldb_cpu_without': [],
         'centraldb_cpu_with': [],
+        'centraldb_mem_without': [],
+        'centraldb_mem_with': [],
+        'sensor_cpu_without': [],
+        'sensor_cpu_with': [],
+        'sensor_mem_without': [],
+        'sensor_mem_with': [],
         'alerts_count_without': [],
         'alerts_count_with': [],
         'alerts_size_without': [],
@@ -154,37 +160,51 @@ def plot_scaling_comparison(base_dir, output_dir):
     for batch_size in batch_sizes:
         # Without policy
         if 'without' in data[batch_size]:
-            without_dir = os.path.join(data[batch_size]['without'], 'metrics')
+            without_dir = data[batch_size]['without']
             metrics['central_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt')))
             metrics['central_mem_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt')))
             metrics['centraldb_cpu_without'].append(
                 read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt')))
+            metrics['centraldb_mem_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt')))
+            metrics['sensor_cpu_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt')))
+            metrics['sensor_mem_without'].append(
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt')))
             metrics['alerts_count_without'].append(
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt')))
             metrics['alerts_size_without'].append(
                 read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt')))
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
+                       'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
                        'alerts_count_without', 'alerts_size_without']:
                 metrics[key].append(None)
 
         # With policy
         if 'with' in data[batch_size]:
-            with_dir = os.path.join(data[batch_size]['with'], 'metrics')
+            with_dir = data[batch_size]['with']
             metrics['central_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt')))
             metrics['central_mem_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt')))
             metrics['centraldb_cpu_with'].append(
                 read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt')))
+            metrics['centraldb_mem_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt')))
+            metrics['sensor_cpu_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt')))
+            metrics['sensor_mem_with'].append(
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt')))
             metrics['alerts_count_with'].append(
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt')))
             metrics['alerts_size_with'].append(
                 read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt')))
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
+                       'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
                        'alerts_count_with', 'alerts_size_with']:
                 metrics[key].append(None)
 
@@ -280,7 +300,53 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'policy_cpu_overhead.png'), dpi=150)
-    print(f"Saved: policy_cpu_overhead.png")
+    print(f"Saved: policy_cpu_overhead.png (Central CPU increase when policy is enabled)")
+    plt.close()
+
+    # Plot 7: Central-DB Memory vs Event Rate
+    plt.figure(figsize=(12, 7))
+    centraldb_mem_without_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_without']]
+    centraldb_mem_with_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_with']]
+    plt.plot(event_rates, centraldb_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average Memory Usage (GB)', fontsize=12)
+    plt.title('Central-DB Memory Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'centraldb_mem_vs_rate.png'), dpi=150)
+    print(f"Saved: centraldb_mem_vs_rate.png")
+    plt.close()
+
+    # Plot 8: Sensor CPU vs Event Rate
+    plt.figure(figsize=(12, 7))
+    plt.plot(event_rates, metrics['sensor_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average CPU Usage (cores)', fontsize=12)
+    plt.title('Sensor CPU Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sensor_cpu_vs_rate.png'), dpi=150)
+    print(f"Saved: sensor_cpu_vs_rate.png")
+    plt.close()
+
+    # Plot 9: Sensor Memory vs Event Rate
+    plt.figure(figsize=(12, 7))
+    sensor_mem_without_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_without']]
+    sensor_mem_with_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_with']]
+    plt.plot(event_rates, sensor_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8)
+    plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
+    plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
+    plt.ylabel('Average Memory Usage (GB)', fontsize=12)
+    plt.title('Sensor Memory Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'sensor_mem_vs_rate.png'), dpi=150)
+    print(f"Saved: sensor_mem_vs_rate.png")
     plt.close()
 
     print(f"\nAll comparison plots saved to {output_dir}")
