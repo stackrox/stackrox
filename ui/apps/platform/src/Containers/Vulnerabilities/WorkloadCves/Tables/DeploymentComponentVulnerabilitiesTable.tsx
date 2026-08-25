@@ -70,8 +70,10 @@ function DeploymentComponentVulnerabilitiesTable({
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
-    const colSpanForDockerfileLayer = 9 + (isAdvisoryColumnEnabled ? 1 : 0);
+    const colSpanForDockerfileLayer =
+        8 + (isAdvisoryColumnEnabled ? 1 : 0) + (isOriginColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
@@ -91,7 +93,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
-                    <Th>CVE origin</Th>
+                    {isOriginColumnEnabled && <Th>CVE origin</Th>}
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -165,7 +167,9 @@ function DeploymentComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
-                            <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
+                            {isOriginColumnEnabled && (
+                                <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
+                            )}
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>

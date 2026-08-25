@@ -56,10 +56,14 @@ function ImageComponentVulnerabilitiesTable({
 }: ImageComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
 
     const colSpanForDockerfileLayer =
-        6 + (isAdvisoryColumnEnabled ? 1 : 0) + (isLayerTypeColumnEnabled ? 1 : 0);
+        5 +
+        (isAdvisoryColumnEnabled ? 1 : 0) +
+        (isOriginColumnEnabled ? 1 : 0) +
+        (isLayerTypeColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -77,7 +81,7 @@ function ImageComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
-                    <Th>CVE origin</Th>
+                    {isOriginColumnEnabled && <Th>CVE origin</Th>}
                     {isLayerTypeColumnEnabled && <Th>Layer type</Th>}
                     <Th>Location</Th>
                 </Tr>
@@ -118,7 +122,9 @@ function ImageComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
-                            <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
+                            {isOriginColumnEnabled && (
+                                <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
+                            )}
                             {isLayerTypeColumnEnabled && (
                                 <Td dataLabel="Layer type">
                                     <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
