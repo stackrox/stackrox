@@ -223,6 +223,60 @@ var PullTrackedVMs = prometheus.NewGauge(
 	},
 )
 
+// PullDueVMs is how many VMs were eligible to scrape at the start of the last
+// tick (nextAttemptAt had arrived and they were not already in flight).
+var PullDueVMs = prometheus.NewGauge(
+	prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_due_vms",
+		Help:      "How many VMs were eligible to scrape at the beginning of the last scraper tick",
+	},
+)
+
+// PullStartsPerTick is how many VM scrapes each tick launches. Idle ticks
+// (nobody due) are omitted so the histogram is not dominated by zeros.
+var PullStartsPerTick = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_starts_per_tick",
+		Help: "How many VM scrapes the scraper starts in a single tick. " +
+			"Idle ticks are not observed. Compare with vsock_pull_due_vms: " +
+			"spread due times keep both small; a mass of large starts is a dump.",
+		Buckets: []float64{0, 1, 2, 3, 5, 8, 10, 15, 20, 30, 50, 100},
+	},
+)
+
+// PullForwardInterarrivalSeconds is the Sensor-level gap between consecutive
+// successful forwards to Central. The first forward after start is not observed.
+var PullForwardInterarrivalSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_forward_interarrival_seconds",
+		Help: "Seconds between consecutive successful VM index-report forwards " +
+			"from this Sensor to Central. The first forward after Sensor start does not count.",
+		// 10ms to ~47h. Sized for a 24h poll in extreme cases so those
+		// gaps stay in a finite bucket instead of +Inf.
+		Buckets: prometheus.ExponentialBuckets(0.01, 2, 25),
+	},
+)
+
+// PullScheduleOffsetSeconds is the random extra delay drawn when a VM returns
+// to cadence after success or a permanent non-retry outcome (retries/NACKs do not).
+var PullScheduleOffsetSeconds = prometheus.NewHistogram(
+	prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "vsock_pull_schedule_offset_seconds",
+		Help: "Random extra delay (seconds) added on top of the poll interval " +
+			"when scheduling a VM's next attempt after a return-to-cadence outcome.",
+		// 250ms to ~36h. Sized for a 24h poll in extreme cases (W up to 24h).
+		Buckets: prometheus.ExponentialBuckets(0.25, 2, 20),
+	},
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsSent,
@@ -240,5 +294,9 @@ func init() {
 		PullRequestsTotal,
 		PullTicksTotal,
 		PullTrackedVMs,
+		PullDueVMs,
+		PullStartsPerTick,
+		PullForwardInterarrivalSeconds,
+		PullScheduleOffsetSeconds,
 	)
 }

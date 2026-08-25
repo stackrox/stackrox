@@ -64,3 +64,26 @@ func TestReconcilePeriod(t *testing.T) {
 	assert.Equal(t, 5*time.Minute, reconcilePeriod(time.Hour))
 	assert.Equal(t, time.Minute, reconcilePeriod(time.Minute))
 }
+
+func TestSteadySpreadWidth(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, 40*time.Minute, steadySpreadWidth(time.Hour, 2.0/3))
+	assert.Equal(t, 0, int(steadySpreadWidth(time.Hour, 0)))
+	assert.Equal(t, 0, int(steadySpreadWidth(0, 2.0/3)))
+}
+
+func TestNewVMIndexReportWindow(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, maxNewVMIndexReportWindow, newVMIndexReportWindow(time.Hour))
+	assert.Equal(t, 100*time.Second, newVMIndexReportWindow(5*time.Minute))
+	assert.Equal(t, time.Duration(0), newVMIndexReportWindow(0))
+}
+
+func TestRandOffset(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, time.Duration(0), randOffset(0, 0.5))
+	assert.Equal(t, 20*time.Minute, randOffset(40*time.Minute, 0.5))
+	assert.Equal(t, time.Duration(0), randOffset(40*time.Minute, 0))
+	assert.Equal(t, 40*time.Minute, randOffset(40*time.Minute, 1))
+	assert.Equal(t, time.Duration(0), randOffset(40*time.Minute, -1))
+}

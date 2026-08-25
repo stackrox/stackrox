@@ -57,12 +57,11 @@ func (m *mockStore) Get(id virtualmachine.VMID) *virtualmachine.Info {
 type mockDialer struct {
 	err      error
 	errQueue []error
-	callIdx  int
+	callIdx  atomic.Int32
 }
 
 func (m *mockDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
-	idx := m.callIdx
-	m.callIdx++
+	idx := int(m.callIdx.Add(1) - 1)
 	if idx < len(m.errQueue) && m.errQueue[idx] != nil {
 		return nil, m.errQueue[idx]
 	}
@@ -764,10 +763,12 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		concurrency:           1,
 		// Half of the 16MiB default pull response-size ceiling — same
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
-		warnMaxBytes: 8 << 20,
-		vmState:      make(map[string]*vmState),
-		inFlight:     set.NewStringSet(),
-		now:          clock.Now,
+		warnMaxBytes:   8 << 20,
+		spreadFraction: 2.0 / 3,
+		vmState:        make(map[string]*vmState),
+		inFlight:       set.NewStringSet(),
+		now:            clock.Now,
+		randFloat64:    func() float64 { return 0 },
 	}, clock
 }
 
