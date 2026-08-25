@@ -215,6 +215,11 @@ spec:
           mountPath: /run/secrets/stackrox.io/ocp-tls
           readOnly: true
         {{- end }}
+        {{- if ._rox.central.signingKeyBundle.configMapName }}
+        - name: signing-key-bundle
+          mountPath: /tmp/redhat-signing-keys
+          readOnly: true
+        {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
         - name: {{ $extraMount.name }}
           {{- $extraMount.mount | toYaml | nindent 10 }}
@@ -306,6 +311,12 @@ spec:
       - name: ocp-tls
         secret:
           secretName: central-ocp-tls
+      {{- end }}
+      {{- if ._rox.central.signingKeyBundle.configMapName }}
+      - name: signing-key-bundle
+        configMap:
+          name: {{ ._rox.central.signingKeyBundle.configMapName }}
+          optional: true
       {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}

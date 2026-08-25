@@ -168,13 +168,20 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
+	// References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+	// This allows air-gapped customers to provide or update the signing keys used for
+	// signature verification of Red Hat container images. The ConfigMap is managed
+	// externally; key rotation requires only editing the ConfigMap, not a CR update.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	SigningKeyBundle *LocalConfigMapReference `json:"signingKeyBundle,omitempty"`
+
 	// Configures the encryption of notifier secrets stored in the Central DB.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
 
 	// Configures the rollout strategy for the Central deployment.
 	// The default is: Recreate.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=9
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=10
 	RolloutStrategy *RolloutStrategy `json:"rolloutStrategy,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99

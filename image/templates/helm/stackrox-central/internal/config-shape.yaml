@@ -86,6 +86,8 @@ central:
     mounts:
       configMaps: null # [string]
       secrets: null # [string]
+  signingKeyBundle:
+    configMapName: null # string
   extraMounts: null # [dict]
   db:
     nodeSelector: null # string | dict
