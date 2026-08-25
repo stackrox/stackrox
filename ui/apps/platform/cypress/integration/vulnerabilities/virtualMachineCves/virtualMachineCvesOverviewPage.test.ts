@@ -134,11 +134,7 @@ describe('Virtual Machine CVEs - Overview Page', () => {
                 fixture: fixturePathListVMs,
             },
         }).then(({ waitForRequests }) => {
-            visitVirtualMachineCvesOverviewPage(
-                undefined,
-                undefined,
-                virtualMachineTabParams
-            );
+            visitVirtualMachineCvesOverviewPage(undefined, undefined, virtualMachineTabParams);
             waitForRequests();
 
             sortByTableHeader('Virtual machine');
@@ -179,11 +175,7 @@ describe('Virtual Machine CVEs - Overview Page', () => {
         interceptAndWatchRequests(routeMatcherMapForVirtualMachines, {
             [listVirtualMachinesAlias]: paginatedFixture,
         }).then(({ waitForRequests }) => {
-            visitVirtualMachineCvesOverviewPage(
-                undefined,
-                undefined,
-                virtualMachineTabParams
-            );
+            visitVirtualMachineCvesOverviewPage(undefined, undefined, virtualMachineTabParams);
             waitForRequests();
 
             paginateNext();
