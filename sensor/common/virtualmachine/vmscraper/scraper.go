@@ -14,10 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -254,6 +256,11 @@ func (s *VMScraper) run() {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		log.Debugf("VMScraper: skipping pull; Central does not advertise VirtualMachinesSupported")
+		return
+	}
+
 	tickStart := s.now()
 	reconcile := forceReconcile
 	if !reconcile {
@@ -461,8 +468,17 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
 		// Send failures are typically a transient Central connection issue, so
 		// retry on the short backoff rather than waiting a full poll interval.
-		next := s.scheduleAfterAttempt(key, scrapeRetryable)
-		log.Infof("VMScraper: scrape %q failed retryable next=%s", key, next)
+		outcome := scrapeRetryable
+		if errors.Is(err, errox.NotImplemented) {
+			// Central cannot consume VM index reports (missing capability).
+			outcome = scrapeNonRetryable
+		}
+		next := s.scheduleAfterAttempt(key, outcome)
+		kind := "retryable"
+		if outcome == scrapeNonRetryable {
+			kind = "non-retryable"
+		}
+		log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 		return false
 	}
 

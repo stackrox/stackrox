@@ -14,9 +14,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
@@ -207,13 +210,37 @@ func TestVMScraper_PollsRunningVMs(t *testing.T) {
 		errQueue:    []error{nil, nil},
 	}
 
-	s, _ := newTestScraper(store, sender, dialer, client)
+	s, _ := newTestScraper(t, store, sender, dialer, client)
 	discoveredBefore := testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE"))
 	s.pollOnce(context.Background())
 
 	assert.Len(t, sender.sent, 2)
 	assert.Len(t, client.calls, 2)
 	assert.Equal(t, discoveredBefore+2, testutil.ToFloat64(metrics.VMDiscoveredData.WithLabelValues("RHEL", "ACTIVE", "AVAILABLE")))
+}
+
+// TestVMScraper_SkipsWhenCentralLacksCapability covers a store already
+// populated (for example after reconnecting to an older Central) so the
+// scraper must not dial or forward.
+func TestVMScraper_SkipsWhenCentralLacksCapability(t *testing.T) {
+	store := &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}
+	sender := &mockSender{}
+	dialer := &mockDialer{}
+	client := &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	}
+
+	s, _ := newTestScraper(t, store, sender, dialer, client)
+	centralcaps.Set(nil)
+
+	s.pollOnce(context.Background())
+
+	assert.Equal(t, 0, store.listRunningCalls, "should not reconcile when Central cannot consume reports")
+	assert.Zero(t, dialer.callIdx.Load())
+	assert.Empty(t, sender.sent)
+	assert.Empty(t, client.calls)
 }
 
 func TestVMScraper_SkipsUnchangedToken(t *testing.T) {
@@ -226,7 +253,7 @@ func TestVMScraper_SkipsUnchangedToken(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 
 	s.pollOnce(context.Background())
 	require.Len(t, sender.sent, 1)
@@ -249,7 +276,7 @@ func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 
 	s.pollOnce(context.Background())
 	require.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
@@ -273,7 +300,7 @@ func TestVMScraper_ForwardsAfter4Hours(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 
 	s.pollOnce(context.Background())
 	require.Len(t, sender.sent, 1)
@@ -304,7 +331,7 @@ func TestVMScraper_SendsLastKnownTokenOnRequest(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("tok-100")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 	s.pollOnce(context.Background())
 
 	require.Len(t, client.calls, 1)
@@ -329,7 +356,7 @@ func TestVMScraper_ForwardsOnTokenChange(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 	s.pollOnce(context.Background())
 	require.Len(t, sender.sent, 1)
 
@@ -422,7 +449,7 @@ func TestVMScraper_NACK(t *testing.T) {
 				resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 			}
 
-			s, clock := newTestScraper(store, sender, dialer, client)
+			s, clock := newTestScraper(t, store, sender, dialer, client)
 			s.pollOnce(context.Background())
 			require.Len(t, sender.sent, 1)
 
@@ -487,7 +514,7 @@ func TestVMScraper_InFlightSendCanOverwriteNACKReset(t *testing.T) {
 		vmA.ID = "vm-a-id"
 		store := &mockStore{vms: []*virtualmachine.Info{vmA}}
 		client := &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport("1")}}
-		s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+		s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, client)
 
 		s.pollOnce(t.Context())
 		require.Equal(t, "1", cachedToken(t, s, "ns1/vm-a"))
@@ -574,7 +601,7 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 				resultQueue: tc.resultQueue,
 				errQueue:    tc.errQueue,
 			}
-			s, _ := newTestScraper(&mockStore{vms: vms}, sender, tc.dialer, client)
+			s, _ := newTestScraper(t, &mockStore{vms: vms}, sender, tc.dialer, client)
 			if tc.perVMTimeout > 0 {
 				s.perVMTimeout = tc.perVMTimeout
 			}
@@ -587,7 +614,7 @@ func TestVMScraper_HandlesDialAndProtocolFailures(t *testing.T) {
 }
 
 func TestVMScraper_StartRejectsSecondCall(t *testing.T) {
-	s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
 	require.NoError(t, s.Start())
 	t.Cleanup(s.Stop)
 
@@ -602,7 +629,7 @@ func TestVMScraper_GetReportTimeoutClassified(t *testing.T) {
 	client := &mockProtocolClient{
 		errQueue: []error{errors.New("i/o timeout")},
 	}
-	s, _ := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
 
 	timeoutBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout))
 	readErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError))
@@ -626,7 +653,7 @@ func TestVMScraper_GetReportDeadlineExceededClassified(t *testing.T) {
 	client := &mockProtocolClient{
 		errQueue: []error{errors.New("i/o timeout")},
 	}
-	s, _ := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
 	defer cancel()
@@ -643,7 +670,7 @@ func TestVMScraper_GetReportBusyClassified(t *testing.T) {
 	client := &mockProtocolClient{
 		errQueue: []error{vsockclient.ErrBusy},
 	}
-	s, _ := newTestScraper(&mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
+	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{vm}}, &mockSender{}, &mockDialer{}, client)
 
 	busyBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy))
 	readErrBefore := testutil.ToFloat64(metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError))
@@ -667,7 +694,7 @@ func TestVMScraper_PrunesStaleState(t *testing.T) {
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1"), makeReport("1")},
 	}
 
-	s, clock := newTestScraper(store, sender, dialer, client)
+	s, clock := newTestScraper(t, store, sender, dialer, client)
 	s.pollOnce(context.Background())
 	assert.Len(t, s.vmState, 2)
 	assert.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
@@ -704,7 +731,11 @@ func cachedToken(t *testing.T, s *VMScraper, key string) string {
 	})
 }
 
-func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) (*VMScraper, *testClock) {
+func newTestScraper(t *testing.T, store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) (*VMScraper, *testClock) {
+	t.Helper()
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
 	clock := newTestClock()
 	interval := 5 * time.Minute
 	s := &VMScraper{
@@ -810,7 +841,7 @@ func TestVMScraper_ConcurrentFasterThanSequential(t *testing.T) {
 	dialer := &delayDialer{delay: dialDelay}
 	client := &safeProtocolClient{token: "1"}
 
-	s, _ := newTestScraper(store, sender, dialer, client)
+	s, _ := newTestScraper(t, store, sender, dialer, client)
 	s.concurrency = concurrency
 	// This test measures real dial overlap via delayDialer's timers, so it
 	// needs the wall clock rather than the fake test clock.
@@ -835,7 +866,7 @@ func TestVMScraper_RetryableFailureSchedulesBackoff(t *testing.T) {
 	client := &mockProtocolClient{
 		errQueue: []error{vsockclient.ErrNotReady},
 	}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, client)
 
 	s.pollOnce(context.Background())
 	require.Len(t, client.calls, 1)
@@ -883,6 +914,12 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 			wantBackoff: initialBackoff,
 			wantGap:     initialBackoff,
 		},
+		"not-implemented send should not retry using backoff": {
+			client:      &mockProtocolClient{resultQueue: []*vsockclient.GetReportResult{makeReport("1")}},
+			sender:      &mockSender{err: errox.NotImplemented},
+			wantBackoff: 0,
+			wantGap:     5 * time.Minute,
+		},
 		"ErrInternal should retry using backoff": {
 			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrInternal}},
 			sender:      &mockSender{},
@@ -924,7 +961,7 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, clock := newTestScraper(
+			s, clock := newTestScraper(t,
 				&mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}},
 				tc.sender, &mockDialer{}, tc.client,
 			)
@@ -946,7 +983,7 @@ func TestVMScraper_NonForcedTickSkipsReconcileWhenNotDue(t *testing.T) {
 	client := &mockProtocolClient{
 		resultQueue: []*vsockclient.GetReportResult{makeReport("1"), makeReport("1")},
 	}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, client)
 
 	s.pollOnce(context.Background())
 	require.Equal(t, 1, store.listRunningCalls, "pollOnce forces exactly one reconcile")

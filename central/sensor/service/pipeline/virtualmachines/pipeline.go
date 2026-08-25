@@ -52,7 +52,12 @@ type pipelineImpl struct {
 
 func (p *pipelineImpl) OnFinish(_ string) {}
 
+// Capabilities omits VirtualMachinesSupported when ROX_VIRTUAL_MACHINES is
+// off so Sensor treats this Central like a pre-VM build.
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
+	if !features.VirtualMachines.Enabled() {
+		return nil
+	}
 	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
 }
 
