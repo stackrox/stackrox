@@ -126,7 +126,7 @@ def read_metric_max(file_path, start_offset=60.0, end_offset=None):
 
 def add_trendline(x_data, y_data, label, color, linestyle='--'):
     """
-    Add a linear trend line to the current plot.
+    Add a linear trend line to the current plot and return the equation.
 
     Args:
         x_data: X-axis values (event rates)
@@ -134,11 +134,14 @@ def add_trendline(x_data, y_data, label, color, linestyle='--'):
         label: Label for the trend line
         color: Color for the trend line
         linestyle: Line style for the trend line
+
+    Returns:
+        Tuple of (slope, intercept) or None if insufficient data
     """
     # Filter out None values
     valid_points = [(x, y) for x, y in zip(x_data, y_data) if y is not None]
     if len(valid_points) < 2:
-        return  # Need at least 2 points for a trend line
+        return None  # Need at least 2 points for a trend line
 
     x_valid = [p[0] for p in valid_points]
     y_valid = [p[1] for p in valid_points]
@@ -150,6 +153,33 @@ def add_trendline(x_data, y_data, label, color, linestyle='--'):
     # Plot trend line
     plt.plot(x_valid, trend_y, linestyle=linestyle, linewidth=1.5, color=color,
              alpha=0.7, label=label)
+
+    # Return slope and intercept
+    return (coeffs[0], coeffs[1])
+
+def add_equation_text(equations, y_position=0.95):
+    """
+    Add trend line equations as text on the plot.
+
+    Args:
+        equations: List of tuples (label, slope, intercept, color)
+        y_position: Vertical position for the text box (0-1, in axes coordinates)
+    """
+    if not equations:
+        return
+
+    equation_text = []
+    for label, slope, intercept, color in equations:
+        if slope is not None and intercept is not None:
+            # Format equation: y = mx + b
+            sign = '+' if intercept >= 0 else '-'
+            equation_text.append(f"{label}: y = {slope:.4e}x {sign} {abs(intercept):.4f}")
+
+    if equation_text:
+        text_str = '\n'.join(equation_text)
+        plt.text(0.02, y_position, text_str, transform=plt.gca().transAxes,
+                fontsize=9, verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
 
 def plot_scaling_comparison(base_dir, output_dir):
     """
@@ -273,13 +303,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     plt.plot(event_rates, metrics['central_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, metrics['central_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, metrics['central_cpu_without'], 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, metrics['central_cpu_with'], 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, metrics['central_cpu_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['central_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Central CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'central_cpu_vs_rate.png'), dpi=150)
     print(f"Saved: central_cpu_vs_rate.png")
@@ -291,13 +325,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     mem_with_gb = [m / (1024**3) if m else None for m in metrics['central_mem_with']]
     plt.plot(event_rates, mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, mem_without_gb, 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, mem_with_gb, 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, mem_without_gb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'central_mem_vs_rate.png'), dpi=150)
     print(f"Saved: central_mem_vs_rate.png")
@@ -307,13 +345,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     plt.plot(event_rates, metrics['centraldb_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, metrics['centraldb_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, metrics['centraldb_cpu_without'], 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, metrics['centraldb_cpu_with'], 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, metrics['centraldb_cpu_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['centraldb_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'centraldb_cpu_vs_rate.png'), dpi=150)
     print(f"Saved: centraldb_cpu_vs_rate.png")
@@ -323,13 +365,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     plt.plot(event_rates, metrics['alerts_count_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, metrics['alerts_count_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, metrics['alerts_count_without'], 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, metrics['alerts_count_with'], 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, metrics['alerts_count_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['alerts_count_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Alert Count', fontsize=12)
     plt.title(f'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'alerts_count_vs_rate.png'), dpi=150)
     print(f"Saved: alerts_count_vs_rate.png")
@@ -341,13 +387,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     size_with_mb = [s / (1024**2) if s else None for s in metrics['alerts_size_with']]
     plt.plot(event_rates, size_without_mb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, size_with_mb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, size_without_mb, 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, size_with_mb, 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, size_without_mb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, size_with_mb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Table Size (MB)', fontsize=12)
     plt.title(f'Alerts Table Size vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'alerts_size_vs_rate.png'), dpi=150)
     print(f"Saved: alerts_size_vs_rate.png")
@@ -364,13 +414,16 @@ def plot_scaling_comparison(base_dir, output_dir):
             cpu_overhead.append(None)
 
     plt.plot(event_rates, cpu_overhead, 'o-', linewidth=2, markersize=8, color='red', label='CPU Overhead')
-    add_trendline(event_rates, cpu_overhead, 'Trend', 'red')
+    eq1 = add_trendline(event_rates, cpu_overhead, 'Trend', 'red')
     plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('CPU Overhead (%)', fontsize=12)
     plt.title(f'Policy Enforcement CPU Overhead\n(Central CPU increase when policy enabled, {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Overhead', eq1[0], eq1[1], 'red'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'policy_cpu_overhead.png'), dpi=150)
     print(f"Saved: policy_cpu_overhead.png (Central CPU increase when policy is enabled)")
@@ -382,13 +435,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     centraldb_mem_with_gb = [m / (1024**3) if m else None for m in metrics['centraldb_mem_with']]
     plt.plot(event_rates, centraldb_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, centraldb_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, centraldb_mem_with_gb, 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, centraldb_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, centraldb_mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'centraldb_mem_vs_rate.png'), dpi=150)
     print(f"Saved: centraldb_mem_vs_rate.png")
@@ -398,13 +455,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.figure(figsize=(12, 7))
     plt.plot(event_rates, metrics['sensor_cpu_without'], 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, metrics['sensor_cpu_without'], 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, metrics['sensor_cpu_with'], 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, metrics['sensor_cpu_without'], 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, metrics['sensor_cpu_with'], 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
     plt.title(f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sensor_cpu_vs_rate.png'), dpi=150)
     print(f"Saved: sensor_cpu_vs_rate.png")
@@ -416,13 +477,17 @@ def plot_scaling_comparison(base_dir, output_dir):
     sensor_mem_with_gb = [m / (1024**3) if m else None for m in metrics['sensor_mem_with']]
     plt.plot(event_rates, sensor_mem_without_gb, 'o-', label='Without Policy', linewidth=2, markersize=8, color='C0')
     plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8, color='C1')
-    add_trendline(event_rates, sensor_mem_without_gb, 'Trend (Without Policy)', 'C0')
-    add_trendline(event_rates, sensor_mem_with_gb, 'Trend (With Policy)', 'C1')
+    eq1 = add_trendline(event_rates, sensor_mem_without_gb, 'Trend (Without Policy)', 'C0')
+    eq2 = add_trendline(event_rates, sensor_mem_with_gb, 'Trend (With Policy)', 'C1')
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
     plt.title(f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
+    equations = []
+    if eq1: equations.append(('Without Policy', eq1[0], eq1[1], 'C0'))
+    if eq2: equations.append(('With Policy', eq2[0], eq2[1], 'C1'))
+    add_equation_text(equations)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'sensor_mem_vs_rate.png'), dpi=150)
     print(f"Saved: sensor_mem_vs_rate.png")
