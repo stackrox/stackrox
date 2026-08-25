@@ -5,7 +5,8 @@ import (
 )
 
 // startBudget is max(1, ceil(n × tick / window)) for positive n, tick, and
-// window. Zero otherwise so a missing window does not start a scrape.
+// window. n is tracked fleet size so a leftover due pile keeps a stable drain
+// rate. Zero otherwise so a missing window does not start a scrape.
 func startBudget(n int, tick, window time.Duration) int {
 	if n <= 0 || tick <= 0 || window <= 0 {
 		return 0
