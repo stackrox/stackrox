@@ -58,7 +58,7 @@ var (
 
 	// VirtualMachinesScraperPollInterval defines how often the pull-mode scraper
 	// polls VMs for new reports.
-	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 5*time.Minute)
+	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 4*time.Hour)
 
 	// VirtualMachinesScraperTickInterval is how often VMScraper considers due VMs.
 	// Independent of retry backoff so operators can slow the ticker without

@@ -28,10 +28,23 @@ ci_export() {
     local env_name="$1"
     local env_value="$2"
 
-    export "$env_name"="$env_value"
-
-    if [[ -n "${GITHUB_ENV:-}" ]]; then
-        printf '%s=%q\n' "${env_name}" "${env_value}" >> "$GITHUB_ENV"
+    if is_GITHUB_ACTIONS; then
+        export "${env_name}"="${env_value}"
+        if [[ -z "${GITHUB_ENV:-}" ]]; then
+            die "GITHUB_ENV is unset in the environment even though GITHUB_ACTION is set"
+        fi
+        if [[ "$env_value" == *$'\n'* ]]; then
+            # GHA also supports multi-line values, which need to be added to $GITHUB_ENV with a
+            # special syntax.
+            # See https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#multiline-strings
+            local delimiter="EOF_${env_name}_$$"
+            printf '%s<<%s\n%s\n%s\n' "$env_name" "$delimiter" "$env_value" "$delimiter" >> "$GITHUB_ENV"
+        else
+            # GHA needs the environment variables to be unquoted and unescaped, they are parsed literally.
+            echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
+        fi
+    else
+        export "$env_name"="$env_value"
     fi
 }
 
@@ -567,7 +580,10 @@ poll_for_system_test_images() {
     local image_list
     image_list="$(mktemp)"
     populate_stackrox_image_list "${image_list}"
-    info "Will poll for: $(awk '{print $1}' "${image_list}")"
+    info "Will poll for the following images:"
+    while IFS=' ' read -r name tag; do
+        info "  ${name}:${tag}"
+    done < "${image_list}"
 
     local start_time
     start_time="$(date '+%s')"
@@ -621,7 +637,7 @@ _image_prefetcher_prebuilt_start() {
     # _image_prefetcher_prebuilt_await
 
     case "$CI_JOB_NAME" in
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_start_set qa-e2e
         _set_quay_pull_policy
         ;;
@@ -672,7 +688,7 @@ _image_prefetcher_system_start() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
         image_prefetcher_start_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -790,7 +806,7 @@ _image_prefetcher_prebuilt_await() {
     # at the last moment before any of the prebuilt images is used. (See other existing examples.)
     # This way we save time since prefetching can happen in parallel with whatever other setup the test job needs.
 
-    *qa-e2e-tests)
+    *qa-e2e-tests*)
         image_prefetcher_await_set qa-e2e
         ;;
     *nongroovy-e2e-tests)
@@ -813,7 +829,7 @@ _image_prefetcher_system_await() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*ocp*qa-e2e-tests*)
         image_prefetcher_await_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
@@ -973,9 +989,12 @@ populate_stackrox_image_list() {
 
     local tag
     tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
+
+    local operator_controller_tag
+    operator_controller_tag="$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)"
+
     local operator_metadata_tag
-    operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
-    local operator_controller_tag="${tag//x/0}"
+    operator_metadata_tag="v${operator_controller_tag}"
 
     # Require images based on the job
     case "$CI_JOB_NAME" in
@@ -1023,6 +1042,37 @@ scanner-v4 ${tag}
 scanner-v4-db ${tag}
 roxctl ${tag}
 END
+            ;;
+        *qa-e2e-tests*)
+            if [[ "${USE_KONFLUX_IMAGES:-false}" == "true" ]]; then
+                cat >> "${image_list}" << END
+release-operator ${operator_controller_tag}
+release-operator-bundle ${operator_metadata_tag}
+release-main ${operator_controller_tag}
+release-central-db ${operator_controller_tag}
+release-collector ${operator_controller_tag}
+release-fact ${operator_controller_tag}
+release-scanner ${operator_controller_tag}
+release-scanner-db ${operator_controller_tag}
+release-scanner-v4 ${operator_controller_tag}
+release-scanner-v4-db ${operator_controller_tag}
+release-roxctl ${operator_controller_tag}
+END
+            else
+                cat >> "${image_list}" << END
+stackrox-operator ${operator_controller_tag}
+stackrox-operator-bundle ${operator_metadata_tag}
+main ${tag}
+central-db ${tag}
+collector ${tag}
+fact ${tag}
+scanner ${tag}
+scanner-db ${tag}
+scanner-v4 ${tag}
+scanner-v4-db ${tag}
+roxctl ${tag}
+END
+            fi
             ;;
         *)
             cat >> "${image_list}" << END
@@ -2659,19 +2709,20 @@ _record_cluster_info() {
     # Assumes (a) there is a single cluster under test (cut_*) and (b) all nodes
     # in the cluster are homogeneous.
 
-    # Product version. Currently used for OpenShift version. Could cover cloud
-    # provider versions for example.
-    local oc_version
-    oc_version="$(oc version -o json 2>&1 || true)"
-    local openshiftVersion
-    openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    # Product version. Currently used for OpenShift version.
+    if command -v oc &>/dev/null; then
+        local oc_version
+        oc_version="$(oc version -o json 2>/dev/null || true)"
+        local openshiftVersion
+        openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion // empty')
+        set_ci_shared_export "cut_product_version" "$openshiftVersion"
+    fi
 
     # K8s version.
     local kubectl_version
-    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    kubectl_version="$(kubectl version -o json 2>/dev/null || true)"
     local serverGitVersion
-    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
+    serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion // empty')
     set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.

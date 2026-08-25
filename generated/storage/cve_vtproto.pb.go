@@ -294,6 +294,7 @@ func (m *ImageCVEV2) CloneVT() *ImageCVEV2 {
 	r.ImageIdV2 = m.ImageIdV2
 	r.FixAvailableTimestamp = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FixAvailableTimestamp).CloneVT())
 	r.Datasource = m.Datasource
+	r.Origin = m.Origin
 	if m.HasFixedBy != nil {
 		r.HasFixedBy = m.HasFixedBy.(interface {
 			CloneVT() isImageCVEV2_HasFixedBy
@@ -974,6 +975,9 @@ func (this *ImageCVEV2) EqualVT(that *ImageCVEV2) bool {
 		return false
 	}
 	if this.Datasource != that.Datasource {
+		return false
+	}
+	if this.Origin != that.Origin {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2193,6 +2197,13 @@ func (m *ImageCVEV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.Origin != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Origin))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x90
+	}
 	if len(m.Datasource) > 0 {
 		i -= len(m.Datasource)
 		copy(dAtA[i:], m.Datasource)
@@ -3333,6 +3344,9 @@ func (m *ImageCVEV2) SizeVT() (n int) {
 	l = len(m.Datasource)
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Origin != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.Origin))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6466,6 +6480,25 @@ func (m *ImageCVEV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Datasource = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Origin", wireType)
+			}
+			m.Origin = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Origin |= VulnOrigin(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10970,6 +11003,25 @@ func (m *ImageCVEV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Datasource = stringValue
 			iNdEx = postIndex
+		case 18:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Origin", wireType)
+			}
+			m.Origin = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Origin |= VulnOrigin(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -83,6 +83,7 @@ func TestEnricherV2Flow(t *testing.T) {
 		result                 EnrichmentResult
 		errorExpected          bool
 		expectedBaseImageCalls int // track Base Image logic
+		expectScanCall         *bool
 	}{
 		{
 			name: "nothing in the cache",
@@ -162,6 +163,36 @@ func TestEnricherV2Flow(t *testing.T) {
 				ScanResult:   ScanSucceeded,
 			},
 			expectedBaseImageCalls: 1,
+		},
+		{
+			name: "data in both caches but force refetch metadata only",
+			ctx: EnrichmentContext{
+				FetchOpt: ForceRefetchMetadataOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+			},
+			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
+				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
+				Digest: "sha",
+				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Scan:   &storage.ImageScan{}}),
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     false,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: false,
+				ScanResult:   ScanReused,
+			},
+			expectedBaseImageCalls: 1,
+			expectScanCall:         new(bool),
 		},
 		{
 			name: " data in both caches but force refetch use names",
@@ -424,6 +455,9 @@ func TestEnricherV2Flow(t *testing.T) {
 
 			assert.Equal(t, c.result, result)
 			assert.Equal(t, c.expectedBaseImageCalls, mockBaseGetter.callCount, "Mismatch in: %s", c.name)
+			if c.expectScanCall != nil {
+				assert.Equal(t, *c.expectScanCall, fsr.scanner.requestedScan, "scan call mismatch in: %s", c.name)
+			}
 		})
 	}
 }
@@ -1414,6 +1448,17 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	require.NotEmpty(t, img.GetBaseImageInfo(), "BaseImageInfo should have been populated")
 	assert.Equal(t, expectedName, img.GetBaseImageInfo()[0].GetBaseImageFullName())
 	assert.Equal(t, expectedDigest, img.GetBaseImageInfo()[0].GetBaseImageDigest())
+}
+
+func TestForceRefetchMetadataOnly_Predicates(t *testing.T) {
+	ctx := EnrichmentContext{FetchOpt: ForceRefetchMetadataOnly}
+
+	assert.False(t, ctx.FetchOnlyIfMetadataEmpty(),
+		"ForceRefetchMetadataOnly must force metadata refetch (same as ForceRefetch)")
+	assert.True(t, ctx.FetchOnlyIfScanEmpty(),
+		"ForceRefetchMetadataOnly must allow scan reuse from DB")
+	assert.False(t, ctx.FetchOpt.forceRefetchCachedValues(),
+		"ForceRefetchMetadataOnly must not force refetch of cached DB values")
 }
 
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {

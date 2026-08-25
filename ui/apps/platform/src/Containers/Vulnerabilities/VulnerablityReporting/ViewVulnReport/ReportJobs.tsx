@@ -47,7 +47,7 @@ import { runStates } from 'types/reportJob';
 import type { RunState } from 'types/reportJob';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 
-import ImageVulnerabilityReportView from '../../ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
+import ImageVulnerabilityReportView from '../../Reports/ImageVulnerabilityReports/View/ImageVulnerabilityReportView';
 import {
     attributesSeparateFromConfigForImageVulnerabilityReport,
     searchFilterConfigForImageVulnerabilityReport,

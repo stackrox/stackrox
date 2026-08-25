@@ -94,6 +94,10 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 				return confighash.NewPodTemplateAnnotationPostRenderer(kubeClient, obj, renderCache)
 			},
 		),
+		// Disable rollbacks here. Failed installs/upgrades leave the release in a failed state.
+		// Recovery happens by correcting the spec so subsequent reconcile attempts succeed.
+		// See also https://github.com/operator-framework/helm-operator-plugins/issues/421.
+		client.WithFailureRollbacks(false),
 	}
 
 	actionClientGetter, err := client.NewActionClientGetter(actionConfigGetter, opts...)

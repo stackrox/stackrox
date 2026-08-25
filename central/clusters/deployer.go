@@ -177,11 +177,10 @@ func getBaseMetaValues(c *storage.Cluster, imageFlavor *defaults.ImageFlavor, ch
 }
 
 func getFeatureFlagsAsManifestBundleEnv() map[string]string {
-	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
-	// wrongly enable Scanner V4 delegated scanning on secured clusters which are set up
-	// using manifest bundles. But delegated scanning is not supported for manifest bundle
-	// installed secured clusters.
-	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4")
+	// ROX_SCANNER_V4 would enable delegated scanning, which bundles do not support.
+	// ROX_VIRTUAL_MACHINES is already set from virtualMachines.enabled; a duplicate
+	// env name would make kubectl apply fail to patch an existing Sensor Deployment.
+	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4", "ROX_VIRTUAL_MACHINES")
 	featureFlagVals := make(map[string]string)
 	for _, feature := range features.Flags {
 		envVar := feature.EnvVar()

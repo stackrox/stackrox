@@ -220,16 +220,11 @@ export function flattenFilterValue<UndefinedFallback>(
  * @param options.perPage The number of items per page
  */
 export function getListQueryParams({
-    searchFilter,
+    searchFilter = {},
     sortOption,
     page,
     perPage,
-}: {
-    searchFilter: SearchFilter;
-    sortOption: ApiSortOption;
-    page: number;
-    perPage: number;
-}): string {
+}: SearchQueryOptions): string {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
