@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
@@ -186,5 +187,45 @@ func TestQueueSeq(t *testing.T) {
 
 		assert.ElementsMatch(t, expectedItems, items)
 
+	})
+
+	t.Run("Seq Empty Queue No Spin Loop", func(t *testing.T) {
+		// This test verifies the fix for the spin-loop bug where Seq() would
+		// continuously loop without blocking when the queue was empty.
+		// Under synctest's deterministic execution, a spin-loop causes timeouts.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			itemReceived := make(chan int, 1)
+			iterationStarted := make(chan struct{})
+
+			// Start Seq() iteration on empty queue
+			go func() {
+				close(iterationStarted)
+				for item := range q.Seq(ctx) {
+					itemReceived <- item
+					return
+				}
+			}()
+
+			<-iterationStarted
+
+			// Wait to ensure the goroutine is properly blocked (not spinning)
+			// In the buggy version, this would cause synctest to detect a spin-loop
+			synctest.Wait()
+
+			// Now add an item - it should be received
+			q.Push(42)
+			synctest.Wait()
+
+			select {
+			case item := <-itemReceived:
+				assert.Equal(t, 42, item)
+			default:
+				t.Fatal("expected to receive item from queue")
+			}
+		})
 	})
 }

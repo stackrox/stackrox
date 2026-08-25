@@ -105,13 +105,19 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 	return func(yield func(T) bool) {
 		for {
+			item, ok := q.pull()
+			if ok {
+				if !yield(item) {
+					return
+				}
+				continue
+			}
+
+			// Queue is empty, wait for signal
 			select {
 			case <-waitable.Done():
 				return
 			case <-q.notEmptySignal.Done():
-				if item, ok := q.pull(); ok && !yield(item) {
-					return
-				}
 			}
 		}
 	}
