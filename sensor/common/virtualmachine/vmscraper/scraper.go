@@ -466,13 +466,13 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
-		// Send failures are typically a transient Central connection issue, so
-		// retry on the short backoff rather than waiting a full poll interval.
 		outcome := scrapeRetryable
 		if errors.Is(err, errox.NotImplemented) {
 			// Central cannot consume VM index reports (missing capability).
 			outcome = scrapeNonRetryable
 		}
+		// Send failures are typically a transient Central connection issue, so
+		// retry on the short backoff rather than waiting a full poll interval.
 		next := s.scheduleAfterAttempt(key, outcome)
 		kind := "retryable"
 		if outcome == scrapeNonRetryable {
