@@ -97,7 +97,7 @@ COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
 RUN cd /assets/downloads/cli && \
-    find . -maxdepth 1 -type f -name 'roxctl-*' ! -name '*.tar.gz' | while read f; do \
+    find . -maxdepth 1 -type f -name 'roxctl-*' -executable | while read f; do \
         tar czf "${f#./}.tar.gz" "${f#./}"; \
     done
 
