@@ -42,6 +42,7 @@ _EO_KUTTL_HELP_
         junit_wrap deploy-previous-operator \
                    "Deploy previous version of the operator using helm chart." \
                    "${kuttl_help}" \
+                   "env" "ROX_PRODUCT_BRANDING=RHACS_BRANDING" \
                    "make" "-C" "operator" "deploy-previous-via-chart" TEST_NAMESPACE="rhacs-operator-system"
         info "Preparing current operator helm chart"
         junit_wrap prepare-operator-helm-chart \

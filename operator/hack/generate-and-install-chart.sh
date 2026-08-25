@@ -19,6 +19,4 @@ echo >&2 "Deploying operator version ${version} from a temporary checkout at ${d
 git worktree add "${dir}" "${version}"
 trap 'git worktree remove --force "${dir}"' EXIT
 
-cd "${dir}"
-export VERSION="${version}" ROX_PRODUCT_BRANDING=RHACS_BRANDING
-make -C operator/ chart deploy-via-chart TEST_NAMESPACE="rhacs-operator-system"
+make -C "${dir}/operator" chart deploy-via-chart VERSION="${version}"
