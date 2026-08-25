@@ -6,6 +6,7 @@ import {
 } from 'services/ReportsService.types';
 import type {
     ConfiguredReportSnapshot,
+    GenericVulnerabilityReportConfiguration,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportRequestViewBased,
@@ -251,6 +252,230 @@ export function downloadReportByJobId({
     return saveFile({
         method: 'get',
         url: `/api/reports/jobs/download?id=${reportJobId}`,
+        data: null,
+        timeout: 300000,
+        name: `${sanitizedFilename}.${fileExtension}`,
+    });
+}
+
+// Node Vulnerability Report functions (parallel to image vulnerability reports above)
+
+export function fetchNodeReportConfigurationsCount({
+    query,
+}: {
+    query: string;
+}): Promise<{ count: number }> {
+    const params = queryString.stringify(
+        {
+            query,
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<{ count: number }>(`/v2/reports/node/configuration-count?${params}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function fetchNodeReportConfigurations({
+    query,
+    page,
+    perPage,
+    sortOption,
+}: {
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+}): Promise<GenericVulnerabilityReportConfiguration[]> {
+    const params = queryString.stringify(
+        {
+            query,
+            pagination: getPaginationParams({ page, perPage, sortOption }),
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<{ reportConfigs: GenericVulnerabilityReportConfiguration[] }>(
+            `/v2/reports/node/configurations?${params}`
+        )
+        .then((response) => {
+            return response?.data?.reportConfigs ?? [];
+        });
+}
+
+export function fetchNodeReportConfiguration(
+    reportId: string
+): Promise<GenericVulnerabilityReportConfiguration> {
+    return axios
+        .get<GenericVulnerabilityReportConfiguration>(
+            `/v2/reports/node/configurations/${reportId}`
+        )
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function fetchNodeReportStatus(id: string): Promise<ReportStatus | null> {
+    return axios
+        .get<{ status: ReportStatus | null }>(`/v2/reports/node/jobs/${id}/status`)
+        .then((response) => {
+            return response.data?.status;
+        });
+}
+
+export function fetchNodeReportLastRunStatus(id: string): Promise<ReportStatus | null> {
+    return axios
+        .get<{ status: ReportStatus | null }>(`/v2/reports/node/last-status/${id}`)
+        .then((response) => {
+            return response.data?.status;
+        });
+}
+
+export function fetchNodeReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
+    const params = queryString.stringify(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
+    return axios
+        .get<ReportHistoryResponse>(
+            `/v2/reports/node/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
+        .then((response) => {
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
+        });
+}
+
+export function fetchNodeViewBasedReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
+    const params = buildNestedRawQueryParams(
+        { searchFilter, page, perPage, sortOption },
+        'reportParamQuery'
+    );
+
+    const endpoint = showMyHistory
+        ? '/v2/reports/node/view-based/my-history'
+        : '/v2/reports/node/view-based/history';
+
+    return axios.get<ReportHistoryResponse>(`${endpoint}?${params}`).then((response) => {
+        const snapshots = response.data?.reportSnapshots ?? [];
+        return snapshots.filter(isViewBasedReportSnapshot);
+    });
+}
+
+export function createNodeReportConfiguration(
+    report: GenericVulnerabilityReportConfiguration
+): Promise<GenericVulnerabilityReportConfiguration> {
+    return axios
+        .post<GenericVulnerabilityReportConfiguration>('/v2/reports/node/configurations', report)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function updateNodeReportConfiguration(
+    reportId: string,
+    report: GenericVulnerabilityReportConfiguration
+): Promise<GenericVulnerabilityReportConfiguration> {
+    return axios
+        .put<GenericVulnerabilityReportConfiguration>(
+            `/v2/reports/node/configurations/${reportId}`,
+            report
+        )
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function deleteNodeReportConfiguration(reportId: string): Promise<Empty> {
+    return axios
+        .delete<Empty>(`/v2/reports/node/configurations/${reportId}`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function runNodeReportRequest(
+    reportConfigId: string,
+    reportNotificationMethod: ReportNotificationMethod
+): Promise<RunReportResponse> {
+    return axios
+        .post<RunReportResponse>('/v2/reports/node/run', {
+            reportConfigId,
+            reportNotificationMethod,
+        })
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function downloadNodeReport(reportId: string) {
+    return axios.get<string>(`/v2/reports/node/jobs/${reportId}/download`).then((response) => {
+        return response.data;
+    });
+}
+
+export function deleteDownloadableNodeReport(reportId: string) {
+    return axios
+        .delete<Empty>(`/v2/reports/node/jobs/${reportId}/delete`)
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function runNodeViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'NODE_VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/node/view-based/run', requestBody)
+        .then((response) => response.data);
+}
+
+export function downloadNodeReportByJobId({
+    reportJobId,
+    filename,
+    fileExtension,
+}: {
+    reportJobId: string;
+    filename: string;
+    fileExtension: string;
+}): Promise<{ fileSizeBytes?: number }> {
+    const sanitizedFilename = sanitizeFilename(filename);
+
+    return saveFile({
+        method: 'get',
+        url: `/api/reports/node/jobs/download?id=${reportJobId}`,
         data: null,
         timeout: 300000,
         name: `${sanitizedFilename}.${fileExtension}`,

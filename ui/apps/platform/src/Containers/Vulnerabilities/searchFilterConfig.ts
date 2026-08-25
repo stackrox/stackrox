@@ -251,6 +251,17 @@ export const searchFilterConfigForImageVulnerabilityReport = [
     imageComponentSearchFilterConfig,
 ];
 
+export const searchFilterConfigForNodeVulnerabilityReport = [
+    {
+        ...nodeCVESearchFilterConfig,
+        attributes: nodeCVESearchFilterConfig.attributes.filter(
+            ({ searchTerm }) => searchTerm !== 'CVE Created Time'
+        ),
+    },
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+];
+
 export const searchFilterConfigForWorkloadVulnerabilityResultsAndViewBasedReport = [
     clusterSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -293,5 +304,11 @@ export const attributesSeparateFromConfigForImageVulnerabilityReport = [
     attributeForPlatformComponent,
     attributeForVulnerabilityState,
     attributeForSeverityInBackendAndViewBasedReport, // Formerly under Vulnerability parameters
+    attributeForFixableInBackendAndViewBasedReport,
+];
+
+export const attributesSeparateFromConfigForNodeVulnerabilityReport = [
+    attributeForVulnerabilityState,
+    attributeForSeverityInBackendAndViewBasedReport,
     attributeForFixableInBackendAndViewBasedReport,
 ];
