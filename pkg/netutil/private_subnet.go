@@ -2,7 +2,6 @@ package netutil
 
 import (
 	"net"
-	"slices"
 )
 
 var (
@@ -47,10 +46,10 @@ var (
 
 // GetPrivateSubnets returns a slice of IPv4 and IPv6 addresses considered as private ranges including localhost addresses.
 func GetPrivateSubnets() []*net.IPNet {
-	return slices.Concat(
-		IPv4PrivateNetworks,
-		[]*net.IPNet{IPv4LocalHost},
-		IPv6PrivateNetworks,
-		[]*net.IPNet{IPv6LocalHost, IPv4MappedIPv6Loopback},
-	)
+	result := make([]*net.IPNet, 0, len(IPv4PrivateNetworks)+len(IPv6PrivateNetworks)+3)
+	result = append(result, IPv4PrivateNetworks...)
+	result = append(result, IPv4LocalHost)
+	result = append(result, IPv6PrivateNetworks...)
+	result = append(result, IPv6LocalHost, IPv4MappedIPv6Loopback)
+	return result
 }
