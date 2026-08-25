@@ -445,7 +445,7 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 
 .PHONY: deploy-via-chart
 deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
-	helm install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
+	helm upgrade --install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
 		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
 		rhacs-operator ./dist/chart
 
@@ -456,13 +456,6 @@ upgrade-via-olm: kuttl
 .PHONY: upgrade-dirty-tag-via-olm
 upgrade-dirty-tag-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
-
-.PHONY: upgrade-via-chart
-upgrade-via-chart:
-# TODO(ROX-33128): drop --take-ownership (and possibly replace with deploy-via-chart) after 4.11 release
-	helm install --take-ownership --namespace $(TEST_NAMESPACE) --wait \
-		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
-		rhacs-operator ./dist/chart
 
 ##@ Bundle and Index build
 
