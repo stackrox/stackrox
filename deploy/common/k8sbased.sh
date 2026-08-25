@@ -326,6 +326,8 @@ function launch_central {
         fi
 
         helm dependency update "${COMMON_DIR}/../charts/monitoring"
+        # Set default PAGERDUTY_INTEGRATION_KEY if not already set to prevent envsubst from creating empty value
+        export PAGERDUTY_INTEGRATION_KEY="${PAGERDUTY_INTEGRATION_KEY:-dummy-key-for-monitoring}"
         envsubst < "${COMMON_DIR}/../charts/monitoring/values.yaml" > "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
         helm upgrade -n "${central_namespace}" --install --create-namespace stackrox-monitoring "${COMMON_DIR}/../charts/monitoring" --values "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml" "${helm_args[@]}"
         rm "${COMMON_DIR}/../charts/monitoring/values_substituted.yaml"
