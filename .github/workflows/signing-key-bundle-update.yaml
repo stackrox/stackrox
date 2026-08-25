@@ -1,0 +1,58 @@
+name: Red Hat signing key bundle update
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - pkg/signatures/bundle.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-upload:
+    if: ${{ github.repository_owner == 'stackrox' }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        persist-credentials: false
+
+    - name: Validate key bundle
+      run: .github/workflows/scripts/validate-signing-key-bundle.sh pkg/signatures/bundle.json
+
+    - name: Authenticate with Google Cloud
+      if: github.ref == 'refs/heads/master'
+      uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      if: github.ref == 'refs/heads/master'
+      uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
+
+    - name: Upload key bundle to GCS
+      if: github.ref == 'refs/heads/master'
+      run: |
+        gsutil -h "Content-Type: application/json" \
+          cp pkg/signatures/bundle.json \
+          gs://definitions.stackrox.io/signing-keys/bundle.json
+
+  send-notification:
+    needs:
+    - validate-and-upload
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+    - name: Send Slack notification on failure
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"<!subteam^S04S96AAVND|acs-scanner-primary> <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|Workflow ${{ github.workflow }}> failed: Red Hat signing key bundle update\"}" \
+          ${{ secrets.SLACK_ONCALL_SCANNER_WEBHOOK }}

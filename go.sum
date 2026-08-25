@@ -90,8 +90,8 @@ github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24/go.mod h
 github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230919221257-8b5d3ce2d11d h1:zjqpY4C7H15HjRPEenkS4SAn3Jy2eRRjkjZbGR30TOg=
 github.com/AdamKorcz/go-fuzz-headers-1 v0.0.0-20230919221257-8b5d3ce2d11d/go.mod h1:XNqJ7hv2kY++g8XEHREpi+JqZo3+0l+CH2egBVN4yqM=
 github.com/Azure/azure-sdk-for-go v68.0.0+incompatible h1:fcYLmCpyNYRnvJbPerq7U0hS+6+I79yEDJBqVNcqUzU=
-github.com/Azure/azure-sdk-for-go-extensions v0.6.0 h1:LzJ4iAk3ZBZ0Y27uUm66XBQntbgMr3QXn2KIDb4Mx04=
-github.com/Azure/azure-sdk-for-go-extensions v0.6.0/go.mod h1:f/wRrqvvh197V5r4jGADV7528UdO/zfL+/Ud92BMSag=
+github.com/Azure/azure-sdk-for-go-extensions v0.7.0 h1:ko7jxarxFmfm3OAtIkKcnC2yK1H7a7wB7As38huaa4Y=
+github.com/Azure/azure-sdk-for-go-extensions v0.7.0/go.mod h1:f/wRrqvvh197V5r4jGADV7528UdO/zfL+/Ud92BMSag=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0 h1:4gRPBpN1f6xt88yi4WR26m7XaD9OlWtVT6bWPdGUIok=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0/go.mod h1:G7QVLxw1j1JVyrO1MA95S8m8HStaaleDZYTcfGgjB2o=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0 h1:CU4+EJeJi3TKYWEcYuSdWsjzw0nVsK/H0MSQOiPcymU=
@@ -183,8 +183,8 @@ github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpH
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/aclements/go-perfevent v0.0.0-20240301234650-f7843625020f h1:JjxwchlOepwsUWcQwD2mLUAGE9aCp0/ehy6yCHFBOvo=
 github.com/aclements/go-perfevent v0.0.0-20240301234650-f7843625020f/go.mod h1:tMDTce/yLLN/SK8gMOxQfnyeMeCg8KGzp0D1cbECEeo=
-github.com/adhocore/gronx v1.20.1 h1:knBhN6BrPz5zUI/S9xKAkXVHdojISoF0HyC5NuVrtG4=
-github.com/adhocore/gronx v1.20.1/go.mod h1:7oUY1WAU8rEJWmAxXR2DN0JaO4gi9khSgKjiRypqteg=
+github.com/adhocore/gronx v1.20.3 h1:DjvHxCqyz9WDzpodceOU814Z4GNpTvSpZs7oeX4ToKU=
+github.com/adhocore/gronx v1.20.3/go.mod h1:7oUY1WAU8rEJWmAxXR2DN0JaO4gi9khSgKjiRypqteg=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -257,8 +257,8 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc v1.38.4 h1:AsbZcJAQPRmHDJG8K1N0pof/
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.38.4/go.mod h1:6imqztH0//t0mKbl6yWl7swSEl7F/w32oAmqB3vP1ag=
 github.com/aws/aws-sdk-go-v2/service/sts v1.45.4 h1:w/AryDYMjSUANSQ2uoZxJovUsMTwWJNTv3IMex30Y+4=
 github.com/aws/aws-sdk-go-v2/service/sts v1.45.4/go.mod h1:WeBiAa67azG7Su9Vf+ChGDBLiAozJCXzdjXiPBUwtbc=
-github.com/aws/smithy-go v1.27.7 h1:Zgj5z4LfcDYoQIVk+n/yGdTkP/2y6ZT5vYxe0fp7bqE=
-github.com/aws/smithy-go v1.27.7/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
+github.com/aws/smithy-go v1.27.8 h1:FR0dxZfIlV7Z8eh2iHfIofdunw382XsDV3Mxt9nUvRY=
+github.com/aws/smithy-go v1.27.8/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
 github.com/aymerick/douceur v0.2.0 h1:Mv+mAeH1Q+n9Fr+oyamOlAkUNPWPlA8PPGR0QAaYuPk=
 github.com/aymerick/douceur v0.2.0/go.mod h1:wlT5vV2O3h55X9m7iVYN0TBM0NH/MmbLnd30/FjWUq4=
 github.com/beevik/etree v1.7.0 h1:xjBk9O4p4x7D1YajePjfLzdaFC4/uYUENA7P0pv6gXA=
@@ -375,8 +375,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/depcheck-test/depcheck-test v0.0.0-20220607135614-199033aaa936 h1:foGzavPWwtoyBvjWyKJYDYsyzy+23iBV7NKTwdk+LRY=
-github.com/depcheck-test/depcheck-test v0.0.0-20220607135614-199033aaa936/go.mod h1:ttKPnOepYt4LLzD+loXQ1rT6EmpyIYHro7TAJuIIlHo=
 github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1/go.mod h1:+hnT3ywWDTAFrW5aE+u2Sa/wT555ZqwoCS+pk3p6ry4=
 github.com/digitorus/pkcs7 v0.0.0-20230713084857-e76b763bdc49/go.mod h1:SKVExuS+vpu2l9IoOc0RwqE7NYnb0JlcFHFnEJkVDzc=
 github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 h1:ge14PCmCvPjpMQMIAH7uKg0lrtNSOdpYsRXlwk3QbaE=
@@ -1326,6 +1324,8 @@ github.com/stackrox/yaml/v3 v3.0.0/go.mod h1:360StwOazy3cplMWHzBAA9y6InmKu/v7WB0
 github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404 h1:j2qhsZjUBpN4yaqEGkNrATdw3fE3vgMrVOhd44cUJDY=
 github.com/stackrox/zap v1.18.2-0.20240314134248-5f932edd0404/go.mod h1:xg/QME4nWcxGxrpdeYfq7UvYrLh66cuVKdrbD1XF/NI=
 github.com/stoewer/go-strcase v1.2.0/go.mod h1:IBiWB2sKIp3wVVQ3Y035++gc+knqhUQag1KpM8ahLw8=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09 h1:vM6k7Atzuhygf/rTytmRdTEs3HdnIuhkpdKyVrgHX7Q=
+github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09/go.mod h1:6V51MeHkiYrmQVSFAhc4rfgZk2/AxtZMNSgNN8DjvRQ=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=

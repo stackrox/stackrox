@@ -23,6 +23,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type RepoCPEMappingUpdatePath int32
+
+const (
+	RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED RepoCPEMappingUpdatePath = 0
+	RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR      RepoCPEMappingUpdatePath = 1
+	RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_URL         RepoCPEMappingUpdatePath = 2
+)
+
+// Enum value maps for RepoCPEMappingUpdatePath.
+var (
+	RepoCPEMappingUpdatePath_name = map[int32]string{
+		0: "REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED",
+		1: "REPO_CPE_MAPPING_UPDATE_PATH_SENSOR",
+		2: "REPO_CPE_MAPPING_UPDATE_PATH_URL",
+	}
+	RepoCPEMappingUpdatePath_value = map[string]int32{
+		"REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED": 0,
+		"REPO_CPE_MAPPING_UPDATE_PATH_SENSOR":      1,
+		"REPO_CPE_MAPPING_UPDATE_PATH_URL":         2,
+	}
+)
+
+func (x RepoCPEMappingUpdatePath) Enum() *RepoCPEMappingUpdatePath {
+	p := new(RepoCPEMappingUpdatePath)
+	*p = x
+	return p
+}
+
+func (x RepoCPEMappingUpdatePath) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RepoCPEMappingUpdatePath) Descriptor() protoreflect.EnumDescriptor {
+	return file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[0].Descriptor()
+}
+
+func (RepoCPEMappingUpdatePath) Type() protoreflect.EnumType {
+	return &file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[0]
+}
+
+func (x RepoCPEMappingUpdatePath) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RepoCPEMappingUpdatePath.Descriptor instead.
+func (RepoCPEMappingUpdatePath) EnumDescriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{0}
+}
+
 type ErrorCode int32
 
 const (
@@ -41,6 +90,10 @@ const (
 	ErrorCode_ERROR_CODE_REQUEST_TOO_LARGE ErrorCode = 5
 	// Agent is already serving another connection; retry after a backoff.
 	ErrorCode_ERROR_CODE_BUSY ErrorCode = 6
+	// No usable mapping yet; guest disk has not been scanned.
+	ErrorCode_ERROR_CODE_MAPPING_REQUIRED ErrorCode = 7
+	// SyncRepoCPEMapping rejected because updater is not Sensor-managed.
+	ErrorCode_ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED ErrorCode = 8
 )
 
 // Enum value maps for ErrorCode.
@@ -53,15 +106,19 @@ var (
 		4: "ERROR_CODE_MALFORMED_REQUEST",
 		5: "ERROR_CODE_REQUEST_TOO_LARGE",
 		6: "ERROR_CODE_BUSY",
+		7: "ERROR_CODE_MAPPING_REQUIRED",
+		8: "ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED",
 	}
 	ErrorCode_value = map[string]int32{
-		"ERROR_CODE_UNSPECIFIED":       0,
-		"ERROR_CODE_UNKNOWN_METHOD":    1,
-		"ERROR_CODE_NOT_READY":         2,
-		"ERROR_CODE_INTERNAL":          3,
-		"ERROR_CODE_MALFORMED_REQUEST": 4,
-		"ERROR_CODE_REQUEST_TOO_LARGE": 5,
-		"ERROR_CODE_BUSY":              6,
+		"ERROR_CODE_UNSPECIFIED":                0,
+		"ERROR_CODE_UNKNOWN_METHOD":             1,
+		"ERROR_CODE_NOT_READY":                  2,
+		"ERROR_CODE_INTERNAL":                   3,
+		"ERROR_CODE_MALFORMED_REQUEST":          4,
+		"ERROR_CODE_REQUEST_TOO_LARGE":          5,
+		"ERROR_CODE_BUSY":                       6,
+		"ERROR_CODE_MAPPING_REQUIRED":           7,
+		"ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED": 8,
 	}
 )
 
@@ -76,11 +133,11 @@ func (x ErrorCode) String() string {
 }
 
 func (ErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[0].Descriptor()
+	return file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[1].Descriptor()
 }
 
 func (ErrorCode) Type() protoreflect.EnumType {
-	return &file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[0]
+	return &file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes[1]
 }
 
 func (x ErrorCode) Number() protoreflect.EnumNumber {
@@ -89,7 +146,7 @@ func (x ErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ErrorCode.Descriptor instead.
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{0}
+	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{1}
 }
 
 // VMServiceRequest is sent by Sensor to roxagent over a length-prefixed VSOCK frame.
@@ -100,6 +157,7 @@ type VMServiceRequest struct {
 	// Types that are valid to be assigned to Method:
 	//
 	//	*VMServiceRequest_GetReport
+	//	*VMServiceRequest_SyncRepoCpeMapping
 	Method        isVMServiceRequest_Method `protobuf_oneof:"method"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -158,6 +216,15 @@ func (x *VMServiceRequest) GetGetReport() *GetReportRequest {
 	return nil
 }
 
+func (x *VMServiceRequest) GetSyncRepoCpeMapping() *SyncRepoCPEMappingRequest {
+	if x != nil {
+		if x, ok := x.Method.(*VMServiceRequest_SyncRepoCpeMapping); ok {
+			return x.SyncRepoCpeMapping
+		}
+	}
+	return nil
+}
+
 type isVMServiceRequest_Method interface {
 	isVMServiceRequest_Method()
 }
@@ -166,7 +233,13 @@ type VMServiceRequest_GetReport struct {
 	GetReport *GetReportRequest `protobuf:"bytes,2,opt,name=get_report,json=getReport,proto3,oneof"`
 }
 
+type VMServiceRequest_SyncRepoCpeMapping struct {
+	SyncRepoCpeMapping *SyncRepoCPEMappingRequest `protobuf:"bytes,3,opt,name=sync_repo_cpe_mapping,json=syncRepoCpeMapping,proto3,oneof"`
+}
+
 func (*VMServiceRequest_GetReport) isVMServiceRequest_Method() {}
+
+func (*VMServiceRequest_SyncRepoCpeMapping) isVMServiceRequest_Method() {}
 
 // VMServiceResponse is returned by roxagent. Contains either a successful result
 // or an ErrorResponse, never both.
@@ -177,6 +250,7 @@ type VMServiceResponse struct {
 	//
 	//	*VMServiceResponse_GetReport
 	//	*VMServiceResponse_Error
+	//	*VMServiceResponse_SyncRepoCpeMapping
 	Result        isVMServiceResponse_Result `protobuf_oneof:"result"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -244,6 +318,15 @@ func (x *VMServiceResponse) GetError() *ErrorResponse {
 	return nil
 }
 
+func (x *VMServiceResponse) GetSyncRepoCpeMapping() *SyncRepoCPEMappingResponse {
+	if x != nil {
+		if x, ok := x.Result.(*VMServiceResponse_SyncRepoCpeMapping); ok {
+			return x.SyncRepoCpeMapping
+		}
+	}
+	return nil
+}
+
 type isVMServiceResponse_Result interface {
 	isVMServiceResponse_Result()
 }
@@ -256,9 +339,15 @@ type VMServiceResponse_Error struct {
 	Error *ErrorResponse `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
 }
 
+type VMServiceResponse_SyncRepoCpeMapping struct {
+	SyncRepoCpeMapping *SyncRepoCPEMappingResponse `protobuf:"bytes,4,opt,name=sync_repo_cpe_mapping,json=syncRepoCpeMapping,proto3,oneof"`
+}
+
 func (*VMServiceResponse_GetReport) isVMServiceResponse_Result() {}
 
 func (*VMServiceResponse_Error) isVMServiceResponse_Result() {}
+
+func (*VMServiceResponse_SyncRepoCpeMapping) isVMServiceResponse_Result() {}
 
 type RequestMeta struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -346,9 +435,14 @@ type ResponseMeta struct {
 	// false-negative dedup when a restarted agent's reset generation coincides
 	// with Sensor's cached value for that VM. Zero means the agent predates this
 	// field; Sensor falls back to generation-only comparison in that case.
-	Epoch         uint32 `protobuf:"varint,6,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Epoch uint32 `protobuf:"varint,6,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// XXH64 hex of active mapping; empty string means none. optional so absence
+	// means an older agent that does not report mapping metadata.
+	RepoCpeMappingHash *string `protobuf:"bytes,7,opt,name=repo_cpe_mapping_hash,json=repoCpeMappingHash,proto3,oneof" json:"repo_cpe_mapping_hash,omitempty"`
+	// SENSOR or URL only; UNSPECIFIED means Sensor must not sync.
+	RepoCpeMappingUpdatePath *RepoCPEMappingUpdatePath `protobuf:"varint,8,opt,name=repo_cpe_mapping_update_path,json=repoCpeMappingUpdatePath,proto3,enum=virtualmachine.v1.RepoCPEMappingUpdatePath,oneof" json:"repo_cpe_mapping_update_path,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ResponseMeta) Reset() {
@@ -421,6 +515,20 @@ func (x *ResponseMeta) GetEpoch() uint32 {
 		return x.Epoch
 	}
 	return 0
+}
+
+func (x *ResponseMeta) GetRepoCpeMappingHash() string {
+	if x != nil && x.RepoCpeMappingHash != nil {
+		return *x.RepoCpeMappingHash
+	}
+	return ""
+}
+
+func (x *ResponseMeta) GetRepoCpeMappingUpdatePath() RepoCPEMappingUpdatePath {
+	if x != nil && x.RepoCpeMappingUpdatePath != nil {
+		return *x.RepoCpeMappingUpdatePath
+	}
+	return RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED
 }
 
 type GetReportRequest struct {
@@ -540,6 +648,95 @@ func (x *GetReportResponse) GetUnchanged() bool {
 	return false
 }
 
+type SyncRepoCPEMappingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mapping       []byte                 `protobuf:"bytes,1,opt,name=mapping,proto3" json:"mapping,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncRepoCPEMappingRequest) Reset() {
+	*x = SyncRepoCPEMappingRequest{}
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncRepoCPEMappingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncRepoCPEMappingRequest) ProtoMessage() {}
+
+func (x *SyncRepoCPEMappingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncRepoCPEMappingRequest.ProtoReflect.Descriptor instead.
+func (*SyncRepoCPEMappingRequest) Descriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *SyncRepoCPEMappingRequest) GetMapping() []byte {
+	if x != nil {
+		return x.Mapping
+	}
+	return nil
+}
+
+type SyncRepoCPEMappingResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// True when the agent accepted new content (applied or staged).
+	Updated       bool `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SyncRepoCPEMappingResponse) Reset() {
+	*x = SyncRepoCPEMappingResponse{}
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SyncRepoCPEMappingResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SyncRepoCPEMappingResponse) ProtoMessage() {}
+
+func (x *SyncRepoCPEMappingResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SyncRepoCPEMappingResponse.ProtoReflect.Descriptor instead.
+func (*SyncRepoCPEMappingResponse) Descriptor() ([]byte, []int) {
+	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *SyncRepoCPEMappingResponse) GetUpdated() bool {
+	if x != nil {
+		return x.Updated
+	}
+	return false
+}
+
 type ErrorResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Code  ErrorCode              `protobuf:"varint,1,opt,name=code,proto3,enum=virtualmachine.v1.ErrorCode" json:"code,omitempty"`
@@ -553,7 +750,7 @@ type ErrorResponse struct {
 
 func (x *ErrorResponse) Reset() {
 	*x = ErrorResponse{}
-	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[6]
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +762,7 @@ func (x *ErrorResponse) String() string {
 func (*ErrorResponse) ProtoMessage() {}
 
 func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[6]
+	mi := &file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -578,7 +775,7 @@ func (x *ErrorResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ErrorResponse.ProtoReflect.Descriptor instead.
 func (*ErrorResponse) Descriptor() ([]byte, []int) {
-	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{6}
+	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ErrorResponse) GetCode() ErrorCode {
@@ -606,17 +803,19 @@ var File_internalapi_virtualmachine_v1_vm_service_proto protoreflect.FileDescrip
 
 const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
-	".internalapi/virtualmachine/v1/vm_service.proto\x12\x11virtualmachine.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a)internalapi/scanner/v4/index_report.proto\"\x96\x01\n" +
+	".internalapi/virtualmachine/v1/vm_service.proto\x12\x11virtualmachine.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a)internalapi/scanner/v4/index_report.proto\"\xf9\x01\n" +
 	"\x10VMServiceRequest\x122\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1e.virtualmachine.v1.RequestMetaR\x04meta\x12D\n" +
 	"\n" +
-	"get_report\x18\x02 \x01(\v2#.virtualmachine.v1.GetReportRequestH\x00R\tgetReportB\b\n" +
-	"\x06method\"\xd3\x01\n" +
+	"get_report\x18\x02 \x01(\v2#.virtualmachine.v1.GetReportRequestH\x00R\tgetReport\x12a\n" +
+	"\x15sync_repo_cpe_mapping\x18\x03 \x01(\v2,.virtualmachine.v1.SyncRepoCPEMappingRequestH\x00R\x12syncRepoCpeMappingB\b\n" +
+	"\x06method\"\xb7\x02\n" +
 	"\x11VMServiceResponse\x123\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1f.virtualmachine.v1.ResponseMetaR\x04meta\x12E\n" +
 	"\n" +
 	"get_report\x18\x02 \x01(\v2$.virtualmachine.v1.GetReportResponseH\x00R\tgetReport\x128\n" +
-	"\x05error\x18\x03 \x01(\v2 .virtualmachine.v1.ErrorResponseH\x00R\x05errorB\b\n" +
+	"\x05error\x18\x03 \x01(\v2 .virtualmachine.v1.ErrorResponseH\x00R\x05error\x12b\n" +
+	"\x15sync_repo_cpe_mapping\x18\x04 \x01(\v2-.virtualmachine.v1.SyncRepoCPEMappingResponseH\x00R\x12syncRepoCpeMappingB\b\n" +
 	"\x06result\"\xcb\x01\n" +
 	"\vRequestMeta\x12\x1d\n" +
 	"\n" +
@@ -626,32 +825,44 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd0\x04\n" +
 	"\fResponseMeta\x12#\n" +
 	"\ragent_version\x18\x01 \x01(\tR\fagentVersion\x12J\n" +
 	"\x13report_generated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11reportGeneratedAt\x12+\n" +
 	"\x11report_generation\x18\x03 \x01(\rR\x10reportGeneration\x12+\n" +
 	"\x11supported_methods\x18\x04 \x03(\tR\x10supportedMethods\x12@\n" +
 	"\x05facts\x18\x05 \x03(\v2*.virtualmachine.v1.ResponseMeta.FactsEntryR\x05facts\x12\x14\n" +
-	"\x05epoch\x18\x06 \x01(\rR\x05epoch\x1a8\n" +
+	"\x05epoch\x18\x06 \x01(\rR\x05epoch\x126\n" +
+	"\x15repo_cpe_mapping_hash\x18\a \x01(\tH\x00R\x12repoCpeMappingHash\x88\x01\x01\x12p\n" +
+	"\x1crepo_cpe_mapping_update_path\x18\b \x01(\x0e2+.virtualmachine.v1.RepoCPEMappingUpdatePathH\x01R\x18repoCpeMappingUpdatePath\x88\x01\x01\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"g\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x18\n" +
+	"\x16_repo_cpe_mapping_hashB\x1f\n" +
+	"\x1d_repo_cpe_mapping_update_path\"g\n" +
 	"\x10GetReportRequest\x122\n" +
 	"\x15last_known_generation\x18\x01 \x01(\rR\x13lastKnownGeneration\x12\x1f\n" +
 	"\vknown_epoch\x18\x02 \x01(\rR\n" +
 	"knownEpoch\"m\n" +
 	"\x11GetReportResponse\x12:\n" +
 	"\findex_report\x18\x01 \x01(\v2\x17.scanner.v4.IndexReportR\vindexReport\x12\x1c\n" +
-	"\tunchanged\x18\x02 \x01(\bR\tunchanged\"\xe0\x01\n" +
+	"\tunchanged\x18\x02 \x01(\bR\tunchanged\"5\n" +
+	"\x19SyncRepoCPEMappingRequest\x12\x18\n" +
+	"\amapping\x18\x01 \x01(\fR\amapping\"6\n" +
+	"\x1aSyncRepoCPEMappingResponse\x12\x18\n" +
+	"\aupdated\x18\x01 \x01(\bR\aupdated\"\xe0\x01\n" +
 	"\rErrorResponse\x120\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x1c.virtualmachine.v1.ErrorCodeR\x04code\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12G\n" +
 	"\adetails\x18\x03 \x03(\v2-.virtualmachine.v1.ErrorResponse.DetailsEntryR\adetails\x1a:\n" +
 	"\fDetailsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\xd2\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\x97\x01\n" +
+	"\x18RepoCPEMappingUpdatePath\x12,\n" +
+	"(REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED\x10\x00\x12'\n" +
+	"#REPO_CPE_MAPPING_UPDATE_PATH_SENSOR\x10\x01\x12$\n" +
+	" REPO_CPE_MAPPING_UPDATE_PATH_URL\x10\x02*\x9e\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1d\n" +
 	"\x19ERROR_CODE_UNKNOWN_METHOD\x10\x01\x12\x18\n" +
@@ -659,7 +870,9 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\x13ERROR_CODE_INTERNAL\x10\x03\x12 \n" +
 	"\x1cERROR_CODE_MALFORMED_REQUEST\x10\x04\x12 \n" +
 	"\x1cERROR_CODE_REQUEST_TOO_LARGE\x10\x05\x12\x13\n" +
-	"\x0fERROR_CODE_BUSY\x10\x06B$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
+	"\x0fERROR_CODE_BUSY\x10\x06\x12\x1f\n" +
+	"\x1bERROR_CODE_MAPPING_REQUIRED\x10\a\x12)\n" +
+	"%ERROR_CODE_MAPPING_NOT_SENSOR_MANAGED\x10\bB$Z\"./internalapi/virtualmachine/v1;v1b\x06proto3"
 
 var (
 	file_internalapi_virtualmachine_v1_vm_service_proto_rawDescOnce sync.Once
@@ -673,40 +886,46 @@ func file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP() []byte {
 	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescData
 }
 
-var file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_internalapi_virtualmachine_v1_vm_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_internalapi_virtualmachine_v1_vm_service_proto_goTypes = []any{
-	(ErrorCode)(0),                // 0: virtualmachine.v1.ErrorCode
-	(*VMServiceRequest)(nil),      // 1: virtualmachine.v1.VMServiceRequest
-	(*VMServiceResponse)(nil),     // 2: virtualmachine.v1.VMServiceResponse
-	(*RequestMeta)(nil),           // 3: virtualmachine.v1.RequestMeta
-	(*ResponseMeta)(nil),          // 4: virtualmachine.v1.ResponseMeta
-	(*GetReportRequest)(nil),      // 5: virtualmachine.v1.GetReportRequest
-	(*GetReportResponse)(nil),     // 6: virtualmachine.v1.GetReportResponse
-	(*ErrorResponse)(nil),         // 7: virtualmachine.v1.ErrorResponse
-	nil,                           // 8: virtualmachine.v1.RequestMeta.FactsEntry
-	nil,                           // 9: virtualmachine.v1.ResponseMeta.FactsEntry
-	nil,                           // 10: virtualmachine.v1.ErrorResponse.DetailsEntry
-	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
-	(*v4.IndexReport)(nil),        // 12: scanner.v4.IndexReport
+	(RepoCPEMappingUpdatePath)(0),      // 0: virtualmachine.v1.RepoCPEMappingUpdatePath
+	(ErrorCode)(0),                     // 1: virtualmachine.v1.ErrorCode
+	(*VMServiceRequest)(nil),           // 2: virtualmachine.v1.VMServiceRequest
+	(*VMServiceResponse)(nil),          // 3: virtualmachine.v1.VMServiceResponse
+	(*RequestMeta)(nil),                // 4: virtualmachine.v1.RequestMeta
+	(*ResponseMeta)(nil),               // 5: virtualmachine.v1.ResponseMeta
+	(*GetReportRequest)(nil),           // 6: virtualmachine.v1.GetReportRequest
+	(*GetReportResponse)(nil),          // 7: virtualmachine.v1.GetReportResponse
+	(*SyncRepoCPEMappingRequest)(nil),  // 8: virtualmachine.v1.SyncRepoCPEMappingRequest
+	(*SyncRepoCPEMappingResponse)(nil), // 9: virtualmachine.v1.SyncRepoCPEMappingResponse
+	(*ErrorResponse)(nil),              // 10: virtualmachine.v1.ErrorResponse
+	nil,                                // 11: virtualmachine.v1.RequestMeta.FactsEntry
+	nil,                                // 12: virtualmachine.v1.ResponseMeta.FactsEntry
+	nil,                                // 13: virtualmachine.v1.ErrorResponse.DetailsEntry
+	(*timestamppb.Timestamp)(nil),      // 14: google.protobuf.Timestamp
+	(*v4.IndexReport)(nil),             // 15: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_vm_service_proto_depIdxs = []int32{
-	3,  // 0: virtualmachine.v1.VMServiceRequest.meta:type_name -> virtualmachine.v1.RequestMeta
-	5,  // 1: virtualmachine.v1.VMServiceRequest.get_report:type_name -> virtualmachine.v1.GetReportRequest
-	4,  // 2: virtualmachine.v1.VMServiceResponse.meta:type_name -> virtualmachine.v1.ResponseMeta
-	6,  // 3: virtualmachine.v1.VMServiceResponse.get_report:type_name -> virtualmachine.v1.GetReportResponse
-	7,  // 4: virtualmachine.v1.VMServiceResponse.error:type_name -> virtualmachine.v1.ErrorResponse
-	8,  // 5: virtualmachine.v1.RequestMeta.facts:type_name -> virtualmachine.v1.RequestMeta.FactsEntry
-	11, // 6: virtualmachine.v1.ResponseMeta.report_generated_at:type_name -> google.protobuf.Timestamp
-	9,  // 7: virtualmachine.v1.ResponseMeta.facts:type_name -> virtualmachine.v1.ResponseMeta.FactsEntry
-	12, // 8: virtualmachine.v1.GetReportResponse.index_report:type_name -> scanner.v4.IndexReport
-	0,  // 9: virtualmachine.v1.ErrorResponse.code:type_name -> virtualmachine.v1.ErrorCode
-	10, // 10: virtualmachine.v1.ErrorResponse.details:type_name -> virtualmachine.v1.ErrorResponse.DetailsEntry
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	4,  // 0: virtualmachine.v1.VMServiceRequest.meta:type_name -> virtualmachine.v1.RequestMeta
+	6,  // 1: virtualmachine.v1.VMServiceRequest.get_report:type_name -> virtualmachine.v1.GetReportRequest
+	8,  // 2: virtualmachine.v1.VMServiceRequest.sync_repo_cpe_mapping:type_name -> virtualmachine.v1.SyncRepoCPEMappingRequest
+	5,  // 3: virtualmachine.v1.VMServiceResponse.meta:type_name -> virtualmachine.v1.ResponseMeta
+	7,  // 4: virtualmachine.v1.VMServiceResponse.get_report:type_name -> virtualmachine.v1.GetReportResponse
+	10, // 5: virtualmachine.v1.VMServiceResponse.error:type_name -> virtualmachine.v1.ErrorResponse
+	9,  // 6: virtualmachine.v1.VMServiceResponse.sync_repo_cpe_mapping:type_name -> virtualmachine.v1.SyncRepoCPEMappingResponse
+	11, // 7: virtualmachine.v1.RequestMeta.facts:type_name -> virtualmachine.v1.RequestMeta.FactsEntry
+	14, // 8: virtualmachine.v1.ResponseMeta.report_generated_at:type_name -> google.protobuf.Timestamp
+	12, // 9: virtualmachine.v1.ResponseMeta.facts:type_name -> virtualmachine.v1.ResponseMeta.FactsEntry
+	0,  // 10: virtualmachine.v1.ResponseMeta.repo_cpe_mapping_update_path:type_name -> virtualmachine.v1.RepoCPEMappingUpdatePath
+	15, // 11: virtualmachine.v1.GetReportResponse.index_report:type_name -> scanner.v4.IndexReport
+	1,  // 12: virtualmachine.v1.ErrorResponse.code:type_name -> virtualmachine.v1.ErrorCode
+	13, // 13: virtualmachine.v1.ErrorResponse.details:type_name -> virtualmachine.v1.ErrorResponse.DetailsEntry
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_vm_service_proto_init() }
@@ -716,18 +935,21 @@ func file_internalapi_virtualmachine_v1_vm_service_proto_init() {
 	}
 	file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[0].OneofWrappers = []any{
 		(*VMServiceRequest_GetReport)(nil),
+		(*VMServiceRequest_SyncRepoCpeMapping)(nil),
 	}
 	file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[1].OneofWrappers = []any{
 		(*VMServiceResponse_GetReport)(nil),
 		(*VMServiceResponse_Error)(nil),
+		(*VMServiceResponse_SyncRepoCpeMapping)(nil),
 	}
+	file_internalapi_virtualmachine_v1_vm_service_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc), len(file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   10,
+			NumEnums:      2,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -9,7 +9,7 @@ require (
 	cloud.google.com/go/securitycenter v1.46.0
 	cloud.google.com/go/storage v1.64.0
 	dario.cat/mergo v1.0.2
-	github.com/Azure/azure-sdk-for-go-extensions v0.6.0
+	github.com/Azure/azure-sdk-for-go-extensions v0.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.23.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.14.0
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
@@ -23,7 +23,7 @@ require (
 	github.com/RoaringBitmap/roaring/v2 v2.24.0
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
-	github.com/adhocore/gronx v1.20.1
+	github.com/adhocore/gronx v1.20.3
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.43.4
 	github.com/aws/aws-sdk-go-v2/config v1.32.35
@@ -34,7 +34,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.107.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.76.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.45.4
-	github.com/aws/smithy-go v1.27.7
+	github.com/aws/smithy-go v1.27.8
 	github.com/bmatcuk/doublestar/v4 v4.10.0
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cespare/xxhash/v2 v2.3.0
@@ -122,6 +122,7 @@ require (
 	github.com/sigstore/cosign/v3 v3.1.3
 	github.com/sigstore/rekor v1.5.3
 	github.com/sigstore/sigstore v1.10.9
+	github.com/sigstore/sigstore-go v1.2.2
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -132,6 +133,7 @@ require (
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20250224110925-13b5b47fd812
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
 	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
+	github.com/stolostron/cluster-lifecycle-api v0.0.0-20260330032750-43755d6ceb09
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.19.0
 	github.com/tkuchiki/go-timezone v0.2.3
@@ -406,7 +408,6 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sigstore/protobuf-specs v0.5.1 // indirect
 	github.com/sigstore/rekor-tiles/v2 v2.3.0 // indirect
-	github.com/sigstore/sigstore-go v1.2.2 // indirect
 	github.com/sigstore/timestamp-authority/v2 v2.1.2 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect

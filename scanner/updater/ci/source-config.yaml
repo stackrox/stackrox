@@ -1,7 +1,7 @@
 # Per-updater configuration for the vulnerability update workflow.
 #
 # storage: GCS location for per-updater data objects. The object path
-# pattern is gs://<bucket>/<prefix>/<stream>/sources/<updater>/data.json.zst,
+# pattern is gs://<bucket>/<prefix>/<stream>/sources/<updater>.json.zst,
 # constructed by the matrix builder and passed to all downstream consumers.
 #
 # bundles: defines which updaters to include in each version stream's bundle.

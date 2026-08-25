@@ -90,6 +90,8 @@ type VMHandle struct {
 	ID string
 	// NodeName is the Kubernetes node hosting the VirtualMachineInstance (populated after VMI is Running).
 	NodeName string
+	// SkipReason, when set, skips this VM's subtests so other VMs still run.
+	SkipReason string
 }
 
 // VMScanningSuite exercises OpenShift VM scanning end-to-end (KubeVirt guests, roxagent, Central).
@@ -326,7 +328,7 @@ func (s *VMScanningSuite) mustVerifyVirtualMachinesFeatureEnabled() {
 
 // mustVerifySensorVSOCKRBAC asserts Sensor can get KubeVirt VMI vsock subresources.
 // Pull-mode scraping fails without this; the Helm chart creates the binding when
-// spec.virtualMachines.mode is Enabled on the SecuredCluster CR.
+// virtualMachines.enabled follows ROX_VIRTUAL_MACHINES (on by default).
 func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 	t := s.T()
 	t.Helper()
@@ -334,7 +336,7 @@ func (s *VMScanningSuite) mustVerifySensorVSOCKRBAC(ctx context.Context) {
 	binding, err := s.k8sClient.RbacV1().ClusterRoleBindings().Get(ctx, "stackrox:vsock-access-binding", metaV1.GetOptions{})
 	require.NoError(t, err, "get ClusterRoleBinding stackrox:vsock-access-binding; "+
 		"Sensor cannot scrape guest agents over vsock without this RBAC "+
-		"(check that spec.virtualMachines.mode is Enabled on the SecuredCluster CR)")
+		"(check that Helm virtualMachines.enabled / ROX_VIRTUAL_MACHINES is on)")
 	require.Equal(t, "ClusterRole", binding.RoleRef.Kind)
 	require.Equal(t, "stackrox:vsock-access", binding.RoleRef.Name)
 
@@ -592,7 +594,7 @@ func (s *VMScanningSuite) prepareGuests() {
 func (s *VMScanningSuite) prepareGuestWithRecovery(vm *VMHandle) error {
 	const maxRecoveries = 2
 	for recoveryAttempt := 0; recoveryAttempt <= maxRecoveries; recoveryAttempt++ {
-		err := s.prepareGuest(*vm)
+		err := s.prepareGuest(vm)
 		if err == nil {
 			return nil
 		}
@@ -711,8 +713,8 @@ func (s *VMScanningSuite) waitForScannerV4Initialized() error {
 	return nil
 }
 
-// ensureRoxagentServing starts pull-mode `roxagent serve` on the guest (if needed)
-// and waits until its VSOCK listener is ready. Sensor scrapes the report afterward.
+// ensureRoxagentServing starts Quadlet roxagent.service on the guest if needed
+// and waits until it is active (VSOCK listener ready). Sensor scrapes afterward.
 func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandle) error {
 	if vm == nil {
 		return errors.New("ensureRoxagentServing: nil VM handle")
@@ -722,7 +724,7 @@ func (s *VMScanningSuite) ensureRoxagentServing(ctx context.Context, vm *VMHandl
 		return fmt.Errorf("Scanner V4 matcher did not initialize within timeout: %w", err)
 	}
 	virt := s.virtctlForVM(*vm)
-	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name, s.cfg.Repo2CPEURL)
+	return vmhelpers.EnsureRoxagentServing(ctx, virt, vm.Namespace, vm.Name)
 }
 
 // waitForScan polls Central in order until scan data is visible.
@@ -773,8 +775,8 @@ func (s *VMScanningSuite) resourceDeleteTimeout() time.Duration {
 	return defaultVMDeleteTimeout
 }
 
-func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
-	virt := s.virtctlForVM(vm)
+func (s *VMScanningSuite) prepareGuest(vm *VMHandle) error {
+	virt := s.virtctlForVM(*vm)
 	stepNum := 0
 	runStep := func(stepName, errContext string, timeout time.Duration, fn func(stepCtx context.Context) error) error {
 		stepNum++
@@ -806,15 +808,15 @@ func (s *VMScanningSuite) prepareGuest(vm VMHandle) error {
 	}); err != nil {
 		return err
 	}
-	if err := runStep("Copy roxagent binary", "CopyRoxagentBinary", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.CopyRoxagentBinary(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentBinaryPath)
+	if err := runStep("Install roxagent Quadlet", "InstallRoxagentQuadlet", max(stepTimeout, 15*time.Minute), func(stepCtx context.Context) error {
+		return vmhelpers.InstallRoxagentQuadlet(stepCtx, virt, vm.Namespace, vm.Name, s.cfg.RoxagentImage, s.cfg.Repo2CPEURL, s.cfg.PodmanAuthFilePath)
 	}); err != nil {
-		return err
-	}
-	// Runs `roxagent --help` to confirm the binary is present, executable, and in $PATH.
-	if err := runStep("Verify roxagent installed", "VerifyRoxagentInstalled", stepTimeout, func(stepCtx context.Context) error {
-		return vmhelpers.VerifyRoxagentInstalled(stepCtx, virt, vm.Namespace, vm.Name)
-	}); err != nil {
+		if errors.Is(err, vmhelpers.ErrPodmanNotFound) {
+			vm.SkipReason = err.Error()
+			s.logf("[guest prep] Quadlet install skipped on %s/%s; VM subtest will be skipped: %v",
+				vm.Namespace, vm.Name, err)
+			return nil
+		}
 		return err
 	}
 	s.logf("[guest prep] COMPLETED for %s/%s in %d step(s)", vm.Namespace, vm.Name, stepNum)

@@ -15,8 +15,6 @@ const clustersUrl = '/v1/clusters';
 const clusterDefaultsUrl = '/v1/cluster-defaults';
 const clusterInitUrl = '/v1/cluster-init';
 const upgradesUrl = '/v1/sensorupgrades';
-const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
-const manualUpgradeUrl = `${upgradesUrl}/cluster`;
 
 export type ClusterLabels = Record<string, string>;
 
@@ -82,54 +80,11 @@ export function fetchClusterWithRetentionInformation(id: string): Promise<Cluste
     });
 }
 
-export type AutoUpgradeConfig = {
-    enableAutoUpgrade: boolean;
-    autoUpgradeFeature: 'SUPPORTED' | 'NOT_SUPPORTED';
-};
-
-/**
- * Checks is auto upgrade is supported
- */
-export function isAutoUpgradeSupported(autoUpgradeConfig: AutoUpgradeConfig) {
-    return autoUpgradeConfig.autoUpgradeFeature === 'SUPPORTED';
-}
-
-/**
- * Gets the cluster autoupgrade config.
- */
-export function getAutoUpgradeConfig(): Promise<AutoUpgradeConfig> {
-    return axios.get<{ config: AutoUpgradeConfig }>(autoUpgradeConfigUrl).then((response) => {
-        return response?.data?.config ?? {};
-    });
-}
-
-/**
- * Saves the cluster autoupgrade config.
- */
-export function saveAutoUpgradeConfig(config: AutoUpgradeConfig): Promise<Empty> {
-    const wrappedObject = { config: { enableAutoUpgrade: config.enableAutoUpgrade } };
-    return axios.post<Empty>(autoUpgradeConfigUrl, wrappedObject).then((response) => response.data);
-}
-
-/**
- * Manually start a sensor upgrade given the cluster ID.
- */
-export function upgradeCluster(id: string): Promise<Empty> {
-    return axios.post(`${manualUpgradeUrl}/${id}`);
-}
-
 /**
  * Start a cluster cert rotation.
  */
 export function rotateClusterCerts(id: string): Promise<Empty> {
     return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
-}
-
-/**
- * Manually start a sensor upgrade for an array of clusters.
- */
-export function upgradeClusters(ids: string[] = []): Promise<Empty[]> {
-    return Promise.all(ids.map((id) => upgradeCluster(id)));
 }
 
 /**

@@ -42,6 +42,12 @@ spec:
     label:
       key: com.docker.stack.namespace
       value: prevent
+  - clusterLabel:
+      key: env
+      value: prod
+    namespaceLabel:
+      key: team
+      value: platform
   severity: LOW_SEVERITY
   enforcementActions:
   - FAIL_BUILD_ENFORCEMENT

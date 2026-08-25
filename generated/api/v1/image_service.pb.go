@@ -1309,7 +1309,8 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\";\n" +
 	"\x13ExportImageResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2\xce\t\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2\xac\n" +
+	"\n" +
 	"\fImageService\x12H\n" +
 	"\bGetImage\x12\x13.v1.GetImageRequest\x1a\x0e.storage.Image\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/images/{id}\x12M\n" +
 	"\vCountImages\x12\f.v1.RawQuery\x1a\x17.v1.CountImagesResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/imagescount\x12F\n" +
@@ -1317,7 +1318,8 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"ListImages\x12\f.v1.RawQuery\x1a\x16.v1.ListImagesResponse\"\x12\x82\xd3\xe4\x93\x02\f\x12\n" +
 	"/v1/images\x12M\n" +
 	"\tScanImage\x12\x14.v1.ScanImageRequest\x1a\x0e.storage.Image\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v1/images/scan\x12P\n" +
-	"\x11ScanImageInternal\x12\x1c.v1.ScanImageInternalRequest\x1a\x1d.v1.ScanImageInternalResponse\x12q\n" +
+	"\x11ScanImageInternal\x12\x1c.v1.ScanImageInternalRequest\x1a\x1d.v1.ScanImageInternalResponse\x12\\\n" +
+	"\x1dScanImageInternalForAdmission\x12\x1c.v1.ScanImageInternalRequest\x1a\x1d.v1.ScanImageInternalResponse\x12q\n" +
 	"\x1fGetImageVulnerabilitiesInternal\x12*.v1.GetImageVulnerabilitiesInternalRequest\x1a\x1d.v1.ScanImageInternalResponse\"\x03\x88\x02\x01\x12^\n" +
 	"\x18EnrichLocalImageInternal\x12#.v1.EnrichLocalImageInternalRequest\x1a\x1d.v1.ScanImageInternalResponse\x12T\n" +
 	"\x1dUpdateLocalScanStatusInternal\x12(.v1.UpdateLocalScanStatusInternalRequest\x1a\t.v1.Empty\x12\\\n" +
@@ -1406,31 +1408,33 @@ var file_api_v1_image_service_proto_depIdxs = []int32{
 	31, // 21: v1.ImageService.ListImages:input_type -> v1.RawQuery
 	4,  // 22: v1.ImageService.ScanImage:input_type -> v1.ScanImageRequest
 	5,  // 23: v1.ImageService.ScanImageInternal:input_type -> v1.ScanImageInternalRequest
-	7,  // 24: v1.ImageService.GetImageVulnerabilitiesInternal:input_type -> v1.GetImageVulnerabilitiesInternalRequest
-	8,  // 25: v1.ImageService.EnrichLocalImageInternal:input_type -> v1.EnrichLocalImageInternalRequest
-	9,  // 26: v1.ImageService.UpdateLocalScanStatusInternal:input_type -> v1.UpdateLocalScanStatusInternalRequest
-	33, // 27: v1.ImageService.InvalidateScanAndRegistryCaches:input_type -> v1.Empty
-	10, // 28: v1.ImageService.DeleteImages:input_type -> v1.DeleteImagesRequest
-	12, // 29: v1.ImageService.WatchImage:input_type -> v1.WatchImageRequest
-	14, // 30: v1.ImageService.UnwatchImage:input_type -> v1.UnwatchImageRequest
-	33, // 31: v1.ImageService.GetWatchedImages:input_type -> v1.Empty
-	17, // 32: v1.ImageService.ExportImages:input_type -> v1.ExportImageRequest
-	23, // 33: v1.ImageService.GetImage:output_type -> storage.Image
-	3,  // 34: v1.ImageService.CountImages:output_type -> v1.CountImagesResponse
-	2,  // 35: v1.ImageService.ListImages:output_type -> v1.ListImagesResponse
-	23, // 36: v1.ImageService.ScanImage:output_type -> storage.Image
-	6,  // 37: v1.ImageService.ScanImageInternal:output_type -> v1.ScanImageInternalResponse
-	6,  // 38: v1.ImageService.GetImageVulnerabilitiesInternal:output_type -> v1.ScanImageInternalResponse
-	6,  // 39: v1.ImageService.EnrichLocalImageInternal:output_type -> v1.ScanImageInternalResponse
-	33, // 40: v1.ImageService.UpdateLocalScanStatusInternal:output_type -> v1.Empty
-	33, // 41: v1.ImageService.InvalidateScanAndRegistryCaches:output_type -> v1.Empty
-	11, // 42: v1.ImageService.DeleteImages:output_type -> v1.DeleteImagesResponse
-	13, // 43: v1.ImageService.WatchImage:output_type -> v1.WatchImageResponse
-	33, // 44: v1.ImageService.UnwatchImage:output_type -> v1.Empty
-	15, // 45: v1.ImageService.GetWatchedImages:output_type -> v1.GetWatchedImagesResponse
-	18, // 46: v1.ImageService.ExportImages:output_type -> v1.ExportImageResponse
-	33, // [33:47] is the sub-list for method output_type
-	19, // [19:33] is the sub-list for method input_type
+	5,  // 24: v1.ImageService.ScanImageInternalForAdmission:input_type -> v1.ScanImageInternalRequest
+	7,  // 25: v1.ImageService.GetImageVulnerabilitiesInternal:input_type -> v1.GetImageVulnerabilitiesInternalRequest
+	8,  // 26: v1.ImageService.EnrichLocalImageInternal:input_type -> v1.EnrichLocalImageInternalRequest
+	9,  // 27: v1.ImageService.UpdateLocalScanStatusInternal:input_type -> v1.UpdateLocalScanStatusInternalRequest
+	33, // 28: v1.ImageService.InvalidateScanAndRegistryCaches:input_type -> v1.Empty
+	10, // 29: v1.ImageService.DeleteImages:input_type -> v1.DeleteImagesRequest
+	12, // 30: v1.ImageService.WatchImage:input_type -> v1.WatchImageRequest
+	14, // 31: v1.ImageService.UnwatchImage:input_type -> v1.UnwatchImageRequest
+	33, // 32: v1.ImageService.GetWatchedImages:input_type -> v1.Empty
+	17, // 33: v1.ImageService.ExportImages:input_type -> v1.ExportImageRequest
+	23, // 34: v1.ImageService.GetImage:output_type -> storage.Image
+	3,  // 35: v1.ImageService.CountImages:output_type -> v1.CountImagesResponse
+	2,  // 36: v1.ImageService.ListImages:output_type -> v1.ListImagesResponse
+	23, // 37: v1.ImageService.ScanImage:output_type -> storage.Image
+	6,  // 38: v1.ImageService.ScanImageInternal:output_type -> v1.ScanImageInternalResponse
+	6,  // 39: v1.ImageService.ScanImageInternalForAdmission:output_type -> v1.ScanImageInternalResponse
+	6,  // 40: v1.ImageService.GetImageVulnerabilitiesInternal:output_type -> v1.ScanImageInternalResponse
+	6,  // 41: v1.ImageService.EnrichLocalImageInternal:output_type -> v1.ScanImageInternalResponse
+	33, // 42: v1.ImageService.UpdateLocalScanStatusInternal:output_type -> v1.Empty
+	33, // 43: v1.ImageService.InvalidateScanAndRegistryCaches:output_type -> v1.Empty
+	11, // 44: v1.ImageService.DeleteImages:output_type -> v1.DeleteImagesResponse
+	13, // 45: v1.ImageService.WatchImage:output_type -> v1.WatchImageResponse
+	33, // 46: v1.ImageService.UnwatchImage:output_type -> v1.Empty
+	15, // 47: v1.ImageService.GetWatchedImages:output_type -> v1.GetWatchedImagesResponse
+	18, // 48: v1.ImageService.ExportImages:output_type -> v1.ExportImageResponse
+	34, // [34:49] is the sub-list for method output_type
+	19, // [19:34] is the sub-list for method input_type
 	19, // [19:19] is the sub-list for extension type_name
 	19, // [19:19] is the sub-list for extension extendee
 	0,  // [0:19] is the sub-list for field type_name

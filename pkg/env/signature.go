@@ -8,7 +8,8 @@ var (
 
 	// RedHatSigningKeyBundleURL is the remote URL of the key bundle JSON.
 	// If empty, the key bundle updater does not start.
-	RedHatSigningKeyBundleURL = RegisterSetting("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL", AllowEmpty())
+	RedHatSigningKeyBundleURL = RegisterSetting("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL",
+		WithDefault("https://definitions.stackrox.io/signing-keys/bundle.json"), AllowEmpty())
 
 	// RedHatSigningKeyUpdateInterval controls how often the updater re-downloads the bundle.
 	RedHatSigningKeyUpdateInterval = registerDurationSetting("ROX_REDHAT_SIGNING_KEY_UPDATE_INTERVAL", 4*time.Hour)
