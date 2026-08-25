@@ -235,6 +235,7 @@ func NewInternalRoleFromPermissionsAndScope(
 		})
 	}
 
+	// Elevate to READ on Cluster resources solely for name-to-ID resolution; this does not expand the caller's derived permissions.
 	clusterIDResolutionCtx := sac.WithGlobalAccessScopeChecker(
 		ctx,
 		sac.AllowFixedScopes(
@@ -270,6 +271,9 @@ func NewInternalRoleFromPermissionsAndScope(
 				continue
 			}
 			clusterID = idForName
+		}
+		if clusterID == "" {
+			continue
 		}
 		output.Clusters[clusterID] = append(output.Clusters[clusterID], ns)
 	}

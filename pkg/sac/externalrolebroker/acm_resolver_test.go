@@ -15,17 +15,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// mockACMClient is a test implementation of the ACM client interface
+// mockACMClient is a test implementation of acmClient.
 type mockACMClient struct {
 	listFunc func(ctx context.Context, opts metav1.ListOptions) (*clusterviewv1alpha1.UserPermissionList, error)
 }
 
 func (m *mockACMClient) ListUserPermissions(ctx context.Context, opts metav1.ListOptions) (*clusterviewv1alpha1.UserPermissionList, error) {
 	return m.listFunc(ctx, opts)
-}
-
-func (m *mockACMClient) GetUserPermission(ctx context.Context, name string, opts metav1.GetOptions) (*clusterviewv1alpha1.UserPermission, error) {
-	return nil, errors.New("not implemented in mock")
 }
 
 type mockClusterResolver struct{}

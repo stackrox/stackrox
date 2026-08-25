@@ -9,9 +9,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ACMClient interface {
+// acmClient is the consumer-side interface for acm.Client, scoped to what this package uses.
+type acmClient interface {
 	ListUserPermissions(ctx context.Context, opts metav1.ListOptions) (*clusterviewv1alpha1.UserPermissionList, error)
-	GetUserPermission(ctx context.Context, name string, opts metav1.GetOptions) (*clusterviewv1alpha1.UserPermission, error)
 }
 
 // GetResolvedRolesFromACM retrieves UserPermissions from ACM, filters them for supported Kubernetes resources,
@@ -27,13 +27,16 @@ type ACMClient interface {
 // The role name is derived from the UserPermission metadata name
 func GetResolvedRolesFromACM(
 	ctx context.Context,
-	client ACMClient,
+	client acmClient,
 	clusterIDResolver tokens.ClusterResolver,
 ) ([]*tokens.InternalRole, error) {
 	// Retrieve all user permissions from ACM
 	userPermissionList, err := client.ListUserPermissions(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list user permissions")
+	}
+	if userPermissionList == nil {
+		return nil, errors.New("received nil user permission list from ACM")
 	}
 
 	// Filter to only permissions managing supported Kubernetes resources
