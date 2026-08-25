@@ -25,12 +25,12 @@ OPTIONAL_HOST_PATHS=(
     /etc/system-release-cpe
     /var/cache/dnf
     /var/lib/dnf
+    /usr/lib/sysimage/libdnf5
 )
 
 STAGED_INSTALL_FILES=(
     install.sh
     roxagent.container
-    roxagent-prep.service
 )
 
 TRANSPORT_KIND=""
@@ -206,14 +206,14 @@ install_from_stage_dir() {
     # restorecon resets SELinux labels so systemd/podman can read the new files.
     sudo restorecon -Rv /etc/containers/systemd/ 2>/dev/null || true
 
-    sudo cp "${stage_dir}/roxagent-prep.service" /etc/systemd/system/
-    sudo restorecon -Rv /etc/systemd/system/roxagent-prep.service 2>/dev/null || true
-
     echo "Reloading systemd..."
     sudo systemctl daemon-reload
 
-    echo "Enabling and starting roxagent service..."
-    sudo systemctl enable --now roxagent.service
+    # Quadlet writes the unit under /run/systemd/generator/, which systemd
+    # treats as generated: `systemctl enable` is rejected. Boot start comes from
+    # [Install] WantedBy= in roxagent.container (the generator applies it).
+    echo "Starting roxagent service..."
+    sudo systemctl start roxagent.service
 
     if ! sudo systemctl is-active --quiet roxagent.service; then
         echo "roxagent.service failed to become active" >&2

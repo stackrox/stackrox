@@ -33,6 +33,9 @@ spec:
         requests:
           memory: "100Mi"
           cpu: "100m"
+  virtualMachines:
+    scraper:
+      pollInterval: $vm_scraper_poll_interval
   processIndicators:
     excludeNamespaceRegex: namespace-without-persistence
   scanner:

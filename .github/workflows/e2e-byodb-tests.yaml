@@ -33,7 +33,6 @@ jobs:
     env:
       MAIN_IMAGE_TAG: ${{ inputs.tag }}
       BUILD_TAG: ${{ inputs.tag }}
-      USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       CI_JOB_NAME: gke-byodb-qa-e2e-tests
       ARTIFACT_DIR: ./junit-reports
@@ -75,16 +74,11 @@ jobs:
       env:
         MACHINE_TYPE: e2-standard-8
         NUM_NODES: "3"
-        GKE_SPOT: "true"
+        GKE_SPOT: "false"
       timeout-minutes: 20
       run: |
-        source scripts/ci/gke.sh
-        provision_gke_cluster byodb
-        {
-          echo "CLUSTER_NAME=${CLUSTER_NAME}"
-          echo "ZONE=${ZONE}"
-          echo "KUBECONFIG=${HOME}/.kube/config"
-        } >> "$GITHUB_ENV"
+        scripts/ci/gke.sh provision_gke_cluster byodb
+        echo "KUBECONFIG=${HOME}/.kube/config" >> "$GITHUB_ENV"
 
     - name: Build roxctl
       run: |
@@ -120,8 +114,6 @@ jobs:
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        AWS_S3_BACKUP_TEST_BUCKET_NAME: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_NAME }}
-        AWS_S3_BACKUP_TEST_BUCKET_REGION: ${{ secrets.AWS_S3_BACKUP_TEST_BUCKET_REGION || 'us-east-2' }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_ECR_REGISTRY_REGION: ${{ secrets.AWS_ECR_REGISTRY_REGION }}

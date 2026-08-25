@@ -1,6 +1,5 @@
 import { Grid, GridItem } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { Cluster } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
@@ -8,23 +7,14 @@ import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterHealthPanel from './Components/ClusterHealthPanel';
 import ClusterMetadata from './Components/ClusterMetadata';
 import CredentialExpiration from './Components/CredentialExpiration';
-import SensorUpgradePanel from './Components/SensorUpgradePanel';
 import type { CertExpiryStatus } from './clusterTypes';
 
 type ClusterSummaryGridProps = {
-    centralVersion: string;
     clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     clusterInfo: Cluster;
 };
 
-export function ClusterSummaryGrid({
-    centralVersion,
-    clusterRetentionInfo,
-    clusterInfo,
-}: ClusterSummaryGridProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isSensorCompatStatusEnabled = isFeatureFlagEnabled('ROX_SENSOR_COMPATIBILITY_STATUS');
-
+export function ClusterSummaryGrid({ clusterRetentionInfo, clusterInfo }: ClusterSummaryGridProps) {
     return (
         <Grid hasGutter>
             {clusterInfo.status && (
@@ -32,15 +22,6 @@ export function ClusterSummaryGrid({
                     <ClusterHealthPanel header="Cluster metadata">
                         <ClusterMetadata status={clusterInfo.status} />
                     </ClusterHealthPanel>
-                </GridItem>
-            )}
-            {clusterInfo.status && !isSensorCompatStatusEnabled && (
-                <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
-                    <SensorUpgradePanel
-                        centralVersion={centralVersion}
-                        sensorVersion={clusterInfo.status?.sensorVersion}
-                        upgradeStatus={clusterInfo.status?.upgradeStatus}
-                    />
                 </GridItem>
             )}
             {clusterInfo.status && (

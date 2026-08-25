@@ -24,7 +24,7 @@ import {
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
-import { vulnerabilityConfigurationReportsPath } from 'routePaths';
+import { vulnerabilityConfigurationsReportsPath } from 'routePaths';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
@@ -47,7 +47,7 @@ import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
 import type { ImageVulnerabilityReportConfiguration } from 'services/ReportsService.types';
 
-import type { ImageVulnerabilityResourceScope } from '../../ImageVulnerabilityReports/imageVulnerabilityReports.types';
+import type { ImageVulnerabilityResourceScope } from '../../Reports/ImageVulnerabilityReports/imageVulnerabilityReports.types';
 import useFetchReports from '../api/useFetchReports';
 import useRunReport from '../api/useRunReport';
 import { useWatchLastSnapshotForReports } from '../api/useWatchLastSnapshotForReports';
@@ -65,7 +65,7 @@ function isResourceScopeAbsent({ resourceScope }: ImageVulnerabilityReportConfig
 
 const CreateReportsButton = () => {
     return (
-        <Link to={`${vulnerabilityConfigurationReportsPath}?action=create`}>
+        <Link to={`${vulnerabilityConfigurationsReportsPath}?action=create`}>
             <Button variant="primary">Create report</Button>
         </Link>
     );

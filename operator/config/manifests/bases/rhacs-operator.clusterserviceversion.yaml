@@ -570,10 +570,13 @@ spec:
         path: customize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configures the encryption of notifier secrets stored in the Central
-          DB.
-        displayName: Notifier Secrets Encryption
-        path: central.notifierSecretsEncryption
+      - description: |-
+          References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+          This allows air-gapped customers to provide or update the signing keys used for
+          signature verification of Red Hat container images. The ConfigMap is managed
+          externally; key rotation requires only editing the ConfigMap, not a CR update.
+        displayName: Signing Key Bundle
+        path: central.signingKeyBundle
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Overlays
@@ -581,16 +584,22 @@ spec:
         path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Configures the rollout strategy for the Central deployment.
-          The default is: Recreate.
-        displayName: Rollout Strategy
-        path: central.rolloutStrategy
+      - description: Configures the encryption of notifier secrets stored in the Central
+          DB.
+        displayName: Notifier Secrets Encryption
+        path: central.notifierSecretsEncryption
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
         displayName: Monitoring
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
+          Configures the rollout strategy for the Central deployment.
+          The default is: Recreate.
+        displayName: Rollout Strategy
+        path: central.rolloutStrategy
       - description: Network configuration.
         displayName: Network
         path: network
@@ -925,6 +934,11 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: The name of the referenced config map.
+        displayName: Name
+        path: central.signingKeyBundle.name
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
@@ -1136,6 +1150,14 @@ spec:
           * for new installations starting with ACS 4.8, the default is: AutoSense.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
+      - description: Settings for the virtual machine scraper running in Sensor.
+        displayName: Scraper
+        path: virtualMachines.scraper
+      - description: |-
+          Maximum number of virtual machines scraped concurrently in each poll cycle.
+          The default is: 20.
+        displayName: Concurrency
+        path: virtualMachines.scraper.concurrency
       - description: |-
           Enables teams to bypass admission control in a monitored manner in the event of an emergency.
           The default is: BreakGlassAnnotation.
@@ -1215,6 +1237,12 @@ spec:
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
       - description: |-
+          Maximum response size in KB from a virtual machine agent.
+          Responses larger than this are rejected and that virtual machine is skipped until the next poll.
+          The default is: 16384.
+        displayName: Max Response Size KB
+        path: virtualMachines.scraper.maxResponseSizeKB
+      - description: |-
           If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
           fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
           The default is: Ignore.
@@ -1280,6 +1308,13 @@ spec:
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
+      - description: |-
+          How often the scraper polls virtual machines for new reports.
+          Minimum interval is 1m; shorter values are rounded up.
+          Shorter intervals refresh scans more often but increase the load on kubevirt API server.
+          The default is: 4h.
+        displayName: Poll Interval
+        path: virtualMachines.scraper.pollInterval
       - description: |-
           Settings for the Admission Control component, which is necessary for preventive policy enforcement,
           and for Kubernetes event monitoring.
@@ -1397,6 +1432,9 @@ spec:
         path: processIndicators
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Settings for the virtual machine scraper.
+        displayName: Virtual Machines Settings
+        path: virtualMachines
       - description: |-
           Stores persistent data in a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).

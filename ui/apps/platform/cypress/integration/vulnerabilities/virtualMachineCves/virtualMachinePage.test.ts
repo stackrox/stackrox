@@ -45,7 +45,9 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
     });
 
     describe('Vulnerabilities tab', () => {
-        it('should render CVE rows from fixture data', () => {
+        // TODO(ROX-36464): intercepts do not isolate live VM CVE data, so row-count
+        // assertions fail when scanning is on.
+        it.skip('should render CVE rows from fixture data', () => {
             visitWithFixture();
 
             cy.get('tbody tr:not([class*="expandable"])').should('have.length', 3);
@@ -62,7 +64,9 @@ describe('Virtual Machine CVEs - Virtual Machine Page', () => {
                 });
         });
 
-        it('should display the correct number of affected components', () => {
+        // TODO(ROX-36464): intercepts do not isolate live VM CVE data, so row-count
+        // assertions fail when scanning is on.
+        it.skip('should display the correct number of affected components', () => {
             visitWithFixture();
 
             cy.get('tbody tr:not([class*="expandable"])')

@@ -33,6 +33,7 @@ operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
 operator/internal/central/values/translation/translation_test.go
+operator/internal/securedcluster/values/translation/translation_test.go
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_builtin_test.go
 pkg/booleanpolicy/runtime_criteria_test.go

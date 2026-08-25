@@ -118,7 +118,11 @@ network:
   enableNetworkPolicies: true
 
 virtualMachines:
-  enabled: false
+  enabled: [< .FeatureFlags.ROX_VIRTUAL_MACHINES >]
+  scraper:
+    concurrency: 20
+    maxResponseSizeKB: 16384
+    pollInterval: "4h"
 
 enableOpenShiftMonitoring: false
 

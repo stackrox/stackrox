@@ -178,7 +178,9 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
+	virtualMachineScanV2DS "github.com/stackrox/rox/central/virtualmachine/scan/v2/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
+	virtualMachineV2DS "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	virtualmachineV2Service "github.com/stackrox/rox/central/virtualmachine/v2/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
@@ -716,6 +718,10 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(virtualMachineDS.Gather(virtualMachineDS.Singleton()))
+	add(virtualMachineDS.GatherV2(
+		virtualMachineV2DS.Singleton(),
+		virtualMachineScanV2DS.Singleton(),
+	))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -986,10 +992,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	// Append report custom routes
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
-		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Image)),
+		Authorizer:    user.With(permissions.View(resources.Image)),
 		ServerHandler: v2Service.NewDownloadHandler(),
 		Compression:   true,
 	})
+
+	if features.NodeVulnerabilityReports.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/reports/node/jobs/download",
+			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
+			ServerHandler: v2Service.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
 
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
