@@ -418,7 +418,9 @@ func (s *VMScraper) scrapeKey(ctx context.Context, key string) bool {
 	vm := s.store.Get(vmID)
 	if vm == nil || !vm.Running {
 		concurrency.WithLock(&s.mu, func() {
-			delete(s.vmState, key)
+			if st, ok := s.vmState[key]; ok && st.vmID == vmID {
+				delete(s.vmState, key)
+			}
 		})
 		return false
 	}
@@ -452,7 +454,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	log.Debugf("VMScraper: dialing roxagent on %q with TLS", key)
 	result, outcome := s.dialAndGetReport(vmCtx, vm, key, port, lastKnownToken)
 	if outcome != scrapeOK {
-		next := s.scheduleAfterAttempt(key, outcome)
+		next := s.scheduleAfterAttempt(key, vm.ID, outcome)
 		kind := "retryable"
 		if outcome == scrapeNonRetryable {
 			kind = "non-retryable"
@@ -462,7 +464,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	if result.Unchanged {
-		next := s.scheduleAfterAttempt(key, scrapeOK)
+		next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 		log.Debugf("VMScraper: unchanged report from roxagent on %q (token=%s)", key, snap.lastToken)
 		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportUnchanged).Inc()
@@ -475,7 +477,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 	if !viable {
 		metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeInvalidReport).Inc()
-		next := s.scheduleAfterAttempt(key, scrapeNonRetryable)
+		next := s.scheduleAfterAttempt(key, vm.ID, scrapeNonRetryable)
 		log.Infof("VMScraper: scrape %q failed non-retryable next=%s", key, next)
 		return false
 	}
@@ -497,7 +499,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		}
 		// Send failures are typically a transient Central connection issue, so
 		// retry on the short backoff rather than waiting a full poll interval.
-		next := s.scheduleAfterAttempt(key, outcome)
+		next := s.scheduleAfterAttempt(key, vm.ID, outcome)
 		kind := "retryable"
 		if outcome == scrapeNonRetryable {
 			kind = "non-retryable"
@@ -507,9 +509,9 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	}
 
 	newToken := result.Meta.GetReportToken()
-	s.commitVMState(key, newToken, result.Meta.GetAgentVersion())
+	s.commitVMState(key, vm.ID, newToken, result.Meta.GetAgentVersion())
 	s.observeForwardInterarrival()
-	next := s.scheduleAfterAttempt(key, scrapeOK)
+	next := s.scheduleAfterAttempt(key, vm.ID, scrapeOK)
 
 	log.Infof("VMScraper: scrape %q ok outcome=forwarded next=%s", key, next)
 	totalElapsed := s.now().Sub(totalStart)
@@ -541,13 +543,14 @@ const (
 	scrapeNonRetryable
 )
 
-// scheduleAfterAttempt sets when this VM may be tried again and returns that
-// delay. Retries use short exponential backoff; success / permanent failure
-// return to poll cadence with a random offset in [0, steadyWidth].
-func (s *VMScraper) scheduleAfterAttempt(key string, outcome scrapeOutcome) time.Duration {
+// scheduleAfterAttempt updates nextAttemptAt/backoff for key and returns the
+// delay until the next attempt (0 if the slot was dropped or belongs to another VM).
+// Retries use short exponential backoff; success / permanent failure return to
+// poll cadence with a random offset in [0, steadyWidth].
+func (s *VMScraper) scheduleAfterAttempt(key string, vmID virtualmachine.VMID, outcome scrapeOutcome) time.Duration {
 	return concurrency.WithLock1(&s.mu, func() time.Duration {
 		st, ok := s.vmState[key]
-		if !ok {
+		if !ok || st.vmID != vmID {
 			return 0
 		}
 		now := s.now()
@@ -710,10 +713,10 @@ func (s *VMScraper) snapshotVMState(key string) vmStateSnapshot {
 // then the NACK will overwrite lastToken / backoff / nextAttemptAt, and then this code
 // will set the token (and a later scheduleAfterAttempt(scrapeOK) will reset backoff schedule).
 // This race is accepted for v1.
-func (s *VMScraper) commitVMState(key string, newToken string, agentVersion string) {
+func (s *VMScraper) commitVMState(key string, vmID virtualmachine.VMID, newToken string, agentVersion string) {
 	concurrency.WithLock(&s.mu, func() {
 		state, ok := s.vmState[key]
-		if !ok {
+		if !ok || state.vmID != vmID {
 			return
 		}
 		state.lastToken = newToken

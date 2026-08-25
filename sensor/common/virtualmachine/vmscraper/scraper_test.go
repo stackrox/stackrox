@@ -793,6 +793,64 @@ func TestVMScraper_ReconcileVMState(t *testing.T) {
 	})
 }
 
+// TestVMScraper_IgnoresLateScrapeAfterVMReplacement covers a KubeVirt recreate
+// while a scrape of the predecessor is still in Send: the late commit must not
+// mark the replacement as already scanned or push its next poll out by interval.
+func TestVMScraper_IgnoresLateScrapeAfterVMReplacement(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		const key = "ns1/vm-a"
+		oldVM := &virtualmachine.Info{
+			ID:        "uid-old",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(100)),
+			Running:   true,
+		}
+		store := &mockStore{vms: []*virtualmachine.Info{oldVM}}
+		gate := &gateSender{
+			blockAt: 1,
+			release: make(chan struct{}),
+		}
+		s, clock := newTestScraper(t, store, gate, &mockDialer{}, &mockProtocolClient{
+			resultQueue: []*vsockclient.GetReportResult{makeReport("99")},
+		})
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			s.pollOnce(t.Context())
+		}()
+		synctest.Wait()
+
+		store.vms = []*virtualmachine.Info{{
+			ID:        "uid-new",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(101)),
+			Running:   true,
+		}}
+		s.reconcile()
+
+		require.Equal(t, virtualmachine.VMID("uid-new"), concurrency.WithLock1(&s.mu, func() virtualmachine.VMID {
+			return s.vmState[key].vmID
+		}))
+		require.Zero(t, s.Stats().VMsScanned)
+		require.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key))
+
+		close(gate.release)
+		<-done
+
+		assert.Equal(t, virtualmachine.VMID("uid-new"), concurrency.WithLock1(&s.mu, func() virtualmachine.VMID {
+			return s.vmState[key].vmID
+		}))
+		assert.Empty(t, cachedToken(t, s, key), "late commit must not stamp the replacement")
+		assert.Zero(t, s.Stats().VMsScanned, "replacement must stay unscanned until its own scrape")
+		assert.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key),
+			"late schedule must not inherit the predecessor's poll timer")
+		assert.Contains(t, s.dueKeys(), key)
+	})
+}
+
 // hasScheduleSlot reports whether key has a vmState slot (reconcile membership).
 func hasScheduleSlot(t *testing.T, s *VMScraper, key string) bool {
 	t.Helper()
