@@ -72,29 +72,56 @@ def read_metric_average(file_path, start_offset=60.0, end_offset=None):
 
     return sum(filtered_values) / len(filtered_values)
 
-def read_metric_max(file_path):
-    """Read a metric file and return the maximum value."""
+def read_metric_max(file_path, start_offset=60.0, end_offset=None):
+    """
+    Read a metric file and return the maximum value over a time window.
+
+    Args:
+        file_path: Path to metrics file
+        start_offset: Start time in seconds (to skip initial ramp-up)
+        end_offset: End time in seconds (None = until end)
+
+    Returns:
+        Maximum value over the time window, or None if file doesn't exist
+    """
     if not os.path.exists(file_path):
         return None
 
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
+    timestamps = []
     values = []
+
     for line in lines:
         parts = line.strip().split()
         if len(parts) != 2:
             continue
         try:
-            val = float(parts[1])
+            ts, val = int(parts[0]), float(parts[1])
+            timestamps.append(ts)
             values.append(val)
         except ValueError:
             continue
 
-    if not values:
+    if not timestamps:
         return None
 
-    return max(values)
+    # Convert to relative time in seconds
+    base_time = timestamps[0]
+    rel_times = [(t - base_time) / 1000.0 for t in timestamps]
+
+    # Filter to time window
+    filtered_values = []
+    for t, v in zip(rel_times, values):
+        if t >= start_offset:
+            if end_offset is None or t <= end_offset:
+                filtered_values.append(v)
+
+    if not filtered_values:
+        return None
+
+    return max(filtered_values)
 
 def plot_scaling_comparison(base_dir, output_dir):
     """
@@ -105,6 +132,12 @@ def plot_scaling_comparison(base_dir, output_dir):
         output_dir: Output directory for plots
     """
     os.makedirs(output_dir, exist_ok=True)
+
+    # Use consistent time window for all metrics to ensure fair comparison
+    # Tests may run for different durations, so we use the same window across all
+    START_OFFSET = 60.0   # Skip initial 60s ramp-up
+    END_OFFSET = 660.0    # Measure from 60s to 660s (10 minutes of stable data)
+    TIME_WINDOW_DESC = "60-660s"
 
     # Find all result directories
     pattern = os.path.join(base_dir, "file_activity_results_*_policy_*")
@@ -162,21 +195,21 @@ def plot_scaling_comparison(base_dir, output_dir):
         if 'without' in data[batch_size]:
             without_dir = data[batch_size]['without']
             metrics['central_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['central_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['centraldb_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['centraldb_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['sensor_cpu_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['sensor_mem_without'].append(
-                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt')))
+                read_metric_average(os.path.join(without_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['alerts_count_without'].append(
-                read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt')))
+                read_metric_max(os.path.join(without_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET))
             metrics['alerts_size_without'].append(
-                read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt')))
+                read_metric_max(os.path.join(without_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET))
         else:
             for key in ['central_cpu_without', 'central_mem_without', 'centraldb_cpu_without',
                        'centraldb_mem_without', 'sensor_cpu_without', 'sensor_mem_without',
@@ -187,21 +220,21 @@ def plot_scaling_comparison(base_dir, output_dir):
         if 'with' in data[batch_size]:
             with_dir = data[batch_size]['with']
             metrics['central_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_central_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['central_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_central_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['centraldb_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['centraldb_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_central-db_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['sensor_cpu_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_cpu.txt'), START_OFFSET, END_OFFSET))
             metrics['sensor_mem_with'].append(
-                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt')))
+                read_metric_average(os.path.join(with_dir, 'metrics_sensor_mem.txt'), START_OFFSET, END_OFFSET))
             metrics['alerts_count_with'].append(
-                read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt')))
+                read_metric_max(os.path.join(with_dir, 'metrics_alerts.txt'), START_OFFSET, END_OFFSET))
             metrics['alerts_size_with'].append(
-                read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt')))
+                read_metric_max(os.path.join(with_dir, 'metrics_alerts_bytes.txt'), START_OFFSET, END_OFFSET))
         else:
             for key in ['central_cpu_with', 'central_mem_with', 'centraldb_cpu_with',
                        'centraldb_mem_with', 'sensor_cpu_with', 'sensor_mem_with',
@@ -214,7 +247,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, metrics['central_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title('Central CPU Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Central CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -230,7 +263,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title('Central Memory Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Central Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -244,7 +277,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, metrics['centraldb_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title('Central-DB CPU Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Central-DB CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -258,7 +291,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, metrics['alerts_count_with'], 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Alert Count', fontsize=12)
-    plt.title('Alerts Table Row Count vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Alerts Table Row Count vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -274,7 +307,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, size_with_mb, 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Maximum Table Size (MB)', fontsize=12)
-    plt.title('Alerts Table Size vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Alerts Table Size vs File Activity Event Rate\n(maximum within {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -282,7 +315,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     print(f"Saved: alerts_size_vs_rate.png")
     plt.close()
 
-    # Plot 6: Policy Overhead (CPU)
+    # Plot 6: Policy Enforcement CPU Overhead
     plt.figure(figsize=(12, 7))
     cpu_overhead = []
     for without, with_pol in zip(metrics['central_cpu_without'], metrics['central_cpu_with']):
@@ -296,7 +329,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('CPU Overhead (%)', fontsize=12)
-    plt.title('Policy Enforcement CPU Overhead', fontsize=14, fontweight='bold')
+    plt.title(f'Policy Enforcement CPU Overhead\n(Central CPU increase when policy enabled, {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'policy_cpu_overhead.png'), dpi=150)
@@ -311,7 +344,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, centraldb_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title('Central-DB Memory Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Central-DB Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -325,7 +358,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, metrics['sensor_cpu_with'], 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average CPU Usage (cores)', fontsize=12)
-    plt.title('Sensor CPU Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Sensor CPU Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -341,7 +374,7 @@ def plot_scaling_comparison(base_dir, output_dir):
     plt.plot(event_rates, sensor_mem_with_gb, 's-', label='With Policy', linewidth=2, markersize=8)
     plt.xlabel('File Activity Event Rate (events/sec)', fontsize=12)
     plt.ylabel('Average Memory Usage (GB)', fontsize=12)
-    plt.title('Sensor Memory Usage vs File Activity Event Rate', fontsize=14, fontweight='bold')
+    plt.title(f'Sensor Memory Usage vs File Activity Event Rate\n(averaged over {TIME_WINDOW_DESC})', fontsize=14, fontweight='bold')
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
