@@ -46,6 +46,7 @@ deploy_stackrox_in_scale_mode() {
             --pause-reconciliation \
             --envrc "$roxie_envrc"
 
+    extend_roxie_envrc "$roxie_envrc"
     # shellcheck source=/dev/null
     source "$roxie_envrc"
     rm -f "$roxie_envrc"
