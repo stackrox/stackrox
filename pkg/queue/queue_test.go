@@ -460,3 +460,80 @@ func TestQueueSeq(t *testing.T) {
 		})
 	})
 }
+
+func TestQueuePullBlocking(t *testing.T) {
+	t.Run("PullBlocking Empty Pull After Signal", func(t *testing.T) {
+		// This test verifies that PullBlocking() properly re-blocks when a signal
+		// occurs but another consumer removes the item before PullBlocking can pull it.
+		// Without proper blocking, PullBlocking would spin-loop after the empty pull.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			itemReceived := make(chan int, 1)
+			pullStarted := make(chan struct{})
+
+			// Start PullBlocking on empty queue
+			go func() {
+				close(pullStarted)
+				item := q.PullBlocking(ctx)
+				itemReceived <- item
+			}()
+
+			<-pullStarted
+			synctest.Wait() // PullBlocking is blocked waiting
+
+			// Push an item, but immediately pull it with another consumer
+			q.Push(99)
+			pulled := q.Pull()
+			assert.Equal(t, 99, pulled)
+
+			// PullBlocking should remain blocked (not spin-loop) even though it was signaled
+			synctest.Wait()
+
+			select {
+			case <-itemReceived:
+				t.Fatal("PullBlocking should not have received the pulled item")
+			default:
+				// Expected: PullBlocking is still blocked
+			}
+
+			// Now push a second item - PullBlocking should receive this one
+			q.Push(42)
+			synctest.Wait()
+
+			select {
+			case item := <-itemReceived:
+				assert.Equal(t, 42, item)
+			default:
+				t.Fatal("expected to receive item from queue")
+			}
+		})
+	})
+
+	t.Run("PullBlocking Cancellation", func(t *testing.T) {
+		// This test verifies that PullBlocking() checks waitable.Done()
+		// before blocking, not just after. If the waitable is already cancelled,
+		// PullBlocking should return immediately.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+
+			// Create already-cancelled context
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			// Verify context is cancelled
+			select {
+			case <-ctx.Done():
+				// Expected: context is already done
+			default:
+				t.Fatal("context should be cancelled")
+			}
+
+			// PullBlocking should return immediately with zero value
+			item := q.PullBlocking(ctx)
+			assert.Equal(t, 0, item, "should return zero value when cancelled")
+		})
+	})
+}
