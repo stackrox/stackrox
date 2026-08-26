@@ -1,8 +1,6 @@
 package dispatcher
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
@@ -22,72 +20,17 @@ func getVirtualMachineOwnerReference(owners []metav1.OwnerReference) (*metav1.Ow
 }
 
 func getVirtualMachineState(vm *sensorVirtualMachine.Info) virtualMachineV1.VirtualMachine_State {
-	if vm == nil {
-		return virtualMachineV1.VirtualMachine_UNKNOWN
-	}
-	if vm.Running {
-		return virtualMachineV1.VirtualMachine_RUNNING
-	}
-	return virtualMachineV1.VirtualMachine_STOPPED
+	return sensorVirtualMachine.State(vm)
 }
 
 func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
-	if vm == nil {
-		return int32(0), false
-	}
-	if vm.VSOCKCID == nil {
-		return int32(0), false
-	}
-	return int32(*vm.VSOCKCID), true
+	return sensorVirtualMachine.VSockCID(vm)
 }
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
-	facts := map[string]string{
-		pkgVM.GuestOSKey: pkgVM.UnknownGuestOS,
-	}
-	if vm.GuestOS != "" {
-		facts[pkgVM.GuestOSKey] = vm.GuestOS
-	}
-	if vm.Description != "" {
-		facts[pkgVM.DescriptionKey] = vm.Description
-	}
-	if vm.NodeName != "" {
-		facts[pkgVM.NodeNameKey] = vm.NodeName
-	}
-	if len(vm.IPAddresses) > 0 {
-		facts[pkgVM.IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
-	}
-	if len(vm.ActivePods) > 0 {
-		facts[pkgVM.ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
-	}
-	if len(vm.BootOrder) > 0 {
-		facts[pkgVM.BootOrderKey] = strings.Join(vm.BootOrder, ", ")
-	}
-	if len(vm.CDRomDisks) > 0 {
-		facts[pkgVM.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
-	}
-	return facts
+	return sensorVirtualMachine.Facts(vm)
 }
 
 func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
-	if vm == nil {
-		return nil
-	}
-	vSockCID, vSockCIDSet := getVirtualMachineVSockCID(vm)
-	return &central.SensorEvent{
-		Id:     string(vm.ID),
-		Action: action,
-		Resource: &central.SensorEvent_VirtualMachine{
-			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:          string(vm.ID),
-				Namespace:   vm.Namespace,
-				Name:        vm.Name,
-				ClusterId:   clusterID,
-				VsockCid:    vSockCID,
-				VsockCidSet: vSockCIDSet,
-				State:       getVirtualMachineState(vm),
-				Facts:       getFacts(vm),
-			},
-		},
-	}
+	return sensorVirtualMachine.SensorEvent(action, clusterID, vm)
 }
