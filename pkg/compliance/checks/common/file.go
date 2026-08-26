@@ -34,7 +34,7 @@ func RecursiveOwnershipCheckIfDirExists(dir, user, group string) *standards.Chec
 
 // CheckRecursiveOwnership checks the files against the passed user and group
 func CheckRecursiveOwnership(f *compliance.File, user, group string) []*storage.ComplianceResultValue_Evidence {
-	var results []*storage.ComplianceResultValue_Evidence
+	var results []*storage.ComplianceResultValue_Evidence //nolint:prealloc // recursive function with unpredictable size
 	results = append(results, ownershipCheck(f, user, group)...)
 	for _, f := range f.GetChildren() {
 		results = append(results, CheckRecursiveOwnership(f, user, group)...)

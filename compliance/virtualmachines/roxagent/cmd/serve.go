@@ -108,27 +108,12 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 		return err
 	}
 
-	// The mapping file must exist locally before the first scan can run:
-	// scan() never fetches it itself, so this initial fetch is mandatory.
-	// If it fails, startup fails rather than running a scan against no data.
-	// Start(ctx, true) blocks until that fetch completes, then keeps
-	// refreshing the file in the background.
-	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
-		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
-	if err := mappingDownloader.Start(ctx, true); err != nil {
-		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
-	}
+	// serveCtx lets early-return paths (mapping/scan failure after listen)
+	// stop Serve instead of leaking the accept loop until process exit.
+	serveCtx, cancelServe := context.WithCancel(ctx)
+	defer cancelServe()
 
 	cache := &vsockserver.ReportCache{}
-	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
-
-	report, err := scan(ctx, cfg.hostPath, mappingCachePath)
-	if err != nil {
-		return fmt.Errorf("initial scan: %w", err)
-	}
-	cache.SetReport(report, discoverFacts(cfg.hostPath))
-	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
-
 	handler := vsockserver.NewHandler(cache, agentVersion)
 
 	// TLS is mandatory: sensor always dials with TLS, so a plaintext agent is
@@ -155,14 +140,47 @@ func runServe(ctx context.Context, cfg serveConfig) error {
 	log.Infof("Listening on VSOCK port %d (pull mode)", cfg.port)
 
 	var wg sync.WaitGroup
-	wg.Go(func() { srv.Serve(ctx, ln) })
-	wg.Go(func() { vmRescanner.Run(ctx) })
+	wg.Go(func() { srv.Serve(serveCtx, ln) })
 
-	<-ctx.Done()
+	// Report systemd readiness once VSOCK is up.
+	if err := notifySystemdReady(); err != nil {
+		// Exiting, as systemd would kill this service anyway after TimeoutStartSec.
+		cancelServe()
+		wg.Wait()
+		return err
+	}
+
+	// The mapping file must exist locally before the first scan can run:
+	// scan() never fetches it itself, so this initial fetch is mandatory.
+	// If it fails, startup fails rather than running a scan against no data.
+	// Start(serveCtx, true) blocks until that fetch completes, then keeps
+	// refreshing the file in the background.
+	mappingDownloader := newMappingDownloader(cfg.repoCPEURL, mappingCachePath,
+		logMappingDownloadResult(cfg.repoCPEURL, mappingCachePath))
+	if err := mappingDownloader.Start(serveCtx, true); err != nil {
+		cancelServe()
+		wg.Wait()
+		return fmt.Errorf("initial repository-to-CPE mapping fetch: %w", err)
+	}
+
+	report, err := scan(serveCtx, cfg.hostPath, mappingCachePath)
+	if err != nil {
+		cancelServe()
+		wg.Wait()
+		mappingDownloader.Stop()
+		return fmt.Errorf("initial scan: %w", err)
+	}
+	cache.SetReport(report, discoverFacts(cfg.hostPath))
+	log.Infof("Initial scan complete, report cached. Num packages: %d", len(report.GetContents().GetPackages()))
+
+	vmRescanner := newRescanner(cache, cfg.hostPath, mappingCachePath, cfg.rescanInterval)
+	wg.Go(func() { vmRescanner.Run(serveCtx) })
+
+	<-serveCtx.Done()
 	// Wait for Serve's graceful drain (in-flight connections) and the
 	// rescan loop to finish before returning, so the process doesn't exit
 	// mid-drain or mid-scan. mappingDownloader.Stop waits for its own
-	// background refresh loop the same way, once ctx is already done.
+	// background refresh loop the same way, once serveCtx is already done.
 	wg.Wait()
 	mappingDownloader.Stop()
 	return nil

@@ -69,15 +69,16 @@ jobs:
         UPDATER_SOURCE: ${{ inputs.source }}
         SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
       run: |
-        # check-freshness.sh exit codes: 0=fresh, 1=stale/missing, 2=error.
-        rc=0
-        ./.github/workflows/scripts/scanner-updater-check-freshness.sh || rc=$?
-        if [[ $rc -eq 0 ]]; then
-            echo "result=skip" >> "$GITHUB_OUTPUT"
-        elif [[ $rc -eq 1 ]]; then
-            echo "result=run" >> "$GITHUB_OUTPUT"
-        else
+        interval_secs=$(./.github/workflows/scripts/scanner-updater-config.sh interval-secs "$UPDATER_SOURCE")
+
+        fresh=$(./.github/workflows/scripts/scanner-updater-check-freshness.sh --max-age "$interval_secs") || {
             echo "result=error" >> "$GITHUB_OUTPUT"
+            exit 0
+        }
+        if [[ "$fresh" == "true" ]]; then
+            echo "result=skip" >> "$GITHUB_OUTPUT"
+        else
+            echo "result=run" >> "$GITHUB_OUTPUT"
         fi
 
     - name: Fail on recheck error

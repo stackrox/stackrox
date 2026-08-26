@@ -146,9 +146,6 @@ var (
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
 
-	// SensorCompatibilityStatus enables sensor compatibility status UI in place of sensor upgrade status
-	SensorCompatibilityStatus = registerFeature("Display sensor compatibility status instead of sensor upgrade status", "ROX_SENSOR_COMPATIBILITY_STATUS")
-
 	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
 	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
 )

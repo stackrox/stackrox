@@ -46,7 +46,11 @@ export function viteProxy() {
 
     const proxy = proxyWithTarget(process.env.UI_START_TARGET || 'https://localhost:8000');
 
+    // Custom proxies come first so their (often more specific, possibly regex)
+    // paths take precedence over the generic catch-alls below. Vite matches proxy
+    // contexts in insertion order, and treats keys beginning with `^` as RegExp.
     return {
+        ...customProxies,
         '/v1': proxy,
         '/v2': proxy,
         '/api': proxy,
