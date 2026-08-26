@@ -130,11 +130,11 @@ func (s *serviceImpl) PostReportConfiguration(ctx context.Context, request *apiV
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(createdReportConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id)
+	} else if err := s.scheduler.UpsertReportSchedule(createdReportConfig); err != nil {
 		return nil, err
 	}
-	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id)
 
 	resp, err := s.convertProtoReportConfigurationToV2(createdReportConfig)
 	if err != nil {
@@ -179,11 +179,11 @@ func (s *serviceImpl) UpdateReportConfiguration(ctx context.Context, request *ap
 		return nil, err
 	}
 
-	err = s.scheduler.UpsertReportSchedule(updatedConfig)
-	if err != nil {
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId())
+	} else if err := s.scheduler.UpsertReportSchedule(updatedConfig); err != nil {
 		return nil, err
 	}
-	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, updatedConfig.GetId())
 	return &apiV2.Empty{}, nil
 }
 
@@ -269,8 +269,11 @@ func (s *serviceImpl) DeleteReportConfiguration(ctx context.Context, id *apiV2.R
 		return nil, err
 	}
 
-	s.scheduler.RemoveReportSchedule(id.GetId())
-	notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId())
+	if env.CentralWorkerEnabled.BooleanSetting() {
+		notifyWithRetry(ctx, s.db, pgNotify.ReportConfigChanged, id.GetId())
+	} else {
+		s.scheduler.RemoveReportSchedule(id.GetId())
+	}
 	return &apiV2.Empty{}, nil
 }
 

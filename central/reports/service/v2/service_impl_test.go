@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
@@ -25,6 +26,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	postgresMocks "github.com/stackrox/rox/pkg/postgres/mocks"
+	pgNotify "github.com/stackrox/rox/pkg/postgres/notify"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -56,6 +59,7 @@ type ReportServiceTestSuite struct {
 	notifierDataStore       *notifierDSMocks.MockDataStore
 	blobStore               *blobDSMocks.MockDatastore
 	scheduler               *schedulerMocks.MockScheduler
+	db                      *postgresMocks.MockDB
 	service                 Service
 }
 
@@ -68,8 +72,9 @@ func (s *ReportServiceTestSuite) SetupTest() {
 	s.notifierDataStore = notifierDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDSMocks.NewMockDatastore(s.mockCtrl)
 	s.scheduler = schedulerMocks.NewMockScheduler(s.mockCtrl)
+	s.db = postgresMocks.NewMockDB(s.mockCtrl)
 	validator := validation.New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore)
-	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, nil)
+	s.service = New(s.reportConfigDataStore, s.reportSnapshotDataStore, s.collectionDataStore, s.notifierDataStore, s.scheduler, s.blobStore, validator, s.db)
 }
 
 func (s *ReportServiceTestSuite) TearDownSuite() {
@@ -132,6 +137,38 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
 	_, err := s.service.PostReportConfiguration(allAccessContext, requestConfig)
 	s.Error(err)
+}
+
+func (s *ReportServiceTestSuite) TestCreateReportConfigurationWithCentralWorker() {
+	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
+
+	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+	requestConfig.Notifiers = nil
+	requestConfig.Schedule = nil
+	s.mockCollectionStoreCalls(requestConfig, true, false, false)
+
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	identity := mockIdentity.NewMockIdentity(s.mockCtrl)
+	identity.EXPECT().UID().Return(creator.GetId()).AnyTimes()
+	identity.EXPECT().FullName().Return(creator.GetName()).AnyTimes()
+	identity.EXPECT().FriendlyName().Return(creator.GetName()).AnyTimes()
+	role := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	role.EXPECT().GetAccessScope().Return(&storage.SimpleAccessScope{}).Times(1)
+	identity.EXPECT().Roles().Return([]permissions.ResolvedRole{role}).Times(1)
+	ctx := authn.ContextWithIdentity(s.ctx, identity, s.T())
+
+	storedConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	storedConfig.Notifiers = nil
+	storedConfig.Schedule = nil
+	storedConfig.Creator = creator
+	storedConfig.GetVulnReportFilters().AccessScopeRules = []*storage.SimpleAccessScope_Rules{{}}
+	s.reportConfigDataStore.EXPECT().AddReportConfiguration(ctx, storedConfig).Return(storedConfig.GetId(), nil).Times(1)
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, storedConfig.GetId()).Return(storedConfig, true, nil).Times(1)
+	s.db.EXPECT().Exec(ctx, "SELECT pg_notify($1, $2)", pgNotify.ReportConfigChanged, storedConfig.GetId()).
+		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
+
+	_, err := s.service.PostReportConfiguration(ctx, requestConfig)
+	s.NoError(err)
 }
 
 func (s *ReportServiceTestSuite) TestUpdateReportConfigurationError() {
@@ -226,6 +263,30 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 			}
 		})
 	}
+}
+
+func (s *ReportServiceTestSuite) TestUpdateReportConfigurationWithCentralWorker() {
+	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
+
+	creator := &storage.SlimUser{Id: "uid", Name: "name"}
+	ctx := s.getContextForUser(creator)
+	requestConfig := fixtures.GetValidV2ReportConfigWithMultipleNotifiers()
+	requestConfig.Notifiers = nil
+	requestConfig.Schedule = nil
+	s.mockCollectionStoreCalls(requestConfig, true, false, true)
+
+	storedConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV2()
+	storedConfig.Notifiers = nil
+	storedConfig.Schedule = nil
+	storedConfig.Creator = creator
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(ctx, storedConfig.GetId()).Return(storedConfig, true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(ctx, gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
+	s.reportConfigDataStore.EXPECT().UpdateReportConfiguration(ctx, storedConfig).Return(nil).Times(1)
+	s.db.EXPECT().Exec(ctx, "SELECT pg_notify($1, $2)", pgNotify.ReportConfigChanged, storedConfig.GetId()).
+		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
+
+	_, err := s.service.UpdateReportConfiguration(ctx, requestConfig)
+	s.NoError(err)
 }
 
 func (s *ReportServiceTestSuite) TestListReportConfigurations() {
@@ -406,6 +467,22 @@ func (s *ReportServiceTestSuite) TestDeleteReportConfiguration() {
 			s.NoError(err)
 		}
 	}
+}
+
+func (s *ReportServiceTestSuite) TestDeleteReportConfigurationWithCentralWorker() {
+	s.T().Setenv(env.CentralWorkerEnabled.EnvVar(), "true")
+
+	const configID = "config-id"
+	ctx := sac.WithAllAccess(context.Background())
+	s.reportConfigDataStore.EXPECT().GetReportConfiguration(gomock.Any(), configID).
+		Return(fixtures.GetValidReportConfigWithMultipleNotifiersV2(), true, nil).Times(1)
+	s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).Return([]*storage.ReportSnapshot{}, nil).Times(1)
+	s.reportConfigDataStore.EXPECT().RemoveReportConfiguration(ctx, configID).Return(nil).Times(1)
+	s.db.EXPECT().Exec(ctx, "SELECT pg_notify($1, $2)", pgNotify.ReportConfigChanged, configID).
+		Return(pgconn.NewCommandTag("SELECT 1"), nil).Times(1)
+
+	_, err := s.service.DeleteReportConfiguration(ctx, &apiV2.ResourceByID{Id: configID})
+	s.NoError(err)
 }
 
 func (s *ReportServiceTestSuite) upsertReportConfigTestCases(isUpdate bool) []upsertTestCase {
