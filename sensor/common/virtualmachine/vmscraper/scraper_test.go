@@ -889,6 +889,12 @@ func TestVMScraper_SchedulesByOutcome(t *testing.T) {
 			wantBackoff: initialBackoff,
 			wantGap:     initialBackoff,
 		},
+		"ErrMappingRequired should retry using backoff": {
+			client:      &mockProtocolClient{errQueue: []error{vsockclient.ErrMappingRequired}},
+			sender:      &mockSender{},
+			wantBackoff: initialBackoff,
+			wantGap:     initialBackoff,
+		},
 		"io.EOF should retry using backoff": {
 			client:      &mockProtocolClient{errQueue: []error{io.EOF}},
 			sender:      &mockSender{},

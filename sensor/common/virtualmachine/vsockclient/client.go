@@ -29,6 +29,8 @@ var (
 	ErrInternal = errors.New("agent internal error")
 	// ErrBusy indicates the agent's single connection slot is held by another request.
 	ErrBusy = errors.New("agent is busy with another request")
+	// ErrMappingRequired indicates the agent has no repository-to-CPE mapping yet.
+	ErrMappingRequired = errors.New("agent has no repository-to-CPE mapping yet")
 )
 
 // GetReportResult holds the parsed response from a GetReport call.
@@ -143,6 +145,8 @@ func errorFromResponse(e *pb.ErrorResponse) error {
 		return fmt.Errorf("%w: %s", ErrInternal, e.GetMessage())
 	case pb.ErrorCode_ERROR_CODE_BUSY:
 		return fmt.Errorf("%w: %s", ErrBusy, e.GetMessage())
+	case pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED:
+		return fmt.Errorf("%w: %s", ErrMappingRequired, e.GetMessage())
 	default:
 		return fmt.Errorf("agent error (%s): %s", e.GetCode(), e.GetMessage())
 	}

@@ -577,6 +577,10 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusNotReady).Inc()
 		return scrapeRetryable
+	case errors.Is(err, vsockclient.ErrMappingRequired):
+		log.Debugf("VMScraper: roxagent on %q has no repository-to-CPE mapping yet", key)
+		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusNotReady).Inc()
+		return scrapeRetryable
 	case errors.Is(err, vsockclient.ErrUnknownMethod):
 		log.Warnf("VMScraper: roxagent on %q does not support the GetReport method", key)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownMethod).Inc()

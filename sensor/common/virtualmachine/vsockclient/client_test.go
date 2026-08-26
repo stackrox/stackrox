@@ -125,6 +125,11 @@ func TestSendGetReport_ErrorCodes(t *testing.T) {
 			message: "agent is already serving another request",
 			wantErr: ErrBusy,
 		},
+		"should wrap ErrMappingRequired for MAPPING_REQUIRED": {
+			code:    pb.ErrorCode_ERROR_CODE_MAPPING_REQUIRED,
+			message: "repository-to-CPE mapping not yet available",
+			wantErr: ErrMappingRequired,
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
