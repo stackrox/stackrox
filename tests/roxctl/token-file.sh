@@ -13,22 +13,68 @@ eecho() {
   echo "$@" >&2
 }
 
+die() {
+  eecho "$@"
+  exit 1
+}
+
 curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
-# Retrieve API token
-TOKEN_FILE=$(mktemp)
-curl -k -f \
-  --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") \
-  -d '{"name": "test", "role": "Admin"}' \
-  --retry 5 \
-  --retry-connrefused \
-  "https://$API_ENDPOINT/v1/apitokens/generate" \
-  | jq -r .token \
-  > "$TOKEN_FILE"
+# token_file_has_token rejects jq's "null" for a missing .token field.
+token_file_has_token() {
+  local token
+  token="$(cat "$TOKEN_FILE")"
+  [ -n "$token" ] && [ "$token" != "null" ]
+}
 
-[ -n "$(cat "$TOKEN_FILE")" ]
+request_api_token() {
+  # wait_for_api_token owns retries; curl --retry would multiply generate POSTs.
+  curl -k -f \
+    --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") \
+    -d '{"name": "test", "role": "Admin"}' \
+    --connect-timeout 10 \
+    --max-time 30 \
+    "https://$API_ENDPOINT/v1/apitokens/generate"
+}
+
+write_token_file() {
+  local response
+  response="$(request_api_token)" || return 1
+  printf '%s' "$response" | jq -r .token > "$TOKEN_FILE" || return 1
+  token_file_has_token
+}
+
+# sleep_before_next_attempt waits 1s, 2s, 4s, then 8s after attempts 1-4.
+sleep_before_next_attempt() {
+  case "$1" in
+    1) sleep 1 ;;
+    2) sleep 2 ;;
+    3) sleep 4 ;;
+    4) sleep 8 ;;
+  esac
+}
+
+wait_for_api_token() {
+  local attempt=1
+  local max_attempts=5
+
+  while [ "$attempt" -le "$max_attempts" ]; do
+    if write_token_file; then
+      return 0
+    fi
+    if [ "$attempt" -eq "$max_attempts" ]; then
+      die "Failed to retrieve API token after ${max_attempts} attempts: token file is empty"
+    fi
+    eecho "Token generate attempt ${attempt}/${max_attempts} failed, retrying..."
+    sleep_before_next_attempt "$attempt"
+    attempt=$((attempt + 1))
+  done
+}
+
+TOKEN_FILE=$(mktemp)
+wait_for_api_token
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl " "$@"

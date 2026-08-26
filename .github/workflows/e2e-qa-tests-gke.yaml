@@ -1,0 +1,33 @@
+name: e2e-qa-tests-gke
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+      should-run:
+        description: true if should really run the job. false - otherwise, i.e. the job should be skipped.
+        type: boolean
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to test.
+        type: string
+        required: true
+
+jobs:
+  run:
+    uses: ./.github/workflows/e2e-qa-tests.yaml
+    with:
+      should-run: ${{ github.event_name == 'workflow_dispatch' || inputs.should-run }}
+      tag: ${{ inputs.tag }}
+      ci-job-name: gke-qa-e2e-tests
+      cluster-name-prefix: e2e-qa-tests-gke
+      cluster-provisioning-method: direct-gke
+      extra-env-vars: |
+        ORCHESTRATOR_FLAVOR=k8s
+        KUBERNETES_PROVIDER=gke
+    secrets: inherit

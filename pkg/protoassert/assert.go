@@ -198,10 +198,10 @@ func diffSlices[V any, T message[V]](a, b []T) (extraA, extraB []T) {
 	aLen, bLen := len(a), len(b)
 
 	visited := make([]bool, bLen)
-	for i := 0; i < aLen; i++ {
+	for i := range aLen {
 		element := a[i]
 		found := false
-		for j := 0; j < bLen; j++ {
+		for j := range bLen {
 			if visited[j] {
 				continue
 			}
@@ -216,7 +216,7 @@ func diffSlices[V any, T message[V]](a, b []T) (extraA, extraB []T) {
 		}
 	}
 
-	for j := 0; j < bLen; j++ {
+	for j := range bLen {
 		if visited[j] {
 			continue
 		}

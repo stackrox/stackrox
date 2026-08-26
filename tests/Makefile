@@ -25,7 +25,7 @@ destructive-tests:
 .PHONY: external-backup-tests
 external-backup-tests:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -v -run TestGCSExternalBackup 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,externalbackups ../scripts/go-test.sh -cover -v -run TestExternalBackup 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=external-backup-tests-results
 
 .PHONY: compliance-v2-tests

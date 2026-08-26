@@ -52,10 +52,13 @@ import {
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
+    vulnerabilityImageReportsPath,
+    vulnerabilityNodeReportsPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
 import type { RouteKey } from 'routePaths';
 
+import FeatureDisabledMessage from 'Components/FeatureDisabledMessage';
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
 import usePermissions from 'hooks/usePermissions';
@@ -292,9 +295,22 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     },
     'vulnerabilities/reports': {
         component: asyncComponent(
-            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+            () => import('Containers/Vulnerabilities/Reports/VulnerabilityReportsPage')
         ),
         path: vulnerabilityReportsPath,
+    },
+    'vulnerabilities/reports/images': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/VulnerablityReporting/VulnReportingPage')
+        ),
+        path: vulnerabilityImageReportsPath,
+    },
+    'vulnerabilities/reports/nodes': {
+        component: asyncComponent(
+            () =>
+                import('Containers/Vulnerabilities/Reports/NodeVulnerabilityReports/NodeVulnerabilityReportsPage')
+        ),
+        path: vulnerabilityNodeReportsPath,
     },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
@@ -367,6 +383,22 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         const { component: Component, path } = routeComponentMap[routeKey];
                         return <Route key={routeKey} path={`${path}/*`} element={<Component />} />;
                     })}
+                {!isFeatureFlagEnabled('ROX_LEGACY_SCANNER') && (
+                    <Route
+                        path={`${vulnerabilitiesPlatformCvesPath}/*`}
+                        element={
+                            <PageSection>
+                                <PageTitle title="Kubernetes components - Disabled" />
+                                <FeatureDisabledMessage
+                                    title="Kubernetes components"
+                                    message="The Legacy Scanner [deprecated] has been disabled by your administrator."
+                                    actionText="Go to Vulnerability Management"
+                                    url={vulnerabilitiesUserWorkloadsPath}
+                                />
+                            </PageSection>
+                        }
+                    />
+                )}
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>
             {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}

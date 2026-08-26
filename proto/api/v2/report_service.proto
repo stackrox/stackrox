@@ -13,7 +13,8 @@ option java_package = "io.stackrox.proto.api.v2";
 
 message ReportConfiguration {
   enum ReportType {
-    VULNERABILITY = 0;
+    VULNERABILITY = 0; // for historical reasons, this short form was used to mean "Image Vulnerability"
+    NODE_VULNERABILITY = 1;
   }
   string id = 1;
   string name = 2;
@@ -21,6 +22,7 @@ message ReportConfiguration {
   ReportType type = 4;
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
+    NodeVulnerabilityReportFilters node_vuln_report_filters = 9;
   }
 
   ReportSchedule schedule = 6;
@@ -63,6 +65,13 @@ message VulnerabilityReportFilters {
   bool include_advisory = 9 [deprecated = true];
   // Filters related to image, cve etc for non-collection-based scopes
   string query = 12;
+}
+
+message NodeVulnerabilityReportFilters {
+  oneof cves_since {
+    bool all_vuln = 1;
+  }
+  string query = 2;
 }
 
 //filter for ondemand view based reports
@@ -192,6 +201,11 @@ message CollectionSnapshot {
 }
 
 message ReportSnapshot {
+  enum ReportType {
+    VULNERABILITY = 0; // for historical reasons, this short form was used to mean "Image Vulnerability"
+    NODE_VULNERABILITY = 1;
+  }
+  ReportType type = 16;
   string report_config_id = 1;
   string report_job_id = 2;
   string name = 3;
@@ -199,6 +213,7 @@ message ReportSnapshot {
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
     ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
+    NodeVulnerabilityReportFilters node_vuln_report_filters = 15;
   }
   CollectionSnapshot collection_snapshot = 6;
   ReportSchedule schedule = 7;
@@ -252,11 +267,13 @@ message DeleteReportRequest {
 
 message ReportRequestViewBased {
   enum ReportType {
-    VULNERABILITY = 0;
+    VULNERABILITY = 0; // for historical reasons, this short form was used to mean "Image Vulnerability"
+    NODE_VULNERABILITY = 1;
   }
   ReportType type = 1;
   oneof filter {
     ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 2;
+    NodeVulnerabilityReportFilters node_vuln_report_filters = 4;
   }
 
   string area_of_concern = 3;

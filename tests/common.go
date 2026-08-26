@@ -3,14 +3,17 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -19,7 +22,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,6 +63,8 @@ const (
 
 var (
 	sensorPodLabels = map[string]string{"app": "sensor"}
+
+	errNotFound = errors.New("not found")
 )
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
@@ -293,7 +297,7 @@ func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	var alerts []*storage.ListAlert
 	// Retry until desired alert count is reached when sensor(s) resync
-	for i := 0; i < 45; i++ {
+	for range 45 {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()
@@ -420,7 +424,7 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 			},
 		},
 		Spec: appsV1.DeploymentSpec{
-			Replicas: pointers.Int32(int32(replicas)),
+			Replicas: new(int32(replicas)),
 			Selector: &metaV1.LabelSelector{
 				MatchLabels: map[string]string{"app": deploymentName},
 			},
@@ -590,7 +594,7 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: new(int64(0))})
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())
@@ -891,6 +895,36 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 }
 
 type logMatcher = logmatchers.LogMatcher
+
+// getPodLogLine returns the first log line found that matches the regular expression
+// and occurs after the fromByte position. Returns errNotFound if no lines match.
+func (ks *KubernetesSuite) getPodLogLine(ctx context.Context, namespace string, podName string, container string, fromByte int64, re *regexp.Regexp) (string, error) {
+	resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(podName, &coreV1.PodLogOptions{Container: container}).Do(ctx)
+	log, err := resp.Raw()
+	if err != nil {
+		return "", fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", podName, namespace, err)
+	}
+
+	reader := bytes.NewReader(log)
+	_, err = reader.Seek(fromByte, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("could not seek to pos %d: %w", fromByte, err)
+	}
+
+	br := bufio.NewReader(reader)
+	for {
+		line, _, err := br.ReadLine()
+		if errors.Is(err, io.EOF) {
+			return "", errNotFound
+		}
+		if err != nil {
+			return "", err
+		}
+		if re.Match(line) {
+			return string(line), nil
+		}
+	}
+}
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {

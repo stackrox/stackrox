@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -188,6 +189,17 @@ func (g *garbageCollectorImpl) Start() {
 }
 
 func (g *garbageCollectorImpl) pruneBasedOnConfig() {
+	acquired, release, err := dblock.TryAcquireAdvisoryLock(pruningCtx, g.postgres, dblock.PruningGCLockID)
+	if err != nil {
+		log.Errorf("[Pruning] Failed to acquire advisory lock: %v", err)
+		return
+	}
+	if !acquired {
+		log.Info("[Pruning] Skipping cycle: advisory lock held by another process")
+		return
+	}
+	defer release()
+
 	pvtConfig, err := g.config.GetPrivateConfig(pruningCtx)
 	if err != nil {
 		log.Error(err)
@@ -587,7 +599,7 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 
 	// Each cluster has a separate store thus we can take advantage of doing these deletions concurrently.  If we don't
 	// the entire prune job will be stuck waiting on processing the network flows deletions in cluster sequence.
-	for _, c := range clusters.AsSlice() {
+	for c := range clusters.All() {
 		if err := sema.Acquire(pruningCtx, 1); err != nil {
 			log.Errorf("context cancelled via stop: %v", err)
 			return

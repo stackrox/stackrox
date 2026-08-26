@@ -470,7 +470,7 @@ func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
 				Command: []string{"sh", "-c", "echo init"},
 				Args:    []string{"arg1"},
 				SecurityContext: &v1.SecurityContext{
-					Privileged: boolPtr(true),
+					Privileged: new(true),
 				},
 				LivenessProbe: &v1.Probe{TimeoutSeconds: 5},
 			},
@@ -494,8 +494,4 @@ func TestPopulateContainersInitContainerFieldsPopulated(t *testing.T) {
 	assert.Equal(t, []string{"arg1"}, initContainer.GetConfig().GetArgs())
 	assert.True(t, initContainer.GetSecurityContext().GetPrivileged())
 	assert.True(t, initContainer.GetLivenessProbe().GetDefined())
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }

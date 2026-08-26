@@ -84,6 +84,34 @@ func TestFraming(t *testing.T) {
 				_ = r.Close()
 			},
 		},
+		"should discard a framed payload without error": {
+			run: func(t *testing.T) {
+				payload := []byte("hello world")
+				var buf bytes.Buffer
+				require.NoError(t, WriteFrame(&buf, payload))
+				require.NoError(t, DiscardFrame(&buf, 1024))
+				assert.Zero(t, buf.Len())
+			},
+		},
+		"should reject discarded frame exceeding size limit": {
+			run: func(t *testing.T) {
+				payload := bytes.Repeat([]byte("x"), 100)
+				var buf bytes.Buffer
+				require.NoError(t, WriteFrame(&buf, payload))
+				err := DiscardFrame(&buf, 50)
+				assert.ErrorIs(t, err, ErrFrameTooLarge)
+			},
+		},
+		"should error when discarded payload is truncated": {
+			run: func(t *testing.T) {
+				var buf bytes.Buffer
+				_ = binary.Write(&buf, binary.BigEndian, uint32(100))
+				buf.Write(make([]byte, 50))
+				err := DiscardFrame(&buf, 1024)
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, io.ErrUnexpectedEOF)
+			},
+		},
 	}
 	for name, tc := range cases {
 		t.Run(name, tc.run)

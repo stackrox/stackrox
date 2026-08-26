@@ -301,6 +301,12 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
+        },
+        "cisaKev": {
+          "type": "boolean"
         }
       }
     },
@@ -658,9 +664,19 @@
         "datasource": {
           "type": "string",
           "title": "datasource is for internal use only"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
+        },
+        "cisaKev": {
+          "type": "boolean"
+        },
+        "origin": {
+          "$ref": "#/definitions/storageVulnOrigin",
+          "description": "origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV)."
         }
       },
-      "title": "Next Tag: 27"
+      "title": "Next Tag: 30"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -671,6 +687,27 @@
       "default": "V2",
       "description": "- V2: No unset for automatic backwards compatibility",
       "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageExploit": {
+      "type": "object",
+      "properties": {
+        "dateAdded": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "requiredAction": {
+          "type": "string"
+        },
+        "dueDate": {
+          "type": "string"
+        },
+        "knownRansomwareCampaignUse": {
+          "type": "string"
+        }
+      },
+      "description": "Exploit stores CISA Known Exploited Vulnerabilities (KEV) catalog data."
     },
     "storageNode": {
       "type": "object",
@@ -907,6 +944,22 @@
         "NO_EXECUTE_TAINT_EFFECT"
       ],
       "default": "UNKNOWN_TAINT_EFFECT"
+    },
+    "storageVulnOrigin": {
+      "type": "string",
+      "enum": [
+        "VULN_ORIGIN_OTHER",
+        "VULN_ORIGIN_OSV",
+        "VULN_ORIGIN_ALPINE",
+        "VULN_ORIGIN_AMAZON",
+        "VULN_ORIGIN_DEBIAN",
+        "VULN_ORIGIN_ORACLE",
+        "VULN_ORIGIN_PHOTON",
+        "VULN_ORIGIN_RED_HAT",
+        "VULN_ORIGIN_SUSE",
+        "VULN_ORIGIN_UBUNTU"
+      ],
+      "default": "VULN_ORIGIN_OTHER"
     },
     "storageVulnerabilitySeverity": {
       "type": "string",

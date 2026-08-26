@@ -12,7 +12,7 @@ EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
 COLLECTOR_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory collector-tag)"}"
 SCANNER_TAG="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory scanner-tag)"}"
-PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.9" "4.10.5" "4.11.1")
+PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.11" "4.9.10" "4.10.6" "4.11.2")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -190,6 +190,7 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$CURRENT_TAG"
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
     wait_for_api
+    wait_for_background_migrations
 
     # Verify data is still there
     checkForPostgresAccessScopes
@@ -221,6 +222,7 @@ test_upgrade_paths() {
     kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$CURRENT_TAG"
 
     wait_for_api
+    wait_for_background_migrations
 
     # Cleanup the scaled sensor before smoke tests
     helm uninstall -n stackrox stackrox-secured-cluster-services

@@ -146,12 +146,12 @@ func TestPublish(t *testing.T) {
 			return nil
 		}))
 		// Publish multiple events - they should not block even though consumer is slow
-		for i := 0; i < numEvents; i++ {
+		for range numEvents {
 			require.NoError(t, lane.Publish(&concurrentTestEvent{data: "event"}))
 		}
 		unblockSig.Signal()
 		// Wait for all events to be processed
-		for i := 0; i < numEvents; i++ {
+		for i := range numEvents {
 			select {
 			case <-doneCh:
 			case <-time.After(1 * time.Second):
@@ -217,11 +217,11 @@ func TestPublish(t *testing.T) {
 		startSignal := concurrency.NewSignal()
 
 		// Spawn multiple publisher goroutines
-		for i := 0; i < numPublishers; i++ {
+		for i := range numPublishers {
 			publisherID := i
 			go func() {
 				<-startSignal.Done()
-				for j := 0; j < eventsPerPublisher; j++ {
+				for j := range eventsPerPublisher {
 					event := &concurrentTestEvent{
 						data: fmt.Sprintf("publisher_%d_event_%d", publisherID, j),
 					}
@@ -316,6 +316,46 @@ func TestErrorHandling(t *testing.T) {
 	})
 }
 
+func TestHandleEvent_StalledConsumerDoesNotLeakGoroutines(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	const numEvents = 50
+	consumeCalled := make(chan struct{}, numEvents)
+	lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(newStalledConsumer(consumeCalled))).NewLane()
+	require.NotNil(t, lane)
+	defer lane.Stop()
+
+	require.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
+		return nil
+	}))
+
+	// Snapshot after the lane's own goroutines exist (run loop). Find must run
+	// before Stop(): the old watcher also selected on the stop signal, so
+	// checking only after Stop() would hide a reintroduced leak.
+	ignoreExisting := goleak.IgnoreCurrent()
+
+	for range numEvents {
+		require.NoError(t, lane.Publish(&concurrentTestEvent{}))
+	}
+
+	// Wait until the lane has actually dispatched Consume() for every published
+	// event before checking for leaks - otherwise the check could race ahead of
+	// dispatch and pass trivially regardless of what handleEvent does.
+	for i := range numEvents {
+		select {
+		case <-consumeCalled:
+		case <-time.After(time.Second):
+			t.Fatalf("timed out waiting for stalledConsumer.Consume to be called for event %d/%d", i+1, numEvents)
+		}
+	}
+
+	// This must be checked while the lane is still running, i.e. before Stop().
+	// stalledConsumer's errC is never resolved, so any per-event watcher
+	// goroutine would still be alive here.
+	require.NoError(t, goleak.Find(append([]goleak.Option{ignoreExisting}, goleak.CommonIgnores()...)...),
+		"concurrentLane must not spawn a goroutine per stalled consumer event")
+}
+
 func TestStop(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 	t.Run("stop should clean up resources", func(t *testing.T) {
@@ -382,3 +422,24 @@ func (m *mockConsumer) Stop() {
 		m.stopFn()
 	}
 }
+
+// newStalledConsumer builds a pubsub.NewConsumer factory whose Consume() returns
+// a channel that is never written to and never closed, simulating a consumer
+// whose processing never resolves. Every Consume() call is reported on
+// consumeCalled, so callers can deterministically wait for dispatch.
+func newStalledConsumer(consumeCalled chan<- struct{}) pubsub.NewConsumer {
+	return func(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
+		return &stalledConsumer{consumeCalled: consumeCalled}, nil
+	}
+}
+
+type stalledConsumer struct {
+	consumeCalled chan<- struct{}
+}
+
+func (c *stalledConsumer) Consume(_ concurrency.Waitable, _ pubsub.Event) <-chan error {
+	c.consumeCalled <- struct{}{}
+	return make(chan error)
+}
+
+func (c *stalledConsumer) Stop() {}

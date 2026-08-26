@@ -145,6 +145,9 @@ var (
 
 	// UISecretsPageMigration enables the secrets list page under the Risk section
 	UISecretsPageMigration = registerFeature("Display secrets list page under Risk section", "ROX_UI_SECRETS_PAGE_MIGRATION")
+
+	// LegacyScanner enables the legacy scanner (Scanner V2) integration.
+	LegacyScanner = registerFeature("Enable legacy scanner (Scanner V2) integration", "ROX_LEGACY_SCANNER", enabled)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -184,7 +187,8 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
-	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+	// VirtualMachines gates VM inventory, scanning, and VSOCK RBAC in Sensor.
+	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES", enabled)
 
 	// ScannerV4StoreExternalIndexReports enables storing index reports from delegated scans to Central's Scanner V4 Indexer.
 	ScannerV4StoreExternalIndexReports = registerFeature("Enables storing index reports from delegated scans to Central's Scanner V4 Indexer", "ROX_SCANNER_V4_STORE_EXTERNAL_INDEX_REPORTS", enabled)
@@ -200,4 +204,7 @@ var (
 
 	// ScannerV4Dedupe de-duplicates packages and vulnerabilities from appearing in scan results.
 	ScannerV4Dedupe = registerFeature("Deduplicate packages and vulnerabilities found in Scanner V4 results.", "ROX_SCANNER_V4_DEDUPE", enabled)
+
+	// ScannerV4SuppressOSVWithRedHatVEX suppresses OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists.
+	ScannerV4SuppressOSVWithRedHatVEX = registerFeature("Scanner V4 will suppress OSV.dev vulnerabilities when a corresponding Red Hat VEX assertion exists", "ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX", enabled)
 )

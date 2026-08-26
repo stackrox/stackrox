@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"strings"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -15,8 +14,6 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
-	"github.com/stackrox/rox/compliance/virtualmachines/relay"
-	vmmetrics "github.com/stackrox/rox/compliance/virtualmachines/relay/metrics"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -40,8 +37,7 @@ var log = logging.LoggerForModule()
 const (
 	// nodeResourceID is the resource ID used for node scanning UMH.
 	// Compliance handles exactly one node, so a single constant suffices.
-	nodeResourceID           = "this-node"
-	vmACKResourceIDSeparator = ":"
+	nodeResourceID = "this-node"
 )
 
 // Compliance represents the Compliance app
@@ -51,24 +47,19 @@ type Compliance struct {
 	nodeIndexer        node.NodeIndexer
 	umhNodeInventory   handler.UnconfirmedMessageHandler
 	umhNodeIndex       handler.UnconfirmedMessageHandler
-	umhVMIndex         handler.UnconfirmedMessageHandler
 	nodeInventoryCache atomic.Pointer[sensor.MsgFromCompliance]
 	nodeIndexCache     atomic.Pointer[sensor.MsgFromCompliance]
-	scrapeConfig       atomic.Pointer[sensor.MsgToCompliance_ScrapeConfig]
-	scrapeConfigReady  concurrency.Signal
 }
 
 // NewComplianceApp constructs the Compliance app object
 func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
-	umhNodeInv, umhNodeIndex, umhVMIndex handler.UnconfirmedMessageHandler) *Compliance {
+	umhNodeInv, umhNodeIndex handler.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
-		nodeNameProvider:  nnp,
-		nodeScanner:       scanner,
-		nodeIndexer:       nodeIndexer,
-		umhNodeInventory:  umhNodeInv,
-		umhNodeIndex:      umhNodeIndex,
-		umhVMIndex:        umhVMIndex,
-		scrapeConfigReady: concurrency.NewSignal(),
+		nodeNameProvider: nnp,
+		nodeScanner:      scanner,
+		nodeIndexer:      nodeIndexer,
+		umhNodeInventory: umhNodeInv,
+		umhNodeIndex:     umhNodeIndex,
 	}
 }
 
@@ -110,7 +101,7 @@ func (c *Compliance) Start() {
 	}()
 
 	var wg concurrency.WaitGroup
-	wg.Add(3)
+	wg.Add(2)
 
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
@@ -133,35 +124,6 @@ func (c *Compliance) Start() {
 			for n := range nodeIndexesC {
 				toSensorC <- n
 			}
-		}
-	}(ctx)
-
-	// The virtual machine relay (ROX-30476), which reads VM index reports from vsock connections and forwards them to
-	// sensor, is currently started and run in the compliance container. This enables reusing the existing connection to
-	// sensor and accelerates initial development.
-	go func(ctx context.Context) {
-		defer wg.Add(-1)
-		if !features.VirtualMachines.Enabled() {
-			return
-		}
-		// VM relay startup is gated by the first scrape config.
-		// We must not start relay until that config is available.
-		config := c.waitForInitialScrapeConfig(ctx)
-		if config == nil { // nil means ctx was cancelled
-			log.Info("Virtual machine relay start aborted: context cancelled")
-			return
-		}
-		if !shouldStartVMRelay(config) {
-			log.Infof("Virtual machine relay not started on master node; set %s=true to enable",
-				env.VirtualMachinesRelayEnabledOnMasterNodes.EnvVar())
-			return
-		}
-		log.Infof("Virtual machine relay enabled")
-
-		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-		err := relay.RunWithRetry(ctx, sensorClient, c.umhVMIndex)
-		if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-			log.Errorf("Error running virtual machine relay: %v", err)
 		}
 	}(ctx)
 
@@ -321,11 +283,6 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 				}
 				log.Fatalf("Error initializing stream to sensor: %v", err)
 			}
-			// Record and signal the first valid scrape config for VM relay startup.
-			if !c.scrapeConfigReady.IsDone() {
-				c.scrapeConfig.Store(config)
-				c.scrapeConfigReady.Signal()
-			}
 			// A second Context is introduced for cancelling the goroutine if runRecv returns.
 			// runRecv only returns on errors, upon which the client will get reinitialized,
 			// orphaning manageSendToSensor in the process.
@@ -339,27 +296,6 @@ func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServ
 			cancelFn() // runRecv is blocking, so the context is safely cancelled before the next call to initializeStream
 		}
 	}
-}
-
-// waitForInitialScrapeConfig waits for the first scrape config observed by the
-// stream manager and returns it. Returns nil only when ctx is cancelled.
-//
-// manageStream stores the scrape config before signaling readiness, and
-// initializeStream guarantees a non-nil config on success, so the returned
-// config is always valid when the context is not cancelled.
-func (c *Compliance) waitForInitialScrapeConfig(ctx context.Context) *sensor.MsgToCompliance_ScrapeConfig {
-	select {
-	case <-ctx.Done():
-		return nil
-	case <-c.scrapeConfigReady.Done():
-		return c.scrapeConfig.Load()
-	}
-}
-
-// shouldStartVMRelay reports whether the VM relay should start based on
-// the scrape config and the master-node override env var.
-func shouldStartVMRelay(config *sensor.MsgToCompliance_ScrapeConfig) bool {
-	return !config.GetIsMasterNode() || env.VirtualMachinesRelayEnabledOnMasterNodes.BooleanSetting()
 }
 
 func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceService_CommunicateClient, config *sensor.MsgToCompliance_ScrapeConfig) error {
@@ -423,8 +359,6 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 		dispatchACK(c.umhNodeInventory, "node inventory", ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
 		dispatchACK(c.umhNodeIndex, "node index", ack.GetAction(), ack.GetReason())
-	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
-		c.handleVMIndexACK(ack.GetResourceId(), ack.GetAction(), ack.GetReason())
 	default:
 		log.Errorf("Unknown ComplianceACK message type: %s", ack.GetMessageType())
 	}
@@ -443,41 +377,6 @@ func dispatchACK(umh handler.UnconfirmedMessageHandler, label string, action sen
 	default:
 		log.Errorf("Unknown ComplianceACK action for %s: %s", label, action)
 	}
-}
-
-// handleVMIndexACK handles ACK/NACK for VM index report messages.
-func (c *Compliance) handleVMIndexACK(resourceID string, action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
-	relayResourceID := resolveVMRelayResourceID(resourceID)
-	switch action {
-	case sensor.MsgToCompliance_ComplianceACK_ACK:
-		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("ACK").Inc()
-		c.umhVMIndex.HandleACK(relayResourceID)
-	case sensor.MsgToCompliance_ComplianceACK_NACK:
-		vmmetrics.VMIndexACKsFromSensor.WithLabelValues("NACK").Inc()
-		if reason != "" {
-			log.Infof("VM index NACK received for %s: %s", relayResourceID, reason)
-		}
-		c.umhVMIndex.HandleNACK(relayResourceID)
-	default:
-		log.Errorf("Unknown ComplianceACK action for VM index: %s", action)
-	}
-}
-
-// resolveVMRelayResourceID returns the CID key expected by relay/UMH.
-// Sensor can send VM index ACK/NACK as VMID:CID correlation pairs; relay state
-// remains CID-keyed, so we extract the CID portion when present.
-//
-// Limitation: VMID:CID does not distinguish multiple reports for the same VM
-// when the CID is unchanged, so a stale ACK can still match the latest entry.
-func resolveVMRelayResourceID(resourceID string) string {
-	vmID, cid, found := strings.Cut(resourceID, vmACKResourceIDSeparator)
-	if !found {
-		return resourceID
-	}
-	if vmID == "" || cid == "" || strings.Contains(cid, vmACKResourceIDSeparator) {
-		return resourceID
-	}
-	return cid
 }
 
 func (c *Compliance) startAuditLogCollection(ctx context.Context, client sensor.ComplianceService_CommunicateClient, request *sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest) auditlog.Reader {

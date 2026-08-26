@@ -5,107 +5,202 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 )
 
-// Guest paths for staging and installing the roxagent binary during VM tests.
 const (
-	// DefaultRoxagentInstallPath is the path used when copying and running roxagent on the guest.
-	DefaultRoxagentInstallPath = "/usr/local/bin/roxagent"
-	roxagentStagingPath        = "/tmp/roxagent"
+	// E2ERescanInterval is passed to serve --rescan-interval. It is the
+	// minimum allowed interval and keeps the package-freshness e2e within a
+	// reasonable wall-clock budget without reactive watching or restarts.
+	E2ERescanInterval = 5 * time.Minute
+	// E2EScraperPollInterval is the Sensor pull-mode scrape cadence used by
+	// the VM e2e suite - floored at 1m.
+	E2EScraperPollInterval = time.Minute
+	// roxagentUnit is the Quadlet-generated systemd unit customers run.
+	roxagentUnit               = "roxagent.service"
+	roxagentListenPollInterval = 5 * time.Second
+	guestPodmanAuthPath        = "/etc/containers/auth.json"
+	guestPodmanAuthStagingPath = "/tmp/roxagent-podman-auth.json"
 )
+
+// ErrPodmanNotFound means the guest has no podman binary. SetupSuite records
+// SkipReason and continues; TestScanPipeline skips that VM's subtests.
+var ErrPodmanNotFound = errors.New("podman not found on guest")
 
 // ErrTerminalVSOCKUnavailable is returned when vsock is permanently unavailable on the guest (no retry).
 var ErrTerminalVSOCKUnavailable = errors.New("terminal vsock unavailable")
 
-// roxagentMaxAttempts is the number of times to retry roxagent before giving up.
-const roxagentMaxAttempts = 3
-
-// isVsockUnavailableOutput detects terminal vsock device errors in roxagent combined output.
+// isVsockUnavailableOutput detects terminal vsock device errors in roxagent or
+// Podman combined output. Both the vsock token and an unavailable-device marker
+// must appear on the same line so an unrelated ENOENT in a journal dump is ignored.
 func isVsockUnavailableOutput(output string) bool {
-	lower := strings.ToLower(strings.TrimSpace(output))
-	if !strings.Contains(lower, "vsock") {
-		return false
+	for line := range strings.SplitSeq(strings.ToLower(output), "\n") {
+		if !strings.Contains(line, "vsock") {
+			continue
+		}
+		if strings.Contains(line, "no such device") ||
+			strings.Contains(line, "no such file or directory") ||
+			(strings.Contains(line, "/dev/vsock") && strings.Contains(line, "not found")) {
+			return true
+		}
 	}
-	return strings.Contains(lower, "no such device") ||
-		strings.Contains(lower, "no such file or directory")
+	return false
 }
 
-// verboseOutputHasOSFields reports whether a roxagent --verbose stdout
-// contains at least one recognised OS-detection field.
-func verboseOutputHasOSFields(stdout string) bool {
-	return strings.Contains(stdout, `"detectedOs"`) ||
-		strings.Contains(stdout, `"operatingSystem"`) ||
-		strings.Contains(stdout, `"operating_system"`)
+// EnsureRoxagentServing starts Quadlet `roxagent.service` if it is not already
+// active, then waits until ActiveState is active (READY=1 after VSOCK listen).
+func EnsureRoxagentServing(ctx context.Context, virt Virtctl, namespace, vm string) error {
+	if err := startRoxagentServeIfNeeded(ctx, virt, namespace, vm); err != nil {
+		return err
+	}
+	return waitRoxagentActive(ctx, virt, namespace, vm)
 }
 
-// CopyRoxagentBinary copies a local roxagent binary into the guest install path.
-func CopyRoxagentBinary(ctx context.Context, virt Virtctl, namespace, vm, hostBinaryPath string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "copy roxagent binary", func(ctx context.Context) error {
-		stderr, err := virt.SCPTo(ctx, namespace, vm, hostBinaryPath, roxagentStagingPath)
+func startRoxagentServeIfNeeded(ctx context.Context, virt Virtctl, namespace, vm string) error {
+	return retryOnSSHTransport(ctx, virt.Logf, "start roxagent serve", func(ctx context.Context) error {
+		state, err := roxagentServeState(ctx, virt, namespace, vm)
 		if err != nil {
-			return fmt.Errorf("virtctl scp roxagent: %w: %s", err, strings.TrimSpace(stderr))
+			return err
 		}
-		_, stderr, err = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "install roxagent binary",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "sudo", "install", "-m", "0755", roxagentStagingPath, DefaultRoxagentInstallPath)
-		if err != nil {
-			return fmt.Errorf("install roxagent binary on guest: %w: %s", err, strings.TrimSpace(stderr))
-		}
-		return nil
-	})
-}
-
-// VerifyRoxagentInstalled runs `roxagent --help` on the guest to confirm the binary is
-// present, executable, and resolvable in $PATH — all in a single SSH round-trip.
-func VerifyRoxagentInstalled(ctx context.Context, virt Virtctl, namespace, vm string) error {
-	return retryOnSSHTransport(ctx, virt.Logf, "verify roxagent installed", func(ctx context.Context) error {
-		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "verify roxagent installed",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, DefaultRoxagentInstallPath, "--help")
-		if err != nil {
-			return fmt.Errorf("roxagent --help: %w: %s", err, strings.TrimSpace(stderr))
-		}
-		return nil
-	})
-}
-
-// RunRoxagentOnce runs roxagent on the guest with the given repo2cpe URL.
-// It retries up to roxagentMaxAttempts times before giving up.
-//
-// This is the application-level retry loop: it retries when SSH transport
-// succeeded but roxagent itself exited non-zero (e.g., Scanner temporarily
-// unavailable, VSOCK relay not yet ready). Terminal vsock errors (missing
-// /dev/vsock) are not retried.
-//
-// SSH transport failures (banner timeout, network unreachable, websocket EOF)
-// are handled separately by runSSHCommandWithFramework's inner retry loop
-// before this layer ever sees the error.
-func RunRoxagentOnce(ctx context.Context, virt Virtctl, namespace, vm, repo2cpeURL string) error {
-	envAssignment := fmt.Sprintf("ROXAGENT_REPO2CPE_URL=%s", repo2cpeURL)
-
-	var lastErr error
-	for attempt := range roxagentMaxAttempts {
-		stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
-			description:            "run roxagent --verbose",
-			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
-		}, "sudo", "env", envAssignment, DefaultRoxagentInstallPath, "--verbose")
-
-		if err == nil {
-			if !verboseOutputHasOSFields(stdout) {
-				return fmt.Errorf("roxagent: verbose output OS assertion failed: no OS detection fields in output (stdout: %.200s)", strings.TrimSpace(stdout))
-			}
-			virt.Logf("roxagent completed (%d bytes stdout, %d bytes stderr)", len(stdout), len(stderr))
+		if state == "active" || state == "activating" {
+			virt.Logf("roxagent serve: %s already %s", roxagentUnit, state)
 			return nil
 		}
-		combined := strings.TrimSpace(stdout + "\n" + stderr)
-		if isVsockUnavailableOutput(combined) {
-			return fmt.Errorf("%w: roxagent: no retry for vsock device error: %w (stderr: %s)",
-				ErrTerminalVSOCKUnavailable, err, strings.TrimSpace(stderr))
+
+		if state == "failed" {
+			_, _, _ = runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+				description:            "reset-failed roxagent.service",
+				transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+			}, "sudo", "systemctl", "reset-failed", roxagentUnit)
 		}
-		lastErr = err
-		virt.Logf("roxagent attempt %d/%d failed: %v", attempt+1, roxagentMaxAttempts, err)
+
+		_, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+			description:            "systemctl start roxagent.service",
+			transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+		}, "sudo", "systemctl", "start", roxagentUnit)
+		if err != nil {
+			return wrapRoxagentUnitCmdError(ctx, virt, namespace, vm, "systemctl start "+roxagentUnit, err, stderr)
+		}
+
+		virt.Logf("roxagent serve: started %s", roxagentUnit)
+		return nil
+	})
+}
+
+// waitRoxagentActive polls until the Quadlet unit's ActiveState is active.
+// Type=notify keeps the unit in activating until READY=1 after VSOCK listen.
+func waitRoxagentActive(ctx context.Context, virt Virtctl, namespace, vm string) error {
+	for {
+		state, err := roxagentServeState(ctx, virt, namespace, vm)
+		if err != nil {
+			return err
+		}
+		switch state {
+		case "active":
+			virt.Logf("roxagent serve is active (VSOCK listener ready)")
+			return nil
+		case "activating":
+			virt.Logf("roxagent serve still starting (unit=%s, waiting for Type=notify READY)", state)
+		default:
+			logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+			if isVsockUnavailableOutput(logs) {
+				return fmt.Errorf("%w: %s ActiveState=%q (journal: %s)",
+					ErrTerminalVSOCKUnavailable, roxagentUnit, state, logs)
+			}
+			return fmt.Errorf("%s ActiveState=%q (journal: %s)", roxagentUnit, state, logs)
+		}
+
+		timer := time.NewTimer(roxagentListenPollInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return fmt.Errorf("timed out waiting for roxagent serve to become active: %w", ctx.Err())
+		case <-timer.C:
+		}
 	}
-	return fmt.Errorf("roxagent: all %d attempts failed: %w", roxagentMaxAttempts, lastErr)
+}
+
+// systemctlShowProperty runs `systemctl show -p <property> --value <unit>` on the guest and
+// returns the property's trimmed value. Unlike `is-active`/`is-enabled`, `show` always exits 0
+// for any unit systemd knows about — loaded or not, active or not — so a non-zero exit here
+// reliably means a genuine remote-command problem, not an expected state value. That makes it
+// the preferred way to read any systemd unit property from the guest; add new lookups (like
+// roxagentServeState below) on top of it rather than parsing the output or exit code of
+// state-specific subcommands such as `is-active`.
+func systemctlShowProperty(ctx context.Context, virt Virtctl, namespace, vm, unit, property string) (string, error) {
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            fmt.Sprintf("systemctl show -p %s %s", property, unit),
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "systemctl", "show", "-p", property, "--value", unit)
+	if err != nil {
+		return "", fmt.Errorf("systemctl show -p %s %s: %w (stdout: %s; stderr: %s)",
+			property, unit, err, strings.TrimSpace(stdout), strings.TrimSpace(stderr))
+	}
+	return strings.TrimSpace(stdout), nil
+}
+
+// RoxagentServeInvocationID returns the Quadlet unit's current systemd InvocationID.
+// That UUID is unique per activation, so comparing it before and after a wait
+// detects restarts.
+func RoxagentServeInvocationID(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
+	id, err := systemctlShowProperty(ctx, virt, namespace, vm, roxagentUnit, "InvocationID")
+	if err != nil {
+		return "", err
+	}
+	if id == "" {
+		return "", errors.New("roxagent.service InvocationID is empty")
+	}
+	return id, nil
+}
+
+// RoxagentServeDidNotRestart returns nil when the Quadlet unit still has beforeID
+// as its InvocationID. A different ID means systemd started a new activation
+// (stop/start, crash recovery, or an explicit restart).
+func RoxagentServeDidNotRestart(ctx context.Context, virt Virtctl, namespace, vm, beforeID string) error {
+	if beforeID == "" {
+		return errors.New("before InvocationID is empty")
+	}
+	afterID, err := RoxagentServeInvocationID(ctx, virt, namespace, vm)
+	if err != nil {
+		return err
+	}
+	if afterID != beforeID {
+		return fmt.Errorf("roxagent.service restarted during the wait: InvocationID changed from %s to %s",
+			beforeID, afterID)
+	}
+	return nil
+}
+
+// roxagentServeState returns the Quadlet unit's ActiveState (active/inactive/failed/activating/…).
+func roxagentServeState(ctx context.Context, virt Virtctl, namespace, vm string) (string, error) {
+	state, err := systemctlShowProperty(ctx, virt, namespace, vm, roxagentUnit, "ActiveState")
+	if err != nil {
+		return "", err
+	}
+	if state == "" {
+		return "unknown", nil
+	}
+	return state, nil
+}
+
+// wrapRoxagentUnitCmdError appends journal context and maps terminal vsock failures.
+func wrapRoxagentUnitCmdError(ctx context.Context, virt Virtctl, namespace, vm, op string, err error, stderr string) error {
+	logs := fetchRoxagentServeJournal(ctx, virt, namespace, vm)
+	combined := strings.TrimSpace(stderr + "\n" + logs)
+	if isVsockUnavailableOutput(combined) {
+		return fmt.Errorf("%w: %s: %w (output: %s)", ErrTerminalVSOCKUnavailable, op, err, combined)
+	}
+	return fmt.Errorf("%s: %w (stderr: %s; journal: %s)", op, err, strings.TrimSpace(stderr), logs)
+}
+
+// fetchRoxagentServeJournal returns a short recent journal dump for error messages.
+func fetchRoxagentServeJournal(ctx context.Context, virt Virtctl, namespace, vm string) string {
+	stdout, stderr, err := runSSHCommandWithFramework(ctx, virt, namespace, vm, sshCommandRunOptions{
+		description:            "journalctl roxagent.service",
+		transportRetryAttempts: rhsmPrecheckSSHRetryThreshold,
+	}, "sudo", "journalctl", "-u", roxagentUnit, "-b", "--no-pager", "-o", "cat", "-n", "200")
+	if err != nil {
+		return strings.TrimSpace(stdout + "\n" + stderr)
+	}
+	return strings.TrimSpace(stdout)
 }

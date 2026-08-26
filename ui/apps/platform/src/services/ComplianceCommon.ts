@@ -1,8 +1,3 @@
-import qs from 'qs';
-
-import type { SearchQueryOptions } from 'types/search';
-import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-
 export const complianceV2Url = '/v2/compliance';
 
 export const ComplianceCheckStatusValues = [
@@ -87,26 +82,3 @@ export type ComplianceProfileSummary = {
     standards: ComplianceBenchmark[];
     operatorKind?: ComplianceProfileOperatorKind;
 };
-
-/*
- * Builds query parameters for nested RawQuery in compliance API requests
- *
- * This is used when the RawQuery is nested within the request parameter,
- * not when it's the sole parameter.
- */
-export function buildNestedRawQueryParams({
-    page,
-    perPage,
-    sortOption,
-    searchFilter = {},
-}: SearchQueryOptions): string {
-    const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const pagination = getPaginationParams({ page, perPage, sortOption });
-    const queryParameters = {
-        query: {
-            query,
-            pagination,
-        },
-    };
-    return qs.stringify(queryParameters, { arrayFormat: 'repeat', allowDots: true });
-}

@@ -16,6 +16,7 @@ export const searchFieldLabels = [
     'Collector Status',
     'Admission Control Status',
     'Scanner Status',
+    'Sensor Version Compatibility',
     'Last Contact',
     //
     'Policy ID',
@@ -421,8 +422,10 @@ export const searchFieldLabels = [
     'AuthProvider Name',
     //
     // Virtual Machine fields.
+    'Guest OS',
     'Virtual Machine ID',
     'Virtual Machine Name',
+    'Virtual Machine Scan Time',
     'Scan Status', // frontend only pending backend
 ] as const;
 

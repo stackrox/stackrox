@@ -2,13 +2,12 @@ package index
 
 import (
 	"context"
-	"fmt"
 	"testing"
+	"testing/synctest"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -19,8 +18,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
-	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -63,20 +60,20 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	defer s.handler.Stop()
 	s.Require().NotNil(s.handler.toCentral)
 
-	cid := "1"
-	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(
+	cid := uint32(1)
+	s.store.EXPECT().Get(gomock.Eq(virtualmachine.VMID("test-vm"))).Times(1).Return(
 		&virtualmachine.Info{
 			ID: "test-vm",
 		})
 
-	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
 	go func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			ID:       "test-vm",
+			VSOCKCID: &cid,
+		}, &v4.IndexReport{State: "IndexFinished"})
 		s.Require().NoError(err)
 	}()
 
-	// Read from ResponsesC to verify message was sent.
 	select {
 	case msg := <-s.handler.ResponsesC():
 		s.Require().NotNil(msg)
@@ -88,6 +85,11 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.GetAction())
 		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
 		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachineIndexReport().GetId())
+		index := sensorEvent.GetVirtualMachineIndexReport().GetIndex()
+		s.Require().NotNil(index)
+		s.Assert().Equal("test-vm", index.GetVmId())
+		s.Assert().Equal("1", index.GetVsockCid())
+		s.Assert().Equal("IndexFinished", index.GetIndexV4().GetState())
 	case <-time.After(time.Second):
 		s.Fail("Expected message to be sent to central")
 	}
@@ -102,40 +104,28 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	ctx := context.Background()
 	numGoroutines := 3
 	numVMsPerGoroutine := 2
-	anyOf := func() []any {
-		ret := make([]any, 0, numGoroutines*numVMsPerGoroutine)
-		cont := 0
-		for range numGoroutines {
-			for range numVMsPerGoroutine {
-				ret = append(ret, uint32(cont))
-				cont++
-			}
-		}
-		return ret
-	}()
-	s.store.EXPECT().GetFromCID(gomock.AnyOf(anyOf...)).Times(numGoroutines * numVMsPerGoroutine).
-		Return(
-			&virtualmachine.Info{
-				ID: "test-vm",
-			})
+	s.store.EXPECT().Get(gomock.Any()).Times(numGoroutines * numVMsPerGoroutine).
+		DoAndReturn(func(id virtualmachine.VMID) *virtualmachine.Info {
+			return &virtualmachine.Info{ID: id}
+		})
 
-	// Start concurrent sends.
 	cont := 0
 	mu := sync.Mutex{}
-	for i := range numGoroutines {
-		go func(routineID int) {
+	for range numGoroutines {
+		go func() {
 			for range numVMsPerGoroutine {
-				var req *v1.IndexReport
+				var cid uint32
 				concurrency.WithLock(&mu, func() {
-					req = &v1.IndexReport{
-						VsockCid: fmt.Sprintf("%d", cont),
-					}
+					cid = uint32(cont)
 					cont++
 				})
-				err := s.handler.Send(ctx, req)
+				err := s.handler.Send(ctx, &virtualmachine.Info{
+					ID:       virtualmachine.VMID("test-vm"),
+					VSOCKCID: &cid,
+				}, &v4.IndexReport{})
 				s.Require().NoError(err)
 			}
-		}(i)
+		}()
 	}
 
 	// Collect all responses. The timeout breaks the loop so the Assert
@@ -162,20 +152,21 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	defer s.handler.Stop()
 	s.Require().NotNil(s.handler.toCentral)
 
-	cid := "1"
+	cid := uint32(1)
 	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(nil)
 
-	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
+		// Empty ID forces CID-based resolution in the processing path.
+		err := s.handler.Send(context.Background(), &virtualmachine.Info{
+			VSOCKCID: &cid,
+		}, &v4.IndexReport{})
 		s.Require().NoError(err)
 	})
 
 	wg.Wait()
 
-	// Read from ResponsesC to verify message was not sent.
+	// No message should be forwarded when the VM cannot be resolved.
 	select {
 	case <-s.handler.ResponsesC():
 		s.Fail("Unexpected message to be sent to central")
@@ -183,44 +174,82 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestInvalidCID() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	s.handler.Notify(common.SensorComponentEventCentralReachable)
-	defer s.handler.Stop()
-	s.Require().NotNil(s.handler.toCentral)
+func (s *virtualMachineHandlerSuite) TestResolveVM_InvalidCID() {
+	_, _, err := s.handler.resolveVM(&v1.IndexReport{VsockCid: "invalid-cid"})
+	s.Require().Error(err)
+	s.Assert().ErrorContains(err, "invalid Vsock CID")
+}
 
-	cid := "invalid-cid"
-
-	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: cid}
-	wg := sync.WaitGroup{}
-	wg.Go(func() {
-		err := s.handler.Send(context.Background(), vm)
-		s.Require().NoError(err)
-	})
-
-	wg.Wait()
-
-	// Read from ResponsesC to verify message was not sent.
-	select {
-	case <-s.handler.ResponsesC():
-		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(500 * time.Millisecond):
+func (s *virtualMachineHandlerSuite) TestSend_ResolveByVmID() {
+	vmID := virtualmachine.VMID("test-vm")
+	cases := map[string]struct {
+		vsockCID *uint32
+		wantCID  string
+	}{
+		"should forward when only vm_id is set": {
+			vsockCID: nil,
+			wantCID:  "",
+		},
+		"should include vsock_cid when known": {
+			vsockCID: new(uint32(42)),
+			wantCID:  "42",
+		},
 	}
+	s.store.EXPECT().Get(gomock.Eq(vmID)).Times(len(cases)).Return(&virtualmachine.Info{ID: vmID})
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			synctest.Test(s.T(), func(t *testing.T) {
+				handler := &handlerImpl{
+					centralReady: concurrency.NewSignal(),
+					lock:         &sync.RWMutex{},
+					stopper:      concurrency.NewStopper(),
+					store:        s.store,
+				}
+				err := handler.Start()
+				s.Require().NoError(err)
+				handler.Notify(common.SensorComponentEventCentralReachable)
+				defer handler.Stop()
+
+				go func() {
+					err := handler.Send(context.Background(), &virtualmachine.Info{
+						ID:       vmID,
+						VSOCKCID: tc.vsockCID,
+					}, &v4.IndexReport{})
+					s.Require().NoError(err)
+				}()
+
+				synctest.Wait()
+
+				msg := <-handler.ResponsesC()
+				s.Require().NotNil(msg)
+				sensorEvent := msg.GetEvent()
+				s.Require().NotNil(sensorEvent)
+				s.Assert().Equal(string(vmID), sensorEvent.GetId())
+				indexEvent := sensorEvent.GetVirtualMachineIndexReport()
+				s.Require().NotNil(indexEvent)
+				s.Assert().Equal(string(vmID), indexEvent.GetId())
+				s.Assert().Equal(string(vmID), indexEvent.GetIndex().GetVmId())
+				s.Assert().Equal(tc.wantCID, indexEvent.GetIndex().GetVsockCid())
+			})
+		})
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_NilVM() {
+	err := s.handler.Send(context.Background(), nil, &v4.IndexReport{})
+	s.Require().Error(err)
+	s.Assert().ErrorContains(err, "virtual machine info is nil")
 }
 
 func (s *virtualMachineHandlerSuite) TestStop() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
 
-	// Stop should not panic and should stop gracefully.
 	s.handler.Stop()
 
-	// Verify stopper is stopped.
 	select {
 	case <-s.handler.stopper.Client().Stopped().Done():
-		// Expected.
 	case <-time.After(time.Second):
 		s.Fail("handler should have stopped")
 	}
@@ -230,95 +259,6 @@ func (s *virtualMachineHandlerSuite) TestCapabilities() {
 	caps := s.handler.Capabilities()
 	s.Require().Len(caps, 1)
 	s.Contains(caps, centralsensor.SensorACKSupport)
-}
-
-func (s *virtualMachineHandlerSuite) TestAccepts() {
-	// Should accept SensorACK with VM_INDEX_REPORT type
-	vmAckMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-1",
-		}},
-	}
-	s.Assert().True(s.handler.Accepts(vmAckMsg), "Handler should accept SensorACK for VM_INDEX_REPORT")
-
-	// Should not accept SensorACK with other types
-	nodeAckMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_NODE_INDEX_REPORT,
-			ResourceId:  "node-1",
-		}},
-	}
-	s.Assert().False(s.handler.Accepts(nodeAckMsg), "Handler should not accept SensorACK for NODE_INDEX_REPORT")
-
-	// Should not accept other message types
-	otherMsg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_ClusterConfig{},
-	}
-	s.Assert().False(s.handler.Accepts(otherMsg), "Handler should not accept other message types")
-}
-
-func (s *virtualMachineHandlerSuite) TestProcessMessage() {
-	ctx := context.Background()
-
-	getMetric := func(label string) float64 {
-		return testutil.ToFloat64(vmmetrics.IndexReportAcksReceived.WithLabelValues(label))
-	}
-
-	cases := map[string]struct {
-		msg        *central.MsgToSensor
-		expectAck  int
-		expectNack int
-	}{
-		"ack increments ack metric": {
-			msg: &central.MsgToSensor{
-				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-					Action:      central.SensorACK_ACK,
-					MessageType: central.SensorACK_VM_INDEX_REPORT,
-					ResourceId:  "vm-ack",
-				}},
-			},
-			expectAck:  1,
-			expectNack: 0,
-		},
-		"nack increments nack metric": {
-			msg: &central.MsgToSensor{
-				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-					Action:      central.SensorACK_NACK,
-					MessageType: central.SensorACK_VM_INDEX_REPORT,
-					ResourceId:  "vm-nack",
-					Reason:      "rate limited",
-				}},
-			},
-			expectAck:  0,
-			expectNack: 1,
-		},
-		"non-VM message does not change metrics": {
-			msg: &central.MsgToSensor{
-				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-					Action:      central.SensorACK_ACK,
-					MessageType: central.SensorACK_NODE_INDEX_REPORT,
-					ResourceId:  "node-1",
-				}},
-			},
-			expectAck:  0,
-			expectNack: 0,
-		},
-	}
-
-	for name, tc := range cases {
-		s.Run(name, func() {
-			initialAck := getMetric(central.SensorACK_ACK.String())
-			initialNack := getMetric(central.SensorACK_NACK.String())
-
-			err := s.handler.ProcessMessage(ctx, tc.msg)
-			s.Require().NoError(err)
-			s.Equal(initialAck+float64(tc.expectAck), getMetric(central.SensorACK_ACK.String()))
-			s.Equal(initialNack+float64(tc.expectNack), getMetric(central.SensorACK_NACK.String()))
-		})
-	}
 }
 
 func (s *virtualMachineHandlerSuite) TestResponsesC_BeforeStart() {
@@ -334,323 +274,11 @@ func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
 	s.Require().NotNil(ch)
 }
 
-func (s *virtualMachineHandlerSuite) TestComplianceC_AfterStart() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	ch := s.handler.ComplianceC()
-	s.Require().NotNil(ch, "ComplianceC channel should be not nil after start")
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	cases := map[string]struct {
-		centralAction  central.SensorACK_Action
-		resourceID     string
-		vmID           string
-		nodeName       string
-		reason         string
-		expectedAction sensor.MsgToCompliance_ComplianceACK_Action
-	}{
-		"should forward ACK to compliance with composite resource ID": {
-			centralAction:  central.SensorACK_ACK,
-			resourceID:     "vm-123:100",
-			vmID:           "vm-123",
-			nodeName:       "node-a",
-			reason:         "all good",
-			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
-		},
-		"should forward NACK to compliance with composite resource ID": {
-			centralAction:  central.SensorACK_NACK,
-			resourceID:     "vm-456:200",
-			vmID:           "vm-456",
-			nodeName:       "node-b",
-			reason:         "validation failed",
-			expectedAction: sensor.MsgToCompliance_ComplianceACK_NACK,
-		},
-		"should forward ACK with bare VM ID": {
-			centralAction:  central.SensorACK_ACK,
-			resourceID:     "vm-789",
-			vmID:           "vm-789",
-			nodeName:       "node-c",
-			reason:         "",
-			expectedAction: sensor.MsgToCompliance_ComplianceACK_ACK,
-		},
-	}
-
-	for name, tc := range cases {
-		s.Run(name, func() {
-			s.store.EXPECT().Get(virtualmachine.VMID(tc.vmID)).Return(
-				&virtualmachine.Info{ID: virtualmachine.VMID(tc.vmID), NodeName: tc.nodeName})
-
-			ctx := context.Background()
-			msg := &central.MsgToSensor{
-				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-					Action:      tc.centralAction,
-					MessageType: central.SensorACK_VM_INDEX_REPORT,
-					ResourceId:  tc.resourceID,
-					Reason:      tc.reason,
-				}},
-			}
-
-			err := s.handler.ProcessMessage(ctx, msg)
-			s.Require().NoError(err)
-
-			select {
-			case got := <-s.handler.ComplianceC():
-				ack := got.Msg.GetComplianceAck()
-				s.Require().NotNil(ack)
-				s.Equal(tc.expectedAction, ack.GetAction())
-				s.Equal(sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT, ack.GetMessageType())
-				s.Equal(tc.resourceID, ack.GetResourceId())
-				s.Equal(tc.reason, ack.GetReason())
-				s.Equal(tc.nodeName, got.Hostname)
-				s.False(got.Broadcast)
-			case <-time.After(100 * time.Millisecond):
-				s.Fail("timed out waiting for compliance message")
-			}
-		})
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenVMUnknown() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	cases := map[string]struct {
-		resourceID string
-		expectedID string
-	}{
-		"should drop when resource ID is empty": {
-			resourceID: "",
-		},
-		"should drop when VM not in store": {
-			resourceID: "vm-deleted",
-			expectedID: "vm-deleted",
-		},
-		"should drop when VM from composite ID not in store": {
-			resourceID: "vm-deleted:999",
-			expectedID: "vm-deleted",
-		},
-	}
-
-	for name, tc := range cases {
-		s.Run(name, func() {
-			if tc.expectedID != "" {
-				s.store.EXPECT().Get(virtualmachine.VMID(tc.expectedID)).Return(nil)
-			}
-
-			ctx := context.Background()
-			msg := &central.MsgToSensor{
-				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-					Action:      central.SensorACK_ACK,
-					MessageType: central.SensorACK_VM_INDEX_REPORT,
-					ResourceId:  tc.resourceID,
-				}},
-			}
-
-			err := s.handler.ProcessMessage(ctx, msg)
-			s.Require().NoError(err)
-
-			select {
-			case <-s.handler.ComplianceC():
-				s.Fail("ACK should have been dropped when VM is unknown, not forwarded")
-			default:
-			}
-		})
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_NoStartDoesNotPanic() {
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-no-start",
-		}},
-	}
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		_ = s.handler.ProcessMessage(ctx, msg)
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-		s.Fail("ProcessMessage should not block when Start() has not been called")
-	}
-
-	s.Nil(s.handler.ComplianceC())
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_UnknownActionDropped() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_Action(999),
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-unknown",
-		}},
-	}
-
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
-
-	select {
-	case <-s.handler.ComplianceC():
-		s.Fail("unexpected message on ComplianceC for unknown SensorACK action")
-	default:
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DoesNotBlockWhenStopped() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-
-	// Fill the compliance channel to capacity.
-	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
-
-	s.handler.Stop()
-
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-stopped")).Return(
-		&virtualmachine.Info{ID: "vm-stopped", NodeName: "node-x"})
-
-	ctx := context.Background()
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_NACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-stopped",
-			Reason:      "after stop",
-		}},
-	}
-
-	// The first select in forwardToCompliance sees StopRequested and
-	// returns before attempting the channel send.
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
-
-	// Only the pre-filled message should be in the channel.
-	select {
-	case <-s.handler.ComplianceC():
-	default:
-		s.Fail("expected the pre-filled message")
-	}
-	select {
-	case <-s.handler.ComplianceC():
-		s.Fail("the second message should have been dropped")
-	default:
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsWhenQueueFull() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-first")).Return(
-		&virtualmachine.Info{ID: "vm-first", NodeName: "node-1"})
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-second")).Return(
-		&virtualmachine.Info{ID: "vm-second", NodeName: "node-2"})
-
-	ctx := context.Background()
-	makeMsg := func(id string) *central.MsgToSensor {
-		return &central.MsgToSensor{
-			Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-				Action:      central.SensorACK_ACK,
-				MessageType: central.SensorACK_VM_INDEX_REPORT,
-				ResourceId:  id,
-			}},
-		}
-	}
-
-	// First send fills the buffer (capacity 1).
-	err = s.handler.ProcessMessage(ctx, makeMsg("vm-first"))
-	s.Require().NoError(err)
-
-	// Second send without draining: hits the default branch, drops
-	// immediately instead of blocking. This protects ProcessMessage
-	// from stalling if compliance is slow.
-	err = s.handler.ProcessMessage(ctx, makeMsg("vm-second"))
-	s.Require().NoError(err)
-
-	// Only the first message is in the channel.
-	select {
-	case got := <-s.handler.ComplianceC():
-		s.Equal("vm-first", got.Msg.GetComplianceAck().GetResourceId())
-	case <-time.After(100 * time.Millisecond):
-		s.Fail("first message should be available in the buffer")
-	}
-
-	// Channel should now be empty (second was dropped).
-	select {
-	case <-s.handler.ComplianceC():
-		s.Fail("second message should have been dropped when queue was full")
-	default:
-	}
-}
-
-func (s *virtualMachineHandlerSuite) TestForwardToCompliance_DropsOnCancelledContext() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	defer s.handler.Stop()
-
-	// Fill the buffer so the send would need to block.
-	s.handler.toCompliance <- common.MessageToComplianceWithAddress{}
-
-	s.store.EXPECT().Get(virtualmachine.VMID("vm-cancelled")).Return(
-		&virtualmachine.Info{ID: "vm-cancelled", NodeName: "node-c"})
-
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-
-	msg := &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
-			Action:      central.SensorACK_ACK,
-			MessageType: central.SensorACK_VM_INDEX_REPORT,
-			ResourceId:  "vm-cancelled",
-		}},
-	}
-
-	// The first select in forwardToCompliance sees ctx.Done() and
-	// returns before attempting the channel send.
-	err = s.handler.ProcessMessage(ctx, msg)
-	s.Require().NoError(err)
-
-	// Drain the pre-filled message; the cancelled one was dropped.
-	select {
-	case <-s.handler.ComplianceC():
-	default:
-		s.Fail("expected the pre-filled message")
-	}
-	select {
-	case <-s.handler.ComplianceC():
-		s.Fail("the message with cancelled context should have been dropped")
-	default:
-	}
-}
-
 func (s *virtualMachineHandlerSuite) TestSend_CapabilityNotSupported() {
-	// Remove capability to simulate old Central version
+	// Simulate an older Central that lacks VirtualMachinesSupported.
 	centralcaps.Set(nil)
 
-	cid := "1"
-	vm := &v1.IndexReport{VsockCid: cid}
-
-	// Send should return errCapabilityNotSupported when capability is absent
-	err := s.handler.Send(context.Background(), vm)
+	err := s.handler.Send(context.Background(), &virtualmachine.Info{ID: "vm-1"}, &v4.IndexReport{})
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCapabilityNotSupported)
 	s.Require().ErrorIs(err, errox.NotImplemented)
@@ -662,8 +290,7 @@ func (s *virtualMachineHandlerSuite) TestSend_AfterStop() {
 	s.Require().NoError(err)
 	s.handler.Stop()
 
-	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), &virtualmachine.Info{ID: "vm-1"}, &v4.IndexReport{})
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errInputChanClosed)
 	s.Require().ErrorIs(err, errox.InvariantViolation)
@@ -674,8 +301,7 @@ func (s *virtualMachineHandlerSuite) TestSend_CentralNotReachable() {
 	s.Require().NoError(err)
 	defer s.handler.Stop()
 
-	vm := &v1.IndexReport{VsockCid: "1"}
-	err = s.handler.Send(context.Background(), vm)
+	err = s.handler.Send(context.Background(), &virtualmachine.Info{ID: "vm-1"}, &v4.IndexReport{})
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, errCentralNotReachable)
 	s.Require().ErrorIs(err, errox.ResourceExhausted)
@@ -688,41 +314,4 @@ func (s *virtualMachineHandlerSuite) TestStart_CalledTwice() {
 
 	err = s.handler.Start()
 	s.Require().ErrorIs(err, errStartMoreThanOnce)
-}
-
-func TestVmIDFromResourceID(t *testing.T) {
-	t.Parallel()
-
-	cases := map[string]struct {
-		resourceID string
-		expected   string
-	}{
-		"extracts vm id from composite resource id": {
-			resourceID: "vm-1:100",
-			expected:   "vm-1",
-		},
-		"returns bare vm id as-is": {
-			resourceID: "vm-1",
-			expected:   "vm-1",
-		},
-		"returns empty string for empty input": {
-			resourceID: "",
-			expected:   "",
-		},
-		"extracts uuid vm id from composite": {
-			resourceID: "d2696fad-8ef2-49f5-9726-499b1419be20:1289650420",
-			expected:   "d2696fad-8ef2-49f5-9726-499b1419be20",
-		},
-		"returns bare CID as-is": {
-			resourceID: "1289650420",
-			expected:   "1289650420",
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			assert.Equal(t, tc.expected, vmIDFromResourceID(tc.resourceID))
-		})
-	}
 }

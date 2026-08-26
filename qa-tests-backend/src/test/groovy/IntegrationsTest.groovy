@@ -3,7 +3,6 @@ import static util.Helpers.withRetry
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
-import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -27,7 +26,6 @@ import objects.SplunkNotifier
 import objects.StackroxScannerIntegration
 import objects.SyslogNotifier
 import services.ClusterService
-import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.NotifierService
@@ -187,12 +185,16 @@ class IntegrationsTest extends BaseSpecification {
     def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.SplunkDeployment parts = null
+        SplunkNotifier notifier = null
+        String policyId = null
+        Deployment nginxdeployment = null
+        parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
         SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -207,11 +209,11 @@ class IntegrationsTest extends BaseSpecification {
                   .setKey("app")
                   .setValue(nginxName)))
               .addNotifiers(notifier.getId())
-        def policyId = PolicyService.createNewPolicy(policy.build())
+        policyId = PolicyService.createNewPolicy(policy.build())
 
         and:
         "Create a new deployment to trigger the violation against the policy"
-        Deployment nginxdeployment =
+        nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
@@ -225,16 +227,16 @@ class IntegrationsTest extends BaseSpecification {
 
         cleanup:
         "remove Deployment and services"
-        if (parts.deployment != null) {
+        if (nginxdeployment) {
             orchestrator.deleteDeployment(nginxdeployment)
         }
-        if (policy != null) {
+        if (policyId) {
             PolicyService.deletePolicy(policyId)
         }
         if (parts) {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
-        notifier.deleteNotifier()
+        notifier?.deleteNotifier()
     }
 
     @Unroll
@@ -493,107 +495,6 @@ class IntegrationsTest extends BaseSpecification {
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
                         .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
-    }
-
-    @Unroll
-    @Tag("Integration")
-    @IgnoreIf({ !Env.IS_BYODB })
-    def "Verify external backup errors on external DB"() {
-        when:
-        def backup = ExternalBackupService.getS3IntegrationConfig("this shall not work")
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
-
-        then:
-        def exception = thrown(StatusRuntimeException)
-        assert exception.message.contains('Please manage backups directly with your database provider.')
-    }
-
-    @Unroll
-    @Tag("Integration")
-    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
-    def "Verify AWS S3 Integration: #integrationName"() {
-        when:
-        "the integration is tested"
-        def backup = ExternalBackupService.getS3IntegrationConfig(integrationName, bucket, region, endpoint,
-                accessKeyId, accesskey)
-
-        then:
-        "verify test integration"
-        // Test integration for S3 performs test backup (and rollback).
-        withRetry(3, 10) {
-            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
-        }
-
-        where:
-        "configurations are:"
-
-        integrationName       | bucket                       | region                         |
-                endpoint                                             | accessKeyId            |
-                accesskey
-        "S3 with endpoint"    | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
-                "s3.${Env.mustGetAWSS3BucketRegion()}.amazonaws.com" | Env.mustGetAWSAccessKeyID() |
-                Env.mustGetAWSSecretAccessKey()
-        "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
-                ""                                                   | Env.mustGetAWSAccessKeyID() |
-                Env.mustGetAWSSecretAccessKey()
-    }
-
-    @Unroll
-    @Tag("Integration")
-    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
-    def "Verify S3 Compatible Integration: #integrationName"() {
-        when:
-        "the integration is tested"
-        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(integrationName, endpoint, urlStyle)
-
-        then:
-        "verify test integration"
-        // Test integration for S3 compatible performs test backup (and rollback).
-        withRetry(3, 10) {
-            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
-        }
-
-        where:
-        "configurations are:"
-
-        // Cloudflare R2 requires an active credit card subscription to access the buckets.
-        // See BitWarden item `06917dbc-17be-40f9-b8e1-b1a1015ce473` for the account details.
-        integrationName                          | endpoint
-        | urlStyle
-        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
-        | S3URLStyle.S3_URL_STYLE_PATH
-        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
-        | S3URLStyle.S3_URL_STYLE_PATH
-        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
-        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
-        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
-        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
-    }
-
-    @Unroll
-    @Tag("Integration")
-    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
-    def "Verify GCS Integration: #integrationName"() {
-        setup:
-        Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
-
-        when:
-        "the integration is tested"
-        def backup = ExternalBackupService.getGCSIntegrationConfig(integrationName, useWorkloadId)
-
-        then:
-        "verify test integration"
-        // Test integration for GCS performs test backup (and rollback).
-        withRetry(3, 10) {
-            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
-        }
-
-        where:
-        "configurations are:"
-
-        integrationName                | bucket                     | useWorkloadId
-        "GCS with service account key" | Env.mustGetGCSBucketName() | false
-        "GCS with workload identity"   | Env.mustGetGCSBucketName() | true
     }
 
     @Unroll

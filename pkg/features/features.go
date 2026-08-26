@@ -44,7 +44,7 @@ func registerFeature(name, envVar string, options ...option) FeatureFlag {
 }
 
 func sortEnvVars() []string {
-	sortedEnvVars := []string{}
+	sortedEnvVars := make([]string, 0, len(Flags))
 	for envVar := range Flags {
 		sortedEnvVars = append(sortedEnvVars, envVar)
 	}
@@ -54,8 +54,9 @@ func sortEnvVars() []string {
 
 // LogFeatureFlags logs the global state of all features flags.
 func LogFeatureFlags() {
-	data := []interface{}{}
-	for _, envVar := range sortEnvVars() {
+	sortedVars := sortEnvVars()
+	data := make([]interface{}, 0, len(sortedVars))
+	for _, envVar := range sortedVars {
 		flag := Flags[envVar]
 		data = append(data, logging.Any(flag.EnvVar(), flag.Enabled()))
 	}

@@ -75,6 +75,7 @@ type VirtualMachineCvev2 struct {
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoCisaKev             bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
 	PreferredCvss                  float32                       `gorm:"column:preferredcvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`

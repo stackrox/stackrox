@@ -6,23 +6,32 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/internal/logging"
 	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/updater"
 )
 
-const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
+const (
+	defaultManualURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
+	logLevelEnvVar   = "STACKROX_SCANNER_V4_UPDATER_LOG_LEVEL"
+	sourcesEnvVar    = "STACKROX_SCANNER_V4_UPDATER_SOURCES"
+)
 
-const logLevelEnvVar = "STACKROX_SCANNER_V4_UPDATER_LOG_LEVEL"
+var (
+	logLevelRaw = os.Getenv(logLevelEnvVar)
+	sourcesRaw  = os.Getenv(sourcesEnvVar)
+)
 
 func initializeLogging() error {
 	level := slog.LevelInfo
 	var levelErr error
-	if v := os.Getenv(logLevelEnvVar); v != "" {
-		if err := level.UnmarshalText([]byte(v)); err != nil {
+	if logLevelRaw != "" {
+		if err := level.UnmarshalText([]byte(logLevelRaw)); err != nil {
 			level = slog.LevelInfo
 			levelErr = err
 		}
@@ -40,16 +49,18 @@ func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOption
 	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	err := updater.Export(ctx, outputDir, opts)
-	if err != nil {
-		return err
-	}
-	return nil
+	return updater.Export(ctx, outputDir, opts)
 }
 
 func main() {
 	if err := initializeLogging(); err != nil {
 		slog.Error("failed to initialize logging", "reason", err)
+		os.Exit(1)
+	}
+
+	sources := config.NormalizeStringList(strings.Split(sourcesRaw, ","))
+	if len(sourcesRaw) > 0 && len(sources) == 0 {
+		slog.Error("unable to parse sources", "raw_sources", sourcesRaw)
 		os.Exit(1)
 	}
 
@@ -79,7 +90,10 @@ func main() {
 					"attempt", attempt,
 					"manual_vulns_url", manualURL,
 					"output_directory", outputDir)
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
+				err := tryExport(ctx, outputDir, &updater.ExportOptions{
+					ManualVulnURL: manualURL,
+					Sources:       sources,
+				})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						slog.WarnContext(ctx, "export failed; will retry if within retry limits",
@@ -95,7 +109,7 @@ func main() {
 			return errors.New("data export failed: max retries exceeded")
 		},
 	}
-	exportCmd.Flags().String("manual-url", DefaultURL, "URL to the manual vulnerability data.")
+	exportCmd.Flags().String("manual-url", defaultManualURL, "URL to the manual vulnerability data.")
 
 	var importCmd = &cobra.Command{
 		Use:   "import",

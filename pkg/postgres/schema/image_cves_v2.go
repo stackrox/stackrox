@@ -77,6 +77,7 @@ type ImageCvesV2 struct {
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	CveBaseInfoCisaKev             bool                          `gorm:"column:cvebaseinfo_cisakev;type:bool"`
 	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
 	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
@@ -90,6 +91,7 @@ type ImageCvesV2 struct {
 	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
 	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar"`
 	FixAvailableTimestamp          *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
+	Origin                         storage.VulnOrigin            `gorm:"column:origin;type:integer"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

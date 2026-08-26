@@ -145,7 +145,7 @@ func formatReportConfigDetails(snapshot *storage.ReportSnapshot, numDeployedImag
 }
 
 func formatEntityScope(entityScope *storage.EntityScope) []string {
-	var parts []string
+	parts := make([]string, 0, len(entityScope.GetRules()))
 	for _, rule := range entityScope.GetRules() {
 		entityType := friendlyEntityType(rule.GetEntity())
 		field := friendlyEntityField(rule.GetField())

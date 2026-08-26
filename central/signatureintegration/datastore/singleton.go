@@ -71,7 +71,7 @@ func startKeyBundleUpdater() {
 
 	rawURL := env.RedHatSigningKeyBundleURL.Setting()
 	if rawURL == "" {
-		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL not set, key bundle updater will not start")
+		log.Info("ROX_REDHAT_SIGNING_KEY_BUNDLE_URL is empty, key bundle updater will not start")
 		return
 	}
 	bundleURL := urlfmt.FormatURL(rawURL, urlfmt.HTTPS, urlfmt.HonorInputSlash)
@@ -90,7 +90,12 @@ func startKeyBundleUpdater() {
 			}
 		}),
 	)
-	u.Start()
+	// Passing false for waitForInitial means Start does not block startup
+	// on the first download; WithOnComplete will report its outcome.
+	if err := u.Start(context.Background(), false); err != nil {
+		log.Errorf("Red Hat signing key bundle updater will not start: %v", err)
+		return
+	}
 	bundleUpdater = u
 }
 

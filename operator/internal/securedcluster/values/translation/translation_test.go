@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -87,7 +86,7 @@ func TestReadBaseValues(t *testing.T) {
 func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	sc := platform.SecuredCluster{
 		Spec: platform.SecuredClusterSpec{
-			ClusterName: ptr.To("my-cluster"),
+			ClusterName: new("my-cluster"),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "stackrox",
@@ -131,7 +130,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
 							ScannerComponent: platform.LocalScannerV4ComponentDefault.Pointer(),
 						},
@@ -180,7 +179,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -227,7 +226,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				client: newDefaultFakeClient(t),
 				sc: platform.SecuredCluster{
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "stackrox",
@@ -267,7 +266,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 				},
 			},
@@ -296,7 +295,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						Scanner: &platform.LocalScannerComponentSpec{
 							ScannerComponent: platform.LocalScannerComponentDisabled.Pointer(),
 						},
@@ -330,7 +329,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 					Defaults: platform.SecuredClusterSpec{
 						ScannerV4: &platform.LocalScannerV4ComponentSpec{
@@ -372,7 +371,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 					},
 				},
 			},
@@ -404,8 +403,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 						Namespace: "stackrox",
 					},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName:     ptr.To("test-cluster"),
-						CentralEndpoint: ptr.To("central.test:443"),
+						ClusterName:     new("test-cluster"),
+						CentralEndpoint: new("central.test:443"),
 						Sensor: &platform.SensorComponentSpec{
 							DeploymentSpec: platform.DeploymentSpec{
 								Tolerations: []*v1.Toleration{
@@ -421,9 +420,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							Enforcement:   ptr.To(platform.PolicyEnforcementEnabled),
+							Enforcement:   new(platform.PolicyEnforcementEnabled),
 							Bypass:        platform.BypassBreakGlassAnnotation.Pointer(),
-							FailurePolicy: ptr.To(platform.FailurePolicyFail),
+							FailurePolicy: new(platform.FailurePolicyFail),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
@@ -494,7 +493,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 						},
 						Monitoring: &platform.GlobalMonitoring{
 							OpenShiftMonitoring: &platform.OpenShiftMonitoring{
-								Enabled: ptr.To(true),
+								Enabled: new(true),
 							},
 						},
 						Scanner: &platform.LocalScannerComponentSpec{
@@ -599,8 +598,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 							DB: &platform.ScannerV4DB{
 								Persistence: &platform.ScannerV4Persistence{
 									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-										ClaimName:        ptr.To("scanner-v4-db-pvc"),
-										StorageClassName: ptr.To("test-sc1"),
+										ClaimName:        new("scanner-v4-db-pvc"),
+										StorageClassName: new("test-sc1"),
 									},
 								},
 								DeploymentSpec: platform.DeploymentSpec{
@@ -654,7 +653,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 								},
 							},
 						},
-						RegistryOverride: ptr.To("my.registry.override.com"),
+						RegistryOverride: new("my.registry.override.com"),
 					},
 				},
 			},
@@ -939,7 +938,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						PerNode: &platform.PerNodeSpec{
 							Collector: &platform.CollectorContainerSpec{
 								Collection: platform.CollectionEBPF.Pointer(),
@@ -977,7 +976,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeEnabled.Pointer(),
 						},
@@ -1012,7 +1011,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
 						},
@@ -1047,7 +1046,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: ptr.To("test-cluster"),
+						ClusterName: new("test-cluster"),
 						ProcessIndicators: &platform.ProcessIndicatorsSpec{
 							Persistence: platform.ProcessIndicatorConfigEnabled.Pointer(),
 						},
@@ -1073,6 +1072,124 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"processIndicators": map[string]interface{}{
 					"noPersistence": false,
+				},
+			},
+		},
+		// getVirtualMachinesValues(nil) omits the virtualMachines helm key.
+		"virtual machines spec nil": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+			},
+		},
+		// Scraper knobs are forwarded; Helm virtualMachines.enabled is omitted
+		// so it follows ROX_VIRTUAL_MACHINES.
+		"virtual machines scraper defaults": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Scraper: &platform.VirtualMachinesScraperSpec{
+								Concurrency:       new(int32(20)),
+								MaxResponseSizeKB: new(int32(16384)),
+								PollInterval:      new("4h"),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"scraper": map[string]interface{}{
+						"concurrency":       int32(20),
+						"maxResponseSizeKB": int32(16384),
+						"pollInterval":      "4h",
+					},
+				},
+			},
+		},
+		"virtual machines with scraper config": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: new("test-cluster"),
+						VirtualMachines: &platform.VirtualMachinesSpec{
+							Scraper: &platform.VirtualMachinesScraperSpec{
+								Concurrency:       new(int32(5)),
+								MaxResponseSizeKB: new(int32(1024)),
+								PollInterval:      new("1m"),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"virtualMachines": map[string]interface{}{
+					"scraper": map[string]interface{}{
+						"concurrency":       int32(5),
+						"maxResponseSizeKB": int32(1024),
+						"pollInterval":      "1m",
+					},
 				},
 			},
 		},
@@ -1336,7 +1453,7 @@ func (s *TranslationTestSuite) TestTranslateWithCABundle() {
 			sc := platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 				},
 			}
 
@@ -1454,13 +1571,13 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Customize: &platform.CustomizeSpec{
 						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+							PinToNodes: new(platform.PinToNodesInfraRole),
 						},
 					},
 				},
@@ -1471,9 +1588,9 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Customize: &platform.CustomizeSpec{
 						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
@@ -1491,9 +1608,9 @@ func TestDeploymentDefaults(t *testing.T) {
 			securedCluster: platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 				Spec: platform.SecuredClusterSpec{
-					ClusterName: ptr.To("test-cluster"),
+					ClusterName: new("test-cluster"),
 					ScannerV4: &platform.LocalScannerV4ComponentSpec{
-						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+						ScannerComponent: new(platform.LocalScannerV4ComponentAutoSense),
 					},
 					Sensor: &platform.SensorComponentSpec{
 						DeploymentSpec: platform.DeploymentSpec{

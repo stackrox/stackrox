@@ -2,10 +2,7 @@ import static util.Helpers.withRetry
 
 import com.google.common.base.CaseFormat
 import io.fabric8.openshift.api.model.PolicyRule
-import org.javers.core.Javers
-import org.javers.core.JaversBuilder
 import org.javers.core.diff.Diff
-import org.javers.core.diff.ListCompareAlgorithm
 
 import io.stackrox.proto.api.v1.RbacServiceOuterClass
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
@@ -249,10 +246,6 @@ class K8sRbacTest extends BaseSpecification {
 
     @Tag("BAT")
     def "Verify scraped bindings"() {
-        given:
-        Javers javers = JaversBuilder.javers()
-                .withListCompareAlgorithm(ListCompareAlgorithm.AS_SET)
-                .build()
         expect:
         "SR should have the same bindings"
         withRetry(5, 30) {
@@ -262,7 +255,7 @@ class K8sRbacTest extends BaseSpecification {
             def stackroxBindingsSet = stackroxBindings.collect { "${it.namespace}/${it.name}" }
             def orchestratorBindingsSet = orchestratorBindings.collect { "${it.namespace}/${it.name}" }
 
-            Diff diff = javers.compareCollections(stackroxBindingsSet, orchestratorBindingsSet, String)
+            Diff diff = JAVERS.compareCollections(stackroxBindingsSet, orchestratorBindingsSet, String)
             assert diff.changes.empty, diff.prettyPrint()
 
             stackroxBindings.each { Rbac.K8sRoleBinding b ->

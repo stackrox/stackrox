@@ -33,8 +33,8 @@ func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber in
 	nextPage := 0
 	for {
 		comments, resp, err := client.Issues.ListComments(ctx, s, s, prNumber, &github.IssueListCommentsOptions{
-			Sort:        github.String("created"),
-			Direction:   github.String("asc"),
+			Sort:        new("created"),
+			Direction:   new("asc"),
 			ListOptions: github.ListOptions{Page: nextPage},
 		})
 		if err != nil {
@@ -67,7 +67,29 @@ func splitMultilineComment(comment string) []string {
 	return result
 }
 
-func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]bool, error) {
+// jobState normalizes a job's outcome regardless of which GitHub API it
+// came from: the Statuses API (Prow jobs, reported as free-form strings
+// such as "success"/"failure"/"pending"/"error") and the Checks API
+// (GitHub Actions, reported as a pass/fail conclusion) each have their own
+// raw representation. Decision logic in main.go only ever needs to ask "is
+// this job failing?" or "is this job still pending?", so both sources are
+// translated into this one type at the point they're fetched, instead of
+// letting two different truthiness conventions leak into the rest of the
+// file. A status of "error" (the job didn't reach a verdict, e.g. due to
+// infra trouble) is folded into jobFailure alongside "failure" (the job
+// reached a verdict and it was negative), since both warrant a retest the
+// same way. The zero value, jobOK, covers every other raw state (success,
+// cancelled, or simply "no news") since none of those get special
+// treatment today.
+type jobState int
+
+const (
+	jobOK jobState = iota
+	jobPending
+	jobFailure
+)
+
+func checksForCommit(ctx context.Context, client *github.Client, lastCommit string) (map[string]jobState, error) {
 	completed := "completed"
 	latest := "latest"
 	checks, _, err := client.Checks.ListCheckRunsForRef(ctx, s, s, lastCommit, &github.ListCheckRunsOptions{
@@ -78,11 +100,27 @@ func checksForCommit(ctx context.Context, client *github.Client, lastCommit stri
 		return nil, err
 	}
 
-	result := map[string]bool{}
+	result := map[string]jobState{}
 	for _, check := range checks.CheckRuns {
-		result[check.GetName()] = check.GetConclusion() != "failure"
+		result[check.GetName()] = checkToState(check)
 	}
 	return result, nil
+}
+
+func checkToState(check *github.CheckRun) jobState {
+	// "timed_out" means the check never reached a verdict, same as a
+	// Statuses API "error". "error" is folded into jobFailure alongside
+	// "failure" so retestable checks (e.g. "e2e-...") still trigger a retry.
+	//
+	// "cancelled" is mapped to jobOK: because `retest_comment.yml` only
+	// reruns GitHub Actions runs with status=failure, so issuing "/retest"
+	// for a cancelled run wouldn't trigger anything anyway.
+	switch check.GetConclusion() {
+	case "failure", "timed_out":
+		return jobFailure
+	default:
+		return jobOK
+	}
 }
 
 type Status struct {
@@ -91,7 +129,7 @@ type Status struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func statusesForPR(ctx context.Context, client *github.Client, url string) (map[string]string, error) {
+func statusesForPR(ctx context.Context, client *github.Client, url string) (map[string]jobState, error) {
 	var statuses []Status
 	statusRequest, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -106,11 +144,22 @@ func statusesForPR(ctx context.Context, client *github.Client, url string) (map[
 		return a.UpdatedAt.Compare(b.UpdatedAt)
 	})
 
-	result := map[string]string{}
+	result := map[string]jobState{}
 	for _, status := range statuses {
 		job := strings.TrimPrefix(status.Context, "ci/prow/")
-		result[job] = status.State
+		result[job] = parseJobState(status.State)
 	}
 
 	return result, nil
+}
+
+func parseJobState(raw string) jobState {
+	switch raw {
+	case "failure", "error":
+		return jobFailure
+	case "pending":
+		return jobPending
+	default:
+		return jobOK
+	}
 }
