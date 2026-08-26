@@ -419,28 +419,20 @@ type ResponseMeta struct {
 	AgentVersion string `protobuf:"bytes,1,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
 	// When the cached scan report was produced by the scanner.
 	ReportGeneratedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=report_generated_at,json=reportGeneratedAt,proto3" json:"report_generated_at,omitempty"`
-	// Monotonic counter incremented on each rescan; resets to 1 on agent restart.
-	// Sensor uses this for deduplication (see ADR-0006 §2, "Generation counter").
-	ReportGeneration uint32 `protobuf:"varint,3,opt,name=report_generation,json=reportGeneration,proto3" json:"report_generation,omitempty"`
+	// XXH64 of the cached IndexReport and facts. Identical content keeps the
+	// same token; Sensor still forces a full report with an empty last_known_token.
+	ReportToken string `protobuf:"bytes,3,opt,name=report_token,json=reportToken,proto3" json:"report_token,omitempty"`
 	// Methods this agent accepts (e.g. ["get_report"]). Doubles as capability
 	// discovery — no separate handshake needed. See ADR-0006 §2.
 	SupportedMethods []string `protobuf:"bytes,4,rep,name=supported_methods,json=supportedMethods,proto3" json:"supported_methods,omitempty"`
 	// VM metadata from the scan (detected_os, os_version, activation_status, etc.).
 	// Future: may also carry roxagent operational metrics.
 	Facts map[string]string `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Opaque value seeded once per agent process lifetime (random/time-derived),
-	// held in memory only, never persisted to VM disk. Changes on every agent
-	// restart, unlike report_generation which resets to 1. Sensor should treat
-	// an epoch mismatch as "changed" regardless of report_generation, to avoid
-	// false-negative dedup when a restarted agent's reset generation coincides
-	// with Sensor's cached value for that VM. Zero means the agent predates this
-	// field; Sensor falls back to generation-only comparison in that case.
-	Epoch uint32 `protobuf:"varint,6,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// XXH64 hex of active mapping; empty string means none. optional so absence
 	// means an older agent that does not report mapping metadata.
-	RepoCpeMappingHash *string `protobuf:"bytes,7,opt,name=repo_cpe_mapping_hash,json=repoCpeMappingHash,proto3,oneof" json:"repo_cpe_mapping_hash,omitempty"`
+	RepoCpeMappingHash *string `protobuf:"bytes,6,opt,name=repo_cpe_mapping_hash,json=repoCpeMappingHash,proto3,oneof" json:"repo_cpe_mapping_hash,omitempty"`
 	// SENSOR or URL only; UNSPECIFIED means Sensor must not sync.
-	RepoCpeMappingUpdatePath *RepoCPEMappingUpdatePath `protobuf:"varint,8,opt,name=repo_cpe_mapping_update_path,json=repoCpeMappingUpdatePath,proto3,enum=virtualmachine.v1.RepoCPEMappingUpdatePath,oneof" json:"repo_cpe_mapping_update_path,omitempty"`
+	RepoCpeMappingUpdatePath *RepoCPEMappingUpdatePath `protobuf:"varint,7,opt,name=repo_cpe_mapping_update_path,json=repoCpeMappingUpdatePath,proto3,enum=virtualmachine.v1.RepoCPEMappingUpdatePath,oneof" json:"repo_cpe_mapping_update_path,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -489,11 +481,11 @@ func (x *ResponseMeta) GetReportGeneratedAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ResponseMeta) GetReportGeneration() uint32 {
+func (x *ResponseMeta) GetReportToken() string {
 	if x != nil {
-		return x.ReportGeneration
+		return x.ReportToken
 	}
-	return 0
+	return ""
 }
 
 func (x *ResponseMeta) GetSupportedMethods() []string {
@@ -508,13 +500,6 @@ func (x *ResponseMeta) GetFacts() map[string]string {
 		return x.Facts
 	}
 	return nil
-}
-
-func (x *ResponseMeta) GetEpoch() uint32 {
-	if x != nil {
-		return x.Epoch
-	}
-	return 0
 }
 
 func (x *ResponseMeta) GetRepoCpeMappingHash() string {
@@ -533,20 +518,11 @@ func (x *ResponseMeta) GetRepoCpeMappingUpdatePath() RepoCPEMappingUpdatePath {
 
 type GetReportRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Generation last observed by Sensor for this VM (see ResponseMeta.report_generation).
-	// Use 0 when no prior generation is known, which forces a full report. See
-	// ADR-0006 §2, "Generation counter", for how the agent uses this value.
-	LastKnownGeneration uint32 `protobuf:"varint,1,opt,name=last_known_generation,json=lastKnownGeneration,proto3" json:"last_known_generation,omitempty"`
-	// Epoch last observed by Sensor for this VM (see ResponseMeta.epoch). 0 means
-	// unknown (first-ever request for this VM, or a Sensor build that predates
-	// this field) -- the agent should ignore epoch and fall back to
-	// generation-only comparison, exactly as if this field did not exist. This
-	// lets the agent detect a restart-coincidence false match (last_known_generation
-	// happens to equal the post-restart generation) and serve the full report in
-	// the same round trip, instead of Sensor needing a second, forced request.
-	KnownEpoch    uint32 `protobuf:"varint,2,opt,name=known_epoch,json=knownEpoch,proto3" json:"known_epoch,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Token last observed by Sensor for this VM (see ResponseMeta.report_token).
+	// Empty when none is known, which forces a full report.
+	LastKnownToken string `protobuf:"bytes,1,opt,name=last_known_token,json=lastKnownToken,proto3" json:"last_known_token,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetReportRequest) Reset() {
@@ -579,26 +555,19 @@ func (*GetReportRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_virtualmachine_v1_vm_service_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetReportRequest) GetLastKnownGeneration() uint32 {
+func (x *GetReportRequest) GetLastKnownToken() string {
 	if x != nil {
-		return x.LastKnownGeneration
+		return x.LastKnownToken
 	}
-	return 0
-}
-
-func (x *GetReportRequest) GetKnownEpoch() uint32 {
-	if x != nil {
-		return x.KnownEpoch
-	}
-	return 0
+	return ""
 }
 
 type GetReportResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Full scan report; set when generation changed or forced (generation 0).
+	// Full scan report; set when the content hash changed or last_known_token is empty.
 	IndexReport *v4.IndexReport `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	// True when agent's generation matches last_known_generation; index_report
-	// is nil in this case. Sensor may still force a refresh after 4 h (ADR-0006 §2).
+	// True when the agent's token matches last_known_token; index_report is nil.
+	// Sensor may still force a refresh after 4 h with an empty last_known_token.
 	Unchanged     bool `protobuf:"varint,2,opt,name=unchanged,proto3" json:"unchanged,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -825,26 +794,23 @@ const file_internalapi_virtualmachine_v1_vm_service_proto_rawDesc = "" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd0\x04\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb0\x04\n" +
 	"\fResponseMeta\x12#\n" +
 	"\ragent_version\x18\x01 \x01(\tR\fagentVersion\x12J\n" +
-	"\x13report_generated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11reportGeneratedAt\x12+\n" +
-	"\x11report_generation\x18\x03 \x01(\rR\x10reportGeneration\x12+\n" +
+	"\x13report_generated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x11reportGeneratedAt\x12!\n" +
+	"\freport_token\x18\x03 \x01(\tR\vreportToken\x12+\n" +
 	"\x11supported_methods\x18\x04 \x03(\tR\x10supportedMethods\x12@\n" +
-	"\x05facts\x18\x05 \x03(\v2*.virtualmachine.v1.ResponseMeta.FactsEntryR\x05facts\x12\x14\n" +
-	"\x05epoch\x18\x06 \x01(\rR\x05epoch\x126\n" +
-	"\x15repo_cpe_mapping_hash\x18\a \x01(\tH\x00R\x12repoCpeMappingHash\x88\x01\x01\x12p\n" +
-	"\x1crepo_cpe_mapping_update_path\x18\b \x01(\x0e2+.virtualmachine.v1.RepoCPEMappingUpdatePathH\x01R\x18repoCpeMappingUpdatePath\x88\x01\x01\x1a8\n" +
+	"\x05facts\x18\x05 \x03(\v2*.virtualmachine.v1.ResponseMeta.FactsEntryR\x05facts\x126\n" +
+	"\x15repo_cpe_mapping_hash\x18\x06 \x01(\tH\x00R\x12repoCpeMappingHash\x88\x01\x01\x12p\n" +
+	"\x1crepo_cpe_mapping_update_path\x18\a \x01(\x0e2+.virtualmachine.v1.RepoCPEMappingUpdatePathH\x01R\x18repoCpeMappingUpdatePath\x88\x01\x01\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x18\n" +
 	"\x16_repo_cpe_mapping_hashB\x1f\n" +
-	"\x1d_repo_cpe_mapping_update_path\"g\n" +
-	"\x10GetReportRequest\x122\n" +
-	"\x15last_known_generation\x18\x01 \x01(\rR\x13lastKnownGeneration\x12\x1f\n" +
-	"\vknown_epoch\x18\x02 \x01(\rR\n" +
-	"knownEpoch\"m\n" +
+	"\x1d_repo_cpe_mapping_update_path\"<\n" +
+	"\x10GetReportRequest\x12(\n" +
+	"\x10last_known_token\x18\x01 \x01(\tR\x0elastKnownToken\"m\n" +
 	"\x11GetReportResponse\x12:\n" +
 	"\findex_report\x18\x01 \x01(\v2\x17.scanner.v4.IndexReportR\vindexReport\x12\x1c\n" +
 	"\tunchanged\x18\x02 \x01(\bR\tunchanged\"5\n" +

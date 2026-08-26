@@ -28,6 +28,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts from 'hooks/patternfly/useToasts';
 import type { Toast } from 'hooks/patternfly/useToasts';
+import { deleteReportConfiguration } from 'services/ReportsService';
 import type { ReportConfiguration } from 'services/ReportsService.types';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -79,6 +80,7 @@ function ViewVulnReportPage() {
         onDelete,
         deleteResults,
     } = useDeleteModal({
+        deleteFunction: deleteReportConfiguration,
         onCompleted: () => {
             navigate(vulnerabilityConfigurationsReportsPath);
         },

@@ -96,6 +96,7 @@ type ImageCvesV2 struct {
 	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
 	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar"`
 	FixAvailableTimestamp          *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
+	Origin                         storage.VulnOrigin            `gorm:"column:origin;type:integer"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`

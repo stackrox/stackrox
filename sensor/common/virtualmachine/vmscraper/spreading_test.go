@@ -3,6 +3,7 @@ package vmscraper
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -21,6 +22,16 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+// recordingDialer counts Dial calls so tests can assert how many scrapes a tick started.
+type recordingDialer struct {
+	calls atomic.Int32
+}
+
+func (d *recordingDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	d.calls.Add(1)
+	return nopCloser{}, nil
+}
+
 // sequencedRand returns successive values from seq, then the last value.
 func sequencedRand(seq []float64) func() float64 {
 	var i atomic.Int32
@@ -35,8 +46,8 @@ func sequencedRand(seq []float64) func() float64 {
 
 func TestVMScraper_CadenceRescheduleUsesSteadyBand(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns", "vm-a", 1)}}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	})
 	s.spreadFraction = 2.0 / 3
 	// First draw (reconcile insert) keeps the VM due now; second is the cadence offset.
@@ -58,10 +69,11 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(10+i)))
 	}
 	store := &mockStore{vms: vms}
-	s, clock := newTestScraper(store, &safeSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s, clock := newTestScraper(t, store, &safeSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
+	s.tickInterval = newVMIndexReportWindow(s.interval)
 	s.reconcileEvery = reconcilePeriod(s.interval)
 	s.randFloat64 = sequencedRand([]float64{0, 0.25, 0.5, 0.75, 1})
 
@@ -104,7 +116,7 @@ func TestVMScraper_MassFirstInsertSpansNewVMIndexReportWindow(t *testing.T) {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
 	}
 	store := &mockStore{vms: vms}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	units := make([]float64, numVMs)
@@ -138,7 +150,7 @@ func TestVMScraper_MassFirstInsertSpansNewVMIndexReportWindow(t *testing.T) {
 
 func TestVMScraper_SingleInsertUsesNewVMIndexReportSpread(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns", "only", 1)}}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = 20
 	s.randFloat64 = func() float64 { return 0.5 }
 
@@ -154,7 +166,7 @@ func TestVMScraper_MultiInsertUsesNewVMIndexReportSpread(t *testing.T) {
 		makeVM("ns", "a", 1),
 		makeVM("ns", "b", 2),
 	}}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = 20
 	s.randFloat64 = sequencedRand([]float64{0.25, 0.75})
 
@@ -168,7 +180,7 @@ func TestVMScraper_MultiInsertUsesNewVMIndexReportSpread(t *testing.T) {
 func TestVMScraper_RetryPathDoesNotUseSteadyBand(t *testing.T) {
 	store := &mockStore{vms: []*virtualmachine.Info{makeVM("ns1", "vm-a", 100)}}
 	client := &mockProtocolClient{errQueue: []error{vsockclient.ErrNotReady}}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, client)
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, client)
 	// Insert due now; a later unit of 1 would be full steadyWidth if cadence used RNG.
 	s.randFloat64 = sequencedRand([]float64{0, 1})
 
@@ -182,8 +194,8 @@ func TestVMScraper_RetryPathDoesNotUseSteadyBand(t *testing.T) {
 func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 	vm := makeVM("ns1", "vm-a", 100)
 	store := &mockStore{vms: []*virtualmachine.Info{vm}}
-	s, clock := newTestScraper(store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport(1)},
+	s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
 	})
 	s.randFloat64 = sequencedRand([]float64{0, 1})
 	s.pollOnce(context.Background())
@@ -192,6 +204,125 @@ func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 	s.handleNACK(string(vm.ID) + ":1")
 	assert.Equal(t, initialBackoff, cachedNextAttemptAt(t, s, "ns1/vm-a").Sub(start))
 	assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"))
+}
+
+func TestVMScraper_DuePileIsPacedByStartBudget(t *testing.T) {
+	const numVMs = 10
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s.concurrency = numVMs
+	s.interval = time.Hour
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	window := newVMIndexReportWindow(s.interval)
+	want := startBudget(numVMs, s.tickInterval, window)
+	require.Equal(t, 1, want)
+	require.Greater(t, want, 0)
+	require.Less(t, want, numVMs)
+	require.LessOrEqual(t, want, s.concurrency)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load())
+
+	dialer.calls.Store(0)
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load(), "leftovers stay due for later ticks")
+}
+
+// TestVMScraper_AllDueClumpDrainsWithinIndexWindow covers a 100-VM all-due
+// clump: fleet-sized budget drains it in one index window.
+func TestVMScraper_AllDueClumpDrainsWithinIndexWindow(t *testing.T) {
+	const numVMs = 100
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s.concurrency = numVMs
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	window := newVMIndexReportWindow(s.interval)
+	require.Equal(t, 100*time.Second, window)
+	perTick := startBudget(numVMs, s.tickInterval, window)
+	require.Equal(t, 10, perTick, "ceil(100 × 10s / 100s) = 10")
+	ticks := (numVMs + perTick - 1) / perTick
+	require.Equal(t, 10, ticks)
+
+	for range ticks {
+		s.tick(context.Background(), false)
+	}
+	assert.Equal(t, int32(numVMs), dialer.calls.Load(),
+		"a shrinking-n budget would start only 55 of 100 in 10 ticks (10+9+…+1)")
+	assert.Empty(t, s.dueKeys(), "the clump should have left the due pile within the index window")
+}
+
+// TestVMScraper_SpreadDuePileStartsAtFleetRate covers VMs already spread by
+// nextAttemptAt: the due snapshot is smaller than the fleet, but the rate
+// must still be the fleet cap so every currently-due VM can start.
+func TestVMScraper_SpreadDuePileStartsAtFleetRate(t *testing.T) {
+	const (
+		numVMs = 100
+		nDue   = 10
+	)
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(t, &mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{token: "1"})
+	s.concurrency = numVMs
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for i, vm := range vms {
+			st := &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now.Add(time.Hour),
+			}
+			if i < nDue {
+				st.nextAttemptAt = now
+			}
+			s.vmState[vm.Key()] = st
+		}
+		s.lastReconcile = now
+	})
+	require.Len(t, s.dueKeys(), nDue)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(nDue), dialer.calls.Load(),
+		"a due-pile budget would start 1 (ceil(10 × 10s / 100s)), not all 10 due")
+	assert.Empty(t, s.dueKeys())
 }
 
 func TestSpreadFractionEnvDefault(t *testing.T) {
@@ -205,7 +336,7 @@ func TestVMScraper_StartsPerTickObservesLaunchCount(t *testing.T) {
 	for i := range numVMs {
 		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(10+i)))
 	}
-	s, clock := newTestScraper(&mockStore{vms: vms}, &safeSender{}, &mockDialer{}, &safeProtocolClient{gen: 1})
+	s, clock := newTestScraper(t, &mockStore{vms: vms}, &safeSender{}, &mockDialer{}, &safeProtocolClient{token: "1"})
 	s.concurrency = numVMs
 	s.reconcileEvery = reconcilePeriod(s.interval)
 
@@ -228,7 +359,7 @@ func TestVMScraper_StartsPerTickObservesLaunchCount(t *testing.T) {
 }
 
 func TestVMScraper_StartsPerTickSkipsIdleTicks(t *testing.T) {
-	s, clock := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	s, clock := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
 	now := clock.Now()
 	concurrency.WithLock(&s.mu, func() {
 		s.lastReconcile = now
@@ -278,7 +409,7 @@ func TestVMScraper_WarnIfSpreadSaturated(t *testing.T) {
 			log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
 			t.Cleanup(func() { log = orig })
 
-			s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+			s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
 			s.tickInterval = tc.tickInterval
 			s.spreadFraction = tc.spreadFraction
 			s.warnIfSpreadSaturated(tc.numVMs)
@@ -289,7 +420,7 @@ func TestVMScraper_WarnIfSpreadSaturated(t *testing.T) {
 }
 
 func TestVMScraper_ForwardInterarrivalObservesAfterFirst(t *testing.T) {
-	s, _ := newTestScraper(&mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
+	s, _ := newTestScraper(t, &mockStore{}, &mockSender{}, &mockDialer{}, &mockProtocolClient{})
 	before := histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds)
 	s.observeForwardInterarrival()
 	assert.Equal(t, before, histogramSampleCount(t, metrics.PullForwardInterarrivalSeconds),

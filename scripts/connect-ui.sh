@@ -2,8 +2,10 @@
 
 set -e
 
-# ensure logged in to docker
-docker login
+CONTAINER_ENGINE="${CONTAINER_ENGINE:-docker}"
+
+# ensure logged in to container registry
+${CONTAINER_ENGINE} login
 
 # get clean cluster name
 CLUSTER_NAME="$(echo $1 | sed 's/-rg//')"
