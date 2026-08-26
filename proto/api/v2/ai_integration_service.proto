@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/common.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+enum AiIntegrationType {
+  AI_INTEGRATION_TYPE_UNSPECIFIED = 0;
+  AI_INTEGRATION_TYPE_OLS = 1;
+}
+
+message AiIntegration {
+  string id = 1;
+  string name = 2;
+  AiIntegrationType type = 3;
+  string service_url = 4;
+}
+
+message ListAiIntegrationsResponse {
+  repeated AiIntegration integrations = 1;
+}
+
+service AiIntegrationService {
+  // CreateAiIntegration creates a new AI integration.
+  rpc CreateAiIntegration(AiIntegration) returns (AiIntegration) {
+    option (google.api.http) = {
+      post: "/v2/ai-integrations"
+      body: "*"
+    };
+  }
+
+  // ListAiIntegrations returns all configured AI integrations.
+  rpc ListAiIntegrations(Empty) returns (ListAiIntegrationsResponse) {
+    option (google.api.http) = {get: "/v2/ai-integrations"};
+  }
+
+  // GetAiIntegration returns a single AI integration by ID.
+  rpc GetAiIntegration(ResourceByID) returns (AiIntegration) {
+    option (google.api.http) = {get: "/v2/ai-integrations/{id}"};
+  }
+
+  // UpdateAiIntegration updates an existing AI integration.
+  rpc UpdateAiIntegration(AiIntegration) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/ai-integrations/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteAiIntegration deletes an AI integration by ID.
+  rpc DeleteAiIntegration(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/ai-integrations/{id}"};
+  }
+
+  // TestAiIntegration tests connectivity to an AI integration endpoint.
+  rpc TestAiIntegration(AiIntegration) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v2/ai-integrations/test"
+      body: "*"
+    };
+  }
+}
