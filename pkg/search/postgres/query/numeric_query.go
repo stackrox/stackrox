@@ -24,7 +24,7 @@ var (
 	}
 
 	validPrefixesSortedByLengthDec = func() []string {
-		var validPrefixes []string
+		validPrefixes := make([]string, 0, 2*len(prefixesAndInversions)+2)
 		for _, pAndI := range prefixesAndInversions {
 			validPrefixes = append(validPrefixes, pAndI.prefix)
 			validPrefixes = append(validPrefixes, pAndI.inversion)

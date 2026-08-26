@@ -204,14 +204,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 
-		if kvConfig := cfg.k8sClient.RESTConfig(); kvConfig != nil {
-			pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
-			vmDial := vsockdialer.NewMultiDialer(kvConfig, pullMaxBytes)
+		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
+		vmDial, err := vsockdialer.NewMultiDialer()
+		if err != nil {
+			log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
+		} else {
 			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
 			scraper := vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient)
 			components = append(components, scraper)
-		} else {
-			log.Warn("VSOCK pull mode disabled (no REST config available)")
 		}
 	}
 

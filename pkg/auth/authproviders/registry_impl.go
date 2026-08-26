@@ -62,6 +62,7 @@ func (r *registryImpl) Init() error {
 	r.providers = make(map[string]Provider)
 	err := r.store.ForEachAuthProvider(sac.WithAllAccess(context.Background()), func(storedValue *storage.AuthProvider) error {
 		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
+		//nolint:prealloc // Preallocating would not improve performance here
 		options := []ProviderOption{
 			WithStorageView(storedValue),
 			WithAttributeVerifier(storedValue),
