@@ -75,6 +75,75 @@ func TestPullWithPredEmptyQueue(t *testing.T) {
 	assert.False(t, ok)
 }
 
+// testEmptyPullAfterSignal is a shared test helper that verifies a consumer properly
+// re-blocks when signaled but another consumer steals the item. This prevents spin-loops.
+func testEmptyPullAfterSignal(t *testing.T, consumerName string, startConsumer func(*Queue[int], context.Context, chan int, chan struct{})) {
+	synctest.Test(t, func(t *testing.T) {
+		q := NewQueue[int]()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		itemReceived := make(chan int, 1)
+		consumerStarted := make(chan struct{})
+
+		// Start consumer on empty queue
+		startConsumer(q, ctx, itemReceived, consumerStarted)
+
+		<-consumerStarted
+		synctest.Wait() // Consumer is blocked waiting
+
+		// Push an item, but immediately pull it with another consumer
+		q.Push(99)
+		pulled := q.Pull()
+		assert.Equal(t, 99, pulled)
+
+		// Consumer should remain blocked (not spin-loop) even though it was signaled
+		synctest.Wait()
+
+		select {
+		case <-itemReceived:
+			t.Fatalf("%s should not have received the pulled item", consumerName)
+		default:
+			// Expected: Consumer is still blocked
+		}
+
+		// Now push a second item - consumer should receive this one
+		q.Push(42)
+		synctest.Wait()
+
+		select {
+		case item := <-itemReceived:
+			assert.Equal(t, 42, item)
+		default:
+			t.Fatal("expected to receive item from queue")
+		}
+	})
+}
+
+// testCancellationWithEmptyQueue is a shared test helper that verifies a consumer
+// returns immediately when the context is already cancelled.
+func testCancellationWithEmptyQueue(t *testing.T, consume func(context.Context, *Queue[int]) int) {
+	synctest.Test(t, func(t *testing.T) {
+		q := NewQueue[int]()
+
+		// Create already-cancelled context
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		// Verify context is cancelled
+		select {
+		case <-ctx.Done():
+			// Expected: context is already done
+		default:
+			t.Fatal("context should be cancelled")
+		}
+
+		// Consumer should return immediately with zero value
+		item := consume(ctx, q)
+		assert.Equal(t, 0, item, "should return zero value when cancelled")
+	})
+}
+
 func TestQueueSeq(t *testing.T) {
 	t.Run("Basic Iteration", func(t *testing.T) {
 		q := NewQueue[int]()
@@ -233,51 +302,14 @@ func TestQueueSeq(t *testing.T) {
 		// This test verifies that Seq() properly re-blocks when a signal occurs
 		// but another consumer removes the item before Seq can pull it.
 		// Without proper blocking, Seq would spin-loop after the empty pull.
-		synctest.Test(t, func(t *testing.T) {
-			q := NewQueue[int]()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			itemReceived := make(chan int, 1)
-			iterationStarted := make(chan struct{})
-
-			// Start Seq() iteration on empty queue
+		testEmptyPullAfterSignal(t, "Seq", func(q *Queue[int], ctx context.Context, itemReceived chan int, started chan struct{}) {
 			go func() {
-				close(iterationStarted)
+				close(started)
 				for item := range q.Seq(ctx) {
 					itemReceived <- item
 					return
 				}
 			}()
-
-			<-iterationStarted
-			synctest.Wait() // Seq() is blocked waiting
-
-			// Push an item, but immediately pull it with another consumer
-			q.Push(99)
-			pulled := q.Pull()
-			assert.Equal(t, 99, pulled)
-
-			// Seq() should remain blocked (not spin-loop) even though it was signaled
-			synctest.Wait()
-
-			select {
-			case <-itemReceived:
-				t.Fatal("Seq should not have received the pulled item")
-			default:
-				// Expected: Seq is still blocked
-			}
-
-			// Now push a second item - Seq should receive this one
-			q.Push(42)
-			synctest.Wait()
-
-			select {
-			case item := <-itemReceived:
-				assert.Equal(t, 42, item)
-			default:
-				t.Fatal("expected to receive item from queue")
-			}
 		})
 	})
 
@@ -466,49 +498,12 @@ func TestQueuePullBlocking(t *testing.T) {
 		// This test verifies that PullBlocking() properly re-blocks when a signal
 		// occurs but another consumer removes the item before PullBlocking can pull it.
 		// Without proper blocking, PullBlocking would spin-loop after the empty pull.
-		synctest.Test(t, func(t *testing.T) {
-			q := NewQueue[int]()
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			itemReceived := make(chan int, 1)
-			pullStarted := make(chan struct{})
-
-			// Start PullBlocking on empty queue
+		testEmptyPullAfterSignal(t, "PullBlocking", func(q *Queue[int], ctx context.Context, itemReceived chan int, started chan struct{}) {
 			go func() {
-				close(pullStarted)
+				close(started)
 				item := q.PullBlocking(ctx)
 				itemReceived <- item
 			}()
-
-			<-pullStarted
-			synctest.Wait() // PullBlocking is blocked waiting
-
-			// Push an item, but immediately pull it with another consumer
-			q.Push(99)
-			pulled := q.Pull()
-			assert.Equal(t, 99, pulled)
-
-			// PullBlocking should remain blocked (not spin-loop) even though it was signaled
-			synctest.Wait()
-
-			select {
-			case <-itemReceived:
-				t.Fatal("PullBlocking should not have received the pulled item")
-			default:
-				// Expected: PullBlocking is still blocked
-			}
-
-			// Now push a second item - PullBlocking should receive this one
-			q.Push(42)
-			synctest.Wait()
-
-			select {
-			case item := <-itemReceived:
-				assert.Equal(t, 42, item)
-			default:
-				t.Fatal("expected to receive item from queue")
-			}
 		})
 	})
 
@@ -516,24 +511,8 @@ func TestQueuePullBlocking(t *testing.T) {
 		// This test verifies that PullBlocking() checks waitable.Done()
 		// before blocking, not just after. If the waitable is already cancelled,
 		// PullBlocking should return immediately.
-		synctest.Test(t, func(t *testing.T) {
-			q := NewQueue[int]()
-
-			// Create already-cancelled context
-			ctx, cancel := context.WithCancel(context.Background())
-			cancel()
-
-			// Verify context is cancelled
-			select {
-			case <-ctx.Done():
-				// Expected: context is already done
-			default:
-				t.Fatal("context should be cancelled")
-			}
-
-			// PullBlocking should return immediately with zero value
-			item := q.PullBlocking(ctx)
-			assert.Equal(t, 0, item, "should return zero value when cancelled")
+		testCancellationWithEmptyQueue(t, func(ctx context.Context, q *Queue[int]) int {
+			return q.PullBlocking(ctx)
 		})
 	})
 }
