@@ -52,15 +52,21 @@ cosign sign \
 
 ## 3. referrer-keyless-rhtas
 
-Sigstore bundle format, keyless via public Sigstore, attached as OCI referrer.
-Sign with an `@redhat.com` Google identity to match the test's OIDC config.
+Sigstore bundle format, keyless via the private RHTAS instance on the testing
+services cluster, attached as OCI referrer. Sign with an `@redhat.com` Google
+identity to match the test's OIDC config.
 
 Cosign's default OIDC flow uses a Sigstore-hosted OAuth client that only
 supports GitHub and Microsoft identities. To sign with a Google (`@redhat.com`)
 identity, create a GCP OAuth 2.0 client (type "Desktop app") and pass its
-credentials to cosign.
+credentials to cosign. The RHTAS TUF URL is derived from the cluster's route
+(see `KEYLESS_RHTAS_REKOR_URL` in the test file for the cluster base URL).
 
 ```bash
+# Point cosign at the private RHTAS TUF root to use its Fulcio and Rekor.
+TUF_URL=<RHTAS_TUF_URL>
+cosign initialize --mirror=$TUF_URL --root=$TUF_URL/root.json
+
 crane cp docker.io/library/alpine:latest \
   quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas
 
@@ -141,6 +147,7 @@ cosign verify --new-bundle-format \
   --certificate-oidc-issuer="https://github.com/login/oauth" \
   quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-keyless
 
+# Requires prior: cosign initialize --mirror=$TUF_URL --root=$TUF_URL/root.json
 cosign verify --new-bundle-format \
   --certificate-identity-regexp=".*@redhat.com" \
   --certificate-oidc-issuer="https://accounts.google.com" \
