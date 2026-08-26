@@ -652,7 +652,7 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 		return scrapeRetryable
 	default:
 		log.Warnf("VMScraper: unexpected transport or framing error for %q: %v", key, err)
-		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportReadError).Inc()
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportUnexpected).Inc()
 		return scrapeRetryable
 	}
 }

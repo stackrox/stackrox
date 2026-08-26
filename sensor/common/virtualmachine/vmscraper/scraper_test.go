@@ -772,6 +772,64 @@ func cachedToken(t *testing.T, s *VMScraper, key string) string {
 	})
 }
 
+type pullOutcomeSample struct {
+	vec   *prometheus.CounterVec
+	label string
+}
+
+func allPullOutcomeSamples() []pullOutcomeSample {
+	var out []pullOutcomeSample
+	for _, label := range []string{
+		metrics.PullTransportDialError,
+		metrics.PullTransportTimeout,
+		metrics.PullTransportReadError,
+		metrics.PullTransportAbnormalClose,
+		metrics.PullTransportUnexpected,
+	} {
+		out = append(out, pullOutcomeSample{metrics.PullTransportTotal, label})
+	}
+	for _, label := range []string{
+		metrics.PullGetReportUnchanged,
+		metrics.PullGetReportNotReady,
+		metrics.PullGetReportUnknownMethod,
+		metrics.PullGetReportBusy,
+		metrics.PullGetReportInternalError,
+		metrics.PullGetReportMalformedRequest,
+		metrics.PullGetReportRequestTooLarge,
+		metrics.PullGetReportUnknownAgentError,
+	} {
+		out = append(out, pullOutcomeSample{metrics.PullGetReportTotal, label})
+	}
+	for _, label := range []string{
+		metrics.PullScrapeSuccess,
+		metrics.PullScrapeInvalidReport,
+		metrics.PullScrapeSendError,
+	} {
+		out = append(out, pullOutcomeSample{metrics.PullScrapeTotal, label})
+	}
+	return out
+}
+
+func snapshotPullOutcomes() map[pullOutcomeSample]float64 {
+	snap := make(map[pullOutcomeSample]float64, len(allPullOutcomeSamples()))
+	for _, sample := range allPullOutcomeSamples() {
+		snap[sample] = testutil.ToFloat64(sample.vec.WithLabelValues(sample.label))
+	}
+	return snap
+}
+
+func assertOnlyPullOutcomeIncremented(t *testing.T, before map[pullOutcomeSample]float64, wantVec *prometheus.CounterVec, wantLabel string) {
+	t.Helper()
+	for _, sample := range allPullOutcomeSamples() {
+		got := testutil.ToFloat64(sample.vec.WithLabelValues(sample.label))
+		want := before[sample]
+		if sample.vec == wantVec && sample.label == wantLabel {
+			want++
+		}
+		assert.Equal(t, want, got, "status %q", sample.label)
+	}
+}
+
 // TestHandleGetReportError_ClassifiesEveryErrorCode locks the mapping from
 // each error to its metric label and retry classification.
 func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
@@ -841,10 +899,10 @@ func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
 			wantLabel:   metrics.PullTransportReadError,
 			wantOutcome: scrapeRetryable,
 		},
-		"unrecognized transport/framing error falls back to transport read_error": {
+		"unrecognized transport/framing error maps to transport unexpected": {
 			err:         errors.New("unmarshaling response: unexpected EOF in the middle of a varint"),
 			wantMetric:  metrics.PullTransportTotal,
-			wantLabel:   metrics.PullTransportReadError,
+			wantLabel:   metrics.PullTransportUnexpected,
 			wantOutcome: scrapeRetryable,
 		},
 	}
@@ -852,11 +910,10 @@ func TestHandleGetReportError_ClassifiesEveryErrorCode(t *testing.T) {
 	s := &VMScraper{}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			before := testutil.ToFloat64(tc.wantMetric.WithLabelValues(tc.wantLabel))
+			before := snapshotPullOutcomes()
 			outcome := s.handleGetReportError(t.Context(), "ns/vm", tc.err)
 			assert.Equal(t, tc.wantOutcome, outcome)
-			assert.Equal(t, before+1, testutil.ToFloat64(tc.wantMetric.WithLabelValues(tc.wantLabel)),
-				"expected %v to increment %q exactly once", tc.err, tc.wantLabel)
+			assertOnlyPullOutcomeIncremented(t, before, tc.wantMetric, tc.wantLabel)
 		})
 	}
 }

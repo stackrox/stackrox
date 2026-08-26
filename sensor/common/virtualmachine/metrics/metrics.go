@@ -116,6 +116,7 @@ const (
 	PullTransportTimeout       = "timeout"
 	PullTransportReadError     = "read_error"
 	PullTransportAbnormalClose = "abnormal_close"
+	PullTransportUnexpected    = "unexpected"
 )
 
 // GetReport protocol status values for PullGetReportTotal.
