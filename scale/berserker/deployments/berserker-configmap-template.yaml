@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: berserker-file-activity-config-WORKLOAD_NAME
+  namespace: NAMESPACE
+data:
+  workload.ber: |
+WORKLOAD_CONTENT

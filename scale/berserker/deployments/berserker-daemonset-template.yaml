@@ -1,0 +1,54 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: berserker-file-activity-WORKLOAD_NAME
+  namespace: NAMESPACE
+spec:
+  selector:
+    matchLabels:
+      app: berserker-file-activity-WORKLOAD_NAME
+  template:
+    metadata:
+      labels:
+        app: berserker-file-activity-WORKLOAD_NAME
+    spec:
+      containers:
+      - command:
+        - berserker
+        args:
+        - -f
+        - /etc/berserker/workload.ber
+        image: quay.io/stackrox-io/berserker:1.0-97-g64cfd0ee0b
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "15m"
+          limits:
+            memory: "200Mi"
+            cpu: "15m"
+        volumeMounts:
+        - name: config
+          mountPath: "/etc/berserker"
+          readOnly: true
+        imagePullPolicy: IfNotPresent
+        name: berserker
+        env:
+        - name: RUST_LOG
+          value: "error"
+      volumes:
+      - name: config
+        configMap:
+          name: berserker-file-activity-config-WORKLOAD_NAME
+          items:
+          - key: workload.ber
+            path: workload.ber
+      tolerations:
+      - key: "node.kubernetes.io/not-ready"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
+      - key: "node.kubernetes.io/unreachable"
+        operator: "Exists"
+        effect: "NoExecute"
+        tolerationSeconds: 900
