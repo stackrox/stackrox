@@ -270,7 +270,7 @@ func TestSyncRepoCPEMappingIntegration_FullRoundTrip(t *testing.T) {
 	handler := roxagentvsock.NewHandler(cache, "test-agent", updater, updater)
 	client := NewClient([]string{CapabilityReportV1}, 10<<20)
 
-	first, err := exchangeOnce(t, client, 0, 0, handler.HandleConn)
+	first, err := exchangeOnce(t, client, "", handler.HandleConn)
 	require.ErrorIs(t, err, ErrMappingRequired, "no bootstrapped mapping must surface as MAPPING_REQUIRED")
 	require.NotNil(t, first.Meta)
 	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR, first.Meta.GetRepoCpeMappingUpdatePath())
@@ -282,9 +282,9 @@ func TestSyncRepoCPEMappingIntegration_FullRoundTrip(t *testing.T) {
 	wantHash := cpemapping.HashMapping(mapping)
 	assert.Equal(t, wantHash, syncMeta.GetRepoCpeMappingHash())
 
-	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil)
+	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil, "")
 
-	second, err := exchangeOnce(t, client, 0, 0, handler.HandleConn)
+	second, err := exchangeOnce(t, client, "", handler.HandleConn)
 	require.NoError(t, err)
 	require.NotNil(t, second.IndexReport)
 	assert.Equal(t, "sync-integration-hash", second.IndexReport.GetHashId())
