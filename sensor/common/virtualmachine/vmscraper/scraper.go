@@ -14,10 +14,12 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -32,9 +34,13 @@ var (
 	errStartMoreThanOnce = errors.New("unable to start the VM scraper more than once")
 )
 
-// minPollInterval clamps ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to avoid
-// accidental high-churn vsock polling.
-const minPollInterval = time.Minute
+const (
+	// minPollInterval clamps ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL to avoid
+	// accidental high-churn vsock polling.
+	minPollInterval = time.Minute
+
+	sendNotImplementedLogLimiter = "vm-scraper-send-not-implemented"
+)
 
 func getVsockPort() uint32 {
 	return uint32(env.VirtualMachinesVsockPort.IntegerSetting())
@@ -87,7 +93,10 @@ type VMScraper struct {
 	warnMaxBytes          int
 	stopper               concurrency.Stopper
 	started               atomic.Bool
-	now                   func() time.Time
+	// loggedSkip is set after the first skip log for a missing-capability stretch
+	// so a 10s ticker does not repeat it until the capability returns.
+	loggedSkip atomic.Bool
+	now        func() time.Time
 	// randFloat64 returns a unit sample in [0, 1] for schedule offsets; tests inject a fixed source.
 	randFloat64          func() float64
 	lastSpreadWarnNumVMs int
@@ -254,6 +263,14 @@ func (s *VMScraper) run() {
 }
 
 func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		if s.loggedSkip.CompareAndSwap(false, true) {
+			log.Infof("VMScraper: skipping pulling index reports from VMs; Central does not advertise VirtualMachinesSupported")
+		}
+		return
+	}
+	s.loggedSkip.Store(false)
+
 	tickStart := s.now()
 	reconcile := forceReconcile
 	if !reconcile {
@@ -457,12 +474,23 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
-		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
 		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
+		outcome := scrapeRetryable
+		if errors.Is(err, errox.NotImplemented) {
+			logging.GetRateLimitedLogger().WarnL(sendNotImplementedLogLimiter,
+				"VMScraper: Central cannot consume VM index reports: %v", err)
+			outcome = scrapeNonRetryable
+		} else {
+			log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
+		}
 		// Send failures are typically a transient Central connection issue, so
 		// retry on the short backoff rather than waiting a full poll interval.
-		next := s.scheduleAfterAttempt(key, scrapeRetryable)
-		log.Infof("VMScraper: scrape %q failed retryable next=%s", key, next)
+		next := s.scheduleAfterAttempt(key, outcome)
+		kind := "retryable"
+		if outcome == scrapeNonRetryable {
+			kind = "non-retryable"
+		}
+		log.Infof("VMScraper: scrape %q failed %s next=%s", key, kind, next)
 		return false
 	}
 
