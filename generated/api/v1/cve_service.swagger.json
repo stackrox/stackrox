@@ -6,10 +6,12 @@
   },
   "tags": [
     {
-      "name": "NodeCVEService"
+      "name": "NodeCVEService",
+      "description": "NodeCVEService APIs can be used to manage node cves."
     },
     {
-      "name": "ClusterCVEService"
+      "name": "ClusterCVEService",
+      "description": "ClusterCVEService APIs can be used to manage cluster cves."
     }
   ],
   "consumes": [

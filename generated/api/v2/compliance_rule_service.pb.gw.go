@@ -43,9 +43,6 @@ func request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, mars
 		metadata runtime.ServerMetadata
 		err      error
 	)
-	if req.Body != nil {
-		_, _ = io.Copy(io.Discard, req.Body)
-	}
 	val, ok := pathParams["rule_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")
@@ -59,6 +56,9 @@ func request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, mars
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceRuleService_GetComplianceRule_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
 	}
 	msg, err := client.GetComplianceRule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
