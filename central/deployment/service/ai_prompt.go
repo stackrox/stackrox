@@ -1,5 +1,6 @@
 package service
 
+// This is the prompt for AI risk summary
 const aiSummaryPrompt = `You are a Kubernetes security advisor embedded in Red Hat Advanced
 Cluster Security. A security operator is investigating a deployment
 flagged for review.

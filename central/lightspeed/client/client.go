@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	// LightspeedEndpoint is the URL of the OpenShift Lightspeed API.
+	// LightspeedEndpoint is the URL of the OpenShift Lightspeed API. URL will be populated from integration in a follow up PR
 	LightspeedEndpoint = env.RegisterSetting("ROX_LIGHTSPEED_ENDPOINT",
 		env.WithDefault("https://lightspeed-app-server.openshift-lightspeed.svc:8443"))
 )
