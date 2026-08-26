@@ -77,7 +77,7 @@ func TestHandleRequest_GetReport_Unchanged(t *testing.T) {
 }
 
 // TestHandleRequest_GetReport_TokenMismatch covers a Sensor-cached token
-// that does not match the agent's current scan, including after restart.
+// that does not match the agent's current content.
 func TestHandleRequest_GetReport_TokenMismatch(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
@@ -93,9 +93,10 @@ func TestHandleRequest_GetReport_TokenMismatch(t *testing.T) {
 	assert.NotEqual(t, "stale-token", resp.GetMeta().GetReportToken())
 }
 
-// TestHandleRequest_GetReport_NewScanMintsNewToken covers a rescan: the
-// token changes even if content is identical, so Sensor still gets a full report.
-func TestHandleRequest_GetReport_NewScanMintsNewToken(t *testing.T) {
+// TestHandleRequest_GetReport_IdenticalRescanUnchanged covers a rescan
+// whose report and facts did not change: the token is stable, so Sensor
+// gets unchanged unless it sends an empty last_known_token.
+func TestHandleRequest_GetReport_IdenticalRescanUnchanged(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "same-hash"}, nil)
 
@@ -108,10 +109,39 @@ func TestHandleRequest_GetReport_NewScanMintsNewToken(t *testing.T) {
 	resp := sendAndReceive(t, handler, getReportRequest("req-after-rescan", token))
 
 	assert.NotNil(t, resp.GetGetReport())
+	assert.True(t, resp.GetGetReport().GetUnchanged())
+	assert.Nil(t, resp.GetGetReport().GetIndexReport())
+	assert.Equal(t, token, resp.GetMeta().GetReportToken())
+}
+
+// TestHandleRequest_GetReport_ContentChangeServesReport covers a rescan
+// whose content changed: the token changes and the full report is served.
+func TestHandleRequest_GetReport_ContentChangeServesReport(t *testing.T) {
+	cache := &ReportCache{}
+	cache.SetReport(&v4.IndexReport{HashId: "before"}, nil)
+
+	handler := NewHandler(cache, "test-1.0.0")
+	first := sendAndReceive(t, handler, getReportRequest("req-before", ""))
+	token := first.GetMeta().GetReportToken()
+	require.NotEmpty(t, token)
+
+	cache.SetReport(&v4.IndexReport{HashId: "after"}, nil)
+	resp := sendAndReceive(t, handler, getReportRequest("req-after", token))
+
+	assert.NotNil(t, resp.GetGetReport())
 	assert.False(t, resp.GetGetReport().GetUnchanged())
-	assert.Equal(t, "same-hash", resp.GetGetReport().GetIndexReport().GetHashId())
+	assert.Equal(t, "after", resp.GetGetReport().GetIndexReport().GetHashId())
 	assert.NotEmpty(t, resp.GetMeta().GetReportToken())
 	assert.NotEqual(t, token, resp.GetMeta().GetReportToken())
+}
+
+func TestReportToken(t *testing.T) {
+	report := &v4.IndexReport{HashId: "a"}
+	assert.Equal(t, reportToken(report, nil), reportToken(&v4.IndexReport{HashId: "a"}, map[string]string{}))
+	assert.NotEqual(t, reportToken(report, nil), reportToken(&v4.IndexReport{HashId: "b"}, nil))
+	assert.NotEqual(t, reportToken(report, nil), reportToken(report, map[string]string{"os": "rhel"}))
+	assert.Equal(t, reportToken(nil, nil), reportToken(nil, map[string]string{}))
+	assert.Len(t, reportToken(report, nil), 16)
 }
 
 func TestHandleRequest_NotReady(t *testing.T) {

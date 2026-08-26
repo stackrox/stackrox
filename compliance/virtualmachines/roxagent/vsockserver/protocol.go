@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"maps"
 	"net"
+	"slices"
 	"sync/atomic"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/vsockframing"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -27,7 +28,7 @@ type reportSnapshot struct {
 	facts       map[string]string
 }
 
-// ReportCache holds the cached scan report with its per-scan token.
+// ReportCache holds the cached scan report with its content-hash token.
 // Invariant: exactly one goroutine (the rescan loop) calls SetReport; multiple
 // HandleConn goroutines read via snap.Load(). This single-writer/multi-reader
 // pattern is safe with atomic.Pointer without CAS.
@@ -35,21 +36,41 @@ type ReportCache struct {
 	snap atomic.Pointer[reportSnapshot]
 }
 
-// SetReport atomically publishes a new report with updated facts in a single
-// store, minting a fresh token. Readers never observe a partial (new report,
-// stale facts) state.
+// SetReport atomically publishes a new report and facts. The token is an
+// XXH64 of that content, so identical rescans stay unchanged for Sensor.
 //
 // r and facts are defensively copied so that a caller mutating its own copy
 // after this call (or reusing the same facts map across scans) can never
 // mutate the published, supposedly-immutable snapshot out from under
 // concurrent readers.
 func (c *ReportCache) SetReport(r *v4.IndexReport, facts map[string]string) {
+	cloned := cloneIndexReport(r)
+	clonedFacts := cloneFacts(facts)
 	c.snap.Store(&reportSnapshot{
-		report:      cloneIndexReport(r),
-		token:       uuid.NewV4().String(),
+		report:      cloned,
+		token:       reportToken(cloned, clonedFacts),
 		generatedAt: time.Now(),
-		facts:       cloneFacts(facts),
+		facts:       clonedFacts,
 	})
+}
+
+// reportToken is XXH64 of the IndexReport and facts, as 16 lowercase hex
+// digits. Deterministic marshal keeps identical content stable across rescans.
+func reportToken(r *v4.IndexReport, facts map[string]string) string {
+	h := xxhash.New()
+	if r != nil {
+		b, err := proto.MarshalOptions{Deterministic: true}.Marshal(r)
+		if err == nil {
+			_, _ = h.Write(b)
+		}
+	}
+	for _, k := range slices.Sorted(maps.Keys(facts)) {
+		_, _ = h.Write([]byte(k))
+		_, _ = h.Write([]byte{0})
+		_, _ = h.Write([]byte(facts[k]))
+		_, _ = h.Write([]byte{0})
+	}
+	return fmt.Sprintf("%016x", h.Sum64())
 }
 
 // cloneIndexReport returns a deep copy of r, or nil if r is nil.
@@ -136,10 +157,9 @@ func (h *Handler) handleGetReport(req *pb.GetReportRequest) *pb.VMServiceRespons
 		return h.errorResponseFromSnap(snap, pb.ErrorCode_ERROR_CODE_NOT_READY, "initial scan in progress, try again later")
 	}
 
-	// Empty last_known_token means Sensor has no cached token (first request
-	// or a forced refresh) and must receive the full report. A matching
-	// token is unchanged; any other value is a new scan (or a restarted
-	// agent), so the full report is served in this round trip.
+	// Empty last_known_token forces a full report (first request or Sensor
+	// refresh). A matching token is identical content; any other value
+	// means the published report or facts changed.
 	if lastKnown := req.GetLastKnownToken(); lastKnown != "" && lastKnown == snap.token {
 		log.Infof("GetReport: unchanged (token=%s)", snap.token)
 		resp := h.newResponseFromSnap(snap)

@@ -419,9 +419,8 @@ type ResponseMeta struct {
 	AgentVersion string `protobuf:"bytes,1,opt,name=agent_version,json=agentVersion,proto3" json:"agent_version,omitempty"`
 	// When the cached scan report was produced by the scanner.
 	ReportGeneratedAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=report_generated_at,json=reportGeneratedAt,proto3" json:"report_generated_at,omitempty"`
-	// Opaque per-scan identifier minted when the cached report is published.
-	// Changes on every scan regardless of content, so Sensor always receives
-	// a full report at least once per rescan interval.
+	// XXH64 of the cached IndexReport and facts. Identical content keeps the
+	// same token; Sensor still forces a full report with an empty last_known_token.
 	ReportToken string `protobuf:"bytes,3,opt,name=report_token,json=reportToken,proto3" json:"report_token,omitempty"`
 	// Methods this agent accepts (e.g. ["get_report"]). Doubles as capability
 	// discovery — no separate handshake needed. See ADR-0006 §2.
@@ -565,10 +564,10 @@ func (x *GetReportRequest) GetLastKnownToken() string {
 
 type GetReportResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Full scan report; set when the token changed or last_known_token is empty.
+	// Full scan report; set when the content hash changed or last_known_token is empty.
 	IndexReport *v4.IndexReport `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
 	// True when the agent's token matches last_known_token; index_report is nil.
-	// Sensor may still force a refresh after 4 h.
+	// Sensor may still force a refresh after 4 h with an empty last_known_token.
 	Unchanged     bool `protobuf:"varint,2,opt,name=unchanged,proto3" json:"unchanged,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
