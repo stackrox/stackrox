@@ -28,7 +28,7 @@ info "Pre-flight DNS health check (DPTP-5138 mitigation)"
 
 _check_dns() {
     local domain="$1"
-    nslookup "$domain" >/dev/null 2>&1
+    getent hosts "$domain" >/dev/null 2>&1
 }
 
 dns_check_failed=false
