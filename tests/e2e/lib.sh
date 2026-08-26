@@ -276,6 +276,42 @@ gen_admin_password() {
     head -c 20 </dev/urandom | base64
 }
 
+# Populate a roxie config file with the endpoint settings required by endpoints_test.go:
+# plaintext endpoints (8080/8081) and the full central-endpoints ConfigMap (8082, 8444-8448).
+# Values are taken from the ROX_PLAINTEXT_ENDPOINTS and ROXDEPLOY_CONFIG_FILE_MAP env vars,
+# which are exported by test_preamble() of the jobs that run endpoints_test.go. Jobs that do
+# not set these are left untouched, so this is safe to call unconditionally from such a job.
+configure_endpoints_for_test() {
+    local config_file="$1"
+
+    # Expose plaintext endpoints required by endpoints_test.go.
+    if [[ -n "${ROX_PLAINTEXT_ENDPOINTS:-}" ]]; then
+        set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "${ROX_PLAINTEXT_ENDPOINTS}"
+    fi
+
+    # Inject the full endpoint config into the central-endpoints ConfigMap so that
+    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
+    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
+        local overlay_tmp; overlay_tmp="$(mktemp)"
+        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
+        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
+        cat > "$overlay_tmp" <<'OVERLAY'
+central:
+  spec:
+    overlays:
+    - apiVersion: v1
+      kind: ConfigMap
+      name: central-endpoints
+      patches:
+      - path: data.endpoints\.yaml
+        verbatim: |
+OVERLAY
+        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
+        merge_yaml "$config_file" < "$overlay_tmp"
+        rm -f "$overlay_tmp"
+    fi
+}
+
 # Deploy StackRox for compatibility testing using roxie.
 # Deploys central at central_version and secured cluster at sensor_version.
 deploy_stackrox_with_custom_central_and_sensor_versions() {
@@ -300,35 +336,14 @@ securedCluster:
     clusterName: remote
 EOF
 
-    # Expose plaintext endpoints required by endpoints_test.go.
-    set_custom_env "$config_file" "central" "ROX_PLAINTEXT_ENDPOINTS" "8080,grpc@8081"
+    # Configure the endpoints required by endpoints_test.go (plaintext 8080/8081 and the
+    # central-endpoints ConfigMap for 8082/8444-8448).
+    configure_endpoints_for_test "$config_file"
 
     # Speed up baseline generation so TestPod can observe process events within the test window.
     # The default is 1h; tests time out long before baselines would be generated.
     set_custom_env "$config_file" "central" "ROX_BASELINE_GENERATION_DURATION" "1m"
     set_custom_env "$config_file" "central" "ROX_NETWORK_BASELINE_OBSERVATION_PERIOD" "2m"
-
-    # Inject the full endpoint config into the central-endpoints ConfigMap so that
-    # Central also listens on ports 8082 and 8444-8448 (used by endpoints_test.go).
-    if [[ -n "${ROXDEPLOY_CONFIG_FILE_MAP:-}" && -f "${ROXDEPLOY_CONFIG_FILE_MAP}" ]]; then
-        local overlay_tmp; overlay_tmp="$(mktemp)"
-        # \. in the path escapes the dot so the operator treats "endpoints.yaml" as a
-        # single ConfigMap key rather than a path separator. verbatim preserves newlines.
-        cat > "$overlay_tmp" <<'OVERLAY'
-central:
-  spec:
-    overlays:
-    - apiVersion: v1
-      kind: ConfigMap
-      name: central-endpoints
-      patches:
-      - path: data.endpoints\.yaml
-        verbatim: |
-OVERLAY
-        sed 's/^/          /' "${ROXDEPLOY_CONFIG_FILE_MAP}" >> "$overlay_tmp"
-        merge_yaml "$config_file" < "$overlay_tmp"
-        rm -f "$overlay_tmp"
-    fi
 
     # Add the test CA so Central accepts client-cert auth during endpoints_test.go.
     if [[ -n "${TRUSTED_CA_FILE:-}" && -f "${TRUSTED_CA_FILE}" ]]; then
