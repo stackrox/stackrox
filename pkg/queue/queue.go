@@ -88,14 +88,17 @@ func (q *Queue[T]) Pull() T {
 // In case the waitable signals done, the default value of T will be returned.
 func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 	item, ok := q.pull()
-	// In case multiple go routines are pull blocking, we have to ensure that the result of pull
-	// is valid, hence the additional for loop here.
-	for ; !ok; item, ok = q.pull() {
+	// Keep retrying until we actually get an item or context is cancelled.
+	// This prevents lost wakeup: if we're signaled but another consumer
+	// takes the item before we pull, we must continue waiting.
+	for !ok {
 		select {
 		case <-waitable.Done():
-			return item
+			var nilT T
+			return nilT
 		case <-q.notEmptySignal.Done():
 		}
+		item, ok = q.pull()
 	}
 	return item
 }
