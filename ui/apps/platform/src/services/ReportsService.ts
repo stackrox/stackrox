@@ -169,6 +169,8 @@ export function runReportRequest(
         .then((response) => response.data);
 }
 
+// Job management
+
 // Promise because of TS2322 in ReportJobs component
 // DeleteReport
 export function deleteDownloadableReport(reportId: string): Promise<Empty> {
@@ -176,8 +178,6 @@ export function deleteDownloadableReport(reportId: string): Promise<Empty> {
         .delete<Empty>(`/v2/reports/jobs/${reportId}/delete`)
         .then((response) => response.data);
 }
-
-// Job management
 
 // View-based jobs
 
