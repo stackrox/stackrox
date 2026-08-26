@@ -111,32 +111,71 @@ generate_cluster_junit() {
     fi
 
     local cluster_create_debug=""
+    local cluster_create_category=""
+    local cluster_create_pattern=""
+
     if [[ -f "${SHARED_DIR}/cluster_create_failure_debug.txt" ]]; then
         cluster_create_debug="$(summarize_cluster_debug "${SHARED_DIR}/cluster_create_failure_debug.txt")"
+
+        # Categorize the failure for detailed root cause tracking
+        local categorization
+        categorization="$(categorize_cluster_failure "${SHARED_DIR}/cluster_create_failure_debug.txt" "${cluster_flavor_variant}")"
+        cluster_create_category="${categorization%%:*}"
+        cluster_create_pattern="${categorization#*:}"
     else
         cluster_create_debug="See build.log and Artifacts for details"
+        cluster_create_category="No_Debug_Info"
+        cluster_create_pattern="No debug file created (see build.log for details)"
     fi
 
     if [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
         save_junit_success "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_CREATE_DESCRIPTION} ${cluster_flavor_variant}"
     else
+        # Generate overall failure test case (preserves existing behavior)
         save_junit_failure "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_CREATE_DESCRIPTION} ${cluster_flavor_variant}" \
             "${cluster_create_debug}"
+
+        # This creates a separate Jira ticket per failure category for better tracking
+        save_junit_failure "Cluster_RootCause" \
+            "${_JUNIT_CLUSTER_CREATE_DESCRIPTION} ${cluster_flavor_variant} - ${cluster_create_category}" \
+            "${cluster_create_pattern}
+
+${cluster_create_debug}"
     fi
 
     local cluster_destroy_debug=""
+    local cluster_destroy_category=""
+    local cluster_destroy_pattern=""
+
     if [[ -f "${SHARED_DIR}/cluster_destroy_failure_debug.txt" ]]; then
         cluster_destroy_debug="$(summarize_cluster_debug "${SHARED_DIR}/cluster_destroy_failure_debug.txt")"
+
+        # Categorize the failure for detailed root cause tracking
+        local categorization
+        categorization="$(categorize_cluster_failure "${SHARED_DIR}/cluster_destroy_failure_debug.txt" "${cluster_flavor_variant}")"
+        cluster_destroy_category="${categorization%%:*}"
+        cluster_destroy_pattern="${categorization#*:}"
     else
         cluster_destroy_debug="See build.log and Artifacts for details"
+        cluster_destroy_category="No_Debug_Info"
+        cluster_destroy_pattern="No debug file created (see build.log for details)"
     fi
 
     if [[ "${DESTROY_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
         save_junit_success "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_DESTROY_DESCRIPTION} ${cluster_flavor_variant}"
     elif [[ "${CREATE_CLUSTER_OUTCOME:-}" == "${OUTCOME_PASSED}" ]]; then
         # Only record cluster destroy failures when the create succeeded. Otherwise it is mostly noise.
+
+        # Generate overall failure test case (preserves existing behavior)
         save_junit_failure "${_JUNIT_CLUSTER_CLASS}" "${_JUNIT_CLUSTER_DESTROY_DESCRIPTION} ${cluster_flavor_variant}" \
             "${cluster_destroy_debug}"
+
+        # This creates a separate Jira ticket per failure category for better tracking
+        save_junit_failure "Cluster_RootCause" \
+            "${_JUNIT_CLUSTER_DESTROY_DESCRIPTION} ${cluster_flavor_variant} - ${cluster_destroy_category}" \
+            "${cluster_destroy_pattern}
+
+${cluster_destroy_debug}"
     fi
 }
 
