@@ -105,6 +105,13 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 	return func(yield func(T) bool) {
 		for {
+			// Check for cancellation before every pull
+			select {
+			case <-waitable.Done():
+				return
+			default:
+			}
+
 			item, ok := q.pull()
 			if ok {
 				if !yield(item) {
