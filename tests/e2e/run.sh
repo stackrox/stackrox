@@ -35,6 +35,7 @@ test_e2e() {
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
+    setup_client_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
     kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
