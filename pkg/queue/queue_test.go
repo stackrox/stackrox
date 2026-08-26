@@ -229,6 +229,58 @@ func TestQueueSeq(t *testing.T) {
 		})
 	})
 
+	t.Run("Seq Empty Pull After Signal", func(t *testing.T) {
+		// This test verifies that Seq() properly re-blocks when a signal occurs
+		// but another consumer removes the item before Seq can pull it.
+		// Without proper blocking, Seq would spin-loop after the empty pull.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			itemReceived := make(chan int, 1)
+			iterationStarted := make(chan struct{})
+
+			// Start Seq() iteration on empty queue
+			go func() {
+				close(iterationStarted)
+				for item := range q.Seq(ctx) {
+					itemReceived <- item
+					return
+				}
+			}()
+
+			<-iterationStarted
+			synctest.Wait() // Seq() is blocked waiting
+
+			// Push an item, but immediately pull it with another consumer
+			q.Push(99)
+			pulled := q.Pull()
+			assert.Equal(t, 99, pulled)
+
+			// Seq() should remain blocked (not spin-loop) even though it was signaled
+			synctest.Wait()
+
+			select {
+			case <-itemReceived:
+				t.Fatal("Seq should not have received the pulled item")
+			default:
+				// Expected: Seq is still blocked
+			}
+
+			// Now push a second item - Seq should receive this one
+			q.Push(42)
+			synctest.Wait()
+
+			select {
+			case item := <-itemReceived:
+				assert.Equal(t, 42, item)
+			default:
+				t.Fatal("expected to receive item from queue")
+			}
+		})
+	})
+
 	t.Run("Seq Cancellation With Queued Items", func(t *testing.T) {
 		// This test verifies that Seq() checks waitable.Done() before every pull,
 		// not just when the queue is empty. If items are already queued and the
