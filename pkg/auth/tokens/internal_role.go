@@ -246,6 +246,9 @@ func NewInternalRoleFromPermissionsAndScope(
 	// Resolve cluster scope
 	output.Clusters = make(ClusterScopes)
 	for _, clusterID := range scope.GetRules().GetIncludedClusterIds() {
+		if clusterID == "" {
+			continue
+		}
 		output.Clusters[clusterID] = []string{"*"}
 	}
 	for _, clusterName := range scope.GetRules().GetIncludedClusters() {
@@ -253,7 +256,7 @@ func NewInternalRoleFromPermissionsAndScope(
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to resolve cluster ID")
 		}
-		if !found {
+		if !found || clusterID == "" {
 			continue
 		}
 		output.Clusters[clusterID] = []string{"*"}
