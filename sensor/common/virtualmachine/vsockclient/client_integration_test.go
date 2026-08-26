@@ -282,7 +282,7 @@ func TestSyncRepoCPEMappingIntegration_FullRoundTrip(t *testing.T) {
 	wantHash := cpemapping.HashMapping(mapping)
 	assert.Equal(t, wantHash, syncMeta.GetRepoCpeMappingHash())
 
-	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil, "")
+	cache.SetReport(&v4.IndexReport{HashId: "sync-integration-hash"}, nil, wantHash)
 
 	second, err := exchangeOnce(t, client, "", handler.HandleConn)
 	require.NoError(t, err)
