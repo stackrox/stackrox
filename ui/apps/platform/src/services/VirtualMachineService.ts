@@ -226,14 +226,27 @@ export function listVMs({
     perPage,
     searchFilter,
 }: SearchQueryOptions): Promise<ListVMsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage, sortOption, searchFilter });
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        sortOption,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMsResponse>(`/v2/virtualmachines/vms?${params}`)
         .then((response) => response.data);
 }
 
-export function listVMCVEs({ page, perPage }: SearchQueryOptions): Promise<ListVMCVEsResponse> {
-    const params = buildNestedRawQueryParams({ page, perPage });
+export function listVMCVEs({
+    searchFilter,
+    page,
+    perPage,
+}: SearchQueryOptions): Promise<ListVMCVEsResponse> {
+    const params = buildNestedRawQueryParams({
+        page,
+        perPage,
+        searchFilter: applyRegexSearchModifiers(searchFilter ?? {}),
+    });
     return axios
         .get<ListVMCVEsResponse>(`/v2/virtualmachines/cves?${params}`)
         .then((response) => response.data);

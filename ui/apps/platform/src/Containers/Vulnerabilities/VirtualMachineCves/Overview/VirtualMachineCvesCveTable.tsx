@@ -1,55 +1,67 @@
 import { useCallback } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { Flex, Pagination } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useRestQuery from 'hooks/useRestQuery';
-import useURLPagination from 'hooks/useURLPagination';
 import { listVMCVEs } from 'services/VirtualMachineService';
+import type { SearchFilter } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import SeverityCountLabels from '../../components/SeverityCountLabels';
+import TableEntityToolbar from '../../components/TableEntityToolbar';
 import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
-import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { formatEpssProbabilityAsPercent } from '../../WorkloadCves/Tables/table.utils';
+import VirtualMachineCvesFilterToolbar from './VirtualMachineCvesFilterToolbar';
+import VirtualMachineCvesToggleGroup from './VirtualMachineCvesToggleGroup';
 
-function VirtualMachineCVEsTable() {
-    const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+type VirtualMachineCvesCveTableProps = {
+    searchFilter: SearchFilter;
+    pagination: UseURLPaginationResult;
+    isFiltered: boolean;
+    onClearFilters: () => void;
+};
+
+function VirtualMachineCvesCveTable({
+    searchFilter,
+    pagination,
+    isFiltered,
+    onClearFilters,
+}: VirtualMachineCvesCveTableProps) {
+    const { page, perPage } = pagination;
 
     const fetchVirtualMachineCVEs = useCallback(
-        () => listVMCVEs({ page, perPage }),
-        [page, perPage]
+        () => listVMCVEs({ searchFilter, page, perPage }),
+        [searchFilter, page, perPage]
     );
     const { data, isLoading, error } = useRestQuery(fetchVirtualMachineCVEs);
+
+    const totalCount = data?.totalCount ?? 0;
 
     const tableState = getTableUIState({
         isLoading,
         data: data?.cves ?? [],
         error,
-        searchFilter: {},
+        searchFilter,
     });
 
     return (
         <>
-            <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
-                <Pagination
-                    itemCount={data?.totalCount ?? 0}
-                    perPage={perPage}
-                    page={page}
-                    onSetPage={(_, newPage) => setPage(newPage)}
-                    onPerPageSelect={(_, newPerPage) => {
-                        setPerPage(newPerPage);
-                    }}
-                />
-            </Flex>
+            <TableEntityToolbar
+                filterToolbar={<VirtualMachineCvesFilterToolbar />}
+                entityToggleGroup={<VirtualMachineCvesToggleGroup />}
+                pagination={pagination}
+                tableRowCount={totalCount}
+                isFiltered={isFiltered}
+            />
             <Table
                 borders={tableState.type === 'COMPLETE'}
                 variant="compact"
                 aria-live="polite"
-                aria-busy={false}
+                aria-busy={isLoading}
             >
                 <Thead noWrap>
                     <Tr>
@@ -68,6 +80,7 @@ function VirtualMachineCVEsTable() {
                         message:
                             'No CVEs have been detected for virtual machines across your secured clusters',
                     }}
+                    filteredEmptyProps={{ onClearFilters }}
                     renderer={({ data }) => (
                         <Tbody>
                             {data.map((virtualMachineCve) => {
@@ -124,4 +137,4 @@ function VirtualMachineCVEsTable() {
     );
 }
 
-export default VirtualMachineCVEsTable;
+export default VirtualMachineCvesCveTable;

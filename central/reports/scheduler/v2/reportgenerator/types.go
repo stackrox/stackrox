@@ -49,6 +49,7 @@ type ImageCVEQueryResponse struct {
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
+	Origin            *storage.VulnOrigin            `db:"cve_origin"`
 
 	Link string
 }
@@ -135,6 +136,13 @@ func (res *ImageCVEQueryResponse) GetCVSS() float64 {
 		return 0.0
 	}
 	return *res.CVSS
+}
+
+func (res *ImageCVEQueryResponse) GetOrigin() storage.VulnOrigin {
+	if res.Origin == nil {
+		return storage.VulnOrigin_VULN_ORIGIN_OTHER
+	}
+	return *res.Origin
 }
 
 func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {

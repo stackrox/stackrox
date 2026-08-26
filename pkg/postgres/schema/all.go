@@ -80,7 +80,7 @@ func getAllRegisteredTablesInOrder() []*registeredTable {
 	}
 	slices.Sort(tables)
 
-	var rts []*registeredTable
+	var rts []*registeredTable //nolint:prealloc // recursive with unpredictable size
 	for _, table := range tables {
 		rts = append(rts, getRegisteredTablesFor(visited, table)...)
 	}
@@ -190,7 +190,7 @@ func GetAllIndexDefinitions() []*postgres.IndexDefinition {
 }
 
 func flattenIndexes(stmt *postgres.CreateStmts) []*postgres.IndexDefinition {
-	var result []*postgres.IndexDefinition
+	var result []*postgres.IndexDefinition //nolint:prealloc // recursive index flattening, unpredictable size
 	result = append(result, stmt.Indexes...)
 	for _, child := range stmt.Children {
 		result = append(result, flattenIndexes(child)...)
