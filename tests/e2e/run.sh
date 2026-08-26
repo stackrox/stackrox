@@ -72,6 +72,12 @@ securedCluster:
   pauseReconciliation: true
   resourceProfile: ci
 EOF
+
+    # - endpoints_test.go needs Central to listen on additional (plaintext)
+    #   ports. Build a roxie config with those endpoint settings and hand it to
+    #   the compat deploy layer.
+    configure_endpoints_for_test "$roxie_config"
+
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
