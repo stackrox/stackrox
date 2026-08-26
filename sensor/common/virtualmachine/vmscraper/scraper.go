@@ -449,7 +449,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	reportSize := proto.Size(result.IndexReport)
 	metrics.PullReportBytes.Observe(float64(reportSize))
 	metrics.PullReportPackages.Observe(float64(len(result.IndexReport.GetContents().GetPackages())))
-	recordVMDiscoveredData(result.Meta.GetFacts())
+	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
 		log.Errorf("VMScraper: sending %q report to Central failed: %v", key, err)
@@ -643,14 +643,4 @@ func (s *VMScraper) commitVMState(key string, newGen, newEpoch uint32) {
 		state.lastEpoch = newEpoch
 		state.lastForwardedAt = s.now()
 	})
-}
-
-// recordVMDiscoveredData increments VMDiscoveredData from ResponseMeta.facts
-// keys written by roxagent (detected_os, activation_status, dnf_metadata_status).
-func recordVMDiscoveredData(facts map[string]string) {
-	metrics.VMDiscoveredData.WithLabelValues(
-		facts["detected_os"],
-		facts["activation_status"],
-		facts["dnf_metadata_status"],
-	).Inc()
 }
