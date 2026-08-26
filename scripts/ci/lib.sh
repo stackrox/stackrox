@@ -43,6 +43,20 @@ ci_export() {
             # GHA needs the environment variables to be unquoted and unescaped, they are parsed literally.
             echo "${env_name}=${env_value}" >> "$GITHUB_ENV"
         fi
+    elif command -v cci-export >/dev/null; then
+        echo "Entered 'cci-export exists' conditional block"
+        command -v cci-export
+        echo "${BASH_ENV:-no BASH_ENV set}"
+        ls -la "${BASH_ENV:-/tmp/}"
+        # cci-export writes to $BASH_ENV which defaults to read-only /etc/initial-bash.env in the CI container
+        if [[ -n "${BASH_ENV:-}" && ! -w "${BASH_ENV}" ]]; then
+            echo "mktemp for BASH_ENV"
+            BASH_ENV=$(mktemp)
+            export BASH_ENV
+        fi
+        echo "before cci-export $env_name ? ${!env_name:+previously set} ${!env_name:0:1}.."
+        echo cci-export "$env_name" "${env_value:0:1}.."
+        cci-export "$env_name" "$env_value"
     else
         export "$env_name"="$env_value"
     fi
