@@ -12,6 +12,21 @@ describe(Cypress.spec.relative, () => {
         cy.contains('Always review AI-generated content prior to use.').should('not.exist');
     });
 
+    it('should render an error alert when the request fails', () => {
+        cy.mount(
+            <AiRiskSummaryCard
+                summary={undefined}
+                isLoading={false}
+                error={new Error('something went wrong')}
+                onClose={() => {}}
+            />
+        );
+
+        cy.contains('Unable to generate AI risk summary').should('exist');
+        cy.contains('something went wrong').should('exist');
+        cy.contains('Always review AI-generated content prior to use.').should('not.exist');
+    });
+
     it('should render the summary with the review disclaimer on success', () => {
         cy.mount(
             <AiRiskSummaryCard
@@ -26,21 +41,6 @@ describe(Cypress.spec.relative, () => {
         cy.contains('Always review AI-generated content prior to use.').should('exist');
         cy.contains('sync-worker scores 67/100 (Important).').should('exist');
         cy.get('[aria-label="Generating AI risk summary"]').should('not.exist');
-    });
-
-    it('should render an error alert when the request fails', () => {
-        cy.mount(
-            <AiRiskSummaryCard
-                summary={undefined}
-                isLoading={false}
-                error={new Error('something went wrong')}
-                onClose={() => {}}
-            />
-        );
-
-        cy.contains('Unable to generate AI risk summary').should('exist');
-        cy.contains('something went wrong').should('exist');
-        cy.contains('Always review AI-generated content prior to use.').should('not.exist');
     });
 
     it('should copy the summary to the clipboard', () => {

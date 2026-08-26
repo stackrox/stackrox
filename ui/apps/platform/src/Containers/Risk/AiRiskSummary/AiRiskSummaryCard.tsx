@@ -9,6 +9,7 @@ import {
     CardTitle,
     Content,
     Flex,
+    FlexItem,
     Spinner,
 } from '@patternfly/react-core';
 import { CopyIcon, MagicIcon, TimesIcon } from '@patternfly/react-icons';
@@ -62,7 +63,7 @@ function AiRiskSummaryCard({
                         spaceItems={{ default: 'spaceItemsSm' }}
                     >
                         <MagicIcon />
-                        AI risk briefing
+                        <FlexItem>AI risk briefing</FlexItem>
                     </Flex>
                 </CardTitle>
             </CardHeader>
