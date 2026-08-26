@@ -107,6 +107,17 @@ export function visitConsoleMainDashboard(staticResponseMap) {
 }
 
 /**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitConsoleDynamicPluginsStatusPage(staticResponseMap) {
+    visitConsole(
+        '/k8s/cluster/operator.openshift.io~v1~Console/cluster/console-plugins',
+        routeMatcherMapForConsole,
+        staticResponseMap
+    );
+}
+
+/**
  * Visit main dashboard to test conditional rendering for user role permissions specified as response or fixture.
  * Conditional rendering for permissions might make a subset of requests.
  *
