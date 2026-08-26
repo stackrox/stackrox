@@ -221,13 +221,15 @@ class Kubernetes {
         }
         log.debug "Deployment ${deployment.name} with version ${existing.metadata.resourceVersion} " +
                 "found in namespace ${deployment.namespace}. Updating..."
-        // Edit the live object rather than createOrReplace (CREATE then REPLACE) or
-        // replacing with a newly built spec. createOrReplace is recorded as CREATE
-        // enforcement; a reconstructed object can fail apiserver validation after
-        // admission allows it (immutable spec.selector).
+        // Edit the live object rather than createOrReplace (CREATE then REPLACE).
+        // createOrReplace is recorded as CREATE enforcement.
+        // Retry 409s: the deployment controller often updates status right after
+        // create, so a PATCH with the just-read resourceVersion conflicts.
+        // Do not retry 403; admission denials must fail immediately.
         K8sDeployment desired = toK8sDeployment(deployment)
-        try {
-            withK8sClientRetry(maxRetries, 1) {
+        int attempts = Math.max(maxRetries, 5)
+        for (int i = 0; i <= attempts; i++) {
+            try {
                 this.deployments.inNamespace(deployment.namespace)
                         .withName(deployment.name)
                         .edit { K8sDeployment current ->
@@ -244,12 +246,22 @@ class Kubernetes {
                                     .build()
                         }
                 log.debug "Told the orchestrator to update " + deployment.name
+                return true
+            } catch (KubernetesClientException e) {
+                if (e.code == 409 && i < attempts) {
+                    log.debug "Conflict updating ${deployment.name}, retrying " +
+                            "(attempt ${i + 1} of ${attempts})"
+                    sleep 1000
+                    continue
+                }
+                log.warn("Error updating k8s deployment: ", e)
+                return false
+            } catch (Exception e) {
+                log.warn("Error updating k8s deployment: ", e)
+                return false
             }
-            return true
-        } catch (Exception e) {
-            log.warn("Error updating k8s deployment: ", e)
-            return false
         }
+        return false
     }
 
     void updateDeployment(Deployment deployment) {
