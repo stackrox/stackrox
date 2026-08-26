@@ -27,10 +27,10 @@ export const CVSS: CompoundSearchFilterAttribute = {
 export const KnownExploit: CompoundSearchFilterAttribute = {
     displayName: 'Known exploit',
     filterChipLabel: 'Known exploit',
-    searchTerm: 'CISA KEV', // and 'Known Ransonware Campaign' as category2
+    searchTerm: 'CISA KEV', // and 'Known Ransomware Campaign' as category2
     inputType: 'select-exclusive-double',
     inputProps: {
-        category2: 'Known Ransonware Campaign',
+        category2: 'Known Ransomware Campaign',
         options: [
             {
                 label: 'Has a known exploit',
@@ -39,7 +39,7 @@ export const KnownExploit: CompoundSearchFilterAttribute = {
             },
             {
                 label: 'Used in ransomware campaigns',
-                category: 'Known Ransonware Campaign',
+                category: 'Known Ransomware Campaign',
                 value: 'true',
             },
             {
