@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -25,6 +26,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 // --- Mocks ---
@@ -241,6 +244,34 @@ func TestVMScraper_SkipsWhenCentralLacksCapability(t *testing.T) {
 	assert.Zero(t, dialer.callIdx.Load())
 	assert.Empty(t, sender.sent)
 	assert.Empty(t, client.calls)
+}
+
+// TestVMScraper_LogsSkipOnceWhileCapabilityMissing covers a missing-capability
+// stretch that lasts more than one tick, then a later drop after the
+// capability returns, so the skip log fires once per stretch not once per tick.
+func TestVMScraper_LogsSkipOnceWhileCapabilityMissing(t *testing.T) {
+	core, logs := observer.New(zap.InfoLevel)
+	orig := log
+	log = &logging.LoggerImpl{InnerLogger: zap.New(core).Sugar()}
+	t.Cleanup(func() { log = orig })
+
+	s, _ := newTestScraper(t, &mockStore{vms: []*virtualmachine.Info{
+		makeVM("ns1", "vm-a", 100),
+	}}, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+	})
+	centralcaps.Set(nil)
+
+	s.pollOnce(t.Context())
+	s.pollOnce(t.Context())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("skipping pull").Len())
+
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
+	s.pollOnce(t.Context())
+
+	centralcaps.Set(nil)
+	s.pollOnce(t.Context())
+	assert.Equal(t, 2, logs.FilterMessageSnippet("skipping pull").Len())
 }
 
 func TestVMScraper_SkipsUnchangedToken(t *testing.T) {
