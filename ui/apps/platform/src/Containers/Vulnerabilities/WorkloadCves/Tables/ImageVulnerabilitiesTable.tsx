@@ -15,6 +15,7 @@ import type { IAction } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useMetadata from 'hooks/useMetadata';
 import useSet from 'hooks/useSet';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -54,7 +55,7 @@ import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { infoForEpssProbability } from './infoForTh';
+import { getInfoForCveOrigin, infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent } from './table.utils';
 
 export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
@@ -189,6 +190,7 @@ function ImageVulnerabilitiesTable({
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { version } = useMetadata();
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -229,7 +231,12 @@ function ImageVulnerabilitiesTable({
                     >
                         EPSS probability
                     </Th>
-                    <Th className={getVisibilityClass('origin')}>CVE origin</Th>
+                    <Th
+                        className={getVisibilityClass('origin')}
+                        info={getInfoForCveOrigin(version, 'image')}
+                    >
+                        CVE origin
+                    </Th>
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
