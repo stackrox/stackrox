@@ -143,6 +143,16 @@ var (
 		// Central's internal scan semaphore may reject enrichment requests when under load,
 		// retry when this happens.
 		"acquiring scan semaphore",
+
+		// Intermittent network timeouts dialing the registry/CDN (e.g. quay.io's Akamai
+		// edge) may interrupt fetching a layer blob. These surface as a gRPC DeadlineExceeded
+		// wrapping a net dial timeout, so retry when this happens.
+		//
+		// ex:
+		// - create index: rpc error: code = DeadlineExceeded desc = getting layer request URL
+		//   and headers (digest: "sha256:..."): Get "https://cdn01.quay.io/...": dial tcp
+		//   23.192.220.151:443: i/o timeout
+		"i/o timeout",
 	}
 )
 
