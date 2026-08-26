@@ -122,9 +122,11 @@ func buildVMTraits(hasCapability bool, vmm *central.VirtualMachineMetrics) map[s
 			return strings.Compare(a.Version, b.Version)
 		})
 		raw, err := json.Marshal(entries)
-		if err == nil {
-			traits["Roxagent Version Counts"] = string(raw)
+		if err != nil {
+			log.Warnf("Failed to marshal roxagent version counts: %v", err)
+			return traits
 		}
+		traits["Roxagent Version Counts"] = string(raw)
 	}
 
 	return traits

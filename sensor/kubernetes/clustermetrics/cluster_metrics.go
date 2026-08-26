@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
@@ -199,12 +200,9 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 }
 
 // vmStatsSnapshot returns fleet stats when src is a usable VMStatsSource.
-// A typed-nil *VMScraper stored in the interface is treated as absent.
+// A nil interface or typed-nil pointer stored in it is treated as absent.
 func vmStatsSnapshot(src VMStatsSource) (vmscraper.Stats, bool) {
-	if src == nil {
-		return vmscraper.Stats{}, false
-	}
-	if scraper, ok := src.(*vmscraper.VMScraper); ok && scraper == nil {
+	if reflectutils.IsNil(src) {
 		return vmscraper.Stats{}, false
 	}
 	return src.Stats(), true
