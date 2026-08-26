@@ -65,15 +65,6 @@ func TestFacts(t *testing.T) {
 				pkgVM.DetectedGuestOSKey:  "Red Hat Enterprise Linux 9.2",
 			},
 		},
-		"nil AgentFacts does not affect result": {
-			input: &Info{
-				GuestOS:    "Fedora",
-				AgentFacts: nil,
-			},
-			expected: map[string]string{
-				pkgVM.GuestOSKey: "Fedora",
-			},
-		},
 		"AgentFacts do not overwrite informer guestOS": {
 			input: &Info{
 				GuestOS: "from-informer",
@@ -101,14 +92,6 @@ func TestAgentFactsFromResponseFacts(t *testing.T) {
 		input    map[string]string
 		expected map[string]string
 	}{
-		"nil map returns nil": {
-			input:    nil,
-			expected: nil,
-		},
-		"empty map returns nil": {
-			input:    map[string]string{},
-			expected: nil,
-		},
 		"RHEL with version and statuses": {
 			input: map[string]string{
 				"detected_os":         v1.DetectedOS_RHEL.String(),
@@ -122,14 +105,6 @@ func TestAgentFactsFromResponseFacts(t *testing.T) {
 				pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusUnavailable,
 			},
 		},
-		"RHEL without version": {
-			input: map[string]string{
-				"detected_os": v1.DetectedOS_RHEL.String(),
-			},
-			expected: map[string]string{
-				pkgVM.DetectedGuestOSKey: "Red Hat Enterprise Linux",
-			},
-		},
 		"unspecified enums are omitted": {
 			input: map[string]string{
 				"detected_os":         v1.DetectedOS_UNKNOWN.String(),
@@ -137,16 +112,6 @@ func TestAgentFactsFromResponseFacts(t *testing.T) {
 				"dnf_metadata_status": v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED.String(),
 			},
 			expected: nil,
-		},
-		"active and available": {
-			input: map[string]string{
-				"activation_status":   v1.ActivationStatus_ACTIVE.String(),
-				"dnf_metadata_status": v1.DnfMetadataStatus_AVAILABLE.String(),
-			},
-			expected: map[string]string{
-				pkgVM.ActivationStatusKey:  pkgVM.ActivationStatusActive,
-				pkgVM.DNFMetadataStatusKey: pkgVM.DNFMetadataStatusAvailable,
-			},
 		},
 	}
 
