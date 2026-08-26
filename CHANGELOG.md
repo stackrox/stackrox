@@ -22,6 +22,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-32461: Red Hat OpenShift Data Foundation is now officially supported as an S3-compatible backup target.
 - ROX-35962: On OCP, central API is exposed via a new `central-ocp` service, signed and rotated by OCP.
 - ROX-35508: Scanner V4 now suppresses duplicate OSV.dev vulnerability records when Red Hat VEX data covers the same CVE for a Red Hat product image, showing Red Hat's own severity/CVSS/remediation data instead of a conflicting OSV.dev one. Enabled by default; disable via `ROX_SCANNER_V4_SUPPRESS_OSV_WITH_RED_HAT_VEX=false` if needed.
+- ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
+  DSSE envelope verification for sigstore bundle-format signatures.
 
 ### Removed Features
 
@@ -65,8 +67,6 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
     would leak to all images sharing the same digest.
   - Policies now evaluate correctly per the deployed/checked image name and respect its
     vulnerability exceptions, rather than being affected by shared-digest exception leakage.
-- ROX-34488: Added support for cosign signature discovery via OCI 1.1 referrers, including
-  DSSE envelope verification for sigstore bundle-format signatures.
 
 ### Removed Features
 

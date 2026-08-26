@@ -50,7 +50,29 @@ cosign sign \
   "quay.io/rhacs-eng/qa-signatures@$DIGEST"
 ```
 
-## 3. referrer-byopki
+## 3. referrer-keyless-rhtas
+
+Sigstore bundle format, keyless via public Sigstore, attached as OCI referrer.
+Sign with an `@redhat.com` Google identity to match the test's OIDC config.
+
+Cosign's default OIDC flow uses a Sigstore-hosted OAuth client that only
+supports GitHub and Microsoft identities. To sign with a Google (`@redhat.com`)
+identity, create a GCP OAuth 2.0 client (type "Desktop app") and pass its
+credentials to cosign.
+
+```bash
+crane cp docker.io/library/alpine:latest \
+  quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas
+
+DIGEST=$(crane digest quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas)
+
+cosign sign --yes \
+  --oidc-client-id="<GCP_OAUTH_CLIENT_ID>" \
+  --oidc-client-secret-file=$HOME/oidc-client-secret \
+  "quay.io/rhacs-eng/qa-signatures@$DIGEST"
+```
+
+## 4. referrer-byopki
 
 Sigstore bundle format, BYOPKI (bring-your-own-PKI) certificate chain, attached
 as OCI referrer. The signing certificate must carry OIDC extensions for issuer
@@ -104,7 +126,8 @@ Update `ImageSignatureVerificationTest.groovy` with:
 - `REFERRER_COSIGN_PUBLIC_KEY`: contents of `cosign.pub`
 - `REFERRER_PUBKEY_MATCHING_IMAGE_DIGEST`: digest from step 1
 - `REFERRER_KEYLESS_SIGSTORE_MATCHING_IMAGE_DIGEST`: digest from step 2
-- `REFERRER_BYOPKI_IMAGE_DIGEST`: digest from step 3
+- `REFERRER_KEYLESS_RHTAS_MATCHING_IMAGE_DIGEST`: digest from step 3
+- `REFERRER_BYOPKI_IMAGE_DIGEST`: digest from step 4
 - `REFERRER_BYOPKI_CA_BUNDLE`: contents of `ca-bundle.pem`
 
 ## Verification
@@ -117,6 +140,11 @@ cosign verify --new-bundle-format \
   --certificate-identity-regexp=".*@redhat.com" \
   --certificate-oidc-issuer="https://github.com/login/oauth" \
   quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-keyless
+
+cosign verify --new-bundle-format \
+  --certificate-identity-regexp=".*@redhat.com" \
+  --certificate-oidc-issuer="https://accounts.google.com" \
+  quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas
 
 cosign verify --new-bundle-format \
   --certificate-identity="team-a@testing.org" \

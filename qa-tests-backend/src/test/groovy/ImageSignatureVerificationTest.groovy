@@ -148,7 +148,6 @@ nzTe7BpOmVwmqLkIefEJe5L4PSXtp2KFLZqGO/kY5A==
     static final private String BYOPKI_UNVERIFIABLE_IDENTITY = "invalid"
 
     // Root CA bundle for referrer BYOPKI test image.
-    // Source: qa-tests-backend/src/test/groovy/testdata/referrer-byopki-ca-bundle.pem
     static final private String REFERRER_BYOPKI_CA_BUNDLE = """\
 -----BEGIN CERTIFICATE-----
 MIIFqzCCA5OgAwIBAgIUXp5NfhduES4NIr+wVdh6oGiDmMkwDQYJKoZIhvcNAQEL
@@ -418,9 +417,9 @@ l4RLgOfB7JK26P2QEGpNzOKYHxWIV+oBSrrG1/2q1LS6WJYqhlM2+tLK9g==
     // Deployment holding an image signed keyless via RHTAS using the sigstore bundle format.
     static final private Deployment REFERRER_KEYLESS_RHTAS_MATCHING_DEPLOYMENT = new Deployment()
             .setName("referrer-rhtas-keyless")
-            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-rhtas-keyless" +
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-keyless-rhtas" +
                     "@$REFERRER_KEYLESS_RHTAS_MATCHING_IMAGE_DIGEST")
-            .addLabel("app", "image-with-referrer-rhtas-keyless")
+            .addLabel("app", "image-with-referrer-keyless-rhtas")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
             .setImagePrefetcherAffinity()
@@ -428,9 +427,9 @@ l4RLgOfB7JK26P2QEGpNzOKYHxWIV+oBSrrG1/2q1LS6WJYqhlM2+tLK9g==
     // Deployment holding an image signed keyless via public Sigstore using the sigstore bundle format.
     static final private Deployment REFERRER_KEYLESS_SIGSTORE_MATCHING_DEPLOYMENT = new Deployment()
             .setName("referrer-sigstore-keyless")
-            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-keyless" +
+            .setImage("quay.io/rhacs-eng/qa-signatures:referrer-sigstore-bundle-keyless" +
                     "@$REFERRER_KEYLESS_SIGSTORE_MATCHING_IMAGE_DIGEST")
-            .addLabel("app", "image-with-referrer-sigstore-keyless")
+            .addLabel("app", "image-with-referrer-sigstore-bundle-keyless")
             .setCommand(["sleep", "600"])
             .setNamespace(SIGNATURE_TESTING_NAMESPACE)
             .setImagePrefetcherAffinity()
