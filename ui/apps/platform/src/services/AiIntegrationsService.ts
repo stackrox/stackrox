@@ -12,19 +12,8 @@ export type AiIntegration = {
     serviceUrl: string;
 };
 
-// The v2 AI integrations API wraps the resource in request/response messages,
-// consistent with the cloud sources service (ListCloudSourcesResponse,
-// GetCloudSourceResponse, CreateCloudSourceRequest, ...).
 type ListAiIntegrationsResponse = {
     integrations: AiIntegration[];
-};
-
-type AiIntegrationResponse = {
-    integration: AiIntegration;
-};
-
-type AiIntegrationRequest = {
-    integration: AiIntegration;
 };
 
 export function fetchAiIntegrations(): Promise<AiIntegration[]> {
@@ -34,22 +23,16 @@ export function fetchAiIntegrations(): Promise<AiIntegration[]> {
 }
 
 export function fetchAiIntegration(id: string): Promise<AiIntegration> {
-    return axios
-        .get<AiIntegrationResponse>(`${aiIntegrationsUrl}/${id}`)
-        .then((response) => response.data.integration);
+    return axios.get<AiIntegration>(`${aiIntegrationsUrl}/${id}`).then((response) => response.data);
 }
 
 export function createAiIntegration(data: AiIntegration): Promise<AiIntegration> {
-    const request: AiIntegrationRequest = { integration: data };
-    return axios
-        .post<AiIntegrationResponse>(aiIntegrationsUrl, request)
-        .then((response) => response.data.integration);
+    return axios.post<AiIntegration>(aiIntegrationsUrl, data).then((response) => response.data);
 }
 
 export function updateAiIntegration(data: AiIntegration): Promise<Empty> {
-    const request: AiIntegrationRequest = { integration: data };
     return axios
-        .put<Empty>(`${aiIntegrationsUrl}/${data.id}`, request)
+        .put<Empty>(`${aiIntegrationsUrl}/${data.id}`, data)
         .then((response) => response.data);
 }
 
@@ -58,8 +41,5 @@ export function deleteAiIntegration(id: string): Promise<Empty> {
 }
 
 export function testAiIntegration(data: AiIntegration): Promise<Empty> {
-    const request: AiIntegrationRequest = { integration: data };
-    return axios
-        .post<Empty>(`${aiIntegrationsUrl}/test`, request)
-        .then((response) => response.data);
+    return axios.post<Empty>(`${aiIntegrationsUrl}/test`, data).then((response) => response.data);
 }
