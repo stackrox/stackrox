@@ -4,6 +4,8 @@ import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/useTableSort';
+import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import CvssFormatted from 'Components/CvssFormatted';
 
 import AdvisoryLinkOrText from '../../components/AdvisoryLinkOrText';
 import { getOriginDisplayName } from '../../utils/vulnerabilityUtils';
@@ -30,6 +32,8 @@ export const imageComponentVulnerabilitiesFragment = gql`
         inBaseImageLayer
         imageVulnerabilities(query: $query) {
             severity
+            cvss
+            scoreVersion
             fixedByVersion
             origin
             advisory {
@@ -60,7 +64,7 @@ function ImageComponentVulnerabilitiesTable({
     const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
 
     const colSpanForDockerfileLayer =
-        5 +
+        7 +
         (isAdvisoryColumnEnabled ? 1 : 0) +
         (isOriginColumnEnabled ? 1 : 0) +
         (isLayerTypeColumnEnabled ? 1 : 0);
@@ -78,6 +82,8 @@ function ImageComponentVulnerabilitiesTable({
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
+                    <Th>CVE severity</Th>
+                    <Th>CVSS</Th>
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
@@ -91,6 +97,9 @@ function ImageComponentVulnerabilitiesTable({
                     image,
                     name,
                     version,
+                    severity,
+                    cvss,
+                    scoreVersion,
                     fixedByVersion,
                     origin,
                     advisory,
@@ -113,6 +122,12 @@ function ImageComponentVulnerabilitiesTable({
                         <Tr>
                             <Td dataLabel="Component">{name}</Td>
                             <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE severity" modifier="nowrap">
+                                <VulnerabilitySeverityIconText severity={severity} />
+                            </Td>
+                            <Td dataLabel="CVSS" modifier="nowrap">
+                                <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                            </Td>
                             <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>

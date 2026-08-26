@@ -83,6 +83,8 @@ export type ComponentVulnerabilityBase = {
     inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
+        cvss: number;
+        scoreVersion: string;
         fixedByVersion: string;
         origin?: string;
         advisory?: Advisory | null;
@@ -123,6 +125,8 @@ export type TableDataRow = {
     fixedByVersion: string;
     advisory?: Advisory | null;
     severity: VulnerabilitySeverity;
+    cvss: number;
+    scoreVersion: string;
     version: string;
     location: string;
     source: SourceType;
@@ -162,23 +166,13 @@ export function flattenImageComponentVulns(
 export function flattenDeploymentComponentVulns(
     imageMetadataContext: ImageMetadataContext,
     componentVulnerabilities: DeploymentComponentVulnerability[]
-): (TableDataRow & {
-    cvss: number;
-    scoreVersion: string;
-})[] {
+): TableDataRow[] {
     const image = imageMetadataContext;
     const layers = imageMetadataContext.metadata?.v1?.layers ?? [];
 
     return componentVulnerabilities.map((component) => {
         const vulnerability = component.imageVulnerabilities[0];
-        const cvss = vulnerability?.cvss ?? 0;
-        const scoreVersion = vulnerability?.scoreVersion ?? 'N/A';
-
-        return {
-            ...extractCommonComponentFields(image, layers, component, vulnerability),
-            scoreVersion,
-            cvss,
-        };
+        return extractCommonComponentFields(image, layers, component, vulnerability);
     });
 }
 
@@ -207,6 +201,8 @@ function extractCommonComponentFields(
         vulnerability?.severity && isVulnerabilitySeverity(vulnerability.severity)
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
+    const cvss = vulnerability?.cvss ?? 0;
+    const scoreVersion = vulnerability?.scoreVersion ?? 'N/A';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
     const origin = vulnerability?.origin;
     const advisory = vulnerability?.advisory;
@@ -224,6 +220,8 @@ function extractCommonComponentFields(
         },
         layer,
         severity,
+        cvss,
+        scoreVersion,
         fixedByVersion,
         origin,
         advisory,
