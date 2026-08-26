@@ -980,18 +980,14 @@ func (s *VMScraper) persistAgentFacts(vm *virtualmachine.Info, facts map[string]
 	s.store.AddOrUpdate(vm.Copy())
 }
 
-// snapshotAgentFacts maps ResponseMeta.facts. ok is false when the response
-// carried no facts, so stored values stay as they are. An empty mapped map
-// means every reported value was unspecified or unsupported.
+// snapshotAgentFacts maps ResponseMeta.facts. ok is false when nothing maps,
+// so stored values stay as they are.
 func snapshotAgentFacts(facts map[string]string) (mapped map[string]string, ok bool) {
 	if len(facts) == 0 {
 		return nil, false
 	}
 	mapped = virtualmachine.AgentFactsFromResponseFacts(facts)
-	if mapped == nil {
-		mapped = map[string]string{}
-	}
-	return mapped, true
+	return mapped, len(mapped) > 0
 }
 
 // forwardAgentFactsIfChanged emits a VM update when roxagent facts changed
@@ -1006,9 +1002,6 @@ func (s *VMScraper) forwardAgentFactsIfChanged(ctx context.Context, vm *virtualm
 	var prevFacts map[string]string
 	if prev := s.store.Get(vm.ID); prev != nil {
 		prevFacts = prev.AgentFacts
-	}
-	if len(mapped) == 0 && len(prevFacts) == 0 {
-		return
 	}
 	if maps.Equal(prevFacts, mapped) {
 		return

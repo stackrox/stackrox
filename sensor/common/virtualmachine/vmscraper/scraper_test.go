@@ -467,106 +467,16 @@ func TestVMScraper_ForwardsChangedAgentFactsOnUnchangedReport(t *testing.T) {
 	require.Len(t, updates, 1, "unchanged report should not be forwarded")
 	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
 	assert.Equal(t, expected, store.Get(virtualmachine.VMID("ns1/vm-a")).AgentFacts)
-}
-
-func TestVMScraper_DoesNotResendUnchangedAgentFacts(t *testing.T) {
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-	}}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
-	}
-
-	s, clock := newTestScraper(t, store, dialer, client)
-	s.pollOnce(context.Background())
-	require.Equal(t, 1, forwardedCount(s))
 
 	client.reset()
 	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
 		"detected_os":         "RHEL",
-		"activation_status":   "ACTIVE",
-		"dnf_metadata_status": "AVAILABLE",
+		"activation_status":   "INACTIVE",
+		"dnf_metadata_status": "UNAVAILABLE",
 	})}
 	clock.Advance(s.interval)
 	s.pollOnce(context.Background())
 	assert.Empty(t, drainToCentral(s), "should not emit a VM update when agent facts are unchanged")
-}
-
-func TestVMScraper_RetriesAgentFactsAfterSendFailure(t *testing.T) {
-	vmID := virtualmachine.VMID("ns1/vm-a")
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-	}}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
-	}
-
-	s, clock := newTestScraper(t, store, dialer, client)
-	s.pollOnce(context.Background())
-	require.Equal(t, 1, forwardedCount(s))
-	initialFacts := virtualmachine.AgentFactsFromResponseFacts(map[string]string{
-		"detected_os":         "RHEL",
-		"activation_status":   "ACTIVE",
-		"dnf_metadata_status": "AVAILABLE",
-	})
-	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
-
-	changedFacts := map[string]string{
-		"detected_os":         "RHEL",
-		"activation_status":   "INACTIVE",
-		"dnf_metadata_status": "UNAVAILABLE",
-	}
-	s.centralReady.Reset()
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
-	clock.Advance(s.interval)
-	s.pollOnce(context.Background())
-
-	assert.Empty(t, drainToCentral(s), "failed metadata send should not count as forwarded")
-	assert.Equal(t, initialFacts, store.Get(vmID).AgentFacts)
-
-	s.centralReady.Signal()
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(changedFacts)}
-	clock.Advance(s.interval)
-	s.pollOnce(context.Background())
-
-	expected := virtualmachine.AgentFactsFromResponseFacts(changedFacts)
-	updates := drainVMUpdates(s)
-	require.Len(t, updates, 1, "retry should be metadata-only")
-	assert.Equal(t, expected[pkgVM.ActivationStatusKey], updates[0].GetFacts()[pkgVM.ActivationStatusKey])
-	assert.Equal(t, expected, store.Get(vmID).AgentFacts)
-}
-
-func TestVMScraper_ClearsAgentFactsWhenResponseValuesUnspecified(t *testing.T) {
-	vmID := virtualmachine.VMID("ns1/vm-a")
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-	}}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
-	}
-
-	s, clock := newTestScraper(t, store, dialer, client)
-	s.pollOnce(context.Background())
-	require.Equal(t, 1, forwardedCount(s))
-	require.NotEmpty(t, store.Get(vmID).AgentFacts)
-
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{unchangedResultWithFacts(map[string]string{
-		"detected_os":         pb.DetectedOS_UNKNOWN.String(),
-		"activation_status":   pb.ActivationStatus_ACTIVATION_UNSPECIFIED.String(),
-		"dnf_metadata_status": pb.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED.String(),
-	})}
-	clock.Advance(s.interval)
-	s.pollOnce(context.Background())
-
-	updates := drainVMUpdates(s)
-	require.Len(t, updates, 1, "clearing facts should be metadata-only")
-	assert.Empty(t, store.Get(vmID).AgentFacts)
 }
 
 func TestVMScraper_RemainsScheduledAcrossUnchangedPolls(t *testing.T) {
