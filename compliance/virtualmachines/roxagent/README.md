@@ -9,7 +9,7 @@ The sources live under `compliance/` because the agent reuses the Scanner V4 nod
 ## What it does
 
 1. Fetches the repository-to-CPE mapping file (required before the first scan).
-2. Scans the VM for installed packages and caches the index report with a generation counter.
+2. Scans the VM for installed packages and caches the index report with a content-hash token.
 3. Listens on a VSOCK port with mandatory mTLS.
 4. On each Sensor connection, handles a framed `VMServiceRequest` / `VMServiceResponse` (for example `get_report`).
 5. Periodically rescans and atomically swaps the cached report.
@@ -40,8 +40,8 @@ sudo ./roxagent serve --port 818 --host-path / --rescan-interval 4h
 
    The default `--repo-cpe-url` is `https://security.access.redhat.com/data/metrics/repository-to-cpe.json`, so the VM needs outbound HTTPS to that host (or a proxy that can reach it). On isolated networks, host a copy of `repository-to-cpe.json` somewhere the VM can reach and point `--repo-cpe-url` at that URL.
 2. **Initial scan:** Indexes `--host-path`, stores the report and discovered VM facts in an in-memory cache, then starts the VSOCK server and the rescan loop.
-3. **Serving reports:** Sensor connects and the agent serves the cached report. If Sensor already has the current generation, the agent omits the payload.
-4. **Rescan:** On `--rescan-interval`, re-indexes the rpm/dnf database and swaps the cache, bumping the generation.
+3. **Serving reports:** Sensor connects and the agent serves the cached report. If Sensor already has the current content-hash token, the agent omits the payload. Sensor can still force a full report by sending an empty token (first request, NACK retry, or the 4h refresh).
+4. **Rescan:** On `--rescan-interval`, re-indexes the rpm/dnf database and swaps the cache. The token stays the same when the report and facts are unchanged.
 
 ### TLS (mandatory)
 

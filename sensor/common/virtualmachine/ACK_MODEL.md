@@ -4,7 +4,7 @@ VM index reports flow directly from Sensor to Central; Compliance is not involve
 
 `VMScraper` pulls reports from each running VM's roxagent over VSOCK and forwards successful reports to Central through `vmIndex.Handler`, which wraps the Scanner V4 payload as a `v1.IndexReport`.
 
-A successful forward already returns the VM to poll cadence. Central's ACK is counted (`IndexReportAcksReceived`) and otherwise ignored. A NACK clears cached `report_generation` and applies the shared retry backoff so the next attempt pulls a full report. There is no payload cache and no ACK timeout.
+A successful forward already returns the VM to poll cadence. Central's ACK is counted (`IndexReportAcksReceived`) and otherwise ignored. A NACK clears cached `report_token` and applies the shared retry backoff so the next attempt pulls a full report. There is no payload cache and no ACK timeout.
 
 A short tick (`ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL`, default 10s) walks the per-VM schedule. Each VM is due at its own `nextAttemptAt`. Success and permanent failures reschedule at `pollInterval + U(0, W)`, where `pollInterval` is `ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL` (default 4h) and `W` is `ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION` times that interval (default 2/3).
 
@@ -30,7 +30,7 @@ sequenceDiagram
     alt ACK
         Note over Sc: recorded; schedule unchanged
     else NACK
-        Sc->>Sc: clear cached generation; apply retry backoff
+        Sc->>Sc: clear cached token; apply retry backoff
         Note over Sc,A: next due attempt requests a full report
     end
 ```
@@ -43,4 +43,4 @@ Using only the vsock CID is unsafe because a CID can be reused by a different VM
 
 The pair is not a per-report unique ID: multiple in-flight reports from the same VM with the same CID are still not fully distinguishable, so a stale ACK can match the latest entry instead of the one it was actually for.
 
-A NACK can also lose a race with the post-`Send` commit of `lastGeneration`, in which case the next poll may still see an "unchanged" delta.
+A NACK can also lose a race with the post-`Send` commit of `lastToken`, in which case the next poll may still see an "unchanged" delta.
