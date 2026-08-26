@@ -60,12 +60,12 @@ export const defaultColumns = {
         title: 'EPSS probability',
         isShownByDefault: true,
     },
-    origin: {
-        title: 'CVE origin',
-        isShownByDefault: true,
-    },
     affectedComponents: {
         title: 'Affected components',
+        isShownByDefault: true,
+    },
+    origin: {
+        title: 'CVE origin',
         isShownByDefault: true,
     },
     firstDiscovered: {
@@ -158,15 +158,15 @@ function DeploymentVulnerabilitiesTable({
                     >
                         EPSS probability
                     </Th>
+                    <Th className={getVisibilityClass('affectedComponents')}>
+                        Affected components
+                        {isFiltered && <DynamicColumnIcon />}
+                    </Th>
                     <Th
                         className={getVisibilityClass('origin')}
                         info={getInfoForCveOrigin(version, 'deployment')}
                     >
                         CVE origin
-                    </Th>
-                    <Th className={getVisibilityClass('affectedComponents')}>
-                        Affected components
-                        {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
                     <Th className={getVisibilityClass('publishedOn')}>Published</Th>
@@ -282,16 +282,16 @@ function DeploymentVulnerabilitiesTable({
                                         {formatEpssProbabilityAsPercent(epssProbability)}
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('origin')}
-                                        dataLabel="CVE origin"
-                                    >
-                                        {origin}
-                                    </Td>
-                                    <Td
                                         className={getVisibilityClass('affectedComponents')}
                                         dataLabel="Affected components"
                                     >
                                         {affectedComponentsText}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('origin')}
+                                        dataLabel="CVE origin"
+                                    >
+                                        {origin}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('firstDiscovered')}
