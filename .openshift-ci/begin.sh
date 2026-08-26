@@ -42,7 +42,14 @@ for domain in oauth2.googleapis.com compute.googleapis.com storage.googleapis.co
 done
 
 if [[ "$dns_check_failed" == "true" ]]; then
-    die "DNS is broken after retries (likely persistent node-resolver issue - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
+    local error_msg="DNS is broken after retries (likely persistent node-resolver issue - see https://redhat.atlassian.net/browse/DPTP-5138). Failing fast to avoid wasted cluster creation time."
+
+    # Generate structured JUnit report for better CI dashboard visibility
+    if [[ -n "${ARTIFACT_DIR:-}" ]] && command -v save_junit_failure >/dev/null 2>&1; then
+        save_junit_failure "DNS_Preflight_Check" "DNS resolution failed" "$error_msg"
+    fi
+
+    die "$error_msg"
 fi
 
 set_ci_shared_export started_at "$(date -u +%s)"

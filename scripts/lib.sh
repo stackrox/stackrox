@@ -36,38 +36,11 @@ warn() {
 }
 export -f warn
 
-_die_with_junit() {
-    local message="$1"
-    local class="Script_Error"
-    local description
-
-    # Use the first line or first 60 chars as the description
-    if [[ "$message" =~ ^([^$'\n']{1,60}) ]]; then
-        description="${BASH_REMATCH[1]}"
-    else
-        description="Script execution failed"
-    fi
-
-    # Only save JUnit if we're in CI and the function exists
-    if [[ -n "${ARTIFACT_DIR:-}" ]] && command -v save_junit_failure >/dev/null 2>&1; then
-        save_junit_failure "$class" "$description" "$message"
-    fi
-}
-export -f _die_with_junit
-
 die() {
-    local message="$*"
-
-    # Create structured JUnit report for better CI failure visibility
-    if [[ -n "${ARTIFACT_DIR:-}" ]]; then
-        _die_with_junit "$message"
-    fi
-
-    # Original die() behavior
     if is_GITHUB_ACTIONS; then
-        echo >&2 "::error::ERROR: $message"
+        echo >&2 "::error::ERROR: $*"
     else
-        echo >&2 "ERROR: $message"
+        echo >&2 "ERROR:" "$@"
     fi
     exit 1
 }
