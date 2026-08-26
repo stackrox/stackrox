@@ -91,6 +91,48 @@ export type ImageVulnerabilityReportConfigurationForCollection = {
     };
 } & ReportConfigurationBase;
 
+// Types of views and steps with only properties that they need to know:
+export type ImageVulnerabilityReportResourcesConfiguration = {
+    resourceScope: ImageVulnerabilityReportResourceScope;
+    vulnReportFilters: {
+        imageTypes: ImageType[]; // more closely related to resources although in vulnReportFilters
+    };
+};
+
+export type ImageVulnerabilityReportResourceScope =
+    | {
+          collectionScope: CollectionScope;
+      }
+    | {
+          entityScope: EntityScope;
+      };
+
+// Types because Resources and Filters for view and wizard combine data properties.
+export type ImageVulnerabilityReportFiltersConfiguration = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersWithoutCvesSince =
+    | ImageVulnerabilityReportFiltersForEntityWithoutCvesSince
+    | ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince;
+
+export type ImageVulnerabilityReportFiltersConfigurationForEntity = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersForEntityWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersForEntityWithoutCvesSince = {
+    query: string;
+};
+
+export type ImageVulnerabilityReportFiltersConfigurationForCollection = {
+    vulnReportFilters: ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince & CvesSince;
+};
+
+export type ImageVulnerabilityReportFiltersForCollectionWithoutCvesSince = {
+    fixability: Fixability;
+    severities: VulnerabilitySeverity[];
+};
+
 // Vulnerability report filters
 
 export type Fixability = 'BOTH' | 'FIXABLE' | 'NOT_FIXABLE';
