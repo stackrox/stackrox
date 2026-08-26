@@ -169,15 +169,13 @@ function WorkloadCvesOverviewPage() {
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
 
     // If the user is viewing observed CVEs, we need to scope the query based on
-    // the selected vulnerability state, and exclude images/deployments with 0 CVEs
-    // (see ROX-36389). If the user is viewing _without_ CVEs, we need to scope the
-    // query to only show images/deployments with 0 CVEs.
+    // the selected vulnerability state. If the user is viewing _without_ CVEs, we
+    // need to scope the query to only show images/deployments with 0 CVEs.
     const workloadCvesScopedSearchFilter = isViewingWithCves
         ? {
               ...baseSearchFilter,
               ...querySearchFilter,
               'Vulnerability State': [currentVulnerabilityState],
-              'Image CVE Count': ['>0'],
           }
         : {
               ...baseSearchFilter,
