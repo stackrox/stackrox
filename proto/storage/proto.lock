@@ -17993,6 +17993,11 @@
                     "id": 2,
                     "name": "public_key_pem_enc",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "trust_root",
+                    "type": "TrustRoot"
                   }
                 ]
               }
@@ -18025,6 +18030,11 @@
                 "id": 5,
                 "name": "certificate_transparency_log",
                 "type": "CertificateTransparencyLogVerification"
+              },
+              {
+                "id": 6,
+                "name": "trust_root",
+                "type": "TrustRoot"
               }
             ]
           },
@@ -18039,6 +18049,21 @@
               {
                 "id": 2,
                 "name": "public_key_pem_enc",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "TrustRoot",
+            "fields": [
+              {
+                "id": 1,
+                "name": "tuf_mirror_url",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "tuf_root_url",
                 "type": "string"
               }
             ]

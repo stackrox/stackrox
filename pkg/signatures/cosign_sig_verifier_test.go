@@ -160,7 +160,7 @@ func TestNewCosignSignatureVerifier(t *testing.T) {
 				assert.ErrorIs(t, err, c.err)
 			} else {
 				assert.NoError(t, err)
-				assert.Len(t, verifier.parsedPublicKeys, 1)
+				assert.Len(t, verifier.publicKeys, 1)
 			}
 		})
 	}
