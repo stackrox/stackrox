@@ -13,7 +13,8 @@ var defaultGCPAuthScopes = []string{
 
 // GCPAuthScopes returns the default OAuth scopes for GCP API access.
 func GCPAuthScopes() []string {
-	return defaultGCPAuthScopes
+	copyScopes := defaultGCPAuthScopes
+	return copyScopes
 }
 
 // CredentialsManager manages GCP credentials based on the environment.
