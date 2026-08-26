@@ -237,6 +237,7 @@ function ImagePageVulnerabilities({
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
@@ -244,6 +245,7 @@ function ImagePageVulnerabilities({
         cveSelection: hideColumnIf(!canSelectRows),
         nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
         epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        origin: hideColumnIf(!isOriginColumnEnabled),
         requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
         rowActions: hideColumnIf(createTableActions === undefined),
     });

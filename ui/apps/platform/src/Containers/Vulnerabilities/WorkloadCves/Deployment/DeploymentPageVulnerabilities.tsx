@@ -182,9 +182,11 @@ function DeploymentPageVulnerabilities({
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const columnConfig = overrideManagedColumns(managedColumnState.columns, {
         epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        origin: hideColumnIf(!isOriginColumnEnabled),
     });
 
     // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
