@@ -2,6 +2,7 @@ package virtualmachineindex
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -158,8 +159,25 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 }
 
 func (suite *PipelineTestSuite) TestCapabilities() {
-	capabilities := suite.pipeline.Capabilities()
-	suite.Contains(capabilities, centralsensor.CentralCapability(centralsensor.VirtualMachinesSupported))
+	cases := map[string]struct {
+		enabled bool
+		want    []centralsensor.CentralCapability
+	}{
+		"flag on advertises VirtualMachinesSupported": {
+			enabled: true,
+			want:    []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported},
+		},
+		"flag off advertises nothing": {
+			enabled: false,
+			want:    nil,
+		},
+	}
+	for name, tc := range cases {
+		suite.Run(name, func() {
+			suite.T().Setenv(features.VirtualMachines.EnvVar(), strconv.FormatBool(tc.enabled))
+			suite.Equal(tc.want, suite.pipeline.Capabilities())
+		})
+	}
 }
 
 func (suite *PipelineTestSuite) TestOnFinish() {

@@ -24,7 +24,7 @@ function CollectorUnavailableStatus({
 
     return isList ? (
         <Tooltip content={reasonUnavailable}>
-            <div className="inline">
+            <div className="pf-v6-u-display-inline">
                 <HealthStatus icon={icon} iconColor={fgColor} isList={isList}>
                     {statusElement}
                 </HealthStatus>

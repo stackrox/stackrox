@@ -26,7 +26,7 @@ function CollectorStatus({ healthStatus }: CollectorStatusProps): ReactElement {
     const { Icon, fgColor } = isDelayed
         ? delayedCollectorStatusStyle
         : healthStatusStyles[collectorHealthStatus];
-    const icon = <Icon className="inline h-4 w-4" />;
+    const icon = <Icon />;
 
     const statusElement = (
         <HealthLabelWithDelayed

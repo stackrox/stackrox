@@ -1,6 +1,8 @@
 package k8srbac
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -36,9 +38,7 @@ func (k *policyRuleFieldSet) Merge(to, from *storage.PolicyRule) bool {
 		} else if fIndex == len(k.fields)-1 { // all but last field.
 			matchFields = k.fields[:len(k.fields)-1]
 		} else { // all but some middle field.
-			matchFields = make([]PolicyRuleField, fIndex)
-			copy(matchFields, k.fields[:fIndex])
-			matchFields = append(matchFields, k.fields[fIndex+1:]...)
+			matchFields = slices.Concat(k.fields[:fIndex], k.fields[fIndex+1:])
 		}
 		if NewPolicyRuleFieldSet(matchFields...).Equals(to, from) {
 			mergeField.Merge(to, from)
