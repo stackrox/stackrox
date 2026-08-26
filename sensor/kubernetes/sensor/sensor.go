@@ -212,7 +212,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		if repo2CPE != nil {
 			repo2CPEFetcher = repo2CPE
 		}
-		vmScraper = vmscraper.New(storeProvider.VirtualMachines(), dialer, vmProtoClient, repo2CPEFetcher)
+		vmScraper = vmscraper.New(storeProvider.VirtualMachines(), dialer, vmProtoClient, repo2CPEFetcher, clusterID)
 		vmStats = vmScraper
 	}
 
