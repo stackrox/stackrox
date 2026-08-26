@@ -355,7 +355,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                 />
             </PageSection>
             <Dialog
-                className="w-1/3"
+                className="pf-v6-u-w-50"
                 isOpen={showDialog}
                 text={`Deleting a cluster configuration doesn't remove security services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
                 onConfirm={makeDeleteRequest}
