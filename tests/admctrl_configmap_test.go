@@ -90,7 +90,7 @@ func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 	}()
 	require.NoError(t, err, "failed to create new policy")
 
-	testutils.Retry(t, 10, 3*time.Second, func(t testutils.T) {
+	testutils.Retry(t, 30, 3*time.Second, func(t testutils.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 

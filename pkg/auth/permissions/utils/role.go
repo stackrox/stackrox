@@ -8,7 +8,7 @@ import (
 
 // Converts a slice of ResourceWithAccess to a slice of *v1.Permission.
 func resourcesWithAccessToPermissions(resourceWithAccess ...permissions.ResourceWithAccess) []*v1.Permission {
-	var perms []*v1.Permission
+	perms := make([]*v1.Permission, 0, len(resourceWithAccess))
 	for _, rAndA := range resourceWithAccess {
 		perms = append(perms, &v1.Permission{
 			Resource: string(rAndA.Resource.GetResource()),

@@ -22,7 +22,6 @@ spec:
     metadata:
       labels:
         app: sensor
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "sensor") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "sensor") | nindent 8 }}
@@ -221,6 +220,16 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
+        {{- end }}
+        - name: ROX_VIRTUAL_MACHINES
+          value: {{ quote ._rox.virtualMachines.enabled }}
+        {{- if ._rox.virtualMachines.enabled }}
+        - name: ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY
+          value: {{ quote ._rox.virtualMachines.scraper.concurrency }}
+        - name: ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB
+          value: {{ quote ._rox.virtualMachines.scraper.maxResponseSizeKB }}
+        - name: ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL
+          value: {{ quote ._rox.virtualMachines.scraper.pollInterval }}
         {{- end }}
         [<- if (not .KubectlOutput) >]
         {{- if ._rox.sensor.localImageScanning.enabled }}

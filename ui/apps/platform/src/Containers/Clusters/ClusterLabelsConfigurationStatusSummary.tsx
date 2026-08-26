@@ -3,10 +3,12 @@ import { Alert, Content, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import useMetadata from 'hooks/useMetadata';
 import type { Cluster, ClusterManagerType, CompleteClusterConfig } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import ClusterStatusGrid from './ClusterStatusGrid';
 import ClusterSummaryGrid from './ClusterSummaryGrid';
+import SensorCompatibilityPanel from './Components/SensorCompatibilityPanel';
 import DynamicConfigurationForm from './DynamicConfigurationForm';
 import StaticConfigurationForm from './StaticConfigurationForm';
 // Delete whenever deprecated properties are deleted.
@@ -38,6 +40,9 @@ function ClusterLabelsConfigurationStatusSummary({
     handleChange,
     handleChangeAdmissionControllerEnforcementBehavior,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
+    const metadata = useMetadata();
+    const compatibleVersions = metadata?.compatibleSensorVersions ?? [];
+
     const isManagerTypeNonConfigurable =
         managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
         managerType === 'MANAGER_TYPE_HELM_CHART';
@@ -157,11 +162,21 @@ function ClusterLabelsConfigurationStatusSummary({
                     >
                         <ClusterStatusGrid healthStatus={selectedCluster.healthStatus} />
                         <ClusterSummaryGrid
-                            centralVersion={centralVersion}
                             clusterInfo={selectedCluster}
                             clusterRetentionInfo={clusterRetentionInfo}
                         />
                     </Flex>
+                </Flex>
+            )}
+            {selectedCluster.id && selectedCluster.status && (
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                    <Title headingLevel="h2">Compatibility status</Title>
+                    <SensorCompatibilityPanel
+                        compatibility={selectedCluster.status.sensorVersionCompatibility}
+                        compatibleVersions={compatibleVersions}
+                        sensorVersion={selectedCluster.status.sensorVersion}
+                        centralVersion={centralVersion}
+                    />
                 </Flex>
             )}
         </Flex>

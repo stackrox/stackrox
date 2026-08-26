@@ -23,7 +23,6 @@ spec:
       namespace: {{ .Release.Namespace }}
       labels:
         app: central
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "central") | nindent 8 }}
       annotations:
         {{- include "srox.podAnnotations" (list . "deployment" "central") | nindent 8 }}
@@ -148,7 +147,18 @@ spec:
         - name: ROX_SCANNER_V4
           value: "true"
         {{- end }}
+        {{- if ._rox._legacyScannerEnabled }}
+        - name: ROX_LEGACY_SCANNER
+          value: "true"
+        {{- else }}
+        - name: ROX_LEGACY_SCANNER
+          value: "false"
+        {{- end }}
         [<- end >]
+        {{- if ._rox.centralWorker.enabled }}
+        - name: ROX_CENTRAL_WORKER_ENABLED
+          value: "true"
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
@@ -207,6 +217,11 @@ spec:
           readOnly: true
         - name: ocp-tls
           mountPath: /run/secrets/stackrox.io/ocp-tls
+          readOnly: true
+        {{- end }}
+        {{- if ._rox.central.signingKeyBundle.configMapName }}
+        - name: signing-key-bundle
+          mountPath: /tmp/redhat-signing-keys
           readOnly: true
         {{- end }}
         {{- range $extraMount := (default list ._rox.central.extraMounts) }}
@@ -300,6 +315,12 @@ spec:
       - name: ocp-tls
         secret:
           secretName: central-ocp-tls
+      {{- end }}
+      {{- if ._rox.central.signingKeyBundle.configMapName }}
+      - name: signing-key-bundle
+        configMap:
+          name: {{ ._rox.central.signingKeyBundle.configMapName }}
+          optional: true
       {{- end }}
       {{- range $extraMount := (default list ._rox.central.extraMounts) }}
       - name: {{ $extraMount.name }}

@@ -30,15 +30,20 @@ func sendAndReceive(t *testing.T, handler *Handler, req *pb.VMServiceRequest) *p
 	return &resp
 }
 
+func getReportRequest(requestID, lastKnownToken string) *pb.VMServiceRequest {
+	return &pb.VMServiceRequest{
+		Meta:   &pb.RequestMeta{RequestId: requestID},
+		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownToken: lastKnownToken}},
+	}
+}
+
 func TestHandleRequest_GetReport(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
 	handler := NewHandler(cache, "test-1.0.0")
-	req := &pb.VMServiceRequest{
-		Meta:   &pb.RequestMeta{RequestId: "req-1", Capabilities: []string{"report_v1"}},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: 0}},
-	}
+	req := getReportRequest("req-1", "")
+	req.Meta.Capabilities = []string{"report_v1"}
 
 	resp := sendAndReceive(t, handler, req)
 
@@ -49,10 +54,9 @@ func TestHandleRequest_GetReport(t *testing.T) {
 	meta := resp.GetMeta()
 	require.NotNil(t, meta)
 	assert.Equal(t, "test-1.0.0", meta.GetAgentVersion())
-	assert.Equal(t, uint32(1), meta.GetReportGeneration())
+	assert.NotEmpty(t, meta.GetReportToken())
 	assert.NotNil(t, meta.GetReportGeneratedAt())
 	assert.Contains(t, meta.GetSupportedMethods(), "get_report")
-	assert.NotZero(t, meta.GetEpoch(), "epoch should be seeded on handler creation")
 }
 
 func TestHandleRequest_GetReport_Unchanged(t *testing.T) {
@@ -60,121 +64,84 @@ func TestHandleRequest_GetReport_Unchanged(t *testing.T) {
 	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
 
 	handler := NewHandler(cache, "test-1.0.0")
-	req := &pb.VMServiceRequest{
-		Meta:   &pb.RequestMeta{RequestId: "req-2"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: 1}},
-	}
+	first := sendAndReceive(t, handler, getReportRequest("req-learn-token", ""))
+	token := first.GetMeta().GetReportToken()
+	require.NotEmpty(t, token)
 
-	resp := sendAndReceive(t, handler, req)
+	resp := sendAndReceive(t, handler, getReportRequest("req-2", token))
 
 	assert.NotNil(t, resp.GetGetReport())
 	assert.True(t, resp.GetGetReport().GetUnchanged())
 	assert.Nil(t, resp.GetGetReport().GetIndexReport())
+	assert.Equal(t, token, resp.GetMeta().GetReportToken())
 }
 
-func TestHandleRequest_GetReport_UnchangedWhenKnownEpochMatches(t *testing.T) {
-	cache := &ReportCache{}
-	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
-
-	handler := NewHandler(cache, "test-1.0.0")
-	// Learn the handler's epoch from a first exchange (known_epoch=0, so
-	// Sensor has no cached epoch yet — falls back to generation-only).
-	firstResp := sendAndReceive(t, handler, &pb.VMServiceRequest{
-		Meta:   &pb.RequestMeta{RequestId: "req-learn-epoch"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{LastKnownGeneration: 0}},
-	})
-	epoch := firstResp.GetMeta().GetEpoch()
-	require.NotZero(t, epoch)
-
-	req := &pb.VMServiceRequest{
-		Meta: &pb.RequestMeta{RequestId: "req-epoch-match"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
-			LastKnownGeneration: 1,
-			KnownEpoch:          epoch,
-		}},
-	}
-
-	resp := sendAndReceive(t, handler, req)
-
-	assert.NotNil(t, resp.GetGetReport())
-	assert.True(t, resp.GetGetReport().GetUnchanged(), "matching generation and epoch should report unchanged")
-	assert.Nil(t, resp.GetGetReport().GetIndexReport())
-}
-
-// TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch covers
-// the case report_generation alone cannot distinguish: report_generation
-// resets to 1 on every roxagent restart, so a restarted agent can
-// coincidentally match a generation Sensor already has cached for a
-// previous instance. known_epoch lets the agent detect this itself, in a
-// single round trip, by comparing Sensor's last-seen epoch against its own
-// current one.
-func TestHandleRequest_GetReport_ServesFullReportOnKnownEpochMismatch(t *testing.T) {
+// TestHandleRequest_GetReport_TokenMismatch covers a Sensor-cached token
+// that does not match the agent's current content.
+func TestHandleRequest_GetReport_TokenMismatch(t *testing.T) {
 	cache := &ReportCache{}
 	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
 
 	handler := NewHandler(cache, "test-1.0.0")
-	req := &pb.VMServiceRequest{
-		Meta: &pb.RequestMeta{RequestId: "req-epoch-mismatch"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
-			// Generation matches (both are 1), but Sensor's cached epoch is
-			// from a previous agent process instance.
-			LastKnownGeneration: 1,
-			KnownEpoch:          12345,
-		}},
-	}
-
-	resp := sendAndReceive(t, handler, req)
+	resp := sendAndReceive(t, handler, getReportRequest("req-mismatch", "stale-token"))
 
 	assert.NotNil(t, resp.GetGetReport())
-	assert.False(t, resp.GetGetReport().GetUnchanged(), "epoch mismatch must serve the full report despite matching generation")
+	assert.False(t, resp.GetGetReport().GetUnchanged())
 	require.NotNil(t, resp.GetGetReport().GetIndexReport())
 	assert.Equal(t, "post-restart-hash", resp.GetGetReport().GetIndexReport().GetHashId())
-	assert.NotEqual(t, uint32(12345), resp.GetMeta().GetEpoch(), "response should carry the agent's real current epoch")
+	assert.NotEmpty(t, resp.GetMeta().GetReportToken())
+	assert.NotEqual(t, "stale-token", resp.GetMeta().GetReportToken())
 }
 
-// TestHandleRequest_GetReport_UnchangedWhenKnownEpochZero pins down backward
-// compatibility: known_epoch=0 means Sensor has no epoch to compare (first
-// request for this VM, or a Sensor build that predates the field), so the
-// agent must fall back to generation-only comparison exactly as before this
-// field existed.
-func TestHandleRequest_GetReport_UnchangedWhenKnownEpochZero(t *testing.T) {
+// TestHandleRequest_GetReport_IdenticalRescanUnchanged covers a rescan
+// whose report and facts did not change: the token is stable, so Sensor
+// gets unchanged unless it sends an empty last_known_token.
+func TestHandleRequest_GetReport_IdenticalRescanUnchanged(t *testing.T) {
 	cache := &ReportCache{}
-	cache.SetReport(&v4.IndexReport{HashId: "test-hash"}, nil)
+	cache.SetReport(&v4.IndexReport{HashId: "same-hash"}, nil)
 
 	handler := NewHandler(cache, "test-1.0.0")
-	req := &pb.VMServiceRequest{
-		Meta: &pb.RequestMeta{RequestId: "req-epoch-zero"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
-			LastKnownGeneration: 1,
-			KnownEpoch:          0,
-		}},
-	}
+	first := sendAndReceive(t, handler, getReportRequest("req-first-scan", ""))
+	token := first.GetMeta().GetReportToken()
+	require.NotEmpty(t, token)
 
-	resp := sendAndReceive(t, handler, req)
+	cache.SetReport(&v4.IndexReport{HashId: "same-hash"}, nil)
+	resp := sendAndReceive(t, handler, getReportRequest("req-after-rescan", token))
 
 	assert.NotNil(t, resp.GetGetReport())
-	assert.True(t, resp.GetGetReport().GetUnchanged(), "known_epoch=0 should fall back to generation-only comparison")
+	assert.True(t, resp.GetGetReport().GetUnchanged())
 	assert.Nil(t, resp.GetGetReport().GetIndexReport())
+	assert.Equal(t, token, resp.GetMeta().GetReportToken())
 }
 
-func TestHandleRequest_GetReport_GenerationRegression(t *testing.T) {
+// TestHandleRequest_GetReport_ContentChangeServesReport covers a rescan
+// whose content changed: the token changes and the full report is served.
+func TestHandleRequest_GetReport_ContentChangeServesReport(t *testing.T) {
 	cache := &ReportCache{}
-	cache.SetReport(&v4.IndexReport{HashId: "post-restart-hash"}, nil)
+	cache.SetReport(&v4.IndexReport{HashId: "before"}, nil)
 
 	handler := NewHandler(cache, "test-1.0.0")
-	req := &pb.VMServiceRequest{
-		Meta: &pb.RequestMeta{RequestId: "req-regression"},
-		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{
-			LastKnownGeneration: 5,
-		}},
-	}
+	first := sendAndReceive(t, handler, getReportRequest("req-before", ""))
+	token := first.GetMeta().GetReportToken()
+	require.NotEmpty(t, token)
 
-	resp := sendAndReceive(t, handler, req)
+	cache.SetReport(&v4.IndexReport{HashId: "after"}, nil)
+	resp := sendAndReceive(t, handler, getReportRequest("req-after", token))
 
 	assert.NotNil(t, resp.GetGetReport())
-	assert.False(t, resp.GetGetReport().GetUnchanged(), "agent restarted (gen=1 < requested=5), must serve full report")
-	assert.Equal(t, "post-restart-hash", resp.GetGetReport().GetIndexReport().GetHashId())
-	assert.Equal(t, uint32(1), resp.GetMeta().GetReportGeneration())
+	assert.False(t, resp.GetGetReport().GetUnchanged())
+	assert.Equal(t, "after", resp.GetGetReport().GetIndexReport().GetHashId())
+	assert.NotEmpty(t, resp.GetMeta().GetReportToken())
+	assert.NotEqual(t, token, resp.GetMeta().GetReportToken())
+}
+
+func TestReportToken(t *testing.T) {
+	report := &v4.IndexReport{HashId: "a"}
+	assert.Equal(t, reportToken(report, nil), reportToken(&v4.IndexReport{HashId: "a"}, map[string]string{}))
+	assert.NotEqual(t, reportToken(report, nil), reportToken(&v4.IndexReport{HashId: "b"}, nil))
+	assert.NotEqual(t, reportToken(report, nil), reportToken(report, map[string]string{"os": "rhel"}))
+	assert.Equal(t, reportToken(nil, nil), reportToken(nil, map[string]string{}))
+	assert.Len(t, reportToken(report, nil), 16)
 }
 
 func TestHandleRequest_NotReady(t *testing.T) {

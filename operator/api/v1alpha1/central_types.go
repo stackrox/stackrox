@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -77,6 +78,11 @@ type CentralSpec struct {
 	// Config-as-Code configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Config-as-Code,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ConfigAsCode *ConfigAsCodeSpec `json:"configAsCode,omitempty"`
+
+	// Central Worker configuration. When enabled, pruning and reporting jobs run in a
+	// separate Deployment instead of inside Central.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Central Worker",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	CentralWorker *CentralWorkerSpec `json:"centralWorker,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -162,13 +168,20 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Declarative Configuration",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	DeclarativeConfiguration *DeclarativeConfiguration `json:"declarativeConfiguration,omitempty"`
 
+	// References a ConfigMap containing the Red Hat signing key bundle (key `bundle.json`).
+	// This allows air-gapped customers to provide or update the signing keys used for
+	// signature verification of Red Hat container images. The ConfigMap is managed
+	// externally; key rotation requires only editing the ConfigMap, not a CR update.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Signing Key Bundle",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	SigningKeyBundle *LocalConfigMapReference `json:"signingKeyBundle,omitempty"`
+
 	// Configures the encryption of notifier secrets stored in the Central DB.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Notifier Secrets Encryption",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	NotifierSecretsEncryption *NotifierSecretsEncryption `json:"notifierSecretsEncryption,omitempty"`
 
 	// Configures the rollout strategy for the Central deployment.
 	// The default is: Recreate.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=9
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Rollout Strategy",order=10
 	RolloutStrategy *RolloutStrategy `json:"rolloutStrategy,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
@@ -635,6 +648,26 @@ const (
 	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
+
+// CentralWorkerSpec defines the central-worker configuration.
+type CentralWorkerSpec struct {
+	// If set to true, pruning and reporting jobs run in a separate Deployment.
+	// The default is: false.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Enabled"
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// If you want this component to only run on specific nodes, you can configure
+	// tolerations and affinity settings here.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,displayName="Affinity"
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// Configures the priority class name for the central-worker deployment.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Priority Class Name"
+	PriorityClassName *string `json:"priorityClassName,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	DeploymentSpec `json:",inline"`
+}
 
 type ConfigAsCodeSpec struct {
 	// If you want to deploy the Config as Code component, set this to "Enabled"

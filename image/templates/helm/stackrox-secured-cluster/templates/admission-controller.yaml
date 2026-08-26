@@ -21,7 +21,6 @@ spec:
       namespace: {{ ._rox._namespace }}
       labels:
         app: admission-control
-        sidecar.istio.io/inject: "false"
         {{- include "srox.podLabels" (list . "deployment" "admission-control") | nindent 8 }}
       annotations:
         {{- $annotations := dict -}}
@@ -256,7 +255,7 @@ webhooks:
         {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
       {{- else }}
       matchExpressions:
-      - key: namespace.metadata.stackrox.io/name
+      - key: kubernetes.io/metadata.name
         operator: NotIn
         values:
           - {{ ._rox._namespace }}

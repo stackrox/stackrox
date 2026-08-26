@@ -1,0 +1,31 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+tests:
+- name: "No signing key bundle by default"
+  expect: |
+    [.deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "signing-key-bundle")] | assertThat(length == 0)
+    [.deployments.central.spec.template.spec.volumes[]
+      | select(.name == "signing-key-bundle")] | assertThat(length == 0)
+
+- name: "Setting signingKeyBundle.configMapName adds volume and volumeMount"
+  values:
+    central:
+      signingKeyBundle:
+        configMapName: "redhat-signing-key-bundle"
+  expect: |
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "signing-key-bundle") | assertThat(. != null)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "signing-key-bundle") | assertThat(.readOnly == true)
+    .deployments.central.spec.template.spec.containers[0].volumeMounts[]
+      | select(.name == "signing-key-bundle") | assertThat(.mountPath == "/tmp/redhat-signing-keys")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "signing-key-bundle")
+     | assertThat(. != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "signing-key-bundle")
+     | assertThat(.configMap != null)
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "signing-key-bundle")
+     | assertThat(.configMap.name == "redhat-signing-key-bundle")
+    .deployments.central.spec.template.spec.volumes[] | select(.name == "signing-key-bundle")
+     | assertThat(.configMap.optional == true)

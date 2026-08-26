@@ -3,7 +3,7 @@ package index
 import (
 	"context"
 
-	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -11,12 +11,10 @@ import (
 )
 
 // Handler provides functionality to send virtual machine index reports to Central.
-// It embeds ComplianceComponent (which itself embeds SensorComponent) so that
-// compliance channel wiring is part of the compile-time contract.
 type Handler interface {
-	common.ComplianceComponent
+	common.SensorComponent
 
-	Send(ctx context.Context, vm *v1.IndexReport) error
+	Send(ctx context.Context, vm *virtualmachine.Info, report *v4.IndexReport) error
 }
 
 // VirtualMachineStore interface to the VirtualMachine store

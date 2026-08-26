@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
 	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
+	"github.com/stackrox/rox/sensor/common/events"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -85,6 +86,18 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 			log.Debug("File system pipeline using pub/sub mode for process enrichment")
 			p.wg.Add(1)
 			go p.cleanupExpiredBuffers()
+		}
+
+		// Register consumer for fake file activities from fake workloads
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.FakeFileActivityConsumer,
+			pubsub.FakeFileActivityTopic,
+			pubsub.FakeFileActivityLane,
+			p.handleFakeFileActivityEvent,
+		); err != nil {
+			log.Errorf("Failed to register consumer for fake file activities: %v", err)
+		} else {
+			log.Debug("File system pipeline registered consumer for fake file activities")
 		}
 	}
 
@@ -341,6 +354,30 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 		p.detector.ProcessFileAccess(enrichedEvent.Context, access)
 	}
 
+	return nil
+}
+
+func (p *Pipeline) handleFakeFileActivityEvent(event pubsub.Event) error {
+	select {
+	case <-p.stopper.Flow().StopRequested():
+		return nil
+	default:
+	}
+
+	fakeEvent, ok := event.(*events.FakeFileActivityEvent)
+	if !ok {
+		log.Errorf("File system pipeline received unexpected event type for fake file activity: %T", event)
+		return fmt.Errorf("unexpected event type: %T", event)
+	}
+
+	if fakeEvent.Activity == nil {
+		return nil
+	}
+
+	// Process fake file activity directly instead of writing to activityChan.
+	// This avoids potential panic on shutdown when the channel is closed by filesystemService.
+	// The activityChan is owned by the gRPC service, which is its only writer.
+	p.processFileActivity(fakeEvent.Activity)
 	return nil
 }
 

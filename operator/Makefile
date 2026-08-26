@@ -255,7 +255,9 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.29
+# Dynamically derived from the k8s.io/api dependency version in go.mod (v0.X.Y -> 1.X),
+# since not all patch versions are re-published.
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f '{{.Version}}' k8s.io/api | sed 's/^v0\.\([0-9]*\).*/1.\1/')
 
 .PHONY: test
 test: manifests generate fmt vet  ## Run go unit tests
@@ -308,10 +310,10 @@ run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quic
 quick-run: ## Same as run, but without ensuring dependencies.
 	@if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
 		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
-		IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh | while read -r line; do \
+		while read -r line; do \
 			echo " * $$line"; \
 			export "$$line"; \
-		done; \
+		done < <(IMAGE_REGISTRY=$(IMAGE_REPO) ./hack/related-images-with-main-tags.sh); \
 	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
@@ -512,7 +514,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
-bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
 	candidate_version=$$(go run ./bundle_helpers/main.go patch-csv \
@@ -535,15 +537,17 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 		--operator-image=$(IMG) \
 		--related-images-mode=$(RELATED_IMAGES_MODE) \
 		$${unreleased_opt:-}
-# Check that the resulting bundle still passes validations.
+
+.PHONY: bundle-validate
+bundle-validate: operator-sdk ## Validate the bundle manifests in build/bundle/.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-build
-bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
+bundle-build: bundle.Dockerfile bundle-post-process bundle-validate ## Build the bundle image.
 	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
-bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
+bundle-test: operator-sdk bundle-post-process bundle-validate ## Run scorecard tests against bundle files.
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) build/bundle/
 
 .PHONY: bundle-test-image
@@ -551,7 +555,7 @@ bundle-test-image: operator-sdk ## Run scorecard tests against bundle image in t
 	$(OPERATOR_SDK) scorecard $(SCORECARD_ARGS) $(BUNDLE_IMG)
 
 .PHONY: index-build
-index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
+index-build: bundle-post-process bundle-validate yq ## Build Index (a.k.a. Catalog) image with the bundles. Bundle image must be pushed beforehand.
 # If the bundle has `replaces:` attribute in CSV, then the one it replaces has to already be in the index. Otherwise,
 # validation of the index fails because more than one version is identified as the head of the channel. An example of an
 # error: `multiple channel heads found in graph: rhacs-operator.v3.67.0, rhacs-operator.v3.69.0`

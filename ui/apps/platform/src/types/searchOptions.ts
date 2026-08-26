@@ -16,6 +16,7 @@ export const searchFieldLabels = [
     'Collector Status',
     'Admission Control Status',
     'Scanner Status',
+    'Sensor Version Compatibility',
     'Last Contact',
     //
     'Policy ID',

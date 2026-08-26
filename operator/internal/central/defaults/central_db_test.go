@@ -7,7 +7,6 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/ptr"
 )
 
 func TestCentralDBDefaulting(t *testing.T) {
@@ -16,7 +15,7 @@ func TestCentralDBDefaulting(t *testing.T) {
 			DB: &platform.CentralDBSpec{
 				Persistence: &platform.DBPersistence{
 					PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-						ClaimName: ptr.To("central-db"),
+						ClaimName: new("central-db"),
 					},
 				},
 			},
@@ -53,7 +52,7 @@ func TestCentralDBDefaulting(t *testing.T) {
 			spec: &platform.CentralSpec{
 				Central: &platform.CentralComponentSpec{
 					DB: &platform.CentralDBSpec{
-						ConnectionStringOverride: ptr.To("postgresql://external:5432/db"),
+						ConnectionStringOverride: new("postgresql://external:5432/db"),
 					},
 				},
 			},
@@ -63,7 +62,7 @@ func TestCentralDBDefaulting(t *testing.T) {
 			spec: &platform.CentralSpec{
 				Central: &platform.CentralComponentSpec{
 					DB: &platform.CentralDBSpec{
-						ConnectionStringOverride: ptr.To("postgresql://external:5432/db"),
+						ConnectionStringOverride: new("postgresql://external:5432/db"),
 						Persistence:              &platform.DBPersistence{},
 					},
 				},

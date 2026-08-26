@@ -1,0 +1,49 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+
+tests:
+- name: "virtual machine scanning is enabled by default"
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. != null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. != null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == "true")
+    [container(.deployments.sensor; "sensor") | .env[] | select(.name == "ROX_VIRTUAL_MACHINES")] | length | assertThat(. == 1)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY"] | assertThat(. == "20")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB"] | assertThat(. == "16384")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL"] | assertThat(. == "4h")
+
+- name: "virtual machine VSOCK RBAC and env var are created when enabled"
+  set:
+    virtualMachines.enabled: true
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. != null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. != null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == "true")
+    [container(.deployments.sensor; "sensor") | .env[] | select(.name == "ROX_VIRTUAL_MACHINES")] | length | assertThat(. == 1)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY"] | assertThat(. == "20")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB"] | assertThat(. == "16384")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL"] | assertThat(. == "4h")
+
+- name: "virtual machine scraper knobs can be customized when enabled"
+  set:
+    virtualMachines.enabled: true
+    virtualMachines.scraper.concurrency: 5
+    virtualMachines.scraper.maxResponseSizeKB: 1024
+    virtualMachines.scraper.pollInterval: "1m"
+  expect: |
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY"] | assertThat(. == "5")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB"] | assertThat(. == "1024")
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL"] | assertThat(. == "1m")
+
+- name: "virtual machine VSOCK RBAC is absent and the feature flag is off when explicitly disabled"
+  set:
+    virtualMachines.enabled: false
+  expect: |
+    .clusterroles["stackrox:vsock-access"] | assertThat(. == null)
+    .clusterrolebindings["stackrox:vsock-access-binding"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES"] | assertThat(. == "false")
+    [container(.deployments.sensor; "sensor") | .env[] | select(.name == "ROX_VIRTUAL_MACHINES")] | length | assertThat(. == 1)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_CONCURRENCY"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_PULL_MAX_RESPONSE_SIZE_KB"] | assertThat(. == null)
+    envVars(.deployments.sensor; "sensor")["ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL"] | assertThat(. == null)

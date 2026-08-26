@@ -29,6 +29,19 @@ enum Source {
   SOURCE_NVD = 3;
 }
 
+enum VulnOrigin {
+  VULN_ORIGIN_OTHER = 0;
+  VULN_ORIGIN_OSV = 1;
+  VULN_ORIGIN_ALPINE = 2;
+  VULN_ORIGIN_AMAZON = 3;
+  VULN_ORIGIN_DEBIAN = 4;
+  VULN_ORIGIN_ORACLE = 5;
+  VULN_ORIGIN_PHOTON = 6;
+  VULN_ORIGIN_RED_HAT = 7;
+  VULN_ORIGIN_SUSE = 8;
+  VULN_ORIGIN_UBUNTU = 9;
+}
+
 //Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
 enum CvssScoreVersion {
   UNKNOWN_VERSION = 0;
@@ -211,6 +224,8 @@ message ImageCVEV2 {
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   string datasource = 17;
+  // origin indicates where vulnerability details came from, origin may be an aggregator (such as OSV).
+  VulnOrigin origin = 18; // @gotags: search:"CVE Origin,hidden"
 }
 
 message NodeCVE {

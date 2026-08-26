@@ -80,10 +80,14 @@ central:
           certificate: null # string
           destinationCACertificate: null # string
           key: null # string
+  notifierSecretsEncryption:
+    enabled: null # bool
   declarativeConfiguration:
     mounts:
       configMaps: null # [string]
       secrets: null # [string]
+  signingKeyBundle:
+    configMapName: null # string
   extraMounts: null # [dict]
   db:
     nodeSelector: null # string | dict
@@ -120,6 +124,14 @@ central:
           volumeSpec: null # dict
       none: null # bool
     extraMounts: null # [dict]
+centralWorker:
+  enabled: false # bool
+  nodeSelector: null # string | dict
+  tolerations: null # [dict]
+  hostAliases: null # [dict]
+  affinity: null # dict
+  priorityClassName: null # string
+  resources: null # string | dict
 configController:
   nodeSelector: null # string | dict
   tolerations: null # [dict]

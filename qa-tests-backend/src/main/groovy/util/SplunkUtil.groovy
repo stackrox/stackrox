@@ -191,6 +191,8 @@ class SplunkUtil {
         Service syslogSvc
         LocalPortForward splunkPortForward
         try {
+            // No TCP readiness probe: Splunk binds 8089 after the container is
+            // running, and waitForSplunkBoot already waits on the health API.
             deployment =
                     new Deployment()
                             .setNamespace(namespace)
@@ -202,6 +204,8 @@ class SplunkUtil {
                             .addPort(514)
                             .setEnv(ENV_VARIABLES)
                             .addLabel("app", deploymentName)
+                            .addRequest("cpu", "500m")
+                            .addLimits("memory", "3Gi")
             orchestrator.createDeployment(deployment)
 
             collectorSvc = new Service("splunk-collector-" + uid, namespace)

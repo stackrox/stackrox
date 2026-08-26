@@ -1826,7 +1826,7 @@ type ClusterStatus struct {
 	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
 	CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus,proto3" json:"cert_expiry_status,omitempty"`
 	// Computed at runtime, not persisted.
-	SensorVersionCompatibility SensorVersionCompatibility `protobuf:"varint,7,opt,name=sensor_version_compatibility,json=sensorVersionCompatibility,proto3,enum=storage.SensorVersionCompatibility" json:"sensor_version_compatibility,omitempty"`
+	SensorVersionCompatibility SensorVersionCompatibility `protobuf:"varint,7,opt,name=sensor_version_compatibility,json=sensorVersionCompatibility,proto3,enum=storage.SensorVersionCompatibility" json:"sensor_version_compatibility,omitempty" search:"Sensor Version Compatibility" sql:"-"` // @gotags: search:"Sensor Version Compatibility" sql:"-"
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
