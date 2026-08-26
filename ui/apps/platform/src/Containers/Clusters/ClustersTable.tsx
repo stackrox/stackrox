@@ -167,23 +167,16 @@ function ClustersTable({
                                             </Td>
                                             <Td
                                                 dataLabel={sensorColumnLabel}
-                                                compoundExpand={
-                                                    clusterInfo?.status?.sensorVersionCompatibility
-                                                        ? {
-                                                              isExpanded: isCellExpanded(
-                                                                  clusterId,
-                                                                  EXPANDABLE_COLUMN.SENSOR
-                                                              ),
-                                                              onToggle: () =>
-                                                                  toggle(
-                                                                      clusterId,
-                                                                      EXPANDABLE_COLUMN.SENSOR
-                                                                  ),
-                                                              rowIndex,
-                                                              columnIndex: 4,
-                                                          }
-                                                        : undefined
-                                                }
+                                                compoundExpand={{
+                                                    isExpanded: isCellExpanded(
+                                                        clusterId,
+                                                        EXPANDABLE_COLUMN.SENSOR
+                                                    ),
+                                                    onToggle: () =>
+                                                        toggle(clusterId, EXPANDABLE_COLUMN.SENSOR),
+                                                    rowIndex,
+                                                    columnIndex: 4,
+                                                }}
                                             >
                                                 <SensorCompatibility
                                                     compatibility={
