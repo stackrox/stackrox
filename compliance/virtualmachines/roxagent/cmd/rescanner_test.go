@@ -9,9 +9,46 @@ import (
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
+)
+
+// fakeProvider is a vsockserver.MappingProvider test double for rescanner
+// tests; Hash/UpdatePath/Bytes are unused by rescanner and always zero.
+type fakeProvider struct {
+	ready   bool
+	path    string
+	pathErr error
+}
+
+func (f *fakeProvider) Ready() bool  { return f.ready }
+func (f *fakeProvider) Hash() string { return "" }
+func (f *fakeProvider) UpdatePath() pb.RepoCPEMappingUpdatePath {
+	return pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED
+}
+func (f *fakeProvider) Bytes() ([]byte, error) { return nil, errors.New("not implemented") }
+func (f *fakeProvider) Path() (string, error)  { return f.path, f.pathErr }
+
+var _ vsockserver.MappingProvider = (*fakeProvider)(nil)
+
+// fakeGatedProvider adds ScanBusyGate call tracking on top of fakeProvider,
+// mirroring SensorUpdater (gated) as opposed to URLUpdater (ungated) so
+// tests can verify scanOnce only invokes the gate for providers that
+// implement it.
+type fakeGatedProvider struct {
+	fakeProvider
+	busyCalls int
+	idleCalls int
+}
+
+func (f *fakeGatedProvider) MarkScanBusy()                { f.busyCalls++ }
+func (f *fakeGatedProvider) MarkScanIdleAndApplyPending() { f.idleCalls++ }
+
+var (
+	_ vsockserver.MappingProvider = (*fakeGatedProvider)(nil)
+	_ vsockserver.ScanBusyGate    = (*fakeGatedProvider)(nil)
 )
 
 // testRescanner returns a rescanner with a long default interval so tests
@@ -19,9 +56,13 @@ import (
 // factsFn is stubbed out so Run never exercises the real discoverFacts,
 // which - unlike scanFn - has no test-friendly no-op input; hostPath=""
 // resolves to real absolute host paths (e.g. "/etc/pki/entitlement"), not
-// a safe default.
-func testRescanner() *rescanner {
-	r := newRescanner(&vsockserver.ReportCache{}, "", "", time.Hour)
+// a safe default. provider defaults to always-ready when nil, so existing
+// tests that don't care about readiness are unaffected.
+func testRescanner(provider vsockserver.MappingProvider) *rescanner {
+	if provider == nil {
+		provider = &fakeProvider{ready: true}
+	}
+	r := newRescanner(&vsockserver.ReportCache{}, "", provider, time.Hour)
 	r.factsFn = func(string) map[string]string { return nil }
 	return r
 }
@@ -66,7 +107,7 @@ func (f *fakeTicker) lastReset() time.Duration {
 func TestRescanner_Run(t *testing.T) {
 	t.Run("should publish to cache on each tick", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
-			r := testRescanner()
+			r := testRescanner(nil)
 			ticker := newFakeTicker()
 			defer ticker.close()
 			r.newDelay = ticker.newDelay
@@ -101,7 +142,7 @@ func TestRescanner_Run(t *testing.T) {
 
 	t.Run("should retry sooner than the full interval after a failed rescan", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
-			r := testRescanner()
+			r := testRescanner(nil)
 			ticker := newFakeTicker()
 			defer ticker.close()
 			r.newDelay = ticker.newDelay
@@ -142,7 +183,7 @@ func TestRescanner_Run(t *testing.T) {
 
 	t.Run("should stop promptly when the context is cancelled", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
-			r := testRescanner()
+			r := testRescanner(nil)
 
 			ctx, cancel := context.WithCancel(t.Context())
 			stopped := r.runAsync(ctx)
@@ -153,6 +194,114 @@ func TestRescanner_Run(t *testing.T) {
 			// fails the test on deadlock automatically.
 			cancel()
 			<-stopped
+		})
+	})
+
+	t.Run("a periodic tick is a no-op when the mapping is not yet ready", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			r := testRescanner(&fakeProvider{ready: false})
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			var calls int
+			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+				calls++
+				return &v4.IndexReport{}, nil
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait()
+
+			ticker.fire()
+			synctest.Wait()
+
+			assert.Zero(t, calls, "scanFn must not be called while the mapping provider isn't ready")
+		})
+	})
+
+	t.Run("OnMappingChanged triggers an immediate scan attempt", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			r := testRescanner(&fakeProvider{ready: true})
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			var calls int
+			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+				calls++
+				return &v4.IndexReport{}, nil
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait() // Run is blocked waiting for the first tick
+
+			r.OnMappingChanged()
+			synctest.Wait()
+
+			assert.Equal(t, 1, calls, "OnMappingChanged should trigger a scan without waiting for the next tick")
+		})
+	})
+
+	t.Run("a failed scan clears busy via idle-and-apply-pending", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
+			r := testRescanner(provider)
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+				return nil, errors.New("scan failed")
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait()
+
+			ticker.fire()
+			synctest.Wait()
+
+			assert.Equal(t, 1, provider.busyCalls)
+			assert.Equal(t, 1, provider.idleCalls, "a failed scan must not leave a Sync stuck behind busy forever")
+		})
+	})
+
+	t.Run("a successful scan clears busy without waiting for GetReport", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
+			r := testRescanner(provider)
+			ticker := newFakeTicker()
+			defer ticker.close()
+			r.newDelay = ticker.newDelay
+			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+				return &v4.IndexReport{HashId: "ok"}, nil
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait()
+
+			ticker.fire()
+			synctest.Wait()
+
+			assert.Equal(t, 1, provider.busyCalls)
+			assert.Equal(t, 1, provider.idleCalls, "a successful scan must apply a deferred Sync itself; GetReport can be hours away")
 		})
 	})
 }
