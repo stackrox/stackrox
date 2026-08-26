@@ -4,12 +4,15 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/csv"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -32,13 +35,42 @@ var (
 		"Reference",
 		"Advisory Name",
 		"Advisory Link",
+		"CVE Origin",
+	}
+
+	// originDisplayNames maps VulnOrigin enum values to human-readable names for the
+	// CSV report. This must be kept in sync with the equivalent UI map.
+	originDisplayNames = map[storage.VulnOrigin]string{
+		storage.VulnOrigin_VULN_ORIGIN_ALPINE:  "Alpine Linux",
+		storage.VulnOrigin_VULN_ORIGIN_AMAZON:  "Amazon Linux",
+		storage.VulnOrigin_VULN_ORIGIN_DEBIAN:  "Debian",
+		storage.VulnOrigin_VULN_ORIGIN_ORACLE:  "Oracle Linux",
+		storage.VulnOrigin_VULN_ORIGIN_OSV:     "OSV.dev",
+		storage.VulnOrigin_VULN_ORIGIN_PHOTON:  "Photon OS",
+		storage.VulnOrigin_VULN_ORIGIN_RED_HAT: "Red Hat",
+		storage.VulnOrigin_VULN_ORIGIN_SUSE:    "SUSE",
+		storage.VulnOrigin_VULN_ORIGIN_UBUNTU:  "Ubuntu",
+		storage.VulnOrigin_VULN_ORIGIN_OTHER:   "Other",
 	}
 )
+
+func originDisplayName(origin storage.VulnOrigin) string {
+	if name, ok := originDisplayNames[origin]; ok {
+		return name
+	}
+	return origin.String()
+}
 
 // GenerateCSV takes in the results of vuln report query, converts to CSV and returns zipped data
 func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*bytes.Buffer, error) {
 	// add header for component version
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
+	csvHeaderCols := csvHeader
+	if features.KnownExploitedVulnerabilities.Enabled() {
+		csvHeaderCols = append(csvHeaderCols[:0:0], csvHeader...)
+		epssIdx := slices.Index(csvHeaderCols, "EPSS Probability Percentage")
+		csvHeaderCols = slices.Insert(csvHeaderCols, epssIdx+1, "CISA KEV")
+	}
+	csvWriter := csv.NewGenericWriter(csvHeaderCols, true)
 
 	for _, r := range cveResponses {
 		var epssScore string
@@ -61,11 +93,23 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string) (*byt
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 			strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64),
 			epssScore,
+		}
+		if features.KnownExploitedVulnerabilities.Enabled() {
+			var cisaKev string
+			if r.GetCisaKev() != nil {
+				cisaKev = strconv.FormatBool(*r.GetCisaKev())
+			} else {
+				cisaKev = "Not Available"
+			}
+			row = append(row, cisaKev)
+		}
+		row = append(row,
 			r.GetDiscoveredAtImage(),
 			r.Link,
 			r.GetAdvisoryName(),
 			r.GetAdvisoryLink(),
-		}
+			originDisplayName(r.GetOrigin()),
+		)
 		csvWriter.AddValue(row)
 	}
 

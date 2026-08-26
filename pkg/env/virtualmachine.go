@@ -58,7 +58,17 @@ var (
 
 	// VirtualMachinesScraperPollInterval defines how often the pull-mode scraper
 	// polls VMs for new reports.
-	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 5*time.Minute)
+	VirtualMachinesScraperPollInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_POLL_INTERVAL", 4*time.Hour)
+
+	// VirtualMachinesScraperTickInterval is how often VMScraper considers due VMs.
+	// Independent of retry backoff so operators can slow the ticker without
+	// retuning NACK and failure delays.
+	VirtualMachinesScraperTickInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_TICK_INTERVAL", 10*time.Second)
+
+	// VirtualMachinesScraperInitialBackoff is the first retry delay after a
+	// retryable scrape failure or Central NACK. Later retries double, capped at
+	// min(poll interval, 30m).
+	VirtualMachinesScraperInitialBackoff = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_INITIAL_BACKOFF", 10*time.Second)
 
 	// VirtualMachinesScraperPerVMTimeout defines the per-VM deadline for dialing
 	// and pulling a report in a single scrape cycle.
@@ -70,4 +80,11 @@ var (
 	// vulnerability definitions, mirroring ROX_REPROCESSING_INTERVAL and ROX_NODE_SCANNING_INTERVAL's
 	// role for image and node scanning.
 	VirtualMachinesScraperMandatoryRefreshInterval = registerDurationSetting("ROX_VIRTUAL_MACHINES_SCRAPER_MANDATORY_REFRESH_INTERVAL", 4*time.Hour)
+
+	// VirtualMachinesScraperSteadySpreadFraction is the fraction of the poll interval used as the
+	// one-sided post-poll random band W for cadence reschedule (nextAttemptAt =
+	// now + pollInterval + U(0, W)). Default 2/3. Internal Sensor env only; not Operator/Helm-exposed.
+	// Valid range is [0.01, 1] so W is not effectively zero; out-of-range values fall back to the default.
+	VirtualMachinesScraperSteadySpreadFraction = RegisterFloatSetting("ROX_VIRTUAL_MACHINES_SCRAPER_STEADY_SPREAD_FRACTION", 2.0/3).
+							WithMinimum(0.01).WithMaximum(1)
 )

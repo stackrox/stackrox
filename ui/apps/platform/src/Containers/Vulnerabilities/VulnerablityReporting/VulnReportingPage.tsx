@@ -5,7 +5,7 @@ import type { ReportPageAction } from 'Components/Reports/reports.types';
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 
-import ImageVulnerabilityReportWizardPage from '../ImageVulnerabilityReports/Wizard/ImageVulnerabilityReportWizardPage';
+import ImageVulnerabilityReportWizardPage from '../Reports/ImageVulnerabilityReports/Wizard/ImageVulnerabilityReportWizardPage';
 
 import ViewVulnReportPage from './ViewVulnReport/ViewVulnReportPage';
 import VulnReportingLayout from './VulnReports/VulnReportingLayout';
@@ -27,14 +27,14 @@ function VulnReportingPage() {
                 path="/"
                 element={
                     <Navigate
-                        to={isReportConfigurationEnabled ? 'configuration' : 'view-based'}
+                        to={isReportConfigurationEnabled ? 'configurations' : 'view-based-jobs'}
                         replace
                     />
                 }
             />
             {isReportConfigurationEnabled && (
                 <Route
-                    path="/configuration"
+                    path="/configurations"
                     element={
                         (pageAction === 'create' || pageAction === 'createFromFilters') &&
                         hasWriteAccessForReport ? (
@@ -47,7 +47,7 @@ function VulnReportingPage() {
             )}
             {isReportConfigurationEnabled && (
                 <Route
-                    path="/configuration/:reportId"
+                    path="/configurations/:reportId"
                     element={
                         (pageAction === 'clone' || pageAction === 'edit') &&
                         hasWriteAccessForReport ? (
@@ -58,7 +58,7 @@ function VulnReportingPage() {
                     }
                 />
             )}
-            <Route path="/view-based" element={<VulnReportingLayout />} />
+            <Route path="/view-based-jobs" element={<VulnReportingLayout />} />
             <Route path="*" element={<PageNotFound />} />
         </Routes>
     );

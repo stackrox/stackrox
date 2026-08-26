@@ -150,7 +150,7 @@ type Rows struct {
 // to be used as sql driver.Rows.
 // Use Sqlmock.NewRows instead if using a custom converter
 func NewRows(columns []string) *Rows {
-	var coldefs []pgconn.FieldDescription
+	coldefs := make([]pgconn.FieldDescription, 0, len(columns))
 	for _, column := range columns {
 		coldefs = append(coldefs, pgconn.FieldDescription{Name: column})
 	}

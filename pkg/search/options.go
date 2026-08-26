@@ -30,6 +30,9 @@ var (
 	ClusterPlatformType      = newFieldLabel("Cluster Platform Type")
 	ClusterKubernetesVersion = newFieldLabel("Cluster Kubernetes Version")
 
+	// SensorVersionCompatibility is computed at runtime in the cluster datastore and is not persisted.
+	SensorVersionCompatibility = newFieldLabel("Sensor Version Compatibility")
+
 	// cluster health search fields
 	ClusterStatus          = newFieldLabel("Cluster Status")
 	SensorStatus           = newFieldLabel("Sensor Status")
@@ -58,6 +61,7 @@ var (
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
 	CVEFixAvailable    = newFieldLabel("CVE Fix Available Timestamp")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
+	CVEOrigin          = newFieldLabel("CVE Origin")
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")
 	CVSS               = newFieldLabel("CVSS")

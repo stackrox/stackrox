@@ -32,7 +32,8 @@ jobs:
     needs: [ detect-changes ]
     runs-on: ubuntu-slim
     outputs:
-      dispatch-any: ${{ steps.determine.outputs.dispatch-any }}
+      wait-for-gha-images: ${{ steps.determine.outputs.wait-for-gha-images }}
+      wait-for-konflux-images: ${{ steps.determine.outputs.wait-for-konflux-images }}
       jobs: ${{ steps.determine.outputs.jobs }}
     steps:
     - name: Determine whether should dispatch workflows
@@ -52,37 +53,66 @@ jobs:
         import os
         import subprocess
         from types import SimpleNamespace
+        from dataclasses import dataclass
+
+        @dataclass
+        class Job:
+            name: str
+            require_pr_label: bool = False
+            require_konflux_build: bool = False
+
+            def should_run(self, input):
+                if input.is_fork == 'true':
+                    return False
+
+                if input.event_name != 'pull_request':
+                    return True
+                elif self.name in input.pr_labels:
+                    return True
+
+                # We are in a PR context, job is not explicitly listed among the PR labels.
+
+                # TODO(ROX-21073): re-enable Konflux for all PR branches
+                if self.require_konflux_build and 'konflux-build' not in input.pr_labels:
+                    return False
+
+                if input.ui_only_change == 'true':
+                    # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
+                    # As we add more E2E test workflows, we may want to make this more flexible.
+                    return False
+                if self.require_pr_label:
+                    return False
+                if input.is_draft != 'true':
+                    return True
+
+                return False
+
 
         input = SimpleNamespace(**{
             key.removeprefix('input__'): val
             for (key, val) in os.environ.items()
             if key.startswith('input__')})
-        for k, v in vars(input).items():
-            print(f'{k} = {v}')
 
         if input.event_name != 'pull_request':
-            all_labels = []
+            input.pr_labels = []
         else:
             p = subprocess.run(
                 ['gh', 'pr', 'view', input.pr_number, '--repo', input.repo, '--json', 'labels', '--jq', '.labels[].name'],
                 check=True, encoding='utf-8', stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
-            all_labels = p.stdout.strip().splitlines()
-        print(f'all_labels = {", ".join(all_labels)}')
+            input.pr_labels = p.stdout.strip().splitlines()
 
-        def should_run(job):
-            if input.is_fork == 'true':
-                return False
-            if input.event_name != 'pull_request':
-                return True
-            if input.ui_only_change == 'true':
-                # For now, all the workflows that we dispatch should be skipped for PRs that only change UI.
-                # As we add more E2E test workflows, we may want to make this more flexible.
-                return False
-            if input.is_draft != 'true':
-                return True
-            if job in all_labels:
-                return True
-            return False
+        for k, v in vars(input).items():
+            print(f'{k} = {v}')
+
+        jobs_registry = [
+            Job(name='e2e-byodb-tests'),
+            Job(name='e2e-db-backup-restore-tests'),
+            Job(name='e2e-gke-upgrade-tests'),
+            Job(name='e2e-nongroovy-tests'),
+            Job(name='e2e-qa-tests-gke', require_pr_label=True),
+            Job(name='e2e-qa-tests-gke-konflux', require_konflux_build=True),
+            Job(name='e2e-qa-tests-ocp-4-22', require_pr_label=True),
+        ]
 
         with open(os.environ['GITHUB_OUTPUT'], mode='at', encoding='utf-8') as file:
             def write(job, val):
@@ -90,34 +120,32 @@ jobs:
                 print(line)
                 file.write(line + '\n')
 
-            jobs = { job: should_run(job) for job in [
-                    'e2e-byodb-tests',
-                    'e2e-db-backup-restore-test',
-                    'e2e-gke-upgrade-tests',
-                    'e2e-nongroovy-tests',
-                ]}
+            jobs = {job.name: job.should_run(input) for job in jobs_registry}
 
             write('jobs', json.dumps(jobs))
 
-            # dispatch_any==False is a shortcut to prevent executing the further workflow for draft PRs which don't
-            # qualify for running any actual e2e jobs.
-            # We must make sure that dispatch_any is True for non-drafts even if no actual jobs are to be dispatched
-            # (the case of UI-only PRs) because this lets GHA enter the corresponding workflows and skip the test jobs
-            # inside them "in proper way" that allows to satisfy branch protection rules.
-            dispatch_any = any(jobs.values()) or input.is_draft != 'true'
-            write('dispatch-any', str(dispatch_any).lower())
+            # Find out when we can complete the workflow early by not even waiting for GHA-built images.
+            wait_for_gha_images = input.event_name != 'pull_request' or input.is_draft != 'true' or any(jobs.values())
+            write('wait-for-gha-images', str(wait_for_gha_images).lower())
 
-  # Waits for images to be built so we don't start testing until they are available.
+            # Waiting for konflux-built images in PR request context requires the 'konflux-build' PR label.
+            wait_for_konflux_images = input.event_name != 'pull_request' or ('konflux-build' in input.pr_labels and any(jobs.values()))
+            write('wait-for-konflux-images', str(wait_for_konflux_images).lower())
+
   wait-for-images:
     needs: [ should-dispatch ]
-    if: needs.should-dispatch.outputs.dispatch-any == 'true'
-    runs-on: ubuntu-slim
+    if: needs.should-dispatch.outputs.wait-for-gha-images == 'true'
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG_DIR: "."
+      IMAGE_PREFIX: ""
+      OPERATOR_IMAGE_PREFIX: "stackrox-"
+      DEV_TAG_SUFFIX: ""
+      # MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
+      # MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
     outputs:
-      tag: ${{ steps.build-tag.outputs.tag }}
-      operator_tag: ${{ steps.build-tag.outputs.operator_tag }}
-      ## MAIN_IMAGE_TAG can be used for overriding when you want to run workflows for particular images.
-      # env:
-      #   MAIN_IMAGE_TAG: 4.12.x-350-gc76d76b0fb
+      tag: ${{ steps.image-references.outputs.tag }}
+      tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
     concurrency:
       group: wait-for-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
@@ -129,30 +157,81 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: ./.github/actions/handle-tagged-build
-    - name: Compute build tag
-      id: build-tag
-      run: |
-        tag="${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}"
-        echo "tag=$tag" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
-        echo "operator_tag=$(BUILD_TAG="${tag}" make -C operator --quiet --no-print-directory tag)" | tee -a "$GITHUB_OUTPUT" -a "$GITHUB_ENV"
+    - name: Determine image references
+      id: image-references
+      run: &image-references |
+        IMAGE_TAG="${MAIN_IMAGE_TAG:-"$(make -C "$MAIN_IMAGE_TAG_DIR" --quiet --no-print-directory tag)"}"
+        echo "IMAGE_TAG=$IMAGE_TAG" | tee -a "$GITHUB_ENV"
+        echo "tag=$IMAGE_TAG" | tee -a "$GITHUB_OUTPUT"
+
+        OPERATOR_IMAGE_TAG="$(BUILD_TAG="${IMAGE_TAG}" make -C operator --quiet --no-print-directory tag)"
+        echo "OPERATOR_IMAGE_TAG=${OPERATOR_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
+
+        # Mirrors the logic in https://github.com/stackrox/konflux-tasks/blob/main/tasks/determine-image-tag-task.yaml.
+        source_branch="${GITHUB_HEAD_REF:-}"
+        target_branch="${GITHUB_BASE_REF:-${GITHUB_REF}}"
+        TAG_SUFFIX=""
+        if [[ "${source_branch}" == *konflux-release-like* ]]; then
+          echo "Source branch contains 'konflux-release-like', suppressing suffix."
+        elif ! grep -qE '^((refs/heads/)?release-[0-9a-z]+\.[0-9a-z]+|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$' <<< "${target_branch}"; then
+          TAG_SUFFIX="${DEV_TAG_SUFFIX}"
+        fi
+        echo "TAG_SUFFIX=${TAG_SUFFIX}" | tee -a "$GITHUB_ENV"
+        echo "tag_suffix=${TAG_SUFFIX}" | tee -a "$GITHUB_OUTPUT"
+
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: |
-          rhacs-eng/central-db:${{ env.tag }}
-          rhacs-eng/collector:${{ env.tag }}
-          rhacs-eng/fact:${{ env.tag }}
-          rhacs-eng/main:${{ env.tag }}
-          rhacs-eng/roxctl:${{ env.tag }}
-          rhacs-eng/scanner-db-slim:${{ env.tag }}
-          rhacs-eng/scanner-db:${{ env.tag }}
-          rhacs-eng/scanner-slim:${{ env.tag }}
-          rhacs-eng/scanner-v4-db:${{ env.tag }}
-          rhacs-eng/scanner-v4:${{ env.tag }}
-          rhacs-eng/scanner:${{ env.tag }}
-          rhacs-eng/stackrox-operator-bundle:v${{ env.operator_tag }}
-          rhacs-eng/stackrox-operator:${{ env.operator_tag }}
+        limit: 1800 # Seconds, corresponding to 30m.
+        image: &stackrox-required-images |
+          rhacs-eng/${{ env.IMAGE_PREFIX }}central-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}collector:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}fact:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}main:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}roxctl:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-slim:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4-db:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner-v4:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.IMAGE_PREFIX }}scanner:${{ env.IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator-bundle:v${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+          rhacs-eng/${{ env.OPERATOR_IMAGE_PREFIX }}operator:${{ env.OPERATOR_IMAGE_TAG }}${{ env.TAG_SUFFIX }}
+
+  wait-for-konflux-images:
+    needs: [ should-dispatch ]
+    if: needs.should-dispatch.outputs.wait-for-konflux-images == 'true'
+    runs-on: ubuntu-latest
+    env:
+      MAIN_IMAGE_TAG_DIR: "operator"
+      IMAGE_PREFIX: "release-"
+      OPERATOR_IMAGE_PREFIX: "release-"
+      DEV_TAG_SUFFIX: "-fast"
+    outputs:
+      tag: ${{ steps.image-references.outputs.tag }}
+      tag_suffix: ${{ steps.image-references.outputs.tag_suffix }}
+    concurrency:
+      group: wait-for-konflux-images-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+        persist-credentials: false
+    - uses: ./.github/actions/handle-tagged-build
+    - name: Determine image references
+      id: image-references
+      run: *image-references
+
+    - name: Wait for Konflux images
+      uses: stackrox/actions/release/wait-for-image@9238e423c3ae1ac4eb0f254cbb98da9daae24d86 # ratchet:stackrox/actions/release/wait-for-image@v1
+      with:
+        token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+        image: *stackrox-required-images
+        limit: 14100 # Seconds, corresponding to 3h55m, which is the timeout for building the operator-index (.tekton/operator-index-build.yaml) + 5m buffer.
 
   e2e-byodb-tests:
     needs: [ wait-for-images, should-dispatch ]
@@ -165,15 +244,15 @@ jobs:
       group: e2e-byodb-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
-  e2e-db-backup-restore-test:
+  e2e-db-backup-restore-tests:
     needs: [ wait-for-images, should-dispatch ]
-    uses: ./.github/workflows/e2e-db-backup-restore-test.yaml
+    uses: ./.github/workflows/e2e-db-backup-restore-tests.yaml
     with:
       tag: ${{ needs.wait-for-images.outputs.tag }}
-      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-test }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-db-backup-restore-tests }}
     secrets: inherit
     concurrency:
-      group: e2e-db-backup-restore-test-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      group: e2e-db-backup-restore-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true
 
   e2e-gke-upgrade-tests:
@@ -196,4 +275,37 @@ jobs:
     secrets: inherit
     concurrency:
       group: e2e-nongroovy-tests-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-qa-tests-gke:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-qa-tests-gke.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke }}
+    secrets: inherit
+    concurrency:
+      group: e2e-qa-tests-gke-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-qa-tests-ocp-4-22:
+    needs: [ wait-for-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-qa-tests-ocp-4-22.yaml
+    with:
+      tag: ${{ needs.wait-for-images.outputs.tag }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-ocp-4-22 }}
+    secrets: inherit
+    concurrency:
+      group: e2e-qa-tests-ocp-4-22-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
+
+  e2e-qa-tests-gke-konflux:
+    needs: [ wait-for-konflux-images, should-dispatch ]
+    uses: ./.github/workflows/e2e-qa-tests-gke-konflux.yaml
+    with:
+      tag: ${{ needs.wait-for-konflux-images.outputs.tag }}${{ needs.wait-for-konflux-images.outputs.tag_suffix }}
+      should-run: ${{ fromJSON(needs.should-dispatch.outputs.jobs).e2e-qa-tests-gke-konflux }}
+    secrets: inherit
+    concurrency:
+      group: e2e-qa-tests-gke-konflux-${{ github.workflow }}-${{ github.head_ref || github.run_id }}
       cancel-in-progress: true

@@ -405,6 +405,193 @@ func TestResetClusterLocal(t *testing.T) {
 	}
 }
 
+// TestScanImageInternalForAdmission_FetchOpt verifies that the admission RPC
+// uses ForceRefetchMetadataOnly for tag-only requests and behaves identically
+// to ScanImageInternal for digest-based requests.
+func TestScanImageInternalForAdmission_FetchOpt(t *testing.T) {
+	name, _, err := utils.GenerateImageNameFromString("reg.invalid/some/image:latest")
+	require.NoError(t, err)
+
+	names := []*storage.ImageName{name}
+
+	tcs := map[string]struct {
+		request          *v1.ScanImageInternalRequest
+		existingImg      *storage.Image
+		existingImgV2    *storage.ImageV2
+		expectedFetchOpt enricher.FetchOption
+		expectEnrich     bool
+	}{
+		"tag-only uses ForceRefetchMetadataOnly": {
+			request: &v1.ScanImageInternalRequest{
+				Image: &storage.ContainerImage{Name: name},
+			},
+			expectedFetchOpt: enricher.ForceRefetchMetadataOnly,
+			expectEnrich:     true,
+		},
+		"digest request, image in DB, skips enricher entirely": {
+			request: &v1.ScanImageInternalRequest{
+				Image: &storage.ContainerImage{Id: "sha256:abc", Name: name},
+			},
+			existingImg: &storage.Image{
+				Id: "sha256:abc", Name: name, Names: names,
+				Scan: &storage.ImageScan{},
+			},
+			existingImgV2: &storage.ImageV2{
+				Id: utils.NewImageV2ID(name, "sha256:abc"), Digest: "sha256:abc",
+				Name: name, Scan: &storage.ImageScan{},
+			},
+			expectEnrich: false,
+		},
+		"digest request, image NOT in DB, uses UseCachesIfPossible": {
+			request: &v1.ScanImageInternalRequest{
+				Image: &storage.ContainerImage{Id: "sha256:abc", Name: name},
+			},
+			expectedFetchOpt: enricher.UseCachesIfPossible,
+			expectEnrich:     true,
+		},
+	}
+
+	for desc, tc := range tcs {
+		t.Run(desc, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+
+			var s *serviceImpl
+			if features.FlattenImageData.Enabled() {
+				imageEnricherV2Mock := enricherMocks.NewMockImageEnricherV2(ctrl)
+				if tc.expectEnrich {
+					fetchOptMatcher := gomock.Cond(func(eCtx enricher.EnrichmentContext) bool {
+						return eCtx.FetchOpt == tc.expectedFetchOpt
+					})
+					imageEnricherV2Mock.EXPECT().
+						EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
+						Return(enricher.EnrichmentResult{}, nil).Times(1)
+				}
+
+				riskManagerMock.EXPECT().
+					CalculateRiskAndUpsertImageV2(gomock.Any()).
+					Return(nil).AnyTimes()
+
+				imageV2DSMock := imageV2DSMocks.NewMockDataStore(ctrl)
+				imageV2DSMock.EXPECT().
+					GetImage(gomock.Any(), gomock.Any()).
+					Return(tc.existingImgV2, tc.existingImgV2 != nil, nil).AnyTimes()
+				imageV2DSMock.EXPECT().
+					GetImageNames(gomock.Any(), gomock.Any()).
+					Return(names, nil).AnyTimes()
+
+				connMgrMock := connMgrMocks.NewMockManager(ctrl)
+				connMgrMock.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
+				s = &serviceImpl{
+					internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+					enricherV2:            imageEnricherV2Mock,
+					datastoreV2:           imageV2DSMock,
+					riskManager:           riskManagerMock,
+					connManager:           connMgrMock,
+				}
+			} else {
+				imageEnricherMock := enricherMocks.NewMockImageEnricher(ctrl)
+				if tc.expectEnrich {
+					fetchOptMatcher := gomock.Cond(func(eCtx enricher.EnrichmentContext) bool {
+						return eCtx.FetchOpt == tc.expectedFetchOpt
+					})
+					imageEnricherMock.EXPECT().
+						EnrichImage(gomock.Any(), fetchOptMatcher, gomock.Any()).
+						Return(enricher.EnrichmentResult{}, nil).Times(1)
+				}
+
+				riskManagerMock.EXPECT().
+					CalculateRiskAndUpsertImage(gomock.Any()).
+					Return(nil).AnyTimes()
+
+				imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+				imageDSMock.EXPECT().
+					GetImage(gomock.Any(), gomock.Any()).
+					Return(tc.existingImg, tc.existingImg != nil, nil).AnyTimes()
+
+				s = &serviceImpl{
+					internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+					enricher:              imageEnricherMock,
+					datastore:             imageDSMock,
+					riskManager:           riskManagerMock,
+				}
+			}
+
+			resp, err := s.ScanImageInternalForAdmission(context.Background(), tc.request)
+			require.NoError(t, err)
+			assert.NotNil(t, resp)
+		})
+	}
+}
+
+// TestScanImageInternalForAdmission_DigestParity ensures the admission RPC
+// produces the same result as ScanImageInternal for digest-based requests.
+func TestScanImageInternalForAdmission_DigestParity(t *testing.T) {
+	name, _, err := utils.GenerateImageNameFromString("reg.invalid/some/image:latest")
+	require.NoError(t, err)
+
+	names := []*storage.ImageName{name}
+	req := &v1.ScanImageInternalRequest{
+		Image: &storage.ContainerImage{Id: "sha256:abc", Name: name},
+	}
+
+	curScan := &storage.ImageScan{ScanTime: timestamppb.New(time.Now())}
+
+	buildService := func(ctrl *gomock.Controller) *serviceImpl {
+		riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+		if features.FlattenImageData.Enabled() {
+			existingImgV2 := &storage.ImageV2{
+				Id: utils.NewImageV2ID(name, "sha256:abc"), Digest: "sha256:abc",
+				Name: name, Scan: curScan,
+			}
+			imageV2DSMock := imageV2DSMocks.NewMockDataStore(ctrl)
+			imageV2DSMock.EXPECT().
+				GetImage(gomock.Any(), gomock.Any()).
+				Return(existingImgV2, true, nil).AnyTimes()
+			imageV2DSMock.EXPECT().
+				GetImageNames(gomock.Any(), gomock.Any()).
+				Return(names, nil).AnyTimes()
+
+			connMgrMock := connMgrMocks.NewMockManager(ctrl)
+			connMgrMock.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
+			return &serviceImpl{
+				internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+				datastoreV2:           imageV2DSMock,
+				riskManager:           riskManagerMock,
+				connManager:           connMgrMock,
+			}
+		}
+		existingImg := &storage.Image{
+			Id: "sha256:abc", Name: name, Names: names, Scan: curScan,
+		}
+		imageDSMock := imageDSMocks.NewMockDataStore(ctrl)
+		imageDSMock.EXPECT().
+			GetImage(gomock.Any(), gomock.Any()).
+			Return(existingImg, true, nil).AnyTimes()
+
+		return &serviceImpl{
+			internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+			datastore:             imageDSMock,
+			riskManager:           riskManagerMock,
+		}
+	}
+
+	ctrl1 := gomock.NewController(t)
+	ctrl2 := gomock.NewController(t)
+
+	s1 := buildService(ctrl1)
+	s2 := buildService(ctrl2)
+
+	resp1, err1 := s1.ScanImageInternal(context.Background(), req)
+	resp2, err2 := s2.ScanImageInternalForAdmission(context.Background(), req)
+
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	protoassert.Equal(t, resp1.GetImage(), resp2.GetImage())
+}
+
 // TestEnrichLocalImageInternal_ImageNames ensures that image names are
 // populated from the existing image in Central DB when the image
 // requires re-enrichment. (ie: when scan has expired)

@@ -22,7 +22,7 @@ const ScannerStatus = ({ healthStatus }: ScannerStatusProps) => {
     const { Icon, fgColor } = isDelayed
         ? delayedScannerStatusStyle
         : healthStatusStyles[scannerHealthStatus];
-    const icon = <Icon className="inline h-4 w-4" />;
+    const icon = <Icon />;
 
     const healthLabelElement = (
         <HealthLabelWithDelayed
