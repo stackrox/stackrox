@@ -87,6 +87,7 @@ func (nopCloser) Write([]byte) (int, error) { return 0, nil }
 func (nopCloser) Close() error              { return nil }
 
 type mockProtocolClient struct {
+	mu          sync.Mutex
 	resultQueue []*vsockclient.GetReportResult
 	errQueue    []error
 	calls       []protocolCall
@@ -99,6 +100,8 @@ type protocolCall struct {
 }
 
 func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, ifNewerThan uint32, knownEpoch uint32) (*vsockclient.GetReportResult, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = append(m.calls, protocolCall{ifNewerThan: ifNewerThan, knownEpoch: knownEpoch})
 	idx := m.callIdx
 	m.callIdx++
@@ -112,16 +115,21 @@ func (m *mockProtocolClient) GetReport(_ context.Context, _ io.ReadWriteCloser, 
 }
 
 func (m *mockProtocolClient) reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.calls = nil
 	m.callIdx = 0
 }
 
 type mockSender struct {
+	mu   sync.Mutex
 	sent []*v4.IndexReport
 	err  error
 }
 
 func (m *mockSender) Send(_ context.Context, _ *virtualmachine.Info, report *v4.IndexReport) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.err != nil {
 		return m.err
 	}
@@ -749,7 +757,7 @@ func cachedGeneration(t *testing.T, s *VMScraper, key string) uint32 {
 func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDialer, client ProtocolClient) (*VMScraper, *testClock) {
 	clock := newTestClock()
 	interval := 5 * time.Minute
-	return &VMScraper{
+	s := &VMScraper{
 		store:                 store,
 		sender:                sender,
 		dialer:                dialer,
@@ -760,7 +768,7 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		reconcileEvery:        reconcilePeriod(interval),
 		perVMTimeout:          10 * time.Second,
 		mandatoryRefreshAfter: 4 * time.Hour,
-		concurrency:           1,
+		concurrency:           20,
 		// Half of the 16MiB default pull response-size ceiling — same
 		// derivation New() uses from env.VirtualMachinesPullMaxResponseSizeKB.
 		warnMaxBytes:   8 << 20,
@@ -769,12 +777,20 @@ func newTestScraper(store RunningVMStore, sender IndexReportSender, dialer VMDia
 		inFlight:       set.NewStringSet(),
 		now:            clock.Now,
 		randFloat64:    func() float64 { return 0 },
-	}, clock
+	}
+	setTickToDrain(s)
+	return s, clock
 }
 
-// pollOnce forces a reconcile and scrapes every due slot.
+// pollOnce forces a reconcile and scrapes due slots (subject to the per-tick start cap).
 func (s *VMScraper) pollOnce(ctx context.Context) {
 	s.tick(ctx, true)
+}
+
+// setTickToDrain sets tickInterval to the new-VM index report window so one
+// tick can start every never-scraped due VM under concurrency.
+func setTickToDrain(s *VMScraper) {
+	s.tickInterval = newVMIndexReportWindow(s.interval)
 }
 
 // --- Thread-safe mocks for concurrent tests ---

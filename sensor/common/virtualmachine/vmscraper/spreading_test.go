@@ -3,6 +3,7 @@ package vmscraper
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -20,6 +21,16 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
+
+// recordingDialer counts Dial calls so tests can assert how many scrapes a tick started.
+type recordingDialer struct {
+	calls atomic.Int32
+}
+
+func (d *recordingDialer) Dial(_ context.Context, _, _ string, _ uint32, _ bool) (io.ReadWriteCloser, error) {
+	d.calls.Add(1)
+	return nopCloser{}, nil
+}
 
 // sequencedRand returns successive values from seq, then the last value.
 func sequencedRand(seq []float64) func() float64 {
@@ -62,6 +73,7 @@ func TestVMScraper_ManyCadencedSuccessesSpanSteadyBand(t *testing.T) {
 	s.concurrency = numVMs
 	s.interval = time.Hour
 	s.spreadFraction = 2.0 / 3
+	s.tickInterval = newVMIndexReportWindow(s.interval)
 	s.reconcileEvery = reconcilePeriod(s.interval)
 	s.randFloat64 = sequencedRand([]float64{0, 0.25, 0.5, 0.75, 1})
 
@@ -192,6 +204,125 @@ func TestVMScraper_NACKPathDoesNotUseSteadyBand(t *testing.T) {
 	s.handleNACK(string(vm.ID) + ":1")
 	assert.Equal(t, initialBackoff, cachedNextAttemptAt(t, s, "ns1/vm-a").Sub(start))
 	assert.Equal(t, initialBackoff, cachedBackoff(t, s, "ns1/vm-a"))
+}
+
+func TestVMScraper_DuePileIsPacedByStartBudget(t *testing.T) {
+	const numVMs = 10
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.interval = time.Hour
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	window := newVMIndexReportWindow(s.interval)
+	want := startBudget(numVMs, s.tickInterval, window)
+	require.Equal(t, 1, want)
+	require.Greater(t, want, 0)
+	require.Less(t, want, numVMs)
+	require.LessOrEqual(t, want, s.concurrency)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load())
+
+	dialer.calls.Store(0)
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(want), dialer.calls.Load(), "leftovers stay due for later ticks")
+}
+
+// TestVMScraper_AllDueClumpDrainsWithinIndexWindow covers a 100-VM all-due
+// clump: fleet-sized budget drains it in one index window.
+func TestVMScraper_AllDueClumpDrainsWithinIndexWindow(t *testing.T) {
+	const numVMs = 100
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for _, vm := range vms {
+			s.vmState[vm.Key()] = &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now,
+			}
+		}
+		s.lastReconcile = now
+	})
+
+	window := newVMIndexReportWindow(s.interval)
+	require.Equal(t, 100*time.Second, window)
+	perTick := startBudget(numVMs, s.tickInterval, window)
+	require.Equal(t, 10, perTick, "ceil(100 × 10s / 100s) = 10")
+	ticks := (numVMs + perTick - 1) / perTick
+	require.Equal(t, 10, ticks)
+
+	for range ticks {
+		s.tick(context.Background(), false)
+	}
+	assert.Equal(t, int32(numVMs), dialer.calls.Load(),
+		"a shrinking-n budget would start only 55 of 100 in 10 ticks (10+9+…+1)")
+	assert.Empty(t, s.dueKeys(), "the clump should have left the due pile within the index window")
+}
+
+// TestVMScraper_SpreadDuePileStartsAtFleetRate covers VMs already spread by
+// nextAttemptAt: the due snapshot is smaller than the fleet, but the rate
+// must still be the fleet cap so every currently-due VM can start.
+func TestVMScraper_SpreadDuePileStartsAtFleetRate(t *testing.T) {
+	const (
+		numVMs = 100
+		nDue   = 10
+	)
+	vms := make([]*virtualmachine.Info, 0, numVMs)
+	for i := range numVMs {
+		vms = append(vms, makeVM("ns", fmt.Sprintf("vm-%d", i), uint32(100+i)))
+	}
+	dialer := &recordingDialer{}
+	s, _ := newTestScraper(&mockStore{vms: vms}, &mockSender{}, dialer, &safeProtocolClient{gen: 1})
+	s.concurrency = numVMs
+	s.tickInterval = defaultTickInterval
+	s.reconcileEvery = reconcilePeriod(s.interval)
+
+	now := s.now()
+	concurrency.WithLock(&s.mu, func() {
+		for i, vm := range vms {
+			st := &vmState{
+				vmID:          vm.ID,
+				nextAttemptAt: now.Add(time.Hour),
+			}
+			if i < nDue {
+				st.nextAttemptAt = now
+			}
+			s.vmState[vm.Key()] = st
+		}
+		s.lastReconcile = now
+	})
+	require.Len(t, s.dueKeys(), nDue)
+
+	s.tick(context.Background(), false)
+	assert.Equal(t, int32(nDue), dialer.calls.Load(),
+		"a due-pile budget would start 1 (ceil(10 × 10s / 100s)), not all 10 due")
+	assert.Empty(t, s.dueKeys())
 }
 
 func TestSpreadFractionEnvDefault(t *testing.T) {

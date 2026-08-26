@@ -267,12 +267,18 @@ func (s *VMScraper) tick(ctx context.Context, forceReconcile bool) {
 	}
 
 	due := s.dueKeys()
+	nTracked := concurrency.WithLock1(&s.mu, func() int {
+		n := len(s.vmState)
+		metrics.PullTrackedVMs.Set(float64(n))
+		return n
+	})
 	metrics.PullDueVMs.Set(float64(len(due)))
+	capN := min(s.concurrency, startBudget(nTracked, s.tickInterval, newVMIndexReportWindow(s.interval)))
+	if capN < len(due) {
+		due = due[:capN]
+	}
 	log.Debugf("VMScraper: tick: %d due VMs %v (concurrency=%d, reconcile=%v)", len(due), due, s.concurrency, reconcile)
 	metrics.PullTicksTotal.Inc()
-	concurrency.WithLock(&s.mu, func() {
-		metrics.PullTrackedVMs.Set(float64(len(s.vmState)))
-	})
 
 	// A tick launches every due VM, so this is the start count.
 	started := len(due)
