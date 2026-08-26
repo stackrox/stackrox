@@ -123,13 +123,16 @@ func (r *rescanner) scanOnce(ctx context.Context) error {
 		return fmt.Errorf("resolving mapping file path: %w", err)
 	}
 
-	log.Infof("Starting rescan (mapping hash=%s)", r.provider.Hash())
+	// Snapshot the hash before scanFn: a URL-backed provider has no busy
+	// gate, so a background fetch can replace the live mapping mid-scan.
+	mappingHash := r.provider.Hash()
+	log.Infof("Starting rescan (mapping hash=%s)", mappingHash)
 	report, err := r.scanFn(ctx, r.hostPath, path)
 	if err != nil {
 		return err
 	}
 
-	r.cache.SetReport(report, r.factsFn(r.hostPath), r.provider.Hash())
+	r.cache.SetReport(report, r.factsFn(r.hostPath), mappingHash)
 	log.Infof("Rescan complete, report updated (token=%s, packages=%d)", r.cache.Token(), len(report.GetContents().GetPackages()))
 	return nil
 }

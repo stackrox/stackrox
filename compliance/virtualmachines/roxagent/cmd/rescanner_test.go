@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"errors"
+	"net"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -12,19 +13,23 @@ import (
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/vsockframing"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 // fakeProvider is a vsockserver.MappingProvider test double for rescanner
-// tests; Hash/UpdatePath/Bytes are unused by rescanner and always zero.
+// tests; UpdatePath/Bytes are unused by rescanner and always zero.
 type fakeProvider struct {
 	ready   bool
 	path    string
 	pathErr error
+	hash    string
 }
 
 func (f *fakeProvider) Ready() bool  { return f.ready }
-func (f *fakeProvider) Hash() string { return "" }
+func (f *fakeProvider) Hash() string { return f.hash }
 func (f *fakeProvider) UpdatePath() pb.RepoCPEMappingUpdatePath {
 	return pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_UNSPECIFIED
 }
@@ -304,4 +309,43 @@ func TestRescanner_Run(t *testing.T) {
 			assert.Equal(t, 1, provider.idleCalls, "a successful scan must apply a deferred Sync itself; GetReport can be hours away")
 		})
 	})
+}
+
+// TestScanOnce_StoresHashFromBeforeTheScan covers a URL refresh that
+// replaces the live mapping while scanFn runs: SetReport must keep the
+// hash from before the scan.
+func TestScanOnce_StoresHashFromBeforeTheScan(t *testing.T) {
+	const hashAtScan = "hash-at-scan-start"
+	provider := &fakeProvider{ready: true, hash: hashAtScan}
+	r := testRescanner(provider)
+	r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
+		provider.hash = "hash-after-url-refresh"
+		return &v4.IndexReport{HashId: "ok"}, nil
+	}
+
+	require.NoError(t, r.scanOnce(t.Context()))
+	assert.Equal(t, "hash-after-url-refresh", provider.Hash(), "the live mapping may have moved on")
+	assert.Equal(t, hashAtScan, mappingHashFromCache(t, r.cache, provider))
+}
+
+func mappingHashFromCache(t *testing.T, cache *vsockserver.ReportCache, provider vsockserver.MappingProvider) string {
+	t.Helper()
+	handler := vsockserver.NewHandler(cache, "test", provider, nil)
+	clientConn, serverConn := net.Pipe()
+	go handler.HandleConn(serverConn)
+
+	req, err := proto.Marshal(&pb.VMServiceRequest{
+		Method: &pb.VMServiceRequest_GetReport{GetReport: &pb.GetReportRequest{}},
+	})
+	require.NoError(t, err)
+	require.NoError(t, vsockframing.WriteFrame(clientConn, req))
+
+	respData, err := vsockframing.ReadFrame(clientConn, 10<<20)
+	require.NoError(t, err)
+	_ = clientConn.Close()
+
+	var resp pb.VMServiceResponse
+	require.NoError(t, proto.Unmarshal(respData, &resp))
+	require.NotNil(t, resp.GetGetReport())
+	return resp.GetMeta().GetRepoCpeMappingHash()
 }
