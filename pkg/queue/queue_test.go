@@ -228,4 +228,41 @@ func TestQueueSeq(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("Seq Cancellation With Queued Items", func(t *testing.T) {
+		// This test verifies that Seq() checks waitable.Done() before every pull,
+		// not just when the queue is empty. If items are already queued and the
+		// waitable is cancelled, the iterator should exit immediately without
+		// consuming any items.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+
+			// Pre-populate queue with items
+			q.Push(1)
+			q.Push(2)
+			q.Push(3)
+
+			// Create already-cancelled context
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			// Verify context is cancelled before iteration starts
+			select {
+			case <-ctx.Done():
+				// Expected: context is already done
+			default:
+				t.Fatal("context should be cancelled before iteration")
+			}
+
+			// Attempt to iterate - should exit immediately without consuming items
+			itemsConsumed := 0
+			for range q.Seq(ctx) {
+				itemsConsumed++
+			}
+
+			// Assertions
+			assert.Equal(t, 0, itemsConsumed, "should not consume any items when cancelled")
+			assert.Equal(t, 3, q.Len(), "all items should remain in queue")
+		})
+	})
 }
