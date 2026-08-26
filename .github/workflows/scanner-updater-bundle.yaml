@@ -57,6 +57,9 @@ jobs:
     concurrency:
       group: scanner-updater-bundle-${{ matrix.stream }}
       cancel-in-progress: false
+    defaults:
+      run:
+        shell: bash
     env:
       STREAM: ${{ matrix.stream }}
       SOURCE_CONFIG: scanner/updater/ci/source-config.yaml
@@ -132,7 +135,7 @@ jobs:
     - name: Download sources
       if: steps.check-changes.outputs.changed == 'true'
       run: |
-        set -euo pipefail
+        set -euxo pipefail
 
         sc=./.github/workflows/scripts/scanner-updater-config.sh
         mkdir -p bundles
@@ -146,7 +149,7 @@ jobs:
             for attempt in 1 2 3; do
                 meta=$(gcloud storage objects describe "$object" --format=json)
                 gen=$(jq -r '.generation' <<< "$meta")
-                timestamp=$(jq -re '.metadata["refresh-completed-at"]' <<< "$meta")
+                timestamp=$(jq -re '.custom_fields["refresh-completed-at"]' <<< "$meta")
 
                 if gcloud storage cp "$object" "$dest" --if-generation-match="$gen"; then
                     touch -d "$timestamp" "$dest"

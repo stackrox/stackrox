@@ -106,16 +106,8 @@ export const centralEnvDefault = {
     kernelSupportAvailable: false,
 };
 
-type MinusCircleRotate45Props = {
-    className: string;
-};
-
-const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
-    <MinusCircleIcon className={`${className} transform rotate-45`} />
-);
-
 const styleUninitializedLegacy = {
-    Icon: MinusCircleRotate45,
+    Icon: MinusCircleIcon,
     fgColor: '',
 };
 
