@@ -113,18 +113,20 @@ func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
 			}
 
 			item, ok := q.pull()
-			if ok {
-				if !yield(item) {
+			// Keep retrying until we actually get an item or context is cancelled.
+			// This prevents lost wakeup: if we're signaled but another consumer
+			// takes the item before we pull, we must continue waiting.
+			for !ok {
+				select {
+				case <-waitable.Done():
 					return
+				case <-q.notEmptySignal.Done():
 				}
-				continue
+				item, ok = q.pull()
 			}
 
-			// Queue is empty, wait for signal
-			select {
-			case <-waitable.Done():
+			if !yield(item) {
 				return
-			case <-q.notEmptySignal.Done():
 			}
 		}
 	}

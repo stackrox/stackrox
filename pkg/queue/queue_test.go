@@ -317,4 +317,146 @@ func TestQueueSeq(t *testing.T) {
 			assert.Equal(t, 3, q.Len(), "all items should remain in queue")
 		})
 	})
+
+	t.Run("Seq Lost Wakeup With Competing Consumers", func(t *testing.T) {
+		// This test reproduces the lost wakeup bug with competing consumers.
+		// Scenario: Multiple PullBlocking consumers compete with a Seq consumer.
+		// When an item is pushed:
+		// 1. Signal fires
+		// 2. PullBlocking consumer wakes and pulls item (signal resets if queue empty)
+		// 3. Seq consumer wakes but queue is empty, should re-wait
+		// 4. Bug: Seq doesn't re-wait, it returns to top of loop and checks empty again
+		//
+		// With many iterations, we should see Seq miss items that were stolen.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			seqReceived := make(chan int, 100)
+			pullReceived := make(chan int, 100)
+			pullDone := make(chan struct{})
+
+			const numItems = 10
+
+			// Start Seq() consumer
+			go func() {
+				for item := range q.Seq(ctx) {
+					seqReceived <- item
+				}
+			}()
+
+			// Start competing PullBlocking consumer
+			go func() {
+				defer close(pullDone)
+				for {
+					item := q.PullBlocking(ctx)
+					select {
+					case <-ctx.Done():
+						return
+					default:
+						pullReceived <- item
+					}
+				}
+			}()
+
+			synctest.Wait() // Let both consumers start and block
+
+			// Push items one at a time
+			for i := 1; i <= numItems; i++ {
+				q.Push(i)
+				synctest.Wait() // Let consumers race for the item
+			}
+
+			cancel() // Stop consumers
+			synctest.Wait()
+
+			<-pullDone
+			close(seqReceived)
+			close(pullReceived)
+
+			seqItems := []int{}
+			for item := range seqReceived {
+				seqItems = append(seqItems, item)
+			}
+
+			pullItems := []int{}
+			for item := range pullReceived {
+				pullItems = append(pullItems, item)
+			}
+
+			// Both consumers should collectively receive all items
+			allItems := append(seqItems, pullItems...)
+			assert.Equal(t, numItems, len(allItems), "Total items received should equal items pushed")
+
+			// Verify all items were received exactly once
+			seen := make(map[int]bool)
+			for _, item := range allItems {
+				if seen[item] {
+					t.Fatalf("Item %d received more than once", item)
+				}
+				seen[item] = true
+			}
+
+			for i := 1; i <= numItems; i++ {
+				if !seen[i] {
+					t.Fatalf("Item %d was lost - neither consumer received it", i)
+				}
+			}
+		})
+	})
+
+	t.Run("Seq Re-waits After Empty Pull", func(t *testing.T) {
+		// This test verifies the fix for the lost wakeup bug.
+		// It ensures that when Seq() is signaled but another consumer
+		// steals the item, Seq() properly re-waits instead of looping.
+		synctest.Test(t, func(t *testing.T) {
+			q := NewQueue[int]()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			seqGotItem := make(chan int, 1)
+			seqStarted := make(chan struct{})
+
+			// Start Seq() consumer
+			go func() {
+				close(seqStarted)
+				for item := range q.Seq(ctx) {
+					seqGotItem <- item
+					return
+				}
+			}()
+
+			<-seqStarted
+			synctest.Wait() // Seq() is now waiting
+
+			// Push and immediately steal with Pull()
+			q.Push(100)
+			stolen := q.Pull()
+			assert.Equal(t, 100, stolen)
+
+			// Seq() was signaled but the item was stolen
+			// The fix ensures it re-waits properly
+			synctest.Wait()
+
+			// Verify Seq() didn't get the stolen item
+			select {
+			case item := <-seqGotItem:
+				t.Fatalf("Seq() should not have received stolen item, got: %d", item)
+			default:
+				// Expected: Seq() is waiting again
+			}
+
+			// Push another item - Seq() should get this one
+			q.Push(200)
+			synctest.Wait()
+
+			select {
+			case item := <-seqGotItem:
+				assert.Equal(t, 200, item)
+			default:
+				t.Fatal("Seq() should have received the second item")
+			}
+		})
+	})
 }
