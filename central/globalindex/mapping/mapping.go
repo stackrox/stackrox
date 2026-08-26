@@ -55,7 +55,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 
 	policiesSearchOptions := search.CombineOptionsMaps(
 		policycategory.CategorySearchOptions,
-		schema.PoliciesSchema.OptionsMap,
+		schema.PoliciesSchema()OptionsMap,
 	)
 
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
@@ -74,17 +74,17 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_NODE_COMPONENTS:         nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODE_VULNERABILITIES:    nodeToVulnerabilitySearchOptions,
 		v1.SearchCategory_NODES:                   nodeToVulnerabilitySearchOptions,
-		v1.SearchCategory_PODS:                    schema.PodsSchema.OptionsMap,
+		v1.SearchCategory_PODS:                    schema.PodsSchema()OptionsMap,
 		v1.SearchCategory_POLICIES:                policiesSearchOptions,
-		v1.SearchCategory_POLICY_CATEGORIES:       schema.PolicyCategoriesSchema.OptionsMap,
-		v1.SearchCategory_PROCESS_BASELINES:       schema.ProcessBaselinesSchema.OptionsMap,
-		v1.SearchCategory_PROCESS_INDICATORS:      schema.ProcessIndicatorsSchema.OptionsMap,
-		v1.SearchCategory_REPORT_CONFIGURATIONS:   schema.ReportConfigurationsSchema.OptionsMap,
-		v1.SearchCategory_RISKS:                   schema.RisksSchema.OptionsMap,
-		v1.SearchCategory_ROLES:                   schema.K8sRolesSchema.OptionsMap,
-		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema.OptionsMap,
-		v1.SearchCategory_SECRETS:                 schema.SecretsSchema.OptionsMap,
-		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema.OptionsMap,
+		v1.SearchCategory_POLICY_CATEGORIES:       schema.PolicyCategoriesSchema()OptionsMap,
+		v1.SearchCategory_PROCESS_BASELINES:       schema.ProcessBaselinesSchema()OptionsMap,
+		v1.SearchCategory_PROCESS_INDICATORS:      schema.ProcessIndicatorsSchema()OptionsMap,
+		v1.SearchCategory_REPORT_CONFIGURATIONS:   schema.ReportConfigurationsSchema()OptionsMap,
+		v1.SearchCategory_RISKS:                   schema.RisksSchema()OptionsMap,
+		v1.SearchCategory_ROLES:                   schema.K8sRolesSchema()OptionsMap,
+		v1.SearchCategory_ROLEBINDINGS:            schema.RoleBindingsSchema()OptionsMap,
+		v1.SearchCategory_SECRETS:                 schema.SecretsSchema()OptionsMap,
+		v1.SearchCategory_SERVICE_ACCOUNTS:        schema.ServiceAccountsSchema()OptionsMap,
 		v1.SearchCategory_SUBJECTS:                subjectSearchOptions,
 		v1.SearchCategory_VULN_REQUEST:            schema.VulnerabilityRequestsSchema().OptionsMap,
 	}
