@@ -372,8 +372,9 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 // report for the same config, sets the snapshot to WAITING, and persists it to
 // the database. Returns the report ID.
 func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage.ReportSnapshot) (string, error) {
+	reportType := snapshot.GetType()
 	if snapshot.GetVulnReportFilters() != nil && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-		hasPending, err := v.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+		hasPending, err := v.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId(), reportType)
 		if err != nil {
 			return "", err
 		}
@@ -384,7 +385,7 @@ func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage
 	}
 
 	if snapshot.GetViewBasedVulnReportFilters() != nil {
-		hasPending, err := v.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId())
+		hasPending, err := v.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId(), reportType)
 		if err != nil {
 			return "", err
 		}
@@ -402,11 +403,12 @@ func (v *Validator) PersistReportSnapshot(ctx context.Context, snapshot *storage
 	return reportID, nil
 }
 
-func (v *Validator) doesUserHavePendingReport(configID string, userID string) (bool, error) {
+func (v *Validator) doesUserHavePendingReport(configID string, userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportConfigID, configID).
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String()).
+		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
 	snapshots, err := v.snapshotDatastore.SearchReportSnapshots(allAccessCtx, query)
 	if err != nil {
@@ -420,11 +422,12 @@ func (v *Validator) doesUserHavePendingReport(configID string, userID string) (b
 	return false, nil
 }
 
-func (v *Validator) doesUserHaveViewBasedPendingReport(userID string) (bool, error) {
+func (v *Validator) doesUserHaveViewBasedPendingReport(userID string, reportType storage.ReportSnapshot_ReportType) (bool, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
 		AddExactMatches(search.UserID, userID).
+		AddExactMatches(search.ReportType, reportType.String()).
 		ProtoQuery()
 	count, err := v.snapshotDatastore.Count(allAccessCtx, query)
 	if err != nil {
