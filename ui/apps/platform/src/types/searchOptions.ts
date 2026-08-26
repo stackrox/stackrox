@@ -37,6 +37,7 @@ export const searchFieldLabels = [
     'CVE Published On',
     'CVE Fix Available Timestamp',
     'CVE Created Time',
+    'CVE Origin',
     'CVE Snoozed',
     'CVE Snooze Expiry',
     'CVSS',
