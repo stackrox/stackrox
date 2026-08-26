@@ -43,7 +43,36 @@ test_e2e() {
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
-    deploy_stackrox
+
+    # Make sure we use the roxie version pinned in ROXIE_VERSION. Under Prow the test image
+    # ships an older roxie that does not recognize a generic (non-Infra) GKE cluster: it reports
+    # "cluster type: Unknown" and defaults Central exposure to a localhost port-forward instead of
+    # the LoadBalancer. That breaks endpoints_test.go, which dials all of Central's ports at the
+    # API host. The pinned version detects GKE and exposes Central via the LoadBalancer, matching
+    # the GHA runner (which installs the pinned version explicitly).
+    ensure_roxie_on_path
+
+    roxie_config="$(mktemp)"
+    # - Use single namespace.
+    # - Pause operator reconciliation so tests can modify operator-managed
+    #   resources directly (e.g. TestConfigControllerAdditionalCA rewrites the
+    #   'additional-ca' secret) without the operator clobbering their changes.
+    # - Use CI-scaled resource requests so the deployment fits on smaller CI
+    #   clusters. Prow runs this job on e2-standard-4 nodes (with Scanner V4
+    #   on), where full-size requests leave central-db unschedulable
+    #   ("Insufficient cpu").
+    merge_yaml "$roxie_config" <<'EOF'
+central:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Background streamers are not explicitly stopped. They die when the CI
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
