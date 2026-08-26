@@ -43,7 +43,36 @@ test_e2e() {
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
-    deploy_stackrox
+
+    # Make sure we use the roxie version pinned in ROXIE_VERSION. Under Prow the test image
+    # ships an older roxie that does not recognize a generic (non-Infra) GKE cluster: it reports
+    # "cluster type: Unknown" and defaults Central exposure to a localhost port-forward instead of
+    # the LoadBalancer. That breaks endpoints_test.go, which dials all of Central's ports at the
+    # API host. The pinned version detects GKE and exposes Central via the LoadBalancer, matching
+    # the GHA runner (which installs the pinned version explicitly).
+    ensure_roxie_on_path
+
+    roxie_config="$(mktemp)"
+    # - Use single namespace.
+    # - Pause operator reconciliation so tests can modify operator-managed
+    #   resources directly (e.g. TestConfigControllerAdditionalCA rewrites the
+    #   'additional-ca' secret) without the operator clobbering their changes.
+    # - Use CI-scaled resource requests so the deployment fits on smaller CI
+    #   clusters. Prow runs this job on e2-standard-4 nodes (with Scanner V4
+    #   on), where full-size requests leave central-db unschedulable
+    #   ("Insufficient cpu").
+    merge_yaml "$roxie_config" <<'EOF'
+central:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+securedCluster:
+  namespace: stackrox
+  pauseReconciliation: true
+  resourceProfile: ci
+EOF
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Background streamers are not explicitly stopped. They die when the CI
     # runner terminates, same as the port-forward processes in setup_proxy_tests.
@@ -116,6 +145,38 @@ test_preamble() {
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
     export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/root.crt"
+}
+
+# Ensure the roxie CLI is installed and on PATH. run.sh runs under both GitHub Actions and
+# OpenShift CI (Prow); on Prow the GHA roxie/install-cli action is unavailable and the test
+# image may ship an older roxie, so we rely on the self-installing scripts/roxie.sh wrapper,
+# which downloads the version pinned in ROXIE_VERSION into bin/<os>_<arch>/roxie and put it
+# ahead of any pre-installed roxie on PATH.
+ensure_roxie_on_path() {
+    local os arch
+    case "$(uname -s)" in
+        Linux*) os="linux" ;;
+        Darwin*) os="darwin" ;;
+        *) die "Unsupported operating system: $(uname -s)" ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        arm64|aarch64) arch="arm64" ;;
+        *) die "Unsupported architecture: $(uname -m)" ;;
+    esac
+
+    # Triggers the download/install of the pinned roxie version if it is not present yet.
+    "$ROOT/scripts/roxie.sh" version
+
+    # Put ONLY roxie at the front of PATH, via a dedicated directory. We must not prepend
+    # "$ROOT/bin/${os}_${arch}" directly: it also contains roxctl, which the bats tests move out
+    # of that directory mid-run, after which bare `roxctl` would resolve to the now-missing path
+    # (instead of the stable /usr/local/bin/roxctl copy) and later phases (e.g. proxy tests) fail.
+    local roxie_bindir; roxie_bindir="$(mktemp -d)"
+    ln -sf "$ROOT/bin/${os}_${arch}/roxie" "${roxie_bindir}/roxie"
+    export PATH="${roxie_bindir}:$PATH"
+
+    check_for_roxie
 }
 
 prepare_for_endpoints_test() {
