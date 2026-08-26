@@ -16,10 +16,25 @@ import glob
 import re
 
 def extract_batch_size(dirname):
-    """Extract batch size from directory name."""
+    """
+    Extract batch size from directory name.
+
+    Supports two formats:
+    - batch-10 (fake workload): batch size 10 → 100 events/sec
+    - file-activity-100 (berserker): event rate 100 → batch size 10 (for compatibility)
+    """
+    # Try fake workload pattern first: batch-X
     match = re.search(r'batch-(\d+)', dirname)
     if match:
         return int(match.group(1))
+
+    # Try berserker pattern: file-activity-X (event rate)
+    # Convert event rate to "batch size" for compatibility: rate / 10
+    match = re.search(r'file-activity-(\d+)', dirname)
+    if match:
+        event_rate = int(match.group(1))
+        return event_rate // 10
+
     return None
 
 def read_metric_average(file_path, start_offset=60.0, end_offset=None):
@@ -197,9 +212,10 @@ def plot_scaling_comparison(base_dir, output_dir):
     END_OFFSET = 660.0    # Measure from 60s to 660s (10 minutes of stable data)
     TIME_WINDOW_DESC = "60-660s"
 
-    # Find all result directories
-    pattern = os.path.join(base_dir, "file_activity_results_*_policy_*")
-    result_dirs = glob.glob(pattern)
+    # Find all result directories (both fake workload and berserker)
+    pattern_fake = os.path.join(base_dir, "file_activity_results_*_policy_*")
+    pattern_berserker = os.path.join(base_dir, "berserker_file_activity_results_*_policy_*")
+    result_dirs = glob.glob(pattern_fake) + glob.glob(pattern_berserker)
 
     # Organize by batch size and policy
     data = {}  # {batch_size: {'without': dir, 'with': dir}}
