@@ -48,7 +48,6 @@ ci_export() {
         command -v cci-export
         echo "${BASH_ENV:-no BASH_ENV set}"
         ls -la "${BASH_ENV:-/tmp/}"
-        echo "before cci-export $env_name ? ${!env_name:+previously set} ${!env_name:0:1}.."
         echo "skipping: cci-export $env_name ${env_value:0:1}.."
         export "$env_name"="$env_value"
     else
