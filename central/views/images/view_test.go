@@ -506,8 +506,8 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 	}
 }
 
-// TestImageCVECountFiltering covers the filter added in ROX-36389 to exclude
-// zero-CVE images from the Workload CVEs Image tab.
+// TestImageCVECountFiltering verifies that "Image CVE Count > 0" excludes zero-CVE
+// images from ImageView results (see ROX-36389 for background on this field).
 func (s *ImageViewTestSuite) TestImageCVECountFiltering() {
 	ctx := sac.WithAllAccess(context.Background())
 

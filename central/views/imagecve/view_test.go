@@ -1263,8 +1263,9 @@ func standardizeImages(images ...*storage.Image) {
 	}
 }
 
-// TestImageCVECountFiltering confirms the filter added in ROX-36389 doesn't drop
-// any CVEs from the Workload CVEs CVE tab.
+// TestImageCVECountFiltering verifies that "Image CVE Count > 0" doesn't drop any
+// CVEs from ImageCVEView results when the underlying data is healthy (see ROX-36389
+// for background on this field, including a case where it isn't).
 func (s *ImageCVEViewTestSuite) TestImageCVECountFiltering() {
 	if !features.FlattenImageData.Enabled() {
 		s.T().Skip("Image CVE Count only maps to images_v2.ScanStats.CveCount when FlattenImageData is enabled")
