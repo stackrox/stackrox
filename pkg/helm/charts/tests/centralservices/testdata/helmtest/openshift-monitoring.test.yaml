@@ -20,11 +20,6 @@ tests:
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
           ]
-        .servicemonitors["central-ocp-monitor-stackrox"] | [
-            assertThat(.metadata.namespace == "openshift-monitoring"),
-            assertThat(.spec.endpoints[].port == "https"),
-            assertThat(.spec.endpoints[].path == "/metrics")
-          ]
         .services["central-ocp"] | assertThat(. != null)
 
     - name: "secure metrics endpoint is enabled"
@@ -59,6 +54,31 @@ tests:
     env.openshift: 4
   tests: *enabled-test
 
+- name: "Custom metrics"
+  set:
+    env.openshift: 4
+  tests:
+    - name: "openshift metrics disabled"
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics disabled"
+      set:
+        monitoring.openshift.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | assertThat(. == null)
+
+    - name: "custom metrics enabled"
+      set:
+        monitoring.openshift.enabled: true
+        monitoring.openshift.custom.enabled: true
+      expect: |
+        .servicemonitors["central-ocp-monitor-stackrox"] | [
+            assertThat(.metadata.namespace == "openshift-monitoring"),
+            assertThat(.spec.endpoints[].port == "https"),
+            assertThat(.spec.endpoints[].path == "/metrics")
+          ]
+
 - name: "When enabled with Scanner V4"
   set:
     monitoring.openshift.enabled: true
@@ -74,11 +94,6 @@ tests:
         .servicemonitors["central-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
-          ]
-        .servicemonitors["central-ocp-monitor-stackrox"] | [
-            assertThat(.metadata.namespace == "openshift-monitoring"),
-            assertThat(.spec.endpoints[].port == "https"),
-            assertThat(.spec.endpoints[].path == "/metrics")
           ]
         .services["central-ocp"] | assertThat(. != null)
         .rolebindings["rhacs-scanner-v4-auth-reader-stackrox"] | assertThat(. != null)
