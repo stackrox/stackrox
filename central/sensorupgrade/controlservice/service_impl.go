@@ -56,7 +56,7 @@ func (s *service) UpgradeCheckInFromUpgrader(ctx context.Context, req *central.U
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errox.InvalidArgs.CausedByf("failed to derive cluster ID: %s", err)
 	}
 
 	return s.connectionManager.ProcessCheckInFromUpgrader(ctx, clusterID, req)
@@ -70,7 +70,7 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 
 	clusterID, err := centralsensor.GetClusterID(req.GetClusterId(), clusterIDFromCert)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to derive cluster ID: %s", err)
+		return nil, errox.InvalidArgs.CausedByf("failed to derive cluster ID: %s", err)
 	}
 
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {

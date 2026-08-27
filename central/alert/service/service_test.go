@@ -105,7 +105,7 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 
 	result, err := s.service.GetAlert(fakeContext, s.fakeResourceByIDRequest)
 
-	s.EqualError(err, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
+	s.EqualError(err, errox.NotFound.Newf("alert with id '%s' does not exist", alerttest.FakeAlertID).Error())
 	s.Nil(result)
 }
 
@@ -706,7 +706,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		Query: "",
 	}, GroupBy: unknownGroupBy})
 
-	s.EqualError(err, errors.Wrapf(errox.InvalidArgs, "unknown group by: %v", unknownGroupBy).Error())
+	s.EqualError(err, errox.InvalidArgs.Newf("unknown group by: %v", unknownGroupBy).Error())
 	s.Nil(result)
 }
 

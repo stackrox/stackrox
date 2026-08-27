@@ -150,7 +150,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetImage returns an image with given sha if it exists.
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest) (*storage.Image, error) {
 	if request.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "id must be specified")
+		return nil, errox.InvalidArgs.New("id must be specified")
 	}
 
 	id := request.GetId()
@@ -166,7 +166,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "image with id %q does not exist", request.GetId())
+		return nil, errox.NotFound.Newf("image with id %q does not exist", request.GetId())
 	}
 
 	if !request.GetIncludeSnoozed() {
@@ -190,7 +190,7 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	numImages, err := s.mappingDatastore.Count(ctx, parsedQuery)
@@ -205,7 +205,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Fill in pagination.
@@ -224,7 +224,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageService_ExportImagesServer) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {
@@ -1244,7 +1244,7 @@ func (s *serviceImpl) DeleteImages(ctx context.Context, request *v1.DeleteImages
 
 	query, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
+		return nil, errox.InvalidArgs.CausedByf("error parsing query: %v", err)
 	}
 	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
 

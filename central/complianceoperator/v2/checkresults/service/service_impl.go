@@ -93,7 +93,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	countQuery := parsedQuery.CloneVT()
@@ -107,7 +107,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 // GetComplianceScanCheckResult returns the specific result by ID
 func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.ResourceByID) (*v2.ComplianceClusterCheckStatus, error) {
 	if req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "compliance check result ID is required for retrieval")
+		return nil, errox.InvalidArgs.New("compliance check result ID is required for retrieval")
 	}
 
 	scanResult, found, err := s.complianceResultsDS.GetComplianceCheckResult(ctx, req.GetId())
@@ -115,7 +115,7 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 		return nil, errors.Wrapf(err, "failed to retrieve compliance check result with id %q.", req.GetId())
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "compliance check result with id %q does not exist", req.GetId())
+		return nil, errox.NotFound.Newf("compliance check result with id %q does not exist", req.GetId())
 	}
 
 	// Check the Compliance Scan object to get the scan time.
@@ -148,16 +148,16 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	ruleNames := make([]string, 0, 1)
 	rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, scanResult.GetRuleRefId()).ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for result %q", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance rule for result %q", req.GetId())
 	}
 	if len(rules) != 1 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for result %q", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Unable to process compliance rule for result %q", req.GetId())
 	}
 	ruleNames = append(ruleNames, rules[0].GetName())
 
 	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, profiles[0].GetName())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for result %q", req.GetId())
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for result %q", req.GetId())
 	}
 
 	return storagetov2.ComplianceV2CheckResult(scanResult, lastScanTime, ruleNames[0], controls), nil
@@ -168,13 +168,13 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 // what the latest scan is.
 func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context, request *v2.ComplianceScanResultsRequest) (*v2.ListComplianceResultsResponse, error) {
 	if request.GetScanConfigName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration name is required")
+		return nil, errox.InvalidArgs.New("Scan configuration name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match
@@ -193,13 +193,13 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 
 func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *v2.ComplianceProfileResultsRequest) (*v2.ListComplianceProfileResults, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the profile name as an exact match
@@ -226,12 +226,12 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 
 	count, err := s.complianceResultsDS.CountByField(ctx, countQuery, search.ComplianceOperatorCheckName)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for query %v", request)
 	}
 
 	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for compliance scan results %v", request)
 	}
 
 	return &v2.ListComplianceProfileResults{
@@ -244,17 +244,17 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 // GetComplianceProfileCheckResult retrieves cluster status for a specific check result
 func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, request *v2.ComplianceProfileCheckRequest) (*v2.ListComplianceCheckClusterResponse, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	if request.GetCheckName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Compliance check name is required")
+		return nil, errox.InvalidArgs.New("Compliance check name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match
@@ -273,7 +273,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
 	// Lookup the scans to get the last scan time
@@ -291,10 +291,10 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		if len(ruleNames) == 0 {
 			rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 			if err != nil {
-				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+				return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance rule for query %v", parsedQuery)
 			}
 			if len(rules) != 1 {
-				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+				return nil, errox.InvalidArgs.Newf("Unable to process compliance rule for query %v", parsedQuery)
 			}
 			ruleNames = append(ruleNames, rules[0].GetName())
 		}
@@ -302,12 +302,12 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
 	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for compliance scan results %v", request)
 	}
 
 	var convertedControls []*v2.ComplianceControl
@@ -327,17 +327,17 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 // GetComplianceProfileClusterResults retrieves check results for a specific profile on a specific cluster
 func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, request *v2.ComplianceProfileClusterRequest) (*v2.ListComplianceCheckResultResponse, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 
 	if request.GetClusterId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Cluster ID is required")
+		return nil, errox.InvalidArgs.New("Cluster ID is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the scan config name as an exact match
@@ -355,7 +355,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
 	checkToRule := make(map[string]string, len(scanResults))
@@ -363,10 +363,10 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 	for _, result := range scanResults {
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+			return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance rule for query %v", parsedQuery)
 		}
 		if len(rules) != 1 {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+			return nil, errox.InvalidArgs.Newf("Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
 		ruleNames = append(ruleNames, rules[0].GetName())
@@ -374,12 +374,12 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 
 	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for compliance scan results %v", request)
 	}
 
 	resultCount, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
 	// Check the Compliance Scan object to get the scan time.
@@ -399,16 +399,16 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 
 func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, request *v2.ComplianceCheckDetailRequest) (*v2.ComplianceClusterCheckStatus, error) {
 	if request.GetProfileName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Profile name is required")
+		return nil, errox.InvalidArgs.New("Profile name is required")
 	}
 	if request.GetCheckName() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Check name is required")
+		return nil, errox.InvalidArgs.New("Check name is required")
 	}
 
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
+		return nil, errox.InvalidArgs.CausedByf("Unable to parse query %v", err)
 	}
 
 	// Add the profile and check name to the query
@@ -421,7 +421,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 	if len(scanResults) == 0 {
 		return nil, nil
@@ -435,7 +435,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 	// across all clusters.
 	rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, scanResults[0].GetRuleRefId()).ProtoQuery())
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance rule for query %v", parsedQuery)
 	}
 	// Since we are using the `RuleRefId` of the first result to find the underlying rule, there can only be 1 rule.
 	// The first result will have a specific cluster and the `RuleRefId` is built from rule_name and cluster_id so to
@@ -443,7 +443,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 	// result name and as such should match across clusters.  Later it would be good to abstract some of this to the
 	// datastore by getting distinct information.
 	if len(rules) != 1 {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to process compliance rule for query %v", parsedQuery)
 	}
 
 	scanRefQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, scanResults[0].GetScanRefId()).
@@ -459,7 +459,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 	} else {
 		controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName())
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
+			return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for compliance scan results %v", parsedQuery)
 		}
 		convertedControls = storagetov2.GetControls(rules[0].GetName(), controls)
 	}
@@ -470,7 +470,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQuery *v1.Query, countQuery *v1.Query) (*v2.ListComplianceResultsResponse, error) {
 	scanResults, err := s.complianceResultsDS.SearchComplianceCheckResults(ctx, parsedQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance scan results for query %v", parsedQuery)
 	}
 
 	checkToRule := make(map[string]string, len(scanResults))
@@ -480,10 +480,10 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 	for _, result := range scanResults {
 		rules, err := s.ruleDS.SearchRules(ctx, search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorRuleRef, result.GetRuleRefId()).ProtoQuery())
 		if err != nil {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance rule for query %v", parsedQuery)
+			return nil, errox.InvalidArgs.Newf("Unable to retrieve compliance rule for query %v", parsedQuery)
 		}
 		if len(rules) != 1 {
-			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to process compliance rule for query %v", parsedQuery)
+			return nil, errox.InvalidArgs.Newf("Unable to process compliance rule for query %v", parsedQuery)
 		}
 		checkToRule[result.GetRuleRefId()] = rules[0].GetName()
 
@@ -508,7 +508,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		if _, found := checkToControls[result.GetCheckName()]; !found {
 			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName)
 			if err != nil {
-				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
+				return nil, errox.InvalidArgs.Newf("Unable to retrieve controls for compliance scan results %v", parsedQuery)
 			}
 
 			checkToControls[result.GetCheckName()] = controls
@@ -517,7 +517,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 
 	count, err := s.complianceResultsDS.CountCheckResults(ctx, countQuery)
 	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve count of compliance scan results for query %v", parsedQuery)
+		return nil, errox.InvalidArgs.Newf("Unable to retrieve count of compliance scan results for query %v", parsedQuery)
 	}
 
 	return &v2.ListComplianceResultsResponse{
