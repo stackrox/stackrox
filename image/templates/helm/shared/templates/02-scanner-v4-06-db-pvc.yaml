@@ -23,7 +23,9 @@ metadata:
   labels:
     {{- include "srox.labels" (list . "persistentvolume" $pvName) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "persistentvolume" $pvName) | nindent 4 }}
+    {{ - $annotations := dict - }}
+    {{ - $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_storage" $annotations) - }}
+    {{- include "srox.annotations" (list . "persistentvolume" $pvName $annotations) | nindent 4 }}
 spec:
   {{- if $storageClassName }}
   storageClassName: {{ $storageClassName }}
@@ -51,7 +53,9 @@ metadata:
     {{- $labels := dict "target.pvc.stackrox.io" "scanner-v4-db" -}}
     {{- include "srox.labels" (list . "persistentvolumeclaim" "scanner-v4-db" $labels) | nindent 4 }}
   annotations:
-    {{- include "srox.annotations" (list . "persistentvolumeclaim" "scanner-v4-db") | nindent 4 }}
+    {{ - $annotations := dict - }}
+    {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_storage" $annotations) -}}
+    {{- include "srox.annotations" (list . "persistentvolumeclaim" "scanner-v4-db" $annotations) | nindent 4 }}
 spec:
   {{- if $storageClassName }}
   storageClassName: {{ $storageClassName }}
