@@ -1,6 +1,8 @@
 package node
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -16,6 +18,7 @@ type NodeCVEQueryResponse struct {
 	FixedByVersion   *string                        `db:"fixed_by"`
 	Severity         *storage.VulnerabilitySeverity `db:"severity"`
 	CVSS             *float64                       `db:"cvss"`
+	FirstOccurrence  *time.Time                     `db:"cve_created_time"`
 
 	Link string
 }
@@ -88,4 +91,11 @@ func (r *NodeCVEQueryResponse) GetCVSS() float64 {
 		return 0.0
 	}
 	return *r.CVSS
+}
+
+func (r *NodeCVEQueryResponse) GetFirstOccurrence() string {
+	if r.FirstOccurrence == nil {
+		return "Not Available"
+	}
+	return r.FirstOccurrence.Format("January 02, 2006")
 }

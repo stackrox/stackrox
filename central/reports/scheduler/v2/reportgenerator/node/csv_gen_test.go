@@ -35,6 +35,8 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 	severity := storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 	cvss := 9.8
 
+	firstOccurrence := time.Date(2021, 6, 15, 0, 0, 0, 0, time.UTC)
+
 	responses := []*NodeCVEQueryResponse{
 		{
 			Cluster:          &cluster,
@@ -46,6 +48,7 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 			FixedByVersion:   &fixedBy,
 			Severity:         &severity,
 			CVSS:             &cvss,
+			FirstOccurrence:  &firstOccurrence,
 			Link:             "https://nvd.nist.gov/vuln/detail/CVE-2021-1234",
 		},
 	}
@@ -77,7 +80,8 @@ func TestGenerateCSV_WithResponses(t *testing.T) {
 	assert.Equal(t, "1.1.2", records[1][6])
 	assert.Equal(t, "CRITICAL", records[1][7])
 	assert.Equal(t, "9.80", records[1][8])
-	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2021-1234", records[1][9])
+	assert.Equal(t, "June 15, 2021", records[1][9])
+	assert.Equal(t, "https://nvd.nist.gov/vuln/detail/CVE-2021-1234", records[1][10])
 }
 
 func TestGenerateCSV_LongConfigNameIsTruncated(t *testing.T) {
@@ -128,14 +132,15 @@ func TestGenerateCSV_NilFieldsProduceDefaults(t *testing.T) {
 	require.Len(t, records, 2)
 
 	row := records[1]
-	assert.Equal(t, "", row[0])        // Cluster
-	assert.Equal(t, "", row[1])        // Node
-	assert.Equal(t, "", row[2])        // Component
-	assert.Equal(t, "", row[3])        // ComponentVersion
-	assert.Equal(t, "", row[4])        // CVE
-	assert.Equal(t, "false", row[5])   // Fixable
-	assert.Equal(t, "", row[6])        // FixedBy
-	assert.Equal(t, "UNKNOWN", row[7]) // Severity
-	assert.Equal(t, "0.00", row[8])    // CVSS
-	assert.Equal(t, "", row[9])        // Link
+	assert.Equal(t, "", row[0])              // Cluster
+	assert.Equal(t, "", row[1])              // Node
+	assert.Equal(t, "", row[2])              // Component
+	assert.Equal(t, "", row[3])              // ComponentVersion
+	assert.Equal(t, "", row[4])              // CVE
+	assert.Equal(t, "false", row[5])         // Fixable
+	assert.Equal(t, "", row[6])              // FixedBy
+	assert.Equal(t, "UNKNOWN", row[7])       // Severity
+	assert.Equal(t, "0.00", row[8])          // CVSS
+	assert.Equal(t, "Not Available", row[9]) // First System Occurrence
+	assert.Equal(t, "", row[10])             // Link
 }

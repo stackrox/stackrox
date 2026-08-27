@@ -23,6 +23,7 @@ var csvHeader = []string{
 	"CVE Fixed In",
 	"Severity",
 	"CVSS",
+	"First System Occurrence",
 	"Reference",
 }
 
@@ -40,6 +41,7 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 			r.GetFixedByVersion(),
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+			r.GetFirstOccurrence(),
 			r.Link,
 		}
 		csvWriter.AddValue(row)
