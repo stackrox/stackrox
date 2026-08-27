@@ -76,6 +76,14 @@ type ProtocolClient interface {
 	GetReport(ctx context.Context, stream io.ReadWriteCloser, lastKnownToken string) (*vsockclient.GetReportResult, error)
 }
 
+// closeCoder is satisfied by transport errors carrying a structured close
+// code. Declared locally so VMScraper doesn't need to import a concrete
+// dialer's error type to recognize one.
+type closeCoder interface {
+	error
+	CloseCode() (code int, reason string)
+}
+
 // VMScraper polls running VMs and pulls their scan reports via VSOCK.
 type VMScraper struct {
 	store                 RunningVMStore
@@ -453,7 +461,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		next := s.scheduleAfterAttempt(key, scrapeOK)
 		log.Infof("VMScraper: scrape %q ok outcome=unchanged next=%s", key, next)
 		log.Debugf("VMScraper: unchanged report from roxagent on %q (token=%s)", key, snap.lastToken)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnchanged).Inc()
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportUnchanged).Inc()
 		return true
 	}
 
@@ -462,7 +470,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 		log.Warnf("VM report from %q: %s", key, warning)
 	}
 	if !viable {
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusInvalidReport).Inc()
+		metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeInvalidReport).Inc()
 		next := s.scheduleAfterAttempt(key, scrapeNonRetryable)
 		log.Infof("VMScraper: scrape %q failed non-retryable next=%s", key, next)
 		return false
@@ -474,7 +482,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	logAndRecordDiscoveredFacts(key, result.Meta.GetFacts())
 
 	if err := s.sender.Send(vmCtx, vm, result.IndexReport); err != nil {
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSendError).Inc()
+		metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeSendError).Inc()
 		outcome := scrapeRetryable
 		if errors.Is(err, errox.NotImplemented) {
 			logging.GetRateLimitedLogger().WarnL(sendNotImplementedLogLimiter,
@@ -504,7 +512,7 @@ func (s *VMScraper) scrapeVM(ctx context.Context, vm *virtualmachine.Info) bool 
 	log.Debugf("VMScraper: successfully pulled report for %q: token=%s, packages=%d, size=%d bytes, total=%s",
 		key, newToken, len(result.IndexReport.GetContents().GetPackages()), reportSize,
 		totalElapsed.Truncate(time.Millisecond))
-	metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusSuccess).Inc()
+	metrics.PullScrapeTotal.WithLabelValues(metrics.PullScrapeSuccess).Inc()
 	metrics.PullTotalDurationSeconds.Observe(totalElapsed.Seconds())
 	return true
 }
@@ -566,7 +574,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 	if err != nil {
 		if ctx.Err() != nil {
 			log.Warnf("VMScraper: dialing roxagent on %q timed out: %v", key, err)
-			metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
+			metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportTimeout).Inc()
 			if errors.Is(ctx.Err(), context.Canceled) {
 				// Parent cancel (Sensor stop): do not keep retrying on the short tick.
 				return nil, scrapeNonRetryable
@@ -574,7 +582,7 @@ func (s *VMScraper) dialAndGetReport(ctx context.Context, vm *virtualmachine.Inf
 			return nil, scrapeRetryable
 		}
 		log.Warnf("VMScraper: dialing roxagent on %q failed: %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusDialError).Inc()
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportDialError).Inc()
 		return nil, scrapeRetryable
 	}
 	defer func() { _ = stream.Close() }()
@@ -594,40 +602,74 @@ func (s *VMScraper) handleGetReportError(ctx context.Context, key string, err er
 	// as timeout (matching the dial path) rather than as a protocol/read error.
 	if ctx.Err() != nil {
 		log.Warnf("VMScraper: reading report from %q timed out: %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusTimeout).Inc()
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportTimeout).Inc()
 		if errors.Is(ctx.Err(), context.Canceled) {
 			return scrapeNonRetryable
 		}
 		return scrapeRetryable
 	}
+	var closeErr closeCoder
 	switch {
 	case errors.Is(err, vsockclient.ErrNotReady):
 		log.Debugf("VMScraper: roxagent on %q has not yet generated a report", key)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusNotReady).Inc()
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportNotReady).Inc()
 		return scrapeRetryable
 	case errors.Is(err, vsockclient.ErrUnknownMethod):
 		log.Warnf("VMScraper: roxagent on %q does not support the GetReport method", key)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusUnknownMethod).Inc()
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportUnknownMethod).Inc()
 		return scrapeNonRetryable
+	case errors.Is(err, vsockclient.ErrBusy):
+		log.Infof("VMScraper: roxagent on %q is busy with another request: %v", key, err)
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportBusy).Inc()
+		return scrapeRetryable
 	case errors.Is(err, vsockclient.ErrInternal):
 		log.Warnf("VMScraper: roxagent on %q reported an internal error: %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportInternalError).Inc()
+		return scrapeRetryable
+	case errors.Is(err, vsockclient.ErrMalformedRequest):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as malformed: %v", key, err)
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportMalformedRequest).Inc()
+		return scrapeNonRetryable
+	case errors.Is(err, vsockclient.ErrRequestTooLarge):
+		log.Warnf("VMScraper: roxagent on %q rejected the request as too large: %v", key, err)
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportRequestTooLarge).Inc()
+		return scrapeNonRetryable
+	case errors.Is(err, vsockclient.ErrUnknownAgentError):
+		log.Warnf("VMScraper: roxagent on %q returned an error code this Sensor version doesn't recognize (possible version mismatch): %v", key, err)
+		metrics.PullGetReportTotal.WithLabelValues(metrics.PullGetReportUnknownAgentError).Inc()
+		return scrapeRetryable
+	case isAbnormalClose(err, &closeErr):
+		// e.g. close code 1006, which is what a TLS handshake failure on the
+		// agent's side looks like from Sensor's end.
+		code, reason := closeErr.CloseCode()
+		log.Warnf("VMScraper: roxagent on %q connection closed abnormally (websocket close code %d: %s) — check roxagent's own logs on the VM for the cause",
+			key, code, reason)
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportAbnormalClose).Inc()
 		return scrapeRetryable
 	case errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF):
 		log.Debugf("VMScraper: roxagent on %q connection closed (agent may be down or restarting): %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
-		return scrapeRetryable
-	case errors.Is(err, vsockclient.ErrBusy):
-		log.Infof("VMScraper: roxagent on %q is busy with another request: %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusBusy).Inc()
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportReadError).Inc()
 		return scrapeRetryable
 	default:
-		log.Warnf("VMScraper: protocol error for %q (possible version mismatch): %v", key, err)
-		metrics.PullRequestsTotal.WithLabelValues(metrics.PullStatusReadError).Inc()
-		// ErrUnknownMethod, the only permanent sentinel, is handled above, so
-		// any error reaching here is treated as transient.
+		log.Warnf("VMScraper: unexpected transport or framing error for %q: %v", key, err)
+		metrics.PullTransportTotal.WithLabelValues(metrics.PullTransportUnexpected).Inc()
 		return scrapeRetryable
 	}
+}
+
+// closeCodeNormalClosure is the RFC 6455 status code (1000) for a graceful
+// websocket close. Declared to keep vmscraper decoupled from the transport
+// package.
+const closeCodeNormalClosure = 1000
+
+// isAbnormalClose reports a closeCoder whose close code is neither 0 nor
+// closeCodeNormalClosure (those fall through to the ordinary io.EOF branch).
+func isAbnormalClose(err error, target *closeCoder) bool {
+	if !errors.As(err, target) {
+		return false
+	}
+	code, _ := (*target).CloseCode()
+	return code != 0 && code != closeCodeNormalClosure
 }
 
 type vmStateSnapshot struct {
