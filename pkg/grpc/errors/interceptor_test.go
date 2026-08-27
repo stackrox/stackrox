@@ -326,7 +326,7 @@ func TestSanitizeErrorMessage(t *testing.T) {
 		{
 			name:     "normal wrapped error should pass through",
 			err:      errox.InvalidArgs.New("bad request"),
-			expected: "bad request: invalid arguments",
+			expected: "bad request",
 		},
 	}
 	for _, tt := range tests {

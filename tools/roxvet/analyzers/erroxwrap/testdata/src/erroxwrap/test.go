@@ -6,16 +6,16 @@ import (
 )
 
 func badWrap() error {
-	return errors.Wrap(errox.InvalidArgs, "bad wrap") // want "Use errox.InvalidArgs.New\\(\\.\\.\\.\\) to create an error with a message"
+	return errors.Wrap(errox.InvalidArgs, "bad wrap") // want "Use errox.InvalidArgs.New instead of errors.Wrap: errox.InvalidArgs.New\\(\"bad wrap\"\\)"
 }
 
 func badWrapf() error {
-	return errors.Wrapf(errox.NotFound, "bad wrap %s", "test") // want "Use errox.NotFound.Newf\\(\\.\\.\\.\\) to create an error with a formatted message"
+	return errors.Wrapf(errox.NotFound, "bad wrap %s", "test") // want "Use errox.NotFound.Newf instead of errors.Wrapf: errox.NotFound.Newf\\(\"bad wrap %s\", \"test\"\\)"
 }
 
 func badWrapMultiple() error {
-	err1 := errors.Wrap(errox.AlreadyExists, "first bad wrap") // want "Use errox.AlreadyExists.New\\(\\.\\.\\.\\) to create an error with a message"
-	err2 := errors.Wrap(errox.InvalidArgs, "second bad wrap")  // want "Use errox.InvalidArgs.New\\(\\.\\.\\.\\) to create an error with a message"
+	err1 := errors.Wrap(errox.AlreadyExists, "first bad wrap") // want "Use errox.AlreadyExists.New instead of errors.Wrap: errox.AlreadyExists.New\\(\"first bad wrap\"\\)"
+	err2 := errors.Wrap(errox.InvalidArgs, "second bad wrap")  // want "Use errox.InvalidArgs.New instead of errors.Wrap: errox.InvalidArgs.New\\(\"second bad wrap\"\\)"
 	if err1 != nil {
 		return err1
 	}
@@ -24,7 +24,7 @@ func badWrapMultiple() error {
 
 func badWrapWithError() error {
 	err := someFunction()
-	return errors.Wrapf(errox.InvalidArgs, "failed to process: %v", err) // want "Use errox.InvalidArgs.CausedByf\\(\\.\\.\\.\\) to wrap an error with a formatted message"
+	return errors.Wrapf(errox.InvalidArgs, "failed to process: %v", err) // want "Use errox.InvalidArgs.CausedByf instead of errors.Wrapf: errox.InvalidArgs.CausedByf\\(\"failed to process: %v\", err\\)"
 }
 
 // These should be fine - not flagged
