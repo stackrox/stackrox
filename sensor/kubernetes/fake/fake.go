@@ -43,10 +43,6 @@ const (
 
 	defaultNamespaceNum = 30
 
-	// Starting CID for VM population. This is used as a part of the name and its value does not matter
-	// as long as it is unique and different than 0, 1, and 2 (reserved values).
-	vmBaseVSOCKCID = uint32(1000)
-
 	// reportGeneratorSeed is the seed for deterministic package selection in VM index reports.
 	reportGeneratorSeed = int64(42)
 )
@@ -560,8 +556,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		workload := w.workload.VirtualMachineWorkload
 		for i := range workload.PoolSize {
 			w.wg.Add(1)
-			cid := vmBaseVSOCKCID + uint32(i)
-			go w.manageVirtualMachine(w.shutdownCtx, workload, cid, reportGen)
+			go w.manageVirtualMachine(w.shutdownCtx, workload, i, reportGen)
 		}
 	}
 }

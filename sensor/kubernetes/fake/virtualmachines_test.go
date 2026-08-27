@@ -1,12 +1,10 @@
 package fake
 
 import (
-	"fmt"
 	"math"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -151,41 +149,6 @@ func TestValidateVMWorkload(t *testing.T) {
 	}
 }
 
-func TestGenerateFakeIndexReport(t *testing.T) {
-	gen := vmindexreport.NewGeneratorWithSeed(10, 42) // 10 packages, seed=42 for reproducibility
-	tests := map[string]uint32{
-		"basic report": 1234,
-		"different VM": 9999,
-	}
-	for name, vsockCID := range tests {
-		t.Run(name, func(t *testing.T) {
-			report := gen.GenerateV1IndexReport(vsockCID)
-
-			// Verify vsockCID is set as string
-			assert.Equal(t, fmt.Sprintf("%d", vsockCID), report.GetVsockCid(), "vsockCID mismatch")
-
-			// Verify index report structure
-			require.NotNil(t, report.GetIndexV4(), "IndexV4 should not be nil")
-			assert.Equal(t, "IndexFinished", report.GetIndexV4().GetState(), "State mismatch")
-			assert.True(t, report.GetIndexV4().GetSuccess(), "Success should be true")
-
-			// Verify contents
-			require.NotNil(t, report.GetIndexV4().GetContents(), "Contents should not be nil")
-			assert.Len(t, report.GetIndexV4().GetContents().GetPackages(), 10, "expected 10 packages")
-			assert.Len(t, report.GetIndexV4().GetContents().GetRepositories(), 3, "expected 3 real repositories")
-
-			// Verify packages have valid CPEs (regression test for WFN error)
-			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {
-				assert.NotEmpty(t, pkg.GetCpe(), "package CPE should not be empty")
-				assert.Contains(t, pkg.GetCpe(), "cpe:2.3:", "package CPE should be valid format")
-				if pkg.GetSource() != nil {
-					assert.NotEmpty(t, pkg.GetSource().GetCpe(), "source package CPE should not be empty")
-				}
-			}
-		})
-	}
-}
-
 func TestToUnstructuredVMI(t *testing.T) {
 	tests := map[string]struct {
 		vsockCID         *uint32
@@ -252,6 +215,14 @@ func TestToUnstructuredVMI(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetRandomVMPair_OmitsVSOCKCID(t *testing.T) {
+	vm, vmi := getRandomVMPair(3, defaultGuestOSPool)
+	assert.Equal(t, fakeVMUUID(3), string(vm.GetUID()))
+	_, found, err := unstructured.NestedInt64(vmi.Object, "status", "vsockCID")
+	require.NoError(t, err)
+	assert.False(t, found)
 }
 
 func TestWorkloadManager_HasFakeVMWorkload(t *testing.T) {

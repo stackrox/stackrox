@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -112,12 +113,11 @@ func validateVMWorkload(workload VirtualMachineWorkload) (VirtualMachineWorkload
 	return workload, nil
 }
 
-func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
-	// Use deterministic UUID based on template index to match index report generation.
-	// This ensures the VM UID in informer events matches the VM ID used in index reports.
-	vmUID := types.UID(fakeVMUUID(int(vsockCID)))
-	vmName := fmt.Sprintf("%s-%d", "vm", vsockCID)
-	os := guestOSes[int(vsockCID)%len(guestOSes)]
+func getRandomVMPair(slot int, guestOSes []string) (*unstructured.Unstructured, *unstructured.Unstructured) {
+	// Deterministic UID so informer events and injected reports share the same VM ID.
+	vmUID := types.UID(fakeVMUUID(slot))
+	vmName := fmt.Sprintf("vm-%d", slot)
+	os := guestOSes[slot%len(guestOSes)]
 
 	vm := &kubeVirtV1.VirtualMachine{
 		TypeMeta: metav1.TypeMeta{
@@ -139,10 +139,8 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 		},
 	}
 
-	// VMI gets a unique UUID based on template index and iteration
-	// Format: 00000000-0000-4000-9000-{12-digit-vsockCID}
-	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", vsockCID))
-	vmiName := fmt.Sprintf("vm-%d-vmi", vsockCID)
+	vmiUID := types.UID(fmt.Sprintf("00000000-0000-4000-9000-%012d", slot))
+	vmiName := fmt.Sprintf("vm-%d-vmi", slot)
 	vmi := &kubeVirtV1.VirtualMachineInstance{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "VirtualMachineInstance",
@@ -167,8 +165,7 @@ func getRandomVMPair(vsockCID uint32, guestOSes []string) (*unstructured.Unstruc
 			},
 		},
 		Status: kubeVirtV1.VirtualMachineInstanceStatus{
-			Phase:    kubeVirtV1.Running,
-			VSOCKCID: &vsockCID,
+			Phase: kubeVirtV1.Running,
 			GuestOSInfo: kubeVirtV1.VirtualMachineInstanceGuestOSInfo{
 				Name: os,
 			},
@@ -227,7 +224,7 @@ func jsonSafeUint64(value uint64) int64 {
 func (w *WorkloadManager) manageVirtualMachine(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	vsockCID uint32,
+	slot int,
 	reportGen *vmindexreport.Generator,
 ) {
 	defer w.wg.Done()
@@ -237,8 +234,8 @@ func (w *WorkloadManager) manageVirtualMachine(
 		if ctx.Err() != nil {
 			return
 		}
-		vm, vmi := getRandomVMPair(vsockCID, defaultGuestOSPool)
-		w.runVMLifecycle(ctx, workload, vsockCID, vm, vmi, reportGen)
+		vm, vmi := getRandomVMPair(slot, defaultGuestOSPool)
+		w.runVMLifecycle(ctx, workload, vm, vmi, reportGen)
 	}
 }
 
@@ -247,7 +244,6 @@ func (w *WorkloadManager) manageVirtualMachine(
 func (w *WorkloadManager) runVMLifecycle(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
-	vsockCID uint32,
 	vm, vmi *unstructured.Unstructured,
 	reportGen *vmindexreport.Generator,
 ) {
@@ -279,7 +275,7 @@ func (w *WorkloadManager) runVMLifecycle(
 		go w.sendIndexReportsWhileAlive(
 			reportCtx,
 			reportGen,
-			vsockCID,
+			virtualmachine.VMID(vm.GetUID()),
 			workload.ReportInterval,
 			workload.InitialReportDelay,
 		)
@@ -336,7 +332,7 @@ func (w *WorkloadManager) HasFakeVMWorkload() bool {
 func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	ctx context.Context,
 	reportGen *vmindexreport.Generator,
-	vsockCID uint32,
+	vmID virtualmachine.VMID,
 	interval time.Duration,
 	initialDelay time.Duration,
 ) {
@@ -345,57 +341,56 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 		return
 	}
 
-	log.Debugf("Starting index report injection for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
+	log.Debugf("Starting index report injection for VM %s (interval=%s, initialDelay=%s)", vmID, interval, initialDelay)
 
 	reportTicker := time.NewTicker(randomizedInterval(interval, reportIntervalMaxDeviation))
 	if initialDelay > 0 {
 		firstPeriod := randomizedInterval(initialDelay, initialReportMaxDeviation)
 		reportTicker.Reset(firstPeriod)
 	} else {
-		w.sendOneIndexReport(ctx, reportGen, vsockCID)
+		w.sendOneIndexReport(ctx, reportGen, vmID)
 	}
 	defer reportTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debugf("Stopping index report injection for VM with vsockCID %d (lifecycle ended)", vsockCID)
+			log.Debugf("Stopping index report injection for VM %s (lifecycle ended)", vmID)
 			return
 		case <-reportTicker.C:
 			reportTicker.Reset(randomizedInterval(interval, reportIntervalMaxDeviation))
-			w.sendOneIndexReport(ctx, reportGen, vsockCID)
+			w.sendOneIndexReport(ctx, reportGen, vmID)
 		}
 	}
 }
 
-// sendOneIndexReport looks the VM up in the informer-backed store and injects one report.
 func (w *WorkloadManager) sendOneIndexReport(
 	ctx context.Context,
 	reportGen *vmindexreport.Generator,
-	vsockCID uint32,
+	vmID virtualmachine.VMID,
 ) {
 	if ctx.Err() != nil {
 		return
 	}
 
 	if w.vmIndexReportSender == nil {
-		log.Debugf("VM index report sender not set, skipping report for VM %d", vsockCID)
+		log.Debugf("VM index report sender not set, skipping report for VM %s", vmID)
 		return
 	}
 	if w.vmStore == nil {
-		log.Debugf("VM store not set, skipping report for VM %d", vsockCID)
+		log.Debugf("VM store not set, skipping report for VM %s", vmID)
 		return
 	}
 
-	vm := w.vmStore.GetFromCID(vsockCID)
+	vm := w.vmStore.Get(vmID)
 	if vm == nil {
-		log.Debugf("VM with vsockCID %d not found in store, skipping index report", vsockCID)
+		log.Debugf("VM %s not found in store, skipping index report", vmID)
 		return
 	}
 
 	if err := w.vmIndexReportSender.Send(ctx, vm, reportGen.GenerateV4IndexReport()); err != nil {
 		if ctx.Err() == nil {
-			log.Debugf("Failed to inject index report for VM %d: %v", vsockCID, err)
+			log.Debugf("Failed to inject index report for VM %s: %v", vmID, err)
 		}
 	}
 }
