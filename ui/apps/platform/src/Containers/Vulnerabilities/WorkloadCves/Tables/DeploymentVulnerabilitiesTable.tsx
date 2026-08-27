@@ -5,6 +5,7 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
+import useMetadata from 'hooks/useMetadata';
 import useSet from 'hooks/useSet';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -27,7 +28,7 @@ import DeploymentComponentVulnerabilitiesTable, {
 } from './DeploymentComponentVulnerabilitiesTable';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
-import { infoForEpssProbability } from './infoForTh';
+import { getInfoForCveOrigin, infoForEpssProbability } from './infoForTh';
 import { formatEpssProbabilityAsPercent } from './table.utils';
 import type { FormattedDeploymentVulnerability } from './table.utils';
 
@@ -61,6 +62,10 @@ export const defaultColumns = {
     },
     affectedComponents: {
         title: 'Affected components',
+        isShownByDefault: true,
+    },
+    origin: {
+        title: 'CVE origin',
         isShownByDefault: true,
     },
     firstDiscovered: {
@@ -120,6 +125,7 @@ function DeploymentVulnerabilitiesTable({
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const { version } = useMetadata();
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -156,6 +162,12 @@ function DeploymentVulnerabilitiesTable({
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
+                    <Th
+                        className={getVisibilityClass('origin')}
+                        info={getInfoForCveOrigin(version, 'deployment')}
+                    >
+                        CVE origin
+                    </Th>
                     <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
                     <Th className={getVisibilityClass('publishedOn')}>Published</Th>
                 </Tr>
@@ -175,6 +187,7 @@ function DeploymentVulnerabilitiesTable({
                             severity,
                             summary,
                             isFixable,
+                            origin,
                             images,
                             affectedComponentsText,
                             discoveredAtImage,
@@ -273,6 +286,12 @@ function DeploymentVulnerabilitiesTable({
                                         dataLabel="Affected components"
                                     >
                                         {affectedComponentsText}
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('origin')}
+                                        dataLabel="CVE origin"
+                                    >
+                                        {origin}
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('firstDiscovered')}
