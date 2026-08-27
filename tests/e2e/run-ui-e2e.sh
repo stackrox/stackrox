@@ -99,6 +99,16 @@ test_ui_e2e() {
     ensure_roxie_on_path
     local roxie_config; roxie_config="$(mktemp)"
     merge_yaml "$roxie_config" < "$ROOT/deploy/roxie-config.yaml"
+    # resourceProfile: ci scales resource requests down to CI size. Without it, roxie deploys
+    # with production-sized requests, which do not fit on the small CI clusters (e.g. the
+    # 3-node GKE ui-e2e cluster), leaving central-db unschedulable and Central crash-looping
+    # until the deploy timeout. This can only be set via config or the --resources flag.
+    merge_yaml "$roxie_config" <<'EOF'
+central:
+  resourceProfile: ci
+securedCluster:
+  resourceProfile: ci
+EOF
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
