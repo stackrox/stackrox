@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine/index"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"go.yaml.in/yaml/v3"
@@ -51,29 +51,29 @@ const (
 	reportGeneratorSeed = int64(42)
 )
 
-// vmReadiness encapsulates the three readiness signals needed before VM workload can start
+// vmReadiness is the gate before fake index reports may be injected.
 type vmReadiness struct {
-	handlerReady concurrency.Signal
+	senderReady  concurrency.Signal
 	storeReady   concurrency.Signal
 	centralReady concurrency.Signal
 }
 
 func newVMReadiness() *vmReadiness {
 	return &vmReadiness{
-		handlerReady: concurrency.NewSignal(),
+		senderReady:  concurrency.NewSignal(),
 		storeReady:   concurrency.NewSignal(),
 		centralReady: concurrency.NewSignal(),
 	}
 }
 
-func (r *vmReadiness) signalHandlerReady() { r.handlerReady.Signal() }
+func (r *vmReadiness) signalSenderReady()  { r.senderReady.Signal() }
 func (r *vmReadiness) signalStoreReady()   { r.storeReady.Signal() }
 func (r *vmReadiness) signalCentralReady() { r.centralReady.Signal() }
 func (r *vmReadiness) resetCentralReady()  { r.centralReady.Reset() }
 
-// Wait blocks until all three signals are ready. Returns true if all ready, false if context cancelled.
+// Wait returns false if ctx is cancelled before sender, store, and Central are ready.
 func (r *vmReadiness) Wait(ctx context.Context) bool {
-	if !concurrency.WaitInContext(&r.handlerReady, ctx) {
+	if !concurrency.WaitInContext(&r.senderReady, ctx) {
 		return false
 	}
 	if !concurrency.WaitInContext(&r.storeReady, ctx) {
@@ -160,11 +160,9 @@ type WorkloadManager struct {
 	servicesInitialized  concurrency.Signal
 	processes            signal.Pipeline
 	networkManager       manager.Manager
-	vmIndexReportHandler index.Handler
-	vmStore              *vmStore.VirtualMachineStore
 	pubSubDispatcher     common.PubSubDispatcher
-
-	// VM readiness coordinator
+	vmIndexReportSender  vmscraper.IndexReportSender
+	vmStore              *vmStore.VirtualMachineStore
 	vmPrerequisitesReady *vmReadiness
 
 	// shutdown coordination
@@ -332,18 +330,17 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 	w.servicesInitialized.Signal()
 }
 
-// SetVMIndexReportHandler sets the handler that will accept VM index reports
-func (w *WorkloadManager) SetVMIndexReportHandler(handler index.Handler) {
-	w.vmIndexReportHandler = handler
-	w.vmPrerequisitesReady.signalHandlerReady()
+// SetVMIndexReportSender sets the injector for fake VM index reports.
+func (w *WorkloadManager) SetVMIndexReportSender(sender vmscraper.IndexReportSender) {
+	w.vmIndexReportSender = sender
+	w.vmPrerequisitesReady.signalSenderReady()
 }
 
-// SetVMStore sets the VirtualMachineStore
+// SetVMStore sets the informer-backed VirtualMachine store.
+// Reports are only injected for VMs that already exist in this store.
 func (w *WorkloadManager) SetVMStore(store *vmStore.VirtualMachineStore) {
-	log.Debugf("SetVMStore called: store=%p, poolSize=%d", store, w.workload.VirtualMachineWorkload.PoolSize)
 	w.vmStore = store
 	w.vmPrerequisitesReady.signalStoreReady()
-	log.Debugf("SetVMStore completed (VMs will be populated by informer events)")
 }
 
 // SetPubSubDispatcher sets the pub/sub dispatcher for publishing synthetic file activities
@@ -351,14 +348,12 @@ func (w *WorkloadManager) SetPubSubDispatcher(dispatcher common.PubSubDispatcher
 	w.pubSubDispatcher = dispatcher
 }
 
-// Notify implements common.Notifiable to receive Sensor component event notifications
+// Notify implements common.Notifiable so report injection waits until Central is reachable.
 func (w *WorkloadManager) Notify(e common.SensorComponentEvent) {
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		log.Debugf("WorkloadManager: Central is reachable, signaling VM workload can start")
 		w.vmPrerequisitesReady.signalCentralReady()
 	case common.SensorComponentEventOfflineMode:
-		log.Debugf("WorkloadManager: Central went offline, resetting reachability signal")
 		w.vmPrerequisitesReady.resetCentralReady()
 	}
 }
@@ -547,8 +542,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	// Start VirtualMachine/VirtualMachineInstance workload if configured.
-	// This unified workload handles both informer events AND index reports.
-	// Index reports are only sent while VMs are "alive" in the lifecycle.
+	// Index reports are injected for live VMs after the store and Central are ready.
 	if w.workload.VirtualMachineWorkload.PoolSize > 0 {
 		// Initialize report generator if index reports are enabled
 		var reportGen *vmindexreport.Generator

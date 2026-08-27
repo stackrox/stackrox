@@ -244,7 +244,6 @@ func (w *WorkloadManager) manageVirtualMachine(
 
 // runVMLifecycle runs a single VM/VMI lifecycle.
 // It blocks until the lifecycle ends (timer fires) or context is cancelled.
-// If index reports are enabled (reportGen != nil), it sends index reports while the VM is alive.
 func (w *WorkloadManager) runVMLifecycle(
 	ctx context.Context,
 	workload VirtualMachineWorkload,
@@ -273,7 +272,6 @@ func (w *WorkloadManager) runVMLifecycle(
 		// Continue even if VMI creation fails
 	}
 
-	// Start index report generation if enabled (runs while VM is alive)
 	var reportCancel context.CancelFunc
 	if reportGen != nil && workload.ReportInterval > 0 {
 		var reportCtx context.Context
@@ -287,7 +285,6 @@ func (w *WorkloadManager) runVMLifecycle(
 		)
 	}
 
-	// Ensure report generation stops when this function exits
 	defer func() {
 		if reportCancel != nil {
 			reportCancel()
@@ -329,9 +326,13 @@ func (w *WorkloadManager) runVMLifecycle(
 	}
 }
 
-// sendIndexReportsWhileAlive sends index reports for a VM at the configured interval.
-// It waits for prerequisites (handler, store, central) before starting, then runs
-// until the context is cancelled (when the VM lifecycle ends).
+// HasFakeVMWorkload reports whether this manager is simulating KubeVirt VMs.
+func (w *WorkloadManager) HasFakeVMWorkload() bool {
+	return w != nil && w.workload != nil && w.workload.VirtualMachineWorkload.PoolSize > 0
+}
+
+// sendIndexReportsWhileAlive injects index reports for a VM at the configured interval.
+// It waits for sender, store, and Central before starting, then runs until the VM lifecycle ends.
 func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	ctx context.Context,
 	reportGen *vmindexreport.Generator,
@@ -339,13 +340,12 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	interval time.Duration,
 	initialDelay time.Duration,
 ) {
-	// Wait for all prerequisites before sending reports
 	if !w.vmPrerequisitesReady.Wait(ctx) {
-		log.Debugf("Prerequisites not ready to start sending fake index reports")
+		log.Debugf("Prerequisites not ready to start injecting fake index reports")
 		return
 	}
 
-	log.Debugf("Starting index report generation for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
+	log.Debugf("Starting index report injection for a VM (vsockCID=%d, interval=%s, initialDelay=%s)", vsockCID, interval, initialDelay)
 
 	reportTicker := time.NewTicker(randomizedInterval(interval, reportIntervalMaxDeviation))
 	if initialDelay > 0 {
@@ -359,7 +359,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debugf("Stopping index report generation for VM with vsockCID %d (lifecycle ended)", vsockCID)
+			log.Debugf("Stopping index report injection for VM with vsockCID %d (lifecycle ended)", vsockCID)
 			return
 		case <-reportTicker.C:
 			reportTicker.Reset(randomizedInterval(interval, reportIntervalMaxDeviation))
@@ -368,7 +368,7 @@ func (w *WorkloadManager) sendIndexReportsWhileAlive(
 	}
 }
 
-// sendOneIndexReport generates and sends a single index report for a VM.
+// sendOneIndexReport looks the VM up in the informer-backed store and injects one report.
 func (w *WorkloadManager) sendOneIndexReport(
 	ctx context.Context,
 	reportGen *vmindexreport.Generator,
@@ -378,8 +378,8 @@ func (w *WorkloadManager) sendOneIndexReport(
 		return
 	}
 
-	if w.vmIndexReportHandler == nil {
-		log.Debugf("VM index report handler not set, skipping report for VM %d", vsockCID)
+	if w.vmIndexReportSender == nil {
+		log.Debugf("VM index report sender not set, skipping report for VM %d", vsockCID)
 		return
 	}
 	if w.vmStore == nil {
@@ -393,10 +393,9 @@ func (w *WorkloadManager) sendOneIndexReport(
 		return
 	}
 
-	if err := w.vmIndexReportHandler.Send(ctx, vm, reportGen.GenerateV4IndexReport()); err != nil {
-		// Don't log errors during shutdown
+	if err := w.vmIndexReportSender.Send(ctx, vm, reportGen.GenerateV4IndexReport()); err != nil {
 		if ctx.Err() == nil {
-			log.Debugf("Failed to send index report for VM %d: %v", vsockCID, err)
+			log.Debugf("Failed to inject index report for VM %d: %v", vsockCID, err)
 		}
 	}
 }

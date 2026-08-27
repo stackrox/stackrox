@@ -6,8 +6,8 @@
 # 1. VM/VMI informer events (always generated when poolSize > 0)
 # 2. VM index reports (only generated when reportInterval > 0)
 #
-# Index reports are tied to VM lifecycle: reports are only sent while the VM is "alive".
-# You can run just the informers (for testing k8s events) or informers + reports (full flow).
+# Reports are injected for VMs that informers have already stored. They are not
+# VSOCK-pulled. You can run just the informers or informers + reports.
 #
 # Usage:
 #   ROX_VIRTUAL_MACHINES=true go run tools/local-sensor/main.go -no-mem-prof -no-cpu-prof -with-metrics -with-fakeworkload scale/workloads/virtual-machines.yaml

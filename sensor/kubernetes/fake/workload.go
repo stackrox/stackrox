@@ -91,9 +91,7 @@ type SecretWorkload struct {
 }
 
 // VirtualMachineWorkload defines the workload for VirtualMachine and VirtualMachineInstance CRDs.
-// This is the unified config for both VM/VMI informer events AND VM index reports.
-// Index reports are only generated when ReportInterval > 0, and they follow the VM lifecycle
-// (reports are sent only while the VM is "alive" in the informer simulation).
+// Index reports are generated when ReportInterval > 0, and only for VMs in the informer-backed store.
 type VirtualMachineWorkload struct {
 	// PoolSize is the number of VM/VMI templates to maintain in the pool.
 	// This controls how many unique VMs exist at any given time.
@@ -104,13 +102,13 @@ type VirtualMachineWorkload struct {
 	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
 	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
 	NumLifecycles int `yaml:"numLifecycles"`
-	// InitialReportDelay delays the first index report for each VM by a user-provided duration.
-	// A ±20% jitter is always applied to spread the initial burst; when unset, the first index
-	// report is sent immediately (no delay, no jitter) once prerequisites are ready.
+	// InitialReportDelay delays the first index report for each VM.
+	// A ±20% jitter is always applied to spread the initial burst; when unset, the first
+	// report is sent immediately once sender, store, and Central are ready.
 	InitialReportDelay time.Duration `yaml:"initialReportDelay"`
 
-	// ReportInterval is how often each VM sends an index report (0 = no reports).
-	// Index reports are only sent while the VM is alive in the informer simulation.
+	// ReportInterval is how often each live VM injects an index report (0 = no reports).
+	// Reports are only sent for VMs that already exist in the informer-backed store.
 	ReportInterval time.Duration `yaml:"reportInterval"`
 	// NumPackages is the number of fake packages to include in each index report
 	NumPackages int `yaml:"numPackages"`

@@ -253,3 +253,27 @@ func TestToUnstructuredVMI(t *testing.T) {
 		})
 	}
 }
+
+func TestWorkloadManager_HasFakeVMWorkload(t *testing.T) {
+	tests := map[string]struct {
+		mgr  *WorkloadManager
+		want bool
+	}{
+		"nil manager": {},
+		"nil workload": {
+			mgr: &WorkloadManager{},
+		},
+		"zero pool": {
+			mgr: &WorkloadManager{workload: &Workload{}},
+		},
+		"pool set": {
+			mgr:  &WorkloadManager{workload: &Workload{VirtualMachineWorkload: VirtualMachineWorkload{PoolSize: 3}}},
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.mgr.HasFakeVMWorkload())
+		})
+	}
+}

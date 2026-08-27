@@ -48,7 +48,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/common/store"
-	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vmscraper"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/vsockclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -180,32 +179,36 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, internalMessageDispatcher, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 
-	var virtualMachineHandler vmIndex.Handler
 	var vmScraper *vmscraper.VMScraper
 	var vmStats clustermetrics.VMStatsSource
 	var repo2CPE *scannerdefinitions.Repo2CPE
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
-
 		pullMaxBytes := int64(env.VirtualMachinesPullMaxResponseSizeKB.IntegerSetting()) * 1024
-		vmDial, err := vsockdialer.NewMultiDialer()
+		var dialer vmscraper.VMDialer
+		d, err := vsockdialer.NewMultiDialer()
 		if err != nil {
 			log.Errorf("VSOCK pull mode disabled: failed to construct dialer: %v", err)
 		} else {
-			vmProtoClient := vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
-			repo2CPE, err = scannerdefinitions.NewRepo2CPE(env.CentralEndpoint.Setting(), cfg.certLoader())
-			if err != nil {
-				log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
-			}
-			// A typed-nil *Repo2CPE is a non-nil Repo2CPEFetcher, so
-			// maybeSyncRepoCPEMapping would call FetchRepo2CPE on a nil receiver.
-			var repo2CPEFetcher vmscraper.Repo2CPEFetcher
-			if repo2CPE != nil {
-				repo2CPEFetcher = repo2CPE
-			}
-			vmScraper = vmscraper.New(storeProvider.VirtualMachines(), virtualMachineHandler, vmDial, vmProtoClient, repo2CPEFetcher)
-			vmStats = vmScraper
+			dialer = d
 		}
+		var vmProtoClient vmscraper.ProtocolClient = vsockclient.NewClient([]string{vsockclient.CapabilityReportV1}, int(pullMaxBytes))
+		if cfg.workloadManager != nil && cfg.workloadManager.HasFakeVMWorkload() {
+			// Fake workloads inject reports via VMScraper.Send, no need to dial over VSOCK.
+			dialer = nil
+			vmProtoClient = nil
+		}
+		repo2CPE, err = scannerdefinitions.NewRepo2CPE(env.CentralEndpoint.Setting(), cfg.certLoader())
+		if err != nil {
+			log.Errorf("Failed to create repo-to-CPE refresher: %v", err)
+		}
+		// A typed-nil *Repo2CPE is a non-nil Repo2CPEFetcher, so
+		// maybeSyncRepoCPEMapping would call FetchRepo2CPE on a nil receiver.
+		var repo2CPEFetcher vmscraper.Repo2CPEFetcher
+		if repo2CPE != nil {
+			repo2CPEFetcher = repo2CPE
+		}
+		vmScraper = vmscraper.New(storeProvider.VirtualMachines(), dialer, vmProtoClient, repo2CPEFetcher)
+		vmStats = vmScraper
 	}
 
 	components := []common.SensorComponent{
@@ -227,9 +230,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
-	}
-	if virtualMachineHandler != nil {
-		components = append(components, virtualMachineHandler)
 	}
 	if repo2CPE != nil {
 		components = append(components, repo2CPE)
@@ -305,10 +305,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetPubSubDispatcher(internalMessageDispatcher)
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
-		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
-			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
+		if features.VirtualMachines.Enabled() && vmScraper != nil && cfg.workloadManager.HasFakeVMWorkload() {
+			cfg.workloadManager.SetVMIndexReportSender(vmScraper)
 			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
-			// Register WorkloadManager as a Notifiable so it receives SensorComponentEvent notifications
 			s.AddNotifiable(cfg.workloadManager)
 		}
 	}
