@@ -44,6 +44,7 @@ var (
 			search.NewQuerySelect(search.FixedBy).Proto(),
 			search.NewQuerySelect(search.Severity).Proto(),
 			search.NewQuerySelect(search.CVSS).Proto(),
+			search.NewQuerySelect(search.CVECreatedTime).Proto(),
 		},
 		Pagination: search.NewPagination().
 			Limit(int32(env.ReportMaxRows.IntegerSetting())).
