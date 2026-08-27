@@ -206,6 +206,43 @@ func TestRescanner_Run(t *testing.T) {
 		})
 	})
 
+	t.Run("OnMappingChanged failure retries at backoff not the full interval", func(t *testing.T) {
+		synctest.Test(t, func(t *testing.T) {
+			r := testRescanner(nil)
+			var mu sync.Mutex
+			var calls int
+			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
+				return concurrency.WithLock2(&mu, func() (*v4.IndexReport, error) {
+					calls++
+					if calls == 1 {
+						return nil, errors.New("transient scan error")
+					}
+					return &v4.IndexReport{HashId: "ok"}, nil
+				})
+			}
+
+			ctx, cancel := context.WithCancel(t.Context())
+			stopped := r.runAsync(ctx)
+			defer func() {
+				cancel()
+				<-stopped
+			}()
+			synctest.Wait()
+
+			r.OnMappingChanged()
+			synctest.Wait()
+			assert.Equal(t, 1, concurrency.WithLock1(&mu, func() int { return calls }), "OnMappingChanged should trigger a scan immediately")
+
+			time.Sleep(rescanRetryBaseBackoff)
+			synctest.Wait()
+			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "a failed mapping-triggered scan should retry after the backoff")
+
+			time.Sleep(rescanRetryBaseBackoff)
+			synctest.Wait()
+			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "a successful retry should wait the full interval")
+		})
+	})
+
 	t.Run("a failed scan clears busy via idle-and-apply-pending", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
