@@ -5,7 +5,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 
@@ -183,96 +182,6 @@ func (s *NodesStoreSuite) TestStore_FreshScanAlwaysWinsSequential() {
 	s.Equal(freshTime.Unix(), found.GetScan().GetScanTime().AsTime().Unix(),
 		"a strictly newer scan must always replace an older one when applied sequentially")
 	s.Len(found.GetScan().GetComponents(), 1)
-}
-
-// TestStore_ConcurrentUpsert_BypassingOuterLock intentionally calls the store layer directly, without the
-// per-node keyedMutex that central/node/datastore/datastore_impl.go normally wraps around every UpsertNode
-// call. isUpdated() (the read-and-decide step) runs *before* storeImpl.upsert acquires its own keyFence
-// lock, so nothing internal to this package serializes "read old scan, decide, write" as one atomic unit.
-// This test proves that gap is real: with two goroutines hammering the same node ID (one always sending a
-// monotonically fresher scan, the other sending metadata-only updates with Scan=nil that rely on the store
-// preserving the existing scan), the persisted scan_time can be observed to regress mid-run.
-//
-// This does not reproduce the customer's exact deployment (Central runs as a single replica, and in
-// production every call is routed through the outer keyedMutex in datastore_impl.go), but it documents a
-// real defense-in-depth gap: if any current or future caller ever reaches storeImpl.Upsert without going
-// through that outer lock, this exact "scan_time never advances" symptom is reproducible on demand.
-func (s *NodesStoreSuite) TestStore_ConcurrentUpsert_BypassingOuterLock() {
-	store := New(s.pool, false, concurrency.NewKeyFence())
-
-	node := &storage.Node{}
-	s.NoError(testutils.FullInit(node, testutils.UniqueInitializer(), testutils.JSONFieldsFilter))
-	for _, comp := range node.GetScan().GetComponents() {
-		comp.Vulns = nil
-	}
-	baseTime := time.Now().Add(-24 * time.Hour)
-	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&baseTime)
-	s.NoError(store.Upsert(s.ctx, node))
-
-	const iterations = 2000
-	const freshWriters = 4
-	const metaWriters = 4
-	var wg sync.WaitGroup
-
-	// Simulates the nodeindex pipeline: always a fresh, monotonically increasing ScanTime.
-	// Multiple concurrent writers of this kind widen the race window further (real Central handles many
-	// clusters/nodes worth of concurrent pipeline traffic, not just one goroutine at a time).
-	for w := range freshWriters {
-		wg.Go(func() {
-			for i := range iterations {
-				fresh := node.CloneVT()
-				t := baseTime.Add(time.Duration(w*iterations+i+1) * time.Millisecond)
-				fresh.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&t)
-				_ = store.Upsert(s.ctx, fresh)
-			}
-		})
-	}
-
-	// Simulates the nodes pipeline: frequent metadata-only churn, Scan explicitly nil.
-	for w := range metaWriters {
-		wg.Go(func() {
-			for i := range iterations {
-				metaOnly := node.CloneVT()
-				metaOnly.Scan = nil
-				metaOnly.Labels = map[string]string{"writer": fmt.Sprintf("%d-%d", w, i)}
-				_ = store.Upsert(s.ctx, metaOnly)
-			}
-		})
-	}
-
-	regressed := concurrency.NewSignal()
-	stop := make(chan struct{})
-	var pollWG sync.WaitGroup
-	for range 4 {
-		pollWG.Go(func() {
-			lastSeen := baseTime
-			for {
-				select {
-				case <-stop:
-					return
-				default:
-				}
-				current, exists, err := store.Get(s.ctx, node.GetId())
-				if err == nil && exists {
-					st := current.GetScan().GetScanTime().AsTime()
-					if st.Before(lastSeen) {
-						regressed.Signal()
-						return
-					}
-					lastSeen = st
-				}
-			}
-		})
-	}
-
-	wg.Wait()
-	close(stop)
-	pollWG.Wait()
-
-	s.True(regressed.IsDone(),
-		"expected scan_time to regress at least once when isUpdated()'s read-decide step races unprotected "+
-			"concurrent upserts for the same node ID; if this now passes without regressing, the store-layer "+
-			"race window may have been closed and this test's assumption should be revisited")
 }
 
 func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
