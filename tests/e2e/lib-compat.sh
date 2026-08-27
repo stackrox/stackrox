@@ -204,6 +204,10 @@ collect_feature_flags() {
     env_with_default ROX_POLICY_CRITERIA_MODAL "true"
     env_with_default ROX_VULN_MGMT_LEGACY_SNOOZE "true"
     env_with_default ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "true"
+    env_with_default ROX_DEPRECATED_COMPLIANCE_DASHBOARD "true"
+    env_with_default ROX_UI_SECRETS_PAGE_MIGRATION "true"
+    env_with_default ROX_AI_INTEGRATIONS "true"
+    env_with_default ROX_LIGHTSPEED_RISK_SUMMARY "true"
 
     # Enabled by default in StackRox, but disabled by default for test deployments.
     env_with_default ROX_NETWORK_GRAPH_EXTERNAL_IPS "false"
