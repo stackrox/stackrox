@@ -127,7 +127,7 @@ func TestNewRescannerAndProvider_CallbackWiredAfterConstruction(t *testing.T) {
 // rescanner's own fake-clock-driven loop.
 func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
 	cachePath := withMappingCachePath(t)
-	vmRescanner, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{})
+	vmRescanner, provider, updater, _ := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{rescanInterval: time.Hour})
 	require.False(t, provider.Ready())
 	require.NotNil(t, updater, "Sensor path must produce a non-nil updater")
 
@@ -138,7 +138,6 @@ func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
 		return &v4.IndexReport{}, nil
 	}
 	vmRescanner.factsFn = func(string) map[string]string { return nil }
-	vmRescanner.interval = time.Hour
 
 	ctx, cancel := context.WithCancel(t.Context())
 	stopped := vmRescanner.runAsync(ctx)
@@ -175,6 +174,7 @@ func TestNewRescannerAndProvider_BundledPathSeedsSensor(t *testing.T) {
 
 	vmRescanner, provider, updater, urlUpdater := newRescannerAndProvider(&vsockserver.ReportCache{}, serveConfig{
 		repoCPEBundledPath: bundledPath,
+		rescanInterval:     time.Hour,
 	})
 	require.True(t, provider.Ready(), "a Sensor-managed seed file must bootstrap the provider Ready")
 	require.NotNil(t, updater)
@@ -188,7 +188,6 @@ func TestNewRescannerAndProvider_BundledPathSeedsSensor(t *testing.T) {
 		return &v4.IndexReport{}, nil
 	}
 	vmRescanner.factsFn = func(string) map[string]string { return nil }
-	vmRescanner.interval = time.Hour
 
 	ctx, cancel := context.WithCancel(t.Context())
 	stopped := vmRescanner.runAsync(ctx)

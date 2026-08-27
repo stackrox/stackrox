@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsockserver"
@@ -36,41 +37,39 @@ type rescanner struct {
 	// function; tests override it to avoid exercising the real
 	// filesystem, since discoverFacts otherwise reads real host paths
 	// (e.g. hostPath="" resolves to "/etc/pki/entitlement" et al., not a
-	// no-op). newDelay defaults to time.After (a one-shot timer); tests
-	// substitute a function returning a manually driven channel for
-	// precise control over Run's loop.
-	scanFn   func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
-	factsFn  func(hostPath string) map[string]string
-	newDelay func(d time.Duration) <-chan time.Time
+	// no-op).
+	scanFn  func(ctx context.Context, hostPath, mappingFilePath string) (*v4.IndexReport, error)
+	factsFn func(hostPath string) map[string]string
 
-	// rescanNow is signalled by OnMappingChanged so Run scans before the
-	// current interval elapses. Buffered so a change mid-scan is not lost.
-	rescanNow chan struct{}
+	// timer is the next scan deadline. OnMappingChanged Reset(0) fires it
+	// immediately; a Reset(0) during scanOnce is received on the next
+	// select because t.C is unbuffered (Go 1.23+). Nil after Run returns
+	// so a later Reset is a no-op.
+	timer atomic.Pointer[time.Timer]
 }
 
 func newRescanner(cache *vsockserver.ReportCache, hostPath string, provider vsockserver.MappingProvider, interval time.Duration) *rescanner {
-	return &rescanner{
-		cache:     cache,
-		hostPath:  hostPath,
-		provider:  provider,
-		interval:  interval,
-		scanFn:    scan,
-		factsFn:   discoverFacts,
-		newDelay:  time.After,
-		rescanNow: make(chan struct{}, 1),
+	r := &rescanner{
+		cache:    cache,
+		hostPath: hostPath,
+		provider: provider,
+		interval: interval,
+		scanFn:   scan,
+		factsFn:  discoverFacts,
 	}
+	r.timer.Store(time.NewTimer(interval))
+	return r
 }
 
 // OnMappingChanged is the updater's onChange callback: it schedules an
-// immediate scan attempt, coalescing with any already-pending request so a
-// burst of changes only triggers one extra scan.
+// immediate scan attempt.
 func (r *rescanner) OnMappingChanged() {
-	select {
-	case r.rescanNow <- struct{}{}:
-		log.Info("Mapping changed, scheduling immediate rescan")
-	default:
-		log.Debug("Mapping changed, rescan already scheduled")
+	t := r.timer.Load()
+	if t == nil {
+		return
 	}
+	t.Reset(0)
+	log.Info("Mapping changed, scheduling immediate rescan")
 }
 
 // Run rescans every r.interval, publishing each successful result to cache.
@@ -79,28 +78,30 @@ func (r *rescanner) OnMappingChanged() {
 // and r.interval itself, so a retry is never slower than just waiting for
 // the next scheduled rescan would be. Blocks until ctx is cancelled.
 func (r *rescanner) Run(ctx context.Context) {
-	defer close(r.rescanNow)
+	t := r.timer.Load()
+	defer func() {
+		r.timer.Store(nil)
+		t.Stop()
+	}()
+
 	backoff := rescanRetryBaseBackoff
-	delay := r.newDelay(r.interval)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-r.rescanNow:
-			log.Infof("Triggering rescan by CPE-to-repository mapping change")
-			if err := r.scanOnce(ctx); err != nil {
-				log.Errorf("Rescan triggered by mapping change failed: %v", err)
-			}
-		case <-delay:
+		case <-t.C:
+			// Schedule the default next scan before scanOnce so a
+			// mapping change during the scan (Reset(0)) is not
+			// overwritten by the post-scan Reset.
+			t.Reset(r.interval)
 			if err := r.scanOnce(ctx); err != nil {
 				retryIn := min(backoff, r.interval)
 				log.Errorf("Rescan failed: %v; trying again in %v", err, retryIn)
 				backoff = min(backoff*2, rescanRetryMaxBackoff)
-				delay = r.newDelay(retryIn)
+				t.Reset(retryIn)
 				continue
 			}
 			backoff = rescanRetryBaseBackoff
-			delay = r.newDelay(r.interval)
 		}
 	}
 }
@@ -139,8 +140,8 @@ func (r *rescanner) scanOnce(ctx context.Context) error {
 }
 
 // runAsync starts Run in a goroutine and returns a channel that is closed
-// when Run returns. Callers that cancel ctx should wait on stopped before
-// tearing down anything Run still observes (e.g. an injected tick channel).
+// when Run returns. Callers that cancel ctx should wait on stopped so
+// assertions do not race Run's last scanOnce.
 func (r *rescanner) runAsync(ctx context.Context) (stopped <-chan struct{}) {
 	return startRun(ctx, r.Run)
 }

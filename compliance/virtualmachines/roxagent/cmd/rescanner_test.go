@@ -72,50 +72,10 @@ func testRescanner(provider vsockserver.MappingProvider) *rescanner {
 	return r
 }
 
-// fakeTicker is a newDelay func driven manually by a test: fire triggers a
-// delay expiry, and lastReset reports the duration most recently requested via
-// newDelay, letting tests assert on scheduling decisions directly instead of
-// on elapsed time. Pair with synctest.Wait after fire to block until the
-// loop under test has processed the tick and settled back into waiting for
-// the next one.
-type fakeTicker struct {
-	tick chan time.Time
-
-	mu     sync.Mutex
-	resets []time.Duration
-}
-
-func newFakeTicker() *fakeTicker {
-	return &fakeTicker{tick: make(chan time.Time, 1)}
-}
-
-func (f *fakeTicker) close() { close(f.tick) }
-
-// newDelay has the same signature as time.After, so it's directly assignable
-// to a rescanner's newDelay field.
-func (f *fakeTicker) newDelay(d time.Duration) <-chan time.Time {
-	concurrency.WithLock(&f.mu, func() { f.resets = append(f.resets, d) })
-	return f.tick
-}
-
-func (f *fakeTicker) fire() { f.tick <- time.Time{} }
-
-func (f *fakeTicker) lastReset() time.Duration {
-	return concurrency.WithLock1(&f.mu, func() time.Duration {
-		if len(f.resets) == 0 {
-			return 0
-		}
-		return f.resets[len(f.resets)-1]
-	})
-}
-
 func TestRescanner_Run(t *testing.T) {
 	t.Run("should publish to cache on each tick", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner(nil)
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
 			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
@@ -127,19 +87,17 @@ func TestRescanner_Run(t *testing.T) {
 
 			ctx, cancel := context.WithCancel(t.Context())
 			stopped := r.runAsync(ctx)
-			// Stop Run before close(tick): a closed tick chan would make
-			// select fire continuously with zero values.
 			defer func() {
 				cancel()
 				<-stopped
 			}()
-			synctest.Wait() // Run is blocked waiting for the first tick
+			synctest.Wait()
 
-			ticker.fire()
+			time.Sleep(r.interval)
 			synctest.Wait()
 			assert.Equal(t, 1, concurrency.WithLock1(&mu, func() int { return calls }))
 
-			ticker.fire()
+			time.Sleep(r.interval)
 			synctest.Wait()
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "should rescan again on the next tick")
 		})
@@ -148,9 +106,6 @@ func TestRescanner_Run(t *testing.T) {
 	t.Run("should retry sooner than the full interval after a failed rescan", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner(nil)
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			var mu sync.Mutex
 			var calls int
 			r.scanFn = func(_ context.Context, _, _ string) (*v4.IndexReport, error) {
@@ -169,20 +124,19 @@ func TestRescanner_Run(t *testing.T) {
 				cancel()
 				<-stopped
 			}()
-			synctest.Wait() // Run is blocked waiting for the first tick
-
-			ticker.fire()
 			synctest.Wait()
 
-			assert.Equal(t, rescanRetryBaseBackoff, ticker.lastReset(),
-				"a failed rescan should be rescheduled after rescanRetryBaseBackoff, not r.interval")
+			time.Sleep(r.interval)
+			synctest.Wait()
 			assert.Equal(t, 1, concurrency.WithLock1(&mu, func() int { return calls }))
 
-			ticker.fire() // the rescheduled retry firing
+			time.Sleep(rescanRetryBaseBackoff)
 			synctest.Wait()
-
 			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "the failed rescan was never retried")
-			assert.Equal(t, r.interval, ticker.lastReset(), "a successful rescan should reschedule after the full interval, resetting backoff")
+
+			time.Sleep(rescanRetryBaseBackoff)
+			synctest.Wait()
+			assert.Equal(t, 2, concurrency.WithLock1(&mu, func() int { return calls }), "a successful rescan should wait the full interval, not keep the retry backoff")
 		})
 	})
 
@@ -199,15 +153,14 @@ func TestRescanner_Run(t *testing.T) {
 			// fails the test on deadlock automatically.
 			cancel()
 			<-stopped
+			// Updaters can still fire onChange after Run has returned.
+			r.OnMappingChanged()
 		})
 	})
 
 	t.Run("a periodic tick is a no-op when the mapping is not yet ready", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner(&fakeProvider{ready: false})
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			var calls int
 			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
 				calls++
@@ -222,7 +175,7 @@ func TestRescanner_Run(t *testing.T) {
 			}()
 			synctest.Wait()
 
-			ticker.fire()
+			time.Sleep(r.interval)
 			synctest.Wait()
 
 			assert.Zero(t, calls, "scanFn must not be called while the mapping provider isn't ready")
@@ -232,9 +185,6 @@ func TestRescanner_Run(t *testing.T) {
 	t.Run("OnMappingChanged triggers an immediate scan attempt", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			r := testRescanner(&fakeProvider{ready: true})
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			var calls int
 			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
 				calls++
@@ -247,7 +197,7 @@ func TestRescanner_Run(t *testing.T) {
 				cancel()
 				<-stopped
 			}()
-			synctest.Wait() // Run is blocked waiting for the first tick
+			synctest.Wait()
 
 			r.OnMappingChanged()
 			synctest.Wait()
@@ -260,9 +210,6 @@ func TestRescanner_Run(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
 			r := testRescanner(provider)
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
 				return nil, errors.New("scan failed")
 			}
@@ -275,7 +222,7 @@ func TestRescanner_Run(t *testing.T) {
 			}()
 			synctest.Wait()
 
-			ticker.fire()
+			time.Sleep(r.interval)
 			synctest.Wait()
 
 			assert.Equal(t, 1, provider.busyCalls)
@@ -287,9 +234,6 @@ func TestRescanner_Run(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
 			provider := &fakeGatedProvider{fakeProvider: fakeProvider{ready: true}}
 			r := testRescanner(provider)
-			ticker := newFakeTicker()
-			defer ticker.close()
-			r.newDelay = ticker.newDelay
 			r.scanFn = func(context.Context, string, string) (*v4.IndexReport, error) {
 				return &v4.IndexReport{HashId: "ok"}, nil
 			}
@@ -302,7 +246,7 @@ func TestRescanner_Run(t *testing.T) {
 			}()
 			synctest.Wait()
 
-			ticker.fire()
+			time.Sleep(r.interval)
 			synctest.Wait()
 
 			assert.Equal(t, 1, provider.busyCalls)
