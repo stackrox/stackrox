@@ -42,7 +42,7 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
 			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
 			r.GetFirstOccurrence(),
-			r.Link,
+			r.GetLink(),
 		}
 		csvWriter.AddValue(row)
 	}

@@ -99,3 +99,7 @@ func (r *NodeCVEQueryResponse) GetFirstOccurrence() string {
 	}
 	return r.FirstOccurrence.Format("January 02, 2006")
 }
+
+func (r *NodeCVEQueryResponse) GetLink() string {
+	return r.Link
+}
