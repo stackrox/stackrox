@@ -108,7 +108,7 @@ func (c serveConfig) validate() error {
 }
 
 // newRescannerAndProvider builds the rescanner and its mapping provider.
-// OnMappingChanged only touches the wake channel, so passing it to the
+// OnMappingChanged does not read provider, so passing it to the
 // provider's constructor before provider is assigned below is safe.
 func newRescannerAndProvider(cache *vsockserver.ReportCache, cfg serveConfig) (vmRescanner *rescanner, provider vsockserver.MappingProvider, updater vsockserver.MappingUpdater, urlUpdater *vsockserver.URLUpdater) {
 	vmRescanner = newRescanner(cache, cfg.hostPath, nil, cfg.rescanInterval)

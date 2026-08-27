@@ -120,8 +120,8 @@ func TestNewRescannerAndProvider_CallbackWiredAfterConstruction(t *testing.T) {
 }
 
 // TestNewRescannerAndProvider_SyncKicksFirstScan simulates a Sensor-pushed
-// mapping arriving (without any real VSOCK connection) and checks it wakes
-// the rescanner into an immediate scan attempt via the onChange wiring.
+// mapping arriving (without any real VSOCK connection) and checks it
+// triggers an immediate scan attempt via the onChange wiring.
 // Runs on the real clock (not synctest): SensorUpdater.Update's fire-and-
 // forget cache-persistence goroutine is real background I/O outside the
 // rescanner's own fake-clock-driven loop.
@@ -167,7 +167,7 @@ func TestNewRescannerAndProvider_SyncKicksFirstScan(t *testing.T) {
 
 // TestNewRescannerAndProvider_BundledPathSeedsSensor covers cmd passing
 // --repo-cpe-bundled-path through to NewSensorUpdater: a seed file is
-// enough to become Ready and wake the first scan, without a Sensor push.
+// enough to become Ready and trigger the first scan, without a Sensor push.
 func TestNewRescannerAndProvider_BundledPathSeedsSensor(t *testing.T) {
 	withMappingCachePath(t)
 	bundledPath := filepath.Join(t.TempDir(), "bundled.json")

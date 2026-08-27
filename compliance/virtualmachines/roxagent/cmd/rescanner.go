@@ -43,31 +43,30 @@ type rescanner struct {
 	factsFn  func(hostPath string) map[string]string
 	newDelay func(d time.Duration) <-chan time.Time
 
-	// wake lets OnMappingChanged nudge Run into scanning immediately
-	// instead of waiting out the rest of the current interval. Buffered
-	// so a callback that fires while Run is mid-scan is not lost.
-	wake chan struct{}
+	// rescanNow is signalled by OnMappingChanged so Run scans before the
+	// current interval elapses. Buffered so a change mid-scan is not lost.
+	rescanNow chan struct{}
 }
 
 func newRescanner(cache *vsockserver.ReportCache, hostPath string, provider vsockserver.MappingProvider, interval time.Duration) *rescanner {
 	return &rescanner{
-		cache:    cache,
-		hostPath: hostPath,
-		provider: provider,
-		interval: interval,
-		scanFn:   scan,
-		factsFn:  discoverFacts,
-		newDelay: time.After,
-		wake:     make(chan struct{}, 1),
+		cache:     cache,
+		hostPath:  hostPath,
+		provider:  provider,
+		interval:  interval,
+		scanFn:    scan,
+		factsFn:   discoverFacts,
+		newDelay:  time.After,
+		rescanNow: make(chan struct{}, 1),
 	}
 }
 
 // OnMappingChanged is the updater's onChange callback: it schedules an
-// immediate scan attempt by waking Run's loop, coalescing with any
-// already-pending wake so a burst of changes only triggers one extra scan.
+// immediate scan attempt, coalescing with any already-pending request so a
+// burst of changes only triggers one extra scan.
 func (r *rescanner) OnMappingChanged() {
 	select {
-	case r.wake <- struct{}{}:
+	case r.rescanNow <- struct{}{}:
 		log.Info("Mapping changed, scheduling immediate rescan")
 	default:
 		log.Debug("Mapping changed, rescan already scheduled")
@@ -80,13 +79,15 @@ func (r *rescanner) OnMappingChanged() {
 // and r.interval itself, so a retry is never slower than just waiting for
 // the next scheduled rescan would be. Blocks until ctx is cancelled.
 func (r *rescanner) Run(ctx context.Context) {
+	defer close(r.rescanNow)
 	backoff := rescanRetryBaseBackoff
 	delay := r.newDelay(r.interval)
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-r.wake:
+		case <-r.rescanNow:
+			log.Infof("Triggering rescan by CPE-to-repository mapping change")
 			if err := r.scanOnce(ctx); err != nil {
 				log.Errorf("Rescan triggered by mapping change failed: %v", err)
 			}
