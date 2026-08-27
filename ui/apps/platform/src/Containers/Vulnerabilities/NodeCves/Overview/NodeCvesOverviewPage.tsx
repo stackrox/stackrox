@@ -10,6 +10,7 @@ import {
 } from '@patternfly/react-core';
 import { useApolloClient } from '@apollo/client';
 
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
@@ -29,12 +30,7 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { getVersionedDocs } from 'utils/versioning';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 
-import {
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    nodeSearchFilterConfig,
-} from '../../searchFilterConfig';
+import { searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport } from '../../searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -56,13 +52,6 @@ import NodesTable, {
     sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
-
-const searchFilterConfig = [
-    clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-];
 
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
@@ -127,6 +116,12 @@ function NodeCvesOverviewPage() {
         CVE: data?.nodeCVECount ?? 0,
         Node: data?.nodeCount ?? 0,
     };
+
+    // Keep getSearchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigForNodeVulnerabilityResultsAndViewBasedReport
+    );
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
