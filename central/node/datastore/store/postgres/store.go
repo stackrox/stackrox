@@ -530,9 +530,8 @@ func (s *storeImpl) isUpdated(ctx context.Context, node *storage.Node) (bool, er
 	scanUpdated := protocompat.CompareTimestamps(oldNode.GetScan().GetScanTime(), node.GetScan().GetScanTime()) <= 0
 	if !scanUpdated {
 		// Metadata-only upserts (e.g. from the informer-driven nodes pipeline) intentionally send no scan at
-		// all, relying on this method to preserve the stored one; that's expected, frequent, fleet-wide
-		// traffic and would flood the log if warned about here. Only warn when a real, incoming scan with its
-		// own scan_time was rejected as not newer than what's stored - that's the actually anomalous case.
+		// all, relying on this method to preserve the stored one; only warn when a real, incoming scan with
+		// its own scan_time was rejected as not newer than what's stored.
 		if node.GetScan().GetScanTime() != nil {
 			log.Warnf("Rejecting incoming node scan for node %s (%s) in cluster %s (%s) as not newer than the "+
 				"stored one: stored scan_time=%s, incoming scan_time=%s. The incoming scan and its "+
