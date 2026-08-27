@@ -61,4 +61,3 @@ const (
 	// NetworkFlowsTableName holds the database table name
 	NetworkFlowsTableName = "network_flows_v2"
 )
-
