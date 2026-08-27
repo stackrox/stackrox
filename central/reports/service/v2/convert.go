@@ -56,7 +56,7 @@ func (s *serviceImpl) convertV2ReportConfigurationToProto(config *apiV2.ReportCo
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          storage.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      s.convertV2ScheduleToProto(config.GetSchedule()),
+		Schedule:      ConvertV2ScheduleToProto(config.GetSchedule()),
 		ResourceScope: s.convertV2ResourceScopeToProto(config.GetResourceScope()),
 		Creator:       creator,
 		Version:       2,
@@ -223,7 +223,8 @@ func (s *serviceImpl) convertV2NotifierConfigToProto(notifier *apiV2.NotifierCon
 }
 
 // convertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule. Does not validate v2.ReportSchedule
-func (s *serviceImpl) convertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *storage.Schedule {
+// ConvertV2ScheduleToProto converts v2.ReportSchedule to storage.Schedule
+func ConvertV2ScheduleToProto(schedule *apiV2.ReportSchedule) *storage.Schedule {
 	if schedule == nil {
 		return nil
 	}
@@ -266,7 +267,7 @@ func (s *serviceImpl) convertProtoReportConfigurationToV2(config *storage.Report
 		Name:          config.GetName(),
 		Description:   config.GetDescription(),
 		Type:          apiV2.ReportConfiguration_ReportType(config.GetType()),
-		Schedule:      s.convertProtoScheduleToV2(config.GetSchedule()),
+		Schedule:      ConvertProtoScheduleToV2(config.GetSchedule()),
 		ResourceScope: resourceScope,
 	}
 
@@ -461,8 +462,8 @@ func (s *serviceImpl) convertProtoNotifierConfigToV2(notifierConfig *storage.Not
 	}, nil
 }
 
-// convertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule. Does not validate storage.Schedule
-func (s *serviceImpl) convertProtoScheduleToV2(schedule *storage.Schedule) *apiV2.ReportSchedule {
+// ConvertProtoScheduleToV2 converts storage.Schedule to v2.ReportSchedule
+func ConvertProtoScheduleToV2(schedule *storage.Schedule) *apiV2.ReportSchedule {
 	if schedule == nil {
 		return nil
 	}
@@ -592,17 +593,30 @@ func (s *serviceImpl) convertProtoReportSnapshotstoV2(snapshots []*storage.Repor
 			ReportJobId:        snapshot.GetReportId(),
 			Name:               snapshot.GetName(),
 			Description:        snapshot.GetDescription(),
+			Type:               apiV2.ReportSnapshot_ReportType(snapshot.GetType()),
 			CollectionSnapshot: s.convertProtoReportCollectiontoV2(snapshot.GetCollection()),
 			User: &apiV2.SlimUser{
 				Id:   snapshot.GetRequester().GetId(),
 				Name: snapshot.GetRequester().GetName(),
 			},
-			Schedule: s.convertProtoScheduleToV2(snapshot.GetSchedule()),
-			Filter: &apiV2.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
-			},
+			Schedule:            ConvertProtoScheduleToV2(snapshot.GetSchedule()),
 			ResourceScope:       resourceScope,
 			IsDownloadAvailable: blobNames.Contains(common.GetReportBlobPath(snapshot.GetReportConfigurationId(), snapshot.GetReportId())),
+		}
+
+		switch snapshot.GetType() {
+		case storage.ReportSnapshot_VULNERABILITY:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
+			}
+		case storage.ReportSnapshot_NODE_VULNERABILITY:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_NodeVulnReportFilters{
+				NodeVulnReportFilters: convertProtoNodeReportFiltersToV2(snapshot.GetNodeVulnReportFilters()),
+			}
+		default:
+			snapshotv2.Filter = &apiV2.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: s.convertProtoVulnReportFiltersToV2(snapshot.GetVulnReportFilters()),
+			}
 		}
 		for _, notifier := range snapshot.GetNotifiers() {
 			converted := s.convertProtoNotifierSnapshotToV2(notifier)
@@ -620,7 +634,7 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 	blobNames := make([]string, 0)
 	for _, snap := range snapshots {
 		status := snap.GetReportStatus()
-		if status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
+		if status != nil && status.GetReportNotificationMethod() == storage.ReportStatus_DOWNLOAD {
 			if status.GetRunState() == storage.ReportStatus_GENERATED ||
 				status.GetRunState() == storage.ReportStatus_DELIVERED {
 				parentDir := snap.GetReportConfigurationId()
@@ -639,4 +653,24 @@ func (s *serviceImpl) getExistingBlobNames(snapshots []*storage.ReportSnapshot) 
 	}
 
 	return search.ResultsToIDSet(results), nil
+}
+
+// convertProtoNodeReportFiltersToV2 converts storage.NodeVulnerabilityReportFilters to apiV2.NodeVulnerabilityReportFilters
+func convertProtoNodeReportFiltersToV2(filters *storage.NodeVulnerabilityReportFilters) *apiV2.NodeVulnerabilityReportFilters {
+	if filters == nil {
+		return nil
+	}
+
+	ret := &apiV2.NodeVulnerabilityReportFilters{
+		Query: filters.GetQuery(),
+	}
+
+	switch filters.GetCvesSince().(type) {
+	case *storage.NodeVulnerabilityReportFilters_AllVuln:
+		ret.CvesSince = &apiV2.NodeVulnerabilityReportFilters_AllVuln{
+			AllVuln: filters.GetAllVuln(),
+		}
+	}
+
+	return ret
 }
