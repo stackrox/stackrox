@@ -59,7 +59,7 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotDatastore
 // ValidateReportConfiguration validates the given report configuration object
 func (v *Validator) ValidateReportConfiguration(config *apiV2.ReportConfiguration) error {
 	if config.GetName() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration name is empty")
+		return errox.InvalidArgs.New("Report configuration name is empty")
 	}
 
 	if err := v.validateSchedule(config); err != nil {
@@ -85,27 +85,27 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 	}
 	switch schedule.GetIntervalType() {
 	case apiV2.ReportSchedule_UNSET:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
+		return errox.InvalidArgs.New("report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
 	case apiV2.ReportSchedule_DAILY:
 		if schedule.GetDaysOfWeek() != nil || schedule.GetDaysOfMonth() != nil {
-			return errors.Wrap(errox.InvalidArgs, "Daily schedule must not specify days of week or days of month")
+			return errox.InvalidArgs.New("daily schedule must not specify days of week or days of month")
 		}
 	case apiV2.ReportSchedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for weekly schedule")
+			return errox.InvalidArgs.New("report configuration must specify days of week for weekly schedule")
 		}
 		for _, day := range schedule.GetDaysOfWeek().GetDays() {
 			if day < 0 || day > 6 {
-				return errors.Wrap(errox.InvalidArgs, "Invalid schedule: Days of the week can be Sunday (0) - Saturday(6)")
+				return errox.InvalidArgs.New("invalid schedule: days of the week can be Sunday (0) - Saturday(6)")
 			}
 		}
 	case apiV2.ReportSchedule_MONTHLY:
 		if schedule.GetDaysOfMonth() == nil || len(schedule.GetDaysOfMonth().GetDays()) == 0 {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of the month for monthly schedule")
+			return errox.InvalidArgs.New("report configuration must specify days of the month for monthly schedule")
 		}
 		for _, day := range schedule.GetDaysOfMonth().GetDays() {
 			if day != 1 && day != 15 {
-				return errors.Wrap(errox.InvalidArgs, "Reports can be sent out only 1st or 15th day of the month")
+				return errox.InvalidArgs.New("reports can be sent out only 1st or 15th day of the month")
 			}
 		}
 	}
@@ -116,13 +116,13 @@ func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
 	notifiers := config.GetNotifiers()
 	if len(notifiers) == 0 {
 		if config.GetSchedule() != nil {
-			return errors.Wrap(errox.InvalidArgs, "Report configurations with a schedule must specify a notifier.")
+			return errox.InvalidArgs.New("report configurations with a schedule must specify a notifier")
 		}
 		return nil
 	}
 	for _, notifier := range notifiers {
 		if notifier.GetEmailConfig() == nil {
-			return errors.Wrap(errox.InvalidArgs, "Notifier must specify an email notifier configuration")
+			return errox.InvalidArgs.New("notifier must specify an email notifier configuration")
 		}
 		if err := v.validateEmailConfig(notifier.GetEmailConfig()); err != nil {
 			return err
@@ -133,24 +133,24 @@ func (v *Validator) validateNotifiers(config *apiV2.ReportConfiguration) error {
 
 func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfiguration) error {
 	if emailConfig.GetNotifierId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid email notifier")
+		return errox.InvalidArgs.New("report configuration must specify a valid email notifier")
 	}
 	if len(emailConfig.GetMailingLists()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify at least one email recipient to send the report to")
+		return errox.InvalidArgs.New("report configuration must specify at least one email recipient to send the report to")
 	}
 	subjectMaxLen := env.ReportCustomEmailSubjectMaxLen.IntegerSetting()
 	if len(emailConfig.GetCustomSubject()) > subjectMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email subject must be fewer than %d characters", subjectMaxLen)
+		return errox.InvalidArgs.Newf("custom email subject must be fewer than %d characters", subjectMaxLen)
 	}
 	bodyMaxLen := env.ReportCustomEmailBodyMaxLen.IntegerSetting()
 	if len(emailConfig.GetCustomBody()) > bodyMaxLen {
-		return errors.Wrapf(errox.InvalidArgs, "Custom email body must be fewer than than %d characters", bodyMaxLen)
+		return errox.InvalidArgs.Newf("custom email body must be fewer than %d characters", bodyMaxLen)
 	}
 
 	errorList := errorhelpers.NewErrorList("Invalid email addresses in mailing list: ")
 	for _, addr := range emailConfig.GetMailingLists() {
 		if _, err := mail.ParseAddress(addr); err != nil {
-			errorList.AddError(errors.Wrapf(errox.InvalidArgs, "Invalid email recipient address: %s", addr))
+			errorList.AddError(errox.InvalidArgs.Newf("invalid email recipient address: %s", addr))
 		}
 	}
 	if !errorList.Empty() {
@@ -171,24 +171,54 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) error {
 	scope := config.GetResourceScope()
 	if scope == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+		return errox.InvalidArgs.New("report configuration must specify a valid resource scope")
 	}
+
+	// Nodes are cluster-level resources without namespace hierarchy
+	if config.GetType() == apiV2.ReportConfiguration_NODE_VULNERABILITY {
+		return v.validateNodeResourceScope(scope)
+	}
+
 	switch ref := scope.GetScopeReference().(type) {
 	case *apiV2.ResourceScope_CollectionScope:
 		return v.validateCollectionScope(ref.CollectionScope)
 	case *apiV2.ResourceScope_EntityScope:
 		if !features.VulnerabilityReportsEnhancedFiltering.Enabled() {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection as resource scope")
+			return errox.InvalidArgs.New("report configuration must specify a valid collection as resource scope")
 		}
 		return validateEntityScope(ref.EntityScope)
 	default:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
+		return errox.InvalidArgs.New("report configuration must specify a valid resource scope")
 	}
+}
+
+func (v *Validator) validateNodeResourceScope(scope *apiV2.ResourceScope) error {
+	entityScope, ok := scope.GetScopeReference().(*apiV2.ResourceScope_EntityScope)
+	if !ok {
+		return errox.InvalidArgs.New("node vulnerability reports must use entity scope (cluster-based scoping only)")
+	}
+
+	if entityScope.EntityScope == nil {
+		return errox.InvalidArgs.New("entity scope cannot be nil")
+	}
+
+	if err := validateEntityScope(entityScope.EntityScope); err != nil {
+		return err
+	}
+
+	// Nodes exist at cluster scope only - unlike deployments, they have no namespace association
+	for _, rule := range entityScope.EntityScope.GetRules() {
+		if rule.GetEntity() != apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER {
+			return errox.InvalidArgs.Newf("node vulnerability reports only support cluster-level scoping, got: %s", rule.GetEntity())
+		}
+	}
+
+	return nil
 }
 
 func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionReference) error {
 	if collectionRef == nil || collectionRef.GetCollectionId() == "" {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid collection ID")
+		return errox.InvalidArgs.New("report configuration must specify a valid collection ID")
 	}
 	collectionID := collectionRef.GetCollectionId()
 	// Use allAccessCtx since report creator/updater might not have permissions for workflowAdministrationSAC
@@ -211,7 +241,7 @@ func (v *Validator) validateCollectionScope(collectionRef *apiV2.CollectionRefer
 // 5. a rule has no values, or a label rule contains values that are not in `key=value` format.
 func validateEntityScope(es *apiV2.EntityScope) error {
 	if es == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
+		return errox.InvalidArgs.New("report configuration must specify a valid resource scope: either a collection scope with a valid collection ID or a non-nil entity scope")
 	}
 	type entityFieldKey struct {
 		entity apiV2.ScopeEntity
@@ -220,22 +250,22 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 	seen := set.NewSet[entityFieldKey]()
 	for _, rule := range es.GetRules() {
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_UNSET {
-			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity scope rule: %s", rule.GetEntity())
+			return errox.InvalidArgs.Newf("unexpected entity scope rule: %s", rule.GetEntity())
 		}
 		if rule.GetField() == apiV2.ScopeField_FIELD_UNSET {
-			return errors.Wrapf(errox.InvalidArgs, "Unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
+			return errox.InvalidArgs.Newf("unexpected entity in scope rule for %s with an unset field", rule.GetEntity())
 		}
 		// Cluster annotation is not indexed and therefore unsupported.
 		if rule.GetEntity() == apiV2.ScopeEntity_SCOPE_ENTITY_CLUSTER && rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION {
-			return errors.Wrap(errox.InvalidArgs, "Annotation field is not supported for cluster entity scope rules")
+			return errox.InvalidArgs.New("annotation field is not supported for cluster entity scope rules")
 		}
 		key := entityFieldKey{entity: rule.GetEntity(), field: rule.GetField()}
 		if !seen.Add(key) {
-			return errors.Wrapf(errox.InvalidArgs,
-				"One rule per (entity, field) pair in entity scope rules is expected. Duplicate (entity, field) pair found: entity=%v field=%v. ", rule.GetEntity(), rule.GetField())
+			return errox.InvalidArgs.Newf(
+				"one rule per (entity, field) pair in entity scope rules is expected; duplicate (entity, field) pair found: entity=%v field=%v", rule.GetEntity(), rule.GetField())
 		}
 		if len(rule.GetValues()) == 0 {
-			return errors.Wrapf(errox.InvalidArgs,
+			return errox.InvalidArgs.Newf(
 				"provide at least one matching value for entity=%v field=%v rule", rule.GetEntity(), rule.GetField())
 		}
 		isMapField := rule.GetField() == apiV2.ScopeField_FIELD_LABEL || rule.GetField() == apiV2.ScopeField_FIELD_ANNOTATION
@@ -244,19 +274,19 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 			if isMapField {
 				mapKey, mapValue, found := strings.Cut(valOfValue, "=")
 				if !found {
-					return errors.Wrapf(errox.InvalidArgs, "%v values must be in 'key=value' format", rule.GetField())
+					return errox.InvalidArgs.Newf("%v values must be in 'key=value' format", rule.GetField())
 				}
 				// Check the key for a Kubernetes qualified name.
 				if rv.GetMatchType() == apiV2.MatchType_EXACT {
 					if errs := k8sValidation.IsLabelKey(mapKey); len(errs) > 0 {
-						return errors.Wrapf(errox.InvalidArgs, "invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
+						return errox.InvalidArgs.Newf("invalid %v key %q: %s", rule.GetField(), mapKey, strings.Join(errs, "; "))
 					}
 				}
 				valOfValue = mapValue
 			}
 			if rv.GetMatchType() == apiV2.MatchType_REGEX {
 				if _, err := regexp.Compile(valOfValue); err != nil {
-					return errors.Wrapf(errox.InvalidArgs, "invalid regex %q: %v", valOfValue, err)
+					return errox.InvalidArgs.CausedByf("invalid regex %q: %v", valOfValue, err)
 				}
 			}
 		}
@@ -265,27 +295,64 @@ func validateEntityScope(es *apiV2.EntityScope) error {
 }
 
 func (v *Validator) validateReportFilters(config *apiV2.ReportConfiguration) error {
-	filters := config.GetVulnReportFilters()
+	switch config.GetType() {
+	case apiV2.ReportConfiguration_VULNERABILITY:
+		return v.validateImageFilters(config.GetVulnReportFilters())
+	case apiV2.ReportConfiguration_NODE_VULNERABILITY:
+		return v.validateNodeFilters(config.GetNodeVulnReportFilters())
+	default:
+		return errox.InvalidArgs.New("unsupported report type")
+	}
+}
+
+func (v *Validator) validateImageFilters(filters *apiV2.VulnerabilityReportFilters) error {
 	if filters == nil {
-		return errors.Wrap(errox.InvalidArgs, "Report configuration must include Vulnerability report filters")
+		return errox.InvalidArgs.New("report configuration must include vulnerability report filters")
 	}
 
 	if len(filters.GetImageTypes()) == 0 {
-		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters should specify which image types to scan for CVEs. "+
-			"The valid options are 'DEPLOYED' and 'WATCHED'.")
+		return errox.InvalidArgs.New("vulnerability report filters should specify which image types to scan for CVEs; " +
+			"the valid options are 'DEPLOYED' and 'WATCHED'")
 	}
 
 	if filters.GetCvesSince() == nil {
-		return errors.Wrap(errox.InvalidArgs, "Vulnerability report filters must specify how far back in time to look for CVEs. "+
-			"The valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
+		return errox.InvalidArgs.New("vulnerability report filters must specify how far back in time to look for CVEs; " +
+			"the valid options are 'sinceLastSentScheduledReport', 'allVuln', and 'startDate'")
 	}
 	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
 		if q := filters.GetQuery(); q != "" {
 			if _, err := search.ParseQuery(q); err != nil {
-				return errors.Wrapf(errox.InvalidArgs, "Invalid query in vulnerability report filters: %s", err)
+				return errox.InvalidArgs.CausedByf("invalid query in vulnerability report filters: %v", err)
 			}
 		}
 	}
+	return nil
+}
+
+func (v *Validator) validateNodeFilters(filters *apiV2.NodeVulnerabilityReportFilters) error {
+	if filters == nil {
+		return errox.InvalidArgs.New("node vulnerability report filters cannot be nil")
+	}
+
+	// TODO: Add support for since_last_sent_scheduled_report and since_start_date filters
+	// once FirstNodeOccurrence timestamp is available in the data model
+	if filters.GetCvesSince() == nil {
+		return errox.InvalidArgs.New("node vulnerability report filters must specify CVE time filter")
+	}
+
+	switch filters.GetCvesSince().(type) {
+	case *apiV2.NodeVulnerabilityReportFilters_AllVuln:
+		// Valid - this is the supported type
+	default:
+		return errox.InvalidArgs.New("only all vulnerabilities filter is currently supported for node reports (since_last_sent and since_start_date require FirstNodeOccurrence timestamp)")
+	}
+
+	if q := filters.GetQuery(); q != "" {
+		if _, err := search.ParseQuery(q); err != nil {
+			return errox.InvalidArgs.CausedByf("invalid query in node vulnerability report filters: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -305,14 +372,14 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	}
 	// Verify ResourceScope is non-nil
 	if !common.HasValidResourceScope(config.GetResourceScope()) {
-		return nil, errors.Wrapf(errox.InvalidArgs,
-			"Report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
+		return nil, errox.InvalidArgs.Newf(
+			"report configuration '%s' has an empty resource scope (no collection ID or entity scope)",
 			configID)
 	}
 
 	if notificationMethod == storage.ReportStatus_EMAIL && len(config.GetNotifiers()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs,
-			"Email request sent for a report configuration that does not have any email notifiers configured")
+		return nil, errox.InvalidArgs.New(
+			"email request sent for a report configuration that does not have any email notifiers configured")
 	}
 
 	var collection *storage.ResourceCollection
@@ -454,29 +521,9 @@ func generateReportSnapshot(
 	requestType storage.ReportStatus_RunMethod,
 	requesterID authn.Identity,
 ) *storage.ReportSnapshot {
-	snapshot := &storage.ReportSnapshot{
-		ReportConfigurationId: config.GetId(),
-		Name:                  config.GetName(),
-		Description:           config.GetDescription(),
-		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Collection:            collectionSnapshot(collection),
-		Schedule:              config.GetSchedule(),
-		ReportStatus: &storage.ReportStatus{
-			RunState:                 storage.ReportStatus_WAITING,
-			ReportRequestType:        requestType,
-			ReportNotificationMethod: notificationMethod,
-		},
-	}
-
-	if features.VulnerabilityReportsEnhancedFiltering.Enabled() {
-		snapshot.ResourceScope = config.GetResourceScope().CloneVT()
-	}
-
-	reportFilters := config.GetVulnReportFilters().CloneVT()
 	var requester *storage.SlimUser
 	switch requestType {
 	case storage.ReportStatus_ON_DEMAND:
-		reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
 		requester = &storage.SlimUser{
 			Id:   requesterID.UID(),
 			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
@@ -484,9 +531,57 @@ func generateReportSnapshot(
 	case storage.ReportStatus_SCHEDULED:
 		requester = config.GetCreator()
 	}
-	snapshot.Requester = requester
-	snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
-		VulnReportFilters: reportFilters,
+
+	var snapshotType storage.ReportSnapshot_ReportType
+	switch config.GetType() {
+	case storage.ReportConfiguration_VULNERABILITY:
+		snapshotType = storage.ReportSnapshot_VULNERABILITY
+	case storage.ReportConfiguration_NODE_VULNERABILITY:
+		snapshotType = storage.ReportSnapshot_NODE_VULNERABILITY
+	}
+
+	snapshot := &storage.ReportSnapshot{
+		ReportConfigurationId: config.GetId(),
+		Name:                  config.GetName(),
+		Description:           config.GetDescription(),
+		Type:                  snapshotType,
+		Collection:            collectionSnapshot(collection),
+		Schedule:              config.GetSchedule(),
+		Requester:             requester,
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_WAITING,
+			ReportRequestType:        requestType,
+			ReportNotificationMethod: notificationMethod,
+		},
+	}
+
+	if features.VulnerabilityReportsEnhancedFiltering.Enabled() || config.GetType() == storage.ReportConfiguration_NODE_VULNERABILITY {
+		snapshot.ResourceScope = config.GetResourceScope().CloneVT()
+	}
+
+	switch config.GetType() {
+	case storage.ReportConfiguration_VULNERABILITY:
+		reportFilters := config.GetVulnReportFilters()
+		if reportFilters != nil {
+			reportFilters = reportFilters.CloneVT()
+			if requestType == storage.ReportStatus_ON_DEMAND {
+				reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+			}
+			snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
+				VulnReportFilters: reportFilters,
+			}
+		}
+	case storage.ReportConfiguration_NODE_VULNERABILITY:
+		nodeFilters := config.GetNodeVulnReportFilters()
+		if nodeFilters != nil {
+			nodeFilters = nodeFilters.CloneVT()
+			if requestType == storage.ReportStatus_ON_DEMAND {
+				nodeFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
+			}
+			snapshot.Filter = &storage.ReportSnapshot_NodeVulnReportFilters{
+				NodeVulnReportFilters: nodeFilters,
+			}
+		}
 	}
 
 	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
@@ -542,44 +637,90 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 	requesterID authn.Identity,
 ) (*reportGen.ReportRequest, error) {
 	if req == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request")
+		return nil, errox.InvalidArgs.New("empty request")
 	}
 
-	// Currently only vulnerability view-based reports are supported.
-	if req.GetType() != apiV2.ReportRequestViewBased_VULNERABILITY {
-		return nil, errors.Wrap(errox.InvalidArgs, "unsupported report type")
-	}
-
-	// Validate filters.
-	vbFilters := req.GetViewBasedVulnReportFilters()
-	if vbFilters == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "view-based vulnerability report filters must be provided")
-	}
-
-	// Convert API filters to storage filters.
-	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
-		Query:            vbFilters.GetQuery(),
-		AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
-	}
 	requester := &storage.SlimUser{
 		Id:   requesterID.UID(),
 		Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
 	}
 
-	// Build report snapshot.
-	snapshot := &storage.ReportSnapshot{
-		Name:          generateViewBasedRequestName(requester),
-		Type:          storage.ReportSnapshot_VULNERABILITY,
-		AreaOfConcern: req.GetAreaOfConcern(),
-		ReportStatus: &storage.ReportStatus{
-			RunState:                 storage.ReportStatus_WAITING,
-			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
-			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
-		},
-		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
-			ViewBasedVulnReportFilters: storageFilters,
-		},
-		Requester: requester,
+	var snapshot *storage.ReportSnapshot
+
+	switch req.GetType() {
+	case apiV2.ReportRequestViewBased_VULNERABILITY:
+		// Validate filters.
+		vbFilters := req.GetViewBasedVulnReportFilters()
+		if vbFilters == nil {
+			return nil, errox.InvalidArgs.New("view-based vulnerability report filters must be provided")
+		}
+
+		// Convert API filters to storage filters.
+		storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
+			Query:            vbFilters.GetQuery(),
+			AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+		}
+
+		// Build report snapshot.
+		snapshot = &storage.ReportSnapshot{
+			Name:          generateViewBasedRequestName(requester),
+			Type:          storage.ReportSnapshot_VULNERABILITY,
+			AreaOfConcern: req.GetAreaOfConcern(),
+			ReportStatus: &storage.ReportStatus{
+				RunState:                 storage.ReportStatus_WAITING,
+				ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+				ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+			},
+			Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
+				ViewBasedVulnReportFilters: storageFilters,
+			},
+			Requester: requester,
+		}
+
+	case apiV2.ReportRequestViewBased_NODE_VULNERABILITY:
+		// Validate filters.
+		nodeFilters := req.GetNodeVulnReportFilters()
+		if nodeFilters == nil {
+			return nil, errox.InvalidArgs.New("node vulnerability report filters must be provided")
+		}
+
+		if err := v.validateNodeFilters(nodeFilters); err != nil {
+			return nil, err
+		}
+
+		// Convert API filters to storage filters.
+		storageFilters := &storage.NodeVulnerabilityReportFilters{
+			Query:            nodeFilters.GetQuery(),
+			AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
+		}
+
+		switch nodeFilters.GetCvesSince().(type) {
+		case *apiV2.NodeVulnerabilityReportFilters_AllVuln:
+			storageFilters.CvesSince = &storage.NodeVulnerabilityReportFilters_AllVuln{
+				AllVuln: nodeFilters.GetAllVuln(),
+			}
+		default:
+			return nil, errox.InvalidArgs.New("unsupported CVE time filter for node vulnerability reports")
+		}
+
+		// Build report snapshot.
+		snapshot = &storage.ReportSnapshot{
+			Name:          generateViewBasedRequestName(requester),
+			Type:          storage.ReportSnapshot_NODE_VULNERABILITY,
+			AreaOfConcern: req.GetAreaOfConcern(),
+			ReportStatus: &storage.ReportStatus{
+				RunState:                 storage.ReportStatus_WAITING,
+				ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+				ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+			},
+			Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+				NodeVulnReportFilters: storageFilters,
+			},
+			Requester: requester,
+		}
+
+	default:
+		return nil, errox.InvalidArgs.New("unsupported report type")
 	}
 
 	return &reportGen.ReportRequest{
