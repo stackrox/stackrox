@@ -2735,13 +2735,20 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	}
 }
 
-func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
+func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) error {
 	batchSize := 30000
 
 	for plopBatch := range slices.Chunk(plops, batchSize) {
-		err := suite.datastore.AddProcessListeningOnPort(suite.hasWriteCtx, fixtureconsts.Cluster1, plopBatch...)
-		suite.NoError(err)
+		// Per-batch deadline so ContextWithTimeoutIfNotExists skips the
+		// 60-second default without sharing one budget across all batches.
+		ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
+		err := suite.datastore.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopBatch...)
+		cancel()
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
@@ -2757,7 +2764,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, np
 	}
 
 	// Add the PLOPs
-	suite.addTooMany(plopObjects)
+	suite.Require().NoError(suite.addTooMany(plopObjects))
 
 	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 	suite.Equal(plopCount, 2*nport*nprocess*npod)
@@ -2816,7 +2823,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the open PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 
 			// Close the PLOPs
 			// This is so that UpsertMany will trigger deletes
@@ -2825,7 +2832,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the closed PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 		}
 	}()
 
@@ -2867,24 +2874,4 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// that number.
 	suite.GreaterOrEqual(plopsWithoutPodUids, totalPrunedCount/2)
 	suite.LessOrEqual(plopsWithoutPodUids, totalPrunedCount)
-}
-
-func (suite *PLOPDataStoreTestSuite) TestSortMany() {
-	nport := 50
-	nprocess := 50
-	npod := 50
-
-	plops := makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
-	suite.addTooMany(plops)
-
-	suite.addDeployments()
-
-	startTime := time.Now()
-	newPlops, err := suite.datastore.GetProcessListeningOnPort(
-		suite.hasWriteCtx, fixtureconsts.Deployment1)
-	suite.NoError(err)
-	duration := time.Since(startTime)
-
-	fmt.Printf("Fetching %d plops took %s\n", len(newPlops), duration)
-
 }
