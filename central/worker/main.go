@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
-	migratorLock "github.com/stackrox/rox/migrator/lock"
+	"github.com/stackrox/rox/pkg/dblock"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -69,7 +69,7 @@ func main() {
 
 func waitForMigrations(ctx context.Context) {
 	err := retry.WithRetry(func() error {
-		acquired, release, err := migratorLock.TryAcquireMigrationLock(ctx, globaldb.GetPostgres())
+		acquired, release, err := dblock.TryAcquireAdvisoryLock(ctx, globaldb.GetPostgres(), dblock.MigrationLockID)
 		if err != nil {
 			return retry.MakeRetryable(err)
 		}
