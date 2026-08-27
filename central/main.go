@@ -144,7 +144,7 @@ import (
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
-	v2Service "github.com/stackrox/rox/central/reports/service/v2"
+	nodeReportServiceV2 "github.com/stackrox/rox/central/reports/service/v2/node"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
@@ -492,6 +492,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 	}
 
 	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
+
+	if features.NodeVulnerabilityReports.Enabled() {
+		servicesToRegister = append(servicesToRegister, nodeReportServiceV2.Singleton())
+	}
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
@@ -996,7 +1000,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/api/reports/jobs/download",
 		Authorizer:    user.With(permissions.View(resources.Image)),
-		ServerHandler: v2Service.NewDownloadHandler(),
+		ServerHandler: reportServiceV2.NewDownloadHandler(),
 		Compression:   true,
 	})
 
@@ -1004,7 +1008,11 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/api/reports/node/jobs/download",
 			Authorizer:    user.With(permissions.View(resources.Node), permissions.View(resources.Cluster)),
+<<<<<<< HEAD
 			ServerHandler: v2Service.NewNodeDownloadHandler(),
+=======
+			ServerHandler: nodeReportServiceV2.NewDownloadHandler(),
+>>>>>>> c27dbd294d (ROX-36250: wire node report service into application)
 			Compression:   true,
 		})
 	}
