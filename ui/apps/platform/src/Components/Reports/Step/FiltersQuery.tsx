@@ -6,8 +6,6 @@ import {
     HelperText,
     HelperTextItem,
 } from '@patternfly/react-core';
-import { getIn } from 'formik';
-import type { FormikProps } from 'formik';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
@@ -25,28 +23,29 @@ import {
     getSearchFilterFromSearchString,
 } from 'utils/searchUtils';
 
-export type FiltersQueryConfiguration = {
-    vulnReportFilters: {
-        query: string;
-    };
-};
-
-export type FiltersQueryProps<T extends FiltersQueryConfiguration = FiltersQueryConfiguration> = {
+// Because filter property name differs for different report types,
+// renderer is responsible to provide values from formik object.
+export type FiltersQueryProps = {
     attributesSeparateFromConfig: SelectSearchFilterAttribute[];
-    formik: FormikProps<T>;
+    error: string | undefined;
+    query: string;
     searchFilterConfig: CompoundSearchFilterConfig;
+    setQueryValue: (value: string, shouldValidate?: boolean) => void;
+    touched: boolean | undefined;
 };
 
-function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfiguration>({
+function FiltersQuery({
     attributesSeparateFromConfig,
-    formik,
+    error,
+    query,
     searchFilterConfig,
-}: FiltersQueryProps<T>): ReactElement {
-    const searchFilter = getSearchFilterFromSearchString(formik.values.vulnReportFilters.query);
+    setQueryValue,
+    touched,
+}: FiltersQueryProps): ReactElement {
+    const searchFilter = getSearchFilterFromSearchString(query);
 
     function onFilterChange(searchFilterChanged: SearchFilter) {
-        formik.setFieldValue(
-            'vulnReportFilters.query',
+        setQueryValue(
             getRequestQueryStringForSearchFilter(applyRegexSearchModifiers(searchFilterChanged))
         );
     }
@@ -81,13 +80,11 @@ function FiltersQuery<T extends FiltersQueryConfiguration = FiltersQueryConfigur
                         searchFilter={searchFilter}
                     />
                 ) : (
-                    getIn(formik.touched, 'vulnReportFilters.query') &&
-                    getIn(formik.errors, 'vulnReportFilters.query') && (
+                    touched &&
+                    error && (
                         <FormHelperText>
                             <HelperText>
-                                <HelperTextItem variant="error">
-                                    {getIn(formik.errors, 'vulnReportFilters.query')}
-                                </HelperTextItem>
+                                <HelperTextItem variant="error">{error}</HelperTextItem>
                             </HelperText>
                         </FormHelperText>
                     )
