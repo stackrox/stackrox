@@ -156,6 +156,17 @@ central:
 securedCluster:
   resourceProfile: ci
 EOF
+    # Scanner V4's matcher must finish loading its vulnerability store before it can scan
+    # images. Loading every vuln source takes far longer than the test window, so the matcher
+    # stays "not initialized" and every image reports 0 components, leaving the vuln-management
+    # Cypress specs asserting on empty tables. Limit the sources to the CI allowlist (matching
+    # the helm/operator path in tests/e2e/lib.sh) so the initial load finishes quickly. The env
+    # var goes on the Central CR's customize.envVars, which the operator propagates to the
+    # scanner-v4-matcher deployment.
+    if [[ -n "${SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST:-}" ]]; then
+        set_custom_env "$roxie_config" "central" \
+            "SCANNER_V4_MATCHER_VULN_BUNDLE_ALLOWLIST" "$SCANNER_V4_CI_VULN_BUNDLE_ALLOWLIST"
+    fi
     deploy_stackrox_with_roxie_compat "$roxie_config"
     rm -f "$roxie_config"
 
