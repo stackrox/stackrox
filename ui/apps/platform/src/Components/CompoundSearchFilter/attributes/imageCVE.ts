@@ -62,7 +62,7 @@ export const KnownExploit: CompoundSearchFilterAttribute = {
 // the single image page, single deployment page, and image vulnerability reports, which
 // append it to their own configs.
 export const Origin: CompoundSearchFilterAttribute = {
-    displayName: 'CVE origin',
+    displayName: 'Origin',
     filterChipLabel: 'CVE origin',
     searchTerm: 'CVE Origin',
     inputType: 'select',
