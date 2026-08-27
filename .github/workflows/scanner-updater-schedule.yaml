@@ -1,8 +1,4 @@
 name: Scanner updater schedule
-# This workflow writes to the test bucket while under validation.
-# Once the bundler workflow is ready and the full pipeline is verified,
-# update storage.bucket in source-config.yaml to definitions.stackrox.io
-# and remove the schedule from scanner-versioned-definitions-update.yaml.
 
 on:
   schedule:
@@ -39,8 +35,7 @@ jobs:
       if: github.event_name != 'pull_request'
       uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
       with:
-        # TODO(ROX-36127): production cutover — use GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER.
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
       if: github.event_name != 'pull_request'
@@ -82,7 +77,7 @@ jobs:
       run: |
         set -euo pipefail
         sc=./.github/workflows/scripts/scanner-updater-config.sh
-        bucket=$("$sc" bucket)
+        bucket="scanner-v4-test"
         prefix=$("$sc" prefix)
         matrix="{\"include\":[{\"source\":\"manual\",\"ref\":\"${PR_SHA}\",\"object\":\"gs://${bucket}/${prefix}/pr-${PR_NUMBER}/sources/manual.json.zst\"}]}"
         printf '{"has_due":true,"has_errors":false,"errors":[],"matrix":%s}\n' "$matrix" > matrix-result.json
