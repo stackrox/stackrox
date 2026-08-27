@@ -2735,7 +2735,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUID() {
 	}
 }
 
-func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) {
+func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListeningOnPortFromSensor) error {
 	batchSize := 30000
 
 	for plopBatch := range slices.Chunk(plops, batchSize) {
@@ -2744,8 +2744,11 @@ func (suite *PLOPDataStoreTestSuite) addTooMany(plops []*storage.ProcessListenin
 		ctx, cancel := context.WithTimeout(suite.hasWriteCtx, 5*time.Minute)
 		err := suite.datastore.AddProcessListeningOnPort(ctx, fixtureconsts.Cluster1, plopBatch...)
 		cancel()
-		suite.Require().NoError(err)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, nprocess int, npod int) {
@@ -2761,7 +2764,7 @@ func (suite *PLOPDataStoreTestSuite) RemovePLOPsWithoutPodUIDScale(nport int, np
 	}
 
 	// Add the PLOPs
-	suite.addTooMany(plopObjects)
+	suite.Require().NoError(suite.addTooMany(plopObjects))
 
 	plopCount, err := suite.store.Count(suite.hasReadCtx, search.EmptyQuery())
 	suite.Equal(plopCount, 2*nport*nprocess*npod)
@@ -2820,7 +2823,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the open PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 
 			// Close the PLOPs
 			// This is so that UpsertMany will trigger deletes
@@ -2829,7 +2832,7 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 			}
 
 			// Add the closed PLOPs
-			suite.addTooMany(plopObjects)
+			suite.NoError(suite.addTooMany(plopObjects))
 		}
 	}()
 
