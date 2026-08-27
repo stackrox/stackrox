@@ -51,6 +51,30 @@ enable_console_plugin() {
     fi
 }
 
+# Ensure the roxie CLI is installed and on PATH. run-ui-e2e.sh runs under OpenShift CI
+# (Prow), where the GHA roxie/install-cli action is unavailable, so we rely on the
+# self-installing scripts/roxie.sh wrapper, which downloads the version pinned in
+# ROXIE_VERSION into bin/<os>_<arch>/roxie.
+ensure_roxie_on_path() {
+    local os arch
+    case "$(uname -s)" in
+        Linux*) os="linux" ;;
+        Darwin*) os="darwin" ;;
+        *) die "Unsupported operating system: $(uname -s)" ;;
+    esac
+    case "$(uname -m)" in
+        x86_64) arch="amd64" ;;
+        arm64|aarch64) arch="arm64" ;;
+        *) die "Unsupported architecture: $(uname -m)" ;;
+    esac
+
+    # Triggers the download/install of the pinned roxie version if it is not present yet.
+    "$ROOT/scripts/roxie.sh" version
+    export PATH="$ROOT/bin/${os}_${arch}:$PATH"
+
+    check_for_roxie
+}
+
 test_ui_e2e() {
     info "Starting UI e2e tests"
 
@@ -67,7 +91,16 @@ test_ui_e2e() {
 
     # deploy the optional components before stackrox
     deploy_optional_e2e_components
-    deploy_stackrox
+
+    # Deploy StackRox with roxie (operator-based) instead of helm. The compat layer
+    # translates this suite's environment-variable based configuration into a roxie
+    # configuration. deploy/roxie-config.yaml pauses operator reconciliation so the tests
+    # run against a stable deployment.
+    ensure_roxie_on_path
+    local roxie_config; roxie_config="$(mktemp)"
+    merge_yaml "$roxie_config" < "$ROOT/deploy/roxie-config.yaml"
+    deploy_stackrox_with_roxie_compat "$roxie_config"
+    rm -f "$roxie_config"
 
     # Enable the console plugin for OpenShift if the ConsolePlugin resource exists
     if [[ "${ORCHESTRATOR_FLAVOR}" == "openshift" ]] && kubectl get consoleplugin advanced-cluster-security &>/dev/null; then
