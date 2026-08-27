@@ -303,7 +303,7 @@ func (s *serviceImpl) GetVMVulnSummary(ctx context.Context, request *v2.GetVMVul
 		vmFilter = search.ConjunctionQuery(vmFilter, additionalQuery)
 	}
 
-	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter)
+	severityCounts, err := s.cveView.CountBySeverity(ctx, vmFilter, search.CVE)
 	if err != nil {
 		return nil, err
 	}
@@ -349,9 +349,17 @@ func (s *serviceImpl) ListVMCVEsByVM(ctx context.Context, request *v2.ListVMCVEs
 		return nil, err
 	}
 
+	componentCountFilter := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, request.GetVmId()).ProtoQuery()
+	componentCounts, err := s.cveView.CountComponentsPerCVE(ctx, componentCountFilter)
+	if err != nil {
+		return nil, err
+	}
+
 	items := make([]*v2.VMCVERow, 0, len(cves))
 	for _, cve := range cves {
-		items = append(items, storagetov2.VirtualMachineCVEV2ToRow(cve))
+		row := storagetov2.VirtualMachineCVEV2ToRow(cve)
+		row.AffectedComponentCount = componentCounts[cve.GetCveBaseInfo().GetCve()]
+		items = append(items, row)
 	}
 
 	return &v2.ListVMCVEsByVMResponse{
@@ -486,7 +494,7 @@ func (s *serviceImpl) GetVMCVEDetail(ctx context.Context, request *v2.GetVMCVEDe
 		viewFilter = search.ConjunctionQuery(viewFilter, additionalQuery)
 	}
 
-	severityCounts, err := s.cveView.CountBySeverity(ctx, viewFilter)
+	severityCounts, err := s.cveView.CountBySeverity(ctx, viewFilter, search.VirtualMachineID)
 	if err != nil {
 		return nil, err
 	}

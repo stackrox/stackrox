@@ -35,7 +35,7 @@ func (v *vmCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, error)
 	return pgSearch.RunDistinctCountForSchema(queryCtx, v.db, v.schema, q, search.CVE)
 }
 
-func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error) {
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (v *vmCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) (c
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	result, err := pgSearch.RunSelectOneForSchema[resourceCountByVMCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID))
+	result, err := pgSearch.RunSelectOneForSchema[resourceCountByVMCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, countOn))
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func (v *vmCVECoreViewImpl) CountBySeverityPerVM(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 
-	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.VirtualMachineID)
+	cloned := common.WithCountBySeverityAndFixabilityQuery(q, search.CVE)
 	cloned.Selects = append([]*v1.QuerySelect{
 		search.NewQuerySelect(search.VirtualMachineID).Proto(),
 	}, cloned.GetSelects()...)
@@ -190,6 +190,30 @@ func (v *vmCVECoreViewImpl) GetAffectedVMs(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 	return ret, nil
+}
+
+func (v *vmCVECoreViewImpl) CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error) {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.CVE).Proto(),
+		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.CVE.String()},
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	result := make(map[string]int32)
+	err := pgSearch.RunSelectRequestForSchemaFn[cveComponentCountResponse](queryCtx, v.db, v.schema, cloned, func(r *cveComponentCountResponse) error {
+		result[r.CVE] = int32(r.ComponentCount)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (v *vmCVECoreViewImpl) GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error) {

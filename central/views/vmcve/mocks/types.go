@@ -17,6 +17,7 @@ import (
 	common "github.com/stackrox/rox/central/views/common"
 	vmcve "github.com/stackrox/rox/central/views/vmcve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -305,18 +306,18 @@ func (mr *MockCveViewMockRecorder) CountAffectedVMs(ctx, q any) *gomock.Call {
 }
 
 // CountBySeverity mocks base method.
-func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error) {
+func (m *MockCveView) CountBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountBySeverity", ctx, q)
+	ret := m.ctrl.Call(m, "CountBySeverity", ctx, q, countOn)
 	ret0, _ := ret[0].(common.ResourceCountByCVESeverity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountBySeverity indicates an expected call of CountBySeverity.
-func (mr *MockCveViewMockRecorder) CountBySeverity(ctx, q any) *gomock.Call {
+func (mr *MockCveViewMockRecorder) CountBySeverity(ctx, q, countOn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverity", reflect.TypeOf((*MockCveView)(nil).CountBySeverity), ctx, q)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverity", reflect.TypeOf((*MockCveView)(nil).CountBySeverity), ctx, q, countOn)
 }
 
 // CountBySeverityPerVM mocks base method.
@@ -332,6 +333,21 @@ func (m *MockCveView) CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]
 func (mr *MockCveViewMockRecorder) CountBySeverityPerVM(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountBySeverityPerVM", reflect.TypeOf((*MockCveView)(nil).CountBySeverityPerVM), ctx, q)
+}
+
+// CountComponentsPerCVE mocks base method.
+func (m *MockCveView) CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountComponentsPerCVE", ctx, q)
+	ret0, _ := ret[0].(map[string]int32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountComponentsPerCVE indicates an expected call of CountComponentsPerCVE.
+func (mr *MockCveViewMockRecorder) CountComponentsPerCVE(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountComponentsPerCVE", reflect.TypeOf((*MockCveView)(nil).CountComponentsPerCVE), ctx, q)
 }
 
 // Get mocks base method.

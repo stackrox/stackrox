@@ -121,6 +121,11 @@ func (r *resourceCountByFixability) GetFixable() int {
 	return r.fixable
 }
 
+type cveComponentCountResponse struct {
+	CVE            string `db:"cve"`
+	ComponentCount int    `db:"component_id_count"`
+}
+
 type cveComponentResponse struct {
 	ComponentName    string `db:"component"`
 	ComponentVersion string `db:"component_version"`

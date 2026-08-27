@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // CveCore is an interface to get VM CVE properties.
@@ -40,13 +41,14 @@ type CVEComponentCore interface {
 //go:generate mockgen-wrapper
 type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
-	CountBySeverity(ctx context.Context, q *v1.Query) (common.ResourceCountByCVESeverity, error)
+	CountBySeverity(ctx context.Context, q *v1.Query, countOn search.FieldLabel) (common.ResourceCountByCVESeverity, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 	GetVMIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	GetCVEComponents(ctx context.Context, q *v1.Query) ([]CVEComponentCore, error)
 	CountBySeverityPerVM(ctx context.Context, q *v1.Query) ([]VMSeverityCounts, error)
 	GetAffectedVMs(ctx context.Context, q *v1.Query) ([]AffectedVMCore, error)
 	CountAffectedVMs(ctx context.Context, q *v1.Query) (int, error)
+	CountComponentsPerCVE(ctx context.Context, q *v1.Query) (map[string]int32, error)
 }
 
 // VMSeverityCounts provides per-VM severity counts.
