@@ -233,7 +233,7 @@ func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMes
 func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 	testPort := testutils.GetFreeTestPort()
 	url := fmt.Sprintf("https://localhost:%d/v1/ping", testPort)
-	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
+	jsonPayload := `{"code":3, "details":[], "error":"missing argument", "message":"missing argument"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
