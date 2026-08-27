@@ -93,28 +93,56 @@ _fetch_cluster_ingress_ca() {
 #          _download_and_install_virtctl -k
 _download_and_install_virtctl() {
     # CI Prow workers are always Linux x86_64 (n2-standard-8 machine type).
-    local download_url
-    download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
-        -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
-    if [[ -z "$download_url" ]]; then
-        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
-    fi
-
     local dest="/usr/local/bin"
     if [[ ! -w "$dest" ]]; then
         dest="$(mktemp -d)"
         export PATH="${dest}:${PATH}"
     fi
 
+    # ConsoleCLIDownload can exist while the ingress backend still serves HTML.
+    # Wait for the href, then retry until the body is a gzip tarball.
+    local download_url=""
+    local attempt=0
+    while (( attempt < 30 )); do
+        attempt=$((attempt + 1))
+        download_url="$(oc get consoleclidownload virtctl-clidownloads-kubevirt-hyperconverged \
+            -o jsonpath='{.spec.links[?(@.text=="Download virtctl for Linux for x86_64")].href}' 2>/dev/null || true)"
+        if [[ -n "$download_url" ]]; then
+            break
+        fi
+        info "Waiting for ConsoleCLIDownload virtctl href (${attempt}/30)"
+        sleep 10
+    done
+    if [[ -z "$download_url" ]]; then
+        die "virtctl not found on PATH and ConsoleCLIDownload resource not available"
+    fi
+
+    local cli_deploy="hyperconverged-cluster-cli-download"
+    if oc get deploy -n openshift-cnv "$cli_deploy" >/dev/null 2>&1; then
+        info "Waiting for ${cli_deploy} rollout..."
+        oc rollout status "deploy/${cli_deploy}" -n openshift-cnv --timeout=300s || true
+    fi
+
+    local archive
+    archive="$(mktemp)"
     info "Downloading virtctl from ${download_url}"
-    if ! curl -sSL "$@" "$download_url" | tar xz -C "$dest" virtctl; then
-        die "Failed to download virtctl from ${download_url}"
-    fi
-    if [[ ! -f "${dest}/virtctl" ]]; then
-        die "Downloaded archive from ${download_url} does not contain virtctl"
-    fi
-    chmod +x "${dest}/virtctl"
-    info "virtctl installed at ${dest}/virtctl"
+    attempt=0
+    while (( attempt < 30 )); do
+        attempt=$((attempt + 1))
+        if curl -sSL "$@" -o "$archive" "$download_url" \
+            && gzip -t "$archive" 2>/dev/null \
+            && tar xz -C "$dest" virtctl -f "$archive" \
+            && [[ -f "${dest}/virtctl" ]]; then
+            rm -f "$archive"
+            chmod +x "${dest}/virtctl"
+            info "virtctl installed at ${dest}/virtctl"
+            return 0
+        fi
+        info "virtctl tarball not ready yet (attempt ${attempt}/30), retrying in 10s"
+        sleep 10
+    done
+    rm -f "$archive"
+    die "Failed to download virtctl from ${download_url}"
 }
 
 # Downloads virtctl from ConsoleCLIDownload using verified TLS only.

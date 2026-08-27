@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -129,11 +130,63 @@ func installGuestPodmanAuth(ctx context.Context, virt Virtctl, namespace, vm, po
 }
 
 func scpToGuest(ctx context.Context, virt Virtctl, namespace, vm, src, dst string) error {
-	stderr, err := virt.SCPTo(ctx, namespace, vm, src, dst)
-	if err != nil {
-		return fmt.Errorf("virtctl scp %s -> %s: %w: %s", src, dst, err, strings.TrimSpace(stderr))
+	return retryCopyToGuest(ctx, virt.Logf, src, dst, defaultSSHTransportRetryAttempts, defaultSSHTransportRetryInterval, func() (string, error) {
+		return virt.SCPTo(ctx, namespace, vm, src, dst)
+	})
+}
+
+// wrapSCPError maps virtctl scp failures onto the same SSH-transport sentinels
+// as runSSHCommandWithFramework so retryOnSSHTransport can retry a banner timeout.
+func wrapSCPError(src, dst, stderr string, err error) error {
+	trimmed := strings.TrimSpace(stderr)
+	isSSH, retryable, category := classifySSHFailure(stderr, err)
+	if !isSSH {
+		return fmt.Errorf("virtctl scp %s -> %s: %w: %s", src, dst, err, trimmed)
 	}
-	return nil
+	kind := "retryable"
+	if !retryable {
+		kind = "terminal"
+	}
+	wrapped := err
+	if isSSHBannerTimeoutFailure(stderr) {
+		wrapped = errors.Join(err, ErrSSHConnectivityStalled)
+	}
+	return fmt.Errorf("%w: virtctl scp %s -> %s: %s SSH %s failure: %w: %s",
+		errSSHTransport, src, dst, kind, category, wrapped, trimmed)
+}
+
+func retryCopyToGuest(ctx context.Context, logf func(string, ...any), src, dst string, attempts int, interval time.Duration, copyFn func() (string, error)) error {
+	if attempts <= 0 {
+		attempts = defaultSSHTransportRetryAttempts
+	}
+	if interval <= 0 {
+		interval = defaultSSHTransportRetryInterval
+	}
+
+	var lastErr error
+	for attempt := 1; attempt <= attempts; attempt++ {
+		stderr, err := copyFn()
+		if err == nil {
+			return nil
+		}
+		lastErr = wrapSCPError(src, dst, stderr, err)
+		isSSH, retryable, category := classifySSHFailure(stderr, err)
+		if !isSSH || !retryable || attempt >= attempts {
+			return lastErr
+		}
+		if logf != nil {
+			logf("virtctl scp %s -> %s: retryable SSH %s (attempt %d/%d)", src, dst, category, attempt, attempts)
+		}
+		timer := time.NewTimer(interval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return fmt.Errorf("%w: virtctl scp %s -> %s: context done during retry backoff: %w",
+				errSSHTransport, src, dst, ctx.Err())
+		case <-timer.C:
+		}
+	}
+	return lastErr
 }
 
 func stageQuadletInstall(image, repo2cpeURL, podmanAuthPath string) (string, error) {
