@@ -724,32 +724,131 @@ func TestVMScraper_GetReportBusyClassified(t *testing.T) {
 		"a busy response must not be counted as a generic protocol/read error")
 }
 
-func TestVMScraper_PrunesStaleState(t *testing.T) {
-	store := &mockStore{vms: []*virtualmachine.Info{
-		makeVM("ns1", "vm-a", 100),
-		makeVM("ns2", "vm-b", 200),
-	}}
-	sender := &mockSender{}
-	dialer := &mockDialer{}
-	client := &mockProtocolClient{
-		resultQueue: []*vsockclient.GetReportResult{makeReport("1"), makeReport("1")},
-	}
+func TestVMScraper_ReconcileVMState(t *testing.T) {
+	t.Run("should prune keys no longer in the running set", func(t *testing.T) {
+		store := &mockStore{vms: []*virtualmachine.Info{
+			makeVM("ns1", "vm-a", 100),
+			makeVM("ns2", "vm-b", 200),
+		}}
+		sender := &mockSender{}
+		dialer := &mockDialer{}
+		client := &mockProtocolClient{
+			resultQueue: []*vsockclient.GetReportResult{makeReport("1"), makeReport("1")},
+		}
 
-	s, clock := newTestScraper(t, store, sender, dialer, client)
-	s.pollOnce(context.Background())
-	assert.Len(t, s.vmState, 2)
-	assert.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
+		s, clock := newTestScraper(t, store, sender, dialer, client)
+		s.pollOnce(context.Background())
+		assert.Len(t, s.vmState, 2)
+		assert.True(t, hasScheduleSlot(t, s, "ns1/vm-a"))
 
-	// Remove vm-a from running set
-	store.vms = []*virtualmachine.Info{makeVM("ns2", "vm-b", 200)}
-	client.reset()
-	client.resultQueue = []*vsockclient.GetReportResult{makeReport("2")}
-	clock.Advance(s.interval)
-	s.pollOnce(context.Background())
+		store.vms = []*virtualmachine.Info{makeVM("ns2", "vm-b", 200)}
+		client.reset()
+		client.resultQueue = []*vsockclient.GetReportResult{makeReport("2")}
+		clock.Advance(s.interval)
+		s.pollOnce(context.Background())
 
-	assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
-	assert.False(t, hasScheduleSlot(t, s, "ns1/vm-a"), "vm-a should no longer be scheduled")
-	assert.True(t, hasScheduleSlot(t, s, "ns2/vm-b"))
+		assert.Len(t, s.vmState, 1, "stale vm-a state should be pruned")
+		assert.False(t, hasScheduleSlot(t, s, "ns1/vm-a"), "vm-a should no longer be scheduled")
+		assert.True(t, hasScheduleSlot(t, s, "ns2/vm-b"))
+	})
+
+	t.Run("should reset scrape state when VM ID changes at the same key", func(t *testing.T) {
+		const key = "ns1/vm-a"
+		oldVM := &virtualmachine.Info{
+			ID:        "uid-old",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(100)),
+			Running:   true,
+		}
+		store := &mockStore{vms: []*virtualmachine.Info{oldVM}}
+		s, clock := newTestScraper(t, store, &mockSender{}, &mockDialer{}, &mockProtocolClient{
+			resultQueue: []*vsockclient.GetReportResult{makeReport("1")},
+		})
+
+		s.pollOnce(context.Background())
+		require.Equal(t, "1", cachedToken(t, s, key))
+		require.Equal(t, 1, s.Stats().VMsScanned)
+		require.Equal(t, clock.Now().Add(s.interval), cachedNextAttemptAt(t, s, key),
+			"successful scrape schedules the next poll")
+
+		store.vms = []*virtualmachine.Info{{
+			ID:        "uid-new",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(101)),
+			Running:   true,
+		}}
+		s.reconcile()
+
+		require.Equal(t, virtualmachine.VMID("uid-new"), concurrency.WithLock1(&s.mu, func() virtualmachine.VMID {
+			return s.vmState[key].vmID
+		}))
+		assert.Empty(t, cachedToken(t, s, key))
+		assert.Equal(t, 1, s.Stats().TrackedVMs)
+		assert.Zero(t, s.Stats().VMsScanned, "replacement must not inherit prior scrape state")
+		assert.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key),
+			"replacement must be due immediately, not on the prior poll timer")
+		assert.Contains(t, s.dueKeys(), key)
+	})
+}
+
+// TestVMScraper_IgnoresLateScrapeAfterVMReplacement covers a KubeVirt recreate
+// while a scrape of the predecessor is still in Send: the late commit must not
+// mark the replacement as already scanned or push its next poll out by interval.
+func TestVMScraper_IgnoresLateScrapeAfterVMReplacement(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		const key = "ns1/vm-a"
+		oldVM := &virtualmachine.Info{
+			ID:        "uid-old",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(100)),
+			Running:   true,
+		}
+		store := &mockStore{vms: []*virtualmachine.Info{oldVM}}
+		gate := &gateSender{
+			blockAt: 1,
+			release: make(chan struct{}),
+		}
+		s, clock := newTestScraper(t, store, gate, &mockDialer{}, &mockProtocolClient{
+			resultQueue: []*vsockclient.GetReportResult{makeReport("99")},
+		})
+
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			s.pollOnce(t.Context())
+		}()
+		synctest.Wait()
+
+		store.vms = []*virtualmachine.Info{{
+			ID:        "uid-new",
+			Namespace: "ns1",
+			Name:      "vm-a",
+			VSOCKCID:  new(uint32(101)),
+			Running:   true,
+		}}
+		s.reconcile()
+
+		require.Equal(t, virtualmachine.VMID("uid-new"), concurrency.WithLock1(&s.mu, func() virtualmachine.VMID {
+			return s.vmState[key].vmID
+		}))
+		require.Zero(t, s.Stats().VMsScanned)
+		require.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key))
+
+		close(gate.release)
+		<-done
+
+		assert.Equal(t, virtualmachine.VMID("uid-new"), concurrency.WithLock1(&s.mu, func() virtualmachine.VMID {
+			return s.vmState[key].vmID
+		}))
+		assert.Empty(t, cachedToken(t, s, key), "late commit must not stamp the replacement")
+		assert.Zero(t, s.Stats().VMsScanned, "replacement must stay unscanned until its own scrape")
+		assert.Equal(t, clock.Now(), cachedNextAttemptAt(t, s, key),
+			"late schedule must not inherit the predecessor's poll timer")
+		assert.Contains(t, s.dueKeys(), key)
+	})
 }
 
 // hasScheduleSlot reports whether key has a vmState slot (reconcile membership).
