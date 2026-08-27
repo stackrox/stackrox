@@ -188,6 +188,101 @@ func (s *EmailFormatterTestSuite) configDetailsTestCases() []configDetailsTestCa
 	return cases
 }
 
+func (s *EmailFormatterTestSuite) TestFormatNodeReportConfigDetails() {
+	for _, tc := range s.nodeConfigDetailsTestCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			configHTML, err := FormatNodeReportConfigDetails(tc.snapshot, 25)
+			s.Require().NoError(err)
+			expectedHTML := strings.ReplaceAll(tc.expectedHTML, "\n", "")
+			expectedHTML = strings.ReplaceAll(expectedHTML, "\t", "")
+			s.Require().Equal(expectedHTML, configHTML)
+		})
+	}
+}
+
+func (s *EmailFormatterTestSuite) TestFormatNodeReportConfigDetails_NilFilters() {
+	snap := &storage.ReportSnapshot{
+		Name: "Node Report",
+	}
+	_, err := FormatNodeReportConfigDetails(snap, 0)
+	s.Require().Error(err)
+}
+
+func (s *EmailFormatterTestSuite) nodeConfigDetailsTestCases() []configDetailsTestCase {
+	return []configDetailsTestCase{
+		{
+			desc: "Node report with entity scope and filter query",
+			snapshot: &storage.ReportSnapshot{
+				Name: "Node Team Report",
+				Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+					NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{
+						Query: "CVSS > 7",
+					},
+				},
+				ResourceScope: &storage.ResourceScope{
+					ScopeReference: &storage.ResourceScope_EntityScope{
+						EntityScope: &storage.EntityScope{
+							Rules: []*storage.EntityScopeRule{
+								{
+									Entity: storage.EntityType_ENTITY_TYPE_CLUSTER,
+									Field:  storage.EntityField_FIELD_NAME,
+									Values: []*storage.RuleValue{
+										{Value: "prod-us"},
+										{Value: "prod-eu"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedHTML: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: </span>
+							<span>Node Team Report</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: </span>
+							<span>25</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Filter: </span>
+							<span>CVSS > 7</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Report scope: </span>
+							<span>Cluster Name: prod-us, prod-eu</span>
+						</div>
+					</div>`,
+		},
+		{
+			desc: "Node report without filter query or entity scope",
+			snapshot: &storage.ReportSnapshot{
+				Name: "Simple Node Report",
+				Filter: &storage.ReportSnapshot_NodeVulnReportFilters{
+					NodeVulnReportFilters: &storage.NodeVulnerabilityReportFilters{},
+				},
+			},
+			expectedHTML: `<div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Config name: </span>
+							<span>Simple Node Report</span>
+						</div>
+						<div style="padding: 0 0 10px 0">
+							<span style="font-weight: bold; margin-right: 10px">
+								Number of CVEs found: </span>
+							<span>25</span>
+						</div>
+					</div>`,
+		},
+	}
+}
+
 func (s *EmailFormatterTestSuite) entityScopeTestCases() []configDetailsTestCase {
 	return []configDetailsTestCase{
 		{
