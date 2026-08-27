@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	pb "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine/cpemapping"
@@ -15,13 +14,6 @@ import (
 const validMappingJSON = `{"data":{"rhel-8-server-rpms":{"cpes":["cpe:/o:redhat:enterprise_linux:8"]}}}`
 const otherValidMappingJSON = `{"data":{"rhel-9-server-rpms":{"cpes":["cpe:/o:redhat:enterprise_linux:9"]}}}`
 const invalidMappingJSON = `{not json`
-
-// waitTimeout/waitTick bound assert.Eventually polling for the
-// fire-and-forget cache-persistence goroutine shared by both updaters' tests.
-const (
-	waitTimeout = 2 * time.Second
-	waitTick    = 10 * time.Millisecond
-)
 
 // onChangeCounter is a test double for a MappingProvider's onChange
 // callback that records how many times it fired.
@@ -36,22 +28,28 @@ func writeFile(t *testing.T, path, content string) {
 	require.NoError(t, os.WriteFile(path, []byte(content), 0600))
 }
 
-// waitForCacheContent polls cachePath for the persist goroutine an applied
-// Update starts in the background, so tests can drain it deterministically
-// instead of letting it race the tempdir's end-of-test cleanup.
-func waitForCacheContent(t *testing.T, cachePath, want string) {
+func newSensorUpdater(t *testing.T, cachePath, bundledPath string, onChange func()) *SensorUpdater {
 	t.Helper()
-	assert.Eventually(t, func() bool {
-		b, err := os.ReadFile(cachePath)
-		return err == nil && string(b) == want
-	}, waitTimeout, waitTick, "expected %q to be persisted to %s", want, cachePath)
+	u := NewSensorUpdater(cachePath, bundledPath, onChange)
+	t.Cleanup(u.waitPersist)
+	return u
+}
+
+// waitForCacheContent drains persistAndNotify's background write, then
+// checks cachePath, so the assertion cannot race AtomicWriteFile.
+func waitForCacheContent(t *testing.T, u *SensorUpdater, cachePath, want string) {
+	t.Helper()
+	u.waitPersist()
+	b, err := os.ReadFile(cachePath)
+	require.NoError(t, err)
+	assert.Equal(t, want, string(b), "expected %q to be persisted to %s", want, cachePath)
 }
 
 func TestNewSensorUpdater_EmptyStart_NotReady(t *testing.T) {
 	dir := t.TempDir()
 	counter := &onChangeCounter{}
 
-	u := NewSensorUpdater(filepath.Join(dir, "cache.json"), "", counter.fn)
+	u := newSensorUpdater(t, filepath.Join(dir, "cache.json"), "", counter.fn)
 
 	assert.False(t, u.Ready())
 	assert.Empty(t, u.Hash())
@@ -69,7 +67,7 @@ func TestNewSensorUpdater_BootstrapFromCache(t *testing.T) {
 	writeFile(t, cachePath, validMappingJSON)
 	counter := &onChangeCounter{}
 
-	u := NewSensorUpdater(cachePath, "", counter.fn)
+	u := newSensorUpdater(t, cachePath, "", counter.fn)
 
 	require.True(t, u.Ready())
 	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
@@ -85,7 +83,7 @@ func TestNewSensorUpdater_BootstrapFromBundled_WhenNoCache(t *testing.T) {
 	writeFile(t, bundledPath, validMappingJSON)
 	counter := &onChangeCounter{}
 
-	u := NewSensorUpdater(filepath.Join(dir, "cache.json"), bundledPath, counter.fn)
+	u := newSensorUpdater(t, filepath.Join(dir, "cache.json"), bundledPath, counter.fn)
 
 	require.True(t, u.Ready())
 	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
@@ -99,7 +97,7 @@ func TestNewSensorUpdater_CacheTakesPrecedenceOverBundled(t *testing.T) {
 	writeFile(t, cachePath, validMappingJSON)
 	writeFile(t, bundledPath, otherValidMappingJSON)
 
-	u := NewSensorUpdater(cachePath, bundledPath, func() {})
+	u := newSensorUpdater(t, cachePath, bundledPath, func() {})
 
 	b, err := u.Bytes()
 	require.NoError(t, err)
@@ -113,7 +111,7 @@ func TestNewSensorUpdater_InvalidCacheFallsBackToBundled(t *testing.T) {
 	writeFile(t, cachePath, invalidMappingJSON)
 	writeFile(t, bundledPath, validMappingJSON)
 
-	u := NewSensorUpdater(cachePath, bundledPath, func() {})
+	u := newSensorUpdater(t, cachePath, bundledPath, func() {})
 
 	require.True(t, u.Ready())
 	b, err := u.Bytes()
@@ -127,7 +125,7 @@ func TestNewSensorUpdater_InvalidCacheNoBundled_NotReady(t *testing.T) {
 	writeFile(t, cachePath, invalidMappingJSON)
 	counter := &onChangeCounter{}
 
-	u := NewSensorUpdater(cachePath, "", counter.fn)
+	u := newSensorUpdater(t, cachePath, "", counter.fn)
 
 	assert.False(t, u.Ready())
 	assert.Equal(t, 0, counter.count)
@@ -135,7 +133,7 @@ func TestNewSensorUpdater_InvalidCacheNoBundled_NotReady(t *testing.T) {
 
 func TestSensorUpdater_Update_OwnsContent(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
-	u := NewSensorUpdater(cachePath, "", func() {})
+	u := newSensorUpdater(t, cachePath, "", func() {})
 	content := []byte(validMappingJSON)
 
 	updated, err := u.Update(content)
@@ -146,12 +144,12 @@ func TestSensorUpdater_Update_OwnsContent(t *testing.T) {
 	b, err := u.Bytes()
 	require.NoError(t, err)
 	assert.Equal(t, validMappingJSON, string(b), "mutating the caller's buffer must not change the active mapping")
-	waitForCacheContent(t, cachePath, validMappingJSON)
+	waitForCacheContent(t, u, cachePath, validMappingJSON)
 }
 
 func TestSensorUpdater_Path_WritesCurrentActive(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
-	u := NewSensorUpdater(cachePath, "", func() {})
+	u := newSensorUpdater(t, cachePath, "", func() {})
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
 	_, err = u.Update([]byte(otherValidMappingJSON))
@@ -163,14 +161,14 @@ func TestSensorUpdater_Path_WritesCurrentActive(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, otherValidMappingJSON, string(onDisk),
 		"Path must persist the current active mapping, not an in-flight older write")
-	waitForCacheContent(t, cachePath, otherValidMappingJSON)
+	waitForCacheContent(t, u, cachePath, otherValidMappingJSON)
 }
 
 func TestSensorUpdater_Update_AppliesWhenIdle(t *testing.T) {
 	dir := t.TempDir()
 	cachePath := filepath.Join(dir, "cache.json")
 	counter := &onChangeCounter{}
-	u := NewSensorUpdater(cachePath, "", counter.fn)
+	u := newSensorUpdater(t, cachePath, "", counter.fn)
 
 	updated, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
@@ -178,15 +176,15 @@ func TestSensorUpdater_Update_AppliesWhenIdle(t *testing.T) {
 	assert.True(t, u.Ready())
 	assert.Equal(t, cpemapping.HashMapping([]byte(validMappingJSON)), u.Hash())
 	assert.Equal(t, 1, counter.count)
-	waitForCacheContent(t, cachePath, validMappingJSON)
+	waitForCacheContent(t, u, cachePath, validMappingJSON)
 }
 
 func TestSensorUpdater_Update_NoOpWhenUnchanged(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
-	u := NewSensorUpdater(cachePath, "", func() {})
+	u := newSensorUpdater(t, cachePath, "", func() {})
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
-	waitForCacheContent(t, cachePath, validMappingJSON)
+	waitForCacheContent(t, u, cachePath, validMappingJSON)
 
 	updated, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
@@ -195,11 +193,11 @@ func TestSensorUpdater_Update_NoOpWhenUnchanged(t *testing.T) {
 
 func TestSensorUpdater_Update_RejectsInvalidKeepsLastGood(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
-	u := NewSensorUpdater(cachePath, "", func() {})
+	u := newSensorUpdater(t, cachePath, "", func() {})
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
 	wantHash := u.Hash()
-	waitForCacheContent(t, cachePath, validMappingJSON)
+	waitForCacheContent(t, u, cachePath, validMappingJSON)
 
 	updated, err := u.Update([]byte(invalidMappingJSON))
 	assert.Error(t, err)
@@ -208,7 +206,7 @@ func TestSensorUpdater_Update_RejectsInvalidKeepsLastGood(t *testing.T) {
 }
 
 func TestSensorUpdater_Update_OversizeRejected(t *testing.T) {
-	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
+	u := newSensorUpdater(t, filepath.Join(t.TempDir(), "cache.json"), "", func() {})
 	oversized := make([]byte, cpemapping.MaxMappingBytes+1)
 
 	updated, err := u.Update(oversized)
@@ -221,7 +219,7 @@ func TestSensorUpdater_UpdateWhileBusy_DefersUntilIdle(t *testing.T) {
 	dir := t.TempDir()
 	cachePath := filepath.Join(dir, "cache.json")
 	counter := &onChangeCounter{}
-	u := NewSensorUpdater(cachePath, "", counter.fn)
+	u := newSensorUpdater(t, cachePath, "", counter.fn)
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
 	require.Equal(t, 1, counter.count)
@@ -250,11 +248,11 @@ func TestSensorUpdater_UpdateWhileBusy_DefersUntilIdle(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, otherValidMappingJSON, string(b))
 	assert.Equal(t, 2, counter.count, "onChange must fire once the pending mapping is promoted")
-	waitForCacheContent(t, cachePath, otherValidMappingJSON)
+	waitForCacheContent(t, u, cachePath, otherValidMappingJSON)
 }
 
 func TestSensorUpdater_UpdateWhileBusy_SameAsPending_NoOp(t *testing.T) {
-	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
+	u := newSensorUpdater(t, filepath.Join(t.TempDir(), "cache.json"), "", func() {})
 	u.MarkScanBusy()
 
 	updated, err := u.Update([]byte(validMappingJSON))
@@ -271,7 +269,7 @@ func TestSensorUpdater_UpdateWhileBusy_SameAsPending_NoOp(t *testing.T) {
 // are ordered, so the newest push (matching active) must win, not the
 // earlier, now-stale pending content.
 func TestSensorUpdater_UpdateWhileBusy_RevertToActive_ClearsStalePending(t *testing.T) {
-	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
+	u := newSensorUpdater(t, filepath.Join(t.TempDir(), "cache.json"), "", func() {})
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
 	u.MarkScanBusy()
@@ -293,11 +291,11 @@ func TestSensorUpdater_UpdateWhileBusy_RevertToActive_ClearsStalePending(t *test
 func TestSensorUpdater_MarkScanIdleAndApplyPending_NoPending_NoOp(t *testing.T) {
 	cachePath := filepath.Join(t.TempDir(), "cache.json")
 	counter := &onChangeCounter{}
-	u := NewSensorUpdater(cachePath, "", counter.fn)
+	u := newSensorUpdater(t, cachePath, "", counter.fn)
 	_, err := u.Update([]byte(validMappingJSON))
 	require.NoError(t, err)
 	require.Equal(t, 1, counter.count)
-	waitForCacheContent(t, cachePath, validMappingJSON)
+	waitForCacheContent(t, u, cachePath, validMappingJSON)
 
 	u.MarkScanBusy()
 	u.MarkScanIdleAndApplyPending()
@@ -307,6 +305,6 @@ func TestSensorUpdater_MarkScanIdleAndApplyPending_NoPending_NoOp(t *testing.T) 
 }
 
 func TestSensorUpdater_UpdatePath_IsSensor(t *testing.T) {
-	u := NewSensorUpdater(filepath.Join(t.TempDir(), "cache.json"), "", func() {})
+	u := newSensorUpdater(t, filepath.Join(t.TempDir(), "cache.json"), "", func() {})
 	assert.Equal(t, pb.RepoCPEMappingUpdatePath_REPO_CPE_MAPPING_UPDATE_PATH_SENSOR, u.UpdatePath())
 }
