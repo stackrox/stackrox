@@ -40,7 +40,7 @@ func (ds *dataStoreImpl) UpsertRole(ctx context.Context, newRole *storage.Role) 
 		return err
 	}
 	if err := rolePkg.ValidateRole(newRole); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 
 	ds.lock.Lock()
@@ -76,7 +76,7 @@ func (ds *dataStoreImpl) UpsertPermissionSet(ctx context.Context, newPS *storage
 		return err
 	}
 	if err := rolePkg.ValidatePermissionSet(newPS); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 
 	ds.lock.Lock()
@@ -108,7 +108,7 @@ func (ds *dataStoreImpl) UpsertAccessScope(ctx context.Context, newScope *storag
 		return err
 	}
 	if err := rolePkg.ValidateSimpleAccessScope(newScope); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 
 	ds.lock.Lock()
@@ -214,7 +214,7 @@ func (ds *dataStoreImpl) AddRole(ctx context.Context, role *storage.Role) error 
 		return err
 	}
 	if err := rolePkg.ValidateRole(role); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultRole(role); err != nil {
 		return err
@@ -243,7 +243,7 @@ func (ds *dataStoreImpl) UpdateRole(ctx context.Context, role *storage.Role) err
 		return err
 	}
 	if err := rolePkg.ValidateRole(role); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultRole(role); err != nil {
 		return err
@@ -281,7 +281,7 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "name = %q", name)
+		return errox.NotFound.Newf("name = %q", name)
 	}
 	if err := ds.verifyRoleForDeletion(ctx, role); err != nil {
 		return err
@@ -292,7 +292,7 @@ func (ds *dataStoreImpl) RemoveRole(ctx context.Context, name string) error {
 
 func verifyRoleOrigin(ctx context.Context, role *storage.Role) error {
 	if !declarativeconfig.CanModifyResource(ctx, role) {
-		return errors.Wrapf(errox.NotAuthorized, "role %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.Newf("role %q's origin is %s, cannot be modified or deleted with the current permission",
 			role.GetName(), role.GetTraits().GetOrigin())
 	}
 	return nil
@@ -362,7 +362,7 @@ func (ds *dataStoreImpl) AddPermissionSet(ctx context.Context, permissionSet *st
 		return err
 	}
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
@@ -394,7 +394,7 @@ func (ds *dataStoreImpl) UpdatePermissionSet(ctx context.Context, permissionSet 
 		return err
 	}
 	if err := rolePkg.ValidatePermissionSet(permissionSet); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
@@ -437,7 +437,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "id = %s", id)
+		return errox.NotFound.Newf("id = %s", id)
 	}
 	if err := verifyNotDefaultPermissionSet(permissionSet); err != nil {
 		return err
@@ -453,7 +453,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 	}
 	for _, role := range roles {
 		if role.GetPermissionSetId() == id {
-			return errors.Wrapf(errox.ReferencedByAnotherObject, "cannot delete permission set in use by role %q", role.GetName())
+			return errox.ReferencedByAnotherObject.Newf("cannot delete permission set in use by role %q", role.GetName())
 		}
 	}
 
@@ -467,7 +467,7 @@ func (ds *dataStoreImpl) RemovePermissionSet(ctx context.Context, id string) err
 
 func verifyPermissionSetOrigin(ctx context.Context, ps *storage.PermissionSet) error {
 	if !declarativeconfig.CanModifyResource(ctx, ps) {
-		return errors.Wrapf(errox.NotAuthorized, "permission set %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.Newf("permission set %q's origin is %s, cannot be modified or deleted with the current permission",
 			ps.GetName(), ps.GetTraits().GetOrigin())
 	}
 	return nil
@@ -548,7 +548,7 @@ func (ds *dataStoreImpl) AddAccessScope(ctx context.Context, scope *storage.Simp
 		return err
 	}
 	if err := rolePkg.ValidateSimpleAccessScope(scope); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultAccessScope(scope); err != nil {
 		return err
@@ -580,7 +580,7 @@ func (ds *dataStoreImpl) UpdateAccessScope(ctx context.Context, newScope *storag
 		return err
 	}
 	if err := rolePkg.ValidateSimpleAccessScope(newScope); err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	if err := verifyNotDefaultAccessScope(newScope); err != nil {
 		return err
@@ -624,7 +624,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 		return err
 	}
 	if !found {
-		return errors.Wrapf(errox.NotFound, "id = %s", id)
+		return errox.NotFound.Newf("id = %s", id)
 	}
 	if err := verifyNotDefaultAccessScope(accessScope); err != nil {
 		return err
@@ -640,7 +640,7 @@ func (ds *dataStoreImpl) RemoveAccessScope(ctx context.Context, id string) error
 	}
 	for _, role := range roles {
 		if role.GetAccessScopeId() == id {
-			return errors.Wrapf(errox.ReferencedByAnotherObject, "cannot delete access scope in use by role %q", role.GetName())
+			return errox.ReferencedByAnotherObject.Newf("cannot delete access scope in use by role %q", role.GetName())
 		}
 	}
 
@@ -714,12 +714,12 @@ func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions
 		if ps, ok := permissionSetsByID[role.GetPermissionSetId()]; ok {
 			resolvedRole.permissionSet = ps
 		} else {
-			return nil, errors.Wrapf(errox.InvariantViolation, "no permission set found for role %s", role.GetName())
+			return nil, errox.InvariantViolation.Newf("no permission set found for role %s", role.GetName())
 		}
 		if as, ok := accessScopesByID[role.GetAccessScopeId()]; ok {
 			resolvedRole.accessScope = as
 		} else {
-			return nil, errors.Wrapf(errox.InvariantViolation, "no access scope found for role %s", role.GetName())
+			return nil, errox.InvariantViolation.Newf("no access scope found for role %s", role.GetName())
 		}
 		result = append(result, resolvedRole)
 	}
@@ -728,7 +728,7 @@ func (ds *dataStoreImpl) GetAllResolvedRoles(ctx context.Context) ([]permissions
 
 func verifyAccessScopeOrigin(ctx context.Context, as *storage.SimpleAccessScope) error {
 	if !declarativeconfig.CanModifyResource(ctx, as) {
-		return errors.Wrapf(errox.NotAuthorized, "access scope %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.Newf("access scope %q's origin is %s, cannot be modified or deleted with the current permission",
 			as.GetName(), as.GetTraits().GetOrigin())
 	}
 	return nil
@@ -744,11 +744,11 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 	// Verify storage constraints.
 	permissionSet, err := ds.verifyPermissionSetIDExists(ctx, role.GetPermissionSetId())
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "referenced permission set %s does not exist", role.GetPermissionSetId())
+		return errox.InvalidArgs.Newf("referenced permission set %s does not exist", role.GetPermissionSetId())
 	}
 	accessScope, err := ds.verifyAccessScopeIDExists(ctx, role.GetAccessScopeId())
 	if err != nil {
-		return errors.Wrapf(errox.InvalidArgs, "referenced access scope %s does not exist", role.GetAccessScopeId())
+		return errox.InvalidArgs.Newf("referenced access scope %s does not exist", role.GetAccessScopeId())
 	}
 
 	if err := declarativeconfig.VerifyReferencedResourceOrigin(permissionSet, role, permissionSet.GetName(), role.GetName()); err != nil {
@@ -764,7 +764,7 @@ func (ds *dataStoreImpl) verifyRoleReferencesExist(ctx context.Context, role *st
 // Returns errox.InvalidArgs if the given role is a default one.
 func verifyNotDefaultRole(role *storage.Role) error {
 	if rolePkg.IsDefaultRole(role) {
-		return errors.Wrapf(errox.InvalidArgs, "default role %q cannot be modified or deleted", role.GetName())
+		return errox.InvalidArgs.Newf("default role %q cannot be modified or deleted", role.GetName())
 	}
 	return nil
 }
@@ -777,7 +777,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDExists(ctx context.Context, id str
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "id = %s", id)
+		return nil, errox.NotFound.Newf("id = %s", id)
 	}
 	return ps, nil
 }
@@ -790,7 +790,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, 
 		return err
 	}
 	if found {
-		return errors.Wrapf(errox.AlreadyExists, "id = %s", id)
+		return errox.AlreadyExists.Newf("id = %s", id)
 	}
 	return nil
 }
@@ -799,7 +799,7 @@ func (ds *dataStoreImpl) verifyPermissionSetIDDoesNotExist(ctx context.Context, 
 // one. Note that IsDefaultRole() is reused due to the name sameness.
 func verifyNotDefaultPermissionSet(permissionSet *storage.PermissionSet) error {
 	if rolePkg.IsDefaultPermissionSet(permissionSet) {
-		return errors.Wrapf(errox.InvalidArgs, "default permission set %q cannot be modified or deleted",
+		return errox.InvalidArgs.Newf("default permission set %q cannot be modified or deleted",
 			permissionSet.GetName())
 	}
 	return nil
@@ -813,7 +813,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDExists(ctx context.Context, id strin
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "id = %s", id)
+		return nil, errox.NotFound.Newf("id = %s", id)
 	}
 	return as, nil
 }
@@ -826,7 +826,7 @@ func (ds *dataStoreImpl) verifyAccessScopeIDDoesNotExist(ctx context.Context, id
 		return err
 	}
 	if found {
-		return errors.Wrapf(errox.AlreadyExists, "id = %s", id)
+		return errox.AlreadyExists.Newf("id = %s", id)
 	}
 	return nil
 }
@@ -839,7 +839,7 @@ func (ds *dataStoreImpl) verifyRoleNameDoesNotExist(ctx context.Context, name st
 		return err
 	}
 	if found {
-		return errors.Wrapf(errox.AlreadyExists, "name = %q", name)
+		return errox.AlreadyExists.Newf("name = %q", name)
 	}
 	return nil
 }
@@ -852,7 +852,7 @@ func (ds *dataStoreImpl) verifyRoleNameExists(ctx context.Context, name string) 
 		return nil, err
 	}
 	if !found {
-		return nil, errors.Wrapf(errox.NotFound, "name = %q", name)
+		return nil, errox.NotFound.Newf("name = %q", name)
 	}
 	return role, nil
 }
@@ -892,7 +892,7 @@ func (ds *dataStoreImpl) verifyNoGroupReferences(ctx context.Context, role *stor
 // Returns errox.InvalidArgs if the given scope is a default one.
 func verifyNotDefaultAccessScope(scope *storage.SimpleAccessScope) error {
 	if rolePkg.IsDefaultAccessScope(scope) {
-		return errors.Wrapf(errox.InvalidArgs, "default access scope %q cannot be modified or deleted", scope.GetName())
+		return errox.InvalidArgs.Newf("default access scope %q cannot be modified or deleted", scope.GetName())
 	}
 	return nil
 }
@@ -909,7 +909,7 @@ func (ds *dataStoreImpl) getRolePermissionSetOrError(ctx context.Context, role *
 		return nil, err
 	} else if !found || permissionSet == nil {
 		log.Errorf("Failed to fetch permission set %s for the existing role %q", role.GetPermissionSetId(), role.GetName())
-		return nil, errors.Wrapf(errox.InvariantViolation, "permission set %s for role %q is missing", role.GetPermissionSetId(), role.GetName())
+		return nil, errox.InvariantViolation.Newf("permission set %s for role %q is missing", role.GetPermissionSetId(), role.GetName())
 	}
 	return permissionSet, nil
 }
@@ -922,7 +922,7 @@ func (ds *dataStoreImpl) getRoleAccessScopeOrError(ctx context.Context, role *st
 		return nil, err
 	} else if !found || accessScope == nil {
 		log.Errorf("Failed to fetch access scope %s for the existing role %q", role.GetAccessScopeId(), role.GetName())
-		return nil, errors.Wrapf(errox.InvariantViolation, "access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
+		return nil, errox.InvariantViolation.Newf("access scope %s for role %q is missing", role.GetAccessScopeId(), role.GetName())
 	}
 	return accessScope, nil
 }

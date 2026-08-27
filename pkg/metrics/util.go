@@ -4,7 +4,6 @@ import (
 	"net"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/env"
@@ -66,7 +65,7 @@ func validateTLS() error {
 		if err != nil {
 			log.Errorf("failed to validate file %q: %s", certFile, err.Error())
 		}
-		return errors.Wrapf(errox.NotFound, "secure metrics certificate file %q not found", certFile)
+		return errox.NotFound.Newf("secure metrics certificate file %q not found", certFile)
 	}
 
 	keyFile := filepath.Join(env.SecureMetricsCertDir.Setting(), env.TLSKeyFileName)
@@ -74,7 +73,7 @@ func validateTLS() error {
 		if err != nil {
 			log.Errorf("failed to validate file %q: %s", keyFile, err.Error())
 		}
-		return errors.Wrapf(errox.NotFound, "secure metrics key file %q not found", keyFile)
+		return errox.NotFound.Newf("secure metrics key file %q not found", keyFile)
 	}
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -60,7 +59,7 @@ func (s *serviceImpl) GetPods(ctx context.Context, request *v1.RawQuery) (*v1.Po
 	// Fill in Query.
 	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+		return nil, errox.InvalidArgs.New(err.Error())
 	}
 
 	// Fill in pagination.
@@ -79,7 +78,7 @@ func (s *serviceImpl) GetPods(ctx context.Context, request *v1.RawQuery) (*v1.Po
 func (s *serviceImpl) ExportPods(req *v1.ExportPodRequest, srv v1.PodService_ExportPodsServer) error {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
-		return errors.Wrap(errox.InvalidArgs, err.Error())
+		return errox.InvalidArgs.New(err.Error())
 	}
 	ctx := srv.Context()
 	if timeout := req.GetTimeout(); timeout != 0 {

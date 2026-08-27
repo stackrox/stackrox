@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceDS "github.com/stackrox/rox/central/compliance/datastore"
@@ -103,7 +102,7 @@ func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrap(errox.NotFound, req.GetId())
+		return nil, errox.NotFound.New(req.GetId())
 	}
 
 	hide, exists, _ := s.complianceDataStore.GetConfig(ctx, req.GetId())
@@ -167,7 +166,7 @@ func (s *serviceImpl) UpdateComplianceStandardConfig(ctx context.Context, req *v
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.Wrap(errox.NotFound, req.GetId())
+		return nil, errox.NotFound.New(req.GetId())
 	}
 	err = s.complianceDataStore.UpdateConfig(ctx, req.GetId(), req.GetHideScanResults())
 	if err != nil {
