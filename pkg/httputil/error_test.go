@@ -50,8 +50,8 @@ func TestWriteError(t *testing.T) {
 			incomingErr:         errox.NotFound.New("Origin: known internal error"),
 			grpcCode:            codes.NotFound,
 			expectedStatus:      404,
-			expectedMessage:     `{"code":5, "message":"Origin: known internal error: not found"}`,
-			expectedGRPCMessage: `{"code":5, "message":"Origin: known internal error: not found"}`,
+			expectedMessage:     `{"code":5, "message":"Origin: known internal error"}`,
+			expectedGRPCMessage: `{"code":5, "message":"Origin: known internal error"}`,
 		},
 		{
 			name:                "Error of an unknown type yields 500",
