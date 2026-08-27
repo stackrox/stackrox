@@ -372,6 +372,18 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 	return val.(string), true, nil
 }
 
+func (ds *datastoreImpl) GetClusterID(ctx context.Context, name string) (string, bool, error) {
+	idVal, ok := ds.nameToIDCache.Get(name)
+	if !ok {
+		return "", false, nil
+	}
+	id := idVal.(string)
+	if allowed, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !allowed {
+		return "", false, err
+	}
+	return id, true, nil
+}
+
 // Figure out if an indicator matches provided namespace filter. We consider
 // SAC errors or failure to find the pre-compiled filter regex as not matching
 // cases.
