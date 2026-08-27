@@ -47,16 +47,11 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 		csvWriter.AddValue(row)
 	}
 
-	var buf bytes.Buffer
-	if err := csvWriter.WriteBytes(&buf); err != nil {
-		return nil, errors.Wrap(err, "error creating csv report")
-	}
-
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
 	truncatedName := configName
-	if len(configName) > 80 {
-		truncatedName = configName[0:80] + "..."
+	if runes := []rune(configName); len(runes) > 80 {
+		truncatedName = string(runes[:80]) + "..."
 	}
 
 	now := time.Now()
@@ -70,7 +65,7 @@ func generateCSV(cveResponses []*NodeCVEQueryResponse, configName string) (*byte
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to create the zip file for report config '%s'", configName)
 	}
-	if _, err = zipFile.Write(buf.Bytes()); err != nil {
+	if err = csvWriter.WriteCSV(zipFile); err != nil {
 		return nil, errors.Wrapf(err, "unable to write the zip file for report config '%s'", configName)
 	}
 	if err = zipWriter.Close(); err != nil {
