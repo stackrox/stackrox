@@ -330,7 +330,7 @@ jobs:
         if: always()
         with:
           paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
-          show: all
+          show: "fail, skip"
 
       - name: Report junit failures in jira
         if: (!cancelled())
