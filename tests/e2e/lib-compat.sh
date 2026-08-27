@@ -231,9 +231,19 @@ handle_scanner_v4_setting() {
     local path="$2"
     local rox_scanner_v4="${ROX_SCANNER_V4:-false}" # To match the previous defaulting
 
+    # The "on" value differs between the two CRDs: Central's ScannerV4ComponentPolicy enum is
+    # Default/Enabled/Disabled, while SecuredCluster's LocalScannerV4ComponentPolicy enum is
+    # Default/AutoSense/Disabled (there is no "Enabled" for the secured cluster; AutoSense is
+    # how it is turned on). This matches the legacy helm path (scannerComponent: AutoSense for
+    # the secured cluster). Disabled is valid for both.
+    local enabled_value="Enabled"
+    if [[ "$path" == *securedCluster* ]]; then
+        enabled_value="AutoSense"
+    fi
+
     case "$rox_scanner_v4" in
         true)
-            patch_yaml "$config_file" "${path} = \"Enabled\""
+            patch_yaml "$config_file" "${path} = \"${enabled_value}\""
             ;;
         false)
             patch_yaml "$config_file" "${path} = \"Disabled\""
