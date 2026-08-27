@@ -32,7 +32,7 @@ message AuthProvider {
   //   according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.
   //
   // OpenShift Auth:
-  // These settings only apply for OpenShift Auth used with access control delegation to OPP.
+  // These settings only apply for OpenShift Auth used with access control delegation to ACM.
   // Otherwise, no extra configuration options are supported.
   // - "client_name": the name of the OAuthClient object used to request an OpenShift auth token.
   // - "client_secret": the OAuthClient secret.
