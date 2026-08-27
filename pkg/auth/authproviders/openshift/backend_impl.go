@@ -105,12 +105,20 @@ func newBackendWithACMAccessControlDelegation(id string, callbackURLPath string,
 		return nil, err
 	}
 
-	return &backend{
+	b := &backend{
 		id:                  id,
 		config:              config,
 		baseRedirectURLPath: callbackURLPath,
 		openshiftConnector:  openshiftConnector,
-	}, nil
+	}
+
+	// Register backend for notification on openshift certificate updates.
+	// And refresh connection to OpenShift in case certificates changed
+	// between the backend creation and its registration.
+	registerBackend(b)
+	b.recreateOpenshiftConnector()
+
+	return b, nil
 }
 
 func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
@@ -242,7 +250,13 @@ func (b *backend) Validate(_ context.Context, _ *tokens.Claims) error {
 }
 
 func (b *backend) recreateOpenshiftConnector() {
-	openshiftConnector, err := createOpenshiftConnector()
+	var openshiftConnector callbackAndRefreshConnector
+	var err error
+	if b.config != nil {
+		openshiftConnector, err = createOpenshiftConnectorForACMAccessControlDelegation(b.config)
+	} else {
+		openshiftConnector, err = createOpenshiftConnector()
+	}
 	if err != nil {
 		log.Errorw("failed to create updated dex openshiftConnector for OpenShift's OAuth Server with new CAs, "+
 			"new certs will not be applied. This may lead to unwanted TLS connection issues.", logging.Err(err))
